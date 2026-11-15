@@ -1419,18 +1419,25 @@ def mesh_from_segment(segment, metadata, arrays, reader, *, check=lambda: None):
     # Accept the completed view only after both immutable sources pass their
     # closing freshness check. Scalars keep cancellation checks within this
     # single bounded, paid internal read operation.
-    with arrays['id.bytes'].columns.read_batch(), reader.source._partition.record._read_batch():
-        view._validate()
-        found, length = sha256(), 0
-        # Inside the reader's collect_proofs block on this store the same stream also scans the widths (I3).
-        scan = WG.OptionalScan() if WG.active(segment.resolver) is not None else None
-        for part in view.iter_legacy_json():
-            check(); found.update(part); length += len(part)
-            if scan is not None:
-                scan.feed(part)
-    identity = LogicalIdentity(LEGACY, found.hexdigest(), length)
-    require(identity == segment.info.ref.identity and identity.sha256 == view.geometry_id,
-            'streamed original geometry identity differs')
+    from atlas_tectonics._private.compact_contracts import proving
+    if proving() or WG.active(segment.resolver) is not None:    # decision 542; unit A's width scan
+        with arrays['id.bytes'].columns.read_batch(), reader.source._partition.record._read_batch():
+            view._validate()
+            found, length = sha256(), 0
+            # Inside the reader's collect_proofs block on this store the same stream also scans the widths (I3).
+            scan = WG.OptionalScan() if WG.active(segment.resolver) is not None else None
+            for part in view.iter_legacy_json():
+                check(); found.update(part); length += len(part)
+                if scan is not None:
+                    scan.feed(part)
+        identity = LogicalIdentity(LEGACY, found.hexdigest(), length)
+        require(identity == segment.info.ref.identity and identity.sha256 == view.geometry_id,
+                'streamed original geometry identity differs')
+    else:
+        # Decision 542: adopted from the record; an ordinary open proves nothing about the mesh.
+        scan = None
+        identity = segment.info.ref.identity
+        require(identity.sha256 == view.geometry_id, 'streamed original geometry identity differs')
     view._logical_identity = identity
     view._width_scan = None if scan is None else scan.result()
     view._sealed = True

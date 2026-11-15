@@ -597,12 +597,14 @@ class CompactMeshStoreV3:
             with segment.info.array(name) as held:
                 require(held.value.dtype == descriptor['dtype'] and list(held.value.shape) == descriptor['shape'],
                         'mesh v3 typed descriptor differs')
-            digest = sha256()
-            with segment.iter(name, block_bytes=65536, max_owned_bytes=131072) as stream:
-                for block in stream:
-                    with block:
-                        digest.update(block.value)
-            require(digest.hexdigest() == descriptor['sha256'], 'mesh v3 column bytes differ')
+            from atlas_tectonics._private.compact_contracts import proving
+            if proving():   # decision 542: the store checks the bytes it reads
+                digest = sha256()
+                with segment.iter(name, block_bytes=65536, max_owned_bytes=131072) as stream:
+                    for block in stream:
+                        with block:
+                            digest.update(block.value)
+                require(digest.hexdigest() == descriptor['sha256'], 'mesh v3 column bytes differ')
             flattened[name] = dict(descriptor, shape=[math.prod(descriptor['shape'])])
         columns = _Segment(segment, flattened)
         del metadata, descriptors, descriptor
@@ -614,6 +616,7 @@ class CompactMeshStoreV3:
 
     def _prepare_open(self, segment, metadata_owner, columns, source, *, cancel):
         from atlas_tectonics._private.content_cache import ChargeSpec
+        from atlas_tectonics._private.compact_contracts import proving
         from atlas_tectonics._private.mesh_tables import (DerivedSupportColumn, MAX_HEADER_BYTES, SegmentColumn, canonical,
                                  mesh_from_segment, require)
         metadata = metadata_owner.value
@@ -639,12 +642,16 @@ class CompactMeshStoreV3:
                 raw_owner = reservation.commit(buffer)
                 del buffer
             raw = raw_owner.value
-            require(sha256(raw).hexdigest() == descriptor['sha256'], 'mesh header column bytes differ')
+            if proving():
+                require(sha256(raw).hexdigest() == descriptor['sha256'], 'mesh header column bytes differ')
             with self.scope.reserve(ChargeSpec('mesh-header-values', _header_decode_charge(raw))) as reservation:
                 header = json.loads(raw)
-                # Transient canonical re-encode (text plus bytes) of the check.
-                with self.scope.reserve(ChargeSpec('mesh-header-canonical-check', 2*size+65536)):
-                    require(type(header) is dict and canonical(header) == raw, 'mesh header column is not canonical')
+                if proving():
+                    # Transient canonical re-encode (text plus bytes) of the check.
+                    with self.scope.reserve(ChargeSpec('mesh-header-canonical-check', 2*size+65536)):
+                        require(type(header) is dict and canonical(header) == raw, 'mesh header column is not canonical')
+                else:
+                    require(type(header) is dict, 'mesh header column is not canonical')
                 header_value_owner = reservation.commit(header)
             del raw, header
             raw_owner.close()
@@ -672,12 +679,12 @@ class CompactMeshStoreV3:
         reader = _V3Supports(segment, arrays, source, static, owner)
         for index in range(len(arrays['s.id'])):
             require(reader.is_shared(index) == (index not in static), 'static/shared support coverage differs')
-            if reader.is_shared(index):
+            if reader.is_shared(index) and proving():
                 require(source.identity(reader.ident(index)).sha256 == reader.ident(index),
                         'partition support ID differs from content')
         arrays['s.blob'] = DerivedSupportColumn(len(arrays['s.id']), reader.blob)
         arrays['s.size'] = DerivedSupportColumn(len(arrays['s.id']), reader.size)
-        for name in ('s.blob', 's.size'):
+        for name in (('s.blob', 's.size') if proving() else ()):
             digest = sha256()
             for value in arrays[name]:
                 digest.update(int(value).to_bytes(8, 'little'))

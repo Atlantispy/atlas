@@ -1473,7 +1473,8 @@ def pressure_entry_point(argv, step, profile):
 
 
 def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
-            interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False):
+            interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
+            open_proofs=False):
     """Inspectable guarded command only; never launches or reads a store. ``start_gate`` goes last."""
     require(type(dev_timing) is bool, 'dev timing flag must be boolean')
     require(type(production_release) is bool and not (production_release and dev_timing),
@@ -1508,6 +1509,7 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
             *(['--stop-before-advance'] if stop_before_advance else []),
             *(['--interval', str(number), '--parent-adopted-sha256', pin] if number >= 2 else []),
             *(['--record-failed-prior'] if record_failed_prior else []),
+            *(['--open-proofs'] if open_proofs else []),
             *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
@@ -1572,9 +1574,14 @@ def _profile_sampler(folder, mode):
 
 
 def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
-              interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False):
+              interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
+              open_proofs=False):
     dev_timing = RUN._dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
+    require(type(open_proofs) is bool, 'open proofs flag must be boolean')
+    if open_proofs:    # decision 542: proof mode, on before anything is opened, never off
+        from atlas_tectonics._private import compact_contracts
+        compact_contracts.open_proofs = True
     seed = _seed(seed, mode)
     _across_refused_in_release(seed, production_release)
     number = interval_number(mode, interval)
@@ -1591,7 +1598,8 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     _profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', mode)
     record: dict = {'schema': RESULT_SCHEMA, 'status': 'STARTED', 'pid': os.getpid(), 'mode': mode,
                     'profile_sha256': profile.sha256, 'errors': [], 'production_acceptance': False,
-                    'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed}
+                    'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed,
+                    'open_proofs': open_proofs}
     guard = budget = None
     # The supervisor has already claimed sidecars. Receipt creation is exclusive.
     with output.open('x', encoding='utf8') as stream:
@@ -1665,6 +1673,8 @@ def main(argv=None):
     parser.add_argument('--reuse-previous-run-sha256', help='with --reuse-previous-run: its SHA-256')
     parser.add_argument('--interval', type=int, help='run B only, item 21: the interval N >= 2 to seal')
     parser.add_argument('--parent-adopted-sha256', help='with --interval N >= 2: the adopted(N-1) file SHA-256')
+    parser.add_argument('--open-proofs', action='store_true',
+                        help='proof mode: the open of an adopted head proves what it loads (decision 542)')
     parser.add_argument('--record-failed-prior', action='store_true',
                         help='diagnostic trees only: record how an earlier producer ended (decision 289)')
     action = parser.add_mutually_exclusive_group()
@@ -1701,13 +1711,13 @@ def main(argv=None):
         return _workload(profile, mode=args.mode, dev_timing=dev_timing, stop_before_advance=args.stop_before_advance,
                          seed=seed, start_gate=args.start_gate, interval=args.interval,
                          parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
-                         record_failed_prior=args.record_failed_prior)
+                         record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs)
     if args.production_release:
         gate = RUN.production_decision(FreshSources(profile),'fresh-'+args.mode)
     argv = command(profile, sys.executable, mode=args.mode, dev_timing=dev_timing,
                    stop_before_advance=args.stop_before_advance, seed=seed, start_gate=gate, interval=args.interval,
                    parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
-                   record_failed_prior=args.record_failed_prior)
+                   record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs)
     print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                       'production_acceptance': False}), flush=True)
     if not args.launch:

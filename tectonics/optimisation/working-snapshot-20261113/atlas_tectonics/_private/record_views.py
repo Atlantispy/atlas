@@ -1169,7 +1169,10 @@ class CompactRecord:
             parsed, identity = _metadata(raw)
         T.require(segment.info.ref.identity == identity, 'segment logical identity differs')
         T.require(segment.info.array_count == len(_NAMES), 'segment array inventory differs')
-        if segment.cache_identity() is not None:
+        from atlas_tectonics._private.compact_contracts import proving
+        # Decision 542: column digests only in proof mode; the store checks every chunk it reads, and the
+        # typed descriptors are still compared below.
+        if proving() and segment.cache_identity() is not None:
             # One authenticated ordered walk, including empty columns. The
             # segment validates physical ranges; verify full codec inventory,
             # typed descriptors and each column digest here as before.
@@ -1203,12 +1206,13 @@ class CompactRecord:
                     info = held.value
                     T.require(info.dtype == descriptor['dtype'] and list(info.shape) == descriptor['shape'],
                               'segment column descriptor differs')
-                digest = sha256()
-                with segment.iter(name, block_bytes=T.CHUNK, max_owned_bytes=2*T.CHUNK) as stream:
-                    for block in stream:
-                        with block:
-                            digest.update(block.value)
-                T.require(digest.hexdigest() == descriptor['sha256'], 'segment column digest differs')
+                if proving():
+                    digest = sha256()
+                    with segment.iter(name, block_bytes=T.CHUNK, max_owned_bytes=2*T.CHUNK) as stream:
+                        for block in stream:
+                            with block:
+                                digest.update(block.value)
+                    T.require(digest.hexdigest() == descriptor['sha256'], 'segment column digest differs')
         # Segment is intentionally owned as a dependency by this wrapper. Its
         # close is delayed until this backing allocation has no live borrows.
         owner = _owned(scope, 65536+8*len(raw), lambda: raw, 'record-segment-view',

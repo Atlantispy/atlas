@@ -424,7 +424,9 @@ def restore(cls, header, arrays, funding, collar, budget, *, interval, store, op
                 PS.open_partition_v2(store, wanted, scope=store.scope))
     else:
         view = PS.CompactPartitionStore(store, budget=budget).open(ref, expected_partition_id=header['partition_id'])
-    require(compact_header(view, {}, ref) == header, 'saved compact partition lineage differs from its stored DAG')
+    from atlas_tectonics._private.compact_contracts import proving
+    if proving():    # decision 542
+        require(compact_header(view, {}, ref) == header, 'saved compact partition lineage differs from its stored DAG')
     # New partitions carry the current collar plan: no parent geometry transfer.
     partition = DifferentialPartition.from_compact(view, funding, collar, interval, budget=budget)
     return partition, interval

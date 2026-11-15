@@ -201,16 +201,18 @@ def _context(owner, parent_spatial_state, parent_collar_state, state, collar_sta
         raise TypeError('Independent restored actual owner/parent/head/mesh on one budget required')
     if owner._heat_label != 'PRIVATE uniform-k composed physical-face heat; original transported caloric stocks':
         raise ValueError('Restored owner must explicitly declare the composed heat method')
-    owner.validate_parent(parent_spatial_state, parent_collar_state)
-    owner.validate_parent(state, collar_state)
-    snapshots = (parent_spatial_state._snapshot, state._snapshot, parent_collar_state.fields,
-        parent_collar_state.native_state, collar_state.fields, collar_state.native_state,
-        transport_snapshot, source_audit)
-    for snapshot in snapshots:
-        if _indexed_spatial(snapshot, (parent_spatial_state, state)):
-            _indexed_snapshot(snapshot, budget, cancel)
-        else:
-            _snapshot(snapshot, budget, cancel, compact_transport=snapshot is transport_snapshot)
+    from atlas_tectonics._private.compact_contracts import proving
+    if proving():    # decision 542: validate_parent and the eight snapshot identities
+        owner.validate_parent(parent_spatial_state, parent_collar_state)
+        owner.validate_parent(state, collar_state)
+        snapshots = (parent_spatial_state._snapshot, state._snapshot, parent_collar_state.fields,
+            parent_collar_state.native_state, collar_state.fields, collar_state.native_state,
+            transport_snapshot, source_audit)
+        for snapshot in snapshots:
+            if _indexed_spatial(snapshot, (parent_spatial_state, state)):
+                _indexed_snapshot(snapshot, budget, cancel)
+            else:
+                _snapshot(snapshot, budget, cancel, compact_transport=snapshot is transport_snapshot)
     # r1 views carried a codec share for life. The stream hashes below are of
     # the committed exchange or a part of it; they are funded here for as long
     # as the caller's scope lives.
@@ -225,7 +227,7 @@ def _context(owner, parent_spatial_state, parent_collar_state, state, collar_sta
     audit = work.stack.enter_context(R.decoded(source_audit._metadata, budget=budget, cancel=cancel)).value
     graph, plan, ref = exchange['spatial_graph'], exchange['joined_heat_plan'], exchange['joined_heat']
     plan = _HC.native_plan(plan, work.stack)
-    body = _SV.exchange_identity(exchange, state.state_id, lambda value: R.stream_hash(value, cancel))
+    body = _SV.exchange_identity(exchange, state.state_id, lambda value: R.stream_hash(value, cancel)) if proving() else None
     # The graph the committed transport was solved on: the issued physical graph, or, for an
     # owner with finite stocks, the graph of the committed finite proposal, as the producer
     # (SpatialOwner.transport) and the native validate_exchange have it. Both are parts of
@@ -234,7 +236,8 @@ def _context(owner, parent_spatial_state, parent_collar_state, state, collar_sta
         finite = exchange.get('finite_proposal')
         if not _SV.is_record(finite) or not _SV.is_record(finite.get('graph')):
             raise ValueError('Committed finite proposal of the transport is missing')
-        transport_graph_id = _SV.identity(finite['graph'], lambda value: R.stream_hash(value, cancel))
+        transport_graph_id = (_SV.identity(finite['graph'], lambda value: R.stream_hash(value, cancel))
+                              if proving() else None)
     elif 'finite_proposal' in exchange:
         raise ValueError('Committed finite proposal has no actual stock owner')
     else:
@@ -245,16 +248,17 @@ def _context(owner, parent_spatial_state, parent_collar_state, state, collar_sta
             or current['parent_state_id'] != parent_spatial_state.state_id
             or exchange.get('collar_state_id') != collar_state.result_id
             or current['intervals'] != parent['intervals']+1
-            or body != exchange.get('result_id')
-            or _SV.identity(graph, lambda value: R.stream_hash(value, cancel)) != exchange.get('spatial_graph_id')
             or exchange.get('global_transport_id') != transport_snapshot.result_id
             or exchange.get('source_audit_id') != source_audit.result_id
             or graph['parent_state_id'] != parent_collar_state.result_id
             or graph['source_flow_stage_id'] != exchange['source_flow_stage_id']
             or transport['source_stage_id'] != exchange['source_flow_stage_id']
             or transport['state_id'] != parent_spatial_state.state_id
-            or transport.get('geometry_id') != transport_graph_id
-            or not _transport_matches(transport_snapshot, transport, exchange, cancel)):
+            or transport_graph_id is not None and transport.get('geometry_id') != transport_graph_id
+            or proving() and (body != exchange.get('result_id')
+                              or _SV.identity(graph, lambda value: R.stream_hash(value, cancel))
+                              != exchange.get('spatial_graph_id')
+                              or not _transport_matches(transport_snapshot, transport, exchange, cancel))):
         raise ValueError('Committed parent/head/source/transport/exchange chain differs')
     duration = ref['duration_s']
     if (type(duration) not in (int,float) or not math.isfinite(duration) or duration <= 0
@@ -278,10 +282,11 @@ def _context(owner, parent_spatial_state, parent_collar_state, state, collar_sta
                 or ('source' in thermal) != ('source' in graph) or thermal.get('source') != graph.get('source')
                 or 'booked_cell_rule' in thermal and thermal['booked_cell_rule'].get('closed_graph_id') != exchange['spatial_graph_id']):
             raise ValueError('Restored physical mesh is not the actual transported endpoint')
-    positive = {row['cell_id'] for row in graph['cells'] if I._q(row['end_volume_m3']) > 0}
-    logical = [row['logical_cell_id'] for row in thermal['cells']]
-    if len(set(logical)) != len(logical) or set(logical) != positive:
-        raise ValueError('Every positive transported cell must appear exactly once')
+    logical = [row['logical_cell_id'] for row in thermal['cells']]   # read by the plan comparison below
+    if proving():
+        positive = {row['cell_id'] for row in graph['cells'] if I._q(row['end_volume_m3']) > 0}
+        if len(set(logical)) != len(logical) or set(logical) != positive:
+            raise ValueError('Every positive transported cell must appear exactly once')
     I._validate_target_plan(plan)
     if (plan['original_target'] != I._target_provenance(target)
             or plan['absolute_residual_target_decimal'] != I._target_text(target)
@@ -298,7 +303,7 @@ def _context(owner, parent_spatial_state, parent_collar_state, state, collar_sta
         elif (type(geometry) is not MimeticGeometry or geometry._budget is not budget
               or sha256(geometry._encoded).hexdigest() != mesh.geometry_id):
             raise ValueError('Retained restored metric differs from actual endpoint')
-    for fid, (kind,value) in plan['boundary'].items():
+    for fid, (kind,value) in (plan['boundary'].items() if proving() else ()):
         if (fid not in geometry._face_ids or len(geometry._incidence[geometry._face_ids.index(fid)]) != 1
                 or kind not in ('power','temperature') or type(value) not in (int,float)
                 or not math.isfinite(value) or kind == 'temperature' and value <= 0):
@@ -341,6 +346,9 @@ class RestoredHeatBinding:
             raise ValueError('Restored binding belongs to a different actual owner/endpoint')
         restored, compared = self._proved
         if _SV._reference(exchange) is restored:
+            from atlas_tectonics._private.compact_contracts import proving
+            if not proving():
+                return    # decision 542: restore()'s own exchange; proved_for is not asked then
             # restore() derived and checked everything below from these very objects (ruling 4b)
             if audit_arrays is not None and audit_arrays is not compared:
                 with R.workspace(budget, 65536, cancel=cancel):
@@ -405,88 +413,100 @@ def restore(store, receipt, *, owner, parent_spatial_state, parent_collar_state,
             view = views.stack.enter_context(_HC.ledger_access(saved.value, budget, cancel, R))
             meta = view.value
             origin = meta['caller_snapshot']
-            cp = owner._collar._native._material.heat_capacity_j_kg_k
-            with R.codec_for_value(owner._definition, budget=budget, cancel=cancel):
-                definition_id = R.stream_hash(owner._definition, cancel)
-                transport_identity = R.stream_hash(dict(parent=parent_spatial_state.state_id,
-                    source=exchange['source_flow_stage_id'], graph=exchange['spatial_graph_id'],
-                    transport=transport_snapshot.result_id), cancel)
-            if (meta.get('schema') != I.SCHEMA or meta.get('method_id') != I.METHOD
-                    or meta.get('fixed_forward_producer') != 'private_heat_forward_kernel_r13.advance'
-                    or meta.get('origin_binding_status') != 'FORWARD_ACTUAL_OWNER_SNAPSHOT'
-                    or meta.get('genuine_forward_origin') is not True or origin.get('fixture_only') is not False
-                    or meta.get('call_id') != ref['call_id'] or meta.get('plan_id') != bindings['plan']
-                    or meta.get('geometry_id') != geometry.geometry_id or meta.get('state_id') != transport_snapshot.result_id
-                    or meta.get('duration_s') != dt or meta.get('cell_ids') != [r['cell_id'] for r in thermal['cells']]
-                    or meta.get('face_ids') != list(geometry._face_ids)
-                    or meta.get('loaded_dependencies') != I._LOADED_IMPLEMENTATION.descriptor()
-                    or origin.get('execution') != execution.provenance or origin.get('private_sources') != dict(I._IMPORTED_SOURCES)
-                    or origin.get('plan_id') != bindings['plan'] or origin.get('geometry_id') != geometry.geometry_id
-                    or origin.get('state_id') != transport_snapshot.result_id or origin.get('duration_s') != dt
-                    or origin.get('cell_ids') != meta['cell_ids']
-                    or origin.get('loaded_dependencies') != meta['loaded_dependencies']
-                    or origin.get('owner_id') != owner.owner_id or origin.get('owner_definition_id') != definition_id
-                    or origin.get('heat_capacity_j_kg_k') != cp or origin.get('source_stage_id') != exchange['source_flow_stage_id']
-                    or origin.get('graph_id') != exchange['spatial_graph_id'] or origin.get('thermal_mesh_id') != mesh.geometry_id
-                    or origin.get('source_policy') != 'already-booked-transport; zero added heat source'
-                    or meta.get('source_policy') != origin['source_policy']
-                    or meta.get('endpoint_face_trace_status') != I.N.A.TRACE_STATUS
-                    or any(meta.get(k) is not False for k in ('native_issue_performed','native_resource_admitted',
-                        'native_heat_dispatch_enabled','production_acceptance','whole_method_memory_inventory_certified'))
-                    or saved.value.array_names != C._FIELDS):
+            # Decision 542, what stays: the stored record's libraries, execution and sources are this process's.
+            if (meta.get('loaded_dependencies') != I._LOADED_IMPLEMENTATION.descriptor()
+                    or origin.get('execution') != execution.provenance
+                    or origin.get('private_sources') != dict(I._IMPORTED_SOURCES)):
                 raise ValueError('Stored heat owner/plan/source/runtime/order/provenance differs')
-            sig = origin['native_origin_signature']
-            expected_sig = dict(owner_id=owner.owner_id, owner_definition_id=definition_id,
-                funding_id=owner._funding.funding_id, component_count=owner._component_count, heat_capacity_j_kg_k=cp,
-                transport_id=transport_identity,
-                state_id=transport_snapshot.result_id, parent_state_id=parent_spatial_state.state_id,
-                source_stage_id=exchange['source_flow_stage_id'], graph_id=exchange['spatial_graph_id'],
-                thermal_mesh_id=mesh.geometry_id, duration_s=dt)
-            if any(sig.get(k) != v for k,v in expected_sig.items()):
-                raise ValueError('Historical producer origin differs from restored actual context')
-            # Historical inventory IDs are bound by the original call ID and CAS;
-            # these snapshots are NOT reconstructed or claimed independently read.
-            if set(sig) != {*expected_sig, 'source_inventory_id', 'native_source_inventory_id'}:
-                raise ValueError('Original producer source-inventory provenance is incomplete')
-            from atlas_tectonics._private import private_heat_gmp_resources_r1 as GMP
-            arithmetic = GMP.OwnedWorkspace(budget, 65536, category='private-cold-input-projection', cancelled=cancel)
-            arithmetic.__enter__()
-            held = R.O._OwnerWorkspace(arithmetic)
-            try:
-                ar = _HC.ledger_arithmetic(R)(arithmetic, R.A.exact_library(), GMP, len(geometry._cells),
-                    len(geometry._face_ids), 1075, lambda: R.check(cancel))
-                held.arithmetic = ar
-                from atlas_tectonics._private.live_transport_result import CompactTransportSnapshot
-                if type(transport_snapshot) is CompactTransportSnapshot:
-                    from atlas_tectonics._private.cold_transport_candidate import compact_inputs
-                    inputs = compact_inputs(ar, transported, thermal, owner._component_count, cp,
-                                            transport_snapshot._record.scope)
-                else:
-                    inputs = _inputs(ar, transported, thermal, owner._component_count, cp)
-                call_arrays = {key.removeprefix('input_'): value for key,value in inputs.items()}
-                with _HC.ledger_codec(view, budget, cancel, R):
-                    if _HC.call_identity(origin, call_arrays, R, cancel) != ref['call_id']:
-                        raise ValueError('Original call identity does not match re-derived transported inputs')
-                _equations(saved.value, meta, geometry, inputs, plan, dt, budget, cancel)
-                exterior = _HC.endpoint_cells(current['cells'])
-                for at, row in enumerate(thermal['cells']):
-                    public = ar.decode(float(saved.value.array('enthalpy_j')[at]))
-                    if row['kind'] == 'collar':
-                        actual = ar.decode(_collar_value(collar_state.fields.array('enthalpy_j'), row['index']))
+            from atlas_tectonics._private.compact_contracts import proving
+            # Decision 542: what the block makes is read only inside it, except exchange_identity, which only
+            # validate_for's proof reads (F-2 list in NOTES.md).
+            if proving():
+                cp = owner._collar._native._material.heat_capacity_j_kg_k
+                with R.codec_for_value(owner._definition, budget=budget, cancel=cancel):
+                    definition_id = R.stream_hash(owner._definition, cancel)
+                    transport_identity = R.stream_hash(dict(parent=parent_spatial_state.state_id,
+                        source=exchange['source_flow_stage_id'], graph=exchange['spatial_graph_id'],
+                        transport=transport_snapshot.result_id), cancel)
+                if (meta.get('schema') != I.SCHEMA or meta.get('method_id') != I.METHOD
+                        or meta.get('fixed_forward_producer') != 'private_heat_forward_kernel_r13.advance'
+                        or meta.get('origin_binding_status') != 'FORWARD_ACTUAL_OWNER_SNAPSHOT'
+                        or meta.get('genuine_forward_origin') is not True or origin.get('fixture_only') is not False
+                        or meta.get('call_id') != ref['call_id'] or meta.get('plan_id') != bindings['plan']
+                        or meta.get('geometry_id') != geometry.geometry_id or meta.get('state_id') != transport_snapshot.result_id
+                        or meta.get('duration_s') != dt or meta.get('cell_ids') != [r['cell_id'] for r in thermal['cells']]
+                        or meta.get('face_ids') != list(geometry._face_ids)
+                        or meta.get('loaded_dependencies') != I._LOADED_IMPLEMENTATION.descriptor()
+                        or origin.get('execution') != execution.provenance or origin.get('private_sources') != dict(I._IMPORTED_SOURCES)
+                        or origin.get('plan_id') != bindings['plan'] or origin.get('geometry_id') != geometry.geometry_id
+                        or origin.get('state_id') != transport_snapshot.result_id or origin.get('duration_s') != dt
+                        or origin.get('cell_ids') != meta['cell_ids']
+                        or origin.get('loaded_dependencies') != meta['loaded_dependencies']
+                        or origin.get('owner_id') != owner.owner_id or origin.get('owner_definition_id') != definition_id
+                        or origin.get('heat_capacity_j_kg_k') != cp or origin.get('source_stage_id') != exchange['source_flow_stage_id']
+                        or origin.get('graph_id') != exchange['spatial_graph_id'] or origin.get('thermal_mesh_id') != mesh.geometry_id
+                        or origin.get('source_policy') != 'already-booked-transport; zero added heat source'
+                        or meta.get('source_policy') != origin['source_policy']
+                        or meta.get('endpoint_face_trace_status') != I.N.A.TRACE_STATUS
+                        or any(meta.get(k) is not False for k in ('native_issue_performed','native_resource_admitted',
+                            'native_heat_dispatch_enabled','production_acceptance','whole_method_memory_inventory_certified'))
+                        or saved.value.array_names != C._FIELDS):
+                    raise ValueError('Stored heat owner/plan/source/runtime/order/provenance differs')
+                sig = origin['native_origin_signature']
+                expected_sig = dict(owner_id=owner.owner_id, owner_definition_id=definition_id,
+                    funding_id=owner._funding.funding_id, component_count=owner._component_count, heat_capacity_j_kg_k=cp,
+                    transport_id=transport_identity,
+                    state_id=transport_snapshot.result_id, parent_state_id=parent_spatial_state.state_id,
+                    source_stage_id=exchange['source_flow_stage_id'], graph_id=exchange['spatial_graph_id'],
+                    thermal_mesh_id=mesh.geometry_id, duration_s=dt)
+                if any(sig.get(k) != v for k,v in expected_sig.items()):
+                    raise ValueError('Historical producer origin differs from restored actual context')
+                # Historical inventory IDs are bound by the original call ID and CAS;
+                # these snapshots are NOT reconstructed or claimed independently read.
+                if set(sig) != {*expected_sig, 'source_inventory_id', 'native_source_inventory_id'}:
+                    raise ValueError('Original producer source-inventory provenance is incomplete')
+                from atlas_tectonics._private import private_heat_gmp_resources_r1 as GMP
+                arithmetic = GMP.OwnedWorkspace(budget, 65536, category='private-cold-input-projection', cancelled=cancel)
+                arithmetic.__enter__()
+                held = R.O._OwnerWorkspace(arithmetic)
+                try:
+                    ar = _HC.ledger_arithmetic(R)(arithmetic, R.A.exact_library(), GMP, len(geometry._cells),
+                        len(geometry._face_ids), 1075, lambda: R.check(cancel))
+                    held.arithmetic = ar
+                    from atlas_tectonics._private.live_transport_result import CompactTransportSnapshot
+                    if type(transport_snapshot) is CompactTransportSnapshot:
+                        from atlas_tectonics._private.cold_transport_candidate import compact_inputs
+                        inputs = compact_inputs(ar, transported, thermal, owner._component_count, cp,
+                                                transport_snapshot._record.scope)
                     else:
-                        actual = ar.decode(exterior[row['logical_cell_id']]['exact']['enthalpy_j'])
-                    if not ar.equal(actual, public):
-                        raise ValueError('Restored endpoint changed the actual stored heat enthalpy')
-                del exterior, public, actual
-                del inputs, call_arrays
-                ar.settle(())
-                held.__exit__(None, None, None)
-            except BaseException:
-                held.__exit__(*sys.exc_info())
-                raise
-            exchange_identity = _SV.identity(exchange, lambda value: R.stream_hash(value, cancel))
+                        inputs = _inputs(ar, transported, thermal, owner._component_count, cp)
+                    call_arrays = {key.removeprefix('input_'): value for key,value in inputs.items()}
+                    with _HC.ledger_codec(view, budget, cancel, R):
+                        if _HC.call_identity(origin, call_arrays, R, cancel) != ref['call_id']:
+                            raise ValueError('Original call identity does not match re-derived transported inputs')
+                    _equations(saved.value, meta, geometry, inputs, plan, dt, budget, cancel)
+                    exterior = _HC.endpoint_cells(current['cells'])
+                    for at, row in enumerate(thermal['cells']):
+                        public = ar.decode(float(saved.value.array('enthalpy_j')[at]))
+                        if row['kind'] == 'collar':
+                            actual = ar.decode(_collar_value(collar_state.fields.array('enthalpy_j'), row['index']))
+                        else:
+                            actual = ar.decode(exterior[row['logical_cell_id']]['exact']['enthalpy_j'])
+                        if not ar.equal(actual, public):
+                            raise ValueError('Restored endpoint changed the actual stored heat enthalpy')
+                    del exterior, public, actual
+                    del inputs, call_arrays
+                    ar.settle(())
+                    held.__exit__(None, None, None)
+                except BaseException:
+                    held.__exit__(*sys.exc_info())
+                    raise
+                exchange_identity = _SV.identity(exchange, lambda value: R.stream_hash(value, cancel))
+                del sig, row
+            else:
+                exchange_identity = None
             # Last use of the decoded context and heat views and of their codec scope.
-            del current, thermal, transported, meta, origin, sig, row
+            del current, thermal, transported, meta, origin
             encoded_plan = _HC.owned_plan_bytes(plan, work, budget, cancel, R, I._json)
             views.__exit__(None, None, None)
             result = object.__new__(RestoredHeatBinding)

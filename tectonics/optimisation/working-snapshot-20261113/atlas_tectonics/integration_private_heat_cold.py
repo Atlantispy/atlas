@@ -115,7 +115,9 @@ def _restore_parent(workflow, parent, budget, work):
             work.stack.enter_context(budget.reserve(
                 _HC.snapshot_charge(old, exterior_arrays, _snapshot_charge), category='private-cold-exterior-retained'))
             parent_spatial = workflow._exterior_owner.restore(old, exterior_arrays)
-            workflow._exterior_owner.validate_parent(parent_spatial, parent_collar)
+            from atlas_tectonics._private.compact_contracts import proving
+            if proving():    # decision 542
+                workflow._exterior_owner.validate_parent(parent_spatial, parent_collar)
         return parent_collar, parent_spatial
     finally:
         # Also retire our references in an escaping traceback. Native callees
@@ -193,7 +195,8 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))
             transport = RegionalMechanicalSnapshot(metadata, transport_fields)
-            if transport.result_id != exchange.get('global_transport_id'):
+            from atlas_tectonics._private.compact_contracts import proving
+            if proving() and transport.result_id != exchange.get('global_transport_id'):    # decision 542
                 raise ValueError('Committed transported arrays/identity differ')
             target = original_target(exchange['joined_heat_plan'])
             binding = work.stack.enter_context(B.restore(store, exchange['joined_heat']['checkpoint'],

@@ -926,8 +926,11 @@ class PreparedSpatialOwner:
                 raise TectonicsError('saved finite and physical interval counts differ')
         elif 'finite_stock_state' in body:
             raise TectonicsError('saved finite stock has no declared owner')
+        from atlas_tectonics._private.compact_contracts import proving
+        proof = _validate_only or proving()    # decision 542: an open proves only in proof mode
         if self._measure_policy is not None:
-            self._check_measures(body)
+            if proof:
+                self._check_measures(body)
         elif 'measure_policy' in body or 'native_material_quadrature_m3' in body:
             raise TectonicsError('dual-measure state requires its explicitly declared owner')
         if (body.get('owner_id') != self.owner_id or body.get('funding_id') != self._funding.funding_id or
@@ -944,35 +947,39 @@ class PreparedSpatialOwner:
         if (mesh_identity(body['thermal_mesh'], mesh_hash) != body['thermal_mesh_id'] or mesh['support_id'] != body['support_id'] or
                 mesh['trajectory_id'] != body['trajectory_id'] or _q(mesh['time_s']) != Q(body['time_s'])):
             raise TectonicsError('saved spatial geometry/time/trajectory identity differs')
-        seen = set()
-        for row in _SV.rows(body['cells']):
-            if row['cell_id'] in seen or _q(row['volume_m3']) <= 0 or set(row['exact']) != set(self._names):
-                raise TectonicsError('saved spatial positive-cell layout differs')
-            seen.add(row['cell_id'])
-            if any(_q(row['exact'][name]) < 0 for name in self._nonnegative):
-                raise TectonicsError('saved spatial material contains negative fields')
-            if mesh.get('physical_geometry_family') == 'differential-plate-component-partition-v1':
-                error = row.get('geometry_volume_error_m3')
-                if type(error) is not list or len(error) != 2:
-                    raise TectonicsError('saved differential volume needs its carried signed geometric enclosure')
-                low, high = map(_q, error)
-                if low > high or _q(row['volume_m3'])+high <= 0:
-                    raise TectonicsError('saved signed geometric volume enclosure is invalid')
-        if seen != set(exterior_ids(body['thermal_mesh'], self._budget)):
-            raise TectonicsError('saved physical and thermal exterior cells differ')
+        if proof:
+            seen = set()
+            for row in _SV.rows(body['cells']):
+                if row['cell_id'] in seen or _q(row['volume_m3']) <= 0 or set(row['exact']) != set(self._names):
+                    raise TectonicsError('saved spatial positive-cell layout differs')
+                seen.add(row['cell_id'])
+                if any(_q(row['exact'][name]) < 0 for name in self._nonnegative):
+                    raise TectonicsError('saved spatial material contains negative fields')
+                if mesh.get('physical_geometry_family') == 'differential-plate-component-partition-v1':
+                    error = row.get('geometry_volume_error_m3')
+                    if type(error) is not list or len(error) != 2:
+                        raise TectonicsError('saved differential volume needs its carried signed geometric enclosure')
+                    low, high = map(_q, error)
+                    if low > high or _q(row['volume_m3'])+high <= 0:
+                        raise TectonicsError('saved signed geometric volume enclosure is invalid')
+            if seen != set(exterior_ids(body['thermal_mesh'], self._budget)):
+                raise TectonicsError('saved physical and thermal exterior cells differ')
         if _validate_only:
             from atlas_tectonics._private.spatial_indexed_patch import validate_projected_payload
             return validate_projected_payload(self, body, arrays, record.get('state_id'))
         result = self._issue(body)
-        expected = result.arrays()
-        if (result.state_id != record.get('state_id') or set(arrays) != set(expected) or
-                any(not np.array_equal(arrays[k], a) for k, a in expected.items())):
+        expected = result.arrays() if proof else None
+        if (result.state_id != record.get('state_id') or proof and (set(arrays) != set(expected) or
+                any(not np.array_equal(arrays[k], a) for k, a in expected.items()))):
             raise TectonicsError('saved exact inventories and projected arrays disagree')
         return result
 
     def validate_exchange(self, state, exchange, *, audit_arrays=None,
                           composed_checkpoint=None, collar_state=None, cancel=None):
         """Verify the saved chain's actual bindings without repeating a solve."""
+        from atlas_tectonics._private.compact_contracts import proving
+        if not proving():
+            return    # decision 542: only the open calls this; it then neither proves nor asks proved_for
         with _SV.access(exchange) as exchange:
             r = self._bound(state)
             composed = _SV.is_record(exchange) and exchange.get('schema') == 'atlas.private.spatial-composed-advance.r1'

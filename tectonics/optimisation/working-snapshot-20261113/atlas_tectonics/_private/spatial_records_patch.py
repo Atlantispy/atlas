@@ -497,10 +497,12 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
                     scope=None, support_source=None):
     from atlas_tectonics._private import spatial_workflow_patch as Y
     from atlas_tectonics._private.compact_store import CompactMeshStoreV3
+    from atlas_tectonics._private.compact_contracts import proving
     scope = _scope(store, budget, scope)
     require(type(arrays) is dict and not arrays, 'compact spatial operands are reference-only')
     expected = state_header['compact_mesh']
-    Y.verify_reference(store, expected, budget=budget)
+    if proving():    # decision 542: the second open of the mesh root
+        Y.verify_reference(store, expected, budget=budget)
     require(expected['schema'] == 'atlas.compact-mesh-store.v3', 'segmented spatial state requires v3 mesh')
     mesh = CompactMeshStoreV3(store, scope=scope, support_source=support_source).open(
         SegmentRef.from_wire(expected['segment']), expected_geometry_id=expected['geometry_id'])
@@ -511,7 +513,8 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
         require(set(other) == {'exchange', 'graph', 'transport', 'heat'}, 'compact exchange record inventory differs')
         refs.update(other)
     with open_records(store, refs, budget=budget, scope=scope,
-                      source_producer=expected.get('source_producer')) as opened:
+                      source_producer=expected.get('source_producer'),
+                      prove=proving() or WG.active(store) is not None) as opened:    # unit A's width feed
         state_ref = opened['state']
         selected = state_ref.without(('cells',))
         metadata = selected.export(max_logical_bytes=SMALL_LOGICAL_BYTES,
@@ -524,8 +527,9 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
         if exchange_header is not None:
             exchange = LogicalExchange.from_records(opened['exchange'],
                 spatial_graph=opened['graph'], transport=opened['transport'], joined_heat=opened['heat'])
-        require(headers(state, exchange, refs, mesh_reference=expected) == (state_header, exchange_header),
-                'compact spatial lineage differs from full logical state')
+        if proving():
+            require(headers(state, exchange, refs, mesh_reference=expected) == (state_header, exchange_header),
+                    'compact spatial lineage differs from full logical state')
         yield state, exchange
         if exchange is not None:
             exchange.close()

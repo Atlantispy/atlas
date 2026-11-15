@@ -6,6 +6,7 @@ no I/O, hashing, codec work, publication or runtime imports.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import json
 import re
@@ -252,3 +253,24 @@ def validate_segment_budget(*, logical_bytes: int, chunk_references: int,
         raise ContractError('metadata cannot exceed its complete manifest')
     if logical_bytes > chunk_references * NATIVE_CHUNK_BYTES:
         raise ContractError('chunk references cannot cover the declared logical bytes')
+
+
+# Decision 542 (designs/next-producer-open-r1.md): the open of an adopted head proves only while this is true.
+# Set true for good by a producer in proof mode (--open-proofs) and by the reader's full core; the tests use
+# proofs(). Lower-case: a run-time value, never part of a module's identity.
+open_proofs = False
+
+
+def proving():
+    return open_proofs
+
+
+@contextmanager
+def proofs(on=True):
+    """Set the switch, then put the old value back. For a caller whose opens run on one thread."""
+    global open_proofs
+    old, open_proofs = open_proofs, on
+    try:
+        yield
+    finally:
+        open_proofs = old

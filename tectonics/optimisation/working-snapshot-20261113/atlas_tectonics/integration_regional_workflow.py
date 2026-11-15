@@ -1018,16 +1018,24 @@ class CollarWorkflow:
                         'closed; no resampling, refill or global advancement' if exterior_owner is None else
                         'paired space-time flux; carried finite exterior inventories')):
                 raise RegionalOwnerRefused('funded collar history or actual physical admission differs')
-            if exterior_owner is not None:
+            from atlas_tectonics._private.compact_contracts import proving
+            # Decision 578: in both modes, today's refusal of an indexed initial state on a store with a scope.
+            if (type(exterior_owner) is PreparedSpatialOwner and getattr(store, 'scope', None) is not None and
+                    type(getattr(exterior_owner.initial_state, '_snapshot', None)) is _COMPACT_SPATIAL.X.IndexedSpatialSnapshot):
+                from atlas_tectonics._private.compact_contracts import ContractError
+                raise ContractError('segmented spatial successors cannot contain mesh aliases')
+            # Decision 542 (section 3): re-encoding the owner this open just restored is a round trip.
+            if exterior_owner is not None and (proving() or not owns_exterior):
                 if type(exterior_owner) is PreparedSpatialOwner:
                     with cls._spatial_records(_COMPACT_SPATIAL.state_record(exterior_owner.initial_state), None, budget, store=store, source_producer=_COMPACT_SPATIAL.producer(collar), persist_mesh=False, aliases=True) as (initial_header, _, _blobs):
                         if root.get('exterior_state') != initial_header:
                             raise RegionalOwnerRefused('spatial admission differs from its single actual funding')
                 elif root.get('exterior_state') != exterior_owner.initial_state.record():
                     raise RegionalOwnerRefused('exterior admission differs from its single actual funding')
-            initial = collar.initial_state_from_funding(funding, owner)
-            if root.get('state') != initial.record() or root.get('native_state_id') != initial.native_state.result_id:
-                raise RegionalOwnerRefused('collar root differs from the actual one-time physical admission')
+            if proving():    # decision 542: the initial collar state rebuilt and compared
+                initial = collar.initial_state_from_funding(funding, owner)
+                if root.get('state') != initial.record() or root.get('native_state_id') != initial.native_state.result_id:
+                    raise RegionalOwnerRefused('collar root differs from the actual one-time physical admission')
             self = cls._issued(store, collar, owner, funding, root, budget, exterior_owner)
             self._owns_exterior_owner = owns_exterior
             self._refresh()
@@ -1271,7 +1279,9 @@ class CollarWorkflow:
                 with self._spatial_restore_records(previous['exterior_state'], previous.get('exterior_advance'),
                                                   record_arrays, self._budget, store=self._store) as (saved, exchange):
                     exterior_state = self._exterior_owner.restore(saved, exterior_arrays)
-                    self._exterior_owner.validate_parent(exterior_state, state)
+                    from atlas_tectonics._private.compact_contracts import proving
+                    if proving():    # decision 542
+                        self._exterior_owner.validate_parent(exterior_state, state)
                     if exchange is not None:
                         if _SV.field_equals(exchange, 'schema', 'atlas.private.spatial-composed-advance.r1'):
                             from . import integration_private_heat_cold as COLD
@@ -1296,8 +1306,9 @@ class CollarWorkflow:
                                         graph['start_support_id'] != interval['start_support_id'] or
                                         graph['end_support_id'] != interval['end_support_id']):
                                     raise RegionalOwnerRefused('saved spatial exchange differs from actual differential geometry')
-                                partition_binding = (graph.get('partition_id'), graph.get('parent_partition_id'),
+                                partition_binding = ((graph.get('partition_id'), graph.get('parent_partition_id'),
                                     _hash(graph.get('support_ids')), _COMPACT_SPATIAL.mesh_partition(saved['thermal_mesh'], self._budget))
+                                    if proving() else None)    # decision 542: read only by the comparison below
                                 # C-1: open B reuses the partition this open already holds (its descriptor decides)
                                 opened_partition = _COMPACT_PARTITION.held_partition(saved['thermal_mesh'])
                                 from .integration_differential_geometry import current_geometry_from_interval
@@ -1333,7 +1344,8 @@ class CollarWorkflow:
                         current_geometry.geometry_id != initial['current_geometry_id']):
                     raise RegionalOwnerRefused('saved initial partition differs from admitted source fields')
             else:
-                if partition_binding != _COMPACT_PARTITION.binding(partition, _hash):
+                from atlas_tectonics._private.compact_contracts import proving
+                if proving() and partition_binding != _COMPACT_PARTITION.binding(partition, _hash):    # decision 542
                     raise RegionalOwnerRefused('saved fields and exchanges belong to another material partition')
         elif partition_arrays:
             raise RegionalOwnerRefused('unowned differential partition in collar checkpoint')

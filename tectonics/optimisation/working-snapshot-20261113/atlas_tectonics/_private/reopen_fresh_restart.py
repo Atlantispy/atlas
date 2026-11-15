@@ -797,6 +797,8 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                         FRESH.preparation_ids(a.case, a.owner) == root['preparation_ids'],
                         'independently rebuilt runtime, plans or owner differ from run A')
                 checks['source_bound_admission'] = True
+                from atlas_tectonics._private import compact_contracts
+                compact_contracts.open_proofs = True    # decision 542: the full core's open proves; never off (N-2)
                 guard.phase('independent-open-fresh-workflow')
                 # One store-set read batch for the whole stage: one file check before, one after.
                 with WG.collect_proofs(store) as proofs, view.read_batch(), m.Workflow.open(
