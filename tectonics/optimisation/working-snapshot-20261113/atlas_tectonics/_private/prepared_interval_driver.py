@@ -43,6 +43,10 @@ class PreparedIntervalRefused(ValueError):
     pass
 
 
+# C1 (decision 416): the certification sidecar's write buffer, charged in its reservation.
+_SIDECAR_BUFFER = 65536
+
+
 class P26ReceivingCapture:
     SCHEMA = 'atlas.plan26.live-receiving-preimages.r1'
     SNAPSHOTS = ('native_inventory', 'native_driving', 'initial_mechanics',
@@ -231,16 +235,17 @@ class P26ReceivingCapture:
         cls._require(not any(child.name.casefold()=='receiving-certification' for child in output.iterdir()),
                      'certification sidecar destination must be absent')
         # Existing record codecs use 64KiB fixed workspace/header slack.
-        # Payloads stay borrowed: unbuffered writes and memoryview slices make
-        # no full native JSON copy, and compact chunks retain their own owner.
-        with budget.reserve(65536, category='plan26-certification-sidecar'):
+        # Payloads stay borrowed: a 64KiB write buffer, charged here, gathers the
+        # token-sized chunks; it is not a full native JSON copy, and compact chunks
+        # retain their own owner.
+        with budget.reserve(65536+_SIDECAR_BUFFER, category='plan26-certification-sidecar'):
             folder.mkdir();cls._ordinary(folder,directory=True)
             captured={}
             for role,chunks,expected in (
                     ('native_measure',(memoryview(native_raw),),native_id),
                     ('bounds',bounds_chunks,solution_record['bounds_id'])):
                 path=paths[role];digest=hashlib.sha256();size=0
-                with path.open('xb', buffering=0) as stream:
+                with path.open('xb', buffering=_SIDECAR_BUFFER) as stream:
                     for chunk in chunks:
                         cls._require(isinstance(chunk,(bytes,memoryview)),'selected canonical byte iterator required')
                         view=memoryview(chunk)
