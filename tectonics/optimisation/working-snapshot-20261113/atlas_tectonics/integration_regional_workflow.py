@@ -695,10 +695,10 @@ class CollarWorkflow:
             yield cls._partition_header(records['partition'], refs), arrays
 
     @classmethod
-    def _restore_partition(cls, header, arrays, funding, collar, budget, *, interval=None, store=None):
+    def _restore_partition(cls, header, arrays, funding, collar, budget, *, interval=None, store=None, opened=None):
         if type(header) is dict and 'compact_partition' in header:
             return _COMPACT_PARTITION.restore(cls, header, arrays, funding, collar, budget,
-                                              interval=interval, store=store)
+                                              interval=interval, store=store, opened=opened)
         from .integration_differential_geometry import DifferentialPartition, CurrentGeometry
         import numpy as np
         refs = header.get('record_blobs', {})
@@ -1265,7 +1265,7 @@ class CollarWorkflow:
         elif audit_arrays:
             raise RegionalOwnerRefused('initial collar cannot contain an unexecuted heat-source audit')
         exterior_state, differential_interval, partition, current_geometry = None, None, None, None
-        partition_binding = None
+        partition_binding = opened_partition = None
         if self._exterior_owner is not None:
             if self._is_spatial():
                 with self._spatial_restore_records(previous['exterior_state'], previous.get('exterior_advance'),
@@ -1298,6 +1298,8 @@ class CollarWorkflow:
                                     raise RegionalOwnerRefused('saved spatial exchange differs from actual differential geometry')
                                 partition_binding = (graph.get('partition_id'), graph.get('parent_partition_id'),
                                     _hash(graph.get('support_ids')), _COMPACT_SPATIAL.mesh_partition(saved['thermal_mesh'], self._budget))
+                                # C-1: open B reuses the partition this open already holds (its descriptor decides)
+                                opened_partition = _COMPACT_PARTITION.held_partition(saved['thermal_mesh'])
                                 from .integration_differential_geometry import current_geometry_from_interval
                                 expected = self._saved_certification_expected(accepted_parent, previous)
                                 expected['endpoint_current_geometry_id'] = current_geometry_from_interval(
@@ -1323,7 +1325,8 @@ class CollarWorkflow:
             raise RegionalOwnerRefused('unexecuted or unowned differential certification in collar checkpoint')
         if self._is_differential():
             partition, current_geometry = self._restore_partition(previous['differential_partition'], partition_arrays,
-                self._funding, self._collar, self._budget, interval=differential_interval, store=self._store)
+                self._funding, self._collar, self._budget, interval=differential_interval, store=self._store,
+                opened=opened_partition)
             if previous['kind'] == 'root':
                 initial = self._exterior_owner.descriptor()['initial_geometry']
                 if (partition.partition_id != initial['partition_id'] or

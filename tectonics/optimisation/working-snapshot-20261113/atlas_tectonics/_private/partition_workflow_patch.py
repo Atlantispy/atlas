@@ -396,7 +396,12 @@ def payload(cls, partition, geometry, funding, collar, budget, *, store, source_
     yield header, {}
 
 
-def restore(cls, header, arrays, funding, collar, budget, *, interval, store):
+def held_partition(mesh):
+    """C-1: the partition view the restored mesh's support source holds (open A), or None."""
+    return getattr(getattr(getattr(mesh, '_reader', None), 'source', None), '_partition', None)
+
+
+def restore(cls, header, arrays, funding, collar, budget, *, interval, store, opened=None):
     """Open the successor's compact partition by reference; no legacy blob or transfer."""
     from atlas_tectonics.integration_differential_geometry import DifferentialPartition, DifferentialInterval
     from atlas_tectonics.storage import ArrayStore
@@ -412,7 +417,11 @@ def restore(cls, header, arrays, funding, collar, budget, *, interval, store):
     ref = header['compact_partition']
     if compact_resolver:
         from atlas_tectonics._private.compact_contracts import SegmentRef
-        view = PS.open_partition_v2(store, SegmentRef.from_wire(ref), scope=store.scope)
+        wanted = SegmentRef.from_wire(ref)
+        # C-1: the partition open A already holds, only when it is this very reference on this scope.
+        view = (opened if opened is not None and getattr(opened, '_sealed', False) and
+                opened.segment_ref == wanted and opened.scope is store.scope else
+                PS.open_partition_v2(store, wanted, scope=store.scope))
     else:
         view = PS.CompactPartitionStore(store, budget=budget).open(ref, expected_partition_id=header['partition_id'])
     require(compact_header(view, {}, ref) == header, 'saved compact partition lineage differs from its stored DAG')
