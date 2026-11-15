@@ -314,6 +314,7 @@ class RestoredHeatBinding:
     _context: tuple = field(repr=False)
     _exchange_identity: str
     _plan: bytes = field(repr=False)
+    _proved: tuple = field(repr=False)
     fixture_only: bool = False
 
     def __init__(self, *args, **kwargs):
@@ -338,6 +339,18 @@ class RestoredHeatBinding:
         actual_owner, parent, parent_collar, actual_state, actual_collar, mesh, transport, audit, execution, target, budget = self._context
         if owner is not actual_owner or state is not actual_state or collar_state is not actual_collar:
             raise ValueError('Restored binding belongs to a different actual owner/endpoint')
+        restored, compared = self._proved
+        if _SV._reference(exchange) is restored:
+            # restore() derived and checked everything below from these very objects (ruling 4b)
+            if audit_arrays is not None and audit_arrays is not compared:
+                with R.workspace(budget, 65536, cancel=cancel):
+                    expected = {**{'spatial-transport:'+k: transport.array(k) for k in transport.array_names},
+                                **{'joined-heat:'+k: self.array(k) for k in C._FIELDS}}
+                    if not _same_arrays(audit_arrays, expected):
+                        raise ValueError('Actual restored transport/heat audit arrays differ')
+                    del expected
+                object.__setattr__(self, '_proved', (restored, audit_arrays))
+            return
         with _SV.codec_scope(exchange, budget, cancel, R.codec_for_value):
             if _SV.identity(exchange, lambda value: R.stream_hash(value, cancel)) != self._exchange_identity:
                 raise ValueError('Restored committed exchange changed')
@@ -352,6 +365,13 @@ class RestoredHeatBinding:
                     raise ValueError('Actual restored transport/heat audit arrays differ')
                 del expected
         _verify(execution, cancel)
+
+    def proved_for(self, owner, state, collar_state, exchange, audit_arrays):
+        """True only for restore()'s own objects and an arrays dict validate_for compared, in this process."""
+        actual_owner, _, _, actual_state, actual_collar = self._context[:5]
+        restored, compared = self._proved
+        return (owner is actual_owner and state is actual_state and collar_state is actual_collar and
+                _SV._reference(exchange) is restored and audit_arrays is not None and audit_arrays is compared)
 
 
 def restore(store, receipt, *, owner, parent_spatial_state, parent_collar_state, spatial_state,
@@ -473,10 +493,9 @@ def restore(store, receipt, *, owner, parent_spatial_state, parent_collar_state,
             context = (owner, parent_spatial_state, parent_collar_state, spatial_state, collar_state,
                        mesh, transport_snapshot, source_audit, execution, absolute_residual_target, budget)
             for name,value in dict(_snapshot=saved.value, _geometry=geometry, _context=context,
-                    _exchange_identity=exchange_identity, _plan=encoded_plan, fixture_only=False).items():
+                    _exchange_identity=exchange_identity, _plan=encoded_plan,
+                    _proved=(_SV._reference(exchange), None), fixture_only=False).items():
                 object.__setattr__(result, name, value)
-            result.validate_for(owner, spatial_state, collar_state, exchange, cancel=cancel)
-            _verify(execution, cancel)
             return R.P.OwnedSolve(result, work)
         except BaseException:
             work.__exit__(*sys.exc_info())

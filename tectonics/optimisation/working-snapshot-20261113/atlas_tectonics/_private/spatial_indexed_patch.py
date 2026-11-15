@@ -372,8 +372,14 @@ def issue(owner, body):
     else:
         fields = {k: np.asarray([_project(_q(r['exact'][k])) for r in body['cells']]) for k in owner._names}
         fields['volume_m3'] = np.asarray([_project(_q(r['volume_m3'])) for r in body['cells']])
-    metadata, _ = S._stream_stats(body)
-    identity = S._snapshot_id(body, S._bindings(fields))
+    arrays = {k: dict(shape=v['shape'], sha256=v['sha256']) for k, v in S._bindings(fields).items()}
+    digest, stream, size = sha256(b'{"arrays":'+N._json(arrays)+b',"metadata":'), sha256(), 0
+    for part in iter_logical_json(body):  # one pass gives both values, as _checked_identity (:276-283)
+        digest.update(part)
+        stream.update(part)
+        size += len(part)
+    digest.update(b'}')
+    metadata, identity = dict(sha256=stream.hexdigest(), nbytes=size), digest.hexdigest()
     allocation = N._Allocation(owner._budget, 8192+retained_metadata_nbytes(body)+
         sum(a.nbytes for a in fields.values())+1024*len(fields), category='indexed-spatial-state')
     result = object.__new__(SpatialExteriorState)

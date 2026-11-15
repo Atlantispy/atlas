@@ -27,7 +27,6 @@ from atlas_tectonics.integration_regional_workflow import _hash
 from atlas_tectonics.integration_regional_inventory import _width
 from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
 from atlas_tectonics.reuse import ExecutionContext
-from atlas_tectonics.storage import StoreConflict
 
 R = B.R
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
@@ -130,7 +129,8 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
     """Owned detached binding from existing workflow CAS, never a live call.
 
     Intended `_refresh` hook only. Parent/head must be the rows accepted by that
-    native chain walk; they are reread here and checked again before return.
+    native chain walk: the workflow's chain walk read them, and its batch and
+    closing token cover the store.
     Current endpoint objects/source audit are already restored by the workflow.
     """
     with _SV.access(exchange) as exchange:
@@ -142,16 +142,7 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
             raise ValueError('Only an explicitly declared private composed checkpoint is supported')
         _links(parent, head)
         store, budget = workflow._store, workflow._budget
-        token = store.change_token()
         root = json.loads(workflow._root)
-
-        def committed():
-            _verify(cancel)
-            if (store.change_token() != token or store.metadata(root['key']) != root
-                    or store.metadata(parent['key']) != parent or store.metadata(head['key']) != head):
-                raise StoreConflict('Cold workflow admission/parent/head changed during recovery')
-
-        committed()
         if (head['workflow_id'] != root['workflow_id'] or head['funding_id'] != workflow._funding.funding_id
                 or head['state']['result_id'] != collar_state.result_id
                 or head['native_state_id'] != collar_state.native_state.result_id
@@ -213,8 +204,6 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
                 expected_heat_result_id=exchange['joined_heat_id'], budget=budget, cancel=cancel))
             binding.value.validate_for(workflow._exterior_owner, spatial_state, collar_state, exchange,
                                        audit_arrays=audit_arrays, cancel=cancel)
-            committed()
-            execution.verify_boundary()
             del metadata, transport_fields
             return R.P.OwnedSolve(binding.value, work)
         except BaseException:

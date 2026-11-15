@@ -11,10 +11,10 @@ from pathlib import Path
 from types import MappingProxyType
 from fractions import Fraction
 
-GRID_SHA = '1564d42e7ee558215d339e8f165d6cd545668d719ad7c51cd90ffe00189169eb'
-GRAPH_SHA = 'f01deb63f9ac948a59936908e869091258fd740a99acb9978dcf9d3d48f751e8'
-PARTITION_ID = 'c318d75e1eb8bb83e0c30b134f367cfdde6276c2170405e9bec8d85b0dc32893'
-CARRY_SHA = 'b4fbcaf439cbd6577474ef04209574afb60b2b9e58b41fac712009210f4447bb'
+GRID_SHA = 'ff892e054fb35b7a426adecf354b3fa39d82ac3726af29a77cbc8d52b8af42a3'
+GRAPH_SHA = 'aca24c2fbab13ecf438b9ecdeca76b7e325bcad7e489f373055d219d9492cb7b'
+PARTITION_ID = '366a94cd95f99d1c3ffa51394d7ef8686b149fac3d27284931960b6aff48dbcc'
+CARRY_SHA = '2033f2b72c581c5d9dd738a0f902662744a10fdaa91efe21aba76227f31e849e'
 GENERATION = '0f83587b3bddc3dcf8cea05910d408269a7b847db60fe5db83533f2c81be6d0e'
 SWEEP_SHA = '3ac636974d9909304c52cf071caa12316c249322491c18307a4ee6cf2e3a8205'
 PHYSICAL_SHA = 'e78918f8b9344b8ed06d21256628f9ad801a876336f669374faf405598e026ce'
@@ -102,7 +102,7 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
     """
     old_count = len(read_verified_totals(sweep_output=sweep_output, physical_output=physical_output,
                                          checkpoint=checkpoint, arena=arena))
-    path = Path(sweep_output).parent.parent.parent/'q363-correspondence-ord1-r2/result-data.json'
+    path = Path(sweep_output).parent.parent.parent/'q363-correspondence-chainb-r3/result-data.json'
     size = path.stat().st_size
     if not 0 < size <= 4 << 20:
         raise ValueError('correspondence proof exceeds source bound')

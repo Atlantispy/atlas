@@ -18,6 +18,8 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   recheck removal (checks already made by an earlier step are not repeated by a later one).
 - 15 November 2026: the order fix, as run by its diagnostic chain: results no longer depend on
   identifier order (an order derived from content).
+- 15 November 2026: the step 6 open patch, as run by its diagnostic chain: the interval reader's open no
+  longer repeats the heat binding's proof.
 
 Each update is one commit, so its diff shows exactly what changed. The sections below were written for the
 13 November contents; their line numbers may have moved since, and a later update may change what they

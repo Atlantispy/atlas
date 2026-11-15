@@ -187,6 +187,15 @@ HEAT_METHODS = {
 }
 
 
+def _proved_composed(checkpoint, owner, state, collar_state, exchange, audit_arrays):
+    # The restored binding already proved the graph, exchange and transport identities for these objects (ruling 4b).
+    value = getattr(checkpoint, 'value', None)
+    if type(value).__module__ != 'atlas_tectonics._private.private_heat_restored_binding_r10':
+        return False
+    from atlas_tectonics._private.private_heat_restored_binding_r10 import RestoredHeatBinding
+    return type(value) is RestoredHeatBinding and value.proved_for(owner, state, collar_state, exchange, audit_arrays)
+
+
 class PreparedSpatialOwner:
     """Explicit first-order spatial advection and one joined finite-cell heat solve.
 
@@ -967,19 +976,21 @@ class PreparedSpatialOwner:
         with _SV.access(exchange) as exchange:
             r = self._bound(state)
             composed = _SV.is_record(exchange) and exchange.get('schema') == 'atlas.private.spatial-composed-advance.r1'
+            proved = composed and _proved_composed(composed_checkpoint, self, state, collar_state, exchange, audit_arrays)
             if (not _SV.is_record(exchange) or not composed and exchange.get('schema') != 'atlas.spatial-exterior-advance.v1' or
                     exchange.get('state_id') != state.state_id or exchange.get('owner_id') != self.owner_id or
                     exchange.get('parent_state_id') != r['parent_state_id'] or
                     exchange.get('collar_state_id') != r['collar_state_id'] or
-                    _SV.identity(exchange['spatial_graph'], _hash) != exchange['spatial_graph_id'] or
+                    not proved and _SV.identity(exchange['spatial_graph'], _hash) != exchange['spatial_graph_id'] or
                     exchange['transport']['result_id'] != exchange['global_transport_id'] or
                     exchange['joined_heat']['state_id'] != exchange['global_transport_id'] or
                     exchange['joined_heat']['geometry_id'] != r['thermal_mesh_id']):
                 raise TectonicsError('saved spatial exchange is not the actual published state chain')
             self._validate_heat_plan(exchange.get('joined_heat_plan'), exchange['joined_heat'], r['thermal_mesh'])
-            body = _SV.exchange_identity(exchange, state.state_id, _hash, audit_arrays)
-            if body != exchange.get('result_id'):
-                raise TectonicsError('saved spatial exchange identity differs')
+            if not proved:
+                body = _SV.exchange_identity(exchange, state.state_id, _hash, audit_arrays)
+                if body != exchange.get('result_id'):
+                    raise TectonicsError('saved spatial exchange identity differs')
             if type(audit_arrays) is not dict:
                 raise TectonicsError('actual spatial transport and heat arrays are required on restore')
             transport = {k.removeprefix('spatial-transport:'): v for k, v in audit_arrays.items()
@@ -990,7 +1001,7 @@ class PreparedSpatialOwner:
                 raise TectonicsError('saved spatial audit fields differ')
             with self._budget.reserve(65536+_SV.native_workspace(exchange, _width)+3*sum(v.nbytes for v in audit_arrays.values()),
                                       category='spatial-audit-restore'):
-                tr = _SV.snapshot(exchange['transport'], transport, RegionalMechanicalSnapshot)
+                tr = None if proved else _SV.snapshot(exchange['transport'], transport, RegionalMechanicalSnapshot)
                 if composed:
                     from atlas_tectonics._private import private_heat_joined_consumer_r6 as J
                     heat_id = J.validate_saved_exchange(self, state, exchange, audit_arrays,
@@ -998,7 +1009,7 @@ class PreparedSpatialOwner:
                 else:
                     hr = RegionalMechanicalSnapshot(exchange['joined_heat'], heat)
                     heat_id = hr.result_id
-                if tr.result_id != exchange['global_transport_id'] or heat_id != exchange['joined_heat_id']:
+                if tr is not None and tr.result_id != exchange['global_transport_id'] or heat_id != exchange['joined_heat_id']:
                     raise TectonicsError('saved actual spatial transport or heat arrays changed')
                 if self._finite is not None:
                     finite = exchange.get('finite_proposal')
