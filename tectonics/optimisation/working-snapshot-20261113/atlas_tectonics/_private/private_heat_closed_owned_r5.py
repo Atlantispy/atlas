@@ -177,8 +177,6 @@ def _guard(ar, old, cap, low, candidate, low_faces, candidate_faces, bounds):
         if lo[1] is None and (lo[2] or hi[2]):
             raise ValueError('Closed guard requires zero exterior transfers')
     residual = _residual(ar, low, low_faces, old)
-    if not _equal_arrays(ar, _residual(ar, candidate, candidate_faces, old), residual):
-        raise ValueError('The supplied high/FCT endpoint must preserve the low physical-face ledger residual')
     difference, dq = ar.array(len(low)), ar.array(len(low_faces))
     for i, (e, f) in enumerate(zip(low, candidate, strict=True)):
         ar.put(difference, i, ar.op('subtract', f, e))
@@ -246,13 +244,17 @@ def _guard(ar, old, cap, low, candidate, low_faces, candidate_faces, bounds):
         raise A.SupplyGuardRefused(str(error), dict(low=low_check, full=full_check,
             quadratic_evidence='sign enclosures; global exact a,b,c not materialised',
             physical_ledger_residual=residual)) from error
+    # F-1 (step5-6-twice s4 row 5, decision 662): at theta 0 the issued state is the low one, so the issue's
+    # test cannot see a broken correction; only here is the handed-in state's ledger tested.
+    if theta == zero and not _equal_arrays(ar, _residual(ar, candidate, candidate_faces, old), residual):
+        raise ValueError('The supplied high/FCT endpoint must preserve the low physical-face ledger residual')
     reused = issued.get(theta)
     checked = certificate(theta) if reused is None else None
     energies, faces, _, _ = state(theta)
     if reused is not None:
         checked = _reused_certificate(ar, theta, reused, energies, faces)
     del issued, reused
-    if not checked['passed'] or not _equal_arrays(ar, _residual(ar, energies, faces, old), residual):
+    if not checked['passed']:    # F-1 row 6: the issued state's ledger is tested by the issue (row 7)
         raise ArithmeticError('Closed guard changed the exact low ledger or failed its certificate')
     checked['stock_conservation_certificate'] = dict(schema='atlas.closed-paired-ledger-identity.r1',
         exact_cell_ledger_unchanged=True, face_owner_order_unchanged=True,

@@ -345,9 +345,8 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
         energy, faces, alphas = limited[1], limited_faces[1], limited_alphas[1]
         branch = 'UNCHANGED_SIGNWISE_FCT_FALLBACK'
     energy, faces, alphas, final, guard = _public_guard(ar, low, energy, cap, low_faces, faces, alphas, bounds)
-    residual, prior = ar.residual(energy, faces), ar.residual(low, low_faces)
-    if not all(ar.equal(a, b) for a, b in zip(residual[1], prior[1], strict=True)):
-        raise ArithmeticError('Physical correction changed the exact low ledger')
+    # F-1 (step5-6-twice s4 row 1): the ledger of the returned state is tested by the issue (row 7), or by the
+    # closed guard when it settles on theta 0 (row 5).
     if any(not ar.equal(q, low_faces[f][2]) for f, (_, j, q) in enumerate(faces) if j is None and f not in permitted):
         raise ArithmeticError('A fixed exterior transfer changed')
     evidence = dict(branch=branch, unchanged_bounds=bounds, full_candidate=full[1],
