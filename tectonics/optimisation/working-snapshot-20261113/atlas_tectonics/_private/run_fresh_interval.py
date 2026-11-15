@@ -131,6 +131,10 @@ MEASUREMENT_SIDECARS = ('-wal', '-journal', '-shm')
 MEASUREMENT_COUNTS = ('unique_chunks', 'snapshots', 'encoded_payload_bytes', 'database_bytes', 'operations')
 SEED_SCHEMA = 'atlas.fresh-interval-reused-initial-cache.v1'
 SEED_FIELDS = frozenset(('receipt_sha256', 'store_sha256'))
+SEED_ACROSS = 'across_change'          # D-3 (decision 726): the earlier profile, by path and SHA-256
+COMPOSITION = frozenset(('profile_sha256', 'source_proof', 'advance_driver_sha256', 'helper_sha256',
+                         'interpreter_seed'))
+DIAGNOSTIC = 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION'
 # Never read: seeds are explicit arguments only. The runner and the reader refuse it if set.
 SEED_ENVIRONMENT = 'ATLAS_INITIAL_MEASUREMENT_SEED'
 # reopen_fresh_restart's adoption record, restated here (the reader imports this module, not the
@@ -525,7 +529,14 @@ def width_gate_passed(gate, k):
 
 def interval_one_route(profile):
     """Where interval 2's gate finds interval 1's producer receipt: this profile's interval-1 output."""
-    return {'output': mode_output(profile.record(), 'interval'), 'profile_sha256': profile.sha256}
+    return {'output': mode_output(profile.record(), 'interval'), 'profile_sha256': profile.sha256,
+            'diagnostic': diagnostic_tree(FreshSources(profile))}            # D-3: may it take an across capture
+
+
+def diagnostic_tree(sources):
+    """Whether this tree's manifest is a diagnostic one (rulings 4a, 27: proof and real trees are not)."""
+    manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
+    return manifest['installed_binding']['qualification_status'] == DIAGNOSTIC
 
 
 def _pin_sha(value):
@@ -566,7 +577,7 @@ def root_anchor(chain, interval_one, recorded=None):
     root files are no anchor for themselves. The receipt is read again by every interval-2 gate,
     the reader's and finalise's included, so it must outlive interval 2's adoption.
     """
-    require(type(interval_one) is dict and set(interval_one) == {'output', 'profile_sha256'},
+    require(type(interval_one) is dict and set(interval_one) == {'output', 'profile_sha256', 'diagnostic'},
             "interval 2's gate needs interval 1's output and profile")
     root, first = chain[0], chain[1]
     path = Path(interval_one['output'])/'run.json'
@@ -594,7 +605,8 @@ def root_anchor(chain, interval_one, recorded=None):
         _prior(errors == [], 'interval 1 is neither a completed nor an approved review producer with a valid seed capture', recorded, 'errors '+_errors_text(errors))
         outcome = reused.get('status') in SEED_REUSED and reused.get('counts_agree_with_bytes') is True
     require(outcome, 'interval 1 is neither a completed nor an approved review producer with a valid seed capture')
-    require(reused.get('composition_equal') is True and
+    require((reused.get('composition_equal') is True or                       # D-3: or across a recorded change
+             interval_one['diagnostic'] is True and type(reused.get('across_change')) is dict) and
             _pin_sha(reused.get('receipt')) == root['verdict'].get('producer_receipt_sha256') and
             reused.get('verdict_sha256') == root['link']['verdict_sha256'] and
             reused.get('adopted_sha256') == root['link']['adopted_sha256'],
@@ -830,8 +842,10 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     fsynced, and both files are re-digested after it.
     Returns the reuse record; reuse_outcome adds the counts after the admission.
     """
-    require(type(seed) is dict and set(seed) == SEED_FIELDS,
+    require(type(seed) is dict and set(seed) - {SEED_ACROSS} == SEED_FIELDS,
             'a measurement seed names exactly its receipt and store SHA-256')
+    earlier = seed.get(SEED_ACROSS)                                     # D-3: across a recorded change
+    expected_profile = profile_sha256 if earlier is None else earlier['sha256']
     receipt_sha256, pin = RUN._sha(seed['receipt_sha256']), RUN._sha(seed['store_sha256'])
     root_sha = sha256(canonical(root_runner)).hexdigest()
     verdict = read_record(verdict_path(store_directory, 0), schema=VERDICT_SCHEMA)
@@ -847,7 +861,7 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     receipt_path = Path(root_output)/'run.json'
     receipt = RUN.pinned_json(receipt_path, receipt_sha256, MAX_RECEIPT)
     require(type(receipt) is dict and receipt.get('schema') == RESULT_SCHEMA and receipt.get('mode') == 'root' and
-            receipt.get('profile_sha256') == profile_sha256 and receipt.get('pid') == root_runner['producer_pid'] and
+            receipt.get('profile_sha256') == expected_profile and receipt.get('pid') == root_runner['producer_pid'] and
             receipt.get('workflow_id') == root_runner['workflow_id'],
             'the seed receipt is not run A clean sealed root of this profile')
     _prior(receipt.get('status') == SEALED_STATUS['root'], 'the seed receipt is not run A clean sealed root of this profile', recorded, 'status %r' % (receipt.get('status'),))
@@ -860,16 +874,37 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     require(type(theirs) is dict, 'run A receipt does not record its measurement composition')
     differing = sorted(name for name in set(binding) | set(theirs)
                        if name not in theirs or name not in binding or theirs[name] != binding[name])
-    require(not differing, 'run A measurement composition differs from this run: '+', '.join(differing))
+    across = None
+    if earlier is None:
+        require(not differing, 'run A measurement composition differs from this run: '+', '.join(differing))
+    else:
+        across = _across_change(theirs, binding, earlier['sha256'])
     source, target = Path(root_output)/MEASUREMENT_STORE, Path(artifacts)/MEASUREMENT_STORE
     started = time.monotonic()
     size = _copy_pinned(source, target, pin, check)
     return {'schema': SEED_SCHEMA, 'status': 'COPIED_BEFORE_ADMISSION', 'source': str(source), 'target': str(target),
             'pinned_sha256': pin, 'bytes': size, 'copy_seconds': time.monotonic()-started,
             'receipt': {'path': str(receipt_path), 'sha256': receipt_sha256}, 'verdict_sha256': verdict_sha,
-            'adopted_sha256': sha256(canonical(adopted)).hexdigest(), 'composition_equal': True,
+            'adopted_sha256': sha256(canonical(adopted)).hexdigest(),
+            'composition_equal': across is None or not across['differences'],
+            **({} if across is None else {SEED_ACROSS: across}),
             'seed_snapshots': stored['statistics']['snapshots'],
             'seed_initial_component_queries': stored.get('initial_component_queries')}
+
+
+def _across_change(theirs, binding, earlier_sha256):
+    """D-3 (decision 726): run A's composition against this run's across a recorded change, member by member."""
+    unknown = sorted((set(theirs) ^ COMPOSITION) | (set(binding) ^ COMPOSITION))
+    require(not unknown, 'run A measurement composition has members this run does not know: '+', '.join(unknown))
+    require(theirs['interpreter_seed'] == binding['interpreter_seed'],
+            'run A measurement composition differs from this run: interpreter_seed')
+    require(theirs['profile_sha256'] == earlier_sha256, "run A measurement composition is not the earlier profile's")
+    mine, old = binding['helper_sha256'], theirs['helper_sha256']
+    require(type(mine) is dict and type(old) is dict, 'run A measurement composition: helper_sha256 is not a table')
+    differences = [name for name in ('profile_sha256', 'source_proof', 'advance_driver_sha256')
+                   if theirs[name] != binding[name]]
+    differences += ['helper_sha256.'+name for name in sorted(set(mine) | set(old)) if mine.get(name) != old.get(name)]
+    return {'earlier_profile_sha256': earlier_sha256, 'differences': differences}
 
 
 def reuse_outcome(reused, measured):
@@ -1371,12 +1406,24 @@ def final_status(errors, mode, record=None):
 
 
 def _seed(seed, mode):
-    """An explicit measurement seed: run B only, exactly its two SHA-256 pins."""
+    """An explicit measurement seed: run B only, exactly its two SHA-256 pins; across a recorded change also the
+    earlier profile by path and SHA-256 (D-3, decision 726)."""
     if seed is None:
         return None
-    require(mode == 'interval' and type(seed) is dict and set(seed) == SEED_FIELDS,
+    require(mode == 'interval' and type(seed) is dict and set(seed) - {SEED_ACROSS} == SEED_FIELDS,
             'a measurement seed applies to run B only and names exactly its receipt and store SHA-256')
-    return {name: RUN._sha(seed[name]) for name in sorted(SEED_FIELDS)}
+    out = {name: RUN._sha(seed[name]) for name in sorted(SEED_FIELDS)}
+    if SEED_ACROSS in seed:
+        earlier = seed[SEED_ACROSS]
+        require(type(earlier) is dict and set(earlier) == {'path', 'sha256'} and type(earlier['path']) is str,
+                'a seed across a change names the earlier profile by path and SHA-256')
+        out[SEED_ACROSS] = {'path': earlier['path'], 'sha256': RUN._sha(earlier['sha256'])}
+    return out
+
+
+def _across_refused_in_release(seed, production_release):
+    require(not (production_release and seed is not None and SEED_ACROSS in seed),
+            'a Release step refuses a seed across a change (decision 726, ruling 27)')
 
 
 # Inserted before run_fresh_interval.command; only stdlib and existing RUN used.
@@ -1437,6 +1484,7 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
     pin = parent_pin(number, parent_adopted_sha256)
     require(not stop_before_advance or number == 1, 'interval N >= 2 runs no smoke: stop-before-advance is interval 1 only')
     seed = _seed(seed, mode)
+    _across_refused_in_release(seed, production_release)
     sources = FreshSources(profile)
     sources.verify()
     if production_release:
@@ -1455,6 +1503,8 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
             *(['--production-release'] if production_release else []),
             *(['--seed-receipt-sha256', seed['receipt_sha256'], '--seed-store-sha256', seed['store_sha256']]
               if seed else []),
+            *(['--reuse-previous-run', seed[SEED_ACROSS]['path'], '--reuse-previous-run-sha256',
+               seed[SEED_ACROSS]['sha256']] if seed and SEED_ACROSS in seed else []),
             *(['--stop-before-advance'] if stop_before_advance else []),
             *(['--interval', str(number), '--parent-adopted-sha256', pin] if number >= 2 else []),
             *(['--record-failed-prior'] if record_failed_prior else []),
@@ -1526,12 +1576,16 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     dev_timing = RUN._dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     seed = _seed(seed, mode)
+    _across_refused_in_release(seed, production_release)
     number = interval_number(mode, interval)
     parent_adopted_sha256 = parent_pin(number, parent_adopted_sha256)
     require(type(production_release) is bool and not (production_release and dev_timing),
             'production Release is explicit and development diagnostics remain strict-only')
     sources = FreshSources(profile)
     recorded = _recording(sources, record_failed_prior)
+    if seed is not None and SEED_ACROSS in seed:                # D-3: diagnostic trees only; the earlier profile by its pin
+        require(diagnostic_tree(sources), 'a seed across a change is for diagnostic trees only: proof and real runs refuse it')
+        FreshProfile.read(Path(seed[SEED_ACROSS]['path']), seed[SEED_ACROSS]['sha256'])
     admitted = RUN.production_admission(sources,'fresh-'+mode,start_gate) if production_release else None
     output = mode_output(profile.record(), mode, interval)/'run.json'
     _profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', mode)
@@ -1607,6 +1661,8 @@ def main(argv=None):
     parser.add_argument('--stop-before-advance', action='store_true', help='run B only: the smoke, never interval 1')
     parser.add_argument('--seed-receipt-sha256', help='run B only, with --seed-store-sha256: run A receipt (item 7)')
     parser.add_argument('--seed-store-sha256', help='run B only: the measurement store SHA-256 run A recorded')
+    parser.add_argument('--reuse-previous-run', help='run B with a seed, diagnostic only: the earlier profile (D-3)')
+    parser.add_argument('--reuse-previous-run-sha256', help='with --reuse-previous-run: its SHA-256')
     parser.add_argument('--interval', type=int, help='run B only, item 21: the interval N >= 2 to seal')
     parser.add_argument('--parent-adopted-sha256', help='with --interval N >= 2: the adopted(N-1) file SHA-256')
     parser.add_argument('--record-failed-prior', action='store_true',
@@ -1625,6 +1681,11 @@ def main(argv=None):
             'a measurement seed needs both its receipt and store SHA-256')
     seed = (None if args.seed_receipt_sha256 is None else
             {'receipt_sha256': args.seed_receipt_sha256, 'store_sha256': args.seed_store_sha256})
+    require((args.reuse_previous_run is None) == (args.reuse_previous_run_sha256 is None) and
+            (args.reuse_previous_run is None or seed is not None),
+            'the earlier profile needs its path, its SHA-256 and a measurement seed (D-3)')
+    if args.reuse_previous_run is not None:
+        seed[SEED_ACROSS] = {'path': args.reuse_previous_run, 'sha256': args.reuse_previous_run_sha256}
     gate_args = bool(args.peak_records) or args.booking_bytes is not None or args.booking_basis is not None
     require(not args.production_release or not (gate_args or dev_timing),
             'production Release never books and refuses development diagnostics')
