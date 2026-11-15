@@ -2982,7 +2982,7 @@ def enclose_initial_partition(partition, *, max_volume_error_m3, max_leaves, bud
     cells = []
     for index, row in enumerate(p['native_cells']):
         box = V.CartesianCell.from_record(row, budget=budget)
-        cells.append(dict(cell_id=W._hash(dict(kind='collar', funding_id=p['funding_id'], cell_id=box.cell_id)),
+        cells.append(dict(cell_id=W._hash(dict(kind='collar', cell_id=box.cell_id)),
             kind='collar', index=index, physical_cell_id=box.cell_id,
             volume_bounds_m3=[_qtext(box.volume_m3)]*2))
     from .integration_dual_geometry import MeasurementGroup
@@ -5739,7 +5739,8 @@ def _carried_partition_regions(parent_partition, step, old_time, retained_rows, 
             identity = dict(parent_partition_id=parent_partition.partition_id,
                 parent_source_chart_id=r['source_chart_id'], parent_partition_path=component['partition_path'],
                 plate_id=r['plate_id'], radial_layer=r['radial_layer'])
-            key = W._hash(identity)
+            # Content key: the parent partition id stays in parent_chart as provenance only.
+            key = W._hash({k: v for k, v in identity.items() if k != 'parent_partition_id'})
             if key not in regions:
                 constraints, literals = {}, []
                 for name, sign in component['constraints']:

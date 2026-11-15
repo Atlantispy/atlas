@@ -588,7 +588,7 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
         cells, faces, boxes, radial_bounds, native_at, physical_nodes = {}, [], {}, {}, {}, {}
         native_keys = []
         for flat, box in enumerate(collar_boxes):
-            key = E._hash(dict(kind='collar', funding_id=funding.funding_id, cell_id=box.cell_id))
+            key = E._hash(dict(kind='collar', cell_id=box.cell_id))
             native_keys.append(key)
             cells[key] = dict(cell_id=key, kind='collar', index=flat, physical_cell_id=box.cell_id,
                 start_volume_bounds_m3=[E._enc(box.volume_m3)]*2, end_volume_bounds_m3=[E._enc(box.volume_m3)]*2)
@@ -731,7 +731,7 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
             for positive, name in ((True, 'positive'), (False, 'negative')):
                 booked, exact, final = row['booked_'+name], value['original_'+name], value[name]
                 donor, receiver = (row['donor'], row['receiver']) if positive else (row['receiver'], row['donor'])
-                add_face(donor, receiver, (final, final), dict(flow_id=flow.flow_id, axis=row['axis'], at=row['index'], positive=positive),
+                add_face(donor, receiver, (final, final), dict(axis=row['axis'], at=row['index'], positive=positive),
                     booked_volume_m3=E._enc(booked), exact_discrete_gauss_volume_m3=E._enc(exact),
                     original_volume_bounds_m3=list(map(E._enc, (min(booked, exact), max(booked, exact)))),
                     normal_increment_m_s=E._enc(value['normal_increment_m_s']),

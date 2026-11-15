@@ -657,7 +657,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
     native_boxes = collar.cell_geometries()
     native_ids = {}
     for flat, box in enumerate(native_boxes):
-        key = W._hash(dict(kind='collar', funding_id=funding.funding_id, cell_id=box.cell_id))
+        key = W._hash(dict(kind='collar', cell_id=box.cell_id))
         native_ids[flat] = key
         cells[key] = dict(cell_id=key, kind='collar', index=flat, physical_cell_id=box.cell_id,
             start_volume_bounds_m3=[D._qtext(box.volume_m3)]*2,

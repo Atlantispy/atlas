@@ -309,7 +309,9 @@ def measure_native_faces(collar, source_flow_stage, *, budget):
                             increasing_normal=_vector(tuple(box.basis[i][axis] for i in range(3))),
                             outward_sign=outward, transverse_axes=transverse,
                             gauss_abscissas=_vector(abscissas), gauss_order='first transverse axis outer, second inner'))
-                    row['face_id'] = hashlib.sha256(_json(dict(flow_id=flow.flow_id, axis=axis, index=list(at)))).hexdigest()
+                    # One id per grid position in every interval; face containers hold one flow at a time
+                    # (differential ALE originals/selected), so the flow id stays out of the key.
+                    row['face_id'] = hashlib.sha256(_json(dict(axis=axis, index=list(at)))).hexdigest()
                     row['represented_gauss_minus_mechanical_volume_m3'] = V._encoded(positive-negative-exact_volume)
                     row['booked_minus_mechanical_volume_m3'] = V._encoded(
                         Q(booked_f[0])*duration-Q(booked_f[1])*duration-exact_volume)

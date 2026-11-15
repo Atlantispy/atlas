@@ -134,7 +134,7 @@ def carve_basal_inventory(funding, sphere, moving, collar, reservoirs, *, budget
                 model='finite initially homogeneous boundary compartment; remaining spatial interface unmodelled')
             if compartment_kind != 'source':
                 lineage['compartment_kind'] = compartment_kind
-            stock_rows.append(dict(stock_id='basal:'+_hash(lineage), kind=compartment_kind, lineage=lineage,
+            stock_rows.append(dict(stock_id='basal:'+_hash({k: v for k, v in lineage.items() if k != 'source_id'}), kind=compartment_kind, lineage=lineage,
                                    volume_m3=_enc(volume), exact={k: _enc(v) for k, v in fields.items()}))
             boxes.append(box.record())
             debits.append(dict(source_key=list(key), cell_id=box.cell_id,

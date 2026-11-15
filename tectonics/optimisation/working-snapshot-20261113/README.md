@@ -16,6 +16,8 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   reader running beside its producer, the query hold and the admission group).
 - 15 November 2026: replaced by the package exactly as run by the next diagnostic chain, which added the
   recheck removal (checks already made by an earlier step are not repeated by a later one).
+- 15 November 2026: the order fix, as run by its diagnostic chain: results no longer depend on
+  identifier order (an order derived from content).
 
 Each update is one commit, so its diff shows exactly what changed. The sections below were written for the
 13 November contents; their line numbers may have moved since, and a later update may change what they

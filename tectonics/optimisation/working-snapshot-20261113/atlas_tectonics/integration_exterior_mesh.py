@@ -723,7 +723,7 @@ def build_exterior_mesh(funding, sphere, wall_measures, *, grid_lines,
         for flat, cell in enumerate(collar_cells):
             at = (flat//(record['cells'][1]*record['cells'][2]),
                   flat//record['cells'][2] % record['cells'][1], flat % record['cells'][2])
-            key = _hash(dict(kind='collar', funding_id=funding.funding_id, cell_id=cell.cell_id))
+            key = _hash(dict(kind='collar', cell_id=cell.cell_id))
             box_by_cell[key] = cell
             candidates.append((key, B._box(cell), dict(kind='collar', index=list(at), logical_cell_id=key,
                 physical_volume_bounds_m3=[_enc(cell.volume_m3)]*2, geometry_volume_max_deviation_m3=_enc(0),
@@ -932,7 +932,7 @@ def _build_exterior_mesh_record(funding, sphere, wall_measures, *, grid_lines,
         for flat, cell in enumerate(collar_cells):
             at = (flat//(record['cells'][1]*record['cells'][2]),
                   flat//record['cells'][2] % record['cells'][1], flat % record['cells'][2])
-            key = _hash(dict(kind='collar', funding_id=funding.funding_id, cell_id=cell.cell_id))
+            key = _hash(dict(kind='collar', cell_id=cell.cell_id))
             box_by_cell[key] = cell
             candidates.append((key, B._box(cell), dict(kind='collar', index=list(at), logical_cell_id=key,
                 physical_volume_bounds_m3=[_enc(cell.volume_m3)]*2, geometry_volume_max_deviation_m3=_enc(0),
