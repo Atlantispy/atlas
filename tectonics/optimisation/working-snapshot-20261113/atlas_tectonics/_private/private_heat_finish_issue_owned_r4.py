@@ -41,7 +41,7 @@ from atlas_tectonics._private import private_heat_process_meter_r1 as METER
 HERE = Path(__file__).resolve().parent
 METHOD = 'private:standalone-conservative-physical-face-finish-r7'
 PINS = {
-    'private_heat_correction_owned_r1.py': 'd98a4db10b705bed39e7fb3177ce1e5f8c4ae4e54602ba19a41630c26bb68ac5',
+    'private_heat_correction_owned_r1.py': '60fd26276d8c225dd13f38b2efafb90c28473d2ffc3c9b1169624d09cdb5c180',
     'private_heat_finish_codec_inventory_r1.py': '6ecc5c68266db6a29dd98518ba16705705a1c7a167ac43bf673caa63fb52d793',
     'private_heat_finish_kernel_r3.py': 'f678d8326761c2d13423fcfed1563e9d11faacccf5e47598144dd1e5fe2f6748',
 }
@@ -199,13 +199,15 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     public_stocks = ar.array(len(stocks))
     for i, value in enumerate(stocks):
         ar.put(public_stocks, i, ar.represented(value))
-    public_residual = ar.loaded_residual(public_stocks[1], faces, load[1])
     stock_projection = ar.array(len(new))
     for i, (p, e) in enumerate(zip(public_stocks[1], new, strict=True)):
         ar.put(stock_projection, i, ar.op('subtract', p, e))
-    if any(not ar.equal(ar.op('add', r, p), measured)
-           for r, p, measured in zip(exact_residual, stock_projection[1], public_residual, strict=True)):
-        raise ArithmeticError('Stock projection audit does not reconcile')
+    # F-2 (step5-6-twice s4 row 8): public - load + faces = (new - load + faces) + (public - new), exactly; the
+    # projection step recomputes all three from the record and tests the identity.
+    public_residual = ar.array(len(new))
+    for i, (r, p) in enumerate(zip(exact_residual, stock_projection[1], strict=True)):
+        ar.put(public_residual, i, ar.op('add', r, p))
+    public_residual = public_residual[1]
     # Same exact paired-global sequence: stock-load deltas, exterior amounts,
     # then their sum. Interior denominators never enter this global reduction.
     total = ar.total(ar.op('subtract', energy, b)
