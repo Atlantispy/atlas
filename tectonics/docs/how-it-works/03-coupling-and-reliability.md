@@ -499,6 +499,16 @@ seed recorded under an earlier profile be reused with its differences recorded.
 It too was run only by a diagnostic chain; it is not review or scientific
 acceptance.
 
+The [next private batch](../../optimisation/working-snapshot-20261113/README.md#the-next-private-batch-15-november) removes work the
+heat steps repeated: compare-only residual checks in the heat finish and
+correction leave ordinary runs (the one case the issue cannot see keeps its
+check), the snapshot equations at save run only in proof mode, the native issuer
+verifies once, and step 5 writes its bounds sidecar from bytes it already holds.
+The low heat predictor now runs on its own thread beside the reconstruction, and
+phases are marked only on the driver's thread. Its chain, compared value by value
+with the run before it, moved no stored value; it is not review or scientific
+acceptance.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell

@@ -30,10 +30,11 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   geometry workers kept between batches, the geometry id memo and source checks once per heat worker
   (see [batch 2](#batch-2-15-november)).
 - 15 November 2026: the next private batch, as run by its diagnostic chain (coverage sidecar buffer,
-  heat solver picks, single decodes and verifies, bounds from bytes held and related removals, the heat predictor beside the reconstruction).
+  heat solver picks, single decodes and verifies, bounds from bytes held and related removals, the heat predictor beside the reconstruction;
+  see [the next private batch](#the-next-private-batch-15-november)).
 
 Each update is one commit, so its diff shows exactly what changed. The first five 15 November sections were read
-from the code at `f29ca36` and the batch 2 section from the code at `9f5080c`; the other sections were written for the 13 November contents, and their line
+from the code at `f29ca36`, the batch 2 section from the code at `9f5080c` and the next private batch from the code at `1e0643e`; the other sections were written for the 13 November contents, and their line
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
 none of the 15 November changes has a review record in this repository.
 
@@ -268,6 +269,81 @@ correspondence proof, grid, graph, partition and carry digests of batch 2's tree
 
 Batch 2 was run by one diagnostic chain. That establishes only that the package ran as published; it is not
 review and not scientific acceptance.
+
+## The next private batch (15 November)
+
+Eleven changes, one commit each, then one commit that repins the source tables. All are in `_private`. None
+changes a stored result: the chain that carried them was compared value by value with the run before it, and
+its only expected record difference is a memory figure and the phase mark described under the heat predictor.
+Line numbers are those of `1e0643e`.
+
+### Writes and reads done once
+
+- **Coverage sidecar buffer.** The prepared interval driver writes the certification sidecar through a 64 KiB
+  buffer (`prepared_interval_driver.py`, `_SIDECAR_BUFFER`, line 47), charged in the sidecar's reservation
+  (line 241), instead of one unbuffered write per token-sized chunk.
+- **Bounds from bytes held.** When the bounds a step hashed before its advance are the solution's bounds (same
+  SHA-256), both interval drivers hand those bytes to the sidecar directly, with no render and no record open
+  (`fresh_interval_driver.py` line 492, `prepared_interval_driver.py` line 484). Otherwise the record is opened
+  as before; the sidecar's hash decides.
+- **One restart-store alias lookup.** An alias read in the compact restart store does one lookup instead of a
+  locator search followed by the read (`compact_restart_store.py` lines 264 and 426, with a lookup in
+  `interval_store_set.py`).
+- **Each heat assembly value decoded once.** When an interval's lower and upper bounds are the same value, the
+  two heat interval assembly kernels decode it once (`private_heat_interval_assembly_kernel_r1.py` line 162 and
+  its plan 40b variant).
+
+### The heat low solver
+
+`private_heat_low_solver_kernel_r5.py` converts the public energies to exact fractions once and reads that list
+three times (line 367). Its residual sum moves a cell to GMP rationals once the cell's denominator reaches
+12,275 bits (`_GMP_RESIDUAL_BITS`, line 170), the measured width above which GMP is faster; both forms are
+canonical, so the returned fractions are the same values either way.
+
+### Checks that ran twice
+
+- **The native heat issuer** no longer verifies its implementation a second time straight after the first
+  (`private_heat_native_issuer_r13.py`, `_advance_verified` line 592 and `_advance_legacy_packaging_verified`
+  line 683).
+- **The heat finish** no longer recomputes a residual only to compare it with the ledger the correction already
+  keeps (`private_heat_finish_kernel_r11.py` line 171); the tests keep that comparison.
+- **The heat correction and the closed guard.** Three more compare-only ledger checks leave ordinary runs
+  (`private_heat_correction_owned_r1.py` line 348; `private_heat_closed_owned_r5.py` line 257): the issue tests
+  the issued state's ledger. In the one case the issue cannot see, a closed step whose guard settles on theta 0
+  (the issued state is then the low one), the guard still tests the state the correction handed in (line 247),
+  so every refusal is as before.
+- **The public residual.** The heat finish issue now fills the public residual as the exact sum the audit tested
+  (`private_heat_finish_issue_owned_r4.py` line 205), and the comparison leaves ordinary runs, so the record no
+  longer claims an audit that did not run. The projection step still recomputes the three residuals from the
+  record and tests the identity before anything is stored.
+- **The snapshot equations at save.** The heat checkpoint repeats the snapshot's equations from stored bytes
+  only with proofs on (`private_heat_checkpoint_consumer_r10.py` line 202); in ordinary runs the projection
+  step's audit of the record stands for them, and the stored arrays' form and inputs are still tested. The next
+  open already skipped these equations outside proof mode, so an ordinary chain now runs them nowhere on the
+  stored snapshot.
+
+### The heat predictor beside the reconstruction (H9)
+
+The heat forward kernel runs the low predictor on its own thread beside the reconstruction instead of after it
+(`private_heat_forward_kernel_r13.py`, the `heat-predictor` thread at line 263). Its working set is reserved on
+the run's ledger first; the thread starts with default numeric contexts; it runs beside only where the pool can
+start workers, otherwise in the old order; a predictor failure ends the reconstruction, and the caller's guard
+is checked fresh before the result is used. `private_heat_stage_lifetime_r3.py` lets the completed output be
+taken from the side ledger the predictor ran on.
+
+The driver marks its phases by watching for the start of certain functions, the low predictor among them. The
+geometry observer now records a mark only on the thread that created it (`private_heat_geometry_observer_r1.py`
+lines 17 and 31), so the predictor's thread adds none: run records no longer carry the heat-low-predictor phase
+mark. Before this, both threads wrote the guard's control file through a temporary name made from the process
+id alone, and a chain stopped on the rename.
+
+### The repin
+
+The last commit regenerates `_application_sources.json` and `.sha256` for the changed files.
+
+The batch was run by one diagnostic chain and compared with the run before it. That establishes only that the
+package ran as published and moved no stored value; it is not review, not a timing result and not scientific
+acceptance.
 
 ## Reader process census
 
