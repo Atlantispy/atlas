@@ -168,10 +168,12 @@ def _replace(source, target, tries=50, pause=0.02):
             time.sleep(pause)
 
 
-def _resource_report(directory, process, body_seconds=None, ledger_peak=None, marks=None):
+def _resource_report(directory, process, body_seconds=None, ledger_peak=None, marks=None, *, batch=None):
     memory = process.memory_info()
     report = dict(pid=process.pid, create_time=process.create_time(),
         rss=memory.rss, peak_rss=getattr(memory, 'peak_wset', memory.rss))
+    if batch is not None:
+        report['batch'] = batch
     if body_seconds is not None:
         # Scheduling observation for the parent's profile only. It is outside
         # the four-key receipt and is never compared with a result.
@@ -395,7 +397,7 @@ def _kept_worker(home, process, marks):
             del binding_bytes, requests, inputs
             gc.collect()
             try:
-                _resource_report(home, process, observed['body'], observed['peak'], marks)
+                _resource_report(home, process, observed['body'], observed['peak'], marks, batch=directory.name)
             except Exception:
                 pass    # the completion is already verified
             with (directory/'done').open('xb'):
@@ -409,6 +411,7 @@ class _Child:
         self.directory, self.deadline, self.rss_limit = directory, deadline, rss_limit
         # A kept worker (decision 143) serves one batch at a time: the session sets batch and baseline.
         self.kept, self.batch, self.baseline, self.rss, self.bad_end = kept, None, None, None, None
+        self._served_batch = None
         self.stop_seconds = 0.0
         # None surveys the whole system in every round, as the one-job routes always did.
         self.interval, self._surveyed = interval, None
@@ -502,8 +505,9 @@ class _Child:
         if type(reported) is int and reported >= 0:
             self.peak_rss = max(self.peak_rss, reported)
         rss = record.get('rss')
-        if type(rss) is int and rss >= 0:
-            self.rss = rss    # the recycle rule's input
+        if (type(rss) is int and rss >= 0
+                and (not self.kept or record.get('batch') == self._served_batch)):
+            self.rss = rss    # the recycle rule's input, from this batch only
         body = record.get('body_seconds')
         # The range alone refuses NaN and infinity, and compares an integer
         # beyond float range exactly where math.isfinite would raise on it.
@@ -664,6 +668,7 @@ class _Child:
         the done file is a failure. On any exception the worker is stopped.
         """
         path = Path(path)
+        self._served_batch = path.name
         if (path/'binding.json').read_bytes() != binding_bytes:
             raise ValueError('dispatch file changed before launch')
         started, launched = time.monotonic(), time.perf_counter()

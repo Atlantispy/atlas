@@ -1440,6 +1440,8 @@ The [Plan16 selection](../../optimisation/workbench/plan16/README.md) sets a suc
 worker ceiling from authenticated parent measurements and resource limits. Its sampled
 geometry proof and timing are component evidence, not whole-interval performance.
 
+In the [working snapshot](../../optimisation/working-snapshot-20261113/README.md#attribute-kept-worker-rss-to-the-batch-it-served), a kept worker stamps its post-collection memory report with the batch it served. The parent uses RSS only from that batch; an older report leaves RSS unknown and invokes the existing recycle rule. Live monitoring and thresholds are unchanged. The stale-report and serve controls cover this route with its timing marks retained.
+
 ### Look ahead across supports to keep endpoint workers busy
 
 [Plan18](../../optimisation/workbench/plan18/README.md) allows bounded endpoint

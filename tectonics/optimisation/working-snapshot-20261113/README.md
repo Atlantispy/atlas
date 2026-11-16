@@ -455,6 +455,12 @@ Independent source review accepted the isolated change. The focused control exer
 
 Two fresh candidate imports from different homes produced identical loaded-inventory bytes; the mapping-removed control exposed the seven original paths. Independent review accepted the corrected nested-Path handling by source inspection. This is controlled relocation evidence, not a new reference run or a proof for every source-provenance dependency.
 
+### Attribute kept-worker RSS to the batch it served
+
+`integration_parallel_dispatch.py` stamps the existing post-collection resource report with its batch name. The parent clears RSS when a batch starts and uses a report for recycling only when that name matches the batch it served. If replacement fails and the previous report is reread, current RSS stays unknown and the existing recycle rule applies. The live memory guard, thresholds, timing marks and result receipt are unchanged.
+
+The existing failed-replacement and real serve/monitor controls passed with timing marks retained; removing the batch comparison was killed by the stale-report control. These bounded resource/lifecycle checks do not measure generator performance or qualify a full interval. No separately scoped check removal is included.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
