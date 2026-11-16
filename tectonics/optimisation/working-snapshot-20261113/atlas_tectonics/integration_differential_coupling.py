@@ -36,6 +36,10 @@ from .kinematics import Rotation
 from .regional_collar3d import PreparedRegionalCollar3D, RegionalCollarState
 from .regional_execution3d import SIDES, _digest_array, _cancel
 from .resources import WorkBudget, MemoryLimitError
+from ._validation import effort_paths as _paths, without_effort as _without
+
+# A-15: counts of work left out of proposal_id; the stored record keeps them.
+PROPOSAL_EFFORT = _paths('attempt')
 
 
 def _json(record):
@@ -101,6 +105,7 @@ class DifferentialForceProposal:
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
     _owner: object = field(repr=False, compare=False)
+    _proposal_id: str = field(repr=False, compare=False)
     source_flow_stage: object
     native_faces: object
     force_exchange: object
@@ -112,7 +117,12 @@ class DifferentialForceProposal:
 
     @property
     def proposal_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        try:
+            return self._proposal_id
+        except AttributeError:
+            value = hashlib.sha256(_json(_without(json.loads(self._json), PROPOSAL_EFFORT))).hexdigest()
+            object.__setattr__(self, '_proposal_id', value)
+            return value
 
     def record(self):
         return dict(proposal_id=self.proposal_id, **json.loads(self._json))

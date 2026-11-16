@@ -994,6 +994,15 @@ def _feed_key(digests, at, name):
         digest.update(b':')
 
 
+def transport_effort():
+    """A-15: the transport's counts of work leave result_id; all are top-level members."""
+    from atlas_tectonics.regional_execution import RESULT_EFFORT
+    paths = RESULT_EFFORT['atlas.spatial-implicit-transport.v1']
+    if any(len(path) != 1 for path in paths):
+        raise ContractError('transport effort paths must be top-level members')
+    return tuple(path[0] for path in paths)
+
+
 def _tee_transport(child, exchange_digest, snapshot_digest):
     """Feed the transport's canonical bytes once into both digests.
 
@@ -1005,6 +1014,7 @@ def _tee_transport(child, exchange_digest, snapshot_digest):
     """
     from atlas_tectonics._private import record_tables as tables
     try:
+        effort = ('result_id', *transport_effort())
         names = child.keys(max_owned_bytes=tables.MAX_ROW_WORK_BYTES)
     except ContractError:
         return False
@@ -1014,7 +1024,7 @@ def _tee_transport(child, exchange_digest, snapshot_digest):
         kept = 0
         for at, name in enumerate(names.value):
             _feed_key((exchange_digest,), at, name)
-            if name == 'result_id':
+            if name in effort:
                 targets = (exchange_digest,)
             else:
                 _feed_key((snapshot_digest,), kept, name)
@@ -1154,7 +1164,7 @@ def snapshot(metadata, arrays, native):
         # bytes, already streamed once by exchange_identity.
         return SimpleNamespace(result_id=tee[1])
     digest = sha256(head[:-1]+b',"metadata":')
-    body = metadata.ref.without(('result_id',))
+    body = metadata.ref.without(('result_id', *transport_effort()))
     try:
         with body.iter_json() as stream:
             for block in stream:

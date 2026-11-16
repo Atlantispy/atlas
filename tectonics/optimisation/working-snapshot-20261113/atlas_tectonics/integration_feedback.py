@@ -45,6 +45,12 @@ from . import integration_transfer as T
 from ._validation import TectonicsError
 from .materials import _json
 from .timebase import advance_time
+from ._validation import effort_paths as _paths, without_effort as _without
+
+# A-15: the outer iteration count and history and the belt solve's end leave the driving digest; the record
+# keeps them.
+DRIVING_EFFORT = _paths('coupling.iterations', 'coupling.history', 'balance.belt.newton_iterations',
+    'balance.belt.newton_relative', 'balance.belt.omega_increment')
 
 SCHEMA = 'atlas.i04-driving-provenance.v1'
 ROUTE = 'd1d2_endpoint_fixed_point_v1'
@@ -397,6 +403,10 @@ def _digest(record):
     return hashlib.sha256(_json(record)).hexdigest()
 
 
+def _driving_digest(record):
+    return _digest(_without(record, DRIVING_EFFORT))
+
+
 def _parent_record(parent, sphere, moving):
     """The parent interval's driving record, from an object bound to this very state (never a caller's dict)."""
     if parent is None:
@@ -429,7 +439,7 @@ def _inherited(record, sphere):
         if tuple(record['p5']['plate_ids']) != sphere.network.plate_ids:
             omega = None
         return dict(omega=omega, labels=tuple(record['labels']), normal_strain=dict(record['normal_strain']),
-                    heat_bound_k=float(record['heat_omission']['cumulative_bound_k']), digest=_digest(record))
+                    heat_bound_k=float(record['heat_omission']['cumulative_bound_k']), digest=_driving_digest(record))
     except (KeyError, TypeError, ValueError) as exc:
         raise FeedbackRefused('the parent driving record is malformed: %s' % exc, MISSING, 'parent') from None
 
@@ -738,7 +748,7 @@ def commit(ledger, coupled, *, deadline=None):
         raise FeedbackRefused('the coupled interval does not start at the head', STALE, 'parent_state_id')
     last = _history(ledger, chain, len(chain)-1)
     found = find_driving(ledger, head) if last is not None else None
-    if record['parent_driving_sha256'] != (None if found is None else _digest(found['record'])):
+    if record['parent_driving_sha256'] != (None if found is None else _driving_digest(found['record'])):
         raise FeedbackRefused('the coupled interval did not inherit the head\'s driving record', STALE, 'parent')
     k0, k1, s0, s1 = next_interval(ledger)
     bind_commit_interval((s0, s1, k0, k1), coupled.motion_port)
@@ -786,7 +796,7 @@ def _cached(ledger, commit, cache):
     parent = None
     if _history(ledger, chain, index-1) is not None:
         parent = verify_driving(ledger, chain[index-1], cache=cache)
-    if found['record'].get('parent_driving_sha256') != (None if parent is None else _digest(parent.record)):
+    if found['record'].get('parent_driving_sha256') != (None if parent is None else _driving_digest(parent.record)):
         raise FeedbackRefused('the cached record does not continue the parent commit\'s record', STALE,
                               'parent_driving_sha256')
     return cached

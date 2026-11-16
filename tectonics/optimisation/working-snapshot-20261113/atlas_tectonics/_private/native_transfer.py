@@ -243,7 +243,8 @@ def _array_records(arrays, label):
 
 
 def _snapshot_id(metadata, bindings):
-    return _hash(dict(metadata=metadata, arrays={name: dict(shape=row['shape'], sha256=row['sha256'])
+    from atlas_tectonics.regional_execution import identity_metadata
+    return _hash(dict(metadata=identity_metadata(metadata), arrays={name: dict(shape=row['shape'], sha256=row['sha256'])
                                                for name, row in bindings.items()}))
 
 

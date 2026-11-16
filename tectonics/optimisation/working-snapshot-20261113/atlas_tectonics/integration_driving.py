@@ -46,6 +46,10 @@ from . import integration_state as _state
 from ._validation import TectonicsError
 from .integration_junction_paths import exponential
 from .materials import _json, _name
+from ._validation import effort_paths as _paths, without_effort as _without
+
+# A-15: how the belt solve ended (N-33) leaves balance_id; the record keeps it.
+BALANCE_EFFORT = _paths('belt.newton_iterations', 'belt.newton_relative', 'belt.omega_increment')
 
 
 SCHEMA = 'atlas.i04-driving-balance.v1'
@@ -1117,7 +1121,7 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
     if radial_record is not None:
         record['radial_pressure'] = radial_record
     arrays = [('omega', _frozen(omega))]+[('term.'+k, _frozen(v)) for k, v in sorted(terms.items())]
-    digest = hashlib.sha256(_json(dict(record, schema=SCHEMA, method=METHOD, route=ROUTE)))
+    digest = hashlib.sha256(_json(_without(dict(record, schema=SCHEMA, method=METHOD, route=ROUTE), BALANCE_EFFORT)))
     for name, array in arrays:
         digest.update(b'\0'+_json([name, array.dtype.str, list(array.shape)]))
         digest.update(array.tobytes())

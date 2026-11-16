@@ -22,6 +22,10 @@ from .integration_native_faces import NativeFaceMeasures
 from .integration_regional_inventory import _width
 from .integration_spatial_ale import _circulation
 from .resources import WorkBudget
+from ._validation import effort_paths as _paths, without_effort as _without
+
+# A-15: quadrature leaves leave directed_id; the record keeps them.
+DIRECTED_EFFORT = _paths('faces.*.leaves')
 
 
 def _json(value):
@@ -304,13 +308,14 @@ class NativeDirectedVolumes:
     _resource: object = field(repr=False, compare=False)
     _measures: object = field(repr=False, compare=False)
     _projection: object = field(repr=False, compare=False)
+    _directed_id: str = field(repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('NativeDirectedVolumes is issued by choose_native_directed_volumes')
 
     @property
     def directed_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        return self._directed_id
 
     def record(self):
         return json.loads(self._json)
@@ -367,7 +372,8 @@ def choose_native_directed_volumes(measures, projection, *, max_width_m3, max_le
             lease = budget.reserve(8192+4*len(encoded), category='native-directed-retained'); lease.__enter__()
             try:
                 result = object.__new__(NativeDirectedVolumes)
-                for key, value in dict(_json=encoded, _resource=budget, _measures=measures, _projection=projection).items():
+                for key, value in dict(_json=encoded, _resource=budget, _measures=measures, _projection=projection,
+                        _directed_id=hashlib.sha256(_json(_without(output, DIRECTED_EFFORT))).hexdigest()).items():
                     object.__setattr__(result, key, value)
                 weakref.finalize(result, lease.__exit__, None, None, None)
             except BaseException:

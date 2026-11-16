@@ -39,6 +39,7 @@ from .materials import MaterialState, _json, _name, _sha
 from .mesh import ColumnGrid1D
 from .resources import select_budget
 from .timebase import advance_time
+from ._validation import effort_paths as _paths, without_effort as _without
 
 
 SCHEMA = 'atlas.i02-common-state.v1'
@@ -58,6 +59,8 @@ MAX_LAYERS, MAX_ORDER = _kernel.POLICY['max_layers'], _kernel.POLICY['max_order'
 STAGE_ACCOUNTS = tuple(name for name, _ in _evolution.STAGE_ACCOUNTS)
 THERMAL_ACCOUNTS = _evolution.THERMAL_ACCOUNTS
 COUNTERS = ('stages', 'evaluations', 'iterations', 'restress_mismatches')
+# A-15: the warm-start dependent counters (_COUNTER_MEANINGS) leave column_state_id; the record keeps them.
+COLUMN_EFFORT = _paths('counters.evaluations', 'counters.iterations')
 EXTREMA = ('max_force_relative', 'max_power_relative', 'min_source_w_m2', 'min_dissipation_w_m',
            'max_step_energy_relative', 'max_temperature_step_k')
 SOLVER = {'conduction': True, 'geometry_feedback': True, 'warm_start': True,
@@ -893,6 +896,11 @@ _SCALARS = ('stretch', 'elapsed_s', 'accepted_steps', 'clock_s', 'displacement_m
             'velocity_start_m_s', 'column_force_start_n_m')
 
 
+def _column_identity(record):
+    """The column record's canonical bytes without COLUMN_EFFORT."""
+    return _canonical(_without(json.loads(record), COLUMN_EFFORT), 'column state')
+
+
 def _column_state(semantics, scalars, accounts, counters, extrema, theta0, theta, kappa0, kappa, yields):
     """One column record: canonical metadata plus the exact bytes of its five immutable arrays."""
     arrays = (('initial_theta_k', theta0), ('theta_k', theta), ('initial_kappa', kappa0), ('kappa', kappa),
@@ -901,7 +909,7 @@ def _column_state(semantics, scalars, accounts, counters, extrema, theta0, theta
         schema='atlas.i02-finite-strain-column-state.v1', route=ROUTE, semantics=semantics, **scalars,
         accounts_j_m=dict(accounts), counters=dict(counters), extrema=dict(extrema),
         arrays=[_spec(name, a) for name, a in arrays]), 'column state')
-    return _issue(ColumnState, **scalars, column_state_id=_identity(record, arrays), _accounts=accounts,
+    return _issue(ColumnState, **scalars, column_state_id=_identity(_column_identity(record), arrays), _accounts=accounts,
                   _counters=counters, _extrema=extrema, _theta0=theta0, _theta=theta, _kappa0=kappa0, _kappa=kappa,
                   _yield=yields, _record=record)
 
@@ -1208,7 +1216,7 @@ def _verified(state):
     if (hashlib.sha256(state._record).hexdigest() != state.state_id
             or hashlib.sha256(settings._record).hexdigest() != settings.settings_id
             or _identity(reference._record, reference._arrays()) != reference.reference_id
-            or _identity(column._record, column._arrays()) != column.column_state_id):
+            or _identity(_column_identity(column._record), column._arrays()) != column.column_state_id):
         raise TectonicsError('a record or array no longer reproduces its identity: edited or forged state')
     record, values, stocks = json.loads(state._record), json.loads(column._record), state.reservoirs
     reserved = record['reservoirs']

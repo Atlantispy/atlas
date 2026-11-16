@@ -19,6 +19,30 @@ from .resources import WorkBudget, select_budget
 from .reuse import ExecutionContext
 from .constitutive import _cancel, _json
 from .stokes_execution import _native_lease, _factored_scale
+from ._validation import effort_paths as _paths, without_effort as _without
+
+# A-15: counts of work and ruled effort floats (N-33), by producing schema; they leave result_id, the
+# metadata keeps them. Every maker of result_id takes its metadata through identity_metadata.
+RESULT_EFFORT = {
+    'atlas.spatial-implicit-transport.v1': _paths('krylov_iterations', 'field_errors'),
+    'atlas.mimetic-heat-advance.v1': _paths('cg_iterations', 'arithmetic.nonlinear.picard', 'arithmetic.nonlinear.newton',
+        'arithmetic.nonlinear.newton_rejected', 'arithmetic.nonlinear.eliminations', 'arithmetic.nonlinear.krylov',
+        'arithmetic.nonlinear.refinements', 'arithmetic.nonlinear.residual_history_decimal',
+        'arithmetic.nonlinear.iterations', 'arithmetic.nonlinear.iteration_history', 'arithmetic.nonlinear.elapsed_seconds',
+        'arithmetic.matvecs', 'arithmetic.direct_factor.refinements', 'arithmetic.direct_factor.iterations_before'),
+    'atlas.radial-strength-response.v1': _paths('iterations'),
+    'atlas.differential-pressure-forcing.v1': _paths('integration_leaves'),
+    'atlas.owned-radial-pressure-correction.v1': _paths('integration_leaves'),
+    'atlas.current-spatial-pressure-correction.v1': _paths('integration_leaves'),
+    'atlas.regional3d-snapshot.v1': _paths('linear_refinements', 'krylov_iterations'),
+    'atlas.regional-mechanical-snapshot.v1': _paths('iterations'),
+    'atlas.regional-donor-stage.v1': _paths('initial_constitutive.iterations'),
+}
+
+
+def identity_metadata(metadata):
+    """Snapshot metadata as result_id hashes it."""
+    return _without(metadata, RESULT_EFFORT.get(metadata.get('schema'), ())) if type(metadata) is dict else metadata
 
 
 def _name(value, name):
@@ -86,7 +110,7 @@ class RegionalMechanicalSnapshot:
                            for key, shape, raw in fields)
         object.__setattr__(self, '_metadata', encoded)
         object.__setattr__(self, '_fields', fields)
-        object.__setattr__(self, 'result_id', _hash({'metadata': metadata,
+        object.__setattr__(self, 'result_id', _hash({'metadata': identity_metadata(metadata),
             'arrays': {key: {'shape': shape, 'sha256': hashlib.sha256(raw).hexdigest()}
                        for key, shape, raw in fields}}))
 

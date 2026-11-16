@@ -158,7 +158,8 @@ def _codec_work_bytes(value):
 
 
 def _snapshot_id(body, bindings):
-    return _stream_hash(dict(metadata=body, arrays={k: dict(shape=v['shape'], sha256=v['sha256'])
+    from atlas_tectonics.regional_execution import identity_metadata
+    return _stream_hash(dict(metadata=identity_metadata(body), arrays={k: dict(shape=v['shape'], sha256=v['sha256'])
                                                    for k, v in bindings.items()}))
 
 

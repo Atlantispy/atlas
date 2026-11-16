@@ -14,7 +14,7 @@ import numpy as np
 from atlas_tectonics._private.compact_contracts import ContractError
 from atlas_tectonics._private.content_cache import ChargeSpec, OwnedStream
 from atlas_tectonics._private.record_tables import RecordCodec, canonical, require
-from atlas_tectonics._private.record_views import CompactRecord, LogicalExchange, RecordRef, _owned
+from atlas_tectonics._private.record_views import CompactRecord, LogicalExchange, RecordRef, _owned, feed_result_metadata
 
 LEDGER_SCHEMA = 'atlas.private.heat-ledger.logical.v1'
 MAX_FIELD_BYTES = 512 << 20
@@ -212,16 +212,12 @@ def field_descriptors(fields):
 
 
 def snapshot_identity(record, fields, *, check=lambda: None):
-    """Original RegionalMechanicalSnapshot identity, streamed in JSON order."""
+    """Original RegionalMechanicalSnapshot identity, streamed in JSON order, less the schema's counts (A-15)."""
     digest = sha256()
     digest.update(b'{"arrays":')
     digest.update(canonical(field_descriptors(fields)))
     digest.update(b',"metadata":')
-    with record.iter_json() as stream:
-        for block in stream:
-            with block:
-                check()
-                digest.update(block.value)
+    feed_result_metadata((digest,), record, check)
     digest.update(b'}')
     check()
     return digest.hexdigest()

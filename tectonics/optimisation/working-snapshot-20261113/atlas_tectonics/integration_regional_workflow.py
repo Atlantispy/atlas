@@ -21,6 +21,7 @@ from . import integration_material as M
 from . import integration_sphere as S
 from .integration_regional_evolution import PreparedRegionalOwner, CellAllocation, RegionalVolumeMap, RegionalOwnerRefused
 from .storage import ArrayStore, StoreConflict
+from ._validation import without_effort as _without
 
 
 SCHEMA = 'atlas.regional-owner-workflow.v1'
@@ -481,10 +482,12 @@ class CollarWorkflow:
                 if set(records) != {'solution', 'proposal', 'iteration', 'force', 'bindings'}:
                     raise RegionalOwnerRefused('saved differential certification record set differs')
                 s, p, i = (records[k] for k in ('solution', 'proposal', 'iteration'))
+                from .integration_differential_coupling import PROPOSAL_EFFORT
                 for record, key, schema in ((s, 'solution_id', 'atlas.differential-interval-solution.v1'),
                         (p, 'proposal_id', 'atlas.differential-force-proposal.v1'),
                         (i, 'iteration_id', 'atlas.differential-iteration.v1')):
-                    if record['schema'] != schema or _hash({k: v for k, v in record.items() if k != key}) != record[key]:
+                    if record['schema'] != schema or _hash(_without({k: v for k, v in record.items() if k != key},
+                            PROPOSAL_EFFORT if key == 'proposal_id' else ())) != record[key]:
                         raise RegionalOwnerRefused('saved differential certification identity changed')
                 audit, f = s['trace_audit'], force.descriptor()
                 if (_hash(audit) != s['trace_audit_id'] or audit['schema'] != 'atlas.differential-final-trace-audit.v1' or

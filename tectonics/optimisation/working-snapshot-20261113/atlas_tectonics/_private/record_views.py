@@ -2642,3 +2642,90 @@ class _ArraySource:
     def close(self):
         self._owner.close()
         self.record = None
+
+
+# A-15 streamed id-makers (ruling e773bd5b (b)): hash a compact record member by member, leaving out the listed effort
+# paths, so the bytes hashed equal the canonical JSON of _validation.without_effort(record, paths) exactly and a streamed
+# id equals the dict id. No parent is materialised: one level of keys at a time; unlisted members stream as stored.
+
+
+def effort_tree(paths):
+    """Effort paths (key tuples, '*' = every key or item, never last) as a drop tree: name -> None (omit) or sub-tree."""
+    tree = {}
+    for path in paths:
+        T.require(path and path[-1] != '*', 'effort path may not end in *')
+        node = tree
+        for key in path[:-1]:
+            node = node.setdefault(key, {})
+            T.require(node is not None, 'effort path under an omitted member')
+        node[path[-1]] = None
+    def mixed(node):
+        return type(node) is dict and (('*' in node and len(node) > 1) or any(map(mixed, node.values())))
+    T.require(not mixed(tree), "'*' beside named keys at one level")
+    return tree
+
+
+def feed_without(digests, ref, drop, check=lambda: None):
+    """Feed ref's canonical bytes less the drop tree (effort_tree) into every digest."""
+    kind = ref.kind if drop else None
+    if kind == 'object':
+        with ref.keys(max_owned_bytes=T.MAX_ROW_WORK_BYTES) as names:
+            for digest in digests:
+                digest.update(b'{')
+            kept = 0
+            for name in names.value:
+                check()
+                rule = drop[name] if name in drop else drop.get('*', {})
+                if rule is None:
+                    continue
+                for digest in digests:
+                    if kept:
+                        digest.update(b',')
+                    for part in T.string_parts(name):
+                        digest.update(part)
+                    digest.update(b':')
+                kept += 1
+                with ref.field(name) as child:
+                    feed_without(digests, child, rule, check)
+            for digest in digests:
+                digest.update(b'}')
+        return
+    if kind == 'array' and '*' in drop:
+        T.require(type(ref) is RecordRef and ref._view._v('node.kind', ref.index) == T.ARRAY,
+                  'effort wildcard over a non-list array')
+        for digest in digests:
+            digest.update(b'[')
+        for at in range(ref.size):
+            check()
+            if at:
+                for digest in digests:
+                    digest.update(b',')
+            with ref.at(at) as item:
+                feed_without(digests, item, drop['*'], check)
+        for digest in digests:
+            digest.update(b']')
+        return
+    with ref.iter_json() as stream:
+        for block in stream:
+            with block:
+                check()
+                for digest in digests:
+                    digest.update(block.value)
+
+
+def feed_result_metadata(digests, record, check=lambda: None):
+    """A-15: a snapshot's metadata as result_id hashes it (regional_execution.identity_metadata), streamed."""
+    from atlas_tectonics.regional_execution import RESULT_EFFORT
+    with (record.borrow() if isinstance(record, RecordRef) else record.root()) as root:
+        schema = None
+        if root.kind == 'object':
+            try:
+                child = root.field('schema')
+            except KeyError:
+                child = None
+            if child is not None:
+                with child:
+                    if child.kind == 'scalar':
+                        with child.scalar(max_owned_bytes=1 << 16) as owned:
+                            schema = owned.value
+        feed_without(digests, root, effort_tree(RESULT_EFFORT.get(schema, ())), check)

@@ -8,7 +8,7 @@ import numpy as np
 from atlas_tectonics._private.compact_contracts import ContractError
 from atlas_tectonics._private.content_cache import ChargeSpec
 from atlas_tectonics._private.record_tables import RecordCodec, canonical
-from atlas_tectonics._private.record_views import _ObjectRecordRef
+from atlas_tectonics._private.record_views import _ObjectRecordRef, feed_result_metadata
 from atlas_tectonics._private import live_spatial_patch as LIVE
 
 
@@ -121,11 +121,7 @@ def identity(snapshot, budget, cancel=None):
             check()
             return sealed[0]
         digest = sha256(b'{"arrays":'+encoded+b',"metadata":')
-        with snapshot._record.iter_json() as stream:
-            for block in stream:
-                with block:
-                    check()
-                    digest.update(block.value)
+        feed_result_metadata((digest,), snapshot._record, check)
         digest.update(b'}')
         check()
         result = digest.hexdigest()

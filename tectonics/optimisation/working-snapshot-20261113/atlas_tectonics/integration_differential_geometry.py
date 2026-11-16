@@ -38,6 +38,7 @@ from .integration_cone_intervals import _cone_cross_bounds, _cone_dot_bounds
 from . import integration_wall_measures as W
 from .geometry import _limits
 from .resources import WorkBudget, MemoryLimitError
+from ._validation import effort_paths as _paths, without_effort as _without
 
 
 SCHEMA = 'atlas.differential-physical-geometry.v1'
@@ -102,6 +103,9 @@ def _issue(cls, record, budget, endpoint=None):
         result = object.__new__(cls)
         object.__setattr__(result, '_json', encoded)
         object.__setattr__(result, '_resource', budget)
+        effort = getattr(cls, '_EFFORT', None)
+        if effort is not None:
+            object.__setattr__(result, effort[0], _record_hash(_without(record, effort[1])))
         if cls is DifferentialInterval:
             object.__setattr__(result, '_endpoint', endpoint)
         weakref.finalize(result, lease.__exit__, None, None, None)
@@ -109,6 +113,19 @@ def _issue(cls, record, budget, endpoint=None):
     except BaseException:
         lease.__exit__(None, None, None)
         raise
+
+
+def _effort_id(obj):
+    """A-15: sha256 of the record without its counts of work (cls._EFFORT); the stored bytes keep them. Made once."""
+    slot, listed = obj._EFFORT
+    try:
+        return getattr(obj, slot)
+    except AttributeError:
+        # Bytes adopted without their record (a worker's result): decoded once under a scratch lease.
+        with obj._resource.reserve(65536+4*len(obj._json), category='differential-effort-id'):
+            value = _record_hash(_without(json.loads(obj._json), listed))
+        object.__setattr__(obj, slot, value)
+        return value
 
 
 def _memo_id(obj, slot):
@@ -127,13 +144,14 @@ class DifferentialInterval:
     _resource: object = field(repr=False, compare=False)
     _endpoint: object = field(repr=False, compare=False)
     _interval_id: str = field(repr=False, compare=False)
+    _EFFORT = ('_interval_id', _paths('orientation_work_units'))
 
     def __init__(self, *args, **kwargs):
         raise TypeError('DifferentialInterval is issued by prepare_differential_interval')
 
     @property
     def interval_id(self):
-        return _memo_id(self, '_interval_id')
+        return _effort_id(self)
 
     @property
     def endpoint_network(self):
@@ -162,7 +180,7 @@ class DifferentialInterval:
             body = {k: v for k, v in record.items() if k != 'interval_id'}
             if (body.get('schema') != SCHEMA or body.get('method') != 'coaxial-physical-ownership-fan-v1' or
                     body.get('geometry_only') is not True or type(identity) is not str or
-                    _record_hash(body) != identity):
+                    _record_hash(_without(body, DifferentialInterval._EFFORT[1])) != identity):
                 raise V.VolumeError('stored differential geometry identity/method differs')
             segments = body.get('trajectory', {}).get('segments')
             if (type(segments) is not list or not segments or W._hash(segments) != body.get('trajectory_id') or
@@ -182,13 +200,15 @@ class DifferentialInterval:
 class DifferentialMeasure:
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _measure_id: str = field(repr=False, compare=False)
+    _EFFORT = ('_measure_id', _paths('work_units', 'leaves', 'segments.*.leaves', 'moving_interface_moments.attempt_leaves'))
 
     def __init__(self, *args, **kwargs):
         raise TypeError('DifferentialMeasure is issued by a differential physical query')
 
     @property
     def measure_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        return _effort_id(self)
 
     def record(self):
         return json.loads(self._json)
@@ -199,13 +219,15 @@ class DifferentialBoundaryPose:
     """One actual rigid boundary pose, not an averaged global material pose."""
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _pose_id: str = field(repr=False, compare=False)
+    _EFFORT = ('_pose_id', _paths('work_units'))
 
     def __init__(self, *args, **kwargs):
         raise TypeError('boundary poses are issued by posed_boundary')
 
     @property
     def pose_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        return _effort_id(self)
 
     def record(self):
         return json.loads(self._json)
@@ -353,13 +375,17 @@ class DifferentialInitialBounds:
     """Measured initial material geometry, before any future force or motion."""
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _bounds_id: str = field(repr=False, compare=False)
+    _EFFORT = ('_bounds_id', _paths('cells.*.initial_accuracy.queries.*.work_units', 'cells.*.initial_accuracy.queries.*.leaves',
+        'cells.*.initial_accuracy.query_count', 'cells.*.initial_accuracy.cumulative_leaf_units',
+        'cells.*.initial_accuracy.cumulative_work_units'))
 
     def __init__(self, *args, **kwargs):
         raise TypeError('DifferentialInitialBounds is issued by enclose_initial_partition')
 
     @property
     def bounds_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        return _effort_id(self)
 
     def record(self):
         return json.loads(self._json)

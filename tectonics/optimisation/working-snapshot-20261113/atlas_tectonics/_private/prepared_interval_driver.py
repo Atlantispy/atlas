@@ -85,7 +85,8 @@ class P26ReceivingCapture:
             cls._require(type(name) is str and name not in arrays and isinstance(raw, bytes), 'snapshot field storage differs')
             cls._require(all(type(n) is int and n >= 0 for n in shape) and len(raw) == math.prod(shape)*8, 'snapshot binary64 size differs')
             arrays[name] = dict(shape=list(shape), sha256=hashlib.sha256(raw).hexdigest())
-        identity = cls._hash(dict(metadata=metadata, arrays=arrays))
+        from atlas_tectonics.regional_execution import identity_metadata
+        identity = cls._hash(dict(metadata=identity_metadata(metadata), arrays=arrays))
         cls._require(identity == snapshot.result_id, 'snapshot original identity differs')
         return dict(recipe='regional-snapshot-v1', identity=identity,
                     metadata=metadata, arrays=arrays)

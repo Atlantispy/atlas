@@ -27,7 +27,7 @@ from atlas_tectonics._private import private_heat_issuer_resources_r4 as R
 from atlas_tectonics._private import private_heat_snapshot_store_r4 as STORE
 
 SCHEMA = 'atlas.private.i12-detached-checkpoint-consumer.r10'
-_ISSUER_SHA = 'b553e11e8cfe37faa0566c244c9dee7a37aaaeb6ae4ffde05620bc1813dc3c17'
+_ISSUER_SHA = '2b9e9809dad4b5184c5fd3a244968d88a7010a98e408fd344bb80c0265ac3d61'
 _PINS = {
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
     'private_heat_issuer_resources_r4.py': '040e72bc91be8090a72a5b83e54703fa361d0d3a71c439aa53369956215cb9e6',

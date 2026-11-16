@@ -156,3 +156,39 @@ def frozen(value: Any) -> FloatArray:
     if reusable is not None:
         return reusable
     return np.frombuffer(data.tobytes(order="C"), dtype=np.float64).reshape(data.shape)
+
+
+# A-15 (form (i)): ids name the science, not the work done to reach it. An id-maker hashes its record without the paths
+# listed for it at that maker; the stored record keeps every field, so ceilings, budgets and readers of the figures read
+# what they read before. A path is a tuple of keys; '*' matches every key of a dict or every item of a list. A path
+# absent from a record leaves it as it is, so a record that holds no listed count hashes the same bytes as before.
+
+
+def effort_paths(*specs):
+    """Dotted specs ('field_errors', 'segments.*.leaves') as key tuples."""
+    return tuple(tuple(spec.split('.')) for spec in specs)
+
+
+def without_effort(record, listed):
+    """A copy of record without the listed paths; parts no path reaches are shared, never copied or changed."""
+    for path in listed:
+        record = _drop_effort(record, path)
+    return record
+
+
+def _drop_effort(node, path):
+    head, rest = path[0], path[1:]
+    if type(node) is dict:
+        keys = tuple(node) if head == '*' else (head,) if head in node else ()
+        if not keys:
+            return node
+        node = dict(node)
+        for key in keys:
+            if rest:
+                node[key] = _drop_effort(node[key], rest)
+            else:
+                del node[key]
+        return node
+    if type(node) in (list, tuple) and head == '*' and rest:
+        return [_drop_effort(item, rest) for item in node]
+    return node

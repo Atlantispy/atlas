@@ -514,7 +514,8 @@ def _audit(store, head, expected, owner, budget, check):
             fields.append((row['name'], tuple(row['shape']), raw))
             identities[row['name']] = dict(shape=row['shape'], sha256=row['sha256'])
             raw = None
-        identity = digest(dict(metadata=head['source_audit'], arrays=identities))
+        from atlas_tectonics.regional_execution import identity_metadata
+        identity = digest(dict(metadata=identity_metadata(head['source_audit']), arrays=identities))
         _require(identity == expected['source_audit_id'] == head['advance']['source_audit_id'],
                  'original source-audit snapshot identity differs')
         # Exactly the native immutable snapshot representation, without new
