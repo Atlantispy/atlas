@@ -188,7 +188,7 @@ Private coordination and source-owner records, personal tools, credentials, inst
 
 The full scientific routes still depend on excluded components, including the recursively sealed scientific bundle and the original bound checkpoint codec. Native compressed history uses a pinned Windows Zstandard library. Copying these source folders to another operating system does not establish compatibility. The public package deliberately does not fabricate replacements for historical dependencies.
 
-Read [AGENTS.md](AGENTS.md) and the relevant [coding-safety map](docs/CODING_SAFETY.md) before changing code. Preserve unrelated work and provide focused, reproducible evidence. Keep the following boundaries intact:
+Read [AGENTS.md](AGENTS.md) and the relevant [coding-safety map](docs/CODING_SAFETY.md) before changing code. Preserve unrelated work and provide focused, reproducible evidence. Follow the [public attribution rule](AGENTS.md#public-attribution); the disclosure above applies repository-wide. Keep the following boundaries intact:
 
 - Do not disable hash/source verification, silently repin checkpoints, relax acceptance tolerances or raise the native 256-step ceiling to obtain a pass.
 - Preserve retained predecessors and immutable history dependencies. Backup, restoration, cleanup and migration require explicit scope; a copied control alone is not a restartable delivery.

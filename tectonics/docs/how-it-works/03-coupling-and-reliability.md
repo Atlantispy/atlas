@@ -509,6 +509,22 @@ phases are marked only on the driver's thread. Its chain, compared value by valu
 with the run before it, moved no stored value; it is not review or scientific
 acceptance.
 
+The [first result-moving break](../../optimisation/working-snapshot-20261113/README.md#the-first-result-moving-break-16-november)
+of 16 November is the first update of that snapshot meant to change stored
+numbers. A plate-network vertex shared by boundary records of equal rank no
+longer takes its home from the smallest record name: the home is chosen once by
+a geometric key and then kept. The heat limiter works to edges that already
+pass the public rounding check, so the rounding guard has nothing left to
+contract, and it records how much of the high-order correction survives.
+Identifiers are hashed without counts of work, so they name a result and not the
+effort spent reaching it. Its reference chain was repeated by a chain killed and
+resumed at three points, which gave the same values. Against the previous
+reference the heat differs by about three times the size measured for the
+limiter change alone; the cause is explained (last-place input differences
+amplified by the accurate heat scheme in cells with almost no heat capacity)
+and the difference is recorded as explained, not equal. None of this is
+scientific acceptance.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell

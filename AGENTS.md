@@ -1,8 +1,6 @@
 # Atlas: coding instructions
 
-Atlas is vibe-coded: OpenAI ChatGPT/Codex and Anthropic Claude Code write code under the owner's
-requirements, decisions and review. Passing tests,
-code review and scientific acceptance are separate outcomes.
+Passing tests, code review and scientific acceptance are separate outcomes.
 
 Describe Atlas work by its engineering and scientific status: planned,
 implemented, published, enabled, tested or scientifically validated, as supported
@@ -10,6 +8,16 @@ by evidence. Do not add worldbuilding canon labels to Atlas documentation.
 Preserve authored-world constraints and source authority. Legacy literal values
 and frozen fixture documents remain compatibility inputs, not project status;
 see `docs/CODING_SAFETY.md#legacy-document-and-format-bindings`.
+
+## Public attribution
+
+Keep the repository-level AI disclosure in `README.md`. Add no AI/tool/model authorship, generated-by
+boilerplate or AI `Co-authored-by` trailers to commits, pull requests, release notes or source/documentation
+headers and footers. Describe the actual change and
+evidence; remove redundant attribution from in-scope content being prepared for publication.
+Preserve genuine technical references, scientific/reproducibility provenance, copyright/licence notices and
+required third-party attribution. Do not rewrite published history, alter sealed evidence or change the actual
+Git author identity.
 
 ## Start with the smallest relevant context
 
@@ -34,6 +42,27 @@ Do not duplicate a progress log or imply a cited source was newly read or benchm
 Finish source-bound method documentation before capturing new evidence; never
 rewrite an old receipt for a documentation update. Documentation-only edits get
 focused content/link and required static checks, not scientific reruns.
+
+## Issue updates and independent execution
+
+Applies to Atlas implementation, review, integration and generator-engineering coordination.
+
+- Update applicable existing GitHub issues at meaningful outcome, publication, measurement, scope-change or
+  blocker checkpoints as part of the assigned work; these factual updates need no separate owner/coordinator
+  approval. Include the actual result, remaining work/holds and public-safe evidence or commit links; preserve
+  concurrent edits; no repetitive progress comments. Keep implementation, publication, enablement,
+  verification and scientific acceptance distinct. Close only the issue's completed declared scope. Without
+  issue access, leave an explicit pending update in the existing task record.
+- Prompts and workflows give the owner an outcome, scope, completion condition and genuine escalation
+  exceptions up front. Owners carry authorised work through implementation, in-scope fixes, proportionate
+  checks, integration and issue updates without routine coordinator sign-off between phases; ordinary fixes
+  are not deferred to the coordinator or a collective assessment.
+- Escalate real missing authority, dependency/ownership conflicts, consequential unresolved decisions and
+  explicitly required reviews or queue/run clearances; continue independent work. When only waiting remains,
+  save the exact blocker, request the authorised direct completion/clearance return once and end the turn.
+  Return substantive completion or an actionable blocker, without acknowledgement loops. Existing holds,
+  privacy, scientific guarantees and publication authority remain in force; issue maintenance does not
+  authorise a run or code publication.
 
 ## Change boundaries
 

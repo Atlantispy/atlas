@@ -34,12 +34,13 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   see [the next private batch](#the-next-private-batch-15-november)).
 - 16 November 2026: the first result-moving break, as run by its reference chain and its
   kill-and-resume chain (vertex homes chosen by geometry and kept, public-safe edges in the heat
-  limiter, counts of work left out of identifiers).
+  limiter, counts of work left out of identifiers; see
+  [the first result-moving break](#the-first-result-moving-break-16-november)).
 
 Each update is one commit, so its diff shows exactly what changed. The first five 15 November sections were read
-from the code at `f29ca36`, the batch 2 section from the code at `9f5080c` and the next private batch from the code at `1e0643e`; the other sections were written for the 13 November contents, and their line
+from the code at `f29ca36`, the batch 2 section from the code at `9f5080c`, the next private batch from the code at `1e0643e` and the first result-moving break from the code at `25811eb`; the other sections were written for the 13 November contents, and their line
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
-none of the 15 November changes has a review record in this repository.
+none of the 15 and 16 November changes has a review record in this repository.
 
 ## Contents
 
@@ -347,6 +348,102 @@ The last commit regenerates `_application_sources.json` and `.sha256` for the ch
 The batch was run by one diagnostic chain and compared with the run before it. That establishes only that the
 package ran as published and moved no stored value; it is not review, not a timing result and not scientific
 acceptance.
+
+## The first result-moving break (16 November)
+
+Three changes that move stored results or identifiers on purpose, landed together so that references are made
+again once. Each is one commit; a fourth commit adds the pins issued for the run and the source tables. Line
+numbers are those of `25811eb`.
+
+### Vertex homes chosen by geometry and then kept
+
+Each vertex of the plate network is stored in the frame of its home (a plate, or a ridge record). Where several
+boundary records of the same rank carried a vertex, the home used to be the carrier of the record with the
+smallest record ID, so a name chose the frame. Now (`integration_sphere.py`):
+
+- `_carriers` (line 599) lists every carrier a vertex may have: one per record of its lowest rank (a trench
+  before a transform before a ridge), or the one plate it lies inside when no record carries it. A vertex that
+  no record carries and that is not inside exactly one plate is refused.
+- `_rehomed` (line 647) keeps a vertex's home while that home still carries one of those records. Otherwise,
+  where the records name one carrier, that carrier is the home; where they name two or more, the home is the
+  carrier of the record that is first by a geometric key: the sorted positions of the record's vertices, all in
+  one frame, compared exactly and made without arithmetic. Two records with equal keys are refused. The key is
+  a convention, not a physical rule: it is free of names and follows the coordinate frame.
+- At a declaration there is no home to keep and the positions are the declared points (`_homes`, line 642,
+  called at line 784). At an event the positions are the directions in the sphere's axes and the stored homes
+  are passed in (`integration_events.py` line 554).
+- A stored home is now state. The layout check only confirms that it is one of the vertex's carriers (line 809)
+  and no longer derives it again. In proof mode and in the tests, `_kept_over` (line 681), called when a moved
+  network is issued (`integration_transfer.py` line 1504), refuses a layout in which a vertex changed its home
+  while the old home still carries it.
+
+### Public-safe edges in the heat limiter, and its share in doubles
+
+When the full high-order correction does not pass the step's temperature bounds, the heat correction limits it
+face by face (`_private/private_heat_correction_owned_r1.py`). The limiter worked to the exact edge, a cell's
+capacity times a bound, and a later rounding guard then scaled the whole correction back by one common factor
+when the rounded public temperature failed the public check. Now:
+
+- `_public_edge` (line 312) replaces each exact edge by the double nearest to it on its inner side whose public
+  temperature passes that check (used at line 375), so the limited result passes the public check and the guard
+  has nothing left to contract. It steps at most eight doubles inward (`_EDGE_STEPS`, line 309); past that it
+  keeps the exact edge, the case is counted, and the guard contracts as before.
+- Two figures join the step's evidence (line 405): the count of such fallbacks, and the share of the correction
+  that survives, which is the sum over faces of the final factor times the size of the face's correction, over
+  the sum of those sizes. `_share` (line 294) computes it in doubles with an order-free sum (`math.fsum`), so
+  face order cannot move it. It is a report figure and never stops a run.
+- The code now names the published limiter it follows, Zalesak's flux-corrected transport (S. T. Zalesak,
+  J. Comput. Phys. 31, 335-362, 1979), and says which parts are the package's own: the public-safe edges, the
+  guard's common factor, and the use of this limiter between two conduction schemes (line 361).
+
+Thirteen other `_private` files change only in the pins that follow this file's hash.
+
+### Counts of work leave the identifiers
+
+An identifier used to be the hash of its whole record, counts of work included. Two runs that reached the same
+values with different effort (another iteration count, another number of quadrature leaves) then produced
+different identifiers, and anything ordered by an identifier followed the effort. Now an id-maker hashes its
+record without the listed counts. The stored record keeps every field, so ceilings, budgets and readers of
+those figures read what they read before, and a record that holds no listed count hashes the same bytes as
+before (`_validation.py`: `effort_paths`, line 167, and `without_effort`, line 172).
+
+| Identifier | Left out of the hash | Where |
+| --- | --- | --- |
+| `result_id` of a snapshot | By producing schema: solver and Krylov iteration counts, nonlinear histories and elapsed time, refinements, integration leaves, the transport's field-error figures | `regional_execution.py`: `RESULT_EFFORT` (line 26); every maker takes its metadata through `identity_metadata` (line 43) |
+| Proposal id | The attempt number | `integration_differential_coupling.py`: `PROPOSAL_EFFORT` (line 42) |
+| Interval, measure, pose and bounds ids | Work units, leaves and query counts | `integration_differential_geometry.py`: `_effort_id` (line 118) and the `_EFFORT` lists (lines 147, 204, 223 and 379) |
+| Balance id | How the belt solve ended | `integration_driving.py`: `BALANCE_EFFORT` (line 52) |
+| Driving digest | The outer iteration count and history, and the belt solve's end | `integration_feedback.py`: `DRIVING_EFFORT` (line 52) and `_driving_digest` (line 406) |
+| Directed id | Quadrature leaves | `integration_native_projection.py`: `DIRECTED_EFFORT` (line 28) |
+| Column state id | Evaluation and iteration counters | `integration_state.py`: `COLUMN_EFFORT` (line 63) and `_column_identity` (line 899) |
+
+Compact records are hashed member by member in a stream that leaves out the same members and hashes the same
+bytes as the in-memory form (`_private/record_views.py`: `feed_without`, line 2668, and `feed_result_metadata`,
+line 2716; the transport's top-level counts in `_private/spatial_validation_patch.py`, `transport_effort`, line
+997). Graph ids and mesh geometry ids are not changed here.
+
+Identifiers move by design. Values move too, in their last places: cells born in a step are ordered by an
+identifier that this changes, and sums taken in that order round differently.
+
+### The pins issued for the run
+
+The identities bound by the first interval's end provider move with the changes above, so a capture run on the
+new code issued them again: the grid, graph, partition and correspondence-proof hashes in
+`_private/q297_end_provider_v2.py` (lines 14 to 17) and `_private/q297_end_factory_v2.py` (line 24 and the run
+row at line 34), and the grid file named in `_private/run_fresh_interval.py` (line 1317). The source tables are
+regenerated for every changed file.
+
+### What was run
+
+The package as published here was run by a reference chain of eight steps and by a second chain that was killed
+and resumed at three points. The second equals the first in every value; 83 identifiers differ, all from one
+identity that includes the run folder's path. Against the previous reference, compared cell by cell through the
+map from old to new identifiers, receipts and non-heat values agree and transport stocks differ by at most
+6.05e-16 relative. Every heat cell differs by about 1e-07 J, about three times the size measured for the limiter
+change alone. That excess is explained and not removed: last-place differences in two of the heat's inputs are
+amplified by the accurate heat scheme in cells that hold almost no heat capacity
+([issue #88](https://github.com/Atlantispy/atlas/issues/88), [issue #89](https://github.com/Atlantispy/atlas/issues/89)). The comparison was reviewed outside this repository and the
+heat difference recorded as explained, not equal. That is not scientific acceptance.
 
 ## Reader process census
 
