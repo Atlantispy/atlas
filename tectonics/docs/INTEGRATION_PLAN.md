@@ -1373,6 +1373,11 @@ report baseline, candidate, raw difference and percentage, including regressions
 - Keep current state bounded; store immutable shared cohorts/events and requested
   checkpoints using the existing lossless store. Avoid copying every full world
   at every numerical substep or growing all historical matrix factors in RAM.
+  Apply the [combined lossless storage contract](OPTIMISATION_REFERENCE.md#storage-contract)
+  for measured codec selection, optional exact temporal encoding, bounded independent
+  recovery and shared static definitions. I10 field/time/LOD readers and standalone
+  exports must exercise the actual enabled combination and its full dependency closure;
+  retaining high-resolution results does not require loading them all for display.
 - Use lazy requested-field loading and data-derived display levels without
   changing the scientific state. Coarse display is not coarse science.
 - Parallelise independent plate/region operations only when the chosen equations
