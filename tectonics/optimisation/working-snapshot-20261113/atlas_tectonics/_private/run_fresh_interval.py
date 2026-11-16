@@ -1314,12 +1314,12 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             record['q297_end_geometry'].update(selection='issued for actual END mesh', **selection)
             save()
         end_provider_factory = make_factory(run_root=qualification/'runs',
-            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-b2.json',
+            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-b1.json',
             selected_observer=note_q297_provider)
         record['q297_end_geometry'] = dict(selection='configured first-interval END provider',
-            scientific_changes=True, grid_sha256='615b76e24a9f9051c3ea00a6e857711b1c5f0e28b3f6316af6d848febfcf531f',
+            scientific_changes=True, grid_sha256='ebc38dfbdfa1a48211b516d36a648f1080b3b445b5c8f15639258b7c128c9303',
             sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-            carry_proof_sha256='b4fa00ceeb31774a60451ddc4fd07a570df418c8a473a5f90080bab82f3cfaad',
+            carry_proof_sha256='18d898d121d5b1f464821d155e4606cb0098bc36575b8e0724534dbcacdcc481',
             inherited_witness_refinements=1, qualification_grid_split='-33/8',
             graph_id='not yet issued', scientifically_certified=False)
         save()

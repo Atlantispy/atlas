@@ -32,6 +32,9 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
 - 15 November 2026: the next private batch, as run by its diagnostic chain (coverage sidecar buffer,
   heat solver picks, single decodes and verifies, bounds from bytes held and related removals, the heat predictor beside the reconstruction;
   see [the next private batch](#the-next-private-batch-15-november)).
+- 16 November 2026: the first result-moving break, as run by its reference chain and its
+  kill-and-resume chain (vertex homes chosen by geometry and kept, public-safe edges in the heat
+  limiter, counts of work left out of identifiers).
 
 Each update is one commit, so its diff shows exactly what changed. The first five 15 November sections were read
 from the code at `f29ca36`, the batch 2 section from the code at `9f5080c` and the next private batch from the code at `1e0643e`; the other sections were written for the 13 November contents, and their line
