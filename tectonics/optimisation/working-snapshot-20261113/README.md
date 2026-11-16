@@ -1,6 +1,6 @@
 # Working snapshot (first published 13 November 2026)
 
-Status: **experimental source snapshot**. This folder publishes the later optimisation work on the review branch. It is not the reviewed folded package and has no scientific acceptance. The source fix below has its stated independent review and focused checks; that does not qualify the whole snapshot. Earlier diagnostic results remain attached to their original packages. Paths are relative to `atlas_tectonics/`. For adoption and continuation, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
+Status: **experimental source snapshot**. This folder publishes the later optimisation work on the review branch. It is not the reviewed folded package and has no scientific acceptance. The source fixes below have their stated independent reviews and focused checks; that does not qualify the whole snapshot. Earlier diagnostic results remain attached to their original packages. Paths are relative to `atlas_tectonics/`. For adoption and continuation, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
 
 ## History
 
@@ -34,11 +34,11 @@ Status: **experimental source snapshot**. This folder publishes the later optimi
 Each later source fix has its own commit, source tables and affected documentation. The first five 15 November sections were read
 from the code at `f29ca36`, the batch 2 section from the code at `9f5080c`, the next private batch from the code at `1e0643e` and the first result-moving break from the code at `25811eb`; the other sections were written for the 13 November contents, and their line
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
-the historical chain sections are not whole-snapshot review records. The later source fix has the bounded review and evidence described below.
+the historical chain sections are not whole-snapshot review records. The later source fixes have the bounded reviews and evidence described below.
 
 ## Contents
 
-- `atlas_tectonics/`: the public package and `_private`, based on the issued first-break source plus the fix below, with the
+- `atlas_tectonics/`: the public package and `_private`, based on the issued first-break source plus the fixes below, with the
   source-list files `_application_sources.json` and `_application_sources.sha256`.
 - Left out: the compiled compression library and compiled Python files.
 - `.gitattributes` keeps git from rewriting line endings in this folder.
@@ -429,7 +429,7 @@ regenerated for every changed file.
 
 ### What was run
 
-The first-break package, before the later source fix below, was run by a reference chain of eight steps and by a second chain that was killed
+The first-break package, before the later source fixes below, was run by a reference chain of eight steps and by a second chain that was killed
 and resumed at three points. The second equals the first in every value; 83 identifiers differ, all from one
 identity that includes the run folder's path. Against the previous reference, compared cell by cell through the
 map from old to new identifiers, receipts and non-heat values agree and transport stocks differ by at most
@@ -448,6 +448,12 @@ These source changes are applied after the first-break package documented above.
 `integration_transfer._transferred` gathers the same rounded donor-share, retained-source and receiver-bound contributions, then uses one `math.fsum` per target. The direct allowance replacement for a rename and the later cap are unchanged. The stored allowance remains binary64 square metres per face; no tolerance or schema changes.
 
 Independent source review accepted the isolated change. The focused control exercised the complete allowance-producing source region and the actual sphere issuer, stored value and restore reader. Both candidate orders produced 384.0 m2 and the same acceptance; the previous sum and its mutant differed by two ULP and flipped that constructed decision. The control did not execute the surrounding geometry derivation or full transfer. Actual-mesh occurrence, the selected two-interval comparison and large-remap memory remain unqualified. No speed or whole-chain claim follows.
+
+### Keep the loaded heat inventory independent of recognised home paths
+
+`_private/private_heat_loaded_identity_r1.py` records recognised package and interpreter path constants relative to their roots, including paths inside tuples and lists. The seven original file-opening constants keep their values. An unrecognised absolute path retains its spelling in the inventory. This changes loaded and derived identities, without recomputing a heat quantity.
+
+Two fresh candidate imports from different homes produced identical loaded-inventory bytes; the mapping-removed control exposed the seven original paths. Independent review accepted the corrected nested-Path handling by source inspection. This is controlled relocation evidence, not a new reference run or a proof for every source-provenance dependency.
 
 ## Reader process census
 

@@ -1500,6 +1500,8 @@ not-enabled A1 result.
 
 ### Check identity at publication and worker boundaries
 
+The [working snapshot](../../optimisation/working-snapshot-20261113/README.md#keep-the-loaded-heat-inventory-independent-of-recognised-home-paths) maps recognised package and interpreter path constants into their own relative namespaces when constructing the loaded heat inventory. File opening still uses the original constants; unknown absolute paths keep their spelling. Controlled two-home imports agree on the inventory. This affects loaded identities, and supplies no new physical or whole-chain result.
+
 [Plan39](../../optimisation/workbench/plan39/README.md) sets the selected Release
 policy's publication, source-lifetime and worker-identity checks. Release remains
 non-default; dependency promotion, runner/fold/desktop wiring, measured peaks and

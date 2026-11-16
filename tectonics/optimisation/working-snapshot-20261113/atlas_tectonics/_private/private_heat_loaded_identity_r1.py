@@ -13,6 +13,7 @@ from concurrent.futures import CancelledError
 from hashlib import sha256
 import json
 import marshal
+import sys
 from pathlib import Path
 from types import FunctionType, ModuleType
 
@@ -39,6 +40,21 @@ def _members(module):
                     yield label+'.'+name, member
 
 
+def _path_constant(value):
+    """Record recognised paths by their package or interpreter location."""
+    if isinstance(value, (str, Path)) and Path(value).is_absolute():
+        try:
+            return _atlas_identity.relkey(value)
+        except _atlas_identity.IdentityError:
+            try:
+                return ('interpreter', Path(value).resolve().relative_to(Path(sys.exec_prefix).resolve()).as_posix())
+            except ValueError:
+                return str(value)
+    if isinstance(value, (tuple, list)):
+        return type(value)(_path_constant(item) for item in value)
+    return value
+
+
 def _inventory(modules, cancel, known=None):
     functions, constants, sources, tokens = {}, {}, {}, []
     names = set()
@@ -52,7 +68,7 @@ def _inventory(modules, cancel, known=None):
         for label, value in sorted(vars(module).items()):
             _check(cancel)
             if label.isupper() and R._captured(value):
-                constants[module.__name__+'.'+label] = R._constant(value)
+                constants[module.__name__+'.'+label] = R._constant(_path_constant(value))
         for label, function in _members(module):
             _check(cancel)
             key = module.__name__+'.'+label
