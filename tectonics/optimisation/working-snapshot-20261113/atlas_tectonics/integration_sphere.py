@@ -596,13 +596,14 @@ class _Layout:
     #                          junction, and one per straight transform that declares its carrier (its trace's circle)
 
 
-def _homes(names, faces, boundaries):
-    """The home of each vertex of a declaration.
+def _carriers(names, faces, boundaries):
+    """The homes each vertex may have: (home, record) pairs, one per record of its lowest rank.
 
-    A vertex inside one plate is that plate's. A boundary vertex is kept with the carrier of its record: the
-    overriding plate of a trench, the declared carrier of a transform (else its left plate), and the ridge record
+    A vertex inside one plate is that plate's (record None). A boundary vertex is kept with the carrier of its record:
+    the overriding plate of a trench, the declared carrier of a transform (else its left plate), and the ridge record
     itself for a ridge, whose frame moves by the ridge's own rule. Where several records meet, a trench's carrier is
-    preferred, then a transform's, then a ridge; among equals the smallest record ID.
+    preferred, then a transform's, then a ridge; every record of that lowest rank is listed. A vertex no record
+    carries that is not inside exactly one plate is refused: no name may choose its home.
     """
     around = {name: set() for name in names}
     for face in faces:
@@ -611,7 +612,7 @@ def _homes(names, faces, boundaries):
                 if name in around:
                     around[name].add(face.plate_id)
     carried = {}
-    for boundary in boundaries:                                  # sorted by boundary ID
+    for boundary in boundaries:
         if boundary.kind == TRENCH:
             rank = 0
             plate = boundary.right_plate_id if boundary.subducting_side == 'left' else boundary.left_plate_id
@@ -621,10 +622,71 @@ def _homes(names, faces, boundaries):
             rank = 1
             plate = boundary.right_plate_id if boundary.carrier_side == 'right' else boundary.left_plate_id
         for name in boundary.vertex_ids:
-            if name in around and (name not in carried or rank < carried[name][0]):
-                carried[name] = (rank, plate)
-    fallback = min((face.plate_id for face in faces), default='')
-    return tuple(carried[name][1] if name in carried else min(around[name], default=fallback) for name in names)
+            if name in around:
+                if name not in carried or rank < carried[name][0]:
+                    carried[name] = (rank, [(plate, boundary)])
+                elif rank == carried[name][0]:
+                    carried[name][1].append((plate, boundary))
+    out = []
+    for name in names:
+        if name in carried:
+            out.append(tuple(carried[name][1]))
+        elif len(around[name]) == 1:
+            out.append(tuple((plate, None) for plate in around[name]))
+        else:
+            raise SphereError('vertex %r is carried by no boundary record and lies inside %d plates, not one: '
+                              'no name may choose its home; refused' % (name, len(around[name])))
+    return tuple(out)
+
+
+def _homes(names, faces, boundaries, positions):
+    """The home of each vertex of a declaration, on its declared ``points``: _rehomed with no home to keep."""
+    return _rehomed(names, faces, boundaries, positions, (None,)*len(names))
+
+
+def _rehomed(names, faces, boundaries, positions, kept):
+    """The home of each vertex at a declaration or an event (ruling 34, A-22 rule (a) as changed on 15 Nov 2026).
+
+    A vertex keeps its home ``kept`` while that home still carries one of its records of the lowest rank (``kept`` is
+    None at a declaration). Otherwise, where those records name one carrier, that carrier is the home; where they name
+    two or more, the vertex is kept by the carrier of the record that is first by a geometric key: the sorted tuple of
+    the positions of the record's vertices (``positions``, one row per name, all in one frame: ``points`` at a
+    declaration, the directions in the sphere's axes at an event; never the stored reference, whose rows are in their
+    homes' frames), compared exactly and made without arithmetic. The key is a convention, not a physical rule: it is
+    free of names and follows the coordinate frame. Two such records with equal keys are refused. Once chosen, a home
+    is state: it is kept, and not chosen again from stored positions.
+    """
+    row = dict(zip(names, positions))
+
+    def key(boundary):                                           # rule (a): one-frame positions, sorted; no arithmetic
+        return tuple(sorted(tuple(float(x) for x in row[name]) for name in boundary.vertex_ids if name in row))
+    home = []
+    for name, records, old in zip(names, _carriers(names, faces, boundaries), kept):
+        plates = {plate for plate, _ in records}
+        if old in plates:
+            home.append(old)
+            continue
+        if len(plates) == 1:
+            home.append(records[0][0])
+            continue
+        found = [(key(boundary), plate) for plate, boundary in records]
+        if len({k for k, _ in found}) != len(found):
+            raise SphereError('vertex %r: boundary records %s carry it at equal rank and two have equal geometric keys '
+                              '(the sorted stored positions of their vertices); refused'
+                              % (name, ', '.join(sorted(repr(boundary.boundary_id) for _, boundary in records))))
+        home.append(min(found, key=lambda item: item[0])[1])
+    return tuple(home)
+
+
+def _kept_over(old, new, faces, boundaries):
+    """Refuse a layout ``new`` issued from ``old`` in which a vertex of both changed its home while its old home still
+    carries one of its records of the lowest rank (A-22 N-61). Two tuples compared; it guards this package's own code,
+    so it runs in proof mode and in the tests, not as a release check."""
+    before = dict(zip(old.names, old.home))
+    for name, home, records in zip(new.names, new.home, _carriers(new.names, faces, boundaries)):
+        if name in before and home != before[name] and before[name] in {plate for plate, _ in records}:
+            raise SphereError('vertex %r changed its home from %r to %r at an issue, while %r still carries one of its '
+                              'records of the lowest rank; refused' % (name, before[name], home, before[name]))
 
 
 def _used(faces):
@@ -719,7 +781,7 @@ def _end_poles(names, points, boundaries, junctions):
 
 def _declared_layout(names, points, faces, plates, boundaries):
     """The layout of a declaration: every reference frame is the sphere's axes at the declared time."""
-    home = _homes(names, faces, boundaries)
+    home = _homes(names, faces, boundaries, points)
     owner = dict(zip(names, home))
     row = {name: points[i] for i, name in enumerate(names)}
     views = tuple(sorted(((name, plate), tuple(float(x) for x in row[name])) for name, plate in _used(faces)
@@ -741,11 +803,14 @@ def _checked_layout(layout, faces, plates, boundaries):
         raise SphereError('the vertex layout does not match its vertex registry, plates and ridge records')
     for name in names:
         _name(name, 'vertex ID')
-    # Every vertex is kept by the carrier its records and faces give it, so one network has one layout.
-    canonical = _homes(names, faces, boundaries)
-    for name, home, carrier in zip(names, layout.home, canonical):
-        if home != carrier:
-            raise SphereError('vertex %r is kept by %r, not by its carrier %r' % (name, home, carrier))
+    # A stored home is state (A-22, ruling 34): chosen at a declaration or an event and kept. Here it is only
+    # confirmed to be a carrier of one of the vertex's records of the lowest rank (or the one plate a vertex no record
+    # carries lies inside); which of two such carriers is first is not asked again.
+    for name, home, records in zip(names, layout.home, _carriers(names, faces, boundaries)):
+        allowed = {plate for plate, _ in records}
+        if home not in allowed:
+            raise SphereError('vertex %r is kept by %r, not by a carrier of its records of the lowest rank (%s)'
+                              % (name, home, ', '.join(sorted(repr(plate) for plate in allowed))))
     _unit_rows(reference, 'vertex reference directions')
     if tuple(plate for plate, _ in layout.frames) != declared or any(
             type(rotation) is not Rotation for _, rotation in layout.frames):

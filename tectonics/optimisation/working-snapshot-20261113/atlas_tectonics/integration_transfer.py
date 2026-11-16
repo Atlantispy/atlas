@@ -1491,14 +1491,18 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
 def _issued(network, moved, end_time_s, step, limits, budget, cancel):
     """The endpoint network of a moved declaration, validated as a closed atlas; a refusal names the cause."""
     try:
-        return _sphere._network(network.sphere, moved.layout, moved.faces, moved.plates, moved.boundaries,
-                                network.epoch_id, end_time_s, step, network.reference_time_s, moved.lineage, limits,
-                                budget, cancel, False)
+        issued = _sphere._network(network.sphere, moved.layout, moved.faces, moved.plates, moved.boundaries,
+                                  network.epoch_id, end_time_s, step, network.reference_time_s, moved.lineage, limits,
+                                  budget, cancel, False)
     except ExchangeRefused:
         raise
     except TectonicsError as exc:
         raise TransferRefused('the moved network is not a valid closed network (a boundary cell may be exhausted, '
                               'or the interval may be too long for the mesh): '+str(exc)) from exc
+    from atlas_tectonics._private.compact_contracts import proving
+    if proving():    # A-22 N-61: a vertex of both layouts keeps its home while that home still carries it
+        _sphere._kept_over(network._layout, issued._layout, issued.faces, issued.boundaries)
+    return issued
 
 
 # ----------------------------------------------------------------------------- measures

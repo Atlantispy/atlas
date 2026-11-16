@@ -523,7 +523,7 @@ def _rebuilt(network, material, faces, plates, boundaries, lineage, frames, sour
     vertices are carried into its frame, except those it already has. Record-end poles are carried into their
     carrier's frame where the record end persists, and formed afresh where it is new, in the carrier's frame.
     """
-    boundaries = tuple(sorted(boundaries, key=lambda record: record.boundary_id))   # homes break ties in this order
+    boundaries = tuple(sorted(boundaries, key=lambda record: record.boundary_id))
     layout = network._layout
     names = layout.names
     index = {name: i for i, name in enumerate(names)}
@@ -549,7 +549,9 @@ def _rebuilt(network, material, faces, plates, boundaries, lineage, frames, sour
         if b.kind == _sphere.RIDGE:
             origin = derived.get(b.boundary_id, b.boundary_id)
             ridges[b.boundary_id] = ridge_frames.get(origin, _sphere.IDENTITY)
-    home = _sphere._homes(names, faces, boundaries)
+    # A-22 (ruling 34): a vertex keeps its home while that home still carries one of its records of the lowest rank;
+    # any other is chosen by the geometric key on the directions in the sphere's axes at the event (one frame).
+    home = _sphere._rehomed(names, faces, boundaries, directions, layout.home)
     reference = np.empty_like(layout.reference)
     for k, name in enumerate(names):
         keeper = home[k]
