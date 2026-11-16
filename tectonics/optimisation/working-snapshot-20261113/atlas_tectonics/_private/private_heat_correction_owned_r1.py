@@ -291,6 +291,45 @@ def _public_guard(ar, low, candidate, cap, lo_faces, faces, alphas, bounds):
         exact_cell_ledger_preserved_by_common_face_scalar=True)
 
 
+def _share(ar, corrections, alphas):
+    """H-6 R-1 (design public-guard-h6-r1 s2, "The share record"): the sum over faces of the final factor times
+    |delta| over the sum of |delta|, in doubles: each term rounded once, the sums by math.fsum, so face order cannot
+    move it. None when no delta is nonzero as a double. A report figure, recorded, never a stop."""
+    kept, total = [], []
+    for (_, _, delta), alpha in zip(corrections, alphas, strict=True):
+        ar.check()
+        size = abs(ar.public(delta))
+        if size:
+            total.append(size)
+            kept.append(ar.public(alpha)*size)
+    whole = math.fsum(total)
+    return math.fsum(kept)/whole if whole else None
+
+
+_EDGE_STEPS = 8
+
+
+def _public_edge(ar, c, edge, bounds, inward):
+    """H-6 (design public-guard-h6-r1 s2): the double nearest the exact edge c*bound, on its inner side
+    (inward = -inf for the top edge, +inf for the bottom), whose public temperature passes the check
+    bounds() makes, and False. Past _EDGE_STEPS steps: the exact edge (the limiter edge before H-6), and
+    True, so the caller counts it (N-1); the guard then contracts as before."""
+    d, fc = ar.public(edge), ar.public(c)
+    for _ in range(_EDGE_STEPS+1):
+        if math.isfinite(d):
+            ar.reserve(max(ar.peak_bits, 1075))
+            q = ar.G.mpq(d)
+            if not (ar.less(edge, q) if inward < 0 else ar.less(q, edge)):
+                t = d/fc
+                if math.isfinite(t):
+                    ar.reserve(max(ar.peak_bits, 1075))
+                    tq = ar.G.mpq(t)
+                    if not (ar.less(tq, bounds[0]) or ar.less(bounds[1], tq)):
+                        return q, False
+        d = math.nextafter(d, inward)
+    return edge, True
+
+
 def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
     if len(low_faces) != len(high_faces):
         raise ValueError('Low/high physical faces must match')
@@ -315,9 +354,14 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
     full_check = ar.bounds(full[1], cap, bounds)
     if full_check['exact_pass'] and full_check['actual_public_pass']:
         energy, faces, alphas = full[1], full_faces[1], full_alphas[1]
-        branch = 'COMPLETE_PHYSICAL_CORRECTION_ADMISSIBLE'
+        branch, fallbacks = 'COMPLETE_PHYSICAL_CORRECTION_ADMISSIBLE', None
     else:
         positive, negative = ar.copy([zero]*n), ar.copy([zero]*n)
+        fallbacks = 0
+        # The limiter is Zalesak's: S. T. Zalesak, "Fully multidimensional flux-corrected transport algorithms
+        # for fluids", J. Comput. Phys. 31, 335-362 (1979). Published there: the per-cell sums of incoming gains
+        # and losses, the two ratios, and the smaller of a face's two owners. Ours (H-6): the public-safe edges,
+        # the guard's common factor, and the use of this limiter between two conduction schemes at all.
         for i, j, delta in corrections[1]:
             for owner, incoming in ((i, delta),) if j is None else ((i, delta), (j, ar.neg(delta))):
                 ar.put(positive, owner, ar.op('add', positive[1][owner], incoming if ar.less(zero, incoming) else zero))
@@ -327,6 +371,12 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
             bottom, top = ar.op('multiply', c, bounds[0]), ar.op('multiply', c, bounds[1])
             if ar.less(e, bottom) or ar.less(top, e):
                 raise ValueError('Low state fails unchanged exact temperature bounds')
+            # H-6: public-safe edges, so the limited candidate passes the public check and the guard never contracts.
+            top, fell_top = _public_edge(ar, c, top, bounds, -math.inf)
+            top = e if ar.less(top, e) else top
+            bottom, fell_bottom = _public_edge(ar, c, bottom, bounds, math.inf)
+            bottom = ar.minimum(bottom, e)
+            fallbacks += fell_top+fell_bottom
             ar.put(up, i, ar.minimum(one, ar.op('divide', ar.op('subtract', top, e), positive[1][i])) if positive[1][i] else one)
             ar.put(down, i, ar.minimum(one, ar.op('divide', ar.op('subtract', bottom, e), negative[1][i])) if negative[1][i] else one)
         limited, limited_faces, limited_alphas = ar.copy(low), ar.array(nf), ar.array(nf)
@@ -345,12 +395,14 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
         energy, faces, alphas = limited[1], limited_faces[1], limited_alphas[1]
         branch = 'UNCHANGED_SIGNWISE_FCT_FALLBACK'
     energy, faces, alphas, final, guard = _public_guard(ar, low, energy, cap, low_faces, faces, alphas, bounds)
+    share = _share(ar, corrections[1], alphas)      # R-1: the final factors, after any guard theta
     # F-1 (step5-6-twice s4 row 1): the ledger of the returned state is tested by the issue (row 7), or by the
     # closed guard when it settles on theta 0 (row 5).
     if any(not ar.equal(q, low_faces[f][2]) for f, (_, j, q) in enumerate(faces) if j is None and f not in permitted):
         raise ArithmeticError('A fixed exterior transfer changed')
     evidence = dict(branch=branch, unchanged_bounds=bounds, full_candidate=full[1],
         full_candidate_check=full_check, final_check=final, public_rounding_contraction=guard,
+        public_edge_fallbacks=fallbacks, surviving_correction_share=share,
         exact_low_ledger_preserved=True, fixed_exterior_transfers_preserved=True,
         one_antisymmetric_transfer_per_physical_face=True,
         full_admission_preserves_all_permitted_high_face_transfers=all(
