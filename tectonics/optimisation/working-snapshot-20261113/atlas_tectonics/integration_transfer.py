@@ -2775,6 +2775,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
     face = np.array([keys[i][0] for i in chosen], dtype=np.int64)
     donor_bound, receiver_bound, ceiling = ({}, {}, {}) if bounds is None else bounds
     previous, slack = material._occupancy_allowance, np.zeros(len(endpoint.face_ids))
+    slack_terms = [[] for _ in endpoint.face_ids]
     into = {}
     for row, target in enumerate(rows.receiver):
         if target >= 0:
@@ -2794,12 +2795,14 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             for row in donors[source]:
                 target = rows.receiver[row]
                 if share and target >= 0 and target not in renamed:
-                    slack[target] += rows.area_m2[row]/total*share
+                    slack_terms[target].append(rows.area_m2[row]/total*share)
         elif name in new_index:
-            slack[new_index[name]] += float(previous[source])
+            slack_terms[new_index[name]].append(float(previous[source]))
     for target, value in receiver_bound.items():
         if target not in renamed:
-            slack[target] += value
+            slack_terms[target].append(value)
+    for target, terms in enumerate(slack_terms):
+        slack[target] = math.fsum(terms)
     for target, source in renamed.items():
         slack[target] = float(previous[source])
     for target, value in ceiling.items():

@@ -652,6 +652,7 @@ few per cent. The cell keeps an allowance of up to twice that, which governs eve
 later check of its rock against its area. A rename keeps the allowance unchanged, and
 a later redraw replaces it rather than adding to it. When a trench cuts a very thin
 cell, the interval can still be refused.
+The [working snapshot](../../optimisation/working-snapshot-20261113/README.md#source-fixes-after-the-reference) accurately sums each target allowance from the same rounded donor-share, retained-source and receiver-bound terms before applying the existing rename replacement and cap. Its focused issuer/store/restore control covers a constructed rounding edge, not full remapping or real-mesh frequency.
 If a
 source or destination is one of the saved history's
 finite stores, the amount is taken from or added to that store in the same save,

@@ -1,12 +1,6 @@
 # Working snapshot (first published 13 November 2026)
 
-Status: **WORKING NON-CANON**. This folder is a working snapshot of the optimisation package, published so the
-later work is visible on the review branch. It is not the reviewed folded package. The work made after the fold
-has not yet been reviewed, and nothing here claims scientific acceptance. The sections below describe what
-this folder's code does, read from the code itself, and say nothing about its correctness: only the
-repeated-check removals were reviewed, as built arms with focused tests, and no run on real data was cleared
-by those reviews. Paths are relative to `atlas_tectonics/`. For the reader, adoption and continuation method
-this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
+Status: **experimental source snapshot**. This folder publishes the later optimisation work on the review branch. It is not the reviewed folded package and has no scientific acceptance. The source fix below has its stated independent review and focused checks; that does not qualify the whole snapshot. Earlier diagnostic results remain attached to their original packages. Paths are relative to `atlas_tectonics/`. For adoption and continuation, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
 
 ## History
 
@@ -37,14 +31,14 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   limiter, counts of work left out of identifiers; see
   [the first result-moving break](#the-first-result-moving-break-16-november)).
 
-Each update is one commit, so its diff shows exactly what changed. The first five 15 November sections were read
+Each later source fix has its own commit, source tables and affected documentation. The first five 15 November sections were read
 from the code at `f29ca36`, the batch 2 section from the code at `9f5080c`, the next private batch from the code at `1e0643e` and the first result-moving break from the code at `25811eb`; the other sections were written for the 13 November contents, and their line
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
-none of the 15 and 16 November changes has a review record in this repository.
+the historical chain sections are not whole-snapshot review records. The later source fix has the bounded review and evidence described below.
 
 ## Contents
 
-- `atlas_tectonics/`: the public package and `_private`, copied byte for byte from the working arm, with the
+- `atlas_tectonics/`: the public package and `_private`, based on the issued first-break source plus the fix below, with the
   source-list files `_application_sources.json` and `_application_sources.sha256`.
 - Left out: the compiled compression library and compiled Python files.
 - `.gitattributes` keeps git from rewriting line endings in this folder.
@@ -54,7 +48,7 @@ none of the 15 and 16 November changes has a review record in this repository.
 `atlas_tectonics/_private/run_fresh_interval.py` line 1312: a machine-specific path to the real-input
 qualification folder is replaced by `Path(os.environ['ATLAS_REAL_INPUT_QUALIFICATION'])`. Because of that edit,
 this file's row in `_application_sources.json` does not match its bytes here. Every other file is identical to
-the arm.
+the corresponding reconstructed source composition. No new operational reference or installed runtime is issued here.
 
 ## One identity check per read batch
 
@@ -435,7 +429,7 @@ regenerated for every changed file.
 
 ### What was run
 
-The package as published here was run by a reference chain of eight steps and by a second chain that was killed
+The first-break package, before the later source fix below, was run by a reference chain of eight steps and by a second chain that was killed
 and resumed at three points. The second equals the first in every value; 83 identifiers differ, all from one
 identity that includes the run folder's path. Against the previous reference, compared cell by cell through the
 map from old to new identifiers, receipts and non-heat values agree and transport stocks differ by at most
@@ -444,6 +438,16 @@ change alone. That excess is explained and not removed: last-place differences i
 amplified by the accurate heat scheme in cells that hold almost no heat capacity
 ([issue #88](https://github.com/Atlantispy/atlas/issues/88), [issue #89](https://github.com/Atlantispy/atlas/issues/89)). The comparison was reviewed outside this repository and the
 heat difference recorded as explained, not equal. That is not scientific acceptance.
+
+## Source fixes after the reference
+
+These source changes are applied after the first-break package documented above. They are not a new joined second-break package. The reference and restart measurements above describe the original first-break bytes; they are not runs of these successors.
+
+### Accurately sum each target face allowance
+
+`integration_transfer._transferred` gathers the same rounded donor-share, retained-source and receiver-bound contributions, then uses one `math.fsum` per target. The direct allowance replacement for a rename and the later cap are unchanged. The stored allowance remains binary64 square metres per face; no tolerance or schema changes.
+
+Independent source review accepted the isolated change. The focused control exercised the complete allowance-producing source region and the actual sphere issuer, stored value and restore reader. Both candidate orders produced 384.0 m2 and the same acceptance; the previous sum and its mutant differed by two ULP and flipped that constructed decision. The control did not execute the surrounding geometry derivation or full transfer. Actual-mesh occurrence, the selected two-interval comparison and large-remap memory remain unqualified. No speed or whole-chain claim follows.
 
 ## Reader process census
 
