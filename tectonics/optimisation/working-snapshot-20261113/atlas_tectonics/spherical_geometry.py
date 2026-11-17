@@ -377,10 +377,18 @@ class SphericalGeometry:
         except GeometryError:
             try:a=self.in_chart(other.chart,limits=limits,budget=budget);b=other
             except GeometryError:
-                points=np.vstack((self.chart._unproject(shapely.get_coordinates(self._projected._geom)),
-                                  other.chart._unproject(shapely.get_coordinates(other._projected._geom))))
-                centre=np.sum(points,axis=0)
-                if not len(points) or np.linalg.norm(centre)==0:
+                points=np.empty((self.vertex_count+other.vertex_count,3))
+                count=0
+                for operand in (self,other):
+                    for coords,role in _rings(operand._projected._geom):
+                        if role:coords=coords[:-1]
+                        size=len(coords)
+                        points[count:count+size]=operand.chart._unproject(coords)
+                        count+=size
+                        del coords
+                centre=np.array([math.fsum(points[:count,j]) for j in range(3)])
+                del points
+                if not count or np.linalg.norm(centre)==0:
                     raise GeometryError('no supported common hemisphere; split the operation into explicit patches')
                 joint=SphericalChart(self.chart.sphere,tuple(centre),max(self.chart.min_cosine,other.chart.min_cosine))
                 a=self.in_chart(joint,limits=limits,budget=budget);b=other.in_chart(joint,limits=limits,budget=budget)

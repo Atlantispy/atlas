@@ -67,6 +67,24 @@ Several patches can form one large or disconnected plate. A complete spherical
 atlas checks opposite edge pairing, junction order, connectivity, Euler's relation
 and an area sum of `4π` steradians. No area rescaling repairs a failed closure.
 
+When neither operand fits the other's chart, the spherical overlay tries one
+joint chart. Its centre sums the individual rounded Cartesian vertex coordinates
+with `math.fsum`. Each polygon shell and hole omits exactly its repeated closing
+sample: that sample stores an edge, not another physical vertex. Hole vertices
+still count positively. Points, line samples and repeated positions belonging to
+different members or operands retain their original multiplicities. No global
+deduplication changes the shapes. A bounded vector buffer is released before the
+joint recharts and geometric operation; existing conditioning, limits, operand
+direction and refusal rules remain.
+
+On two asymmetric triangles, the selected controls reach both original chart
+failures and then successful joint-chart intersection and directed difference,
+under both cyclic starts. They compare the six-edge intersection, three remainder
+triangles, classifications, measures and area partition. The old cycled input
+refuses on conditioning. Positive holes and genuine point/line/member
+multiplicities are covered by source review, not by a positive-hole execution.
+These bounded results do not qualify a joined package or all spherical overlays.
+
 An exact intersection can be a mixture: an area, a line where two outlines only
 touch, and single points. Atlas keeps such a mixture as one collection and holds
 it to one rule, so that nothing in it is measured twice. Its areas must not

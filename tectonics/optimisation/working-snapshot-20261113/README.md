@@ -473,6 +473,23 @@ remains, without a whole-suite PASS. Actual-parent composition, publication and
 scientific acceptance remain separate. Gamma representation/admission, physical
 ordering and A40 are outside this accepted scope.
 
+### Choose a joint-chart centre from physical vertices
+
+When neither operand fits the other's chart, `spherical_geometry.py` sums the
+individual rounded Cartesian vertex coordinates with `math.fsum` for one joint
+centre. It omits exactly each polygon shell or hole's repeated closing sample,
+retains positive hole vertices and point/line/member multiplicities, and releases
+the bounded vector buffer before recharting. Operand direction, conditioning,
+limits and validation remain. The [foundations guide](../../docs/how-it-works/01-foundations.md)
+describes this fallback.
+
+Independent review accepted the isolated source. Two asymmetric triangles under
+both cyclic starts reach the original conditioning failures and then successful
+joint-chart intersection and directed difference, with matched centre terms,
+classifications, measures and area partition. Positive holes and genuine
+point/line/member multiplicities have source review, without a positive-hole
+execution. These bounded controls do not qualify a joined package or all overlays.
+
 ### Attribute kept-worker RSS to the batch it served
 
 `integration_parallel_dispatch.py` stamps the existing post-collection resource report with its batch name. The parent clears RSS when a batch starts and uses a report for recycling only when that name matches the batch it served. If replacement fails and the previous report is reread, current RSS stays unknown and the existing recycle rule applies. The live memory guard, thresholds, timing marks and result receipt are unchanged.
