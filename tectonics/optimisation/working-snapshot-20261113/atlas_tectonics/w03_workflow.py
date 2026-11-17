@@ -299,7 +299,7 @@ def _state(material, compaction, pore, width, reservoir, total_fluid, heights, b
         if (type(heights) is not tuple or len(heights) != material.grid.cells
                 or any(not math.isfinite(x) or x <= 0 for x in heights)):
             raise TectonicsError('explicit positive initial sediment heights required')
-        current_h = np.sum(h, axis=0)
+        current_h = np.array([math.fsum(values) for values in h.T])
         limit = binding.cooling_model.thickness_m*binding.support_parameters.max_relative_deflection
         if np.any(np.abs(current_h-np.asarray(heights)) > limit):
             raise TectonicsError('sediment geometry change exceeds selected fixed-plate envelope')

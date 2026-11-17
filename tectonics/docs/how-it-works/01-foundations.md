@@ -476,6 +476,18 @@ route fixes area and ordering even though the lower-level compaction helper can
 handle area changes. Temperature-dependent compaction, lateral remixing and heat
 carried by pore water remain excluded.
 
+In the nondefault snapshot, each column's cohort thicknesses use one `math.fsum` before the same
+fixed-plate check. W04's reference and current thickness reductions use the
+matching rule before their existing subtraction and sediment/water calculations;
+the paired [sediment-total correction](../../optimisation/working-snapshot-20261113/README.md#keep-reference-and-current-sediment-totals-on-the-same-sum)
+changes no thermal, compaction, load or water limit. Independent review accepts
+all three paired sites and one complete five-cell comparison in both physical
+catalogue orders, including the actual wet outputs. The fixed case passes
+41 comparisons; the original sums produce exactly seven predicted differences
+with all 29 physical-input comparisons unchanged and no other or signature
+failure. This is selected local qualification, not general workflow or
+scientific acceptance.
+
 [Workflow checks](../../tests/test_w03_workflow.py) challenge independent accounts,
 incompatible thermal/source inputs, insufficient water, unloading history and
 restored continuation. The [recorded assessment](../W03_WORKFLOW.md#obtained-evidence-22-september-2026)
@@ -493,6 +505,10 @@ or reservoir-water phase has an explicit density. Unoccupied volume contains the
 declared replacement material. The mass difference per area, multiplied by gravity,
 is downward pressure in Pa. Changing replacement density matters as well as changing
 occupied volume.
+
+For the nondefault snapshot's sediment connection, reference and current cohort thicknesses each
+receive one accurate sum over the same rounded inputs, then the original
+current-minus-reference subtraction. This keeps the reference and current thickness calculations paired; it does not change replacement density or the water calculation.
 
 If expelled pore water is replaced by identical water, their weight changes cancel.
 Replacement by air unloads the column. Optional thermal pressure uses fixed coverage

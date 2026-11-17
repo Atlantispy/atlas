@@ -58,6 +58,15 @@ refuse. Thermal support is owned by `column-isostasy`; no second thermal load is
 added to compaction, W02 mass or already-applied displacement. Compaction depths
 are measured below the sediment top; they are not another isostatic displacement.
 
+The nondefault snapshot's prepared cohort-order correction totals each column's original thicknesses
+with one fsum before the same fixed-plate check. It is paired with W04's
+reference/current bulk sums; no limit changes. Its [source and coverage scope](../optimisation/working-snapshot-20261113/README.md#keep-reference-and-current-sediment-totals-on-the-same-sum)
+records independent acceptance of all three paired sites and the complete
+selected five-cell comparison in both physical catalogue orders. The fixed
+case passes all 41 comparisons; the original sums show exactly seven
+predicted differences with identical physical inputs and no other or
+signature failure. Wider workflow and scientific acceptance remain separate.
+
 ## Physical scope and exclusions
 
 This is a reduced, explicitly partitioned model. The finite thermal plate retains

@@ -676,6 +676,24 @@ and the original-rate solver law lie outside the local acceptance. Original
 rates, exact signed net and matched debit-credit-receipt remain the physical
 target; this verdict does not qualify or select a general replacement.
 
+### Keep reference and current sediment totals on the same sum
+
+At the three W03/W04 thickness reductions, each column uses one `math.fsum`
+over the same cohort thicknesses. W03 keeps its existing fixed-plate limit.
+W04 stores the reference bulk and subtracts it from the independently summed
+current bulk before the original sediment/water calculation. The [W03 route](../../docs/W03_WORKFLOW.md#evolution-and-accounts)
+and both W04 copies are one paired source patch; no gate or tolerance changes.
+Independent review accepts all three paired sites and the complete selected
+five-cell case in both physical catalogue orders. All 41 fixed comparisons
+pass; the 29 physical-input comparisons are identical between the fixed and
+original packages. The original sums produce exactly seven predicted
+reduction/output differences, with no other or signature failure. The case
+reaches actual drained-reservoir exchange at zero net physical load, the
+retained-reference and inferred-current W04 bulk, and all eight wet outputs.
+It does not test storage or restart recovery. This selected local qualification
+establishes no general, whole-module or scientific acceptance, or wider time or
+memory bound.
+
 ### Sum the same small-face vertex vectors before normalising
 
 Both small-diagram centre branches use one `math.fsum` per Cartesian

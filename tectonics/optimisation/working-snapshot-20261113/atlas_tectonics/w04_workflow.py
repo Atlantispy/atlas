@@ -349,7 +349,8 @@ class PreparedW04Support:
                 reference.compaction.conditions.pore_fluid_density_kg_m3,_id(asdict(reference.compaction.conditions))))
             self.phases = tuple(phases)
             self._reference_load = self._load_snapshot(reference,reference_surface,cancel)
-            self._reference_bulk = np.sum(reference.material.thickness_m,axis=0).tobytes()
+            self._reference_bulk = np.array([
+                math.fsum(values) for values in reference.material.thickness_m.T]).tobytes()
             self.plan_id = _id(dict(schema='atlas.w04-projection.v1',reference=reference.state_id,
                 surface=reference_surface.input_id,policy=asdict(policy),geometry=geometry,
                 exterior=None if exterior is None else exterior.input_id,
@@ -458,7 +459,8 @@ class PreparedW04Support:
             if (maxima[1] > self.policy.max_abs_slope or maxima[2] > self.policy.max_bending_strain or
                     maxima[0] > b.cooling_model.thickness_m*b.support_parameters.max_relative_deflection):
                 raise TectonicsError('W04 displacement exceeds selected linear/fixed-plate validity envelope')
-            bulk_delta = np.sum(current.material.thickness_m,axis=0)-np.frombuffer(self._reference_bulk,dtype=np.float64)
+            bulk_delta = (np.array([math.fsum(values) for values in current.material.thickness_m.T])-
+                np.frombuffer(self._reference_bulk,dtype=np.float64))
             sediment = bulk_delta-w
             water = sediment+_divide(surface.reservoir_volume_m3-self.reference_surface.reservoir_volume_m3,
                                      self.support.area_m2,'W04 water-level change')
