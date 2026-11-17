@@ -299,8 +299,6 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
         for kind, descriptor in selected.items():
             child = root.field(kind)
             if proofs is not None:
-                # identity()'s projection guard, kept: stream_identity has none of its own.
-                require(child._fields is None, 'projection has no implicit full-record identity')
                 scan = WG.OptionalScan()
                 identity = RECIPES.stream_identity(child, lambda: _check(cancel), feed=scan.feed)
                 require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},

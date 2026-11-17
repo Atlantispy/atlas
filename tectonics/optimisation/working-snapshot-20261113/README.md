@@ -1293,6 +1293,16 @@ General retained-traceback, maximum-shape, production active-parent,
 coupled-trajectory, universal RSS, whole-chain, performance and scientific
 qualification remain open.
 
+### Authenticate collected record proofs at the record reader
+
+The spatial record collector calls `stream_identity`, which reaches
+`RecordRef.iter_json` and refuses a projected reference before its proof enters
+the collector. Removing the collector's duplicate projection check leaves the
+descriptor byte/digest match, provenance and original publication route intact.
+The retained 24 fixture observations cover proof adoption, changed or corrupt
+descriptors and streams, store/scope boundaries and projection refusal; they
+do not qualify a joined interval.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
