@@ -351,13 +351,17 @@ frame disappears before the returned result graph replaces its entire stack.
                             boundary_point_faces=temperatures, boundary_power_faces=powers,
                             two_point_rows=small['exact_rows'], conductivity=k, budget=budget,
                             cancelled=guarded))
+                        while True:
+                            thread.join(timeout=FUNCTIONS.PARALLEL.POLL)
+                            if not thread.is_alive():
+                                break
+                            check()
                     except BaseException:
                         stop.set()
                         thread.join()
                         if box and not isinstance(box[0], BaseException):
                             retain(box[0])        # a finished predictor stays in this frame's custody
                         raise
-                    thread.join()
                     if not isinstance(box[0], BaseException):
                         retain(box[0])            # custody first: the fresh guard below may raise
                     check()                       # the caller's guard, fresh, before the result is used

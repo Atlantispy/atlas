@@ -37,8 +37,8 @@ REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
 _PINS = {
     'private_heat_grouped_account_r1.py': '788512e23568e4b169359186b9332fc56ada707be06003ddb097295afd4ac0b0',
     'private_heat_native_issuer_r13.py': '341dd427a504f64d854beb5408cc3382522786c84cb99b6f6891f08b42a6d43f',
-    'private_heat_checkpoint_consumer_r10.py': '0ef058ad6ac2731d5e8b37dcb543b34ed5b46ff743c61456fab7da934f40ffcf',
-    'private_heat_forward_kernel_r13.py': 'dab6b213eadaa1d5a5a7c0cc1b997bfc9f8d4f328d8db8de29aa66680a766ff4',
+    'private_heat_checkpoint_consumer_r10.py': '2943be8cc7d9e9646901bce7dc7186e29a1b30d2e0b06b54eb079db2c03f34b0',
+    'private_heat_forward_kernel_r13.py': '84de9ea3e597580152b88f3ffd3b143f8e4695202c09d889ed3098f482ea2917',
 }
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 _HEADER = ('schema', 'method_id', 'plan_id', 'state_id', 'duration_s', 'call_id', 'geometry_id',

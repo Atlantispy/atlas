@@ -331,12 +331,18 @@ canonical, so the returned fractions are the same values either way.
 
 ### The heat predictor beside the reconstruction (H9)
 
-The heat forward kernel runs the low predictor on its own thread beside the reconstruction instead of after it
-(`private_heat_forward_kernel_r13.py`, the `heat-predictor` thread at line 263). Its working set is reserved on
-the run's ledger first; the thread starts with default numeric contexts; it runs beside only where the pool can
-start workers, otherwise in the old order; a predictor failure ends the reconstruction, and the caller's guard
-is checked fresh before the result is used. `private_heat_stage_lifetime_r3.py` lets the completed output be
-taken from the side ledger the predictor ran on.
+The heat forward kernel runs the low predictor on its own thread beside the reconstruction
+(`private_heat_forward_kernel_r13.py`). It reserves the predictor's working set on the run's
+ledger before starting the thread with default numeric contexts. The overlap uses the
+eligible metered route. A predictor failure still ends reconstruction.
+
+After reconstruction and capture, the caller waits for the predictor in 50 ms intervals.
+While it is live, the caller services the existing guard and any due meter read. If
+reconstruction or the live-wait guard raises, the caller signals the stop event, joins
+the predictor and propagates the original error. The work scope keeps any completed
+predictor result. On success it takes custody before
+the fresh guard check and event replay, then adopts the result from the side ledger through
+`private_heat_stage_lifetime_r3.py`. The 128 MiB reservation covers both the wait and cleanup.
 
 The driver marks its phases by watching for the start of certain functions, the low predictor among them. The
 geometry observer now records a mark only on the thread that created it (`private_heat_geometry_observer_r1.py`
