@@ -9,8 +9,8 @@ The record is read by the replay tool's door mode only; no part of the chain rea
 float(v), as FINISH takes them; exact values as [numerator, denominator] in hex, through FINISH's own conversion
 (private_heat_finish_arithmetic_r1.rational), which reads such a pair back to the same number. Only a disk error is
 caught (recorded in ``last``; the heat goes on); any other error stops the heat, as code inside it should.
-r2 (Reviewer N-1 to N-3): the boundary is a list in the order the heat held it; a raw entry's middle field of a kind
-not known here stops (it would reach the replay as text); a booking the budget refuses skips the record, noted in
+The boundary and raw face entries retain their supplied order and values. A booking the budget refuses skips
+the record, noted in
 ``last`` (FINISH's own first booking is far smaller, so the door must not be what stops the heat).
 r3 (the Reviewer's B-1, ruled in the design 878db1f0): the booking is no fixed figure. Before anything is built, offer
 sums the lengths of the texts it will write (the exact values' hex digits from their bit lengths, the floats' hex, the
@@ -45,12 +45,6 @@ def _exact(value):
     return [format(int(q.numerator), 'x'), format(int(q.denominator), 'x')]
 
 
-def _plain(value):
-    if value is None or type(value) in (str, int):
-        return value
-    raise TypeError(f'heat door: a raw face entry holds a {type(value).__name__}, which the record cannot keep exactly')
-
-
 def _hex_length(value):
     q = ARITHMETIC.rational(value)
     return sum(max(1, (abs(int(n)).bit_length() + 3) // 4) + (n < 0) for n in (q.numerator, q.denominator))
@@ -73,7 +67,7 @@ def _size(old, capacity, source, boundary, face_ids, low, high, bindings, target
 def _view(view, energy):
     evidence = view['evidence']
     out = {'evidence': {'absolute_target_decimal': _exact(evidence['absolute_target_decimal']),
-                        'raw_outward_energy_decimal': [[[int(i), _plain(middle), _exact(e)] for i, middle, e in raw]
+                        'raw_outward_energy_decimal': [[[int(i), middle, _exact(e)] for i, middle, e in raw]
                                                        for raw in evidence['raw_outward_energy_decimal']]}}
     if energy:
         out['energy'] = [_exact(e) for e in view['energy']]

@@ -672,6 +672,46 @@
       ]
     },
     {
+      "id": "atlas.snapshot.heat.finish-recorder.raw-incidence-type",
+      "purpose": "Checked the type of each original raw incidence value a recorder encoded in its low and high input views.",
+      "module": "Working snapshot optional heat finish recorder",
+      "process": "Optional capture immediately before the mimetic heat finish",
+      "entry_point": "Recorder offer after ORDER.finish_inputs and before FINISH.finish",
+      "owner": "Mimetic heat snapshot owner",
+      "consumers": [
+        "Optional heat capture",
+        "Heat finish replay"
+      ],
+      "classification": "DEBUG_ONLY",
+      "classification_reason": "The selected recorder receives geometry-owned incidence signs through the finish input builder. The prior gate checked an invariant of that producer.",
+      "classification_refs": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#keep-the-heat-finish-inputs-for-diagnostic-replay",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "Formerly each raw low or high face entry when capture was armed.",
+        "release_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "debug_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "actual_enabled": "OFF_REMOVED",
+        "control": "The gate is absent in the selected source. Previously it ran whenever the armed recorder encoded the input. Deployed Release state is unknown."
+      },
+      "on_failure": "Historical TypeError propagated before the finish. The selected recorder carries the producer's value through directly.",
+      "affected_by": [
+        "Geometry construction or incidence representation",
+        "Finish input producer or recorder callers",
+        "A new caller boundary for external input"
+      ],
+      "evidence": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#keep-the-heat-finish-inputs-for-diagnostic-replay",
+        "tectonics/docs/how-it-works/06-physical-integration.md#save-diagnostic-operands-without-changing-their-logical-identity"
+      ],
+      "retirement_basis": "Source and caller review traced the original signs to the geometry constructors and the sole finish input builder. Faithful encoding, booking and replay input checks have their existing boundaries.",
+      "cost_note": "A type check per low and high raw incidence was removed. Elapsed cost was not measured."
+    },
+    {
       "id": "atlas.publication.plan06-export",
       "purpose": "Qualify the changed Plan06 public document inventory, exact current publication digests, disclosed transformations and privacy without executing its scientific route.",
       "module": "tectonics/tests/test_plan06_publication.py",

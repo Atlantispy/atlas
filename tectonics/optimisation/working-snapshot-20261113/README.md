@@ -1320,7 +1320,9 @@ An optional recorder offers the same ten inputs immediately before `FINISH.finis
 old enthalpy, capacity, time step, source, boundary, face IDs, low/high views,
 source bindings and exact target. Floats keep their consumed binary64 bits as
 hex, exact values use hex rational pairs, and boundary and face-owner order stay
-intact. The recorder's code enters the heat source and loaded-module identity;
+intact. The recorder takes the original incidence values from the finish inputs.
+The geometry constructors already establish their signs. The recorder's code
+enters the heat source and loaded-module identity;
 per-attempt folder/context data remain outside that code identity.
 
 The driver arms it in the `before_advance` factory. An unset recorder returns;

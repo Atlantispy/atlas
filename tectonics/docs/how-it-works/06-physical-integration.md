@@ -1775,6 +1775,11 @@ execution. The [combined selection](../../optimisation/workbench/combined-runtim
 records capture reservation and entry wiring; fold and installed delivery remain
 separate. Historical captures and checkpoints are not silently rebound.
 
+The optional [heat finish recorder](../../optimisation/working-snapshot-20261113/README.md#keep-the-heat-finish-inputs-for-diagnostic-replay)
+keeps the original incidence values and order supplied by the finish inputs.
+The geometry constructors establish the signs. Replay validates the saved inputs
+before comparing the result with stored enthalpy and temperature.
+
 ### Read only the carried-start fields a spatial operation needs
 
 [Plan21](../../optimisation/workbench/plan21/README.md) selects lazy field reads
