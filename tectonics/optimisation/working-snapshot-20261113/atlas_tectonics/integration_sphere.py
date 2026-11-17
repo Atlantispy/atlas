@@ -708,24 +708,53 @@ def _carrier(boundary):
     return boundary.right_plate_id if boundary.carrier_side == 'right' else boundary.left_plate_id
 
 
+def _vector_key(vector):
+    """Numerical coordinate order, then positive zero before negative zero."""
+    values = tuple(float(value) for value in vector)
+    return values, tuple(math.copysign(1., value) < 0 for value in values)
+
+
+def _junction_ends(junction, records, points, lookup):
+    """Record ends ordered by their outward adjacent world positions."""
+    def key(end):
+        boundary_id, role = end
+        chain = records[boundary_id].vertex_ids
+        return _vector_key(points[lookup[chain[1] if role == 'start' else chain[-2]]])
+    return sorted(junction.boundary_ends, key=key)
+
+
 def _stable_pole(a, b):
     """The unit pole of the great circle through two directions, formed stably: normalise((a + b) x (b - a))."""
     pole = np.cross(a+b, b-a)
     return pole/np.linalg.norm(pole)
 
 
-def _trace_pole(trace):
+def _canonical_pole(pole):
+    """Canonical sign and zeros for a newly formed undirected line only."""
+    if next((value for value in pole if value != 0), 0.) < 0:
+        pole = -pole
+    return np.where(pole == 0, 0., pole)
+
+
+def _trace_pole(trace, *, closed=False):
     """The pole of a trace that is one great circle, or None where it bends.
 
-    Formed stably from its first vertex and the vertex farthest from it within 120 degrees (so never from a short or a
-    near-antipodal pair); the trace is one circle when every vertex lies within the existing 64 eps band of it.
+    Open traces keep their first vertex; a closed trace uses its least physical vertex. The other point is the
+    farthest within 120 degrees, with physical position deciding an exact distance tie. The trace is one circle when
+    every vertex lies within the existing 64 eps band of the resulting pole.
     """
-    chords = np.linalg.norm(trace-trace[0], axis=1)
+    anchor = trace[min(range(len(trace)), key=lambda i: _vector_key(trace[i]))] if closed else trace[0]
+    chords = np.linalg.norm(trace-anchor, axis=1)
     usable = np.where(chords <= math.sqrt(3.), chords, -1.)
     far = int(np.argmax(usable))
     if usable[far] <= ATTACHMENT_BAND_RAD:
         return None
-    pole = _stable_pole(trace[0], trace[far])
+    tied = np.flatnonzero(usable == usable[far])
+    if len(tied) > 1:
+        far = min(tied, key=lambda i: _vector_key(trace[i]))
+    # A closed trace's physical anchor is already the least endpoint.
+    a, b = (anchor, trace[far]) if closed else sorted((anchor, trace[far]), key=_vector_key)
+    pole = _canonical_pole(_stable_pole(a, b))
     return pole if float(np.max(np.abs(trace @ pole))) <= ATTACHMENT_BAND_RAD else None
 
 
@@ -754,26 +783,40 @@ def _end_poles(names, points, boundaries, junctions):
     # A transform that declares its carrier keeps its trace's circle, formed here once, so that C6 is judged against
     # the declared trace however far the far plate has slid (I03a-2 C6, cumulative; round 1, F3).
     for key in sorted(_trace_keys(boundaries)):
-        pole = _trace_pole(points[[lookup[name] for name in record[key[0]].vertex_ids]])
+        boundary = record[key[0]]
+        pole = _trace_pole(points[[lookup[name] for name in boundary.vertex_ids]], closed=boundary.closed)
         if pole is not None:
             poles[key] = pole
     for junction in junctions:
         here = points[lookup[junction.vertex_id]]
         ends = []
-        for boundary_id, role in junction.boundary_ends:
+        for boundary_id, role in _junction_ends(junction, record, points, lookup):
             chain = record[boundary_id].vertex_ids
             beside = points[lookup[chain[1] if role == 'start' else chain[-2]]]
-            ends.append(((boundary_id, role), beside))
-            poles[boundary_id, role] = _stable_pole(here, beside)
-        for i, (first, near) in enumerate(ends):
-            for second, far in ends[i+1:]:
+            a, b = sorted((here, beside), key=_vector_key)
+            cross = np.cross(a+b, b-a)
+            norm = float(np.linalg.norm(cross))
+            pole = _canonical_pole(cross/norm)
+            ends.append(((boundary_id, role), beside, norm, pole, a, b))
+            poles[boundary_id, role] = pole
+        for i, (first, near, near_norm, near_pole, near_a, near_b) in enumerate(ends):
+            for second, far, far_norm, far_pole, far_a, far_b in ends[i+1:]:
                 if _carrier(record[first[0]]) == _carrier(record[second[0]]):
                     # Maximise sin(angle), the pole's conditioning, without an extra acceptance threshold. The
                     # junction's own end segments are valid minor arcs even when its neighbours are antipodal.
-                    a, b, remaining = max(((near, far, here), (here, near, far), (here, far, near)),
-                                          key=lambda triple: float(np.linalg.norm(
-                                              np.cross(triple[0]+triple[1], triple[1]-triple[0]))))
-                    line = _stable_pole(a, b)
+                    # Keep the original end data even if an earlier pair has replaced its output pole.
+                    a, b = sorted((near, far), key=_vector_key)
+                    cross = np.cross(a+b, b-a)
+                    scored = [(float(np.linalg.norm(cross)), a, b, here, None),
+                              (near_norm, near_a, near_b, far, near_pole),
+                              (far_norm, far_a, far_b, near, far_pole)]
+                    best = max(scored, key=lambda item: item[0])
+                    tied = [item for item in scored if item[0] == best[0]]
+                    if len(tied) > 1:
+                        best = min(tied, key=lambda item: (_vector_key(item[1]), _vector_key(item[2])))
+                    norm, _, _, remaining, line = best
+                    if line is None:
+                        line = _canonical_pole(cross/norm)
                     if abs(float(line @ remaining)) <= ATTACHMENT_BAND_RAD:
                         poles[first] = poles[second] = line
     return tuple(sorted((key, tuple(float(x) for x in value)) for key, value in poles.items()))

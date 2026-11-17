@@ -1008,6 +1008,15 @@ separate reduced I04 feedback connection in section 4 exercises the joined plate
 balance within its stated fixture scope. The [method document](../I05_MOVING_STATE.md)
 records the equations, inputs, checks, limits and sources.
 
+New undirected line poles use physical conditioning ties and a fixed sign/zero
+representation in the declared frame. Original segment data is retained once
+while selecting a shared same-carrier line. Directed suture and material-edge
+operations, old stored frames and declared side roles keep their meanings.
+Retained external qualification accepts 20 formation/stored-pole comparisons
+and 12 reached group/row/RHS/matrix/solve comparisons; eight persisting/tilted
+comparisons remain partial because they reach no advanced reader. Frame
+transport, full-step/event, paths and mixed generation remain unqualified.
+
 ### Hand part of the network to a regional model and take it back
 
 A regional model, such as the three-dimensional solver of section 4, works on a box

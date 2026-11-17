@@ -1193,6 +1193,17 @@ resident memory. Joined shrinking trajectories, whole-module/general W08 and
 scientific acceptance remain open. The shared finite-sum support ships with this
 first consuming fix; later consumers must bind its exact source.
 
+### Keep undirected line conventions away from directed sutures
+
+New undirected poles have physical conditioning ties and canonical sign/zeros;
+same-carrier end selection retains original segment data rather than rescoring
+overwritten outputs. The [I03 explanation](../../docs/I03_SPHERICAL_NETWORK.md#r3-4-moving-boundaries-and-junctions)
+preserves directed suture/material-edge helpers, stored frames, roles and bands.
+Retained external qualification accepts 20 formation/stored-pole and 12 actual
+advanced-reader comparisons; eight persisting/tilted comparisons have no reader
+verdict. Carrier-frame/full-step/event/path and mixed-generation outcomes remain
+unqualified.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

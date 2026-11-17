@@ -366,7 +366,7 @@ even for coaxial motion. Nothing refuses such a stage, which is far beyond plate
 **Transforms (D6, C6).** The trace is rigid in its carrier's frame and its vertices are kept there. Plates whose
 relative pole is not the pole of the trace's great circle cannot slip exactly along a minor arc. At declaration a
 transform that declares its carrier keeps its trace's great circle, with the pole formed stably as
-`normalise((a+b) × (b-a))` from the trace's first vertex and the vertex farthest from it within 120°. The trace is one
+`normalise((a+b) × (b-a))` from the declared first vertex of an open trace, or the least physical vertex of a closed trace, and the farthest eligible vertex within 120°. Exact conditioning ties use physical positions. Newly formed undirected poles take the sign whose first nonzero coordinate is positive, with canonical exact zeros. Directed suture and material-edge operations keep their directed helper; declared chain orientation and side roles are unchanged. The trace is one
 circle when every vertex lies within the band of it. C6 is judged on the far plate's **total** frame relative to the
 carrier's, `F_carrier⁻¹ F_far` after the interval. Every trace vertex, carried by that rotation, must lie within the
 existing 64 ε band of the stored circle; on a trace that is not one circle, it must lie within the band of where it
@@ -502,6 +502,19 @@ D1-b traversal retain their shared-old-corner construction.
 there (not accessed). M1 and the construction are derived here; they are not taken from plate-reconstruction
 software. The bounds proposal and the coordinator's approval record give the derivations and the approval's
 conditions.
+
+For same-carrier junction ends, retain each original segment's score, ordered
+endpoints and unit pole independently of output assignments. Score only the
+near-to-far candidate anew, then select among the same three conditioning
+candidates with physical position ties and the correct third-point band test.
+Reuse a selected original segment pole. Earlier output writes cannot change that
+retained segment data. Existing stored poles/frames are not rewritten. The
+coordinate-sign convention is frame-dependent; marginal bent traces,
+incompatible multi-end writes, event/path and mixed-generation grouping retain
+their qualification limits. Retained external qualification accepts all 20
+formation/stored-pole comparisons and 12 actually reached advanced-reader
+comparisons. Eight persisting/tilted comparisons have no advanced calls and
+remain partial; no carrier-frame transport or full-step/event proof follows.
 
 #### Ridge-transform staircase seam extension (I04 repair)
 
