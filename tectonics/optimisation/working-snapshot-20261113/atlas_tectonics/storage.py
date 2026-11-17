@@ -28,6 +28,7 @@ from typing import Mapping
 import numpy as np
 
 from .resources import WorkBudget, select_budget, reserve_budgets
+from . import _w08_history_funding as _history
 
 
 class StoreError(ValueError):
@@ -402,6 +403,9 @@ class ArrayStore:
             return self._budget.reserve(count, category=category)
         return reserve_budgets(count, self._budget, select_budget(budget), category=category)
 
+    def _history_roots(self, budget):
+        return (self._budget,) if budget is None else (self._budget, select_budget(budget))
+
     def resource_requirements(self):
         """Configured capacities/allowances, not measured RSS or free-disk checks.
 
@@ -468,7 +472,7 @@ class ArrayStore:
             release_boundary()
 
     @contextmanager
-    def _read_scope(self, *, budget=None):
+    def _read_scope(self, *, budget=None, _history_manifest=False):
         """Pin one SQLite snapshot before trusting validated in-memory payloads.
 
         data_version catches other connections; total_changes catches direct SQL
@@ -479,13 +483,19 @@ class ArrayStore:
         with self._lock:
             self._live()
             owner = not self._db.in_transaction
+            funding = None
+            if getattr(self, '_w08_history_holds', None) is not None:
+                funding = _history.ManifestFunds(*self._history_roots(budget))
             if owner:
                 self._session_boundary()
             reservation = None
             if owner:
-                reservation = self._workspace(self._read_work_bytes(), budget,
-                                              category="store-read")
-                reservation.__enter__()
+                if funding is None:
+                    reservation = self._workspace(self._read_work_bytes(), budget,
+                                                  category="store-read")
+                    reservation.__enter__()
+                else:
+                    funding.enter(self._read_work_bytes())
             try:
                 if owner:
                     self._db.execute('BEGIN')
@@ -499,7 +509,11 @@ class ArrayStore:
                 if version != self._cache_version or changes != self._cache_changes:
                     self._clear_caches()
                     self._cache_version, self._cache_changes = version, changes
-                yield
+                if _history_manifest and funding is not None:
+                    with _history.bind(self, '_w08_history_read', funding):
+                        yield funding
+                else:
+                    yield funding
             except sqlite3.Error as exc:
                 raise _database_error(exc, 'storage read transaction failed') from exc
             finally:
@@ -718,10 +732,19 @@ class ArrayStore:
             raise StoreError('invalid manifest record types')
         if row[0] > self.limits.max_manifest_bytes:
             raise StoreError('oversized manifest')
+        funding = getattr(self, '_w08_history_read', None)
+        if funding is not None:
+            funding.before_fetch(row[0])
         body, digest = self._db.execute('SELECT body,digest FROM snapshots WHERE id=?', (key,)).fetchone()
         if _hash(body) != digest:
             raise StoreError('manifest checksum mismatch')
+        if funding is not None:
+            del row, digest
+            funding.before_parse(len(body))
         m = _parse(body)
+        if funding is not None:
+            del body
+            funding.parsed()
         if not isinstance(m, dict) or set(m) not in ({'schema','invocation','arrays','metadata'},
                 {'schema','invocation','arrays','metadata','execution_mode'}) or m['schema'] != _SCHEMA or m['invocation'] != key:
             raise StoreError('incompatible manifest')
@@ -812,6 +835,11 @@ class ArrayStore:
         Mutable input arrays must stay unchanged until this call returns.
         """
         from .reuse import execution_mode, release_boundary
+        history_roots = (self._history_roots(budget)
+                         if getattr(self, '_w08_history_holds', None) is not None else ())
+        if history_roots:
+            _write_inputs = _history.Hold(_history.SESSION+_history.NUMERIC, *history_roots,
+                                          category='w08-store-write-inputs')
         self._session_boundary()
         _sha(invocation)
         if publication_check is not None and not callable(publication_check):
@@ -819,10 +847,19 @@ class ArrayStore:
         if not isinstance(arrays, Mapping) or not arrays:
             raise StoreError('nonempty array mapping required')
         # Freeze metadata, not arbitrary object graphs or caller array payloads.
+        if history_roots:
+            encoded = _history.Hold(_history.ENCODE+_history.BODY, *history_roots,
+                                     category='w08-store-metadata-bytes')
         meta_bytes = _json({} if metadata is None else metadata)
         if len(meta_bytes) > self.limits.max_manifest_bytes:
             raise StoreError('metadata exceeds limit')
+        if history_roots:
+            encoded.resize(64+len(meta_bytes))
+            frozen_metadata = _history.Hold(_history.GRAPH+_history.PARSE, *history_roots,
+                                             category='w08-store-metadata-freeze')
         metadata = _parse(meta_bytes)
+        if history_roots:
+            frozen_metadata.resize(_history.GRAPH)
         values = dict(arrays)
         for name in values:
             if type(name) is not str or not name or len(name) > 256:
@@ -858,7 +895,9 @@ class ArrayStore:
         projected_manifest = len(meta_bytes) + reference_count * 128 + len(values) * 4096 + 1024
         work = self._write_work_bytes(reference_count,
                                       min(projected_manifest, self.limits.max_manifest_bytes))
-        with self._preparing, self._workspace(work, budget, category="store-stage"), tempfile.SpooledTemporaryFile(
+        stage = (_history.retained_context(work, *history_roots, category='store-stage') if history_roots
+                 else self._workspace(work, budget, category='store-stage'))
+        with self._preparing, stage as _stage_funds, tempfile.SpooledTemporaryFile(
                 max_size=self.limits.staging_memory_bytes, mode='w+b', dir=self.path.parent) as spool:
             check_cancel()
             started = time.perf_counter()
@@ -893,11 +932,12 @@ class ArrayStore:
                     except sqlite3.Error as exc:
                         raise _database_error(exc, 'storage preparation failed; no snapshot published') from exc
                 if exists:
-                    with self._read_scope():
+                    with self._read_scope() as hit_funds:
                         if self._chunk(key, expected_dtype=dt.str, expected_count=len(raw)//dt.itemsize) != raw:
                             raise StoreConflict('logical chunk identity conflict')
                         dependencies[key] = desc
-                        return key
+                    del hit_funds
+                    return key
                 codec, payload = self._encode(raw, dt)
                 # Attest logical equality once, outside the writer transaction.
                 # Future references must not trust an unchecked encoder output.
@@ -966,9 +1006,14 @@ class ArrayStore:
             # not part of the caller's scientific invocation or metadata.
             if execution_mode() == 'release':
                 manifest['execution_mode'] = 'release'
+            if history_roots:
+                manifest_bytes = _history.Hold(_history.ENCODE+_history.BODY, *history_roots,
+                                                category='w08-store-manifest-encode')
             body = _json(manifest)
             if len(body) > self.limits.max_manifest_bytes:
                 raise StoreError('manifest exceeds limit')
+            if history_roots:
+                manifest_bytes.resize(64+len(body))
             self._stats['staged_bytes'] = staged_bytes
             self._stats['prepare_seconds'] += time.perf_counter() - started
             check_cancel()
@@ -985,7 +1030,12 @@ class ArrayStore:
                     for name, value in values.items():
                         if isinstance(value, (ArrayReference, _EditedReference)):
                             self._reference_description(value.reference if isinstance(value, _EditedReference) else value)
-                    previous = self._manifest(invocation)
+                    if history_roots:
+                        previous_funds = _history.ManifestFunds(*history_roots)
+                        with _history.bind(self, '_w08_history_read', previous_funds):
+                            previous = self._manifest(invocation)
+                    else:
+                        previous = self._manifest(invocation)
                     if previous is not None and (
                             {k: v for k, v in previous.items() if k != 'execution_mode'} !=
                             {k: v for k, v in manifest.items() if k != 'execution_mode'}):
@@ -1037,7 +1087,10 @@ class ArrayStore:
                                 flush()
                             batch.append((key, desc, codec, stored, payload)); batch_bytes += count
                     flush()
-                    if previous is None:
+                    insert_snapshot = previous is None
+                    if history_roots:
+                        del previous, previous_funds
+                    if insert_snapshot:
                         self._db.execute('INSERT INTO snapshots VALUES(?,?,?)', (invocation, body, _hash(body)))
                         added += len(body) + 128
                         rows += 1
@@ -1094,8 +1147,12 @@ class ArrayStore:
             return self._db.execute('PRAGMA data_version').fetchone()[0], self._db.total_changes
 
     def metadata(self, invocation):
-        with self._read_scope():
+        holds = getattr(self, '_w08_history_holds', None)
+        scope = self._read_scope() if holds is None else self._read_scope(_history_manifest=True)
+        with scope as funding:
             m = self._manifest(invocation)
+            if m is not None and funding is not None:
+                holds.append(funding.graph)
             return None if m is None else m['metadata']
 
     def execution_mode(self, invocation):
@@ -1145,15 +1202,26 @@ class ArrayStore:
 
     def get(self, invocation, *, budget: WorkBudget | None = None):
         """One stable read snapshot, one manifest parse, bounded chunk decoding."""
-        with self._read_scope(budget=budget):
+        holds = getattr(self, '_w08_history_holds', None)
+        scope = (self._read_scope(budget=budget) if holds is None
+                 else self._read_scope(budget=budget, _history_manifest=True))
+        with scope as funding:
             m = self._manifest(invocation)
             if m is None:
                 return None
             total = sum(math.prod(a['shape']) * _dtype(a['dtype']).itemsize for a in m['arrays'].values())
             if total > self.limits.max_array_bytes:
                 raise StoreError('full result exceeds read limit; use iter_chunks')
-            with self._workspace(2 * total, budget, category="store-output"):
+            output = (self._workspace(2*total, budget, category='store-output') if funding is None
+                      else _history.retained_context(2*total, *funding.roots, category='store-output'))
+            with output as output_funds:
+                if funding is not None:
+                    array_headers = _history.Hold(8192+768*len(m['arrays']), *funding.roots,
+                                                  category='w08-store-returned-array-headers')
+                    if any(a['chunks'] for a in m['arrays'].values()):
+                        funding.before_chunks(8*self.limits.chunk_bytes+self.limits.codec_workspace_bytes)
                 result = {}
+                buffer = raw = None
                 for name, a in m['arrays'].items():
                     dt = _dtype(a['dtype'])
                     count = math.prod(a['shape'])
@@ -1164,6 +1232,10 @@ class ArrayStore:
                         raw = self._chunk(key, expected_dtype=dt.str, expected_count=min(width, count-start))
                         buffer[start*dt.itemsize:start*dt.itemsize+len(raw)] = raw
                     result[name] = np.frombuffer(bytes(buffer), dtype=dt).reshape(a['shape'])
+                if funding is not None:
+                    del buffer, raw
+                    output_funds.resize(total)
+                    holds.extend((output_funds, array_headers))
                 return result
 
     def statistics(self):

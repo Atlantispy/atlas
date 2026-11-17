@@ -4,7 +4,7 @@ Prescribed affine regional footprints and homogeneous finite material stocks.
 Steady wedge temperature is a separate accepted diagnostic, not a transient heat
 history. A regime label never supplies missing kinematics or a continental law.
 """
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 import hashlib
 import json
@@ -15,6 +15,7 @@ from time import perf_counter
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen
+from . import _w08_history_funding as _history
 from .materials import _json, _name
 from .constitutive import _cancel
 from .geometry import PlanarGeometry
@@ -153,6 +154,11 @@ class PreparedW08Workflow:
             raise TectonicsError('one to256 complete event intervals required')
         if store is not None and not isinstance(store,ArrayStore): raise TectonicsError('ArrayStore required')
         _name(source_id,'workflow source')
+        self._history_enabled = (isinstance(budget, WorkBudget)
+                                 and getattr(budget, '_w08_history_qualification', False) is True)
+        if self._history_enabled:
+            _schedule_decode = _history.Hold(2*_history.GRAPH+_history.PARSE, budget,
+                                              category='w08-schedule-decode')
         start = initial.time_s; previous = None; events = set()
         for interval in intervals:
             d = interval.descriptor(); t = d['transition']
@@ -181,9 +187,12 @@ class PreparedW08Workflow:
         self._current = None
         self._stats = dict(computed_intervals=0,restored_outputs=0,latest_hits=0,
                            physics_seconds=0.,storage_seconds=0.)
-        self._guard = self._resource.reserve(2*1024**2+4*initial.nbytes+region.nbytes+sum(len(i._record) for i in intervals),
-                                            category='w08-workflow-prepared')
-        self._guard.__enter__()
+        prepared = 2*1024**2+4*initial.nbytes+region.nbytes+sum(len(i._record) for i in intervals)
+        if self._history_enabled:
+            self._guard = self._history_hold(prepared, 'w08-workflow-prepared')
+        else:
+            self._guard = self._resource.reserve(prepared, category='w08-workflow-prepared')
+            self._guard.__enter__()
         try:
             self._context = ExecutionContext('scipy'); self.execution_id = self._context.identity
             # Validates represented owners before any state is accepted.
@@ -194,6 +203,9 @@ class PreparedW08Workflow:
                 histories.append(AffineMotionInterval(i.end_time_s,**m,source_id=i.source_id))
             self._motion = PreparedAffineMotion(region.polygons,tuple(histories),parcel_ids=region.parcel_ids,
                 time_s=initial.time_s,source_id=source_id,budget=self._resource,cancel=cancel)
+            self._history_binding_funds = self._history_hold(_history.GRAPH, 'w08-history-prepared-binding')
+            _binding_scratch = self._history_hold(_history.ENCODE+_history.BODY+_history.PARSE,
+                                                   'w08-history-binding-scratch')
             self._binding = dict(schema='atlas.w08-workflow.v1',source_status='WORKING NON-CANON',
                 source_id=source_id,initial_id=initial.inventory_id,region_id=region.region_id,
                 intervals=[i.descriptor() for i in intervals],execution=self.execution_id,
@@ -203,6 +215,33 @@ class PreparedW08Workflow:
             self._check(cancel)
         except BaseException:
             self.close(); raise
+
+    def _history_hold(self, size, category):
+        if self._history_enabled:
+            return _history.Hold(size, self._resource, category=category)
+        return None
+
+    def _retain_workspace(self, size, category):
+        if self._history_enabled:
+            return _history.retained_context(size, self._resource, category=category)
+        return self._resource.reserve(size, category=category)
+
+    def _fund_store(self, caller_holds):
+        if self._history_enabled:
+            return _history.bind(self.store, '_w08_history_holds', caller_holds)
+        return nullcontext()
+
+    def _output_receipt(self, record):
+        # Keep the emitted bytes paid if later materialisation or admission fails.
+        charge = self._history_hold(_history.BODY+_history.ENCODE, 'w08-history-issued-receipt')
+        raw = _json(record)
+        if charge is not None:
+            charge.resize(64+len(raw))
+        return raw, charge
+
+    def _stopped(self, out):
+        _descriptor_work = self._history_hold(_history.GRAPH+_history.PARSE, 'w08-history-stop-decode')
+        return out.descriptor()['stopped_at_exhaustion']
 
     def _check(self,cancel=None):
         if self._closed: raise TectonicsError('W08 workflow closed')
@@ -230,7 +269,9 @@ class PreparedW08Workflow:
 
     def statistics(self): return dict(self._stats,budget=self._resource.statistics())
 
-    def _validate(self,out):
+    def _validate(self,out,*,issued_here=False,retirement_heat_present=False):
+        _validation_work = self._history_hold(2*_history.GRAPH+_history.PARSE+_history.NUMERIC,
+                                               'w08-history-validation')
         i = self._index(out.interval_index); d = out.descriptor(); inv = out.inventory
         if (inv.node_ids != self.initial.node_ids or inv.node_kinds != self.initial.node_kinds or
                 inv.component_ids != self.initial.component_ids or
@@ -251,7 +292,10 @@ class PreparedW08Workflow:
         self._event_endpoint(i,d)
         if type(d['accepted_intervals']) is not int or not i+1 <= d['accepted_intervals'] <= 256:
             raise TectonicsError('cumulative accepted-interval ceiling exceeded')
-        self._validate_history(d,inv)
+        self._validate_history(d,inv,issued_here=issued_here,
+                               retirement_heat_present=retirement_heat_present)
+        if self._history_enabled:
+            del d['transfer_history']
         for j in range(len(inv.component_ids)):
             values = [*inv.component_mass_kg[:,j], *(-self.initial.component_mass_kg[:,j])]
             if abs(math.fsum(values)) > 128*np.finfo(float).eps*math.fsum(map(abs,values)):
@@ -261,13 +305,14 @@ class PreparedW08Workflow:
         values = [*inv.enthalpy_j,*(-self.initial.enthalpy_j),-q]
         if abs(math.fsum(values)) > 128*np.finfo(float).eps*(math.fsum(map(abs,values))+aq):
             raise TectonicsError('cross-regime enthalpy account does not close')
-        motion = self._motion.evaluate(inv.time_s)
-        if (tuple(g.geometry_id for g in out.polygons) != tuple(g.geometry_id for g in motion.polygons) or
-                tuple(g.geometry_id for g in out.reference_polygons) != tuple(g.geometry_id for g in self.region.polygons) or
-                not np.array_equal(out.deformation_gradient,motion.deformation_gradient)):
-            raise TectonicsError('restored current/reference geometry or deformation mismatch')
+        if not issued_here:
+            motion = self._motion.evaluate(inv.time_s)
+            if (tuple(g.geometry_id for g in out.polygons) != tuple(g.geometry_id for g in motion.polygons) or
+                    tuple(g.geometry_id for g in out.reference_polygons) != tuple(g.geometry_id for g in self.region.polygons) or
+                    not np.array_equal(out.deformation_gradient,motion.deformation_gradient)):
+                raise TectonicsError('restored current/reference geometry or deformation mismatch')
 
-    def _validate_history(self,record,inventory):
+    def _validate_history(self,record,inventory,*,issued_here=False,retirement_heat_present=False):
         """Reconcile tagged transfers, not replay a physical solver or its flux."""
         history = record['transfer_history']
         i = record['interval_index']
@@ -276,6 +321,7 @@ class PreparedW08Workflow:
         c = self.initial.component_mass_kg.copy(); e = self.initial.enthalpy_j.copy()
         cscale = abs(c); escale = abs(e); total_steps = 0
         node_index = {n:j for j,n in enumerate(self.initial.node_ids)}
+        verify_heat_book = not issued_here or retirement_heat_present
         heat_total = []; absolute_heat = []
         for j,r in enumerate(history):
             spec = self.intervals[j].descriptor()
@@ -284,6 +330,8 @@ class PreparedW08Workflow:
             if j==i and record['stopped_at_exhaustion']: duration=r['duration_s']
             if spec['retirement'] is None and spec['magmatism'] is None:
                 if r is not None: raise TectonicsError('unexpected transfer in kinematic/cessation interval')
+                if self._history_enabled:
+                    del spec
                 total_steps += 1; continue
             start = self.initial.time_s if j==0 else self.intervals[j-1].end_time_s
             exact_end = (type(r) is dict and r.get('exhaustion_duration_s') == r.get('duration_s')
@@ -317,8 +365,11 @@ class PreparedW08Workflow:
                 dc = np.asarray(r['transferred_component_mass_kg'],float).reshape(len(edges),c.shape[1])
                 de = np.asarray(r['transferred_enthalpy_j'],float)
                 heat = np.asarray(r['external_heat_j'],float)
-                expected_heat = np.zeros(len(selected)) if a['heat_w'] is None else np.asarray(a['heat_w'],float)*duration
-                if not np.array_equal(heat,expected_heat): raise TectonicsError('external heat receipt mismatch')
+                # A rounded exhaustion endpoint can have a different booked duration.
+                if not issued_here or r['duration_s'] != duration:
+                    expected_heat = np.zeros(len(selected)) if a['heat_w'] is None else np.asarray(a['heat_w'],float)*duration
+                    if not np.array_equal(heat,expected_heat): raise TectonicsError('external heat receipt mismatch')
+                    del expected_heat
                 if de.shape != (len(edges),): raise TectonicsError('edge heat shape mismatch')
                 for edge,k in zip(edges,range(len(edges))):
                     si,di = (node_index[n] for n in edge)
@@ -326,19 +377,26 @@ class PreparedW08Workflow:
                     cscale[si] += dc[k]; cscale[di] += dc[k]
                     escale[si] += abs(de[k]); escale[di] += abs(de[k])
                 for node,q in zip(selected,heat):
-                    e[node_index[node]] += q; escale[node_index[node]] += abs(q)
-                heat_total.extend(heat); absolute_heat.extend(abs(heat))
+                    absolute = abs(q)
+                    e[node_index[node]] += q; escale[node_index[node]] += absolute
+                    if verify_heat_book:
+                        heat_total.append(q)
+                        absolute_heat.append(absolute)
                 steps = r['kernel']['accepted_intervals']
                 if type(steps) is not int or not 1 <= steps <= 256: raise TectonicsError('invalid accepted magma steps')
                 total_steps += steps
+                if self._history_enabled:
+                    del rates, heat
             if not np.isfinite(dc).all() or np.any(dc<0) or not np.isfinite(de).all():
                 raise TectonicsError('invalid extensive transfer receipt')
+            if self._history_enabled:
+                del dc, de, spec, a
         tol = 128*np.finfo(float).eps
         if (np.any(abs(c-inventory.component_mass_kg)>tol*(cscale+abs(inventory.component_mass_kg))) or
                 np.any(abs(e-inventory.enthalpy_j)>tol*(escale+abs(inventory.enthalpy_j))) or
                 total_steps != record['accepted_intervals'] or
-                math.fsum(heat_total) != record['cumulative_external_heat_j'] or
-                math.fsum(absolute_heat) != record['cumulative_absolute_heat_j']):
+                (verify_heat_book and (math.fsum(heat_total) != record['cumulative_external_heat_j'] or
+                    math.fsum(absolute_heat) != record['cumulative_absolute_heat_j']))):
             raise TectonicsError('tagged transfer/stock/heat history does not reconcile')
 
     def _event_endpoint(self,index,record):
@@ -355,7 +413,10 @@ class PreparedW08Workflow:
             raise TectonicsError('unsupported partial interval is not an exact exhausted-stock event')
 
     def _compute(self,index,parent,cancel):
+        specification_funds = self._history_hold(_history.GRAPH+_history.PARSE, 'w08-history-interval-spec')
         s = self.intervals[index]; spec = s.descriptor()
+        if specification_funds is not None:
+            specification_funds.resize(_history.GRAPH)
         inv = self.initial if parent is None else parent.inventory
         duration = s.end_time_s-inv.time_s
         a = spec['retirement']; m = spec['magmatism']; receipt = None; stopped=False
@@ -370,6 +431,8 @@ class PreparedW08Workflow:
                     source_id=s.source_id,heat_w=m['heat_w'],thermodynamics=self.thermodynamics,
                     context=self._context,end_time_s=end,budget=self._resource,cancel=cancel)
         if a is not None or m is not None:
+            adapter_funds = self._history_hold(3*_history.GRAPH+_history.PARSE+_history.ENCODE+
+                                               _history.BODY+_history.NUMERIC, 'w08-history-adapter-receipt')
             try: candidate,receipt=transfer(duration,s.end_time_s)
             except (RetirementExhaustionError,MagmaticExhaustionError) as exhausted:
                 duration=exhausted.exhaustion_duration_s
@@ -377,6 +440,8 @@ class PreparedW08Workflow:
                 # The rejected branch did not spend anything. Compute exactly
                 # once up to its declared feasibility event, publish, then stop.
                 candidate,receipt=transfer(duration);stopped=True
+            if adapter_funds is not None:
+                adapter_funds.resize(_history.GRAPH)
             inv=candidate
             # An exhaustion whose derived end start+duration rounds onto the
             # declared end completes the interval, exactly as an exhaustion whose
@@ -387,10 +452,20 @@ class PreparedW08Workflow:
         motion = self._motion.evaluate(inv.time_s,cancel=cancel)
         view = self.region.regional_view(inv,motion.polygons,reference_inventory=self.initial,
                                        budget=self._resource,cancel=cancel)
+        _assembly_funds = self._history_hold(3*_history.GRAPH+_history.PARSE+_history.ENCODE+
+                                             _history.BODY+_history.NUMERIC, 'w08-history-assembly')
         prior = None if parent is None else parent.descriptor()
-        heat = [] if receipt is None else receipt.get('external_heat_j',[])
         history = ([] if prior is None else prior['transfer_history'])+[receipt]
-        heat_entries = [q for r in history if r is not None for q in r['external_heat_j']]
+        heat_entries = []
+        retirement_heat_present = False
+        for j, row in enumerate(history):
+            if row is None:
+                continue
+            heat = row['external_heat_j']
+            heat_entries.extend(heat)
+            # A restored retirement receipt can carry heat that affects the issued book.
+            if heat and self.intervals[j].regime == 'subduction':
+                retirement_heat_present = True
         steps = 1 if m is None else receipt['kernel']['accepted_intervals']
         accepted = (0 if prior is None else prior['accepted_intervals'])+steps
         if accepted > 256: raise TectonicsError('joined history exceeds256 accepted intervals')
@@ -405,11 +480,17 @@ class PreparedW08Workflow:
             cumulative_external_heat_j=math.fsum(heat_entries),
             cumulative_absolute_heat_j=math.fsum(map(abs,heat_entries)),
             accepted_intervals=accepted,transfer_history=history)
-        if len(_json(record)) > 512*1024: raise TectonicsError('bounded tagged event history exceeds512KiB')
-        return W08Output(inv,motion.polygons,self.region.polygons,frozen(motion.deformation_gradient),view,
-                         index,self.checkpoint_id(index),_json(record))
+        raw, receipt_funds = self._output_receipt(record)
+        if len(raw) > 512*1024: raise TectonicsError('bounded tagged event history exceeds512KiB')
+        out = W08Output(inv,motion.polygons,self.region.polygons,frozen(motion.deformation_gradient),view,
+                         index,self.checkpoint_id(index),raw)
+        if receipt_funds is not None:
+            object.__setattr__(out,'_issued_receipt_funds',receipt_funds)
+        return out, retirement_heat_present
 
     def _pack(self,out):
+        funds = self._history_hold(2*_history.GRAPH+_history.PARSE+_history.ENCODE+
+                                   _history.BODY+_history.NUMERIC, 'w08-history-packed-header')
         arrays = dict(components=out.inventory.component_mass_kg,enthalpy=out.inventory.enthalpy_j,
                       formation=out.inventory.formation_time_s,deformation=out.deformation_gradient,
                       reference_components=self.initial.component_mass_kg,reference_enthalpy=self.initial.enthalpy_j)
@@ -420,9 +501,17 @@ class PreparedW08Workflow:
                 None if out.interval_index==0 else self.checkpoint_id(out.interval_index-1)),
             output_id=out.output_id,inventory=out.inventory.descriptor(),receipt=out.descriptor(),
             arrays={k:_array_id(v) for k,v in arrays.items()})
-        return arrays,dict(header,content_id=_hash(header))
+        packed = dict(header,content_id=_hash(header))
+        if funds is not None:
+            funds.resize(_history.GRAPH+_history.NUMERIC)
+            caller_holds = getattr(self,'_w08_history_pack_holds',None)
+            if caller_holds is not None:
+                caller_holds.append(funds)
+        return arrays,packed
 
     def _header(self,index,meta,parent):
+        _header_funds = self._history_hold(_history.GRAPH+_history.PARSE+_history.ENCODE+
+                                            _history.BODY, 'w08-history-header-verification')
         keys = {'schema','plan_id','execution','index','checkpoint_id','parent_checkpoint_id',
                 'output_id','inventory','receipt','arrays','content_id'}
         if type(meta) is not dict or set(meta) != keys: raise TectonicsError('invalid W08 checkpoint envelope')
@@ -438,14 +527,21 @@ class PreparedW08Workflow:
             raise TectonicsError('stale, partial or misbound W08 checkpoint')
         self._event_endpoint(index,r)
 
-    def _scan(self,end,cancel):
+    def _scan(self,end,cancel,holds=None):
         latest,meta,parent,gap = -1,None,None,False
+        latest_holds = []
         for i in range(end+1):
-            _cancel(cancel); candidate = self.store.metadata(self.checkpoint_id(i))
+            _cancel(cancel)
+            candidate_holds = []
+            with self._fund_store(candidate_holds):
+                candidate = self.store.metadata(self.checkpoint_id(i))
             if candidate is None: gap=True; continue
             if gap: raise TectonicsError('partial W08 checkpoint history has a gap')
             self._header(i,candidate,parent)
             latest,meta,parent = i,candidate,candidate['output_id']
+            latest_holds = candidate_holds
+        if holds is not None:
+            holds.extend(latest_holds)
         return latest,meta
 
     def _restore(self,index,meta,cancel):
@@ -454,11 +550,17 @@ class PreparedW08Workflow:
         # validation scratch admitted for the whole restore transaction.
         size = (8*self.initial.nbytes+4*self.region.nbytes+2*1024**2+
                 32*len(self.region.node_ids)*len(self.region.parcel_ids)*len(self.initial.component_ids))
-        with self._resource.reserve(size,category='w08-restore-retained-and-scratch'):
-            return self._restore_payload(index,meta,cancel)
+        with self._retain_workspace(size,'w08-restore-retained-and-scratch') as _restore_funds:
+            out = self._restore_payload(index,meta,cancel)
+            if self._history_enabled:
+                self._output_guard(out,restored_reference=True)
+            return out
 
     def _restore_payload(self,index,meta,cancel):
-        arrays = self.store.get(self.checkpoint_id(index),budget=self._resource)
+        loaded_holds = []
+        with self._fund_store(loaded_holds):
+            arrays = self.store.get(self.checkpoint_id(index),budget=self._resource)
+        _restore_conversion = self._history_hold(_history.NUMERIC, 'w08-history-restore-conversion')
         if arrays is None or set(arrays) != set(meta['arrays']) or any(_array_id(a)!=meta['arrays'][k] for k,a in arrays.items()):
             raise TectonicsError('corrupt, partial or changed W08 checkpoint arrays')
         d = meta['inventory']
@@ -479,15 +581,35 @@ class PreparedW08Workflow:
                 frame_id=self.region.polygons[0].frame_id,budget=self._resource) for j in range(count)))
         view = self.region.regional_view(inv,groups[0],reference_inventory=self.initial,
                                         budget=self._resource,cancel=cancel)
+        raw, receipt_funds = self._output_receipt(meta['receipt'])
         out = W08Output(inv,groups[0],groups[1],frozen(arrays['deformation']),view,index,
-                        self.checkpoint_id(index),_json(meta['receipt']))
+                        self.checkpoint_id(index),raw)
+        if receipt_funds is not None:
+            object.__setattr__(out,'_issued_receipt_funds',receipt_funds)
+        del arrays, loaded_holds
+        _identity_funds = self._history_hold(_history.GRAPH+_history.PARSE+_history.ENCODE+
+                                            _history.BODY, 'w08-history-restored-identity')
         if out.output_id != meta['output_id']: raise TectonicsError('checkpoint scientific state identity mismatch')
+        del _identity_funds
         self._validate(out); self._stats['restored_outputs'] += 1
         return out
 
-    def _output_guard(self,out):
+    def _output_guard(self,out,*,restored_reference=False):
+        if self._history_enabled:
+            guard = getattr(out,'_history_output_funds',None)
+            if guard is not None:
+                return guard
         size = (4*out.inventory.nbytes+out.deformation_gradient.nbytes+len(out._receipt)+
                 sum(g.retained_bytes for g in out.polygons)+getattr(out.regional,'nbytes',0)+65536)
+        if self._history_enabled:
+            if restored_reference:
+                # Restoring makes independent reference WKB copies. Issuing shares the plan's.
+                size += sum(g.retained_bytes for g in out.reference_polygons)
+            guard = self._history_hold(size,'w08-latest-output')
+            object.__setattr__(out,'_history_output_funds',guard)
+            if hasattr(out,'_issued_receipt_funds'):
+                object.__delattr__(out,'_issued_receipt_funds')
+            return guard
         guard = self._resource.reserve(size,category='w08-latest-output'); guard.__enter__()
         return guard
 
@@ -495,7 +617,7 @@ class PreparedW08Workflow:
         if guard is None: guard=self._output_guard(out)
         old = self._current_guard
         self._current,self._current_guard = out,guard
-        if old is not None: old.__exit__(None,None,None)
+        if old is not None and not self._history_enabled: old.__exit__(None,None,None)
 
     def load(self,index,*,checkpoint_id=None,cancel=None):
         self._index(index)
@@ -506,44 +628,60 @@ class PreparedW08Workflow:
                 raise TectonicsError('explicit checkpoint belongs to stale/different sources or runtime')
             if self.store is None:
                 return self._current if self._current and self._current.interval_index==index else None
-            last,meta = self._scan(index,cancel)
+            meta_holds = []
+            last,meta = self._scan(index,cancel,meta_holds)
             if last != index: return None
-            out = self._restore(index,meta,cancel); self._adopt(out); return out
+            out = self._restore(index,meta,cancel)
+            del meta, meta_holds
+            self._adopt(out); return out
 
     def run(self,*,through=None,cancel=None):
         end = len(self.intervals)-1 if through is None else self._index(through)
         with self._operation(cancel):
             current = self._current
             if current is not None and current.interval_index==end and self.store is None:
-                if current.descriptor()['stopped_at_exhaustion']: raise W08ExhaustionError(current)
+                if self._stopped(current): raise W08ExhaustionError(current)
                 self._stats['latest_hits'] += 1; return current
             if self.store is not None:
-                last,meta = self._scan(end,cancel)
+                meta_holds = []
+                last,meta = self._scan(end,cancel,meta_holds)
                 current = None if last<0 else self._restore(last,meta,cancel)
+                del meta, meta_holds
                 if current is not None: self._adopt(current)
             elif current is not None and current.interval_index>end:
                 raise TectonicsError('earlier outputs are not retained; use an explicit checkpoint store')
             first = 0 if current is None else current.interval_index+1
-            if current is not None and current.descriptor()['stopped_at_exhaustion']:
+            if current is not None and self._stopped(current):
                 raise W08ExhaustionError(current)
             for index in range(first,end+1):
                 self._check(cancel); started = perf_counter()
-                with self._resource.reserve(8*self.initial.nbytes+4*1024**2,category='w08-step-scratch'):
-                    candidate = self._compute(index,current,cancel)
+                with self._retain_workspace(8*self.initial.nbytes+4*1024**2,'w08-step-scratch') as _step_funds:
+                    candidate, retirement_heat_present = self._compute(index,current,cancel)
                     pending_guard=self._output_guard(candidate)
                     try:
-                        self._validate(candidate)
+                        # This exact output carries the receipt and motion just issued by _compute.
+                        self._validate(candidate,issued_here=True,
+                                       retirement_heat_present=retirement_heat_present)
                         self._stats['physics_seconds'] += perf_counter()-started
                         if self.store is not None:
-                            started = perf_counter(); arrays,meta = self._pack(candidate)
-                            self.store.put(candidate.checkpoint_id,arrays,meta,budget=self._resource,cancel=cancel,
-                                           publication_check=lambda:self._check(cancel))
+                            started = perf_counter()
+                            pack_holds = []
+                            scope = (_history.bind(self,'_w08_history_pack_holds',pack_holds)
+                                     if self._history_enabled else nullcontext())
+                            with scope:
+                                arrays,meta = self._pack(candidate)
+                            with self._fund_store(pack_holds):
+                                self.store.put(candidate.checkpoint_id,arrays,meta,budget=self._resource,cancel=cancel,
+                                               publication_check=lambda:self._check(cancel))
+                            del arrays, meta, pack_holds
                             self._stats['storage_seconds'] += perf_counter()-started
                         self._check(cancel); self._adopt(candidate,pending_guard); pending_guard=None
                     finally:
-                        if pending_guard is not None: pending_guard.__exit__(None,None,None)
+                        if pending_guard is not None and not self._history_enabled:
+                            pending_guard.__exit__(None,None,None)
                     self._stats['computed_intervals'] += 1; current = candidate
-                    if current.descriptor()['stopped_at_exhaustion']: raise W08ExhaustionError(current)
+                    if self._stopped(current): raise W08ExhaustionError(current)
+                del _step_funds
             return current
 
     def close(self):
@@ -554,9 +692,12 @@ class PreparedW08Workflow:
             if self._motion is not None: self._motion.close()
             if self._context is not None: self._context.close()
         finally:
-            if self._current_guard is not None: self._current_guard.__exit__(None,None,None)
+            if self._current_guard is not None and not self._history_enabled:
+                self._current_guard.__exit__(None,None,None)
             self._current = None
-            if self._guard is not None: self._guard.__exit__(None,None,None)
+            self._current_guard = None
+            if self._guard is not None and not self._history_enabled:
+                self._guard.__exit__(None,None,None)
 
     def __enter__(self): self._check(); return self
     def __exit__(self,*_): self.close()

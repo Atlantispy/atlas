@@ -89,9 +89,10 @@ itself (`end_time_s`, shared end-time rule), not `start+(end-start)`, which can
 fall one ulp short: an interval from 0.020301896609317943 s to 0.3 s was refused
 as a mid-event output before 30 September 2026. An exhaustion endpoint is still
 derived as start plus the exhaustion duration. When that derived end rounds onto
-the declared end (the exhaustion duration one ulp short of end minus start), the
-interval completes exactly as it does when the durations are equal, and the
-schedule continues; previously the workflow refused its own result. One `ArrayStore.put` transaction publishes current/reference geometry,
+the declared end, the clock can complete the interval. If the retry duration
+differs from the scheduled duration, the workflow still compares the issued
+heat with the prescribed heat reconstructed for validation. A mismatch refuses
+before any checkpoint. One `ArrayStore.put` transaction publishes current/reference geometry,
 reference stocks, component/enthalpy stocks, formation/origin bindings, finite
 deformation, completed event cursor, exhausted nodes, owners and transfer history.
 The output identity and parent checkpoint/output identities are checked together.
@@ -105,6 +106,14 @@ Completed material solves are not replayed. Corrupt or incomplete payloads,
 partial events, missing prefix entries, changed owners or source/runtime bindings
 refuse. Explicit foreign checkpoint IDs refuse rather than becoming a cache miss.
 This is active-state recovery, not a full re-read of every historical payload.
+
+Fresh issue books the heat entries in their original order, including signed
+zeros. That pass records whether any retirement receipt carries heat. The
+freshly issued result reuses that heat booking when every retirement receipt
+has an empty heat list. Cold restore and standalone validation retain the full
+signed and absolute book comparison. A fitting, correctly bound retirement
+prefix can load with existing heat entries. Continuation still reconciles
+their signed and absolute contributions before writing any successor.
 
 Candidates are immutable and separately admitted before publication. They become
 the active state only after commit. Both pre-commit rollback and interruption
