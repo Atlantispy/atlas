@@ -168,7 +168,7 @@ def _small_diagram(sites, names):
         for side in range(2):
             for k in range(4):
                 ids = ('pole+' if side == 0 else 'pole-', f'equator{k}', f'equator{(k+1)%4}')
-                centre = _unit(sum(vertices[x] for x in ids))
+                centre = _unit(np.array([math.fsum(vertices[x][axis] for x in ids) for axis in range(3)]))
                 faces.append((names[0 if n == 1 else side], ids, tuple(centre)))
     else:
         raw = np.cross(sites[1]-sites[0], sites[2]-sites[0])
@@ -194,7 +194,8 @@ def _small_diagram(sites, names):
                    'pole-', mids[tuple(sorted((i, others[1])))])
             for a, b in zip(rim, rim[1:]+rim[:1]):
                 ids = (anchor, a, b)
-                faces.append((name, ids, tuple(_unit(sum(vertices[x] for x in ids)))))
+                centre = _unit(np.array([math.fsum(vertices[x][axis] for x in ids) for axis in range(3)]))
+                faces.append((name, ids, tuple(centre)))
     return vertices, faces
 
 

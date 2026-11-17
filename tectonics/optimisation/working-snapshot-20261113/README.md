@@ -676,6 +676,20 @@ and the original-rate solver law lie outside the local acceptance. Original
 rates, exact signed net and matched debit-credit-receipt remain the physical
 target; this verdict does not qualify or select a general replacement.
 
+### Sum the same small-face vertex vectors before normalising
+
+Both small-diagram centre branches use one `math.fsum` per Cartesian
+coordinate over the original three rounded vertex vectors before `_unit`.
+Pole/dual construction, rim semantics and stored chart consumers stay intact.
+Independent review accepts both local centre reductions and their selected
+consumers. The two-site control distinguishes four old centres; the fixed
+tilted three-site pair passes 27/27 comparisons and distinguishes ten old
+stored centres. The original seven upstream signed-zero words remain a
+bitwise failure, although nonzero vectors, reached classifications and areas
+agree. The tilted pair does not clear that failure or normalise zero signs.
+The one-site case shares source, not the two-site sensitivity result. No
+universal renamed-input, whole-member or joined acceptance follows.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

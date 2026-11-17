@@ -225,6 +225,16 @@ final boundary total by one unit in its last place; corrected totals and every
 mapped output agree. These aggregation controls do not establish name-invariance
 of upstream patch-area construction or the separate spatial index.
 
+The nondefault snapshot's [small spherical-diagram centre](../../optimisation/working-snapshot-20261113/README.md#sum-the-same-small-face-vertex-vectors-before-normalising)
+uses `math.fsum` for each Cartesian coordinate of its same three rounded vectors,
+then applies the existing unit-direction calculation. Both local centre forms
+have independent local source/consumer acceptance. The two-site control
+distinguishes four old centres; the tilted three-site pair passes 27/27 with
+ten old targets. The original seven upstream signed-zero words remain a
+bitwise failure despite equal nonzero vectors, classifications and areas.
+That failure is not cleared by the tilted result, and no universal
+renamed-input or joined acceptance follows.
+
 **Basis and checks.** [Bird (2003), PB2002](https://doi.org/10.1029/2001GC000252)
 provides an Earth reference, not a recipe for creating every planet. The retained
 implementation uses [SciPy's sparse Dijkstra routine](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.dijkstra.html)
