@@ -211,6 +211,11 @@ mesh's support source already holds is reused (`_private/partition_workflow_patc
 the same segment reference on the same store scope; otherwise the partition is opened as before
 (`restore`, line 404). The heat module's pin of `integration_regional_workflow.py` moves with that file.
 
+In an ordinary compact v2 restore, the partition ID in the checkpoint header must agree with the
+validated ID already held by the view. The comparison applies to a newly opened view and to a reused
+view. A mismatch refuses the restore before constructing the partition. Proof mode keeps the full
+header comparison. The non-v2 open path keeps its expected-ID check.
+
 ### The next producer's open (units P and Q)
 
 In an ordinary run the open of an adopted head now loads what the next interval reads and proves nothing
