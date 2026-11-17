@@ -69,6 +69,7 @@ from atlas_tectonics._private import private_heat_finish_kernel_r11 as FINISH
 from atlas_tectonics._private import private_heat_stage_lifetime_r3 as LIFE
 from atlas_tectonics._private import private_heat_process_meter_r1 as METER
 from atlas_tectonics._private import private_heat_physical_order_r1 as ORDER
+from atlas_tectonics._private import private_heat_small_cell_rule_r1 as SMALL
 
 HERE = Path(__file__).resolve().parent
 # What a returned stage leaves that is in no result graph: tuple and other free
@@ -81,7 +82,7 @@ PREDICTOR_PIN = 128 << 20
 
 
 def _source_paths():
-    pending = [GEOMETRY, LOW, FUNCTIONS, ASSEMBLY, REFINEMENT, SPARSE, INVENTORY, FINISH, LIFE, ORDER]
+    pending = [GEOMETRY, LOW, FUNCTIONS, ASSEMBLY, REFINEMENT, SPARSE, INVENTORY, FINISH, LIFE, ORDER, SMALL]
     roots = {HERE, Path(FUNCTIONS.__file__).resolve().parent, Path(ORDER.__file__).resolve().parent}
     modules, paths = set(), {Path(__file__).resolve()}
     while pending:
@@ -160,7 +161,7 @@ class OwnedAdvance:
 
 def _certified_at(entry):
     """Precision of a completed face's interval certificate; None if its row is exact."""
-    if entry.get('prescribed_power_exact'):
+    if entry.get('prescribed_power_exact') or entry.get('two_point_exact'):
         return None
     last = entry['functional_attempts'][-1]
     if last['route'] in ('interval', 'interval-reduced'):
@@ -316,6 +317,7 @@ frame disappears before the returned result graph replaces its entire stack.
         normalized = prepared['boundary']
         temperatures = {fid for fid, (kind, _) in normalized.items() if kind == 'temperature'}
         powers = set(normalized)-temperatures
+        small = SMALL.shares(prepared, capacity, dt, cancel=check)
         refinements = []
         with threadpool_limits(1):
             # Errata r2: beside only where the pool can start workers (FP's three tests); otherwise base order.
@@ -328,7 +330,7 @@ frame disappears before the returned result graph replaces its entire stack.
                 stage('certify-full-polygon-functionals')
                 row_owner = complete(FUNCTIONS.reconstruct(payload,
                     boundary_point_faces=temperatures, boundary_power_faces=powers,
-                    conductivity=k, budget=budget, cancelled=check))
+                    two_point_rows=small['exact_rows'], conductivity=k, budget=budget, cancelled=check))
             else:
                 stage('certify-full-polygon-functionals')
                 stop = threading.Event()
@@ -346,7 +348,8 @@ frame disappears before the returned result graph replaces its entire stack.
                     try:
                         row_owner = complete(FUNCTIONS.reconstruct(payload,
                             boundary_point_faces=temperatures, boundary_power_faces=powers,
-                            conductivity=k, budget=budget, cancelled=guarded))
+                            two_point_rows=small['exact_rows'], conductivity=k, budget=budget,
+                            cancelled=guarded))
                     except BaseException:
                         stop.set()
                         thread.join()
@@ -441,6 +444,9 @@ frame disappears before the returned result graph replaces its entire stack.
             # Canonical scratch borrows original prepared/payload leaves.
             # Retain their complete original startup owner through FINISH.
             system = assessment.rounded_system(normalized, cancel=check)
+            stage('small-cell-rule')
+            system, small_counts = SMALL.apply(system, small, capacity, dt, normalized, cancel=check)
+            small = None
             stage('solve-certified-high')
             old64, capacity64, source64 = (tuple(map(float, values)) for values in (old, capacity, source))
             high = complete(SPARSE.solve_rounded(system, old64, capacity64, float(dt),
@@ -462,7 +468,7 @@ frame disappears before the returned result graph replaces its entire stack.
         info.update(physical_scratch_order=ORDER.POLICY,
             public_cell_and_face_order_preserved=True,
             connected_seconds=perf_counter()-began, reconstruction=proof,
-            selective_refinements=refinements, numerical_pipeline='ISSUED_METRIC_DERIVED_LOW_CERTIFIED_HIGH_CONSERVATIVE_FINISH',
+            selective_refinements=refinements, small_cell_rule=small_counts, numerical_pipeline='ISSUED_METRIC_DERIVED_LOW_CERTIFIED_HIGH_CONSERVATIVE_FINISH',
             native_forward_origin=False, production_acceptance=False, native_heat_dispatch_enabled=False,
             prospective_stage_ownership=True, caller_diagnostic_byte_allowances=False,
             allocator_or_rss_bound=False, whole_method_memory_inventory_certified=False,

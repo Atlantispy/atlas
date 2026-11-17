@@ -1629,6 +1629,21 @@ selects C3 and forward-only C8 while excluding C13; its
 [receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
 does not establish runtime admission, old-checkpoint migration or whole-interval benefit.
 
+The later [small-cell finite-volume heat rule](../../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity)
+uses two-point rows where a cell cannot support its fitted row. A capacity-to-low-
+conductance ratio blends between 100 and 10,000; a capacity guard of 1,000 further
+limits the fitted share. Both owners use the same final face flux. The original
+signwise finish is retained. In one retained external 855-cell replay, stored final heat
+and temperature match exactly, while the HIGH predictor has a measured nonzero
+input-range excursion of about `3.56325e-6 K`. Predictor behaviour, final-output
+parity and exact closed-case ledger conservation are separate observations.
+The limited size reader reports a maximum positional corrected-enthalpy
+difference of about `8.46888e-6 J`, without proving physical cell pairing or a
+maximum temperature difference; opaque/blanking and retained diagnostic-failure
+limits remain. The isolated measurement handoff is accepted. Mixed-interface
+accuracy, composed-pool/reference/recovery and scientific acceptance remain open;
+the overlapped chain is not an isolated speed benchmark.
+
 ### Reduce repeated pressure arithmetic while preserving certified bounds
 
 The [Plan40 pressure route](../../optimisation/workbench/plan40/pressure/FINDINGS.md)

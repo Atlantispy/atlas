@@ -197,6 +197,14 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
     work.__enter__()
     try:
         centre, normal, owners = data['centre'], data['normal'], data['owners']
+        if fid in prepared.get('two_point', ()):    # a small cell's face: the low stage's exact two-point row
+            exact = prepared['two_point'][fid]
+            bounds = {key: (G.mpq(lo.numerator, lo.denominator), G.mpq(hi.numerator, hi.denominator))
+                      for key, (lo, hi) in exact['bounds'].items()}
+            return P.OwnedSolve(dict(row=dict(face_id=fid, owners=owners, ordered_keys=list(exact['ordered_keys']),
+                                              bounds=bounds),
+                diagnostics=dict(face_id=fid, two_point_exact=True, samples=0,
+                                 moment_identity_kind='small-cell-two-point')), work)
         target_moment = moment(fid)
         if fid in prepared['neumann']:
             key, value = ('power', fid), G.mpq(owners[0][1])
@@ -273,7 +281,7 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
 
 def reconstruct(payload, *, boundary_point_faces, boundary_power_faces, budget,
                 conductivity=1, cancelled=None, selected_faces=None, observe=None,
-                certification_precisions=PRECISIONS):
+                certification_precisions=PRECISIONS, two_point_rows=None):
     """Owner.value is (rows, evidence); selected rows preserve payload order.
 
 The decoded payload/full geometry are caller-owned. This covers newly created
@@ -301,6 +309,7 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
             settled = _prepared_bytes(prepared, cancelled)
             if settled is not None and settled < prepared_owner._workspace.lease.count:
                 prepared_owner._workspace.resize_before_allocation_or_after_drop(settled)
+        prepared['two_point'] = dict(two_point_rows or {})
         face_ids, partial = prepared['face_ids'], selected_faces is not None
         if partial:
             if type(selected_faces) not in (tuple, list, set, frozenset):
@@ -322,19 +331,26 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
         rows, census = [], []
         # Zero is the unchanged loop. An observer is promised its faces in order, one at a time.
         # A face with a prescribed power needs no reconstruction and is not counted.
-        shared = PARALLEL.workers(budget, len(selected-prepared['neumann'])) if observe is None else 0
-        if shared >= 2:
-            rows, census, validated = PARALLEL.reconstruct_faces(sys.modules[__name__], prepared,
-                [face['face_id'] for face in payload['faces'] if face['face_id'] in selected],
+        shared = PARALLEL.workers(budget, len(selected-prepared['neumann']-set(prepared['two_point']))) if observe is None else 0
+        pooled, taken = shared >= 2, 0
+        if pooled:                  # the pool never sees a two-point face; this loop makes them
+            pool_rows, pool_census, validated = PARALLEL.reconstruct_faces(sys.modules[__name__], prepared,
+                [face['face_id'] for face in payload['faces'] if face['face_id'] in selected
+                 and face['face_id'] not in prepared['two_point']],
                 budget=budget, cancelled=cancelled, certification_precisions=certification_precisions,
                 work=work, retain=RETAIN)
         else:
             validated = moments
-        for face in payload['faces'] if shared < 2 else ():
+        for face in payload['faces']:
             fid = face['face_id']
             if fid not in selected:
                 continue
             I.check(cancelled)
+            if pooled and fid not in prepared['two_point']:     # the pool's next row, in this same payload order
+                rows.append(pool_rows[taken])
+                census.append(pool_census[taken])
+                taken += 1
+                continue
             if observe is not None:
                 observe('before-face', dict(face_id=fid, rows_completed=len(rows)))
             temporary = _face(fid, prepared['geometry'][fid], prepared, moment, budget=budget,
@@ -349,11 +365,11 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
             census.append(retained.value['diagnostics'])
             if observe is not None:
                 observe('certified-row', dict(row=rows[-1], diagnostics=census[-1]))
-        if not partial and set(validated) != face_ids:
+        if not partial and set(validated) != face_ids-set(prepared['two_point']):    # a two-point face has no moment
             raise AssertionError('Complete reconstruction omitted a polygon validation')
         interval_faces = exact_faces = exact_attempts = 0
         for entry in census:
-            if entry.get('prescribed_power_exact'):
+            if entry.get('prescribed_power_exact') or entry.get('two_point_exact'):
                 continue
             attempts = entry['functional_attempts']
             exact_attempts += sum(bool(item['exact_fallback']) for item in attempts)
@@ -370,6 +386,7 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
             power_input_convention='outward face-integrated watts',
             power_scaling='normal_distance/(conductivity*face_area), exact area-vector ratio',
             exterior_temperature_samples=len(prepared['dirichlet']), prescribed_power_faces=len(prepared['neumann']),
+            two_point_faces=len(prepared['two_point']),
             general_planar_convex_face_moments=True, stability_proven=False,
             production_resource_accounting=False, partial_reconstruction=partial,
             physical_functional_equations_and_precision_unchanged=True,

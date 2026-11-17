@@ -1056,6 +1056,72 @@ keeps this later prototype separate from earlier integration methods. Joined
 behaviour, general accuracy, stored-result sizing, restart and scientific
 acceptance remain open; component/source publication supplies none of them.
 
+### Blend high-order heat rows by cell capacity
+
+This is the selected small-cell rule for the later finite-volume heat prototype,
+not a change to I05's earlier split conduction or to the signwise finish limiter.
+For cell `i`, let `G_i` be the sum of its non-prescribed-power low-stage face
+conductances, `n_i` its count of those faces, `C_i` its heat capacity and `dt` the
+step. Define `s_i = C_i/(dt G_i)`. Its fitted share is zero at `s_i <= 100`, one
+at `s_i >= 10000`, and linear between. A face takes the least share of its owners.
+A zero-share face uses the low stage's exact two-point row and needs no fit.
+
+For a remaining fitted face, `size_f` is the exact sum of absolute rounded cell
+and wall coefficients. The final fitted share is the lesser of the range share
+and `min_i C_i/(dt n_i size_f)/1000` over its owners. Each coefficient blends that
+face's fitted and low rows with this one share. Rational arithmetic combines the
+existing coefficients; changed entries are rounded in the original system's
+Decimal context. Each affected cell operator and wall entry is rebuilt from the
+same signed final face rows. One common face transfer therefore remains paired
+between owners. Prescribed-power rows are untouched; qualification described
+here is for the closed source-free case.
+
+Only the ordered fitted-face subset is sent to reconstruction workers. The
+kernel constructs two-point rows locally, then rejoins fitted rows in that same
+payload order with their census. The current source construction preserves the
+published worker pool; frozen isolated sizing, stored-step proof and combined
+worker-pool qualification remain distinct. The selected ordinary join
+omits its two superseded pooled-length assertions without adding a substitute;
+the driver/pool failure contracts and exact composed-pool qualification remain.
+
+An isolated eight-step diagnostic chain passed in retained external
+qualification. Its one own-input replay
+reproduced stored post-finish enthalpy and temperature exactly. On its 855 matched
+original cells, the actual HIGH predictor spans approximately
+`[1.249996436752457, 1.750003895096704] K`, against input extrema
+`[1.249999999999979, 1.750000800595892] K`. The largest excursion beyond that input
+range is nonzero: `3.563247521841636e-6 K` below the minimum; the upper excursion
+is `3.094500812526849e-6 K`. These values use the actual HIGH energies and their
+matching capacities, not final temperatures or a coefficient-distance proxy.
+They establish neither a new tolerance nor monotonicity or physical accuracy.
+
+The recorder reports 2,348 no-fit/two-point faces, zero range-blended faces and
+four guard-cut faces. The existing per-cell ledger and shared opposite face
+transfers certify zero total stock change for this closed source-free case;
+that does not require materialising a new global sum. The earlier separate
+stored-step check established only zero modulo four fixed primes.
+
+The completed limited size reader reports 8,238 differences in 149 classes.
+The maximum absolute difference in its positionally paired corrected-enthalpy
+field is `8.468882839581028e-6 J`; the paired-face-energy field gives
+`7.851493965239043e-6 J`. Three changed records are paired one-per-schema after
+the original schema/length matches; lists remain positional. No listed decoded
+record or restart remains unmatched, but the changed opaque heat-field and
+source-bound mesh are still not decoded. Recorded blanking and blanket hex-ID
+classification also remain. These are stored-field observations, not established
+physical cell correspondence, a maximum cellwise temperature difference, global
+error bound or accuracy acceptance. Very large relative figures have near-zero
+reference denominators. The postprocessing took 38.078 s and 2.04 GiB tree RSS,
+not a measured generator gain.
+
+The final isolated measurement handoff is independently accepted with its
+failures preserved: 38 explained sampling-only findings remain FAIL, and the
+inherited equality/decoded reports retain their changed and unexplained classes.
+Approved publication checks overlapped the chain, so its durations are not an
+isolated speed comparison. The composed pool/B/F join, combined reference and
+recovery, mixed low/fitted spatial accuracy, nonzero prescribed-power coverage
+and scientific acceptance remain open.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
