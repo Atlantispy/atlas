@@ -194,7 +194,7 @@ class PreparedExteriorOwner:
                 values['enthalpy_j'] = _q(stock['enthalpy_j'])
                 values['tracer:source_kappa'] = _q(stock['source_kappa_mass_kg'])
                 mass = [Q(0)]*len(self._keys); mass[self._keys.index(key)] = _q(stock['mass_kg'])
-                cell_id = _hash(dict(funding_id=funding.funding_id, source_key=key,
+                cell_id = _hash(dict(source_key=key,          # A-10: no funding_id; support keeps it
                     radial_layer=row['radial_layer'], exclusions=definition['cell_geometries']))
                 cells.append(dict(cell_id=cell_id, source_key=list(key), parent_cell_id=None,
                     support=dict(radial_layer=row['radial_layer'], patch_id=row['patch_id'],

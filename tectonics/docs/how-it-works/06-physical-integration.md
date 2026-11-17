@@ -1508,6 +1508,14 @@ not-enabled A1 result.
 
 ### Check identity at publication and worker boundaries
 
+The separate [rigid-support identity rule](../../optimisation/working-snapshot-20261113/README.md#keep-funding-out-of-rigid-support-identifiers)
+keeps funding as provenance while omitting it from the wall support and
+`PreparedExteriorOwner` cell hashes. The grid cells, trajectory or source
+key/layer/exclusions still define those identifiers. This leaves the spatial
+owner's different recipe and mesh ordering unchanged. Earlier small-collar
+controls contained no wall rows and used one funding per chain; full-chain and
+mixed-funding cache coverage remain open.
+
 The [working snapshot](../../optimisation/working-snapshot-20261113/README.md#keep-the-loaded-heat-inventory-independent-of-recognised-home-paths) maps recognised package and interpreter path constants into their own relative namespaces when constructing the loaded heat inventory. File opening still uses the original constants; unknown absolute paths keep their spelling. Controlled two-home imports agree on the inventory. This affects loaded identities, and supplies no new physical or whole-chain result.
 
 [Plan39](../../optimisation/workbench/plan39/README.md) sets the selected Release

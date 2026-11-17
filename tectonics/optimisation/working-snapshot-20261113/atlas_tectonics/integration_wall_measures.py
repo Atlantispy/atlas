@@ -646,7 +646,7 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     completed = history+[segment]
     trajectory = dict(rule='chronological composition of exact constant-skew matrix exponentials',
         epoch_s=V._encoded(epoch), segments=completed)
-    support_base = dict(funding_id=funding.funding_id, grid_cell_ids=[c.cell_id for c in cells])
+    support_base = dict(grid_cell_ids=[c.cell_id for c in cells])     # A-1 root: no funding_id; the record keeps it
     def support_id(t):
         prefix = history if t == start else completed
         return _hash(dict(**support_base, time_s=V._encoded(t), trajectory_prefix=prefix))

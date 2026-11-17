@@ -524,6 +524,26 @@ execution. These bounded controls do not qualify a joined package or all overlay
 
 The existing failed-replacement and real serve/monitor controls passed with timing marks retained; removing the batch comparison was killed by the stale-report control. These bounded resource/lifecycle checks do not measure generator performance or qualify a full interval. No separately scoped check removal is included.
 
+### Keep funding out of rigid support identifiers
+
+The rigid-wall route's `measure_walls` hashes the retained grid-cell identifiers,
+time and chronological trajectory prefix into each physical support identifier.
+It omits `funding_id` from that hash while keeping funding in the wall record.
+Separately, `PreparedExteriorOwner` hashes source key, radial layer and exclusions
+into each exterior cell identifier, retaining funding in the cell's support and
+owner provenance. Renaming only the funding record therefore need not rename
+these two physical identifiers. This does not change the spatial owner's
+different cell recipe, mesh order, a flux or a stock value.
+
+The sealed rebased funding-rename control and both targeted mutants are
+independently accepted within the small fixture: four wall support identifiers,
+few exterior cells, no actual wall rows and one funding per chain. Restoring
+funding to either hash breaks only its own identifier comparison; provenance
+still agrees. A first attempt's later Windows copy-path failure left its positive
+usable, so that positive was reused in the completed qualification. Mixed-funding
+cache behaviour, a full rigid-wall chain and new capture remain open. Older
+stored identities are not rewritten.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
