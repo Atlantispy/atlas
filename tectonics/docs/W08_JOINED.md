@@ -70,6 +70,17 @@ latent-heat or radiogenic source. The view is a physical input to the W03/W04/W0
 owners, not a second flexure, thermal PDE or free-surface solve. Host displacement
 or replacement still requires its explicit finite-host Step 5 operation.
 
+The snapshot's [regional placement correction](../optimisation/working-snapshot-20261113/README.md#keep-regional-placement-sums-finite-through-cancellation)
+reduces the original checked thickness words once per placement mode and parcel.
+An overflowing `math.fsum` prefix replays those same immutable words in exact
+binary64 quanta, then projects once; a truly overflowing result retains the
+existing regional exception. Extrusion/underplating, existing-column omission,
+load/stock rules and parent/cancellation ownership stay intact. Accepted retained
+external scope covers the standalone legal regional diagnostic and normal stored
+view, including the selected placement/stored-restart regressions. It does not
+qualify a joined shrinking trajectory, maximum shape/resources or the general
+W08 replacement.
+
 ## Checkpoint and cache contract
 
 Only a completed supplied interval or a validated exact-exhaustion endpoint may

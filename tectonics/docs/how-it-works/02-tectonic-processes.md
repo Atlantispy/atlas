@@ -574,6 +574,16 @@ thermal or structural response. [Thermodynamic tests](../../tests/test_w08_magma
 outlets, exact depletion and component/enthalpy closure. They check supplied
 processes rather than predicting volcano locations or melt-source chemistry.
 
+The [placement view](../../optimisation/working-snapshot-20261113/README.md#keep-regional-placement-sums-finite-through-cancellation)
+keeps its rounded mass/density/area thickness words and sums them separately for
+extrusion and underplating. If an intermediate sum overflows, it replays the same
+words exactly before the original float projection; true final overflow keeps
+the existing error. The load plane, stock accounts, existing-column omission and
+parent/cancellation lifetime remain. Selected external range/normal controls and
+the two placement/stored-restart regressions pass within standalone view scope;
+joined shrinking behaviour, maximum resources and general/scientific W08
+qualification remain open. The view supplies physical input to its process owners.
+
 ### Join regimes and exchange evolving mechanical inputs
 
 The [W08 workflow](../../src/atlas_tectonics/w08_workflow.py) serialises dated

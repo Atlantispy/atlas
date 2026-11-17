@@ -1133,6 +1133,45 @@ observed initial issue/restore do not close the cache witness, carried/birth,
 tied-I05, numerical-consumer or actual joined-package gaps. No runtime saving is
 measured for the retained survivor prefixes.
 
+### Keep regional placement sums finite through cancellation
+
+The [regional view](../../docs/W08_JOINED.md#regional-physical-owners) retains
+the issued row selection and the original two checked rounded quotients for
+each thickness contribution: mass change divided by receiving density, then
+parcel area. Extrusion and underplating are reduced separately for each parcel;
+existing-column contributions stay omitted and the separate gross mass/load,
+stocks, heat and pressure rules remain.
+
+Ordinary `math.fsum` runs first over those already stored finite words. Only an
+overflowing prefix restarts the same complete immutable scalar sequence, adding
+integer multiples of `2^-1074` and projecting once at the original binary64
+boundary. No physical quotient is recomputed by the replay. Exact cancellation
+returns positive zero, surviving subnormals are retained and a finite round-back
+to the largest float is allowed. A genuinely overflowing final projection keeps
+the existing regional `TectonicsError`.
+
+The admitted node-by-parcel buffer and bounded scalar replay use the existing
+operation lease. Its fixed 64 KiB pool includes 8 KiB for at most 64 finite words and
+2104-bit scalar sums, with no retained integer state between parcels. Existing
+parcel-batch cancellation, parent admission and release remain; no cap or
+tolerance changes.
+
+Retained external packaged qualification passes all 50 observations:16 scalar
+and34 public/resource observations across both complete row orders and placement
+modes. Additions/load cancel to positive zero with finite equal gross/load and
+stock fields; genuine final overflow, a one-byte parent and entry/live
+cancellation retain their observed error/refusal/unwind behaviour. Four reporter
+classification faults and actual wrong-source/nonoverwrite handling also pass.
+The normal sensitivity passes 8/8, and the two selected public placement and
+actual stored-restart regressions pass. The original old-source comparison's
+four targeted numeric differences are reused without a new old arm.
+
+Accepted scope is this standalone legal regional diagnostic and normal stored
+view. The small logical view peak does not bound maximum shape, elapsed time or
+resident memory. Joined shrinking trajectories, whole-module/general W08 and
+scientific acceptance remain open. The shared finite-sum support ships with this
+first consuming fix; later consumers must bind its exact source.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

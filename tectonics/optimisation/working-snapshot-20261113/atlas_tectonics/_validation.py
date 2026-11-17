@@ -192,3 +192,31 @@ def _drop_effort(node, path):
     if type(node) in (list, tuple) and head == '*' and rest:
         return [_drop_effort(item, rest) for item in node]
     return node
+
+
+def _float_quanta(value):
+    """Exact 2^-1074 units of an already-rounded finite binary64 operand."""
+    numerator, denominator = float(value).as_integer_ratio()
+    return numerator << (1074 - (denominator.bit_length() - 1))
+
+
+def _quanta_float(total):
+    """Round one exact dyadic sum, without converting its numerator first."""
+    return total / (1 << 1074)
+
+
+def _replay_fsum(factory):
+    """Sum validated finite words; replay only after fsum prefix overflow.
+
+    The factory must make a fresh iterator over the same immutable rounded
+    operands. Construct products/quotients before calling, not inside it.
+    Callers own bounded scalar scratch and translate final projection overflow.
+    """
+    values = factory()
+    try:
+        return math.fsum(values)
+    except OverflowError:
+        total = 0
+        for value in factory():
+            total += _float_quanta(value)
+        return _quanta_float(total)

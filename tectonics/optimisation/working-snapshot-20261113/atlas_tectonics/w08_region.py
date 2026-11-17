@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from shapely.strtree import STRtree
 
-from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import TectonicsError, input_shape, read_array, scalar, _replay_fsum
 from .geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS, _validate_shape
 from .magmatic_emplacement import (_allocate, _budget, _cancel, _identity,
     _ids, _json, _quotient, _sum, _text, _text_allowance)
@@ -239,6 +239,8 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
     resource = _budget(budget)
     # Returned bytes coexist with work arrays and JSON/hash scratch. No N*P*K
     # array, native geometry index or retained-result buffer precedes admission.
+    # The fixed 64 KiB pool includes 8 KiB scalar scratch: at most 64 terms and
+    # 2104-bit quantum sums, with no retained integer state between parcels.
     size = 32*n*p*k + 160*n*p + 256*p + region.nbytes + 65536
     size += _geometry_bytes(polygons)+_geometry_bytes(reference)
     size += _text_allowance(inventory.component_ids+inventory.node_ids+
@@ -252,6 +254,7 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
         ref_area = np.array([g.area_m2 for g in reference])
         stocks = np.empty((4,n,p)); components = np.empty((n,p,k))
         base_mass = np.empty((n,p)); changes = np.zeros((3,p))
+        additions = np.zeros((n,p))
         mass,heat,volume,thickness = stocks
         weights,rho = region.mass_weights,region.density_kg_m3
         try:
@@ -272,8 +275,14 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
                     mode = region.placement_modes[row]
                     if mode != 'existing-column':
                         delta = _quotient(mass[row]-base_mass[row],rho[row],'emplacement volume change')
-                        changes[1 if mode == 'extrusive' else 2] += _quotient(
-                            delta,area,'emplacement thickness change')
+                        additions[row] = _quotient(delta,area,'emplacement thickness change')
+                for mode,target in (('extrusive',1),('underplating',2)):
+                    for parcel in range(p):
+                        if parcel % 32 == 0:
+                            _cancel(cancel)
+                        changes[target,parcel] = _replay_fsum(lambda: (
+                            float(additions[row,parcel])
+                            for row,placement in enumerate(region.placement_modes) if placement == mode))
                 current = np.array([_sum(mass[:,j]) for j in range(p)])
                 initial = np.array([_sum(base_mass[:,j]) for j in range(p)])
                 changes[0] = (_quotient(current,area,'current mass per area')-
