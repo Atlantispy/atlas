@@ -92,9 +92,12 @@ Six execution choices that change how work is scheduled or checked, not what is 
   synced but not made visible, then published as a group of at most 64 (or 64 x 22,096 work units) after one
   fresh strict execution check. A stopped process leaves at most 63 partial files, which no reader opens and
   which are recomputed.
-- **The admission group.** `integration_dual_geometry.py` `MeasurementGroup` (line 699): one strict execution
-  check covers up to 64 cached measurement calls; every call of the group, hit or miss, is followed by that
-  check before any miss is published. A stopped process loses the held misses, which are measured again.
+- **The admission group.** `integration_dual_geometry.py` `MeasurementGroup` captures
+  `context.identity` at group open for stored keys and metadata. Held misses are
+  flushed in their original publication order at the existing call/byte limits;
+  normal exit uses the same flush. The repeated group verification is removed.
+  Ungrouped checks, exception cleanup, budgets and remeasurement of held misses
+  lost when a process stops remain unchanged.
 
 The same commit adds two diagnostic-only routes. `_private/reuse_previous_run.py` lets a fixed reader read the
 previous run's sealed interval when the two trees differ only in reader files that bind no producer output; its

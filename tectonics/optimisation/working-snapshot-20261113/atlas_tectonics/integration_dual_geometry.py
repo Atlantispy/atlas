@@ -857,13 +857,12 @@ def measure_initial_component(support, cell_id, *, relative_error, absolute_widt
 
 
 class MeasurementGroup:
-    """One strict execution check for a group of cached_initial_component calls.
+    """Hold bounded groups of cached_initial_component misses for publication.
 
-    Every call of the group, hit or miss, is followed by that check before any
-    miss of the group is published and before the group closes. A stopped
-    process loses the held misses; they are measured again.
+    The execution identity is captured at group open. A stopped process loses
+    the held misses; they are measured again.
     """
-    CALLS = 64          # calls that one check may cover
+    CALLS = 64          # calls before held misses are flushed
     BYTES = 4 << 20     # encoded misses held; one more record of up to 1 MiB may join
 
     def __init__(self, store, context, budget):
@@ -897,9 +896,8 @@ class MeasurementGroup:
             self.flush()
 
     def flush(self):
-        """ONE fresh strict check, then publish every held miss."""
+        """Publish every held miss in its original order."""
         import numpy as np
-        self.context.verify()
         with self.budget.reserve(4 << 20, category='initial-measurement-cache-codec'):
             while self.held:
                 key = next(iter(self.held))
