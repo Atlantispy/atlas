@@ -605,15 +605,20 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                  else _turned(back[keeper], target[name])[0])
         return _sphere._placed(frames_new[keeper], local)[0]
     used = set(names)
-    for name in sorted(uses):
+    for name in sorted(uses, key=lambda name: _sphere._vector_key(points[lookup[name]])):
         _check_cancel(cancel)
         index = lookup[name]
         records = sorted(uses[name], key=lambda boundary: boundary.boundary_id)
-        proposals = [_turned(rule[boundary.boundary_id][1], points[index])[0] for boundary in records]
         # Decisions and every plate's copy use the moved start position; a ridge record's own vertex is then placed
         # by its record's frame from its unchanged reference direction (integration_sphere._directions).
-        target[name] = seam_targets[name][0] if name in seam_targets else proposals[0]
-        spread = max((float(_angle(p, target[name])) for p in proposals[1:]), default=0.)
+        if name in seam_targets:
+            target[name], spread = seam_targets[name][0], 0.
+        else:
+            proposals = [_turned(rule[boundary.boundary_id][1], points[index])[0] for boundary in records]
+            winner = (0 if len(proposals) == 1 else
+                      min(range(len(proposals)), key=lambda i: _sphere._vector_key(proposals[i])))
+            target[name] = proposals[winner]
+            spread = max((float(_angle(p, target[name])) for i, p in enumerate(proposals) if i != winner), default=0.)
         owners = sorted(around[name])
         own = {plate: carried[plate][index] for plate in owners}
         scale = max((float(_angle(own[a], own[b])) for i, a in enumerate(owners) for b in owners[i+1:]), default=0.)
@@ -1373,7 +1378,7 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
     carrier and a line give one constraint. Exactly two lines must meet there: three or more rigid lines cannot stay
     concurrent, so such a junction must reorganise, which needs an admitted law. The contract's closure residual
     r = ||A J - b|| / max |v_i - v_j| is checked at the start of the interval (C1, 1e-11), with rows the stored poles and
-    each record's carrier velocity relative to one plate at the junction (the first by ID), so that a common rotation
+    each record's carrier velocity relative to the least physical velocity at the junction, so that a common rotation
     of every plate leaves it unchanged; for one line and one other record it is zero by structure. The junction goes
     to the intersection of the two advanced lines nearest the junction as the first line carries it, which must cross
     at sin psi >= 1/16 (C4), and no record's end segment may shorten to zero or reverse (C5). Returns (new position, residual, carrier of the through line,
@@ -1382,8 +1387,9 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
     name = junction.vertex_id
     record = {boundary.boundary_id: boundary for boundary in network.boundaries}
     poles = dict(network._layout.poles)
+    end_order = _sphere._junction_ends(junction, record, points, lookup)
     lines = {}
-    for end in junction.boundary_ends:
+    for end in end_order:
         lines.setdefault((_sphere._carrier(record[end[0]]), poles[end]), []).append(end)
     if len(lines) < 2:
         raise TransferRefused('the boundary records that end at vertex %r move it to different points along one line; '
@@ -1391,7 +1397,7 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
     # C3: records on one great circle through the junction with different carriers would be one line carried by two
     # plates. A through-going line is carried by one plate, so such a junction cannot advance.
     ends = [(end, _sphere._placed(frames_old[_sphere._carrier(record[end[0]])], np.asarray(poles[end]))[0])
-            for end in junction.boundary_ends]
+            for end in end_order]
     for i, (first, one_pole) in enumerate(ends):
         for second, two_pole in ends[i+1:]:
             if (_sphere._carrier(record[first[0]]) != _sphere._carrier(record[second[0]])
@@ -1399,9 +1405,10 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
                 raise TransferRefused('records %r and %r end at junction %r on one great circle with different '
                                       'carriers: a through-going line is carried by one plate (C3); refused'
                                       % (first[0], second[0], name))
-    plates = sorted({plate for end in junction.boundary_ends
-                     for plate in (record[end[0]].left_plate_id, record[end[0]].right_plate_id)})
+    plates = {plate for end in end_order
+              for plate in (record[end[0]].left_plate_id, record[end[0]].right_plate_id)}
     velocity = {plate: _velocity(stage[plate], here) for plate in plates}
+    plates = sorted(velocity, key=lambda plate: _sphere._vector_key(velocity[plate]))
     reference = velocity[plates[0]]          # relative velocities: a common rotation changes neither b nor the scale
     rows, values = [], []
     for (carrier, pole), members in lines.items():
@@ -1445,7 +1452,7 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
     through = [(carrier, members) for (carrier, _), members in lines.items() if len(members) > 1]
     corner_transform = None
     if not through and len(junction.boundary_ends) == 2:
-        members = [(end, record[end[0]]) for end in junction.boundary_ends]
+        members = [(end, record[end[0]]) for end in end_order]
         if {b.kind for _, b in members} == {RIDGE, TRANSFORM}:
             transform_end, transform = next((end, b) for end, b in members if b.kind == TRANSFORM)
             if (transform.boundary_id, 'trace') not in poles:
@@ -1456,7 +1463,7 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
         raise TransferRefused('the records at junction %r lie on two lines of one record each (a corner): this version '
                               'advances such a junction only where they carry it to one point; refused' % name)
     through_ends, crossings = set(through[0][1]), {}
-    for boundary_id, role in junction.boundary_ends:
+    for boundary_id, role in end_order:
         chain = record[boundary_id].vertex_ids
         rotation = rule[boundary_id][1]
         carried = _turned(rotation, here)[0]

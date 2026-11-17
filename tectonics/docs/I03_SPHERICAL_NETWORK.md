@@ -400,7 +400,7 @@ refuses the first interval. Otherwise:
    later from a short pair of vertices, whose direction error grows as `ε/ℓ`.
 2. *Residual (C1).* At the start of the interval the contract's residual `r = ||A J - b|| / max |v_i - v_j|` must be
    within 1e-11. Its rows are the stored poles and `b` is each record's carrier velocity there relative to one plate
-   at the junction (the first by ID). That is the same residual in exact arithmetic, and it keeps the round-off at
+   at the junction (the least stored velocity triple, with a deterministic exact-zero representation on a complete numeric tie). That is the same residual in exact arithmetic, and it keeps the round-off at
    the scale of the relative velocities: with absolute velocities, a common rotation of every plate raised `b` and
    not the scale, and the Part 2 verifier found a slow T-junction refused at `9e-11` in the case's own rotated
    frame. The scale uses the plates' relative velocities, which is I03a's precedent and looser than the contract's
@@ -515,6 +515,21 @@ their qualification limits. Retained external qualification accepts all 20
 formation/stored-pole comparisons and 12 actually reached advanced-reader
 comparisons. Eight persisting/tilted comparisons have no advanced calls and
 remain partial; no carrier-frame transport or full-step/event proof follows.
+
+**Proposal and junction arithmetic order.** Used vertices follow their issued
+world-coordinate triples. An ordinary moved target is the least numeric proposal;
+only a complete vector tie uses its exact-zero representation. Spread compares
+every other proposal with that selected target. Seam overrides retain zero spread
+and analytic paths retain their own targets/residuals. At an advanced junction,
+adjacent physical end positions order groups, members, paired checks, matching
+least-squares rows/RHS, line crossings and outward scans. Newly computed exact
+zeros get one representation at their producer. Existing history, carrier/home
+priorities, ridge weights, solvers and closure bands are unchanged. Historical
+signed-zero/residual observations retain their individual scope. The selected
+retained external matrix accepts all 20 endpoint and returned-diagnostic
+comparisons through all six complete endpoint sections. It does not qualify
+carrier-frame transport, a persisted full step, analytic/event poles or mixed
+generation.
 
 #### Ridge-transform staircase seam extension (I04 repair)
 

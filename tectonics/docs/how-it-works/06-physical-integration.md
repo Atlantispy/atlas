@@ -1017,6 +1017,14 @@ and 12 reached group/row/RHS/matrix/solve comparisons; eight persisting/tilted
 comparisons remain partial because they reach no advanced reader. Frame
 transport, full-step/event, paths and mixed generation remain unqualified.
 
+Proposal selection and advanced-junction arithmetic use numeric positions and
+velocities in the declared axes, with a deterministic representation only for an
+exact-zero tie. The same adjacent-end order keeps groups, least-squares rows/RHS
+and crossings aligned. Seam and analytic-path exceptions retain their own targets.
+All 20 selected retained external endpoint/diagnostic comparisons pass through
+the six complete issued endpoint sections. This supplies that bounded result,
+with carrier-frame/full-step/analytic/event and mixed-generation scope open.
+
 ### Hand part of the network to a regional model and take it back
 
 A regional model, such as the three-dimensional solver of section 4, works on a box

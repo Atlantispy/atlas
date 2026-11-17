@@ -1236,6 +1236,16 @@ consumer differences; it was not rerun. Actual source-error/trace/nonoverwrite
 reporting also passes. These observations do not establish maximum-shape or
 whole-chain resources, universal ordering, reference-run or scientific acceptance.
 
+### Keep junction operands aligned with their physical ends
+
+The [junction method](../../docs/I03_SPHERICAL_NETWORK.md#r3-4-moving-boundaries-and-junctions)
+uses numeric proposal/velocity order and one adjacent-end sequence for groups,
+rows/RHS and crossings. Exact-zero representation is settled at its producer;
+seam/path exceptions, carrier/home priorities and numerical gates remain. Retained external
+qualification accepts all 20 endpoint/diagnostic comparisons through six complete
+endpoint sections. Carrier-frame/full-step, analytic/event and mixed-generation
+qualification remains open.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
