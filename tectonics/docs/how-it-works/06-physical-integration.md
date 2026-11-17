@@ -98,6 +98,21 @@ from the lines rather than accepting them as given. Each plate carries one rotat
 describing how far it has turned since a stated reference time, and each boundary
 records where it came from: the declared starting condition or a named event.
 
+The differential-support route names an ordered edge pair without confusing a
+separator inside either vertex label with the separator between the two labels.
+Ordinary keys keep their exact old spelling; a pair containing `>` receives an
+explicit marker and the first label's separator count. The order and multiplicity
+of the physical directed rays remain; nothing sorts edges or bans punctuation.
+Current/moving writers and the interval/END readers use the same pair rule,
+with their exact source bindings retained.
+
+Legacy readers can recognise the old spelling, but that cannot recover a
+constraint already overwritten by an ambiguous old map. Source/static evidence
+does not supply a final-volume, admission, unchanged-search-order or historic
+repair result. The selected consumer qualification separately compares each
+issued fan literal with its actual independently derived directed plane; missing
+setup/consumer coverage and later support errors cannot count as that result.
+
 The geometry is the closed spherical atlas of the
 [foundations chapter](01-foundations.md#geological-geometry-and-shared-plate-boundaries),
 checked by that atlas's own tests. A gap, an overlap, a face claimed twice, a

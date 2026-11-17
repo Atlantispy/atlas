@@ -1431,6 +1431,13 @@ def _finer_static_pose(first, leaf, bounds, weight, widths, max_leaves, arena):
     return None
 
 
+def _directed_edge_name(prefix, first, second):
+    """Name an ordered pair without changing ordinary issued keys."""
+    pair = first+'>'+second
+    if '>' in first or '>' in second:
+        return prefix+':>'+str(first.count('>'))+':'+pair
+    return prefix+':'+pair
+
 def _moving_fan_integrals(ray_records, layer, face, omega, rays, fans, polynomials, widths, duration,
                           max_leaves, arena, whole):
     """Certified interval integrals of an owner's fan partition on one face.
@@ -1478,7 +1485,7 @@ def _moving_fan_integrals(ray_records, layer, face, omega, rays, fans, polynomia
     for fan, leaf, first in inexact:
         constraints, literals = {}, []
         for one, two in zip(fan, fan[1:]+fan[:1]):
-            name = 'owner-fan-edge:'+one+'>'+two
+            name = _directed_edge_name('owner-fan-edge', one, two)
             constraints[name] = dict(kind='moving-ray-edge', rays=[ray_records[one], ray_records[two]])
             literals.append((name, 1))
         # The fan's root enclosure was just evaluated; do not charge it twice.
@@ -2298,7 +2305,7 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
     def fan_names(fan, prefix, advected_start=False):
         names = []
         for first, second in zip(fan, fan[1:]+fan[:1]):
-            name = prefix+':'+first+'>'+second
+            name = _directed_edge_name(prefix, first, second)
             if advected_start:
                 if any(_ray_parts(rays[name])[2] for name in (first, second)):
                     constraint = dict(kind='snapshot-rotated', snapshot_offset_s=_qtext(Q(0)),

@@ -14,8 +14,8 @@ from pathlib import Path
 
 PINS = {
     'provider': ('q297_end_provider_v2.py', '643add9943d36755b1a52782a805ce256c76b6e8d86242d6903ab3ce2181e71c'),
-    'pieces': ('q297_end_pieces_v2.py', '946d19590eea9ef0cb06174eef418ced0be70b7e0ed54529afc3038997adafa3'),
-    'piece_builder': ('interval_piece_candidate.py', '9d59425bc25a312e5f5c2455f070068a298906c3a9604a008cf84d0cf4f0531e'),
+    'pieces': ('q297_end_pieces_v2.py', '9542c8460d9a859868424f25837c5339846a69353abdd340b0cfc6a44d5e8fe8'),
+    'piece_builder': ('interval_piece_candidate.py', 'ad034d0405e59850ec40133d3f7bae7e816381959777fb8542b974c63e8e299c'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),
     'family': ('material_family_context_candidate.py', '6de91cedc3e1131ba51d49df0f7110d0767a3646f42026f24e2f8dda1a32730e'),
     'start': ('material_start_candidate.py', '03c0dba5331bc4702254a3dcffcc888ad7326dc70b4e2b692956a7e207e95acf'),

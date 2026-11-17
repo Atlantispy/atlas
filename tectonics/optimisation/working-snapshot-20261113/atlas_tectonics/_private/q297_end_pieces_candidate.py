@@ -24,7 +24,9 @@ def _actual_planes(row, component, rays, context, *, D, W):
             raise ValueError('invalid signed material literal')
         literal = row['constraints'][name]
         if name.startswith('owner:'):
-            indexes = [i for i, (a, b) in enumerate(pairs) if name == 'owner:' + a + '>' + b]
+            legacy = name.count('>') > 1 and not name.startswith('owner:>')
+            indexes = [i for i, (a, b) in enumerate(pairs) if name ==
+                       ('owner:' + a + '>' + b if legacy else D._directed_edge_name('owner', a, b))]
             if len(indexes) != 1 or sign != 1:
                 raise ValueError('issued current-owner literal differs')
             normal, error, offset = owner[indexes[0]]

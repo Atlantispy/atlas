@@ -633,6 +633,24 @@ the prescribed capacity refusal. This qualifies the selected whole index
 contract beyond matching classifications. Cross-frame, historical restore,
 performance, whole-process and scientific acceptance remain open.
 
+### Keep distinct directed-edge pairs distinct
+
+The differential-support writer and its interval/END readers encode ordered
+vertex pairs without confusing punctuation inside either label with the pair
+separator. Ordinary keys retain their old spelling; a label containing `>` adds
+an explicit marker and separator count. Directed-ray order and multiplicity
+remain. The source binding preserves the current provider, grid and proof
+selection while changing the required piece/member pins.
+
+The independently accepted current-geometry writer qualification reaches actual
+support issue with the same saved operands in both arms: the candidate keeps
+12 constraints and all six checked fields agree at each of 12 slots; the old
+writer keeps 11 constraints after one ambiguous key overwrites a distinct pair.
+Moving writers, END reconstruction and legacy paths retain source-only coverage.
+An old spelling cannot recover an already overwritten constraint. Final volume,
+work/admission, search order, historical recovery, joined qualification and
+scientific acceptance remain open; no performance result is claimed.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

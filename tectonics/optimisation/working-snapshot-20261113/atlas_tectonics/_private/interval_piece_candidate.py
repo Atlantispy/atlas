@@ -59,7 +59,9 @@ def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
             raise ValueError('invalid signed literal '+logical_id+' '+name)
         literal = row['constraints'][name]
         if name.startswith('owner:'):
-            indexes = [i for i,(a,b) in enumerate(pairs) if name == 'owner:'+a+'>'+b]
+            legacy = name.count('>') > 1 and not name.startswith('owner:>')
+            indexes = [i for i,(a,b) in enumerate(pairs) if name ==
+                       ('owner:'+a+'>'+b if legacy else D._directed_edge_name('owner', a, b))]
             if len(indexes) != 1 or sign != 1:
                 raise ValueError('owner literal does not match issued fan '+logical_id+' '+name)
             normal, error, offset = owner[indexes[0]]
