@@ -651,6 +651,17 @@ An old spelling cannot recover an already overwritten constraint. Final volume,
 work/admission, search order, historical recovery, joined qualification and
 scientific acceptance remain open; no performance result is claimed.
 
+### Accurately total each authored phase row
+
+`PreparedPrecursor.sample_cells` streams the actual contiguous phase rows and
+uses one `math.fsum` of their original rounded `phase_volume_m3` terms per row.
+It then subtracts the original bulk volume to store the residual. Authored
+layer-fraction deficits/excesses remain visible; no inventory is renormalised.
+Independent review accepts the local phase-volume arithmetic. The fixed
+same-producer control passes 14/14 comparisons; restoring the old sum changes
+four phase residuals with no other failure. Actual IV1 reach and universal
+extent remain unproved; this is not whole-member or joined qualification.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

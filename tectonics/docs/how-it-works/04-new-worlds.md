@@ -78,6 +78,14 @@ establish consistent construction, not realistic continental morphology. Code:
 [starting structure](../../tools/new_world_structure.py); assumptions and material
 references: [initial lithosphere](../NEW_WORLD_STRUCTURE.md).
 
+The nondefault snapshot's precursor sampler totals each contiguous phase row with one `math.fsum`
+of the original rounded phase volumes, then subtracts the original bulk volume.
+Its residual preserves authored layer deficits or excesses; nothing is
+renormalised. Independent review accepts this local arithmetic: 14/14 fixed
+comparisons pass and the old sum changes four residuals. Actual IV1 reach and
+universal extent remain unproved.
+See the [phase-row method](../../optimisation/working-snapshot-20261113/README.md#accurately-total-each-authored-phase-row).
+
 **A declared successor family (I04.1; not yet wired into New World).** A
 package-owned producer
 ([`integration_family.py`](../../src/atlas_tectonics/integration_family.py)) builds

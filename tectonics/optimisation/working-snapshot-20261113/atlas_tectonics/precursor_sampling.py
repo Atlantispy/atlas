@@ -1055,8 +1055,14 @@ class PreparedPrecursor:
             # The established layer-fraction tolerance permits tiny declared
             # deficits/excesses. Keep those fractions and expose their residual;
             # never renormalise phase inventories to manufacture conservation.
-            phase_sum = np.zeros(len(rows), dtype=np.float64)
-            np.add.at(phase_sum, arrays['phase_row'], arrays['phase_volume_m3'])
+            phase_sum = np.empty(len(rows), dtype=np.float64)
+            phase_start = 0
+            for row_index in range(len(rows)):
+                phase_end = phase_start
+                while phase_end < len(phase_rows) and phase_rows[phase_end][0] == row_index:
+                    phase_end += 1
+                phase_sum[row_index] = math.fsum(arrays['phase_volume_m3'][phase_start:phase_end])
+                phase_start = phase_end
             arrays['phase_volume_residual_m3'] = phase_sum-arrays['bulk_volume_m3']
             arrays['reference_mass_known'] = np.full(len(phase_rows), reference_t is not None, dtype=bool)
             for i, (gid, g) in enumerate(sorted(unique_supports.items())):
