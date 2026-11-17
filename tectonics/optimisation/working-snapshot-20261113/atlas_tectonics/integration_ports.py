@@ -16,13 +16,16 @@ SPDX-License-Identifier: AGPL-3.0-only
 from dataclasses import dataclass, field
 import hashlib
 import math
+import sys
 from numbers import Real
 
 import numpy as np
 
 from . import integration_sphere as S
 from . import integration_state as _state
-from ._validation import TectonicsError
+from ._validation import TectonicsError, _replay_fsum
+from .constitutive import _cancel
+from .resources import select_budget
 from .materials import _json
 
 
@@ -596,18 +599,133 @@ class BoundaryReaction(_state._Immutable):
         return math.fsum(float(x) for x in np.einsum('ij,ij->i', self.traction_left_n_m[mask],
                                                      self.velocity_jump_m_s[mask])*self.edge_length_m[mask])
 
-    def torques(self, plate_ids, plates, radius_m, midpoints):
-        """Per-plate torques of the owned edges by the D1 belt term's midpoint quadrature: R m x f L on the left
-        plate, the opposite on the right (``plates`` are the trace support's (left, right) pairs)."""
-        order = {p: i for i, p in enumerate(plate_ids)}
-        out = np.zeros((len(plate_ids), 3))
-        for e, owned in enumerate(self.owned):
-            if not owned:
-                continue
-            tau = radius_m*self.edge_length_m[e]*np.cross(midpoints[e], self.traction_left_n_m[e])
-            out[order[plates[e][0]]] += tau
-            out[order[plates[e][1]]] -= tau
-        return out
+    def torques(self, plate_ids, plates, radius_m, midpoints, *, budget=None, cancel=None):
+        """Original rounded edge torques, accurately reduced on each output plate.
+
+        Native binary64 rows use compact original-order incidences. Exceptional
+        lanes retain ordered NumPy arithmetic; a widened row selects that original
+        vector route for the entire call, without evaluating any product twice.
+        """
+        _cancel(cancel)
+        owner = select_budget(budget)
+        count = len(plate_ids)
+        owned_count = 0
+        for edge, owned in enumerate(self.owned):
+            if edge % 1024 == 0:
+                _cancel(cancel)
+            owned_count += owned
+
+        # CPython's general-key table bounds also cover its smaller string-key
+        # layout: at most two tables during growth, plus every index integer.
+        # Small headers, row views, cross temporaries, masks and the <=2120-bit
+        # scalar replay are covered by the fixed work allowance, not by E*P.
+        slots = 1 << max(3, (((3*count+1)//2)-1).bit_length())
+        width = 1 if slots <= 128 else 2 if slots <= 32768 else 4 if slots <= 2**31 else 8
+        pointer = np.dtype(np.intp).itemsize
+        mapping = 2*(dict.__basicsize__+64+slots*width+3*pointer*(2*slots//3))
+        mapping += count*sys.getsizeof(count)
+        work = 32*owned_count+35*count+mapping+65536
+        with owner.reserve(work, category='p9-torque-reduction'):
+            order = {}
+            for row, plate in enumerate(plate_ids):
+                if row % 1024 == 0:
+                    _cancel(cancel)
+                order[plate] = row
+            packet = np.empty((owned_count, 3), dtype=np.float64)
+            successor = np.full(2*owned_count, -1, dtype=np.int32)
+            ends = np.full((count, 2), -1, dtype=np.int32)
+            exceptional = np.zeros((count, 3), dtype=bool)
+            out = np.zeros((count, 3))
+
+            def legacy(first, current):
+                # Prefix products are already captured. Replay them, use the live
+                # first nonpacket row, then evaluate the untouched suffix once.
+                ordinal = 0
+                for edge, owned in enumerate(self.owned):
+                    if edge % 1024 == 0:
+                        _cancel(cancel)
+                    if not owned:
+                        continue
+                    if edge < first:
+                        value = packet[ordinal]
+                    elif edge == first:
+                        value = current
+                    else:
+                        value = radius_m*self.edge_length_m[edge]*np.cross(
+                            midpoints[edge], self.traction_left_n_m[edge])
+                    out[order[plates[edge][0]]] += value
+                    out[order[plates[edge][1]]] -= value
+                    ordinal += 1
+                _cancel(cancel)
+                return out
+
+            ordinal = 0
+            has_exceptional = False
+            for edge, owned in enumerate(self.owned):
+                if edge % 1024 == 0:
+                    _cancel(cancel)
+                if not owned:
+                    continue
+                tau = radius_m*self.edge_length_m[edge]*np.cross(
+                    midpoints[edge], self.traction_left_n_m[edge])
+                if (type(tau) is not np.ndarray or tau.shape != (3,)
+                        or tau.dtype != np.dtype(np.float64) or not tau.dtype.isnative):
+                    return legacy(edge, tau)
+                left, right = order[plates[edge][0]], order[plates[edge][1]]
+                packet[ordinal] = tau
+                nonfinite = ~np.isfinite(tau)
+                if np.any(nonfinite):
+                    exceptional[left] |= nonfinite
+                    exceptional[right] |= nonfinite
+                    has_exceptional = True
+                for row, occurrence in ((left, 2*ordinal), (right, 2*ordinal+1)):
+                    tail = int(ends[row, 1])
+                    if tail < 0:
+                        ends[row, 0] = occurrence
+                    else:
+                        successor[tail] = occurrence
+                    ends[row, 1] = occurrence
+                ordinal += 1
+
+            def values(row, axis):
+                occurrence = int(ends[row, 0])
+                visits = 0
+                while occurrence >= 0:
+                    if visits % 1024 == 0:
+                        _cancel(cancel)
+                    value = float(packet[occurrence//2, axis])
+                    yield -value if occurrence % 2 else value
+                    occurrence = int(successor[occurrence])
+                    visits += 1
+
+            for row in range(count):
+                if row % 1024 == 0:
+                    _cancel(cancel)
+                for axis in range(3):
+                    if exceptional[row, axis]:
+                        continue
+                    try:
+                        out[row, axis] = _replay_fsum(lambda: values(row, axis))
+                    except OverflowError:
+                        # Only a true final projection overflow remains after the
+                        # shared finite-word prefix replay. Preserve the original
+                        # NumPy disposition for this lane, not a new port refusal.
+                        exceptional[row, axis] = True
+                        has_exceptional = True
+            if has_exceptional:
+                ordinal = 0
+                for edge, owned in enumerate(self.owned):
+                    if edge % 1024 == 0:
+                        _cancel(cancel)
+                    if not owned:
+                        continue
+                    left, right = order[plates[edge][0]], order[plates[edge][1]]
+                    tau = packet[ordinal]
+                    np.add(out[left], tau, out=out[left], where=exceptional[left])
+                    np.subtract(out[right], tau, out=out[right], where=exceptional[right])
+                    ordinal += 1
+            _cancel(cancel)
+            return out
 
 
 def _boundary_reaction(header, support, owned, velocity, traction, length):

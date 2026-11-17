@@ -402,6 +402,18 @@ moving mantle.
 **Interfaces.** A boundary may carry a simple interface resistance or a regional
 model's reaction, never both.
 
+The separate [boundary-reaction torque reader](../../optimisation/working-snapshot-20261113/README.md#sum-each-owned-reaction-torque-on-both-plate-sides)
+forms each original rounded `R*L*cross(midpoint, traction)` product once and
+keeps left/right incidences in edge order. Finite components use restartable
+accurate reduction; exceptional components and nonplain products retain the
+ordered NumPy paths. Power and the four positional arguments are unchanged.
+Optional admission and cancellation cover the live scratch work; exception
+frames may retain arrays after its lease exits. Local controls accept the
+six-edge optional API fixture, including its caller's 256 KiB traceback
+allowance; the whole belt regression also passes. The two north/south physical input differences,
+general traceback lifetime, production active-parent and coupled-trajectory
+qualification remain open.
+
 **Checks.** The retained I01 two-hemisphere control is repeated on the network's cells,
 covering:
 - the exact rotations;

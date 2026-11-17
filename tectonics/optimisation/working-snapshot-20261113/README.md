@@ -1258,6 +1258,35 @@ at the existing holed-projective branch before issue and qualifies only its
 earlier observations. No admission crossing, general peak or joined/scientific
 result follows. This shared-sum application is distinct from the belt comparison.
 
+### Sum each owned reaction torque on both plate sides
+
+`BoundaryReaction.torques` keeps the immutable issued trace and evaluates each
+original rounded `radius*length*cross(midpoint,traction)` product once, in its
+NumPy order. A compact binary64 packet appends left then right signed incidences
+in edge order, preserving repeated plate names, both sides on one plate and
+skipped unowned edges. Finite output components use the shared restartable
+reduction of those same words. Nonfinite or truly overflowing components replay
+the ordered masked NumPy operations from zero. The first product outside the
+native binary64 three-component route selects the original whole-vector path
+from the captured prefix, live current product and untouched suffix, without a
+second product evaluation or a full-edge scan for every plate.
+
+The four positional arguments and power reader are unchanged. Optional budget
+and cancellation inputs admit the map and packet before allocation and reach
+live incidence walks and replay. Native arrays use `32O+35P` bytes for `O` owned
+edges and `P` plates, plus conservatively funded map/index storage and 64 KiB of
+fixed workspace; issued traces bound `O` to `2^19`.
+
+[Local issued-feedback qualification](../../docs/how-it-works/06-physical-integration.md#balance-the-plates-of-the-shared-network)
+accepts all 23 controls and the whole belt regression. Four normal comparisons
+retain two equal local targets and the same two north/south physical signed-edge
+input differences, which remain open. Resource observations cover only the
+six-edge optional API fixture, including its caller's 256 KiB traceback
+allowance. Exception frames can retain arrays after the operation lease exits.
+General retained-traceback, maximum-shape, production active-parent,
+coupled-trajectory, universal RSS, whole-chain, performance and scientific
+qualification remain open.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
