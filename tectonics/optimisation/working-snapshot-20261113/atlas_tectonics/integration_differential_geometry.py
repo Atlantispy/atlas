@@ -2086,9 +2086,9 @@ def _interface_identity(constraint):
     return None
 
 
-# Born-row geometry (designs/born-row-geometry-r1.md s2): the planes kept as stored where no canonical form exists.
+# Born-row geometry: the planes kept as stored where no canonical form exists.
 # Only these two kinds can lack one (a fixed plane with an offset; a snapshot of an edge with no rigid path); any
-# other kind refuses, so a kind added later with an id inside cannot enter the key unread (Reviewer N-1).
+# other kind refuses, so a kind added later with an id inside cannot enter the key unread.
 _SHAPE_AS_STORED = ('fixed-plane', 'snapshot-rotated')
 
 
@@ -2106,7 +2106,7 @@ def _shape_item(constraint, sign):
 def _shape_key(constraints, literals):
     """sha256 of a cell's own bounding half-spaces: each literal's plane in canonical form times its side, equal items
     dropped, encoded items sorted. No name, id, index, chart or volume enters. Bound to the stored form: a ray record
-    grows each interval, so the key names a shape within one graph record, never a cell across intervals (N-2)."""
+    grows each interval, so the key names a shape within one graph record, never a cell across intervals."""
     items = {_encoded(_shape_item(constraints[name], sign)) for name, sign in literals}
     return hashlib.sha256(b'\n'.join(sorted(items))).hexdigest()
 

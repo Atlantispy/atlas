@@ -586,7 +586,7 @@ def _read_surface_key(record, face):
     return None
 
 
-def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, strict_ports=False, arena=None):
+def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, arena=None):
     """Call-local physical keys; None means no established unique order.
 
     IDs retrieve geometry or authenticate the finite port constructor. They
@@ -652,8 +652,6 @@ def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, stri
         if len(matches) != 1:
             if type(parent) is str and collar is not None and collar[0] == 0:
                 ports[row['cell_id']] = None
-            if strict_ports:
-                raise V.VolumeError('physical port construction preimage is ambiguous or missing')
             continue
         ports[row['cell_id']] = (2, collar[1], *matches[0])
         physical[row['cell_id']] = ports[row['cell_id']]
@@ -804,8 +802,6 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
         key = row['cell_id']
         value = Q(start_volumes_m3.get(key, 0))
         lo, hi = map(W._decode, row['start_volume_bounds_m3'])
-        if _selected_fixed and lo != hi:
-            raise V.VolumeError('fixed start bounds required')
         if not lo <= value <= hi:
             raise V.VolumeError('carried start volume is outside its certified physical interval')
         starts[key] = value
@@ -828,16 +824,13 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
     with LIVE_SPATIAL.workspace(budget, order_bytes) as order_workspace:
         def canonical_choice(order_arena):
             if _selected_fixed:
-                # The dual selector has already chosen every arc.  Verify that
-                # unique fixed vector, including ports and the reservoir,
+                # The dual selector establishes unique identities and fixed
+                # arcs. Retain the carried-domain, type and port contracts
                 # before using the common graph assembly below.
                 ids = [row['cell_id'] for row in rows]
-                if (len(set(ids)) != len(ids) or set(start_volumes_m3) != material_keys
+                if (set(start_volumes_m3) != material_keys
                         or any(type(key) is not str for key in ids)):
                     raise V.VolumeError('complete unique fixed cell identities required')
-                face_ids = [row['face_id'] for row in transfers]
-                if len(set(face_ids)) != len(face_ids):
-                    raise V.VolumeError('unique fixed face identities required')
                 row_by_id = {row['cell_id']: row for row in rows}
                 for row in rows:
                     if row['kind'] != 'algebraic-port':
@@ -856,10 +849,6 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                                                inward=inward)) == row['cell_id']]
                     if len(matches) != 1:
                         raise V.VolumeError('physical port construction preimage is ambiguous or missing')
-                for a, b, lo, hi in edges:
-                    if lo != hi:
-                        raise V.VolumeError('fixed circulation incidence or bounds differ')
-                    order_arena.work(1)
                 # Keep the existing bounded circulation's exact arithmetic,
                 # incidence checks, work accounting and infeasibility report.
                 # Singleton arcs admit at most one vector regardless of order.

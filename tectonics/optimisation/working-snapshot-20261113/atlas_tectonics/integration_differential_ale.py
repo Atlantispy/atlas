@@ -824,7 +824,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
             else getattr(getattr(_observer, 'interface_batches', None), 'claim', None), **pair)),
         _parallel=_parallel, _observer=_observer)
 
-    # A-15 row 5: receipts stored without their counts; booked as the rows are (shared parts counted again).
+    # receipts stored without their counts; booked as the rows are (shared parts counted again).
     stripped_receipts = {k: D._without(r, D.DifferentialMeasure._EFFORT[1]) for k, r in receipts.items()}
     keep(stripped_receipts)
     result = dict(schema='atlas.source-bound-spatial-ale-bounds.v1',
