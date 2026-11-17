@@ -609,12 +609,14 @@ time, frame, sampling and physical owners must agree. Changed viscosity rebuilds
 coefficients; changed force can reuse compatible geometry. It produces a
 quasi-static snapshot, not an invented path between supplied states.
 Each immutable body-force view is read once. The [same finite-word reducer](../../optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore)
-builds both staggered force fields and validates computed/restored history.
+builds both staggered force fields in the working snapshot and reconciles them
+on checkpoint restore. Fresh history steps consume the prepared producer's
+result directly.
 Ordinary accurate summation runs first; only prefix overflow replays the same
 finite words once before the original binary64 boundary. Genuine final overflow,
 nonfinite values and incompatible physical owners retain their existing refusal.
-Existing cancellation and funding reach the actual evaluation and both history
-readers. The selected local range/consumer/resource case, normal control and
+Evaluation and checkpoint recovery retain their cancellation and funding
+boundaries. The selected local range/consumer/resource case, normal control and
 pressure regression pass; maximum-shape, whole-chain and scientific claims
 remain open.
 

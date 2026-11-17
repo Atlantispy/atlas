@@ -324,6 +324,11 @@ outputs. Earlier physical solves, material movement and external-work booking
 are not replayed. Failure/cancellation before publication leaves the last accepted
 prefix intact. Gaps, damaged payloads, stale sources and incompatible inputs refuse.
 
+The nondefault working snapshot takes fresh history results directly from its
+prepared underthrust section, evolving elastic support or evolving regional
+producer. When reopening a checkpoint, it checks the restored result against
+its admitted inputs and reconciles the applicable regional force fields.
+
 Physical result codecs preserve exact float64/uint8 bytes and WKB geometry;
 there is no lossy compression or pickle execution. The existing store supplies
 lossless compression and exact chunk deduplication. Histories do not copy the

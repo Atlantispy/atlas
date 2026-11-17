@@ -518,6 +518,88 @@
       ]
     },
     {
+      "id": "atlas.snapshot.history.fresh-producer-validation",
+      "purpose": "Repeated the history validator immediately after each of the three prepared producers issued a fresh result.",
+      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/tectonic_history.py",
+      "process": "Fresh tectonic history output",
+      "entry_point": "TectonicHistory._compute after prepared evaluation",
+      "owner": "Tectonic history snapshot owner",
+      "consumers": [
+        "Underthrust section history",
+        "Evolving elastic support history",
+        "Evolving regional history"
+      ],
+      "classification": "UNDETERMINED",
+      "classification_reason": "The original shared validator covered immediately produced results and required checkpoint reconciliation. This record identifies only the removed fresh invocation. Checkpoint restore has its own requirement entry.",
+      "classification_refs": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore",
+        "tectonics/docs/EVOLVING_MECHANICS.md#recovery-and-optimisation",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "Formerly each fresh output immediately after a prepared producer returned.",
+        "release_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "debug_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "actual_enabled": "OFF_REMOVED",
+        "control": "The validation call is absent on all three fresh routes. It previously ran unconditionally on fresh output. Installed Release state is unknown."
+      },
+      "on_failure": "Historical route could refuse a field mismatch or the temporary comparison reservation before producing a complete history output.",
+      "affected_by": [
+        "A different selected producer or consumer",
+        "History input, route or ownership changes",
+        "A new boundary between producer and result consumption"
+      ],
+      "evidence": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore",
+        "tectonics/docs/EVOLVING_MECHANICS.md#recovery-and-optimisation",
+        "tectonics/docs/how-it-works/02-tectonic-processes.md#join-regimes-and-exchange-evolving-mechanical-inputs"
+      ],
+      "retirement_basis": "Review followed all three exact prepared producers and their established fields to fresh consumption. The next separate input boundary is storage and restore.",
+      "cost_note": "The removed regional comparison repeated the two force reductions and reserved temporary space. Elapsed savings are unmeasured."
+    },
+    {
+      "id": "atlas.snapshot.history.checkpoint-result-validation",
+      "purpose": "Reconcile a decoded history result with its admitted route inputs and verify expected result fields, including applicable regional forces.",
+      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/tectonic_history.py",
+      "process": "Tectonic history checkpoint recovery",
+      "entry_point": "TectonicHistory._restore to _validate",
+      "owner": "Tectonic history snapshot owner",
+      "consumers": [
+        "Checkpoint reader",
+        "Restarted tectonic history"
+      ],
+      "classification": "END_CONSUMER_REQUIRED",
+      "classification_reason": "A stored result crosses the recovery boundary and must match the admitted inputs before reuse.",
+      "classification_refs": [
+        "tectonics/docs/EVOLVING_MECHANICS.md#recovery-and-optimisation",
+        "tectonics/optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "On restoration of a stored output.",
+        "release_state": "ON_WHEN_SNAPSHOT_ROUTE_EXECUTES",
+        "debug_state": "ON_WHEN_SNAPSHOT_ROUTE_EXECUTES",
+        "control": "The restore path calls the shared validator within its existing recovery envelope. Installed Release state is unknown."
+      },
+      "on_failure": "Inconsistent recovered fields refuse the checkpoint. Cancellation and restore admission retain their established outcomes.",
+      "affected_by": [
+        "A different selected producer or consumer",
+        "History input, route or ownership changes",
+        "A new boundary between producer and result consumption",
+        "Checkpoint encoding, identity or restoration envelope"
+      ],
+      "evidence": [
+        "tectonics/docs/EVOLVING_MECHANICS.md#recovery-and-optimisation",
+        "tectonics/optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore",
+        "tectonics/docs/how-it-works/02-tectonic-processes.md#join-regimes-and-exchange-evolving-mechanical-inputs"
+      ]
+    },
+    {
       "id": "atlas.docs.r41-progress-wording",
       "purpose": "Required two maintained guides to repeat R4.1-era progress wording and the instruction Continue with R4.2.",
       "module": "tectonics/tests/test_stokes_delivery_r4_1.py",

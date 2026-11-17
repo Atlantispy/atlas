@@ -1225,8 +1225,10 @@ overflow retains `TectonicsError`; the existing nonfinite check and physical
 products remain. The helper is the exact version first delivered with regional
 emplacement, without a force-specific copy or a helper-only publication.
 
-The same reducer supplies the Stokes input and the force validation used by
-history computation and checkpoint restore. Existing cancellation is forwarded
+The same reducer supplies the Stokes input and the force comparison during
+checkpoint restore. A fresh history result comes directly from its prepared
+underthrust section, evolving elastic support or evolving regional producer.
+Existing cancellation is forwarded
 to entry, row and closing polls. Production reservations, restore admission,
 physical ownership, refusals and caps are unchanged. Retained failure frames
 remain funded until released; this does not establish a maximum-shape bound.

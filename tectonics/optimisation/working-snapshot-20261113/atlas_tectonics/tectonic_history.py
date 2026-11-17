@@ -295,7 +295,6 @@ class PreparedTectonicHistory:
         elif self.route == 'evolving-elastic-support':
             result = p.solve(x.state,x.surface,rigidity=x.rigidity,exterior=x.exterior,cancel=cancel)
         else: result = p.evaluate(x,cancel=cancel)
-        self._validate(result,index,cancel=cancel)
         record = dict(schema='atlas.tectonic-history-output.v1',plan_id=self.plan_id,
             route=self.route,execution=self.execution_id,index=index,time_s=self.times[index],
             checkpoint_id=self.checkpoint_id(index),result_id=history_result_id(result),
