@@ -32,7 +32,7 @@ _PINS = {
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
     'private_heat_issuer_resources_r4.py': 'ba28f4113f922feadc65038de4971470d96732eb74cee62c9780982d2bc047a8',
     'private_heat_native_projection_r5.py': 'fbb940aa89846274cfbf4c9d5c185f69b0958a4fa4884a6b2b67fb84e0bb95a6',
-    'private_heat_forward_kernel_r13.py': '1db6fe04a96455c668bab475860920c48da71dce5f54d9c81d06a07187ed5494',
+    'private_heat_forward_kernel_r13.py': 'dab6b213eadaa1d5a5a7c0cc1b997bfc9f8d4f328d8db8de29aa66680a766ff4',
     'private_heat_native_issuer_r13.py': _ISSUER_SHA,
 }
 HERE = Path(__file__).resolve().parent

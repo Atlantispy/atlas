@@ -1314,6 +1314,30 @@ and measurement. Observer/ownership keys and directed streams follow the whole
 pair. Source acceptance preserves multiplicity and unpaired routes; historical
 visit-side counts do not qualify actual numeric fluxes or a fixed-wall result.
 
+### Keep the heat-finish inputs for diagnostic replay
+
+An optional recorder offers the same ten inputs immediately before `FINISH.finish`:
+old enthalpy, capacity, time step, source, boundary, face IDs, low/high views,
+source bindings and exact target. Floats keep their consumed binary64 bits as
+hex, exact values use hex rational pairs, and boundary and face-owner order stay
+intact. The recorder's code enters the heat source and loaded-module identity;
+per-attempt folder/context data remain outside that code identity.
+
+The driver arms it in the `before_advance` factory. An unset recorder returns;
+refused booking skips the record, disk errors are recorded and unexpected errors
+propagate. Encoding is funded from held text lengths and entry allowances.
+The file is atomically written before the finish. A failed finish may therefore
+leave a complete file without completed endpoint telemetry. Only the successful
+completion callback records `heat_door`, including the actual issuer loaded
+identity, and clears the recorder. The recorder's duration is kept only in its
+successful last/run metadata, outside the file bytes and digest.
+
+No chain code reads the file. Diagnostic replay must pass the existing stored
+enthalpy/temperature bitwise gate before the record can be used to judge a fix;
+its output is never a chain result. The retained real-record gate belongs to an
+earlier package/chain; current-parent replay qualification remains open.
+Restarting a chain from the record is the separately parked second part.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

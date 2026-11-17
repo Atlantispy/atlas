@@ -465,6 +465,9 @@ def _closure(fn, name):
 
 def _before_advance(m, a, guard, artifacts, record, save, phase, *, store_limits):
     budget = a.case['budget']
+    # Heat door record (design heat-finish-save-point-r1 part 1): FINISH's inputs written just before it runs.
+    door = m.J.I.F.DOOR
+    door.folder, door.context, door.last = str(artifacts), {'execution_provenance': a.heat_execution.provenance}, None
 
     def before_advance(source, end_bounds, end_mesh, solution):
         for label, operand in (('closed graph', solution.graph), ('end bounds', end_bounds)):
@@ -523,6 +526,10 @@ def _completed(m, a, workflow, record, phase, *, artifacts):
             'maximum': float(temperatures.max()), 'count': int(temperatures.size),
             'array_sha256': sha256(temperatures.tobytes()).hexdigest()}
         record['heat_first_pass'] = m.J.I.F.FUNCTIONS.PARALLEL.report()
+        door = m.J.I.F.DOOR
+        record['heat_door'] = dict(door.last or {'written': False},
+                                   heat_loaded_identity=m.J.I._LOADED_IMPLEMENTATION.identity)
+        door.folder = door.context = None
         from atlas_tectonics._private import dev_stage_timing as TIMING
         TIMING.checkpoint('heat-projection-and-endpoint-publication-complete')
         phase('actual-heat-endpoint-committed')

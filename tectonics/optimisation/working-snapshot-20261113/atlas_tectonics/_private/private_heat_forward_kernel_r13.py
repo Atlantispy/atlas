@@ -69,6 +69,7 @@ from atlas_tectonics._private import private_heat_finish_kernel_r11 as FINISH
 from atlas_tectonics._private import private_heat_stage_lifetime_r3 as LIFE
 from atlas_tectonics._private import private_heat_process_meter_r1 as METER
 from atlas_tectonics._private import private_heat_physical_order_r1 as ORDER
+from atlas_tectonics._private import private_heat_door_r1 as DOOR
 from atlas_tectonics._private import private_heat_small_cell_rule_r1 as SMALL
 
 HERE = Path(__file__).resolve().parent
@@ -82,7 +83,7 @@ PREDICTOR_PIN = 128 << 20
 
 
 def _source_paths():
-    pending = [GEOMETRY, LOW, FUNCTIONS, ASSEMBLY, REFINEMENT, SPARSE, INVENTORY, FINISH, LIFE, ORDER, SMALL]
+    pending = [GEOMETRY, LOW, FUNCTIONS, ASSEMBLY, REFINEMENT, SPARSE, INVENTORY, FINISH, LIFE, ORDER, SMALL, DOOR]
     roots = {HERE, Path(FUNCTIONS.__file__).resolve().parent, Path(ORDER.__file__).resolve().parent}
     modules, paths = set(), {Path(__file__).resolve()}
     while pending:
@@ -460,6 +461,8 @@ frame disappears before the returned result graph replaces its entire stack.
             finish_inputs = retain(ORDER.finish_inputs(order_owner, low, high,
                 budget=budget, cancel=check))
             original_old, original_capacity, original_source = ordered['original_inputs']
+            DOOR.offer(original_old, original_capacity, dt, original_source, normalized, prepared['face_ids'],
+                finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target, budget=budget)
             finished = retain(FINISH.finish(original_old, original_capacity, dt, original_source, normalized,
                 prepared['face_ids'], finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target,
                 cancelled=check, budget=budget, observe=observe))
