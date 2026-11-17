@@ -698,16 +698,29 @@ def resume(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadra
         if x.dtype != np.float64 or x.shape != (base.size,) or not np.all(np.isfinite(x)):
             raise ValueError("a carried endpoint guess is one finite binary64 per material point")
         guess = dict(x=weakening.frozen(x), rate=number(endpoint_guess["rate"], "endpoint guess rate"))
-    current = _solve(run, stretch, theta, kappa, guess, deadline, trial=False)
     frozen = weakening.frozen
+    return _resume_owned(
+        run, accepted=accepted, stretch=stretch, clock_s=clock_s, displacement_m=displacement_m,
+        log_strain_quadrature=log_strain_quadrature, log_path=log_path,
+        theta0=frozen(theta0), theta=frozen(theta), kappa0=frozen(kappa0), kappa=frozen(kappa),
+        accounts=tuple((name, number(accounts[name], name)) for name in ACCOUNTS),
+        diagnostics=tuple(stats.items()), yield_counts=frozen(yields, np.int64),
+        max_step_energy_relative=worst_energy, max_temperature_step_k=worst_step,
+        velocity_start_m_s=velocity, column_force_start_n_m=force, endpoint_guess=guess, deadline=deadline)
+
+
+def _resume_owned(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadrature, log_path, theta0, theta,
+                  kappa0, kappa, accounts, diagnostics, yield_counts, max_step_energy_relative,
+                  max_temperature_step_k, velocity_start_m_s, column_force_start_n_m, endpoint_guess, deadline=None):
+    """Rebuild the endpoint from validated, owned immutable state without recapturing its carried inputs."""
+    current = _solve(run, stretch, theta, kappa, endpoint_guess, deadline, trial=False)
     return _issue(Prefix, _runner=run, accepted=accepted, stretch=stretch, clock_s=clock_s,
                   displacement_m=displacement_m, log_strain_quadrature=log_strain_quadrature, log_path=log_path,
-                  max_step_energy_relative=worst_energy, max_temperature_step_k=worst_step,
-                  velocity_start_m_s=velocity, column_force_start_n_m=force,
-                  accounts=tuple((name, number(accounts[name], name)) for name in ACCOUNTS),
-                  diagnostics=tuple(stats.items()), _theta0=frozen(theta0), _theta=frozen(theta),
-                  _kappa0=frozen(kappa0), _kappa=frozen(kappa), _yield=frozen(yields, np.int64),
-                  _stage=_frozen_stage(current), _guess=guess)
+                  max_step_energy_relative=max_step_energy_relative, max_temperature_step_k=max_temperature_step_k,
+                  velocity_start_m_s=velocity_start_m_s, column_force_start_n_m=column_force_start_n_m,
+                  accounts=accounts, diagnostics=diagnostics, _theta0=theta0, _theta=theta,
+                  _kappa0=kappa0, _kappa=kappa, _yield=yield_counts,
+                  _stage=_frozen_stage(current), _guess=endpoint_guess)
 
 
 def finish(run, prefix, status, reason):

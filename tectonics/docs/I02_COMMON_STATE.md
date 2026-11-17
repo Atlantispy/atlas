@@ -348,13 +348,16 @@ and supplies its predictor array; it proves that schema-string branch, not the
 genuine v1 wire shape. All v2 validation and legacy refusal remain. This snapshot
 qualification does not replace the canonical public v1 tests.
 
-`Continuation._prefix` uses `begin` for a root, the held prefix for the identical
-warm-head state object, and `resume(_carried(state))` for another accepted state.
-`resume` solves that endpoint again from its stored predictor through the same
-solver call. With identical prepared inputs and runtime, this reconstructs the
-uninterrupted endpoint rather than choosing a cold root. It replays no accepted
-steps. With `warm_start` disabled the solver ignores the guess in both paths.
-Reports use this same route while keeping the held warm head.
+`Continuation._prefix` uses `begin` for a root and the held prefix for the
+identical warm-head state. For another accepted state it passes the column's
+owned immutable arrays, accounts, ordered diagnostics and stored predictor to
+`_resume_owned`. Public `resume` validates its raw inputs and captures immutable
+values before calling the same core. Persisted checkpoints pass through `restore`
+before they become issued states. Both cold paths solve the endpoint once with
+the same deadline and `trial=False`. With identical prepared inputs and runtime,
+this reconstructs the uninterrupted endpoint without replaying accepted steps.
+With `warm_start` disabled the solver ignores the guess in both paths. Reports
+use this same route while keeping the held warm head.
 
 Counters, extrema and yield counts still cover booked stages only: the reference
 balance once, then a predictor and an endpoint per accepted step. The resumed

@@ -1596,8 +1596,10 @@ are rebuilt from the recorded inputs, never read back as opaque objects, and a n
 continues from the last entry without recalculating the earlier steps. The
 nondefault `tectonics/optimisation/working-snapshot-20261113` carried-predictor
 successor stores only the last accepted predictor, not a later
-refused trial or a complete solved stage, and reconstructs the endpoint from the
-same inputs. Its v2 column record carries one extra array and rate; a v1 record
+refused trial or a complete solved stage. The snapshot checks the stored record
+when it reopens it. A cold continuation then uses the accepted column's own
+immutable values to solve the endpoint once. The public raw input route checks
+and copies its inputs before entering the same solve. Its v2 column record carries one extra array and rate; a v1 record
 refuses without migration or deletion. Source/state identities move, while evaluation and iteration counts remain
 provenance outside physical identity. Retained external continuation,
 fresh-process and persistence controls passed on their selected fixtures; full driver restart, actual joined qualification and

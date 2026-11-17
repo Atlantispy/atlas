@@ -1310,19 +1310,19 @@ def _context(state):
 
 
 def _carried(state):
-    """resume() keywords of a verified accepted state: cumulative values, arrays as fresh immutable descriptors."""
+    """Pass the issued column's owned immutable state to the continuation core."""
     column = state.column
     counters, extrema = dict(column._counters), dict(column._extrema)
     return dict(accepted=column.accepted_steps, stretch=column.stretch, clock_s=column.clock_s,
                 displacement_m=column.displacement_m, log_strain_quadrature=column.log_strain_quadrature,
-                log_path=column.log_path, theta0=column.initial_theta_k, theta=column.theta_k,
-                kappa0=column.initial_kappa, kappa=column.kappa, accounts=dict(column._accounts),
-                diagnostics={name: counters[name] if name in counters else extrema[name]
-                             for name in _evolution.DIAGNOSTICS},
-                yield_counts=column.yield_stage_counts, max_step_energy_relative=extrema['max_step_energy_relative'],
+                log_path=column.log_path, theta0=column._theta0, theta=column._theta,
+                kappa0=column._kappa0, kappa=column._kappa, accounts=column._accounts,
+                diagnostics=tuple((name, counters[name] if name in counters else extrema[name])
+                                  for name in _evolution.DIAGNOSTICS),
+                yield_counts=column._yield, max_step_energy_relative=extrema['max_step_energy_relative'],
                 max_temperature_step_k=extrema['max_temperature_step_k'],
                 velocity_start_m_s=column.velocity_start_m_s, column_force_start_n_m=column.column_force_start_n_m,
-                endpoint_guess=None if column._guess.size == 0 else dict(x=column.endpoint_guess_x,
+                endpoint_guess=None if column._guess.size == 0 else dict(x=column._guess,
                                                                          rate=column.endpoint_guess_rate))
 
 
@@ -1462,7 +1462,7 @@ class Continuation:
         if column.accepted_steps == 0:
             prefix = _evolution.begin(self._runner, column.initial_kappa, column.initial_theta_k, deadline=deadline)
             return prefix, False, (0, 0)
-        prefix = _evolution.resume(self._runner, deadline=deadline, **_carried(state))
+        prefix = _evolution._resume_owned(self._runner, deadline=deadline, **_carried(state))
         work = prefix.stage_work
         return prefix, False, (work['evaluations'], work['iterations'])
 

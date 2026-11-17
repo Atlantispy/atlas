@@ -81,6 +81,124 @@
       "entry_point": "python -B -m unittest discover -s tests -p test_development_tools.py -k CandidateVerifierTests -v"
     },
     {
+      "id": "atlas.snapshot.column.owned-prefix-revalidation",
+      "purpose": "Re-applied public resume validation and immutable input capture to data from an already issued accepted column.",
+      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/integration_state.py",
+      "process": "Cold continuation of an accepted coupled-column state",
+      "entry_point": "Continuation._prefix, formerly through public resume(_carried(state))",
+      "owner": "Coupled-column snapshot owner",
+      "consumers": [
+        "Coupled-column continuation",
+        "Coupled-column reports"
+      ],
+      "classification": "UNDETERMINED",
+      "classification_reason": "The original path shared validation with public raw input. This removed use is local to already owned state. Raw input and persisted restore each retain a required boundary.",
+      "classification_refs": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#carry-the-accepted-endpoint-predictor-across-a-restart",
+        "tectonics/docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "Formerly when reconstructing an accepted prefix outside the held warm head.",
+        "release_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "debug_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "actual_enabled": "OFF_REMOVED",
+        "control": "The cold owned state calls the owned endpoint core directly. Public entry and recovery checks have their own boundaries. Installed Release state is unknown."
+      },
+      "on_failure": "Historically invalid carried state could raise ValueError before the endpoint solve through the repeated raw validation.",
+      "affected_by": [
+        "Column state ownership, mutability or layout",
+        "Resume callers or carried endpoint format",
+        "Checkpoint compatibility or state admission"
+      ],
+      "evidence": [
+        "tectonics/docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b",
+        "tectonics/optimisation/working-snapshot-20261113/README.md#carry-the-accepted-endpoint-predictor-across-a-restart",
+        "tectonics/docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing"
+      ],
+      "retirement_basis": "Both callers of the endpoint core were reviewed. Issued state supplies immutable arrays and the ordered accounts and diagnostics. The endpoint core solves once with the same deadline.",
+      "cost_note": "Removed repeated whole-vector finiteness work and input capture on the owned route. Elapsed cost was not measured."
+    },
+    {
+      "id": "atlas.snapshot.column.public-resume-input-validation",
+      "purpose": "Check and capture raw carried-column inputs before solving and issuing the accepted endpoint prefix.",
+      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/integration_evolution.py",
+      "process": "Raw coupled-column resume",
+      "entry_point": "integration_evolution.resume",
+      "owner": "Coupled-column snapshot owner",
+      "consumers": [
+        "Public callers carrying raw column inputs",
+        "Accepted endpoint prefix consumers"
+      ],
+      "classification": "END_CONSUMER_REQUIRED",
+      "classification_reason": "Callers supply raw arrays, counters and optional predictor values before the snapshot owns them.",
+      "classification_refs": [
+        "tectonics/docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b",
+        "tectonics/docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "On each direct call to the public resume entry point.",
+        "release_state": "ON_WHEN_SNAPSHOT_ROUTE_EXECUTES",
+        "debug_state": "ON_WHEN_SNAPSHOT_ROUTE_EXECUTES",
+        "control": "Public resume validates and captures immutable inputs before entering the owned core. Installed Release state is unknown."
+      },
+      "on_failure": "The public entry rejects invalid input before solving the endpoint.",
+      "affected_by": [
+        "Column state ownership, mutability or layout",
+        "Resume callers or carried endpoint format",
+        "Checkpoint compatibility or state admission"
+      ],
+      "evidence": [
+        "tectonics/docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b",
+        "tectonics/docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing",
+        "tectonics/optimisation/working-snapshot-20261113/README.md#carry-the-accepted-endpoint-predictor-across-a-restart"
+      ]
+    },
+    {
+      "id": "atlas.snapshot.column.checkpoint-restore-validation",
+      "purpose": "Validate the persisted column record, including finite predictor values and their shape and identities, before issuing restored state.",
+      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/integration_state.py",
+      "process": "V2 coupled-column ledger recovery",
+      "entry_point": "integration_state.restore, called by v2 ledger restoration",
+      "owner": "Coupled-column snapshot owner",
+      "consumers": [
+        "V2 column ledger readers",
+        "Restarted coupled-column continuation"
+      ],
+      "classification": "END_CONSUMER_REQUIRED",
+      "classification_reason": "The restored state and predictor cross the persisted data boundary and must satisfy the admitted history before they can be consumed.",
+      "classification_refs": [
+        "tectonics/docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing",
+        "tectonics/docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "On restoration through the nondefault snapshot's v2 ledger.",
+        "release_state": "ON_WHEN_SNAPSHOT_ROUTE_EXECUTES",
+        "debug_state": "ON_WHEN_SNAPSHOT_ROUTE_EXECUTES",
+        "control": "The v2 decoder validates and freezes present predictor input and issues the state only after record and identity checks. Installed Release state is unknown."
+      },
+      "on_failure": "Invalid arrays, predictor values or incompatible record identities refuse restoration.",
+      "affected_by": [
+        "Column state ownership, mutability or layout",
+        "Resume callers or carried endpoint format",
+        "Checkpoint compatibility or state admission"
+      ],
+      "evidence": [
+        "tectonics/docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing",
+        "tectonics/docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b",
+        "tectonics/docs/how-it-works/06-physical-integration.md#8-accept-save-and-continue-one-evolving-state"
+      ]
+    },
+    {
       "module": "tools/verify_candidate.py",
       "process": "Development candidate qualification",
       "owner": "Atlas development tooling owner",

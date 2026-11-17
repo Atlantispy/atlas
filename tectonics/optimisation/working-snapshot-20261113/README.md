@@ -599,9 +599,12 @@ keeps only the accepted predictor's immutable `x` and finite `rate`, assigning i
 at step acceptance so a refused trial cannot replace it. The v2 column record
 binds `endpoint_guess_x` and `endpoint_guess_rate`; no guess is an empty binary64
 array and zero rate. The [ledger restore](../../docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing)
-supplies that array to the engine, then the continuation reconstructs the endpoint
-from the same guess without replaying accepted steps. The identical warm head is
-reused; a root still goes through `begin`. The evaluation/iteration identity
+validates the array before issuing the state. A cold accepted continuation takes
+its immutable arrays, accounts, diagnostics and predictor directly from that
+state. Public `resume` validates and captures raw inputs before entering the
+same endpoint solve. The stored guess rebuilds the endpoint once under the same
+deadline, without replaying accepted steps. The identical warm head is reused
+and a root goes through `begin`. The evaluation/iteration identity
 exclusions remain, and reconstruction work is not booked again.
 
 This changes schema and identities, not uninterrupted physical calculations.

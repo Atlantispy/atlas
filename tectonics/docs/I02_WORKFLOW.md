@@ -452,9 +452,10 @@ reproduces the canonical record and identity, including the accepted predictor,
 while preserving the effort-counter exclusions. An absent guess is an immutable
 empty binary64 array with rate zero; a present guess has one finite binary64 per
 material point and a finite rate. That v2 route refuses v1 records without
-migration or deletion; the canonical route still reads its own v1 records. A `Continuation` rebuilds operators from the pinned inputs and solves
-the head's endpoint again from that guess (operational work, never booked),
-without re-running the accepted prefix. See the [carried-predictor contract](I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b).
+migration or deletion; the canonical route still reads its own v1 records. A `Continuation` rebuilds operators from the pinned inputs and uses the restored
+column's own immutable inputs for the endpoint solve. Direct calls to public
+`resume` check and capture raw inputs before using that same solve. Endpoint
+reconstruction is unbooked work and never replays the accepted steps. See the [carried-predictor contract](I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b).
 A genuine v1 wire shape may fail on missing predictor members or at an earlier
 ledger/source/root boundary; the retained version-message negative only relabels
 a complete v2 descriptor. It does not promise one first legacy diagnostic.
