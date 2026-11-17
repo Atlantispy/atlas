@@ -21,6 +21,16 @@ pore-water cohort is required; the finite external stock is explicitly the same
 cohort/material. Multiple water origins need an allocation model and are refused.
 The caller supplies maximum loading history, not an inferred deposition age.
 
+In the nondefault snapshot, origin validation still runs first. The pore cohort
+then uses the already-issued material catalogue entry with the same cohort ID
+and equal cohort value. Equal formation times can carry different zero signs in
+stored descriptors; selecting the issued representative keeps the issuer,
+descriptor, save and restore identities aligned. An absent or conflicting
+catalogue entry retains the original downstream refusal. Physical inputs,
+accounts and the paired thickness correction are unchanged; the
+[accepted local identity scope](../optimisation/working-snapshot-20261113/README.md#keep-w03-pore-identity-tied-to-its-issued-catalogue)
+does not establish universal upstream naming or scientific acceptance.
+
 Initial thermal reconciliation checks the named source cooling history, epoch,
 datum, the same authored lithosphere/plate thickness, boundary values and true
 means on every selected depth cell. Half-space inputs additionally match cooling

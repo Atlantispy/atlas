@@ -702,6 +702,27 @@ It does not test storage or restart recovery. This selected local qualification
 establishes no general, whole-module or scientific acceptance, or wider time or
 memory bound.
 
+### Keep W03 pore identity tied to its issued catalogue
+
+After all existing wet-origin checks, W03 selects the already-issued material
+catalogue entry with the same cohort ID and equal cohort value. Equal formation
+times with opposite zero signs can otherwise produce different stored descriptor
+identities. The [public issuer](../../docs/W03_WORKFLOW.md#what-is-connected)
+keeps the catalogue representative through its pore cohort, descriptor,
+ArrayStore checkpoint and restored state. Missing or conflicting catalogue
+entries keep the original downstream refusal; no sorting, physical parameter,
+account, tolerance or paired W03/W04 thickness sum is changed.
+
+Independent acceptance covers this local source and stored-identity correction.
+All seven selected fixed comparisons pass. The original representation produces
+exactly five intended issued/descriptor/stored/restored identity differences,
+with no other failure, on unchanged material, sampled units, input zero words
+and fixtures; the source catalogue retains its negative zero. The actual source
+error/reporting/nonoverwrite controls and both existing invalid-origin and
+complete roundtrip-continuation regressions pass. The earlier proposed universal
+source exclusion is not established. Universal upstream naming, physical
+permutation invariance and wider scientific qualification remain open.
+
 ### Sum the same small-face vertex vectors before normalising
 
 Both small-diagram centre branches use one `math.fsum` per Cartesian

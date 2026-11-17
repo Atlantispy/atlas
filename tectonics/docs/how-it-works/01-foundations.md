@@ -470,6 +470,14 @@ column. It verifies each cell's grain/pore inventory and reconciles the initial
 thermal description with the chosen cooling model on the declared depth cells.
 Transported mixtures cannot supply missing layer order or peak-loading history.
 
+The snapshot also keeps the [pore cohort's issued catalogue representation](../../optimisation/working-snapshot-20261113/README.md#keep-w03-pore-identity-tied-to-its-issued-catalogue)
+after the original wet-origin checks. A same-ID, equal catalogue entry supplies
+the representation used by issuance, descriptors and save/restore; missing or
+conflicting entries still reach the original refusal. The selected signed-zero
+identity case and both named refusal/roundtrip regressions pass. This changes
+stored identity selection, with no new sort, physical input, account or
+universal naming claim.
+
 Each later prescribed load updates compaction, books signed water events once,
 updates the finite reservoir and returns thermal diagnostics. This assembled
 route fixes area and ordering even though the lower-level compaction helper can

@@ -377,6 +377,9 @@ def initialise_w03_columns(workflow, column_id, compaction_parameters, *, subdiv
     pore = fluids[wet[0].unit_id]
     if any(fluids[u.unit_id] != pore for u in wet):
         raise TectonicsError('multiple pore-fluid origins require an explicit allocation model')
+    # Store the already-issued catalogue representation after origin validation.
+    pore = next((c for c in workflow.material.cohorts
+                 if c.cohort_id == pore.cohort_id and c == pore), pore)
     width = workflow.forcing.reduction.reference_width_m
     area = workflow.material.grid.spacing_m*width
     one = compaction_from_geological_column(initial, column_id, compaction_parameters,
