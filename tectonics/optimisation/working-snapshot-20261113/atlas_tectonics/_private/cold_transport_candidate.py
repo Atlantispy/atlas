@@ -103,7 +103,6 @@ def compact_inputs(ar, transport, mesh, component_count, cp, scope):
             enthalpy = mutable_float64(output_count, scope)
             capacity = mutable_float64(output_count, scope)
             source = mutable_float64(output_count, scope)
-            masses = mutable_float64(len(components), scope)
             for output_at, row in enumerate(thermal):
                 ar.check()
                 try:
@@ -115,9 +114,11 @@ def compact_inputs(ar, transport, mesh, component_count, cp, scope):
                     error._cold_owned_row = row
                     raise
                 enthalpy[output_at] = ar.public(ar.decode(fields['enthalpy_j'][at]))
+                mass = 0
                 for i in components:
-                    masses[i] = ar.public(ar.decode(fields[f'component_mass_kg:{i}'][at]))
-                capacity[output_at] = float(np.sum(masses)*cp)
+                    mass = ar.op('add', mass, ar.decode(fields[f'component_mass_kg:{i}'][at]))
+                capacity[output_at] = float(ar.public(mass)*cp)
+                del mass
             if any(not math.isfinite(v) or v <= 0 for values in (enthalpy, capacity) for v in values):
                 raise ValueError('Restored original E/C must be finite and positive')
             result = dict(input_enthalpy_j=freeze_float64(enthalpy, scope),

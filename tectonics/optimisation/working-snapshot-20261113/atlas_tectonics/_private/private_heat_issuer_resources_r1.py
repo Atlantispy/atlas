@@ -293,7 +293,7 @@ def projection_output_plan(groups, *, budget, cancel=None):
 
 
 def owner_projection_bytes(metric, graph, transport, component_count, *, budget, cancel=None):
-    """Original _q/_project gathering and binary64 mass-sum*cp, no new maths."""
+    """Prospective exact mass fold, one public projection, then Cp."""
     n = len(metric['cells'])
     if type(component_count) is not int or component_count <= 0:
         raise ValueError('Original positive component count required')
@@ -313,5 +313,16 @@ def owner_projection_bytes(metric, graph, transport, component_count, *, budget,
         for key in ('start_time_s', 'end_time_s'):
             shape = pair_shape(graph[key], hexadecimal=True)
             largest = max(largest, shape.numerator+shape.denominator)
-        ar.expression_bits = 8*largest
+        ar.expression_bits = max(ar.expression_bits, 8*largest)
+        physical = {row['cell_id'] for row in graph['cells']
+                    if row['end_volume_m3'][0] not in ('0', '0x0')}
+        for at, key in enumerate(transport['cell_ids']):
+            check(cancel)
+            if key not in physical:
+                continue
+            total = L.ZERO
+            for i in range(component_count):
+                total = ar.op('add', total, pair_shape(
+                    transport['exact_stocks']['component_mass_kg:'+str(i)][at], hexadecimal=True))
+            ar.expression_bits = max(ar.expression_bits, 8*(total.numerator+total.denominator))
         return L._size(ar.scalar_work(rational_slots=12)+UNIT*(12*n+4*len(graph['cells'])+component_count+64))

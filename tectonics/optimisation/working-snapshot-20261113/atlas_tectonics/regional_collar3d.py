@@ -878,7 +878,8 @@ class PreparedRegionalCollar3D:
         """Adopt a real joint HMM solve with current transported caloric fields."""
         from .integration_exterior_mesh import ExteriorMesh
         from .integration_mimetic_heat import MimeticHeatResult, _q, _enc
-        from .integration_regional_inventory import _width
+        from .integration_regional_inventory import _width, _project
+        from .integration_spatial_owner import _capacity_shape, _capacity_work_bytes, _capacity_pair_bytes
         self._check_transport_stage(stage)
         private_header = None
         if type(result).__module__ == 'atlas_tectonics._private.private_heat_joined_consumer_r6':
@@ -892,7 +893,7 @@ class PreparedRegionalCollar3D:
             raise TectonicsError('legacy fixed exterior heat state cannot be dropped into a spatial thermal owner')
         with LIVE_COLLAR.heat_inputs(stage, mesh) as (geometry, transport, thermal):
             with self._operation(cancel), LIVE_SPATIAL.workspace(self._budget, self._work_bytes+2*sum(
-                    LIVE_COLLAR.width(v, _width) for v in (geometry, transport, thermal))):
+                    LIVE_COLLAR.width(v, _width) for v in (geometry, transport, thermal))) as _adoption_work:
                 meta = result.descriptor() if private_header is None else private_header
                 expected_schema = 'atlas.mimetic-heat-advance.v1' if private_header is None else J.I.SCHEMA
                 if (meta.get('schema') != expected_schema or
@@ -906,79 +907,89 @@ class PreparedRegionalCollar3D:
                         thermal['grid_id'] != geometry['grid_id'] or
                         _q(thermal['time_s']) != _q(geometry['end_time_s'])):
                     raise TectonicsError('joint thermal result has another actual transport, mesh, source, pose or interval')
-                graph_rows = geometry['cells']; count = len(graph_rows)
-                exact = transport['exact_stocks']; binary = stage.spatial_result.arrays()
-                positive = {}
-                for gi, row in enumerate(graph_rows):
-                    volume = _q(row['end_volume_m3'])
-                    if volume > 0:
-                        positive[row['cell_id']] = gi
-                    elif volume != 0 or any(_q(v[gi]) != 0 for v in exact.values()):
-                        raise TectonicsError('zero-endpoint spatial cell retains material or heat')
-                rows = thermal['cells']; logical = [r['logical_cell_id'] for r in rows]
-                if len(set(logical)) != len(logical) or set(logical) != set(positive):
-                    raise TectonicsError('thermal mesh must match every positive current spatial cell exactly once')
-                order = [positive[k] for k in logical]
-                nc = len(self._native._composition)
-                masses = np.stack([binary['stock:component_mass_kg:'+str(i)] for i in range(nc)])
-                if masses.shape != (nc, len(transport['cell_ids'])):
-                    raise TectonicsError('current transported component layout changed before heat')
-                # Same contiguous component reduction as the heat producer and
-                # caloric field consumers. Density keeps its separate reduction.
-                capacities = _component_sum(masses)*self._native._material.heat_capacity_j_kg_k
-                expected_energy = binary['stock:enthalpy_j'][order]
-                if (not np.array_equal(result.array('input_enthalpy_j'), expected_energy) or
-                        not np.array_equal(result.array('input_capacity_j_k'), capacities[order])):
-                    raise TectonicsError('HMM did not consume actual current transported heat and mass*Cp')
-                if result.array('input_source_w').shape != (len(rows),):
-                    raise TectonicsError('HMM source order differs from the actual thermal mesh')
-                boxes = self.cell_geometries(); indices = {}
-                capacity_projection = []
-                cp = Fraction(self._native._material.heat_capacity_j_kg_k)
-                for ti, (row, gi) in enumerate(zip(rows, order)):
-                    ideal = cp*sum((_q(exact['component_mass_kg:'+str(i)][gi]) for i in range(nc)), Fraction(0))
-                    capacity_projection.append(_enc(ideal-Fraction(float(capacities[gi]))))
-                    if row['kind'] != 'collar':
-                        continue
-                    at = row['index']
-                    # The exterior mesh names a collar cell by its grid coordinate;
-                    # a differential thermal mesh copies the flat index of its ALE
-                    # bounds. Both name one actual full-grid cell, whose identity
-                    # and graph row are compared below either way.
-                    if type(at) is int and 0 <= at < len(boxes):
-                        flat = at
-                    elif (type(at) is not list or len(at) != 3 or
-                            any(type(i) is not int or not 0 <= i < n for i, n in zip(at, self.cells))):
-                        raise TectonicsError('thermal collar index is not an actual full-grid coordinate')
-                    else:
-                        flat = int(np.ravel_multi_index(tuple(at), self.cells))
-                    if (flat in indices or row['physical_cell_id'] != boxes[flat].cell_id or
-                            graph_rows[gi]['kind'] != 'collar' or graph_rows[gi]['index'] != flat):
-                        raise TectonicsError('thermal graph/collar physical cell mapping differs')
-                    if result.array('input_source_w')[ti] != 0:
-                        raise TectonicsError('native donor heat has already been booked; joined conduction cannot repeat it')
-                    indices[flat] = ti
-                if set(indices) != set(range(len(boxes))):
-                    raise TectonicsError('joint thermal mesh omitted an actual collar cell')
-                ordered = [indices[i] for i in range(len(boxes))]
-                heat = RegionalMechanicalSnapshot(dict(schema='atlas.regional-collar-joint-heat.v1',
-                    plan_id=self.plan_id, transport_stage_id=stage.result_id,
-                    spatial_result_id=stage.spatial_result.result_id, joined_heat_id=result.result_id,
-                    endpoint_mesh_id=mesh.geometry_id, duration_s=stage.duration_s,
-                    cell_indices=ordered, thermal_logical_cell_ids=logical,
-                    exact_capacity_projection_j_k=capacity_projection,
-                    caloric_rule='sum actual binary component masses times Cp; identical to native endpoint fields',
-                    energy_rule=('actual solved enthalpy unchanged; exact heat/face/storage accounts retained on issued HMM result'
-                        if private_header is None else 'actual public enthalpy unchanged; full total-public cell/paired-face ledger retained in private result and CAS')), 
-                    dict(enthalpy_j=result.array('enthalpy_j')[ordered].reshape(self.cells),
-                         temperature_k=result.array('temperature_k')[ordered].reshape(self.cells)))
-                issued = object.__new__(RegionalCollarHeatStage)
-                for key, value in dict(transport_stage_id=stage.result_id, heat=heat, exterior_heat=None,
-                        _owner=self, joined_result=result, joined_mesh=mesh).items():
-                    object.__setattr__(issued, key, value)
-                _retain_stage(issued, 8192+heat.nbytes, self._budget)
-                self._verify(); _cancel(cancel)
-                return issued
+                with LIVE_SPATIAL.workspace(self._budget, 65536+1024*(
+                        4*len(transport['cell_ids'])+12*len(thermal['cells'])+64)) as _capacity_tables:
+                    graph_rows = geometry['cells']; count = len(graph_rows)
+                    exact = transport['exact_stocks']; binary = stage.spatial_result.arrays()
+                    positive = {}
+                    for gi, row in enumerate(graph_rows):
+                        volume = _q(row['end_volume_m3'])
+                        if volume > 0:
+                            positive[row['cell_id']] = gi
+                        elif volume != 0 or any(_q(v[gi]) != 0 for v in exact.values()):
+                            raise TectonicsError('zero-endpoint spatial cell retains material or heat')
+                    rows = thermal['cells']; logical = [r['logical_cell_id'] for r in rows]
+                    if len(set(logical)) != len(logical) or set(logical) != set(positive):
+                        raise TectonicsError('thermal mesh must match every positive current spatial cell exactly once')
+                    order = [positive[k] for k in logical]
+                    nc = len(self._native._composition)
+                    if any(binary['stock:component_mass_kg:'+str(i)].shape != (len(transport['cell_ids']),)
+                           for i in range(nc)):
+                        raise TectonicsError('current transported component layout changed before heat')
+                    cp_float = self._native._material.heat_capacity_j_kg_k
+                    shapes = [_capacity_shape(exact, nc, gi, residual_cp=cp_float) for gi in order]
+                    scratch_bytes = max((_capacity_work_bytes(bits) for bits, _ in shapes), default=0)
+                    output_bytes = 8*len(rows)+sum(_capacity_pair_bytes(shape) for _, shape in shapes)
+                    with LIVE_SPATIAL.workspace(self._budget, scratch_bytes+output_bytes) as _capacity_output:
+                        capacities = np.empty(len(rows), dtype=np.float64)
+                        capacity_projection = []
+                        for ti, gi in enumerate(order):
+                            _cancel(cancel)
+                            mass = sum((_q(exact['component_mass_kg:'+str(i)][gi])
+                                        for i in range(nc)), Fraction(0))
+                            value = float(_project(mass)*cp_float)
+                            capacities[ti] = value
+                            capacity_projection.append(_enc(Fraction(cp_float)*mass-Fraction(value)))
+                            del mass
+                        expected_energy = binary['stock:enthalpy_j'][order]
+                        if (not np.array_equal(result.array('input_enthalpy_j'), expected_energy) or
+                                not np.array_equal(result.array('input_capacity_j_k'), capacities)):
+                            raise TectonicsError('HMM did not consume actual current transported heat and mass*Cp')
+                        if result.array('input_source_w').shape != (len(rows),):
+                            raise TectonicsError('HMM source order differs from the actual thermal mesh')
+                        boxes = self.cell_geometries(); indices = {}
+                        for ti, (row, gi) in enumerate(zip(rows, order)):
+                            if row['kind'] != 'collar':
+                                continue
+                            at = row['index']
+                            # The exterior mesh names a collar cell by its grid coordinate;
+                            # a differential thermal mesh copies the flat index of its ALE
+                            # bounds. Both name one actual full-grid cell, whose identity
+                            # and graph row are compared below either way.
+                            if type(at) is int and 0 <= at < len(boxes):
+                                flat = at
+                            elif (type(at) is not list or len(at) != 3 or
+                                    any(type(i) is not int or not 0 <= i < n for i, n in zip(at, self.cells))):
+                                raise TectonicsError('thermal collar index is not an actual full-grid coordinate')
+                            else:
+                                flat = int(np.ravel_multi_index(tuple(at), self.cells))
+                            if (flat in indices or row['physical_cell_id'] != boxes[flat].cell_id or
+                                    graph_rows[gi]['kind'] != 'collar' or graph_rows[gi]['index'] != flat):
+                                raise TectonicsError('thermal graph/collar physical cell mapping differs')
+                            if result.array('input_source_w')[ti] != 0:
+                                raise TectonicsError('native donor heat has already been booked; joined conduction cannot repeat it')
+                            indices[flat] = ti
+                        if set(indices) != set(range(len(boxes))):
+                            raise TectonicsError('joint thermal mesh omitted an actual collar cell')
+                        ordered = [indices[i] for i in range(len(boxes))]
+                        heat = RegionalMechanicalSnapshot(dict(schema='atlas.regional-collar-joint-heat.v1',
+                            plan_id=self.plan_id, transport_stage_id=stage.result_id,
+                            spatial_result_id=stage.spatial_result.result_id, joined_heat_id=result.result_id,
+                            endpoint_mesh_id=mesh.geometry_id, duration_s=stage.duration_s,
+                            cell_indices=ordered, thermal_logical_cell_ids=logical,
+                            exact_capacity_projection_j_k=capacity_projection,
+                            caloric_rule='exact component mass sum, projected once, then binary64 Cp multiplication',
+                            energy_rule=('actual solved enthalpy unchanged; exact heat/face/storage accounts retained on issued HMM result'
+                                if private_header is None else 'actual public enthalpy unchanged; full total-public cell/paired-face ledger retained in private result and CAS')),
+                            dict(enthalpy_j=result.array('enthalpy_j')[ordered].reshape(self.cells),
+                                 temperature_k=result.array('temperature_k')[ordered].reshape(self.cells)))
+                        issued = object.__new__(RegionalCollarHeatStage)
+                        for key, value in dict(transport_stage_id=stage.result_id, heat=heat, exterior_heat=None,
+                                _owner=self, joined_result=result, joined_mesh=mesh).items():
+                            object.__setattr__(issued, key, value)
+                        _retain_stage(issued, 8192+heat.nbytes, self._budget)
+                        self._verify(); _cancel(cancel)
+                        return issued
 
     def _endpoint_from_transport(self, stage, heated, cancel):
         self._check_transport_stage(stage)

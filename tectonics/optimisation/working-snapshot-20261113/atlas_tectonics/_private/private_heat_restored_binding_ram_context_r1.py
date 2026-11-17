@@ -37,13 +37,13 @@ SCHEMA = 'atlas.private.restored-composed-heat-binding.r1'
 EXCHANGE_SCHEMA = 'atlas.private.spatial-composed-advance.r1'
 REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
 _PINS = {
-    'private_heat_checkpoint_consumer_r10.py': 'dba155816aeda90345b957191b16a841874d91ebe8a1e74a13b980d20be3fe29',
-    'private_heat_native_issuer_r13.py': '2b9e9809dad4b5184c5fd3a244968d88a7010a98e408fd344bb80c0265ac3d61',
-    'private_heat_issuer_resources_r4.py': '040e72bc91be8090a72a5b83e54703fa361d0d3a71c439aa53369956215cb9e6',
+    'private_heat_checkpoint_consumer_r10.py': 'b5fe0c452d7823fa456c38382d404a718b23458376aaccf685ec0ade2664d5d4',
+    'private_heat_native_issuer_r13.py': '341dd427a504f64d854beb5408cc3382522786c84cb99b6f6891f08b42a6d43f',
+    'private_heat_issuer_resources_r4.py': 'ba28f4113f922feadc65038de4971470d96732eb74cee62c9780982d2bc047a8',
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
     'private_heat_forward_kernel_r13.py': 'b5d48a44f5ff1b244cdd1ac03e9bc49ef4310753003134037b38f74f540cf039',
-    'private_heat_grouped_account_r1.py': '00cae23c0baa4bc2b43119ab80942c95318d403dc4b6971bfab4232c147e2b8a',
-    'private_heat_joined_consumer_r6.py': 'f903e154c9ba143d405daa5095a06a5bf6d69cf2714cd61f40807b391454a5e3',
+    'private_heat_grouped_account_r1.py': '788512e23568e4b169359186b9332fc56ada707be06003ddb097295afd4ac0b0',
+    'private_heat_joined_consumer_r6.py': '4043dedd51e5141444491937e3d41e23f105a900b200ae3f3739cce6cc3da16b',
 }
 _SOURCES = {str(HERE/name): pin for name, pin in _PINS.items()}
 _SOURCES[_atlas_identity.relkey(__file__)] = R.source_hash(__file__)
@@ -105,7 +105,7 @@ def _expected_bindings(reference, plan, geometry_id, transport_id, execution, ca
 
 
 def _inputs(ar, transport, mesh, component_count, cp):
-    """Exact original producer projection and per-cell contiguous sum order."""
+    """Exact component mass sum, projected once, then original Cp product."""
     keys = transport['cell_ids']
     if len(set(keys)) != len(keys):
         raise ValueError('Restored transport cell order contains duplicates')
@@ -119,9 +119,11 @@ def _inputs(ar, transport, mesh, component_count, cp):
         ar.check()
         at = positions[row['logical_cell_id']]
         old.append(ar.public(ar.decode(fields['enthalpy_j'][at])))
-        masses = np.asarray([ar.public(ar.decode(fields[f'component_mass_kg:{i}'][at]))
-                             for i in range(component_count)], dtype=np.float64)
-        capacity.append(float(np.sum(masses)*cp))
+        mass = 0
+        for i in range(component_count):
+            mass = ar.op('add', mass, ar.decode(fields[f'component_mass_kg:{i}'][at]))
+        capacity.append(float(ar.public(mass)*cp))
+        del mass
     if any(not math.isfinite(v) or v <= 0 for values in (old, capacity) for v in values):
         raise ValueError('Restored original E/C must be finite and positive')
     return dict(input_enthalpy_j=np.asarray(old), input_capacity_j_k=np.asarray(capacity),

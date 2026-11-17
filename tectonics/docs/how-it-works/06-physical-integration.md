@@ -837,6 +837,23 @@ three parts:
   - the boundary columns and per-piece strength state;
   - the carried elastic core.
 
+The spatial heat connection first adds each cell's exact represented component
+masses, projects that total once to binary64, then multiplies by the existing
+binary64 heat capacity per kilogram. Public and private issuer/restore/compact
+readers retain this same order. The collar adopter repeats it from the actual
+transported stocks, compares the issued input capacity and enthalpy, and records
+the exact capacity-projection residual. It does not substitute a sum of already
+rounded component masses; the caloric-rule metadata changes even for pure cells.
+
+Prospective arithmetic storage uses one order-independent per-cell numerator/
+denominator envelope before decoding the exact stocks. The existing memory cap
+is retained. Scratch tables, output arrays and encoded residuals keep their
+accounting owners while a failed call's traceback retains them, then release
+when that error is dropped. The selected late-refusal/cancellation and reordered
+tight-budget controls exercise these lifetimes and admission values at isolated
+method boundaries. They do not qualify actual issuer/adopter/restore inputs,
+mixed funding, a complete pressure/collar route or a joined scientific run.
+
 **One history per cohort.** Each cohort holds one raw history, so history is never averaged.
 - When the plastic strain added to a cohort differs from place to place, the cohort is first split, in the same
   interval, into sub-cohorts that each have one history.

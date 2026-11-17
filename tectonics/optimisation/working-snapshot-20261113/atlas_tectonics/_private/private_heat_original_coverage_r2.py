@@ -20,7 +20,7 @@ _PINS = {
     'private_heat_original_coverage_r1.py':
         '200b7c3aa44e0e418e6adacef8983101f253500a599bbee76eed286aa05cff53',
     'private_heat_issuer_resources_r1.py':
-        '8171c908e9fb5489765a1e185d18f63621a20f17344c2cf3456769519692e0b2',
+        'df1ea5b2a80716373207bd457a9373992891dad6341c734edf72031c16ce183a',
 }
 _SELF_SHA = _sha256(_Path(__file__).read_bytes()).hexdigest()
 

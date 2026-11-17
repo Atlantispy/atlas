@@ -391,9 +391,10 @@ def bind_owner_call(owner, step, mesh, *, boundary, absolute_residual_target,
         for row in m['cells']:
             at = columns[row['logical_cell_id']]
             old.append(_project(_q(t['exact_stocks']['enthalpy_j'][at])))
-            mass = np.asarray([_project(_q(t['exact_stocks']['component_mass_kg:'+str(i)][at]))
-                               for i in range(owner._component_count)])
-            capacity.append(float(np.sum(mass)*cp))
+            mass = sum((_q(t['exact_stocks']['component_mass_kg:'+str(i)][at])
+                        for i in range(owner._component_count)), Fraction(0))
+            capacity.append(float(_project(mass)*cp))
+            del mass
         k = float(owner._definition['conductivity_w_m_k'])
         if not math.isfinite(k) or k <= 0:
             raise ValueError('Uniform positive owner conductivity required')

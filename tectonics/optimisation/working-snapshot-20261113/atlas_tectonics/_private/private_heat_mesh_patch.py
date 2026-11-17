@@ -2,8 +2,8 @@
 
 The supplied graph/transport/scalar operands are caller-owned and must have
 already been authenticated by the actual owner route. This preparation checks
-their scientific relationship to the actual compact mesh, and preserves I12's
-exact projection and mass-sum operation order. It does not authenticate owner
+their scientific relationship to the actual compact mesh, and projects the
+exact component mass sum once before the existing multiplication by Cp. It does not authenticate owner
 history, execution, source code or a saved checkpoint; it cannot advance.
 
 The exact source transform appends an explicit preparation-only entrypoint.
@@ -177,9 +177,10 @@ def prepare_indexed_inputs(mesh, graph, transported, *, graph_id, funding_id,
         R.check(cancel)
         at = columns[logical_id]
         old.append(_project(_q(t['exact_stocks']['enthalpy_j'][at])))
-        mass = np.asarray([_project(_q(t['exact_stocks']['component_mass_kg:'+str(i)][at]))
-                           for i in range(component_count)])
-        capacity.append(float(np.sum(mass)*cp))
+        mass = sum((_q(t['exact_stocks']['component_mass_kg:'+str(i)][at])
+                    for i in range(component_count)), Fraction(0))
+        capacity.append(float(_project(mass)*cp))
+        del mass
     k = float(conductivity_w_m_k)
     if not math.isfinite(k) or k <= 0:
         raise IndexedHeatRefused('uniform positive owner conductivity required')
@@ -216,7 +217,7 @@ def prepare_indexed_inputs(mesh, graph, transported, *, graph_id, funding_id,
     R.check(cancel)
     # Held failures keep scratch and row/header owners in this frame. Success
     # discards all scratch-only containers before releasing that reservation.
-    del arrays, raw_meta, meta, mass, row, row_owner, header_owner, m
+    del arrays, raw_meta, meta, row, row_owner, header_owner, m
     del ids, columns, positive, logical, cell_ids, old, capacity, boundary
     del scratch
     return result

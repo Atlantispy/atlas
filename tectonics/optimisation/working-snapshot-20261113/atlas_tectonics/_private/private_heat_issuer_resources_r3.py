@@ -32,7 +32,7 @@ owner_projection_bytes = BASE.owner_projection_bytes
 projection_output_plan = BASE.projection_output_plan
 _OWNER_SHA = 'e8d935d703d942323cc6ccc62b45da48bb4149e3a17b5e82b7e3db6aaeb9ca38'
 _SOURCES = dict(O._SOURCES, **{_atlas_identity.relkey(BASE.__file__):
-    '8171c908e9fb5489765a1e185d18f63621a20f17344c2cf3456769519692e0b2'})
+    'df1ea5b2a80716373207bd457a9373992891dad6341c734edf72031c16ce183a'})
 _SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 

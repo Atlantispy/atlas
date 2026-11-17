@@ -11,6 +11,7 @@ from fractions import Fraction as Q
 import hashlib
 import json
 import weakref
+import sys
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private import exchange_record_patch as _EXCHANGE_RECORD
 
@@ -29,6 +30,50 @@ from .regional_execution import RegionalMechanicalSnapshot
 from .resources import WorkBudget
 from .integration_dual_measures import B_NAME, policy_record, check_state_cells, transport_audit
 
+
+
+def _capacity_add_shape(left, right):
+    a, b = left
+    c, d = right
+    u, v = a+d, c+b
+    n, h = max(u, v)+1, b+d
+    return (n, h), (a+b)+(c+d)+u+v+2*(n+h)
+
+
+def _capacity_shape(fields, components, at, *, energy=False, residual_cp=None):
+    """Prospective Python arithmetic widths; no exact stock is decoded here."""
+    denominator_bits, excess = 1, 0
+    for i in range(components):
+        pair = fields['component_mass_kg:'+str(i)][at]
+        numerator, denominator = (4*len(v)+1 for v in pair)
+        denominator_bits += denominator
+        excess = max(excess, numerator-denominator)
+    # Sharp common envelope of the former fold over component orders.
+    shape = denominator_bits+components+excess, denominator_bits
+    peak = 8*sum(shape)
+    if energy:
+        peak = max(peak, 8*sum(4*len(v)+1 for v in fields['enthalpy_j'][at]))
+    residual = None
+    if residual_cp is not None:
+        numerator, denominator = residual_cp.as_integer_ratio()
+        cp_shape = max(1, abs(numerator).bit_length()), denominator.bit_length()
+        ideal = shape[0]+cp_shape[0], shape[1]+cp_shape[1]
+        peak = max(peak, sum(shape)+sum(cp_shape)+2*sum(ideal))
+        residual, expression = _capacity_add_shape(ideal, (1024, 1075))
+        peak = max(peak, expression, 8*sum(ideal), 8*sum(residual))
+    return peak, residual
+
+
+def _capacity_work_bytes(bits):
+    integer = (sys.getsizeof(0)+sys.int_info.sizeof_digit*
+               ((bits+sys.int_info.bits_per_digit-1)//sys.int_info.bits_per_digit))
+    return 65536+128*bits+256*12+12*(sys.getsizeof(Q(0))+2*integer)
+
+
+def _capacity_pair_bytes(shape):
+    # Four simultaneous string/list/encoded-metadata generations, with the
+    # existing conservative four-byte character and scalar-header policy.
+    return 4*(256+4*((shape[0]+3)//4+(shape[1]+3)//4+8))
 
 
 def _json(record):
@@ -756,27 +801,33 @@ class PreparedSpatialOwner:
             if 'booked_cell_rule' in m and (type(m['booked_cell_rule']) is not dict or
                     m['booked_cell_rule'].get('closed_graph_id') != step.graph.geometry_id):
                 raise TectonicsError('thermal cells were booked by another closed graph than the transported one')
-            columns = {key: i for i, key in enumerate(t['cell_ids'])}
-            positive = {row['cell_id'] for row in g['cells'] if _q(row['end_volume_m3']) > 0}
-            if {row['logical_cell_id'] for row in m['cells']} != positive:
-                raise TectonicsError('physical endpoint cells and thermal mesh differ; no material may be omitted')
-            if not set(m.get('required_thermal_boundary_faces', ())).issubset({} if boundary is None else boundary):
-                raise TectonicsError('open native and reservoir-cut thermal faces require explicitly declared conditions')
-            cp = self._collar._native._material.heat_capacity_j_kg_k
-            E, C = [], []
-            for row in m['cells']:
-                at = columns[row['logical_cell_id']]
-                E.append(_project(_q(t['exact_stocks']['enthalpy_j'][at])))
-                mass = np.asarray([_project(_q(t['exact_stocks']['component_mass_kg:'+str(i)][at]))
-                                   for i in range(self._component_count)])
-                # Matches the existing native endpoint operation order exactly.
-                C.append(float(np.sum(mass)*cp))
-            geometry = LIVE_SPATIAL.thermal_geometry(mesh, m, self._budget, MimeticGeometry)
-            selection = next(option for label, option in HEAT_METHODS.values() if label == self._heat_label)
-            with PreparedMimeticHeat3D(geometry, self._definition['conductivity_w_m_k'], budget=self._budget,
-                                       positivity_method=selection) as plan:
-                return plan.advance(E, C, step.source.duration_s, state_id=step.result.result_id,
-                                    source_w=0., boundary=boundary, cancel=cancel)
+            with LIVE_SPATIAL.workspace(self._budget, 65536+1024*(
+                    12*len(m['cells'])+4*len(g['cells'])+len(t['cell_ids'])+self._component_count+64)) as _capacity_tables:
+                columns = {key: i for i, key in enumerate(t['cell_ids'])}
+                positive = {row['cell_id'] for row in g['cells'] if _q(row['end_volume_m3']) > 0}
+                if {row['logical_cell_id'] for row in m['cells']} != positive:
+                    raise TectonicsError('physical endpoint cells and thermal mesh differ; no material may be omitted')
+                if not set(m.get('required_thermal_boundary_faces', ())).issubset({} if boundary is None else boundary):
+                    raise TectonicsError('open native and reservoir-cut thermal faces require explicitly declared conditions')
+                cp = self._collar._native._material.heat_capacity_j_kg_k
+                E, C = [], []
+                for row in m['cells']:
+                    at = columns[row['logical_cell_id']]
+                    bits, _ = _capacity_shape(t['exact_stocks'], self._component_count, at, energy=True)
+                    with LIVE_SPATIAL.workspace(self._budget, _capacity_work_bytes(bits)) as _capacity_cell:
+                        energy = _project(_q(t['exact_stocks']['enthalpy_j'][at]))
+                        mass = sum((_q(t['exact_stocks']['component_mass_kg:'+str(i)][at])
+                                    for i in range(self._component_count)), Q(0))
+                        capacity = float(_project(mass)*cp)
+                        del mass
+                    del _capacity_cell
+                    E.append(energy); C.append(capacity)
+                geometry = LIVE_SPATIAL.thermal_geometry(mesh, m, self._budget, MimeticGeometry)
+                selection = next(option for label, option in HEAT_METHODS.values() if label == self._heat_label)
+                with PreparedMimeticHeat3D(geometry, self._definition['conductivity_w_m_k'], budget=self._budget,
+                                           positivity_method=selection) as plan:
+                    return plan.advance(E, C, step.source.duration_s, state_id=step.result.result_id,
+                                        source_w=0., boundary=boundary, cancel=cancel)
 
     def finish(self, step, mesh, heat, collar_advance, *, cancel=None):
         """Bind both actual endpoints; this still does not publish either one."""

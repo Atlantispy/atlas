@@ -544,6 +544,22 @@ usable, so that positive was reused in the completed qualification. Mixed-fundin
 cache behaviour, a full rigid-wall chain and new capture remain open. Older
 stored identities are not rewritten.
 
+### Preserve heat capacity projection and accounting
+
+The spatial heat connection adds exact represented component masses, rounds the
+total once to binary64 and then multiplies by the existing heat capacity per
+kilogram. Public and private issuer and restoration readers retain that order.
+The collar adopter checks the issued capacity and enthalpy against its transported
+stocks and records the capacity projection residual. Prospective arithmetic
+storage uses an order-independent per-cell envelope before exact stock decoding.
+Accounting remains owned while a failed call's traceback retains its allocations,
+then releases when that error is dropped.
+
+The independently accepted isolated controls cover late refusal, cancellation,
+caller interfaces and reordered tight-budget admission. They do not qualify
+actual issuer/adopter/restore inputs, mixed funding, a full pressure/collar route,
+a joined package or a scientific run. No new timing claim is made.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
