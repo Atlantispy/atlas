@@ -1087,6 +1087,25 @@ continuing from the saved state, with each of the four solver choices, and
 require identical results. The
 [method description](../REGIONAL_EVOLUTION_3D.md#heat-and-reuse) gives the counts.
 
+Represented regional component totals use a complete component vector at each
+cell. A private tile copies its original rounded values, or the original rounded
+weighted products, orders them by numeric value and adds them in that fixed
+binary64 order. Original component fields stay paired to their materials. The
+same total supplies mass, temperature and composition readers, native/collar
+quadrature and the assigned pressure inputs; subsequent density divisions,
+constitutive laws and gates remain. This is not an exact-rational sum or `fsum`.
+
+The sort workspace and constructor overlap retain an accounting owner when an
+existing material-temperature refusal leaves their arrays in a traceback. The
+selected constructor and bare-workspace failures now keep the charge until the
+error is dropped. Constructor scratch now appears in `record-workspace` rather
+than `regional-initial-construction` in the existing per-category statistics;
+the total charge and admission stay unchanged. Primitive/native reader
+comparisons distinguish the old sum;
+the old returned limiter slopes and advanced state already agree on that fixture,
+so those outputs are not sensitive negatives. Issued mixed collar/pressure and
+the separate fraction-threshold ordering boundary remain outside these controls.
+
 Known translations in every direction test carriage; exact heating and cooling
 examples test heat accounts; a yielding example checks the three-dimensional
 strain convention; repeated smaller intervals test time accuracy. The connection

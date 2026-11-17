@@ -15,6 +15,7 @@ import weakref
 import sys
 
 import numpy as np
+from .regional_caloric import component_sum as _component_sum, component_workspace as _component_workspace
 
 from ._validation import TectonicsError
 from . import integration_volume as V
@@ -1274,15 +1275,17 @@ def owned_pressure_correction(sphere, moving, support, base_port, funding, colla
     if material.composition_density_contrast_kg_m3 != 0:
         raise PressureCouplingRefused('radial source has no declared composition density field to subtract')
     count = math.prod(collar.cells)
-    with budget.reserve(262144+16384*(count+support.edges)+8*len(base_port._record),
+    with budget.reserve(262144+16384*(count+support.edges)+8*len(base_port._record)+16*count,
                         category='owned-pressure-source'):
-        fields = collar._fields(state)
+        fields, mass, temperature = collar._fields(state, _caloric=True)
         cells = collar.cell_geometries()
         if [c.record() for c in cells] != funded['cell_geometries']:
             raise PressureCouplingRefused('current cell geometry differs from the funded CSG exclusion union')
-        mass = np.sum(fields['component_mass_kg'], axis=0)
-        temperature = fields['enthalpy_j']/(mass*material.heat_capacity_j_kg_k)
-        composition = np.sum(fields['component_mass_kg']*np.asarray(native._composition).reshape((-1, 1, 1, 1)), axis=0)/mass
+        with _component_workspace(collar.cells, len(native._composition), budget) as (scratch, _scratch_owner):
+            composition = _component_sum(fields['component_mass_kg'], out=np.empty(collar.cells),
+                                         scratch=scratch, weights=native._composition)
+            np.divide(composition, mass, out=composition)
+            del scratch, _scratch_owner
         response = boussinesq_response(material, temperature, composition, np.zeros(3),
                                       np.zeros((*collar.cells, 3)), budget=budget)
         density = material.density_kg_m3+response['density_anomaly_kg_m3']

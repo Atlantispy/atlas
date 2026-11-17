@@ -560,6 +560,22 @@ caller interfaces and reordered tight-budget admission. They do not qualify
 actual issuer/adopter/restore inputs, mixed funding, a full pressure/collar route,
 a joined package or a scientific run. No new timing claim is made.
 
+### Fix the order of represented regional component totals
+
+Regional component totals copy the original rounded values or weighted products
+into owned workspace, sort by numeric value and add in that binary64 order.
+Component fields retain their material pairing. Mass, temperature, composition,
+native/collar quadrature and assigned-pressure inputs share the resulting total;
+later density divisions, constitutive laws and admission gates remain.
+
+The accepted isolated comparisons and constructor/bare-workspace failure controls
+cover the selected arithmetic and accounting lifetimes. Constructor scratch is
+reported as `record-workspace` rather than `regional-initial-construction`, with
+total charge and admission unchanged. Old limiter slopes and advanced states
+already agree on the retained fixture and supply no sensitive negative. Issued
+mixed collar/pressure, fraction-threshold ordering, joined qualification and
+scientific acceptance remain separate. No new timing result is claimed.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

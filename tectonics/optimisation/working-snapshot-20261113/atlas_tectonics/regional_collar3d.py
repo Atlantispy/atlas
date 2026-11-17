@@ -14,7 +14,7 @@ from atlas_tectonics._private import live_collar_patch as LIVE_COLLAR
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 
 import numpy as np
-from .regional_caloric import component_sum as _component_sum
+from .regional_caloric import component_sum as _component_sum, component_workspace as _component_workspace
 
 from ._validation import TectonicsError, scalar, frozen
 from .integration_regional_evolution import RegionalVolumeMap
@@ -432,7 +432,7 @@ class PreparedRegionalCollar3D:
     def _slice(self, name, value):
         return value[(slice(None), *self._inner)] if name == 'component_mass_kg' else value[self._inner]
 
-    def _fields(self, state):
+    def _fields(self, state, *, _caloric=False):
         self._verify()
         if type(state) is not RegionalCollarState or state.fields.descriptor().get('plan_id') != self.plan_id:
             raise TectonicsError('collar state belongs to another plan')
@@ -447,22 +447,24 @@ class PreparedRegionalCollar3D:
             arrays[name] = _array(state.fields.array(name), shape, name)
             if not np.array_equal(self._slice(name, arrays[name]), state.native_state.array(name)):
                 raise TectonicsError('whole-grid and actual interior state disagree')
-        mass = np.sum(arrays['component_mass_kg'], axis=0)
-        reference_mass = self._native._mass
-        if 'material_quadrature_m3' in arrays:
-            quadrature = arrays['material_quadrature_m3']
-            if np.any(quadrature < 0):
-                raise TectonicsError('negative collar material quadrature')
-            empty = quadrature == 0
-            if np.any(empty):
-                if np.any(arrays['component_mass_kg'][:, empty] != 0) or any(np.any(a[empty] != 0)
-                        for name, a in arrays.items() if name == 'enthalpy_j' or name.startswith('tracer:')):
-                    raise TectonicsError('zero material quadrature retains collar stock')
-                raise TectonicsError('zero material quadrature has no collar caloric state')
-            reference_mass = self._native._material.density_kg_m3*quadrature
-        if np.any(arrays['component_mass_kg'] < 0) or np.max(np.abs(mass/reference_mass-1)) > 2e-10:
-            raise TectonicsError('full collar cells violate the existing Boussinesq reference inventory gate')
-        temperature = arrays['enthalpy_j']/(_component_sum(arrays['component_mass_kg'])*self._native._material.heat_capacity_j_kg_k)
+        with _component_workspace(self.cells, len(self._native._composition), self._budget) as (scratch, _scratch_owner):
+            mass = _component_sum(arrays['component_mass_kg'], out=np.empty(self.cells), scratch=scratch)
+            reference_mass = self._native._mass
+            if 'material_quadrature_m3' in arrays:
+                quadrature = arrays['material_quadrature_m3']
+                if np.any(quadrature < 0):
+                    raise TectonicsError('negative collar material quadrature')
+                empty = quadrature == 0
+                if np.any(empty):
+                    if np.any(arrays['component_mass_kg'][:, empty] != 0) or any(np.any(a[empty] != 0)
+                            for name, a in arrays.items() if name == 'enthalpy_j' or name.startswith('tracer:')):
+                        raise TectonicsError('zero material quadrature retains collar stock')
+                    raise TectonicsError('zero material quadrature has no collar caloric state')
+                reference_mass = self._native._material.density_kg_m3*quadrature
+            if np.any(arrays['component_mass_kg'] < 0) or np.max(np.abs(mass/reference_mass-1)) > 2e-10:
+                raise TectonicsError('full collar cells violate the existing Boussinesq reference inventory gate')
+            temperature = arrays['enthalpy_j']/(mass*self._native._material.heat_capacity_j_kg_k)
+            del scratch, _scratch_owner
         lo, hi = self._native._material.temperature_range_k
         if np.any((temperature < lo) | (temperature > hi)):
             raise TectonicsError('collar temperature outside declared material law')
@@ -471,7 +473,7 @@ class PreparedRegionalCollar3D:
                 raise TectonicsError('negative carried collar history')
         if np.any(arrays['tracer:damage'] != 0):
             raise TectonicsError('rigid collar cannot silently discard damage evolution')
-        return arrays
+        return (arrays, mass, temperature) if _caloric else arrays
 
     def initial_state_from_funding(self, funding, owner, *, exterior_heat=None,
                                   exterior_enthalpy_j=None, exterior_state_id=None,
@@ -515,7 +517,12 @@ class PreparedRegionalCollar3D:
                 if native_state.descriptor()['parent_state_id'] is not None:
                     raise TectonicsError('material quadrature can only be seeded at fresh collar admission')
                 if material_quadrature_m3 is None or material_quadrature_m3 is True:
-                    quadrature = np.sum(component_mass_kg, axis=0)/self._native._material.density_kg_m3
+                    represented = np.asarray(component_mass_kg, dtype=np.float64)
+                    fields['component_mass_kg'] = represented
+                    with _component_workspace(self.cells, len(self._native._composition), self._budget) as (scratch, _scratch_owner):
+                        quadrature = _component_sum(represented, out=np.empty(self.cells), scratch=scratch)
+                        del scratch, _scratch_owner
+                    np.divide(quadrature, self._native._material.density_kg_m3, out=quadrature)
                     quadrature[self._inner] = native_state.array('material_quadrature_m3')
                 else:
                     quadrature = _array(material_quadrature_m3, self.cells, 'material quadrature')

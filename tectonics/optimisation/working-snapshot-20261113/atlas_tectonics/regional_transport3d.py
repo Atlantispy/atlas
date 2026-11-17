@@ -22,6 +22,7 @@ import sys
 import threading
 
 import numpy as np
+from .regional_caloric import component_sum as _component_sum, component_workspace as _component_workspace
 from scipy import sparse
 from scipy.sparse.linalg import splu
 
@@ -383,10 +384,11 @@ class PreparedRegionalTransport3D:
                 source_status='WORKING NON-CANON', scientific_acceptance=False)
             return ConservativeFaceFlow3D(meta, arrays)
 
-    @staticmethod
-    def _specific_inventory(q, ncomponents):
+    def _specific_inventory(self, q, ncomponents, *, _scratch=None):
         """Specific carried scalars are undefined on massless nonzero inventory."""
-        total = np.sum(q[:ncomponents], axis=0)
+        with _component_workspace(q.shape[1:], ncomponents, self._budget, scratch=_scratch) as (scratch, _scratch_owner):
+            total = _component_sum(q[:ncomponents], out=np.empty(q.shape[1:]), scratch=scratch)
+            del scratch, _scratch_owner
         if not np.isfinite(total).all():
             raise TectonicsError('nonfinite total transported mass')
         if np.any((total == 0)[None] & (q != 0)):
@@ -406,42 +408,44 @@ class PreparedRegionalTransport3D:
         slope = np.zeros_like(q)
         if self.cells[axis] <= 2:
             return slope
-        middle = [slice(None)]*4; left = middle.copy(); right = middle.copy()
-        middle[axis+1] = slice(1, -1); left[axis+1] = slice(None, -2); right[axis+1] = slice(2, None)
-        c, l, r = q[tuple(middle)], q[tuple(left)], q[tuple(right)]
-        raw = .5*(r-l)
-        total, specific = self._specific_inventory(q, ncomponents)
-        cm = middle[1:]; lm = left[1:]; rm = right[1:]
-        m = total[tuple(cm)]; sc = specific[tuple(middle)]
-        low = np.minimum(c, np.minimum(l, r)); high = np.maximum(c, np.maximum(l, r))
-        theta = np.ones_like(m)
+        with _component_workspace(q.shape[1:], ncomponents, self._budget) as (scratch, _scratch_owner):
+            middle = [slice(None)]*4; left = middle.copy(); right = middle.copy()
+            middle[axis+1] = slice(1, -1); left[axis+1] = slice(None, -2); right[axis+1] = slice(2, None)
+            c, l, r = q[tuple(middle)], q[tuple(left)], q[tuple(right)]
+            raw = .5*(r-l)
+            total, specific = self._specific_inventory(q, ncomponents, _scratch=scratch)
+            cm = middle[1:]; lm = left[1:]; rm = right[1:]
+            m = total[tuple(cm)]; sc = specific[tuple(middle)]
+            low = np.minimum(c, np.minimum(l, r)); high = np.maximum(c, np.maximum(l, r))
+            theta = np.ones_like(m)
 
-        def restrict(margin, derivative):
-            nonlocal theta
-            bound = np.divide(margin, np.abs(derivative), out=np.ones_like(margin), where=derivative != 0)
-            theta = np.minimum(theta, np.min(bound, axis=0))
+            def restrict(margin, derivative):
+                nonlocal theta
+                bound = np.divide(margin, np.abs(derivative), out=np.ones_like(margin), where=derivative != 0)
+                theta = np.minimum(theta, np.min(bound, axis=0))
 
-        # Both faces must stay inside the neighbour extensive range.
-        restrict(np.minimum(c-low, high-c), .5*raw)
-        sl, sr = specific[tuple(left)], specific[tuple(right)]
-        # A vacuum contributes no specific-value bound; its zero extensive
-        # inventory still limits the slope above.
-        slo = np.minimum(sc, np.minimum(np.where(total[tuple(lm)][None] > 0, sl, np.inf),
-                                       np.where(total[tuple(rm)][None] > 0, sr, np.inf)))
-        shi = np.maximum(sc, np.maximum(np.where(total[tuple(lm)][None] > 0, sl, -np.inf),
-                                       np.where(total[tuple(rm)][None] > 0, sr, -np.inf)))
-        mass_slope = np.sum(raw[:ncomponents], axis=0)
-        epsilon = np.finfo(float).eps
-        for bound, margin in ((slo, (sc-slo)*m[None]), (shi, (shi-sc)*m[None])):
-            derivative = .5*(raw-bound*mass_slope[None])
-            # Exactly constant specific quantities have a zero derivative;
-            # do not let cancellation at roundoff suppress all other slopes.
-            scale = np.maximum(np.abs(c), np.abs(bound*m[None]))
-            derivative = np.where(np.abs(derivative) <= 16*epsilon*scale, 0., derivative)
-            restrict(margin, derivative)
-        theta = np.where(m > 0, theta, 0.)*(1-16*epsilon)
-        slope[tuple(middle)] = raw*theta[None]
-        return slope
+            # Both faces must stay inside the neighbour extensive range.
+            restrict(np.minimum(c-low, high-c), .5*raw)
+            sl, sr = specific[tuple(left)], specific[tuple(right)]
+            # A vacuum contributes no specific-value bound; its zero extensive
+            # inventory still limits the slope above.
+            slo = np.minimum(sc, np.minimum(np.where(total[tuple(lm)][None] > 0, sl, np.inf),
+                                           np.where(total[tuple(rm)][None] > 0, sr, np.inf)))
+            shi = np.maximum(sc, np.maximum(np.where(total[tuple(lm)][None] > 0, sl, -np.inf),
+                                           np.where(total[tuple(rm)][None] > 0, sr, -np.inf)))
+            mass_slope = _component_sum(raw[:ncomponents], out=np.empty(raw.shape[1:]), scratch=scratch)
+            epsilon = np.finfo(float).eps
+            for bound, margin in ((slo, (sc-slo)*m[None]), (shi, (shi-sc)*m[None])):
+                derivative = .5*(raw-bound*mass_slope[None])
+                # Exactly constant specific quantities have a zero derivative;
+                # do not let cancellation at roundoff suppress all other slopes.
+                scale = np.maximum(np.abs(c), np.abs(bound*m[None]))
+                derivative = np.where(np.abs(derivative) <= 16*epsilon*scale, 0., derivative)
+                restrict(margin, derivative)
+            theta = np.where(m > 0, theta, 0.)*(1-16*epsilon)
+            slope[tuple(middle)] = raw*theta[None]
+            del scratch, _scratch_owner
+            return slope
 
     def _euler_inventory(self, old, ncomponents, streams, courant, boundary_in, cancel):
         higher = self.transport_method == 'muscl-ssprk2'

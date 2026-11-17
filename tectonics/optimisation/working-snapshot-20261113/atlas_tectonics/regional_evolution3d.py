@@ -17,7 +17,7 @@ from pathlib import Path
 import threading
 
 import numpy as np
-from .regional_caloric import component_sum as _component_sum
+from .regional_caloric import component_sum as _component_sum, component_workspace as _component_workspace
 
 from ._validation import TectonicsError, scalar, frozen, input_shape
 from .constitutive import (BoussinesqMaterial, DiffusiveScales, RheologyProfile,
@@ -348,7 +348,13 @@ class PreparedRegionalEvolution3D:
 
     def initial_state(self, temperature_k, fractions, damage, *, time_s,
                       state_source, scalar_histories=None, material_quadrature_m3=None):
+        # Construction peak: four component-stack generations and four
+        # copies of at most 68 scalar fields, including conversion/freeze.
+        from ._private.record_tables import Scratch
         with self._operation(None):
+            # Keep the admitted peak with any retained failure frame.
+            _construction_owner = Scratch(self._resource,
+                65536+32*len(self._composition)*self._n+32*68*self._n)
             _name(state_source, 'state source')
             T = _array(temperature_k, self.cells, 'temperature', scalar_ok=True, positive=True)
             f = _array(fractions, (len(self._composition), *self.cells), 'component fractions')
@@ -394,7 +400,12 @@ class PreparedRegionalEvolution3D:
                 if not np.array_equal(T.ravel(), self._radial_constitutive.array('temperature_k')[:, 0]):
                     raise TectonicsError('initial temperature differs from the actual radial source')
             result = self._state(fields, time_s, state_source, None)
-            self._fields(result)
+            del fields, f, T, d, quadrature, reference_mass
+            # The post-construction snapshot plus this scratch is below
+            # the already admitted construction peak; no nested charge.
+            scratch = np.empty((self._n, len(self._composition)))
+            self._fields(result, _scratch=scratch)
+            del scratch
             return result
 
     def _state(self, fields, time_s, source, parent):
@@ -404,7 +415,7 @@ class PreparedRegionalEvolution3D:
             parent_state_id=parent, inventory='reference mass and sensible enthalpy m*cp*T',
             histories='mass-weighted scalar fields; no elastic tensor or free-surface state'), fields)
 
-    def _fields(self, state):
+    def _fields(self, state, *, _scratch=None):
         if type(state) is not RegionalMechanicalSnapshot:
             raise TectonicsError('immutable regional state required')
         meta = state.descriptor()
@@ -415,29 +426,32 @@ class PreparedRegionalEvolution3D:
                for k in state.array_names) or len(state.array_names) > 66+int(dual):
             raise TectonicsError('unsupported state fields cannot be silently discarded')
         m = _array(state.array('component_mass_kg'), (len(self._composition), *self.cells), 'mass')
-        total = np.sum(m, axis=0)
-        reference_mass = self._mass
-        if dual:
-            quadrature = _array(state.array('material_quadrature_m3'), self.cells, 'material quadrature')
-            if np.any(quadrature < 0):
-                raise TectonicsError('negative material quadrature')
-            empty = quadrature == 0
-            if np.any(empty):
-                if np.any(m[:, empty] != 0) or any(np.any(state.array(k)[empty] != 0)
-                        for k in state.array_names if k == 'enthalpy_j' or k.startswith('tracer:')):
-                    raise TectonicsError('zero material quadrature retains native stock')
-                raise TectonicsError('zero material quadrature has no native caloric state')
-            reference_mass = self._material.density_kg_m3*quadrature
-        if np.any(m < 0) or np.max(np.abs(total/reference_mass-1)) > 2e-10:
-            raise TectonicsError('reference density inventory incompatible with incompressible Boussinesq cells')
-        E = _array(state.array('enthalpy_j'), self.cells, 'enthalpy', positive=True)
-        T = E/(_component_sum(m)*self._material.heat_capacity_j_kg_k)
-        if np.any((T < self._material.temperature_range_k[0]) | (T > self._material.temperature_range_k[1])):
-            raise TectonicsError('temperature outside declared material range')
-        td = (T-self._cs.surface_temperature_k)/self._cs.temperature_scale_k
-        if self._radial_constitutive is None and np.any((td < 0) | (td > 1)):
-            raise TectonicsError('temperature outside constitutive scale; no extrapolation')
-        C = np.einsum('i,i...->...', self._composition, m)/total
+        with _component_workspace(self.cells, len(self._composition), self._resource, scratch=_scratch) as (scratch, _scratch_owner):
+            total = _component_sum(m, out=np.empty(self.cells), scratch=scratch)
+            reference_mass = self._mass
+            if dual:
+                quadrature = _array(state.array('material_quadrature_m3'), self.cells, 'material quadrature')
+                if np.any(quadrature < 0):
+                    raise TectonicsError('negative material quadrature')
+                empty = quadrature == 0
+                if np.any(empty):
+                    if np.any(m[:, empty] != 0) or any(np.any(state.array(k)[empty] != 0)
+                            for k in state.array_names if k == 'enthalpy_j' or k.startswith('tracer:')):
+                        raise TectonicsError('zero material quadrature retains native stock')
+                    raise TectonicsError('zero material quadrature has no native caloric state')
+                reference_mass = self._material.density_kg_m3*quadrature
+            if np.any(m < 0) or np.max(np.abs(total/reference_mass-1)) > 2e-10:
+                raise TectonicsError('reference density inventory incompatible with incompressible Boussinesq cells')
+            E = _array(state.array('enthalpy_j'), self.cells, 'enthalpy', positive=True)
+            T = E/(total*self._material.heat_capacity_j_kg_k)
+            if np.any((T < self._material.temperature_range_k[0]) | (T > self._material.temperature_range_k[1])):
+                raise TectonicsError('temperature outside declared material range')
+            td = (T-self._cs.surface_temperature_k)/self._cs.temperature_scale_k
+            if self._radial_constitutive is None and np.any((td < 0) | (td > 1)):
+                raise TectonicsError('temperature outside constitutive scale; no extrapolation')
+            C = _component_sum(m, out=np.empty(self.cells), scratch=scratch, weights=self._composition)
+            np.divide(C, total, out=C)
+            del scratch, _scratch_owner
         histories = {name[7:]: _array(state.array(name), self.cells, name)
                      for name in state.array_names if name.startswith('tracer:')}
         if not {'damage', 'accumulated_strain_ii'} <= set(histories):

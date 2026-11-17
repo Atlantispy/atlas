@@ -16,6 +16,7 @@ from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private import exchange_record_patch as _EXCHANGE_RECORD
 
 import numpy as np
+from .regional_caloric import component_sum as _component_sum, component_workspace as _component_workspace
 
 from ._validation import TectonicsError
 from .integration_collar_geometry import FullCellFunding, _partition
@@ -357,7 +358,11 @@ class PreparedSpatialOwner:
             if self._measure_policy is not None:
                 initial['measure_policy'] = self._measure_policy
                 arrays = funding.arrays()
-                native_b = np.sum(arrays['component_mass_kg'], axis=0)/collar._native._material.density_kg_m3
+                represented = arrays['component_mass_kg']
+                with _component_workspace(represented.shape[1:], represented.shape[0], budget) as (scratch, _scratch_owner):
+                    native_b = _component_sum(represented, out=np.empty(represented.shape[1:]), scratch=scratch)
+                    del scratch, _scratch_owner
+                np.divide(native_b, collar._native._material.density_kg_m3, out=native_b)
                 initial['native_material_quadrature_m3'] = [_enc(Q(float(v))) for v in native_b.flat]
                 self._check_measures(initial)
             self._initial = self._issue(initial)
@@ -530,7 +535,10 @@ class PreparedSpatialOwner:
                     raise TectonicsError('saved initial source volume is incomplete')
                 if self._measure_policy is not None:
                     funded = funding.arrays()['component_mass_kg']
-                    native_b = np.sum(funded, axis=0)/collar._native._material.density_kg_m3
+                    with _component_workspace(funded.shape[1:], funded.shape[0], budget) as (scratch, _scratch_owner):
+                        native_b = _component_sum(funded, out=np.empty(funded.shape[1:]), scratch=scratch)
+                        del scratch, _scratch_owner
+                    np.divide(native_b, collar._native._material.density_kg_m3, out=native_b)
                     if initial_record.get('native_material_quadrature_m3') != [_enc(Q(float(v))) for v in native_b.flat]:
                         raise TectonicsError('saved initial native quadrature differs from its actual funding')
                     width = Q(0)
