@@ -550,7 +550,7 @@ admitted solvers. Evolution keeps those admission choices fixed: temporary
 competition for shared memory refuses work rather than silently switching
 solver. Changed viscosity can still change the choice under the recorded rule.
 
-The accepted [A3/O1 controls](../../optimisation/working-snapshot-20261113/README.md#refuse-an-unadmitted-selected-method)
+The retained external [selected-method refusal controls](../../optimisation/working-snapshot-20261113/README.md#refuse-an-unadmitted-selected-method)
 retain policy v2 and distinguish a changed admission mask from different byte
 limits with the same mask. They do not establish a new whole-interval result.
 The following timing comparison describes the earlier measured source.
@@ -893,6 +893,21 @@ readers retain this same order. The collar adopter repeats it from the actual
 transported stocks, compares the issued input capacity and enthalpy, and records
 the exact capacity-projection residual. It does not substitute a sum of already
 rounded component masses; the caloric-rule metadata changes even for pure cells.
+
+Agreement at that adoption boundary does not make every endpoint temperature
+bitwise identical. Collar and native mechanics derive temperature separately
+from the projected binary64 component stocks, using the represented reduction
+below. Represented pressure consumes that endpoint mass and temperature; the
+spatial and differential exact-pressure routes have their own rational-density
+calculations.
+
+For an arithmetic illustration, take masses `[1, 1 + 2^-52, 1 + 2^-52]` kg,
+unit specific heat and enthalpy 3 J. The exact-stock capacity projects once to
+`3 + 2^-51` J/K; sorted binary64 addition gives 3 J/K. Their rounded temperatures
+are 0.9999999999999999 K and 1.0 K, one ULP apart. The exact-stock issuer and
+adopter still agree. This example does not qualify a mixed endpoint near a
+material limit; the existing mixed collar/pressure qualification remains open.
+No arithmetic or tolerance is changed here.
 
 Prospective arithmetic storage uses one order-independent per-cell numerator/
 denominator envelope before decoding the exact stocks. The existing memory cap
@@ -1485,13 +1500,14 @@ nondefault `tectonics/optimisation/working-snapshot-20261113` carried-predictor
 successor stores only the last accepted predictor, not a later
 refused trial or a complete solved stage, and reconstructs the endpoint from the
 same inputs. Its v2 column record carries one extra array and rate; a v1 record
-refuses without migration or deletion. Source/state identities move, while A15
-still keeps evaluation and iteration counts as provenance outside physical
-identity. Isolated continuation, fresh-process and persistence controls are
-independently accepted; full driver restart, actual joined qualification and
+refuses without migration or deletion. Source/state identities move, while evaluation and iteration counts remain
+provenance outside physical identity. Retained external continuation,
+fresh-process and persistence controls passed on their selected fixtures; full driver restart, actual joined qualification and
 new capture remain open. Its migrated persistence fixture qualifies that
 snapshot; the canonical `tectonics/src` v1 restore and public tests remain
-unchanged, including cold endpoint reconstruction outside the warm head.
+unchanged, including cold endpoint reconstruction outside the warm head. A
+genuine v1 successor can fail before the version diagnostic; the retained
+version-message negative only relabels a v2 descriptor.
 Reopening also exposed a numerical precision bug:
 on very stiff rock branches, two neighbouring log-stress values could lie either
 side of the answer but neither was accurate enough. Refining directly in stress

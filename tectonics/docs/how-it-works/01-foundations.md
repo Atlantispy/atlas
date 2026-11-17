@@ -84,11 +84,11 @@ them. Ordinary descriptor restore recomputes areas under the receiving source,
 but retaining a historical generated descriptor also retains its old ownership
 and fit declarations; this is not historical restore qualification.
 
-The selected six-plate, 96-patch case with fixed seed 41 preserves the physical
+The retained external six-plate, 96-patch case with fixed seed 41 preserves the physical
 rows and directed rings under cyclic renaming. All 96 rebuilt patch areas and
 the six actual plate-metric records agree bitwise; the old producer changed
 50 areas and four returned plate areas. Existing cube and filled-hole tests
-also pass. Independent review accepts this selected producer correction.
+also pass.
 The results do not establish cross-frame invariance, historical restart,
 performance, whole-process or geological acceptance.
 
@@ -102,12 +102,12 @@ deduplication changes the shapes. A bounded vector buffer is released before the
 joint recharts and geometric operation; existing conditioning, limits, operand
 direction and refusal rules remain.
 
-On two asymmetric triangles, the selected controls reach both original chart
+On two asymmetric triangles, retained external controls reach both original chart
 failures and then successful joint-chart intersection and directed difference,
 under both cyclic starts. They compare the six-edge intersection, three remainder
 triangles, classifications, measures and area partition. The old cycled input
 refuses on conditioning. Positive holes and genuine point/line/member
-multiplicities are covered by source review, not by a positive-hole execution.
+multiplicities are covered by source inspection, not by a positive-hole execution.
 These bounded results do not qualify a joined package or all spherical overlays.
 
 An exact intersection can be a mixture: an area, a line where two outlines only
@@ -173,15 +173,15 @@ hemisphere tests decide whether that candidate is used. Radius and bucket
 formulas, KD-tree capacity checks, classification, limits and refusal rules
 remain unchanged.
 
-The selected comparison gives the old-sum and corrected-cap arms the same
+The retained external comparison gives the old-sum and corrected-cap arms the same
 corrected area producer. All five physical-input groups match across arms and
 within each arm's cyclic renaming, including the 96 areas, six actual metrics
 and directed rings. Of the old arm's actually used caps, 59 change; all 96
 corrected cap records and the complete mapped query result agree. The real
 query reaches both capacity checks and classification, returning 96 owners
 from 238 candidates against 9,216 exhaustive pairs; the bounded vertex query
-retains its prescribed capacity refusal. Independent review accepts the whole
-INDEX contract for this fixed-frame six-plate, seed-41, 96-patch case. Matching
+retains its prescribed capacity refusal. This covers the whole index contract
+for the fixed-frame six-plate, seed-41, 96-patch case. Matching
 classifications alone would not qualify it. These are selected source-bound
 controls, not a cross-frame, historical-restore, performance, whole-process or
 geological result.
@@ -202,7 +202,7 @@ The nondefault [layout generator](../../optimisation/working-snapshot-20261113/a
 uses the rounded support areas during assignment and fit, before issuing the
 final atlas. Its metrics then read the issued patch areas. Regeneration must
 therefore start before the first area-consuming assignment; an old fit or metric
-verdict cannot stand in for the corrected generation. In the selected area
+verdict cannot stand in for the corrected generation. In the retained external area
 control, the non-area primitives and membership declarations also match the
 old defect case, keeping its source attribution separate from the new area bits.
 
@@ -326,7 +326,7 @@ of the cohort slope contributions with its existing compensated addition. The
 actual cohort slopes and candidates keep their original material mapping. The
 mesh route likewise sorts only a copy of the already-rounded slope-times-width
 terms; it does not reorder the physical cohort data or change its limiter law.
-The six retained independent-reference methods pass at their existing
+The six retained external independent-reference methods pass at their existing
 tolerances. In the selected five-cohort case, old and corrected returned groups
 both agree: that case supplies no old-output discriminator or universal exact-bit
 reference proof.

@@ -923,7 +923,7 @@ def _column_state(semantics, scalars, accounts, counters, extrema, theta0, theta
                   _yield=yields, _guess=guess, _record=record)
 
 
-COLUMN_SCHEMA = 'atlas.i02-finite-strain-column-state.v2'    # v2 carries the endpoint guess; v1 refuses (A-4)
+COLUMN_SCHEMA = 'atlas.i02-finite-strain-column-state.v2'    # v2 carries the endpoint guess; v1 refuses
 _NO_GUESS = np.frombuffer(b'', dtype=np.float64)
 
 
@@ -1675,7 +1675,7 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
 
     ``root`` is the verified declared initial state of the history (itself rebuilt through initial_state() from its
     persisted inputs); ``column`` is the successor's persisted column record and the four arrays its current departure,
-    raw history, yield counts and endpoint guess (A-4; a v1 record has none and refuses). Every scalar, account, counter, extreme and array must lie inside the admitted
+    raw history, yield counts and endpoint guess (a v1 record has none and refuses). Every scalar, account, counter, extreme and array must lie inside the admitted
     history exactly as a carried prefix (the bounds resume() applies before any re-solve) and satisfy the relations
     the engine enforces (_consistent, which Ledger.commit applies before publishing), and the rebuilt column record
     must reproduce the persisted one. The successor shares the root's reference, settings, initial departure and
@@ -1691,7 +1691,7 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
         raise TectonicsError('the persisted column record has unexpected fields')
     record = _document(column, 'persisted column record')
     if record['schema'] == 'atlas.i02-finite-strain-column-state.v1':
-        raise TectonicsError('a v1 column record carries no endpoint guess and cannot resume bit-equal: refused (A-4)')
+        raise TectonicsError('a v1 column record carries no endpoint guess and cannot resume bit-equal: refused')
     if (record['schema'], record['route'], record['semantics']) != (COLUMN_SCHEMA, ROUTE, SUCCESSOR_SEMANTICS):
         raise TectonicsError('the persisted column record is not an accepted state of this route')
     settings, reference = root.settings, root.reference

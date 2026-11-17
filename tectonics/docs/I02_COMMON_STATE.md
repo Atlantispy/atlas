@@ -297,7 +297,7 @@ connects it to this envelope. In execution order:
    displacement, log-strain path and quadrature, the global accepted-step index with
    elapsed time `accepted*step_s`, the 14 accounts, counters, extrema, per-point yield
    counts and the reference velocity and force. The nondefault snapshot also
-   carries the endpoint predictor below. That snapshot retains the A15 rule: `COLUMN_EFFORT` excludes only
+   carries the endpoint predictor below. In that snapshot, `COLUMN_EFFORT` excludes only
    `counters.evaluations` and `counters.iterations` through `_column_identity`;
    the record still carries both as provenance. The remaining record and exact
    array bytes stay identity-bound. `Advance.status` is `PIECE_COMPLETE` or `HISTORY_COMPLETE` for a
@@ -324,7 +324,7 @@ The predictor/schema/restore changes below belong only to the separate
 evolution, state, ledger and clock modules. They do not replace the canonical
 route or migrate its tests.
 
-**Nondefault snapshot: carried endpoint predictor (A4 successor).** A prefix retains the `x` array and
+**Nondefault snapshot: carried endpoint predictor.** A prefix retains the `x` array and
 `rate` of the predictor from which its last accepted endpoint was solved. The
 assignment occurs only when the step is accepted, so a later refused trial cannot
 replace it. It carries no complete solved stage. `Prefix.carried()` returns fresh
@@ -334,10 +334,19 @@ The snapshot's column schema is `atlas.i02-finite-strain-column-state.v2`. Its s
 `endpoint_guess_x`, is finite binary64, one value per material point, or an
 immutable empty binary64 array when there was no guess. Its tenth scalar,
 `endpoint_guess_rate`, is the finite solver rate, exactly zero with an empty
-array. Both enter the existing canonical column identity, retaining A15's two
+array. Both enter the existing canonical column identity, retaining the two
 effort-counter exclusions. The root has no accepted predictor and carries the
 empty array and zero rate. That v2 restore refuses v1 records; nothing is migrated, deleted or silently
 solved by a second cold method. The canonical route still reads its own v1 records.
+
+A legacy refusal does not promise one first diagnostic. A genuine v1 successor
+lacks the predictor array and rate: ledger restoration can report an incomplete
+commit, and direct restore can reject its field set before checking the schema.
+A full reopen can stop earlier at source/runtime binding or the rebuilt root
+identity. The retained version-message negative instead relabels a v2 descriptor
+and supplies its predictor array; it proves that schema-string branch, not the
+genuine v1 wire shape. All v2 validation and legacy refusal remain. This snapshot
+qualification does not replace the canonical public v1 tests.
 
 `Continuation._prefix` uses `begin` for a root, the held prefix for the identical
 warm-head state object, and `resume(_carried(state))` for another accepted state.
@@ -354,8 +363,8 @@ and `reconstruction_iterations`, never booked twice. The `warm` flag and these
 reconstruction counters describe execution, rather than new physical state.
 Uninterrupted physical calculations are unchanged. The extra array and scalar
 move schema/state identities and require new source-bound capture; historical
-receipts remain unchanged. The sealed rebased continuation, fresh-process and
-persistence controls are independently accepted on their selected cases. The
+receipts remain unchanged. Retained external continuation, fresh-process and
+persistence controls passed on their selected fixtures. The
 seven selected persistence methods and their full subcases use an external
 migrated qualification fixture, not migrated canonical public tests. Full
 command-driver restart, actual joined-package qualification and new capture

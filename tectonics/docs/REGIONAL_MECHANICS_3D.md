@@ -643,9 +643,9 @@ part of the identity. To continue a run, pass its recorded `mechanics_method`
 and use a budget supporting the same admission choices. States from before
 this change are refused because the package's execution identity changed.
 
-The isolated [A3/O1 refusal correction](../optimisation/working-snapshot-20261113/README.md#refuse-an-unadmitted-selected-method)
-is independently accepted. POLICY v2 and both admitted-method booleans remain in
-the auto plan identity. The retained three controls refuse a selected method
+The [selected-method refusal correction](../optimisation/working-snapshot-20261113/README.md#refuse-an-unadmitted-selected-method)
+keeps POLICY v2 and both admitted-method booleans in the auto plan identity.
+Three retained external controls refuse a selected method
 when only the other fits, refuse a saved state reopened under a changed mask
 before mechanical preparation, and continue at different byte limits with the
 same mask. Earlier range/timing tables retain their original source attribution;

@@ -306,7 +306,7 @@ def solve(geometry, conductivity, old, capacity, dt, source, boundary, reference
     solve that converges slowly, and that the iteration alone would complete,
     can take the factor instead: its result meets the same two residual gates
     and its evidence carries ``direct_factor``. When the budget does not admit
-    the factor, the solve is refused (ruling 34); the iteration does not
+    the factor, the solve is refused; the iteration does not
     continue in its place. The plan
     descriptor's ``linear_method`` does not mention the factor: the evidence
     of each advance, not the plan, names it.
@@ -617,7 +617,7 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
         # leaves there and never here.
         if (iterations-improved >= _STAGNATION or
                 (correction_at is not None and iterations == 0)):
-            # Ruling 34 (A-3): a budget that does not admit the factor refuses the solve.
+            # A budget that does not admit the factor refuses the solve.
             form = direct_form()
             break
         ad = reduced_action(direction)
@@ -754,7 +754,7 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
                 best_residual = true_residual
             best_merit = dot(best_residual, best_residual)
             corrections = actual_corrections
-            # Ruling 34 (A-3): a budget that does not admit the direction refuses; no mixing fallback.
+            # A budget that does not admit the direction refuses; no mixing fallback.
             with budget.reserve(N.workspace_bytes(size), category='mimetic-newton-direction'):
                 helper_identity = N.assert_current()
                 derivative = (N.prepare_scheme2_derivative(local, next_iterate,

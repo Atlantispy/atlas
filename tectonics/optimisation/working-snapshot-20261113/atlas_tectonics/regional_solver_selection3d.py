@@ -13,7 +13,7 @@ Rule (policy v2), in order:
 1. Admission. Each method's complete reservation is predicted with the formulas
    the method itself reserves with, and compared with the budget's available
    bytes. If the method rules 2 and 3 choose does not fit, the plan is refused;
-   the other method is never substituted (ruling 34).
+   the other method is never substituted.
 2. Multigrid whenever the workload lies inside the range where the matrix-free
    method has been shown to meet every gate at least as reliably as the
    assembled route: at least ``MIN_AXIS_CELLS`` cells along every axis, and

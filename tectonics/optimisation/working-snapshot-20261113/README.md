@@ -1,6 +1,6 @@
 # Working snapshot (first published 13 November 2026)
 
-Status: **experimental source snapshot**. This folder publishes the later optimisation work on the review branch. It is not the reviewed folded package and has no scientific acceptance. The source fixes below have their stated independent reviews and focused checks; that does not qualify the whole snapshot. Earlier diagnostic results remain attached to their original packages. Paths are relative to `atlas_tectonics/`. For adoption and continuation, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
+Status: **experimental source snapshot**. This folder publishes the later optimisation work on the review branch. It is not the reviewed folded package and has no scientific acceptance. The source fixes below have the stated bounded qualification; that does not qualify the whole snapshot. Earlier diagnostic results remain attached to their original packages. Paths are relative to `atlas_tectonics/`. For adoption and continuation, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
 
 ## History
 
@@ -34,7 +34,7 @@ Status: **experimental source snapshot**. This folder publishes the later optimi
 Each later source fix has its own commit, source tables and affected documentation. The first five 15 November sections were read
 from the code at `f29ca36`, the batch 2 section from the code at `9f5080c`, the next private batch from the code at `1e0643e` and the first result-moving break from the code at `25811eb`; the other sections were written for the 13 November contents, and their line
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
-the historical chain sections are not whole-snapshot review records. The later source fixes have the bounded reviews and evidence described below.
+the historical chain sections are not whole-snapshot review records. The later source fixes have the bounded evidence described below.
 
 ## Contents
 
@@ -441,19 +441,26 @@ heat difference recorded as explained, not equal. That is not scientific accepta
 
 ## Source fixes after the reference
 
-These source changes are applied after the first-break package documented above. They are not a new joined second-break package. The reference and restart measurements above describe the original first-break bytes; they are not runs of these successors.
+These changes postdate the package used by the reference and restart measurements
+above. Those results remain bound to that earlier source and do not qualify the
+combined successor.
+
+The retained numerical qualification described in these sections uses external
+fixtures and inputs that are not included in this checkout. Public tests keep
+their own declared source and state-format contracts; they do not, by themselves,
+replay every snapshot qualification.
 
 ### Accurately sum each target face allowance
 
 `integration_transfer._transferred` gathers the same rounded donor-share, retained-source and receiver-bound contributions, then uses one `math.fsum` per target. The direct allowance replacement for a rename and the later cap are unchanged. The stored allowance remains binary64 square metres per face; no tolerance or schema changes.
 
-Independent source review accepted the isolated change. The focused control exercised the complete allowance-producing source region and the actual sphere issuer, stored value and restore reader. Both candidate orders produced 384.0 m2 and the same acceptance; the previous sum and its mutant differed by two ULP and flipped that constructed decision. The control did not execute the surrounding geometry derivation or full transfer. Actual-mesh occurrence, the selected two-interval comparison and large-remap memory remain unqualified. No speed or whole-chain claim follows.
+The retained external control exercised the complete allowance-producing source region and the actual sphere issuer, stored value and restore reader. Both candidate orders produced 384.0 m2 and the same acceptance; the previous sum and its mutant differed by two ULP and flipped that constructed decision. The control did not execute the surrounding geometry derivation or full transfer. Actual-mesh occurrence, the selected two-interval comparison and large-remap memory remain unqualified. No speed or whole-chain claim follows.
 
 ### Keep the loaded heat inventory independent of recognised home paths
 
 `_private/private_heat_loaded_identity_r1.py` records recognised package and interpreter path constants relative to their roots, including paths inside tuples and lists. The seven original file-opening constants keep their values. An unrecognised absolute path retains its spelling in the inventory. This changes loaded and derived identities, without recomputing a heat quantity.
 
-Two fresh candidate imports from different homes produced identical loaded-inventory bytes; the mapping-removed control exposed the seven original paths. Independent review accepted the corrected nested-Path handling by source inspection. This is controlled relocation evidence, not a new reference run or a proof for every source-provenance dependency.
+Two fresh candidate imports from different homes produced identical loaded-inventory bytes; the mapping-removed control exposed the seven original paths. Source inspection covered the corrected nested-Path handling. This is controlled relocation evidence, not a new reference run or a proof for every source-provenance dependency.
 
 ### Refuse an unadmitted selected method
 
@@ -466,12 +473,12 @@ POLICY v2 still binds both admitted-method booleans: a changed mask refuses save
 continuation before mechanical preparation, while different budgets with the
 same mask can continue.
 
-The isolated A3/O1 source and three current companion controls are independently
-accepted; all three passed. Adequate older seven-case/six-mutant evidence keeps
-its original source bound. The unrelated historical whole-suite fixture error
-remains, without a whole-suite PASS. Actual-parent composition, publication and
-scientific acceptance remain separate. Gamma representation/admission, physical
-ordering and A40 are outside this accepted scope.
+Three retained external receiving controls passed for the selected refusal
+rule. The older seven-case/six-mutant evidence keeps its original source bound;
+the repository also contains regional solver-selection tests. The historical
+whole-suite fixture error remains, without a whole-suite PASS. These results do
+not qualify the combined package or a scientific run. Other heat-method changes
+and physical ordering have their own qualification.
 
 ### Preserve cohort mapping in native reductions
 
@@ -481,8 +488,7 @@ slope-times-width terms. Physical slopes and candidates retain their original
 cohort mapping and limiter law. The [foundations guide](../../docs/how-it-works/01-foundations.md)
 describes these two reductions.
 
-Independent review accepted the isolated two-kernel source. Six retained reference
-methods pass at their existing tolerances. The selected parent and candidate both
+Six retained external reference methods pass at their existing tolerances. The selected parent and candidate both
 return invariant outputs across nine mapped groups, so that case supplies no
 old-output discriminator. Universal exact-reference parity, joined qualification,
 timing and scientific acceptance remain separate.
@@ -495,8 +501,8 @@ uses the same operation on the rounded per-plate perimeters, then divides by two
 The original operands and physical associations are preserved. The
 [new-world guide](../../docs/how-it-works/04-new-worlds.md) explains the method.
 
-Independent review accepted the isolated area, perimeter and total corrections.
-The controlled naming changes distinguish the old reductions while preserving all
+The retained external naming controls distinguish the old reductions while
+preserving all
 mapped candidate outputs. Bucket accounting stays within the existing fixture
 reservation. This does not qualify the separate spatial-index area producer, a
 joined package, a whole-process memory bound or scientific acceptance.
@@ -511,8 +517,8 @@ the bounded vector buffer before recharting. Operand direction, conditioning,
 limits and validation remain. The [foundations guide](../../docs/how-it-works/01-foundations.md)
 describes this fallback.
 
-Independent review accepted the isolated source. Two asymmetric triangles under
-both cyclic starts reach the original conditioning failures and then successful
+Retained external controls use two asymmetric triangles under both cyclic starts
+and reach the original conditioning failures and then successful
 joint-chart intersection and directed difference, with matched centre terms,
 classifications, measures and area partition. Positive holes and genuine
 point/line/member multiplicities have source review, without a positive-hole
@@ -522,7 +528,7 @@ execution. These bounded controls do not qualify a joined package or all overlay
 
 `integration_parallel_dispatch.py` stamps the existing post-collection resource report with its batch name. The parent clears RSS when a batch starts and uses a report for recycling only when that name matches the batch it served. If replacement fails and the previous report is reread, current RSS stays unknown and the existing recycle rule applies. The live memory guard, thresholds, timing marks and result receipt are unchanged.
 
-The existing failed-replacement and real serve/monitor controls passed with timing marks retained; removing the batch comparison was killed by the stale-report control. These bounded resource/lifecycle checks do not measure generator performance or qualify a full interval. No separately scoped check removal is included.
+The existing failed-replacement and real serve/monitor controls passed with timing marks retained; removing the batch comparison was killed by the stale-report control. These bounded resource/lifecycle checks do not measure generator performance or qualify a full interval.
 
 ### Keep funding out of rigid support identifiers
 
@@ -535,12 +541,10 @@ owner provenance. Renaming only the funding record therefore need not rename
 these two physical identifiers. This does not change the spatial owner's
 different cell recipe, mesh order, a flux or a stock value.
 
-The sealed rebased funding-rename control and both targeted mutants are
-independently accepted within the small fixture: four wall support identifiers,
-few exterior cells, no actual wall rows and one funding per chain. Restoring
-funding to either hash breaks only its own identifier comparison; provenance
-still agrees. A first attempt's later Windows copy-path failure left its positive
-usable, so that positive was reused in the completed qualification. Mixed-funding
+The retained external funding-rename control and both targeted mutants cover
+four support identifiers, few exterior cells, no actual wall rows and one
+funding per chain. Restoring funding to either hash breaks only its own
+identifier comparison; provenance still agrees. Mixed-funding
 cache behaviour, a full rigid-wall chain and new capture remain open. Older
 stored identities are not rewritten.
 
@@ -550,12 +554,15 @@ The spatial heat connection adds exact represented component masses, rounds the
 total once to binary64 and then multiplies by the existing heat capacity per
 kilogram. Public and private issuer and restoration readers retain that order.
 The collar adopter checks the issued capacity and enthalpy against its transported
-stocks and records the capacity projection residual. Prospective arithmetic
+stocks and records the capacity projection residual. Endpoint mechanics and
+represented pressure derive temperature separately from projected component
+stocks. The [physical integration explanation](../../docs/how-it-works/06-physical-integration.md)
+shows the one-ULP distinction without an issuer/adopter mismatch. Prospective arithmetic
 storage uses an order-independent per-cell envelope before exact stock decoding.
 Accounting remains owned while a failed call's traceback retains its allocations,
 then releases when that error is dropped.
 
-The independently accepted isolated controls cover late refusal, cancellation,
+Retained external isolated controls cover late refusal, cancellation,
 caller interfaces and reordered tight-budget admission. They do not qualify
 actual issuer/adopter/restore inputs, mixed funding, a full pressure/collar route,
 a joined package or a scientific run. No new timing claim is made.
@@ -568,7 +575,7 @@ Component fields retain their material pairing. Mass, temperature, composition,
 native/collar quadrature and assigned-pressure inputs share the resulting total;
 later density divisions, constitutive laws and admission gates remain.
 
-The accepted isolated comparisons and constructor/bare-workspace failure controls
+Retained external isolated comparisons and constructor/bare-workspace failure controls
 cover the selected arithmetic and accounting lifetimes. Constructor scratch is
 reported as `record-workspace` rather than `regional-initial-construction`, with
 total charge and admission unchanged. Old limiter slopes and advanced states
@@ -585,14 +592,16 @@ binds `endpoint_guess_x` and `endpoint_guess_rate`; no guess is an empty binary6
 array and zero rate. The [ledger restore](../../docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing)
 supplies that array to the engine, then the continuation reconstructs the endpoint
 from the same guess without replaying accepted steps. The identical warm head is
-reused; a root still goes through `begin`. A15's evaluation/iteration identity
+reused; a root still goes through `begin`. The evaluation/iteration identity
 exclusions remain, and reconstruction work is not booked again.
 
 This changes schema and identities, not uninterrupted physical calculations.
-Schema-v1 records refuse without migration or deletion. The sealed rebase's
-seven continuation cases, fresh-process schedules of 16 and 256 steps and seven
-selected persistence methods with their original subcases passed and received
-independent acceptance. All seven selected mutants produced an attributable
+Schema-v1 records refuse without migration or deletion. A genuine v1 successor
+can stop at missing predictor members or an earlier ledger/source/root boundary;
+the retained version-message negative only relabels a v2 descriptor. Seven
+continuation cases, fresh-process schedules of 16 and 256 steps and seven selected
+persistence methods with their original subcases passed as retained external
+qualification. All seven selected mutants produced an attributable
 assertion failure. For the key-validation mutant, the extra-key assertion is
 decisive; separate non-dictionary and missing-rate subcases errored and are not
 assertion kills. Full command-driver restart, new capture and actual joined
@@ -608,7 +617,7 @@ renaming in a fixed frame; it does not claim rotation/reflection invariance.
 Areas remain derived values outside geometry/atlas identity recipes, so old
 cached areas or fit/metric verdicts cannot qualify corrected generation.
 
-The independently accepted fixed-frame six-plate, seed-41, 96-patch controls
+The retained external fixed-frame six-plate, seed-41, 96-patch controls
 rebuild all areas before assignment and fit, preserving the non-area primitives
 and directed rings. All 96 rebuilt areas and six owner metric records agree
 under the selected renaming comparisons. Existing cube and hole/filler methods
@@ -623,7 +632,7 @@ rounded vertices before the existing mean-direction normalisation. The same
 positive-dot/hemisphere selection, radius and bucket formulas, KD-tree capacity
 checks, classification and refusal rules remain.
 
-The accepted fixed-frame six-plate, seed-41, 96-patch comparison gives both arms
+The retained external fixed-frame six-plate, seed-41, 96-patch comparison gives both arms
 the corrected area producer. All physical-input groups, rebuilt areas, six owner
 metrics and directed rings agree. Of the old arm's used caps, 59 change under
 renaming; all 96 corrected caps and the complete mapped query result agree.
@@ -642,7 +651,7 @@ an explicit marker and separator count. Directed-ray order and multiplicity
 remain. The source binding preserves the current provider, grid and proof
 selection while changing the required piece/member pins.
 
-The independently accepted current-geometry writer qualification reaches actual
+The retained external current-geometry writer qualification reaches actual
 support issue with the same saved operands in both arms: the candidate keeps
 12 constraints and all six checked fields agree at each of 12 slots; the old
 writer keeps 11 constraints after one ambiguous key overwrites a distinct pair.
@@ -657,9 +666,8 @@ scientific acceptance remain open; no performance result is claimed.
 uses one `math.fsum` of their original rounded `phase_volume_m3` terms per row.
 It then subtracts the original bulk volume to store the residual. Authored
 layer-fraction deficits/excesses remain visible; no inventory is renormalised.
-Independent review accepts the local phase-volume arithmetic. The fixed
-same-producer control passes 14/14 comparisons; restoring the old sum changes
-four phase residuals with no other failure. Actual IV1 reach and universal
+The retained external fixed same-producer control passes all 14 comparisons; restoring the old sum changes
+four phase residuals with no other failure. Actual interval-run reach and universal
 extent remain unproved; this is not whole-member or joined qualification.
 
 ### Reduce only the magmatic donor diagonal
@@ -668,8 +676,8 @@ The [magmatic matrix](../../docs/W08_JOINED.md#numerical-design-and-efficiency)
 retains each already-rounded rate/mass coefficient, receiver entry and indexed
 edge row. For each eligible donor it forms one signed `math.fsum` from those
 coefficients for the diagonal. Exact-mode held-feed exclusion and empty positive
-zero remain. Independent review accepts this isolated local reduction. The
-current 34-target control distinguishes four old local values; the same six
+zero remain. The retained external 34-target control distinguishes four old
+local values; the same six
 wider solver/map/stock/edge failures remain open. This does not canonicalise
 expm/DOP853 node axes or qualify propagated invariance. Coefficient overflow
 and the original-rate solver law lie outside the local acceptance. Original

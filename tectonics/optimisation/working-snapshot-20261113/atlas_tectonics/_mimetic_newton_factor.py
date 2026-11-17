@@ -367,7 +367,7 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
             owner = _build(local,blocks,capacity,dt,free,size,active,held,budget,
                            fallback,cancel,source_check,evidence)
         except (DecimalException,_Unavailable) as exc:
-            # Ruling 34 (A-3): MemoryLimitError propagates; only problem refusals fall back.
+            # MemoryLimitError propagates; only problem refusals fall back.
             # No refused candidate storage remains live during fallback GMRES.
             held.close()
             evidence.update(fallback_type=type(exc).__name__,fallback_reason=str(exc))

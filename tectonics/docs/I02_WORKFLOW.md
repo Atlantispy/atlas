@@ -369,9 +369,8 @@ the head's endpoint again from its carried accepted predictor (section 5). So do
 the request after a refused exchange, a stop inside a transfer interval or a
 failed commit, when the warm entry is ahead of the head. With identical prepared
 inputs and runtime this uses the uninterrupted endpoint's inputs; a predictor
-from a later refused trial is never substituted. The sealed carried-predictor
-rebase has independently accepted isolated continuation, fresh-process and
-persistence controls. Full driver restart, new capture and actual joined-package
+from a later refused trial is never substituted. Retained external continuation,
+fresh-process and persistence controls passed on their selected fixtures. Full driver restart, new capture and actual joined-package
 qualification remain open; historical cold-parity results are separate.
 
 The canonical `tectonics/src` route remains unchanged: a new clock or a warm
@@ -450,19 +449,22 @@ stored stocks again; the result must reproduce the stored identity and label ind
 In the nondefault working snapshot, the paired ledger supplies the fourth
 successor array to its v2 engine-owned `restore`, which
 reproduces the canonical record and identity, including the accepted predictor,
-while preserving A15's effort-counter exclusions. An absent guess is an immutable
+while preserving the effort-counter exclusions. An absent guess is an immutable
 empty binary64 array with rate zero; a present guess has one finite binary64 per
 material point and a finite rate. That v2 route refuses v1 records without
 migration or deletion; the canonical route still reads its own v1 records. A `Continuation` rebuilds operators from the pinned inputs and solves
 the head's endpoint again from that guess (operational work, never booked),
 without re-running the accepted prefix. See the [carried-predictor contract](I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b).
+A genuine v1 wire shape may fail on missing predictor members or at an earlier
+ledger/source/root boundary; the retained version-message negative only relabels
+a complete v2 descriptor. It does not promise one first legacy diagnostic.
 The canonical `tectonics/src` restore still accepts the original three successor
 arrays, with no `endpoint_guess_x` argument, and re-solves a cold endpoint outside
 the warm head. Its `1e-8` parity contract and public persistence tests remain
 unchanged. The snapshot's seven selected persistence methods and full original
 subcases are external qualification, not a canonical-test migration. The
 earlier cold-restart controls do not qualify this changed snapshot source.
-Review also found a restart-dependent failure in
+A restart-dependent failure also occurred in
 the local constitutive solve: near a stiff plastic branch, adjacent representable
 log-stress values could both miss the unchanged residual tolerance. The solver
 now finishes in direct stress when that coordinate stalls, inside the same bracket

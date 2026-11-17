@@ -81,9 +81,9 @@ references: [initial lithosphere](../NEW_WORLD_STRUCTURE.md).
 The nondefault snapshot's precursor sampler totals each contiguous phase row with one `math.fsum`
 of the original rounded phase volumes, then subtracts the original bulk volume.
 Its residual preserves authored layer deficits or excesses; nothing is
-renormalised. Independent review accepts this local arithmetic: 14/14 fixed
-comparisons pass and the old sum changes four residuals. Actual IV1 reach and
-universal extent remain unproved.
+renormalised. In the retained external arithmetic control, all 14 fixed
+comparisons pass and the old sum changes four residuals. Actual interval-run reach
+and universal extent remain unproved.
 See the [phase-row method](../../optimisation/working-snapshot-20261113/README.md#accurately-total-each-authored-phase-row).
 
 **A declared successor family (I04.1; not yet wired into New World).** A
@@ -219,7 +219,7 @@ boundary length is `fsum` of those rounded plate perimeters divided by two;
 summing unique edges instead would change the rounding contract. Connectivity,
 axes, ranking, compactness calculations and existing limits remain.
 
-The selected legal renames preserve all mapped operands and distinguish the old
+The retained external legal renames preserve all mapped operands and distinguish the old
 area/perimeter reductions. A separate same-case plate order changes only the old
 final boundary total by one unit in its last place; corrected totals and every
 mapped output agree. These aggregation controls do not establish name-invariance
