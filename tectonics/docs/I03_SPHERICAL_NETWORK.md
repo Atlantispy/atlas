@@ -292,6 +292,22 @@ sections 12.3–12.5 (conservative weights, great-circle cells, normalisation an
 partly covered cells). Inherited: the W02 principle that overlap fractions multiply
 extensive stocks (`remapping.py`, `planar_exchange.py`).
 
+The current C7 implementation forms one `math.fsum` of all original rounded
+edge-reach products and one of all original rounded absolute triangle-area terms
+across the outer ring and every hole. Ring successors remain within their own
+ring; no artificial edge joins rings and no rounded ring subtotal enters either
+sum. The per-ring early domain test, maximum norm departure, coefficients and
+final arithmetic are unchanged. Temporary storage is two doubles per face edge
+plus array-block overhead until return. Retained external qualification accepts both physical
+hole orders at the actual constructor and mesh consumers: the exact one-round
+oracle, allowance, three parent-whole rows/supports and final occupancy agree.
+The old-original arm changes total/bound and final allowances; old-swapped
+survives, with spread equal and no admission crossing. A later event control
+returns an error at the existing holed projective-reexpression branch before
+support/material issue; only its prior area/bound/allowance observations are
+accepted. Event order/issue, general resource peaks and joined/scientific scope
+remain unqualified.
+
 ### R3-2. Poles and seams: no latitude or longitude in the calculation
 
 **Decision.** Vertices are unit vectors, rotations are unit quaternions applied in

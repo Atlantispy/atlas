@@ -1025,6 +1025,15 @@ All 20 selected retained external endpoint/diagnostic comparisons pass through
 the six complete issued endpoint sections. This supplies that bounded result,
 with carrier-frame/full-step/analytic/event and mixed-generation scope open.
 
+For a face with holes, the C7 rounding calculation reduces the original edge
+terms across all rings once for reach and once for spread. It keeps each ring's
+successors separate and every existing coefficient/domain test. The reviewed
+source adds no tolerance. Retained external constructor/mesh comparisons agree
+in both physical hole orders through actual support allowance and occupancy;
+old-original differs while old-swapped survives. The event control fails before
+support/material issue, qualifying only its earlier observations. No admission
+crossing, general temporary-memory bound or joined/scientific result is claimed.
+
 ### Hand part of the network to a regional model and take it back
 
 A regional model, such as the three-dimensional solver of section 4, works on a box

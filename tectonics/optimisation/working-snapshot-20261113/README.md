@@ -1246,6 +1246,18 @@ qualification accepts all 20 endpoint/diagnostic comparisons through six complet
 endpoint sections. Carrier-frame/full-step, analytic/event and mixed-generation
 qualification remains open.
 
+### Reduce multi-hole bounds across original edge terms
+
+[C7](../../docs/I03_SPHERICAL_NETWORK.md#r3-1-conservative-transfer-exact-intersection-first-order)
+uses one sum for each original rounded all-ring reach/spread quantity, keeping
+ring edges separate and the existing tests, coefficients and allowance consumers.
+Retained external constructor/mesh qualification accepts both physical hole
+orders through the exact oracle, allowance, three parent-whole supports and
+occupancy. Old-original differs; old-swapped survives. The event control stops
+at the existing holed-projective branch before issue and qualifies only its
+earlier observations. No admission crossing, general peak or joined/scientific
+result follows. This shared-sum application is distinct from the belt comparison.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

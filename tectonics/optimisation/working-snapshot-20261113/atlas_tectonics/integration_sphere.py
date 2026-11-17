@@ -974,18 +974,22 @@ def _measure_bound(rings):
     of the anchor; otherwise None, and a closure keeps the existing relative criterion alone.
     """
     anchor = _mean_direction(rings[0])
-    total, spread, alpha = 0., 0., abs(float(np.linalg.norm(anchor))-1)
+    totals, spreads, alpha = [], [], abs(float(np.linalg.norm(anchor))-1)
     for ring in rings:
         ring = np.asarray(ring, dtype=np.float64)
-        if np.any(ring @ anchor < QUARTER_TURN_COSINE):
+        projection = ring @ anchor
+        if np.any(projection < QUARTER_TURN_COSINE):
             return None
         alpha = max(alpha, float(np.max(np.abs(np.linalg.norm(ring, axis=1)-1))))
-        reach = np.linalg.norm(ring-anchor, axis=1)
-        total += math.fsum(reach*np.roll(reach, -1))
+        offset = ring-anchor
+        reach = np.linalg.norm(offset, axis=1)
+        totals.append(reach*np.roll(reach, -1))
         after = np.roll(ring, -1, axis=0)
-        numerator = np.cross(ring-anchor, after-anchor) @ anchor
-        denominator = 1+ring @ anchor+np.sum(ring*after, axis=1)+after @ anchor
-        spread += math.fsum(np.abs(2*np.arctan2(numerator, denominator)))
+        numerator = np.cross(offset, after-anchor) @ anchor
+        denominator = 1+projection+np.sum(ring*after, axis=1)+after @ anchor
+        spreads.append(np.abs(2*np.arctan2(numerator, denominator)))
+    total = math.fsum(value for block in totals for value in block)
+    spread = math.fsum(value for block in spreads for value in block)
     return 9*EPSILON*total+max(14*EPSILON, 4.4*EPSILON+5*alpha)*spread
 
 
