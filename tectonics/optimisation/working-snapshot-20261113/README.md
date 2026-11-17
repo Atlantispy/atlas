@@ -981,6 +981,16 @@ The fixture is external to the public checkout. It qualifies this cache-to-issue
 boundary only, without a nonuniform accuracy, performance, global support-optimum,
 general ordering, joined-package or scientific claim.
 
+### Keep cohort remainders and province anchors independent of labels
+
+The [starting-family method](../../docs/I04_CAUSAL_START.md#3-the-starting-family-i041)
+sums unchanged rounded outline areas once per cohort and chooses an exact tied
+remainder recipient from all positive contributing outlines' physical positions.
+Greedy anchors retain target-area priority, then stored centroid/centre order.
+Accepted isolated controls include a nonzero measured-face residual and the
+corrected scan's unchanged stocks/footprints. They do not establish world
+frequency, fresh-IV1 reach, later intervals, restart or a runtime saving.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

@@ -645,7 +645,7 @@ sublayer `l`.
      share therefore keeps the expected plate size independent of crust type. The rule uses only N and f, the exact
      controls, and needs no new number.
 2. **Anchors fill the minority slots first.** Provinces of the minority crust type, majors and fragments alike,
-   largest first, anchor one site at their area centroid. That is continents when f <= 0.5 and oceanic provinces under
+   in descending declared target-area order, anchor one site at their area centroid. Exact target-area ties compare the stored centroid, then the stored chart centre, in the declared sphere axes. The key is `(-target_area_sr, tuple(centroid), tuple(centre))`; it does not reorder upstream province or first-suture generation. That is continents when f <= 0.5 and oceanic provinces under
    the swap. The rule encodes the prior "strong continental lithosphere nucleates plates".
    - A sutured anchor gives two sites, but only while two of the `n_a` slots remain, and with no offset number (round
      1 ruling).
@@ -704,6 +704,28 @@ sublayer `l`.
   remainder.
   - A face wholly inside a province is assigned whole.
   - Each face therefore closes exactly, with no negative remainder.
+
+**Rounded cohort shares and the physical remainder.** On each face the family
+reduces the already rounded positive outline-area contributions once per cohort
+with `math.fsum`. In an exact maximum-share tie, the remainder recipient has the
+least pair of positions: the least vertex over every positive contributing
+outline, and independently the least stored chart centre over those same
+outlines. The two minima may come from different provinces. Unique maxima and
+background paths require no position scan; tied outlines cache their key only
+within the construction. The measured-minus-other-shares formula, individual
+stock products, output order and exact footprints remain unchanged.
+
+The selected producer's positive fan and exclusion of positive-area province
+overlap distinguish the final chart-centre keys; shared least vertices are
+allowed. No duplicate-centre check or ambiguity refusal is added. The two old
+source arms fail all three selected sum/tie/placement controls in retained
+external qualification fixtures while the candidate passes. A retained measured face has an exact tie with a `0.0009765625 m2`
+residual, assigned to the same physical recipient in both candidate names.
+The source-only scan correction preserves the three affected stored payloads,
+stocks and footprints. These are isolated controls: the supplied non-associative
+sum operands are not clipping measurements, and seeded-world frequency,
+first-suture/two-slot execution, fresh-interval constructor reach, restart,
+joined behaviour and runtime savings remain unqualified.
 
 ## 4. Controls and what the checks establish
 

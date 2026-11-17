@@ -1156,7 +1156,7 @@ def _sites(sphere, plate_count, fraction, provinces, outlines, sutures, draws, r
                 return False
         return True
 
-    for province in sorted(provinces, key=lambda p: (-p.target_area_sr, p.name)):
+    for province in sorted(provinces, key=lambda p: (-p.target_area_sr, tuple(p.centroid), tuple(p.centre))):
         room = target-len(sites)
         if not room:
             notes.append('%s anchors no site: no minority slot remains' % province.name)
@@ -1551,6 +1551,7 @@ def _occupied(network, geometry, columns, budget):
     sphere, radius = network.sphere, network.sphere.radius_m
     shapes = T._Shapes(network)
     outlines = geometry._outlines
+    outline_positions = {}
     owner = {face.face_id: face.plate_id for face in network.faces}
     pieces, footprints = [], {}
     for index, (face_id, measured) in enumerate(zip(network.face_ids, network.face_area_m2)):
@@ -1559,7 +1560,7 @@ def _occupied(network, geometry, columns, budget):
         centre, reach = T._cap(rings)
         measured = float(measured)
         plate = owner[face_id]
-        shares, cells_by_cohort, fan = {}, {}, None
+        areas_by_cohort, outlines_by_cohort, cells_by_cohort, fan = {}, {}, {}, None
         for k, outline in enumerate(outlines):
             if _caps_apart(centre, reach, outline.centre, outline.radius):
                 continue
@@ -1599,8 +1600,10 @@ def _occupied(network, geometry, columns, budget):
             province = geometry.provinces[k]
             cohort = ('continental:'+province.name if province.crust_type == CONTINENTAL
                       else 'oceanic:'+plate)
-            shares[cohort] = shares.get(cohort, 0.)+area
+            areas_by_cohort.setdefault(cohort, []).append(area)
+            outlines_by_cohort.setdefault(cohort, []).append(k)
             cells_by_cohort.setdefault(cohort, []).extend(support_parts)
+        shares = {cohort: math.fsum(areas) for cohort, areas in areas_by_cohort.items()}
         background = 'continental:background' if geometry.background_type == CONTINENTAL else 'oceanic:'+plate
         remaining = Q.difference(own_cells, tuple(cell for cells in cells_by_cohort.values() for cell in cells))
         if remaining:
@@ -1612,7 +1615,23 @@ def _occupied(network, geometry, columns, budget):
             if rest < -S.RELATIVE_TOLERANCE*measured:
                 raise FamilyRefused('face %s: province pieces exceed its measured area (PIECE_OVERLAP)' % face_id,
                                     LAYOUT_REFUSED)
-            largest = max(sorted(shares), key=lambda cohort: shares[cohort])
+            largest_area = max(shares.values())
+            tied = [cohort for cohort, area in shares.items() if area == largest_area]
+            largest = tied[0]
+            if len(tied) > 1:
+                cohort_positions = {}
+                for cohort in tied:
+                    positions = []
+                    for k in outlines_by_cohort[cohort]:
+                        position = outline_positions.get(k)
+                        if position is None:
+                            outline = outlines[k]
+                            position = min(map(tuple, outline.outline)), tuple(outline.centre)
+                            outline_positions[k] = position
+                        positions.append(position)
+                    cohort_positions[cohort] = (min(position[0] for position in positions),
+                                                min(position[1] for position in positions))
+                largest = min(tied, key=cohort_positions.__getitem__)
             shares[largest] = measured-math.fsum(v for c, v in shares.items() if c != largest)
         else:
             shares[background] = measured

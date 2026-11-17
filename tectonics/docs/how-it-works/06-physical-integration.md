@@ -122,6 +122,15 @@ valid. The lines that separate plates are also kept apart from the mesh used for
 bookkeeping: an edge between two faces of the same plate is only a seam of that
 mesh, and it can later be redrawn without touching a plate boundary.
 
+The separate [declared starting family](../I04_CAUSAL_START.md#3-the-starting-family-i041)
+keeps its target-area priority when offering province anchors; equal targets use
+the stored centroid and chart centre. On a face, rounded outline contributions
+are summed once per cohort. If maximum shares tie exactly, independent least
+vertex/centre positions over all positive contributing outlines choose the exact
+remainder's recipient. First-suture order and exact footprints stay unchanged.
+The retained face shows the same physical recipient for a nonzero residual,
+but establishes no generated-world frequency or evolved-world qualification.
+
 Rock is recorded separately from plates. Each face holds one or more pieces, and
 each piece belongs to a cohort: rock with one origin, one formation interval and
 one reference to its history. A piece has four kinds of account, never merged: the
