@@ -531,6 +531,99 @@ def _mechanical_sources(pieces, records, supplied):
     return out
 
 
+def _lateral_workspace(columns, contacts, budget, kind):
+    """Incremental row buffers, projection and exceptional-sum scratch."""
+    from contextlib import nullcontext
+    import struct
+    import sys
+    from .resources import select_budget
+    from .integration_spatial_transport import _integer_storage, _workspace
+    if not contacts:
+        return nullcontext()
+    pieces = len(columns)
+    layers = sum(len(column[2]) for column in columns)
+    incidences = sum(len(values) for _, _, values in contacts)
+    pointer = struct.calcsize('P')
+    allocated = lambda size: ((size+15)//16)*16+16
+    header = allocated(sys.getsizeof([]))
+    scalar = allocated(sys.getsizeof(0.)+2*pointer)  # also covers binary64 NumPy scalars
+    # Terms: outer/P column rows/L layer rows. Each endpoint append list
+    # has capacity <=2n+8; include the largest old/new resize overlap.
+    term_slots = (2*pieces+8)+(2*layers+8*pieces)+(8*incidences+8*layers+8)
+    projected_slots = (2*pieces+8)+(2*layers+8*pieces)
+    count = 65536+(2*pieces+layers+2)*header+pointer*(term_slots+projected_slots)
+    count += scalar*(layers+16+(2*incidences if kind == 'piece-flux' else 0))
+    # At most 2I inputs in a row: partial arrays and their resize overlap.
+    count += 32*(2*incidences+32)
+    bits = 2098+(2*incidences-1).bit_length()
+    count += 24*allocated(_integer_storage(bits+2))+8*allocated(_integer_storage(1075))
+    if kind == 'patch-loss':
+        # NumPy header/dimension/stride allowance, arrays and the temporary
+        # projected Python row coexist. No scalar-array view is retained.
+        count += pieces*allocated(np.ndarray.__basicsize__+4*pointer)+8*layers
+    return _workspace(select_budget(budget), count, 'thermal-lateral-'+kind)
+
+
+def _lateral_sum(terms, *, numpy=False, finite_heat=False):
+    """Whole original-rounded binary64 row, projected once to nearest/even."""
+    try:
+        result = math.fsum(terms)
+    except (OverflowError, ValueError):
+        pass                            # only the reduction; never a producer
+    else:
+        if math.isfinite(result):
+            return result
+    total, positive, negative, nan = 0, None, None, None
+    for value in terms:
+        numpy = numpy or isinstance(value, np.floating)
+        if math.isnan(value):
+            if nan is None:
+                nan = value
+        elif math.isinf(value):
+            if value > 0:
+                positive = value
+            else:
+                negative = value
+        else:
+            numerator, denominator = float(value).as_integer_ratio()
+            total += numerator << (1074-(denominator.bit_length()-1))
+    if positive is not None and negative is not None:
+        # These are the actual opposing infinite operands. The final
+        # reduction, not a synthetic signalling operand, supplies invalid.
+        result = float(np.add(np.float64(positive), np.float64(negative))) if numpy else math.nan
+        if nan is not None:
+            result = float(nan)
+    elif nan is not None:
+        result = float(nan)
+    elif positive is not None or negative is not None:
+        result = float(positive if positive is not None else negative)
+    elif not total:
+        result = 0.
+    else:
+        magnitude = abs(total)
+        shift = max(0, magnitude.bit_length()-53)
+        significand = magnitude >> shift
+        if shift:
+            remainder = magnitude-(significand << shift)
+            half = 1 << (shift-1)
+            if remainder > half or remainder == half and significand & 1:
+                significand += 1
+        if total < 0:
+            significand = -significand
+        # The significand converts exactly, including a rounding carry.
+        # Actual final scaling supplies the supported NumPy overflow policy.
+        if numpy:
+            result = float(np.ldexp(np.float64(significand), shift-1074))
+        else:
+            try:
+                result = math.ldexp(float(significand), shift-1074)
+            except OverflowError:
+                result = math.copysign(math.inf, significand)
+    if finite_heat and not math.isfinite(result):
+        raise ThermalRefused('lateral power has no supported finite projection', 'unsupported')
+    return result
+
+
 def conducted(endpoint, records, heat, reference, parent, step, conduction, budget=None, carried=Fraction(0), *,
               mechanical_energy_j=None, physical_columns=None):
     """(sublayer heat after conduction over the interval, report): per substep, in mode 'solve', an explicit
@@ -592,18 +685,25 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
             capacity = [float(c)*piece.area_m2 for c in PH.capacity_area(record, thickness, budget=budget)]
         thermal, propagator = _prepared(record, thickness, dt, cache, budget=budget)
         columns.append((record, piece, thickness, capacity, thermal, propagator))
-    lateral = [[0.]*len(column[2]) for column in columns]
     worst = 0.
-    for i, j, conductances in contacts:
-        for l, g in enumerate(conductances):
-            lateral[i][l] += g
-            lateral[j][l] += g
-    for (_, _, _, capacity, _, _), loss in zip(columns, lateral):
-        for c, g in zip(capacity, loss):
-            worst = max(worst, dt*g/c)
-    if worst > STABILITY*(1+8*EPS):
-        raise ThermalRefused('the explicit lateral step is unstable: dt (sum G)/C = %r exceeds %r; declare more '
-                             'substeps' % (worst, STABILITY), 'unsupported', 'stability')
+    with _lateral_workspace(columns, contacts, budget, 'piece-loss'):
+        if contacts:
+            lateral_terms = [[[] for _ in column[2]] for column in columns]
+            for i, j, conductances in contacts:
+                for l, g in enumerate(conductances):
+                    lateral_terms[i][l].append(g)
+                    lateral_terms[j][l].append(g)
+            lateral = [[_lateral_sum(terms) for terms in loss] for loss in lateral_terms]
+            del lateral_terms
+        else:
+            lateral = [[0. for _ in column[2]] for column in columns]
+        for (_, _, _, capacity, _, _), loss in zip(columns, lateral):
+            for c, g in zip(capacity, loss):
+                worst = max(worst, dt*g/c)
+        if worst > STABILITY*(1+8*EPS):
+            raise ThermalRefused('the explicit lateral step is unstable: dt (sum G)/C = %r exceeds %r; declare more '
+                                 'substeps' % (worst, STABILITY), 'unsupported', 'stability')
+        lateral = loss = g = None
     temperature = [temperatures(c[0], c[1], q, reference, phases) for c, q in zip(columns, heat)]
     physical_energy = None
     if physical:
@@ -641,27 +741,37 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
         low, high = min(values), max(values)
     totals = [dict(top=0., base=0., radiogenic=0., lateral=0.) for _ in columns]
     for substep in range(substeps):
-        flux = [[0.]*len(c[2]) for c in columns]                      # W into each sublayer
-        for i, j, conductances in contacts:
-            for l, g in enumerate(conductances):
-                difference = (temperature[j][l]-temperature[i][l] if not departures else math.fsum((
-                    float(deviations[j][l]), -float(deviations[i][l]),
-                    float(columns[j][4].steady_k[l]), -float(columns[i][4].steady_k[l]))))
-                q = g*difference
-                flux[i][l] += q
-                flux[j][l] -= q
-        for k, column in enumerate(columns):                           # the explicit lateral exchange
-            if physical:
-                caps = PH.capacity_area(column[0], column[2], budget=budget)
-                for l, (q, cap) in enumerate(zip(flux[k], caps)):
-                    du = Fraction(dt)*Fraction(q)/Fraction(column[1].area_m2)
-                    physical_energy[k][l] += du
-                    deviations[k][l] += float(du/cap)
-            elif heated:
-                deviations[k] += np.array([dt*q/c for q, c in zip(flux[k], column[3])])
+        with _lateral_workspace(columns, contacts, budget, 'piece-flux'):
+            if contacts:
+                flux_terms = [[[] for _ in c[2]] for c in columns]      # original rounded W
+                for i, j, conductances in contacts:
+                    for l, g in enumerate(conductances):
+                        difference = (temperature[j][l]-temperature[i][l] if not departures else math.fsum((
+                            float(deviations[j][l]), -float(deviations[i][l]),
+                            float(columns[j][4].steady_k[l]), -float(columns[i][4].steady_k[l]))))
+                        q = g*difference
+                        flux_terms[i][l].append(q)
+                        flux_terms[j][l].append(-q)
+                # Only the selected nonphysical/unheated/radiogenic direct branch
+                # lacks an adequate established consumer failure for nonfinite heat.
+                flux = [[_lateral_sum(terms, finite_heat=not physical and not heated and not bounded)
+                         for terms in row] for row in flux_terms]
+                del flux_terms
             else:
-                temperature[k] = [t+dt*q/c for t, q, c in zip(temperature[k], flux[k], column[3])]
-            totals[k]['lateral'] += math.fsum(flux[k])*dt
+                flux = [[0. for _ in c[2]] for c in columns]
+            for k, column in enumerate(columns):                           # the explicit lateral exchange
+                if physical:
+                    caps = PH.capacity_area(column[0], column[2], budget=budget)
+                    for l, (q, cap) in enumerate(zip(flux[k], caps)):
+                        du = Fraction(dt)*Fraction(q)/Fraction(column[1].area_m2)
+                        physical_energy[k][l] += du
+                        deviations[k][l] += float(du/cap)
+                elif heated:
+                    deviations[k] += np.array([dt*q/c for q, c in zip(flux[k], column[3])])
+                else:
+                    temperature[k] = [t+dt*q/c for t, q, c in zip(temperature[k], flux[k], column[3])]
+                totals[k]['lateral'] += math.fsum(flux[k])*dt
+            flux = flux_terms = q = difference = None
         for k, (record, piece, thickness, capacity, thermal, propagator) in enumerate(columns):
             area = piece.area_m2
             theta = deviations[k] if departures else np.asarray(temperature[k])-thermal.steady_k
@@ -919,13 +1029,22 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
             for col, source in zip(columns, mechanical) for q, c, s in zip(source, col[3], col[0].sublayers))
         if not math.isfinite(rate):
             raise ThermalRefused('patch temperature source bound is not representable', 'unsupported', 'source bound')
-        losses = [np.zeros(len(col[2])) for col in columns]
-        for i, j, conductances in contacts:
-            losses[i] += conductances; losses[j] += conductances
-        worst = max(float(np.max(dt*loss/col[3])) for loss, col in zip(losses, columns))
-        if worst > STABILITY*(1+8*EPS):
-            raise ThermalRefused('explicit patch lateral step exceeds the existing 0.9 stability bound',
-                                 'unsupported', 'stability')
+        with _lateral_workspace(columns, contacts, budget, 'patch-loss'):
+            if contacts:
+                loss_terms = [[[] for _ in col[2]] for col in columns]
+                for i, j, conductances in contacts:
+                    for layer, conductance in enumerate(conductances):
+                        loss_terms[i][layer].append(conductance)
+                        loss_terms[j][layer].append(conductance)
+                losses = [np.asarray([_lateral_sum(terms, numpy=True) for terms in row]) for row in loss_terms]
+                del loss_terms
+            else:
+                losses = [np.zeros(len(col[2])) for col in columns]
+            worst = max(float(np.max(dt*loss/col[3])) for loss, col in zip(losses, columns))
+            if worst > STABILITY*(1+8*EPS):
+                raise ThermalRefused('explicit patch lateral step exceeds the existing 0.9 stability bound',
+                                     'unsupported', 'stability')
+            losses = None
         totals = [dict(top=Fraction(0), base=Fraction(0), radiogenic=Fraction(0), lateral=Fraction(0)) for _ in columns]
         for substep in range(conduction.substeps):
             flux = [[Fraction(0) for _ in col[2]] for col in columns]

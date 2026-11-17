@@ -506,6 +506,29 @@ bound. This source wiring does not establish tied outcomes for every I05 advance
 
 **`integration_thermal.conducted`** implements R-1 to R-3 (§2).
 
+In the working snapshot, the direct piece stability loss, direct piece signed
+lateral power and patch stability loss each reduce their original rounded
+terms. The existing conductance and temperature producers supply the operands.
+Each direct contact forms one rounded `g * temperature_difference` and
+contributes that value and its negative to the two endpoint rows.
+
+The reduction uses a finite `math.fsum` result when available. If a finite row
+needs the exceptional path, the complete saved row is summed as signed integers
+in units of `2^-1074` and projected once to binary64 with ties to even. Where
+applicable, the final NumPy scaling or addition of the original opposing
+infinities carries the existing overflow or invalid policy. Producer errors
+occur at their original point. The projected positive loss enters the existing
+`dt * loss / capacity` stability test. Patch energy transfers retain the
+existing exact Fraction bookings with equal and opposite signs.
+
+For direct nonphysical columns with radiogenic heating and no mechanical heating,
+a non-finite signed power projection raises the existing `ThermalRefused`
+with code `unsupported` and no detail before a heat consumer uses it.
+Before allocating the reduction buffers, the step books its incremental
+workspace on the caller's budget. The allowance grows with pieces, layers and
+contact incidences. It covers the stability decision or last use of the flux.
+An original failure traceback keeps the charge for the workspace it retains.
+
 **Occupied-material means:**
 - `occupied_mean` and `face_mean` average over occupied pieces only, each at its own state, so the result is the
   age-distribution integral.

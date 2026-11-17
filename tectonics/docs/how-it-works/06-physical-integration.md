@@ -924,6 +924,11 @@ three parts:
   - **Lateral exchange.** Heat between neighbouring columns is used only where the geometry supports a simple two-point
     flux across their whole shared boundary, and otherwise refused. It is taken in small explicit steps, each
     followed by the exact downward conduction.
+
+     The working snapshot reduces each row's rounded losses and powers before
+     the stability or energy step. It books the added workspace with the existing
+     caller budget. The [moving-state heat method](../I05_MOVING_STATE.md#6-heat-i052)
+     describes the final projection and the scoped refusal for non-finite power.
   - **No new extremes.** Each of these two operations keeps every temperature between the coldest and hottest of the
     starting and boundary temperatures, so together they do too. Without internal heat sources, a step that would
     leave that range is refused.
