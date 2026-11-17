@@ -547,6 +547,18 @@ comparisons through all six complete endpoint sections. It does not qualify
 carrier-frame transport, a persisted full step, analytic/event poles or mixed
 generation.
 
+**Differential/ALE pair orientation.** In the separate differential route,
+`integration_differential_ale` orients each complete opposite-sign angular pair
+so the physical +1 entry is primary. The original first encounter still schedules
+the pair. Lookahead, workers, the actual measure, represented-wall keys, observer
+and directed donors use that same orientation. All existing opposite pairs,
+same-sign multiplicity, unpaired processing and original-visit ownership handling
+remain. A same-shape adjacent voxel pair instead uses the lower indexed voxel's
+upper face; its ownership bookkeeping still precedes the measurement skip.
+Neither rule adds a refusal. Completion of the selected qualification remains
+unestablished; the historical visit counts and this source convention do not
+establish an actual angular/fixed-wall numerical result.
+
 #### Ridge-transform staircase seam extension (I04 repair)
 
 **Owner-authorised extension, 4 October 2026; focused material and coupled controls pass.**

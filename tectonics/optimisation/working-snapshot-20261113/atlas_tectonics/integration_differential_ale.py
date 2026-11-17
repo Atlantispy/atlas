@@ -275,15 +275,17 @@ def _exterior_interface_jobs(components, groups, owned):
             if any(s == -sign for _, _, s in entries):
                 if (key, name) in owned:
                     return
-                for other, _, other_sign in entries:
+                for other, other_name, other_sign in entries:
                     if other_sign != -sign:
                         continue
                     token = tuple(sorted((key, other)))
                     if token in handled:
                         continue
                     handled.add(token)
-                    yield support, key, name, dict(other_support=components[other][0],
-                                                  other_logical_cell_id=other)
+                    primary, primary_name, secondary = ((key, name, other) if sign == 1 else
+                                                        (other, other_name, key))
+                    yield components[primary][0], primary, primary_name, dict(
+                        other_support=components[secondary][0], other_logical_cell_id=secondary)
                 continue
             yield support, key, name, {}
 
@@ -309,7 +311,7 @@ def _exterior_wall_events(components, component_keys, boxes, native_at, excluded
                 other = None if native else component_keys.get((neighbour, shape_key))
                 stock = None if native else excluded_at.get(neighbour)
                 found = _coincident_boundary_faces(row, part, boxes[at], axis, end, boundaries)
-                query = not (native or other is not None and key > other or
+                query = not (native or other is not None and not end or
                              found and other is None and stock is None)
                 yield dict(key=key, support=support, axis=axis, end=end, native=native,
                            other=other, stock=stock, found=found, query=query)
@@ -408,7 +410,7 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
                             raise V.VolumeError('one angular boundary cannot own two distinct fixed voxel faces')
                         owned[token] = ownership
                     continue
-                if native or other is not None and key > other:
+                if not event['query']:
                     continue
                 if wall_batches is not None:
                     wall_batches.begin_wall()
@@ -467,25 +469,35 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
             if opposites:
                 if (key, name) in owned:
                     raise V.VolumeError('coincident finite boundary cannot be paired as an internal angular interface')
-                for other, other_name in opposites:
-                    token = tuple(sorted((key, other)))
+                for opposite, opposite_name in opposites:
+                    token = tuple(sorted((key, opposite)))
                     if token in handled:
                         continue
                     handled.add(token)
+                    primary, primary_name, secondary, secondary_name = (
+                        (key, name, opposite, opposite_name) if sign == 1 else
+                        (opposite, opposite_name, key, name))
                     if _observer is not None:
                         _observer.begin_interface()
                     begun = None if _observer is None else perf_counter()
-                    ident, measured = interface(support, key, name,
-                        other_support=components[other][0], other_logical_cell_id=other)
+                    ident, measured = interface(components[primary][0], primary, primary_name,
+                        other_support=components[secondary][0], other_logical_cell_id=secondary)
                     if _observer is not None:
-                        _observer.interface(key, name, other, measured, perf_counter()-begun)
-                    if ({(key, name), (other, other_name)} & represented and
-                            any(_pair(measured, n)[1] for n in ('inward_volume_bounds_m3', 'outward_volume_bounds_m3'))):
+                        _observer.interface(primary, primary_name, secondary, measured, perf_counter()-begun)
+                    represented_pair = {(primary, primary_name), (secondary, secondary_name)} & represented
+                    if represented_pair:
+                        inward = _pair(measured, 'inward_volume_bounds_m3')
+                        if inward[1]:
+                            raise second
+                    outward = _pair(measured, 'outward_volume_bounds_m3')
+                    if represented_pair and outward[1]:
                         raise second
                     surface = (1, D._encoded(_segment_identity(plane)).decode('ascii'))
-                    add(key, other, _pair(measured, 'outward_volume_bounds_m3'), dict(moving=token, donor=key),
+                    add(primary, secondary, outward, dict(moving=token, donor=primary),
                         physical_certificate_id=ident, physical_surface=surface)
-                    add(other, key, _pair(measured, 'inward_volume_bounds_m3'), dict(moving=token, donor=other),
+                    if not represented_pair:
+                        inward = _pair(measured, 'inward_volume_bounds_m3')
+                    add(secondary, primary, inward, dict(moving=token, donor=secondary),
                         physical_certificate_id=ident, physical_surface=surface)
                 continue
             if _observer is not None:

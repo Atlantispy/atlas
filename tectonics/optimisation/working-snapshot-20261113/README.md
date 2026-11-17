@@ -1306,6 +1306,14 @@ The retained 24 fixture observations cover proof adoption, changed or corrupt
 descriptors and streams, store/scope boundaries and projection refusal; they
 do not qualify a joined interval.
 
+### Orient each differential measure with its directed streams
+
+The [differential/ALE description](../../docs/I03_SPHERICAL_NETWORK.md#r3-4-moving-boundaries-and-junctions)
+binds the physical +1 angular side, or lower fixed voxel face, before preparation
+and measurement. Observer/ownership keys and directed streams follow the whole
+pair. Source acceptance preserves multiplicity and unpaired routes; historical
+visit-side counts do not qualify actual numeric fluxes or a fixed-wall result.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

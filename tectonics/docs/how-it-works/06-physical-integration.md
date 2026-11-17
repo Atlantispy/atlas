@@ -1046,6 +1046,13 @@ old-original differs while old-swapped survives. The event control fails before
 support/material issue, qualifying only its earlier observations. No admission
 crossing, general temporary-memory bound or joined/scientific result is claimed.
 
+In the separate differential/ALE source, an angular pair's physical positive
+side supplies the measure, with its observer, wall keys and inward/outward donors
+kept together. Adjacent fixed voxels use the lower voxel's upper face. Scheduling
+still begins at the original first encounter, retaining ownership and pair
+multiplicity. This reviewed source convention has no new directed-measure
+qualification from the historical visit counts alone.
+
 ### Hand part of the network to a regional model and take it back
 
 A regional model, such as the three-dimensional solver of section 4, works on a box
