@@ -277,6 +277,14 @@ strength of the rock it crosses.
    how fast that force changes with the motion, the increase of each piece's
    weakening history, and the energy dissipated.
 
+The force bracket asks the existing column kernel for the slope bound it actually
+uses. Rounded area, coverage, torque, tangent and product contributions are summed
+once per quantity without changing their individual products. The retained
+external local checks and killed old-area-sum control do not establish the whole coupled solve: plate
+ordering and the actual returned outer history have their own comparison below.
+The four real product sums and positive-bulge sum still lack a discriminating
+stored-case witness.
+
 **Labels and refusals.** Every result is labelled as a reduced-model claim: the
 thin-sheet assumption behind the belt is not established at these widths. Atlas
 refuses rather than guesses when a line crosses another boundary, when a depth lies

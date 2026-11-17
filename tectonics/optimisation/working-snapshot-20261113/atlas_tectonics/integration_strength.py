@@ -418,7 +418,7 @@ def oblique_stresses(prep, factors, e, c, guess=None):
             if not (np.all(np.isfinite(lo)) and np.all(np.isfinite(hi)) and lo.min() > -700 and hi.max() < 700):
                 raise ValueError("stress outside bounded representable support")
             for _ in range(64):
-                out = _weak._evaluate(prep, hi, le, c, cc, sp, inv)
+                out = _weak._evaluate(prep, hi, le, c, cc, sp, inv, slope_min=True)
                 short = out["total"] < 1.
                 if not short.any():
                     break
@@ -1015,6 +1015,13 @@ def _layer_means(prep, values):
     return out
 
 
+def _face_areas(strength, piece_areas):
+    areas = {}
+    for index, (face, _) in enumerate(strength.pieces):
+        areas.setdefault(face, []).append(float(piece_areas[index]))
+    return {face: math.fsum(terms) for face, terms in areas.items()}
+
+
 def interval_products(lines, responses, strength, piece_areas, dt):
     """(increments, energy, bound) per P2 piece index, each a per-layer array (top down, the cohort record's order).
 
@@ -1022,9 +1029,7 @@ def interval_products(lines, responses, strength, piece_areas, dt):
     ceiling sum_crossings (dy L_e/A) 2 dt e_k (e_k the cell invariant, uniform in depth), against which every
     increment is checked (ruling B5(1))."""
     dt = _real(dt, 'interval duration', positive=True)
-    face_area = {}
-    for index, (face, _) in enumerate(strength.pieces):
-        face_area[face] = face_area.get(face, 0.)+float(piece_areas[index])
+    face_area = _face_areas(strength, piece_areas)
     sums = {}
     for line, response in zip(lines, responses):
         if response['u'] == 0.:
@@ -1036,16 +1041,19 @@ def interval_products(lines, responses, strength, piece_areas, dt):
             plastic_power = _layer_means(prep, 2*local['stress']*local['plastic_rate'])
             share = cell.cell.length_m*line.length_m/face_area[cell.cell.face_id]
             for index in cell.pieces:
-                total = sums.setdefault(index, [np.zeros(plastic.size) for _ in range(4)])
-                total[0] += share*2*dt*plastic
-                total[1] += share*dt*creep_power
-                total[2] += share*dt*plastic_power
-                total[3] += share*2*dt*rate
+                total = sums.setdefault(index, [[], [], [], []])
+                total[0].append(share*2*dt*plastic)
+                total[1].append(share*dt*creep_power)
+                total[2].append(share*dt*plastic_power)
+                total[3].append(share*2*dt*rate)
     increments, energy, bound = {}, {}, {}
     for index in range(len(strength.pieces)):
         layers = len(piece_rows(strength, index))
         if index in sums:
-            inc, creep, plastic, ceiling = sums[index]
+            inc, creep, plastic = (
+                np.array([math.fsum(term[layer] for term in terms) for layer in range(layers)])
+                for terms in sums[index][:3])
+            ceiling = np.full(layers, math.fsum(sums[index][3]))
         else:
             inc = creep = plastic = ceiling = np.zeros(layers)
         if np.any(inc < 0):
@@ -1155,9 +1163,7 @@ class BeltTerm:
         """Check physical coverage on the declared geometric side, not merely on its plate. A plate may wrap
         around a trace endpoint; its faces across the great-circle normal are not in a one-sided belt. The
         point-to-arc footprint (including endpoint caps), missed-face gate and beta tolerance are unchanged."""
-        face_area = {}
-        for index, (face, _) in enumerate(self.strength.pieces):
-            face_area[face] = face_area.get(face, 0.)+float(self.piece_areas[index])
+        face_area = _face_areas(self.strength, self.piece_areas)
         index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
         directions = np.asarray(network.vertex_direction, dtype=float)
         faces = {face.face_id: face for face in network.faces}
@@ -1174,9 +1180,9 @@ class BeltTerm:
             poles.append((a, b, pole, h, line.belt.side, sides[line.belt.side]))
             for cell in line.cells:
                 face_id = cell.cell.face_id
-                covered[face_id] = covered.get(face_id, 0.)+cell.cell.length_m*line.length_m
+                covered.setdefault(face_id, []).append(cell.cell.length_m*line.length_m)
                 face = faces[face_id]
-                bulge = 0.
+                bulges = []
                 for ring in (face.vertex_ids,)+tuple(face.holes):
                     for u_id, v_id in zip(ring, ring[1:]+ring[:1]):
                         u, v = directions[index[u_id]], directions[index[v_id]]
@@ -1184,10 +1190,10 @@ class BeltTerm:
                         excess = _arc_extreme(u, v, pole)-ends      # the edge's bulge beyond its endpoints
                         if excess > 0:
                             arc = 2*math.atan2(float(np.linalg.norm(u-v)), float(np.linalg.norm(u+v)))
-                            bulge += self.radius*arc*self.radius*excess
-                tol = (1/math.cos(h)-1)+bulge/face_area[face_id]+S.RELATIVE_TOLERANCE
+                            bulges.append(self.radius*arc*self.radius*excess)
+                tol = (1/math.cos(h)-1)+math.fsum(bulges)/face_area[face_id]+S.RELATIVE_TOLERANCE
                 tolerance[face_id] = max(tolerance.get(face_id, 0.), tol)
-        self.coverage = {face: covered[face]/face_area[face] for face in sorted(covered)}
+        self.coverage = {face: math.fsum(covered[face])/face_area[face] for face in sorted(covered)}
         self.tolerance = tolerance
         over = [face for face, beta in self.coverage.items() if beta > 1+tolerance[face]]
         if over:
@@ -1199,7 +1205,7 @@ class BeltTerm:
             if face.face_id in crossed or face.plate_id not in belted_plates:
                 continue
             ring = [directions[index[v]] for v in face.vertex_ids]
-            centre = np.sum(ring, axis=0)
+            centre = np.array([math.fsum(point[k] for point in ring) for k in range(3)])
             centre /= np.linalg.norm(centre)
             for a, b, pole, h, side, plates in poles:
                 signed = float(centre @ pole)       # positive is left of the directed great-circle trace
@@ -1216,6 +1222,8 @@ class BeltTerm:
         n = len(self.plates)
         torque, tangent = np.zeros((n, 3)), np.zeros((3*n, 3*n))
         responses, margins = [], []
+        torque_terms = [[] for _ in range(n)]
+        tangent_terms = {}
         for line, history, (left, right) in zip(self.lines, self.histories, self.sides):
             m = line.midpoint
             dv = self.radius*np.cross(omega[right]-omega[left], m)
@@ -1225,8 +1233,8 @@ class BeltTerm:
                 continue
             arm = _cross(m)
             tau = self.radius*line.length_m*(arm @ response['traction'])
-            torque[left] += tau
-            torque[right] -= tau
+            torque_terms[left].append(tau)
+            torque_terms[right].append(-tau)
             local = traction_tangent(line, response)
             if local is None or not np.all(np.isfinite(local)):
                 raise StrengthRefused('the belt tangent is not representable near U = 0', NONCONVERGED, 'tangent')
@@ -1235,7 +1243,12 @@ class BeltTerm:
             margins.append(float(np.linalg.eigvalsh((reduced+reduced.T)/2)[0]))
             block = self.radius**2*line.length_m*(arm @ local @ arm.T)
             for i, j, sign in ((left, left, 1.), (right, right, 1.), (left, right, -1.), (right, left, -1.)):
-                tangent[3*i:3*i+3, 3*j:3*j+3] += sign*block
+                tangent_terms.setdefault((i, j), []).append(sign*block)
+        for plate, terms in enumerate(torque_terms):
+            torque[plate] = [math.fsum(term[k] for term in terms) for k in range(3)]
+        for (i, j), terms in tangent_terms.items():
+            tangent[3*i:3*i+3, 3*j:3*j+3] = [
+                [math.fsum(term[row, col] for term in terms) for col in range(3)] for row in range(3)]
         self.last = (omega.copy(), tuple(responses))
         return torque, tangent, self.report(responses, margins)
 

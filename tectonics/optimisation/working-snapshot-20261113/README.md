@@ -991,6 +991,17 @@ Accepted isolated controls include a nonzero measured-face residual and the
 corrected scan's unchanged stocks/footprints. They do not establish world
 frequency, fresh-IV1 reach, later intervals, restart or a runtime saving.
 
+### Reduce the belt contributions without changing its closure
+
+The [reduced-belt method](../../docs/I04_CAUSAL_START.md#r4-4-d2-on-the-sphere)
+requests the upper-bracket slope it reads and reduces the same rounded areas,
+coverage, torques, tangent blocks and four products once per quantity. The
+constitutive and feedback gates and keyed-map semantics remain unchanged.
+Accepted retained external local evidence leaves the isolated outer comparison
+failed; it supplies no stored two-interval result or real product/bulge
+discrimination. The actual oblique route
+is separate from the interval chain's spatial entry.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

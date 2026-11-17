@@ -364,6 +364,28 @@ order per layer.
     zero-motion limit; its finite local tangent diagnostic is unavailable, not
     represented as a zero derivative.
 
+**Upper bracket and rounded-term reductions.** The oblique stress solve explicitly
+requests `slope_min=True` from the existing weakening kernel at its upper-bracket
+evaluation, before reading that value. Lower-bracket/Newton calls, brackets,
+iteration limits and constitutive laws are unchanged. The direct pure-shear
+parent control detects the former missing request; this is not evidence that an
+unrelated `advance_spatial` route executes the oblique solve. Follow the actual
+`solve_at -> BeltTerm -> balance/_belt_newton -> solve_line/resultant` binding.
+
+Both face-area consumers share one reduction of the original rounded piece-area
+terms. Coverage, ring bulge, missed-face centre, each plate torque component and
+each tangent-block component likewise use one `math.fsum` of the same rounded
+terms. Each of the four history/energy/bound products retains its original
+left-associated multiplication before reduction; the scalar rate bound is still
+broadcast to the layers. Feedback's keyed last-write map is unchanged. These
+changes preserve the existing coverage, monotonicity, product and outer gates.
+
+Retained external upper-bracket and discriminating face-area/centre/torque/
+tangent qualification fixtures are distinct from a complete outer solve. The isolated Strength outer comparison failed despite
+matching mapped products and a common convergence decision. Real four-product
+and positive-bulge sums on that fixed twin were non-discriminating; a stored
+two-interval coverage case and physical threshold-edge incidence remain open.
+
 **What the reduced belt means at ridges.** I03 accommodates opening by accreting birth columns, while the belt resists
 it as pure-shear stretching of fixed columns. That is what the reduced representation means, not necking.
 
