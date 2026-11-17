@@ -1015,6 +1015,49 @@ successor is unexecuted; no negative-zero witness occurred. Stored two-interval,
 two-exterior/current-pose/owned-heat, product/bulge and actual combined-runtime
 qualification remain open.
 
+### Order moving-moment and zero proofs by their exact geometry
+
+The moving-face and moving-interface routines enclose swept wall/interface
+volumes and the associated moments. Their active-edge, exact-incidence and
+clipping scans use the constraint's exact numeric record and sign, rather than
+its label, representation text or caller traversal. The key distinguishes fixed
+planes, rotating normals, snapshot rotations and moving ray edges; ray pairs
+retain their authored fan adjacency and prior rotation histories. Integer edge
+classes retain the meaning of cone, flow, interface, rectangle, voxel and
+certified-origin edges.
+
+The face routine prepares one order for a call before the cone proof, including
+its velocity-sign planes, then passes it through the existing incidence and
+intersection helpers. Two aliases for the same half-space can use their stored
+place to fill the same cache first. The interface routine first deduplicates the
+same record/sign and retains its selected refusal of a remaining equal key;
+there is no invented label fallback. Clipping follows the same physical order.
+The two zero certificates sort their literals by that key and sign. Invalid-sign
+handling, arithmetic/enclosure contracts, tolerances and caps remain unchanged.
+
+The order can move last digits of a bound or lose or gain a zero proof under the
+same cap. A zero not proved can take the existing enclosing fallback. Retained
+external component fixtures distinguish the old order dependence, while two
+inherited mutants remain unreached. Source review accepts the selected unit with
+those limits. One isolated eight-step diagnostic chain completed; it does not
+establish the outstanding field-by-field sizing or selected large-scale proof
+coverage. Key preparation cost, proof losses/gains and runtime savings remain
+unmeasured in that wider scope.
+
+The earlier closed-graph comparison refusal remains in its frozen evidence.
+Its selected successor allows the correlated start-volume, geometric-rebase and
+start-error change only for a row whose end and both end bounds are zero. Each
+start must equal its own exact face-volume limit; the rebase moves with the start
+and both error endpoints oppositely, leaving carried start, start bounds and
+error width unchanged. Other fields and the booking mask retain their exact
+comparison. This is that bounded comparison's allowance, not a general exemption
+for changed starts, bounds or downstream balance.
+
+The [physical-integration explanation](../../docs/how-it-works/06-physical-integration.md#order-moving-face-and-interface-proofs-by-their-geometry)
+keeps this later prototype separate from earlier integration methods. Joined
+behaviour, general accuracy, stored-result sizing, restart and scientific
+acceptance remain open; component/source publication supplies none of them.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

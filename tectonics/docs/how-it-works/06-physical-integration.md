@@ -1669,6 +1669,24 @@ comparison and its time/RAM trade-off; the global default remains six.
 proofs and their resource and identity boundaries. Neither establishes a
 whole-interval speed-up or new physical acceptance.
 
+### Order moving-face and interface proofs by their geometry
+
+The later [moving-moment prototype](../../optimisation/working-snapshot-20261113/README.md#order-moving-moment-and-zero-proofs-by-their-exact-geometry)
+orders active edges, clipping planes and cone-proof candidates by their exact
+constraint numbers and signs. Fixed planes, rotating normals, snapshot rotations
+and fan-adjacent ray paths keep their stored physical meaning. Names and caller
+traversal do not choose the arithmetic or proof search order. The prepared order
+is shared by the moving-face and interface calculations; existing directed
+streams, tolerances, enclosure requirements and resource ceilings remain.
+
+Changing that order can change the last digits of swept-volume bounds and which
+zero certificates are found within the same cap. A lost zero proof takes the
+existing bounded route; a gained proof does not establish wider accuracy.
+Retained component qualification and one isolated eight-step diagnostic completion
+do not supply the outstanding stored-result sizing, lost/gained-proof counts,
+selected large-scale proof coverage, joined/restart or scientific acceptance.
+Per-call key cost and any runtime saving remain unmeasured.
+
 ### Refine only the geometric bounds that need it
 
 [Plan19](../../optimisation/workbench/plan19/README.md) uses tighter bounds and an

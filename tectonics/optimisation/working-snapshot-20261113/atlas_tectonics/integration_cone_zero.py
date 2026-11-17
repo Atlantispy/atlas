@@ -111,6 +111,8 @@ def plane_certificate(cell, literals, constraints, time, arena, *, detail=None):
     with G.V._work(values, arena.resource):
         arena.work(128)
         vertices = cell._vertices()
+    from .integration_moving_face_moments import _constraint_key   # A-46: the A-16 key, free of the caller's order
+    literals = sorted(literals, key=lambda literal: (_constraint_key(constraints[literal[0]]), literal[1]))
     for name, sign in literals:
         raw = constraints[name]
         scalars = tuple(_encoded_scalars(raw))
@@ -177,10 +179,12 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
                     axes.append((u, maximum))
     if not axes:
         return None
+    if any(type(sign) is not int or sign not in (-1, 1) for _, sign in literals):
+        return None
+    from .integration_moving_face_moments import _constraint_key   # A-46: the A-16 key, free of the caller's order
+    literals = sorted(literals, key=lambda literal: (_constraint_key(constraints[literal[0]]), literal[1]))
     groups = {}
     for name, sign in literals:
-        if type(sign) is not int or sign not in (-1, 1):
-            return None
         raw = constraints[name]
         scalars = tuple(_encoded_scalars(raw))
         with G.V._work((*scalars, time), arena.resource):

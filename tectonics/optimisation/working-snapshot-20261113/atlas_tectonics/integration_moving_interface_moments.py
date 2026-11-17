@@ -672,6 +672,9 @@ def _chart(first, second, omega, outward_sign, bounds, J, arena):
     return e1, e2, (b2, J.neg(b1), J.z), tuple(J.scale(x, outward_sign) for x in (cu, cv)), (A,Jc)
 
 
+_constraint_key, _EDGE_CLASS = T._constraint_key, T._EDGE_CLASS   # A-16: one copy, in T
+
+
 def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
               literals, duration, widths, max_leaves, fallback, arena):
     """Enclose both directed physical streams, falling back on each time leaf.
@@ -700,6 +703,18 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
         for name, sign in literals:
             if not any(sign == s and constraints[name] == item for _, s, item in cuts):
                 cuts.append((name, sign, constraints[name]))
+        # Loops over active edges visit them in the order of their constraints' numbers, never of their names
+        # (ruling 34). A cut is a name, a sign and a record, and no two cuts share both, so no two keys tie.
+        edge_keys = {}
+        for name, sign, item in cuts:
+            edge_keys.setdefault(name, (0, _constraint_key(item), sign))
+        if len(set(edge_keys.values())) != len(edge_keys):
+            raise V.VolumeError('two edges of one support share their constraint and sign')
+
+        def edge_order(name):
+            if isinstance(name, tuple):
+                return (1, _EDGE_CLASS[name[0]], *name[1:])
+            return edge_keys[name]
         physical_plane_keys={name:_physical_plane_key(item,arena) for name,_,item in cuts}
         fixed = tuple((tuple(-q for q in p[:3]), -p[3]) for p in O._box_planes(cell)
             if not (p[3] >= 0 and p[3]*p[3] >= radius*radius*O._dot(p[:3], p[:3])))
@@ -784,7 +799,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
             new,face=world_jet(name),world_jet(('interface',))
             result=None
             if new is not None and face is not None:
-                for one,two in combinations(sorted(active,key=repr),2):
+                for one,two in combinations(sorted(active,key=edge_order),2):
                     a,b=world_jet(one),world_jet(two)
                     if a is None or b is None:
                         rectangle_edge=next((edge for edge in (one,two) if
@@ -835,7 +850,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
             result=None
             if new is not None and face is not None:
                 sign=next((s for n,s,_ in cuts if n==name),1)
-                for one,two in combinations(sorted(active,key=repr),2):
+                for one,two in combinations(sorted(active,key=edge_order),2):
                     a,b=world_jet(one),world_jet(two)
                     if a is None or b is None:
                         continue
@@ -894,7 +909,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
             result=False
             if new is not None and face is not None:
                 result=_same_initial_plane(new,face,arena)
-                for edge in active:
+                for edge in sorted(active,key=edge_order):
                     if result:
                         break
                     other=start_plane(edge)
@@ -913,7 +928,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                             if all(lo==hi for lo,hi in interval) and O._dot(new[0],vector)==0:
                                 result=True
                                 break
-                for one,two in combinations(sorted(active,key=repr),2):
+                for one,two in combinations(sorted(active,key=edge_order),2):
                     if result:
                         break
                     a,b=start_plane(one),start_plane(two)
@@ -989,10 +1004,10 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                 # strict sign on the whole leaf needs no second evaluation.
                 if value[0][0]>0 or value[0][1]<0:
                     return value
-                for edge in active:
+                for edge in sorted(active,key=edge_order):
                     if edge not in world_normals:
                         continue
-                    for section in active:
+                    for section in sorted(active,key=edge_order):
                         if not isinstance(section,tuple) or section[0] not in ('voxel','rectangle'):
                             continue
                         key=name,edge,section
@@ -1029,7 +1044,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
             def removable_world_crossing(name,active):
                 if not isinstance(name,tuple) or name[0]!='voxel':
                     return None
-                for edge in sorted(active,key=repr):
+                for edge in sorted(active,key=edge_order):
                     if not isinstance(edge,tuple) or edge[0]!='voxel' or edge==name:
                         continue
                     key=tuple(sorted((name[1],edge[1])))
@@ -1068,7 +1083,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                 # Independent homogeneous lines intersect at the physical
                 # origin. Retain this exact incidence through every cut.
                 if lines[name][2] == J.z:
-                    homogeneous = [edge for edge in active if lines[edge][2] == J.z]
+                    homogeneous = [edge for edge in sorted(active, key=edge_order) if lines[edge][2] == J.z]
                     for one, two in combinations(homogeneous, 2):
                         a,b = lines[one],lines[two]
                         determinant = _incidence_constant(a, b, J)
@@ -1329,12 +1344,12 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                 return T._clip(polygon, lines[name], name, J, incidence=contains, guard=guard,
                     classification=lambda identity, index, count: signs.get((identity, index, count)),
                     intersection=lambda line, active: T._active_intersection(line, active, lines.__getitem__, J,
-                        removable=lambda:removable_world_crossing(name,active)))
+                        removable=lambda:removable_world_crossing(name,active), order=edge_order))
             polygon = tuple((J.constant(u), J.constant(v), frozenset(
                 ('rectangle', axis, end) for axis, q in enumerate((u, v)) for end in range(2)
                 if q == rectangle[axis][end])) for u, v in W._rectangle(rectangle))
             for name in (('cone', 0), ('cone', 1), *(('voxel', i) for i in range(len(fixed))),
-                         *(name for name, _, _ in cuts)):
+                         *sorted((name for name, _, _ in cuts), key=edge_order)):   # A-19: key order
                 polygon = clip(polygon, name)
                 if not polygon:
                     return J.z, J.z
