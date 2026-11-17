@@ -51,20 +51,31 @@ def joint_slopes(h,x,linear):
     if c==1:return slopes
     total=column_totals(h)
     candidates=np.empty(c)
+    ordered=np.empty(c)
     for i in range(n):
         width=x[i+1]-x[i]
         if total[i]==0.:
             slopes[:,i]=0.
             continue
         rate=(slope_at(total,x,i)*width)/total[i]
-        candidate_sum,correction=0.,0.
         for k in range(c):
             candidates[k]=slopes[k,i]*width
-            value=candidate_sum+candidates[k]
-            if abs(candidate_sum)>=abs(candidates[k]):
-                correction+=(candidate_sum-value)+candidates[k]
+            ordered[k]=candidates[k]
+        # Preserve candidates by cohort; sort only their reduction copy.
+        for k in range(1,c):
+            value=ordered[k]
+            j=k-1
+            while j>=0 and ordered[j]>value:
+                ordered[j+1]=ordered[j]
+                j-=1
+            ordered[j+1]=value
+        candidate_sum,correction=0.,0.
+        for k in range(c):
+            value=candidate_sum+ordered[k]
+            if abs(candidate_sum)>=abs(ordered[k]):
+                correction+=(candidate_sum-value)+ordered[k]
             else:
-                correction+=(candidates[k]-value)+candidate_sum
+                correction+=(ordered[k]-value)+candidate_sum
             candidate_sum=value
         candidate_rate=(candidate_sum+correction)/total[i]
         theta=1.

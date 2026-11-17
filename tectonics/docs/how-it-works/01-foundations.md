@@ -269,6 +269,16 @@ reduces smearing while preserving nonnegative amounts under the timestep restric
 All cohort profiles are constrained together so their sum follows the total-thickness
 profile. Conserving each cohort alone would not guarantee that consistency.
 
+For joint native reconstruction, the limiter sums a numerically ordered copy
+of the cohort slope contributions with its existing compensated addition. The
+actual cohort slopes and candidates keep their original material mapping. The
+mesh route likewise sorts only a copy of the already-rounded slope-times-width
+terms; it does not reorder the physical cohort data or change its limiter law.
+The six retained independent-reference methods pass at their existing
+tolerances. In the selected five-cohort case, old and corrected returned groups
+both agree: that case supplies no old-output discriminator or universal exact-bit
+reference proof.
+
 An open boundary uses explicitly supplied composition on inflow and interior
 material on outflow. A closed fixed boundary requires zero normal velocity.
 Receipts account separately for each cohort: change equals incoming minus outgoing

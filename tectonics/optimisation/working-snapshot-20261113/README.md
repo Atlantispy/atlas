@@ -473,6 +473,20 @@ remains, without a whole-suite PASS. Actual-parent composition, publication and
 scientific acceptance remain separate. Gamma representation/admission, physical
 ordering and A40 are outside this accepted scope.
 
+### Preserve cohort mapping in native reductions
+
+The joint material limiter sorts a copy of the cohort slope contributions before
+its existing compensated sum. The mesh kernel does the same for the already-rounded
+slope-times-width terms. Physical slopes and candidates retain their original
+cohort mapping and limiter law. The [foundations guide](../../docs/how-it-works/01-foundations.md)
+describes these two reductions.
+
+Independent review accepted the isolated two-kernel source. Six retained reference
+methods pass at their existing tolerances. The selected parent and candidate both
+return invariant outputs across nine mapped groups, so that case supplies no
+old-output discriminator. Universal exact-reference parity, joined qualification,
+timing and scientific acceptance remain separate.
+
 ### Make layout measurements independent of labels
 
 `plate_layout.py` collects the supplied rounded patch areas and crossing lengths

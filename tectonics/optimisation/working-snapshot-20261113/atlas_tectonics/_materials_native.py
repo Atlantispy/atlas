@@ -23,19 +23,30 @@ def cohort_fluxes(h, u, external_left, external_right, flux):
     c, n = h.shape
     total = column_totals(h)
     slopes = np.empty(c, dtype=np.float64)
+    ordered = np.empty(c, dtype=np.float64)
     for k in range(c):
         flux[k, 0] = u[0]*external_left[k]
         flux[k, n] = u[n]*external_right[k]
     for i in range(n):
         total_slope = _slope(total, i)
-        candidate_sum, correction = 0.0, 0.0
         for k in range(c):
             slopes[k] = _slope(h[k], i)
-            value = candidate_sum + slopes[k]
-            if abs(candidate_sum) >= abs(slopes[k]):
-                correction += (candidate_sum-value)+slopes[k]
+            ordered[k] = slopes[k]
+        # Sort only the reduction copy; slopes retain their cohort mapping.
+        for k in range(1, c):
+            value = ordered[k]
+            j = k-1
+            while j >= 0 and ordered[j] > value:
+                ordered[j+1] = ordered[j]
+                j -= 1
+            ordered[j+1] = value
+        candidate_sum, correction = 0.0, 0.0
+        for k in range(c):
+            value = candidate_sum + ordered[k]
+            if abs(candidate_sum) >= abs(ordered[k]):
+                correction += (candidate_sum-value)+ordered[k]
             else:
-                correction += (slopes[k]-value)+candidate_sum
+                correction += (ordered[k]-value)+candidate_sum
             candidate_sum = value
         candidate_sum += correction
         rate = total_slope/total[i] if total[i] else 0.0
