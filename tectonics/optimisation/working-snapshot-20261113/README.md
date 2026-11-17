@@ -691,9 +691,9 @@ over the same cohort thicknesses. W03 keeps its existing fixed-plate limit.
 W04 stores the reference bulk and subtracts it from the independently summed
 current bulk before the original sediment/water calculation. The [W03 route](../../docs/W03_WORKFLOW.md#evolution-and-accounts)
 and both W04 copies are one paired source patch; no gate or tolerance changes.
-Independent review accepts all three paired sites and the complete selected
-five-cell case in both physical catalogue orders. All 41 fixed comparisons
-pass; the 29 physical-input comparisons are identical between the fixed and
+The accepted local scope covers all three paired sites and the complete selected
+five-cell case in both physical catalogue orders, with all 41 fixed comparisons
+passing; the 29 physical-input comparisons are identical between the fixed and
 original packages. The original sums produce exactly seven predicted
 reduction/output differences, with no other or signature failure. The case
 reaches actual drained-reservoir exchange at zero net physical load, the
@@ -707,10 +707,9 @@ memory bound.
 Both small-diagram centre branches use one `math.fsum` per Cartesian
 coordinate over the original three rounded vertex vectors before `_unit`.
 Pole/dual construction, rim semantics and stored chart consumers stay intact.
-Independent review accepts both local centre reductions and their selected
-consumers. The two-site control distinguishes four old centres; the fixed
-tilted three-site pair passes 27/27 comparisons and distinguishes ten old
-stored centres. The original seven upstream signed-zero words remain a
+The accepted local centre/consumer evidence includes a two-site control
+that distinguishes four old centres and a fixed tilted three-site pair
+that passes 27/27 comparisons and distinguishes ten old stored centres. The original seven upstream signed-zero words remain a
 bitwise failure, although nonzero vectors, reached classifications and areas
 agree. The tilted pair does not clear that failure or normalise zero signs.
 The one-site case shares source, not the two-site sensitivity result. No
@@ -871,9 +870,8 @@ tie remain quiet.
 
 Anchor positions and projection work are admitted to the existing budget.
 Reference failure clears its borrowed positions before an escaping traceback
-can outlive the plan's position owner. Independent review accepts the corrected
-reference successor using valid ordinary tied-anchor evidence and the affected
-IEEE/position boundary pairs. The ordinary two-cube control keeps mapped
+can outlive the plan's position owner. The accepted reference successor has valid
+ordinary tied-anchor evidence and the affected IEEE/position boundary pairs. The ordinary two-cube control keeps mapped
 temperatures and zero exact storage while references and solver targets agree
 under the input swap. Revised IEEE controls exercise the real producer and
 both public early-error prefixes before solve/advance/CG/stencil work; binary
@@ -904,8 +902,8 @@ fixed-set replacement. Existing weak-reference finalisation provides that
 ownership without a second healthy-hit charge or retaining the stencil itself.
 The separate self-prepared route keeps its own workspace ownership.
 
-Independent review accepts this successor after the reference fix. The ordinary
-same-plane control keeps own-face temperatures at 100 K and 99 K and gives the
+For the accepted post-reference successor, the ordinary same-plane control
+keeps own-face temperatures at 100 K and 99 K and gives the
 fixed third observer 99.75 K in either incidence order, with original impulses,
 source/outward bookings and zero exact storage. Valid ordinary evidence is
 reused; the affected close/fixed-replacement failure pair verifies retained
@@ -932,8 +930,8 @@ exact scratch is reused. Existing row/delta admission, cancellation,
 MemoryLimit continuations and evaluation counters remain. The target retains
 its Decimal80 half-even rule, inherited exponent limits and trap settings.
 
-Independent review accepts this returned-representation correction. The
-selected legal one-cell public KSS pair changes two returned bounds from
+The accepted returned-representation correction has a selected legal one-cell
+public KSS pair that changes two returned bounds from
 `2.00`, span 5, to `2`, span 1, with two exact fallbacks replacing two
 96-digit certifications. Both full public solves finish two nonlinear
 iterations; actual minimum reports and issued descriptors follow the corrected

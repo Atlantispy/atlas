@@ -1267,9 +1267,9 @@ uses the minimum exact physical anchor class. A tie takes exact totals of the
 represented energies and capacities and one half-even binary64 projection;
 a singleton retains native division. Both public methods and fallback targets
 share that datum. Active native IEEE signalling and position ownership through
-failure are preserved. Independent review accepts the selected successor and
-its ordinary/boundary evidence; the tiny tests cover the producer and early
-public errors, not downstream tiny-temperature solving or general ordering.
+failure are preserved in the accepted successor's ordinary/boundary scope.
+The tiny tests cover the producer and early public errors, not downstream
+tiny-temperature solving or general ordering.
 
 Its [power-plane trace successor](../../optimisation/working-snapshot-20261113/README.md#reconstruct-power-plane-traces-without-choosing-a-twin)
 preserves each exact-class member's own power relation, while a fixed third
@@ -1277,9 +1277,9 @@ observer receives one Decimal80 contribution from the exact mean power and
 original coefficient. Every face's energy is still booked separately. Static
 class membership belongs to the prepared stencil; a cached stencil keeps its
 single charge through an escaping failed-work frame until the last reference
-dies. Independent review accepts the selected trace and lifetime scope, with
-ordinary arithmetic evidence reused; arbitrary support/mirror ordering,
-exhaustive resource recovery and joined/scientific acceptance remain open.
+dies. The accepted trace and lifetime scope reuses ordinary arithmetic evidence;
+arbitrary support/mirror ordering, exhaustive resource recovery and
+joined/scientific acceptance remain open.
 
 The nondefault snapshot's [Gamma representation correction](../../optimisation/working-snapshot-20261113/README.md#preserve-the-returned-gamma-representation-at-its-readers)
 preserves the exact Decimal80 division's returned tuple at the public KSS

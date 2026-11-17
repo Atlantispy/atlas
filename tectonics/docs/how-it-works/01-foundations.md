@@ -480,10 +480,9 @@ In the nondefault snapshot, each column's cohort thicknesses use one `math.fsum`
 fixed-plate check. W04's reference and current thickness reductions use the
 matching rule before their existing subtraction and sediment/water calculations;
 the paired [sediment-total correction](../../optimisation/working-snapshot-20261113/README.md#keep-reference-and-current-sediment-totals-on-the-same-sum)
-changes no thermal, compaction, load or water limit. Independent review accepts
-all three paired sites and one complete five-cell comparison in both physical
-catalogue orders, including the actual wet outputs. The fixed case passes
-41 comparisons; the original sums produce exactly seven predicted differences
+changes no thermal, compaction, load or water limit. The accepted five-cell
+comparison covers all three paired sites in both physical catalogue orders,
+including the actual wet outputs, and passes 41 comparisons; the original sums produce exactly seven predicted differences
 with all 29 physical-input comparisons unchanged and no other or signature
 failure. This is selected local qualification, not general workflow or
 scientific acceptance.
