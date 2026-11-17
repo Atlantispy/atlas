@@ -168,7 +168,7 @@ def _replace(source, target, tries=50, pause=0.02):
             time.sleep(pause)
 
 
-def _resource_report(directory, process, body_seconds=None, ledger_peak=None, marks=None, *, batch=None):
+def _resource_report(directory, process, body_seconds=None, ledger_peak=None, *, batch=None):
     memory = process.memory_info()
     report = dict(pid=process.pid, create_time=process.create_time(),
         rss=memory.rss, peak_rss=getattr(memory, 'peak_wset', memory.rss))
@@ -181,9 +181,6 @@ def _resource_report(directory, process, body_seconds=None, ledger_peak=None, ma
     if ledger_peak is not None:
         # The largest accounted peak of a batch's child ledgers: for the report only.
         report['ledger_peak'] = ledger_peak
-    if marks is not None:
-        # Part B per-batch marks: seconds after create_time, for the report only (never a receipt).
-        report['marks'] = marks
     with (directory/'resource-next.json').open('wb') as stream:
         stream.write(canonical(report))
     _replace(directory/'resource-next.json', directory/'resource.json')
@@ -202,15 +199,13 @@ def worker_main(directory):
     directory = Path(directory)
     import psutil
     process = psutil.Process()
-    marks = {}
-    _mark(marks, 'imports', process)
     # The START report identifies this worker to its parent: it must succeed.
     _resource_report(directory, process)
     if (directory/'kept').is_file():           # written by the parent before the launch
-        return _kept_worker(directory, process, marks)
+        return _kept_worker(directory, process)
     binding_bytes = _mapped_read(directory/'binding.json', MAX_RECEIPT)
     if is_batch(binding_bytes):
-        return _batch_worker(directory, process, binding_bytes, marks)
+        return _batch_worker(directory, process, binding_bytes)
     binding = JobBinding(binding_bytes)
     record = binding.record()
     request = record['request']
@@ -251,7 +246,7 @@ def worker_main(directory):
         pass
 
 
-def _batch_worker(directory, process, binding_bytes, marks):
+def _batch_worker(directory, process, binding_bytes):
     """worker_main for a batch binding: every member through the unchanged issuer call.
 
     Members that share their supports run on one ledger of exactly the bound
@@ -263,30 +258,19 @@ def _batch_worker(directory, process, binding_bytes, marks):
     worker without a completion.
     """
     from .reuse import ExecutionContext
-    _mark(marks, 'begun', process)
     requests = BatchBinding(binding_bytes).record()['requests']
     if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
         # Pressure P1: pressure walls load and answer their own digest-checked inputs.
         from .integration_pressure_walls import batch_worker
         return batch_worker(directory, process, binding_bytes, requests)
     inputs = _read_inputs(directory, requests)
-    _mark(marks, 'inputs', process)
     observed = dict(body=0.0, peak=0)
     with ExecutionContext('reference') as context:
-        _mark(marks, 'context', process)
-        _complete(directory, binding_bytes, requests, inputs, context, observed, marks, process)
+        _complete(directory, binding_bytes, requests, inputs, context, observed)
     try:
-        _resource_report(directory, process, observed['body'], observed['peak'], marks)
+        _resource_report(directory, process, observed['body'], observed['peak'])
     except Exception:
         pass    # as for a one-job worker: the completion is already verified
-
-
-def _mark(marks, name, process):
-    # Part B marks (recorded, never stopping): seconds after this process was created.
-    try:
-        marks[name] = round(time.time()-process.create_time(), 6)
-    except Exception:
-        pass    # a mark that cannot be taken is left out
 
 
 def _read_inputs(directory, requests):
@@ -306,16 +290,12 @@ def _read_inputs(directory, requests):
     return inputs
 
 
-def _complete(directory, binding_bytes, requests, inputs, context, observed, marks, process):
+def _complete(directory, binding_bytes, requests, inputs, context, observed):
     """Every member through the unchanged issuer call between the two binding checks; result.json written."""
     wall = requests[0].get('kind') == WALL_KIND
 
     def run(new_ledger):
-        _mark(marks, 'identity', process)    # the context is held and the first binding check has passed
-        try:
-            return answer(new_ledger)
-        finally:
-            _mark(marks, 'body', process)
+        return answer(new_ledger)
 
     def answer(new_ledger):
         # The completion repeats the binding; each result is carried as one JSON string.
@@ -361,10 +341,9 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, mar
         raise ValueError('receipt exceeds optional wire envelope')
     with (directory/'result.json').open('xb') as stream:
         stream.write(receipt)
-    _mark(marks, 'result', process)    # after the second binding check and the write
 
 
-def _kept_worker(home, process, marks):
+def _kept_worker(home, process):
     """One context for the worker's life; one batch folder per line on standard input (decision 143).
 
     Each batch keeps both binding checks, a new ledger for each member and a
@@ -374,30 +353,22 @@ def _kept_worker(home, process, marks):
     exits non-zero. The context's closing check runs once, at the end.
     """
     from .reuse import ExecutionContext
-    beside = home.resolve().parent
     with ExecutionContext('reference') as context:
-        _mark(marks, 'context', process)
-        once = dict(marks)
         for line in sys.stdin.buffer:          # end of input: the parent has finished with this worker, or is gone
             directory = Path(line.rstrip(b'\r\n').decode('utf8')).resolve()
-            if directory.parent != beside or not directory.name.startswith('batch-'):
-                raise ValueError('batch folder is not beside this worker')
-            marks = dict(once)
-            _mark(marks, 'begun', process)
             gc.collect()
             binding_bytes = _mapped_read(directory/'binding.json', MAX_RECEIPT)
             requests = BatchBinding(binding_bytes).record()['requests']
             if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
                 raise ValueError('a kept worker does not answer pressure walls')
             inputs = _read_inputs(directory, requests)
-            _mark(marks, 'inputs', process)
             observed = dict(body=0.0, peak=0)
-            _complete(directory, binding_bytes, requests, inputs, context, observed, marks, process)
+            _complete(directory, binding_bytes, requests, inputs, context, observed)
             # V-1: the figure the recycle rule reads is taken after the batch is dropped and collected.
             del binding_bytes, requests, inputs
             gc.collect()
             try:
-                _resource_report(home, process, observed['body'], observed['peak'], marks, batch=directory.name)
+                _resource_report(home, process, observed['body'], observed['peak'], batch=directory.name)
             except Exception:
                 pass    # the completion is already verified
             with (directory/'done').open('xb'):
@@ -423,7 +394,7 @@ class _Child:
         self.peak_rss = 0
         # Scheduling observations only: launch-to-return seconds measured here
         # and the body seconds the worker reports. Neither is ever evidence.
-        self.elapsed = self.body_seconds = self.ledger_peak = self.marks = None
+        self.elapsed = self.body_seconds = self.ledger_peak = None
         self._owned = {}
         self._worker_identity = None
         self._launched_at = None
@@ -516,11 +487,6 @@ class _Child:
         peak = record.get('ledger_peak')
         if type(peak) is int and 0 <= peak < 1 << 62:
             self.ledger_peak = peak
-        marks = record.get('marks')
-        # Part B marks: kept only when well formed; a bad one is ignored, never raised.
-        if (type(marks) is dict and len(marks) <= 8 and all(type(k) is str and len(k) <= 16
-                and type(v) in (int, float) and 0 <= v <= 1e9 for k, v in marks.items())):
-            self.marks = {k: float(v) for k, v in marks.items()}
 
     def _discover(self):
         import psutil
@@ -673,7 +639,7 @@ class _Child:
             raise ValueError('dispatch file changed before launch')
         started, launched = time.monotonic(), time.perf_counter()
         self.peak_rss, self.rss = 0, None
-        self.body_seconds = self.ledger_peak = self.marks = None
+        self.body_seconds = self.ledger_peak = None
         try:
             if self.process is None:
                 command, env = _worker_launch(self.directory)
@@ -1260,7 +1226,7 @@ class _Served:
     def __init__(self, worker, path):
         self.worker, self.path = worker, path
         self.done = threading.Event()
-        self.elapsed = self.body_seconds = self.ledger_peak = self.marks = None
+        self.elapsed = self.body_seconds = self.ledger_peak = None
         self.peak_rss, self.stop_seconds = 0, 0.0
 
     def run(self, binding_bytes):
@@ -1271,7 +1237,7 @@ class _Served:
             return result
         finally:
             self.elapsed, self.body_seconds, self.peak_rss = worker.elapsed, worker.body_seconds, worker.peak_rss
-            self.ledger_peak, self.marks = worker.ledger_peak, worker.marks
+            self.ledger_peak = worker.ledger_peak
 
     def stop(self):
         begun = time.perf_counter()
@@ -1746,7 +1712,7 @@ class BatchParallelSession(InterfaceParallelSession):
             decided=batch['decided'], adopted=batch['adopted'], declined=batch['declined'],
             failed=batch['failed'], total_seconds=child.elapsed, body_seconds=child.body_seconds,
             peak_rss=child.peak_rss, ledger_peak=child.ledger_peak, waited_seconds=batch['clock'][0],
-            marks=child.marks, start_seconds=batch.get('start_seconds'),
+            start_seconds=batch.get('start_seconds'),
             receive_seconds=batch.get('receive_seconds'), stop_seconds=child.stop_seconds))
         batch['answers'] = batch['inputs'] = None
         shutil.rmtree(batch['path'], ignore_errors=True)

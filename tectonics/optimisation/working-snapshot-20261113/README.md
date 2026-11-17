@@ -236,15 +236,21 @@ Initial admission now runs eight producer workers, one per core, instead of two
 
 ### Geometry workers kept between batches (Part B)
 
-`ALE_PARALLEL` (`_private/fresh_interval_driver.py` line 51) now sets `keep_workers`
-(`integration_parallel_selection.py` line 134, off by default). A kept geometry worker
-(`integration_parallel_dispatch.py` `_kept_worker`, line 365) holds one context for its life and serves one
-batch at a time, read from its standard input (`serve`, line 658; the session's handle is `_Served`, line
-1247). Each batch is still bound by its inputs and checked before and after its members run; the package
-source is read once per worker process. Each kept worker holds its own memory baseline, charged within the
-session's budget share; after a batch the worker is idle again, or is ended if it is above its baseline
-(`_release`, line 1764). Per-batch time marks are written to the resource report only and never stop a run.
-With `keep_workers` off, the one-shot worker per batch is unchanged.
+`ALE_PARALLEL` (`_private/fresh_interval_driver.py` line 51) sets `keep_workers`
+(`integration_parallel_selection.py` line 134, off by default). A kept geometry
+worker (`integration_parallel_dispatch.py`, `_kept_worker`) holds one context for
+its life and serves one batch at a time from standard input. Each batch retains
+its input binding checks before and after its members run; the package source is
+read once per worker process. The worker's own memory baseline is charged within
+the session's budget share, and the existing release rule recycles it when needed.
+With `keep_workers` off, each batch still uses its own worker.
+
+The dispatch cuts remove the kept-worker batch-folder naming/location refusal
+and seven worker timing marks. Path resolution, input opens, receipt checks,
+deadlines and direct process-memory monitoring remain. Resource reports keep body
+time and ledger peaks; the parent keeps start, receive and stop observations.
+Body/ledger fields can still describe the previous batch after failed report
+replacement; those observations do not select reuse.
 
 ### The geometry id memo
 
@@ -526,7 +532,7 @@ execution. These bounded controls do not qualify a joined package or all overlay
 
 ### Attribute kept-worker RSS to the batch it served
 
-`integration_parallel_dispatch.py` stamps the existing post-collection resource report with its batch name. The parent clears RSS when a batch starts and uses a report for recycling only when that name matches the batch it served. If replacement fails and the previous report is reread, current RSS stays unknown and the existing recycle rule applies. The live memory guard, thresholds, timing marks and result receipt are unchanged.
+`integration_parallel_dispatch.py` stamps the existing post-collection resource report with its batch name. The parent clears RSS when a batch starts and uses a report for recycling only when that name matches the batch it served. If replacement fails and the previous report is reread, current RSS stays unknown and the existing recycle rule applies. The live memory guard, thresholds and result receipt are unchanged.
 
 The existing failed-replacement and real serve/monitor controls passed with timing marks retained; removing the batch comparison was killed by the stale-report control. These bounded resource/lifecycle checks do not measure generator performance or qualify a full interval.
 
