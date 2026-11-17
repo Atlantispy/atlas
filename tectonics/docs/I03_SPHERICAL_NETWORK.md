@@ -97,6 +97,15 @@ and an extensive amount `Q_i` held by `S_i` moves by
 Q_ij = Q_i * A_ij / sum_j A_ij ,   sum_j Q_ij = Q_i exactly.
 ```
 
+**Rounding the split.** Each non-remainder recipient keeps the existing individually
+rounded binary64 share. Among recipients with exactly the largest area, the least
+physical key chooses who takes the exact amount left after those booked shares.
+The stock and its forward bound use that same choice. Physical descriptions are
+resolved only for tied maxima; output rows are not reordered. Material-cell keys
+use canonical exact cells, while ridge and sink keys use their actual transfer
+stage's endpoint geometry. This preserves exact conservation and each product's
+rounding without letting a recipient's name choose the residual.
+
 A face must be covered by its rows: `|sum_j A_ij - A_i| <= 1e-12 A_i`, and every
 endpoint face must be filled likewise. This is the constant-preservation condition
 of the supermesh formulation (Kritsikis et al., Eq. 3, `A_i = sum A_k`), checked
@@ -147,6 +156,16 @@ normalisation, is refused here because a closed network has none.
 plate, or the faces replaced by a mesh change), within one plate, after a
 bounding-cap rejection test. The tree search of Kritsikis et al. (their section 3.2)
 is not implemented; see section 12.
+
+The separate differential-partition source also orders new charts and each voxel's
+retained supports by their physical geometry before assigning storage slots,
+contacts and initial jobs. Covered carried charts reuse their established order;
+restoration preserves the issued support sequence. Its angular-pruning cache key
+includes the signed transformed predicates, full owner-ray path, material angular
+velocity and duration. Retained keys and survivor layer prefixes are charged to the
+existing arena. Source review does not establish a reachable old-key collision:
+that behavioural witness, carried/birth execution and downstream numerical
+qualification remain open.
 
 **Validity.** Two faces that overlap must fit one conditioned chart (cosine of the
 angle to the chart centre at least 1e-3). Two faces that fit none need no chart when

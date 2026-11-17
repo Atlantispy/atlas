@@ -1122,6 +1122,17 @@ isolated speed comparison. The composed pool/B/F join, combined reference and
 recovery, mixed low/fitted spatial accuracy, nonzero prescribed-power coverage
 and scientific acceptance remain open.
 
+### Keep split recipients and their bounds physically paired
+
+The [I03 split](../../docs/I03_SPHERICAL_NETWORK.md#r3-1-conservative-transfer-exact-intersection-first-order)
+and [I05 heat transport](../../docs/I05_MOVING_STATE.md#5-transport-i051) retain each
+rounded nonwinner share, choose the remainder recipient by its physical key and
+derive bounds from the booked shares. The same source prepares complete angular
+cache keys and physical chart/support order. Isolated source acceptance and the
+observed initial issue/restore do not close the cache witness, carried/birth,
+tied-I05, numerical-consumer or actual joined-package gaps. No runtime saving is
+measured for the retained survivor prefixes.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

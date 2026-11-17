@@ -469,6 +469,14 @@ faces meet in one receiver. Increments take five values per interval, by a deter
 - **Regional returns** carry no rows, so per-piece content cannot follow them. They refuse `unsupported`; this is an
   I07 requirement.
 
+For each heat operation, its own area vector chooses the same physical remainder
+recipient used by its stock split. The nonwinner's forward bound is the half-ULP
+of its already booked share, including sink shares; the winner receives the exact
+sum of those bounds. Motion, mesh, retained birth, mechanical deposition and
+conduction keep separate vectors and matching bounds. Mechanical deposition forms
+its immutable vector once per piece, while each patch keeps its own amount and
+bound. This source wiring does not establish tied outcomes for every I05 advance.
+
 **Checks** (`test_i05_transport.py`):
 - rigid and stationary cases change nothing;
 - a heated plate between a ridge and a trench keeps its riding bytes, born pieces take their column's exact heat, and

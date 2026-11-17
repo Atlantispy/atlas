@@ -2187,7 +2187,10 @@ def _angular_possible(literals, constraints, omega, duration, arena, cache, owne
         if transformed is None:
             return True
         angular.append((transformed, sign))
-    key = tuple((_encoded(value), sign) for value, sign in angular)
+    angular_key = tuple((_encoded(value), sign) for value, sign in angular)
+    context_key = _encoded(dict(owner_rays=owner_rays, duration_s=_qtext(duration),
+                                angular_velocity_rad_s=_store_vec(omega)))
+    key = angular_key, context_key
     entries, owner = cache if cache is not None else ({}, arena)
     if key in entries:
         return entries[key]
@@ -2226,7 +2229,8 @@ def _angular_possible(literals, constraints, omega, duration, arena, cache, owne
                 break
         result = bool(poly) and K._volume(poly, scratch) > 0
     if cache is not None:
-        owner.stack.enter_context(owner.resource.reserve(128+sum(64+2*len(k) for k, _ in key),
+        owner.stack.enter_context(owner.resource.reserve(192+2*len(context_key)+
+            sum(64+2*len(k) for k, _ in angular_key),
                                                          category='differential-angular-proof-cache'))
         entries[key] = result
     return result
@@ -2545,6 +2549,79 @@ def partition_current_support(current, plate_id, layer, voxel, *, source_key,
         _owner_face_ids=_owner_face_ids)
 
 
+def _constraint_key(record):
+    """Exact signed-cut operands, preserving oriented rays and rotation chronology."""
+    kind = record['kind']
+    if kind == 'fixed-plane':
+        return 0, _load_vec(record['normal']), W._decode(record['offset'])
+    if kind == 'rotated-normal':
+        return 1, _load_vec(record['normal']), _load_vec(record['angular_velocity_rad_s'])
+    if kind == 'snapshot-rotated':
+        return (2, W._decode(record['snapshot_offset_s']), _load_vec(record['angular_velocity_rad_s']),
+                _constraint_key(record['constraint']))
+    if kind == 'moving-ray-edge':
+        return 3, tuple(_ray_order_key(ray) for ray in record['rays'])
+    raise V.VolumeError('an edge constraint of unknown kind has no order')
+
+
+def _ray_order_key(ray):
+    return (_load_vec(ray['direction']), _load_vec(ray['angular_velocity_rad_s']),
+            _history(ray.get('prior_rotations', ())))
+
+
+def _layer_order_key(layer):
+    return (layer['convention'], *(W._decode(layer[name]) for name in
+            ('radius_m', 'top_depth_m', 'bottom_depth_m')))
+
+
+def _box_order_key(box):
+    return (*(_load_vec(box[name]) for name in ('lower_m', 'upper_m', 'origin_m')),
+            tuple(tuple(Q(q) if type(q) is int else W._decode(q) for q in row) for row in box['basis']))
+
+
+def _support_order_key(row):
+    constraints = {name: _constraint_key(value) for name, value in row['constraints'].items()}
+    components = tuple(sorted(tuple(sorted((constraints[name], sign) for name, sign in part['constraints']))
+                              for part in row['components']))
+    return (_box_order_key(row['voxel']), _layer_order_key(row['radial_layer']), row['kind'],
+            _load_vec(row['material_angular_velocity_rad_s']), W._decode(row['duration_s']), components)
+
+
+def _region_order_key(region, current, network, grid, points=None, ray_keys=None):
+    """A chart spans real voxels; source identities retrieve but never rank it."""
+    layer = _layer_order_key(region['radial_layer'])
+    chart = region.get('source_constraint_chart')
+    if chart is not None:
+        constraints = {name: _constraint_key(value) for name, value in chart['constraints'].items()}
+        signed = tuple(sorted((constraints[name], sign) for name, sign in chart['literals']))
+        lines, origin, basis = grid
+        footprints = []
+        for slot in region.get('parent_cells', {}):
+            at = tuple(map(int, slot.split(',')))
+            footprints.append((tuple(lines[j][at[j]] for j in range(3)),
+                               tuple(lines[j][at[j]+1] for j in range(3)), origin, basis))
+        return layer, 1, signed, tuple(sorted(footprints))
+    if region.get('kind') == 'birth':
+        boundary = next(row for row in current['boundary_paths']
+                        if row['boundary_id'] == region['birth_boundary_id'])
+        boundary_paths = tuple(sorted(ray_keys['vertex:'+name] for name in boundary['vertex_ids']))
+        fans = tuple(sorted(tuple(ray_keys[name] for name in fan['ray_ids'])
+                            for fan in current['ownership_fans'] if fan['plate_id'] == region['plate_id']))
+        return layer, 2, boundary_paths, region['birth_side'], fans
+    face = network.face(region['source_face_id'])
+    owner = (tuple(sorted(points[name] for name in face.vertex_ids)),
+             tuple(sorted(tuple(sorted(points[name] for name in hole)) for hole in face.holes)))
+    cone = tuple(sorted(_load_vec(point) for point in region['original_cone']))
+    return layer, 0, owner, cone
+
+
+def _owned_order_key(row, make_key, budget):
+    from atlas_tectonics._private.mesh_tables import OwnedRow, _Allocation
+    from .integration_regional_inventory import _width
+    owner = _Allocation(budget, 512+4*_width(row))
+    return OwnedRow(make_key(row), owner)
+
+
 def _initial_partition_sources(funding, sphere, *, budget):
     """Prove exact initial owner coverage, not merely closed stock/area sums."""
     from . import integration_support as U
@@ -2646,7 +2723,7 @@ def prepare_differential_partition(funding, sphere, geometry, collar, *,
 
 def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                         grid_lines, max_components, budget, parent_partition=None,
-                        compact_scope=None, _final_fields=None):
+                        compact_scope=None, _final_fields=None, _carried_prefixes=None):
     from atlas_tectonics._private.live_partition_patch import resolve_scope, SupportBatch, finish
     compact_scope = resolve_scope(budget, compact_scope, parent_partition)
     current = geometry.record()
@@ -2676,6 +2753,52 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
     grid_id = W._hash(dict(lines=[list(map(_qtext, axis)) for axis in lines],
         origin=_store_vec(origin), basis=[_store_vec(row) for row in basis]))
     shape = tuple(len(axis)-1 for axis in lines)
+    with budget.reserve(_restore_scratch(current)+1024*len(sphere.network.vertex_ids),
+                        category='differential-region-order'):
+        points = ({name: tuple(map(float, point)) for name, point in
+                   zip(sphere.network.vertex_ids, sphere.network.vertex_direction, strict=False)}
+                  if any('source_constraint_chart' not in row and row.get('kind') != 'birth' for row in regions)
+                  else None)
+        ray_keys = ({name: _ray_order_key(ray) for name, ray in current['rays'].items()}
+                    if any(row.get('kind') == 'birth' for row in regions) else None)
+        def order_key(row, current=current, points=points, ray_keys=ray_keys):
+            return _region_order_key(row, current, sphere.network, (lines, origin, basis), points, ray_keys)
+        if _carried_prefixes is not None:
+            # The pruning pass already ordered the complete carried keys on
+            # this grid. Only layer/type can place a birth ahead of a carried
+            # chart; within each class the existing physical order is retained.
+            births = [(_owned_order_key(row, order_key, budget), row)
+                      for row in regions if row.get('kind') == 'birth']
+            if births:
+                births.sort(key=lambda item: item[0].value)
+                births.reverse()
+                prefixes = iter(_carried_prefixes)
+                merged = []
+                for row in regions:
+                    if row.get('kind') == 'birth':
+                        continue
+                    if births:
+                        prefix = next(prefixes).value
+                        while births and births[-1][0].value[:2] < prefix:
+                            _key_owner, birth = births.pop()
+                            merged.append(birth)
+                            _key_owner = None
+                        prefix = None
+                    merged.append(row)
+                while births:
+                    _key_owner, birth = births.pop()
+                    merged.append(birth)
+                    _key_owner = None
+                regions = merged
+                del prefixes, merged
+            _carried_prefixes.clear()
+            del births
+        else:
+            ordered_regions = [(_owned_order_key(region, order_key, budget), region) for region in regions]
+            ordered_regions.sort(key=lambda item: item[0].value)
+            regions = [region for _, region in ordered_regions]
+            del ordered_regions
+        del order_key, points, ray_keys
     prepared_regions = []
     for region in regions:
         g = region['radial_layer']
@@ -2732,6 +2855,7 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
             fan_candidates = {plate: tuple(i for i, planes in enumerate(groups) if not any(
                 max(O._dot(normal, p)-offset for p in vertices)+error*absolute <= 0
                 for normal, error, offset in planes)) for plate, groups in owner_planes.items()}
+            pending_supports = []
             for region, layer, cone, normals in prepared_regions:
                 if radial_min >= layer.top_radius_m**2 or radial_max <= layer.bottom_radius_m**2:
                     continue
@@ -2775,16 +2899,22 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                         part['start_identity'] = ('same physical component at accepted endpoint' if parent_id is not None else
                             'exact zero: distinct original ownership fans at the shared start' if region.get('kind') != 'birth' else
                             'exact zero: owner minus the identical start-owner union')
+                component_count += len(row['components'])
+                if component_count > max_components:
+                    raise V.VolumeError('complete source partition exceeds explicit component count; nothing omitted')
+                pending_supports.append((_owned_order_key(row, _support_order_key, budget), row_owner))
+                support = row = part = row_owner = None
+            pending_supports.sort(key=lambda item: item[0].value, reverse=True)
+            while pending_supports:
+                _key_owner, row_owner = pending_supports.pop()
+                row = row_owner.value
                 support = (_issue(DifferentialSupport, row, budget) if compact_scope is None
                            else supports.issue(row))
                 if compact_scope is None:
                     native_components[support.support_id] = native_projection(row, budget)
                 supports.append(support)
                 by_voxel.setdefault(at, []).append(support)
-                component_count += len(row['components'])
-                if component_count > max_components:
-                    raise V.VolumeError('complete source partition exceeds explicit component count; nothing omitted')
-                row = part = row_owner = None
+                _key_owner = row_owner = row = None
         contacts = {}
         for at, flat in native_voxels.items():
             for axis, end in product(range(3), (0, 1)):
@@ -2904,23 +3034,32 @@ def _growth_chart_empty(region, old_time, grid, arena, budget):
 def _growth_drop_empty_charts(regions, step, old_time, grid_lines, collar, budget):
     """Growth successor (b): the carried regions minus charts proved empty (exact)."""
     if not regions:
-        return regions
+        return regions, []
     base = collar.cell_geometries()[0]
     origin, basis = base.origin_m, base.basis
     lines = tuple(tuple(map(W._decode, axis)) for axis in grid_lines)
     radius = W._decode(step['radius_m'])
     translation = tuple(sum(basis[k][j]*origin[k] for k in range(3)) for j in range(3))
     if any(line[0] > -radius-t or line[-1] < radius-t for line, t in zip(lines, translation)):
-        return regions   # coverage not proved here: drop nothing
+        return regions, None   # coverage not proved here: drop nothing/order later
     grid = [(at, V.CartesianCell(tuple(lines[j][at[j]] for j in range(3)),
                                  tuple(lines[j][at[j]+1] for j in range(3)), origin, basis, budget=budget))
             for at in product(*(range(len(a)-1) for a in lines))]
     kept = {}
+    prefixes = []
     with B._Arena(budget) as arena:
-        for key in sorted(regions):
-            if _growth_chart_empty(regions[key], old_time, grid, arena, budget) is None:
-                kept[key] = regions[key]
-    return kept
+        ordered = [(_owned_order_key(region, lambda row: _region_order_key(
+            row, step, None, (lines, origin, basis)), budget), key, region) for key, region in regions.items()]
+        ordered.sort(key=lambda item: item[0].value, reverse=True)
+        while ordered:
+            _key_owner, key, region = ordered.pop()
+            if _growth_chart_empty(region, old_time, grid, arena, budget) is None:
+                kept[key] = region
+                # Retain only the paid layer/class prefix; release the full key.
+                prefixes.append(_owned_order_key(region['radial_layer'],
+                    lambda _layer, prefix=_key_owner.value[:2]: prefix, budget))
+            _key_owner = region = None
+    return kept, prefixes
 
 
 def prepare_interval_partition(parent_partition, interval, funding, sphere, collar, *,
@@ -2963,7 +3102,7 @@ def prepare_interval_partition(parent_partition, interval, funding, sphere, coll
                                           retained_rows, compact_scope)
     # Growth successor (b), new intervals only: a carried chart proved empty
     # at the parent end instant is empty for this whole interval; never seed it.
-    regions = _growth_drop_empty_charts(regions, step, old_time, old['grid_lines'], collar, budget)
+    regions, carried_prefixes = _growth_drop_empty_charts(regions, step, old_time, old['grid_lines'], collar, budget)
     # Actual finite birth declarations, not a fake old patch/source key. The
     # owner registry gives these their own component slots and physical fields.
     finite_record = finite_stock_state.record()
@@ -3007,9 +3146,9 @@ def prepare_interval_partition(parent_partition, interval, funding, sphere, coll
             if 'registry_id' in finite_record else finite_stock_state._owner.definition()['registry_id'])
     del step, stocks, finite_record, old, old_owner
     result = _assemble_partition(funding, sphere, interval, collar, original,
-        [regions[k] for k in sorted(regions)], grid_lines=grid_lines,
+        list(regions.values()), grid_lines=grid_lines,
         max_components=max_components, budget=budget, parent_partition=parent_partition,
-        compact_scope=compact_scope, _final_fields=final_fields)
+        compact_scope=compact_scope, _final_fields=final_fields, _carried_prefixes=carried_prefixes)
     return result
 
 

@@ -2471,8 +2471,39 @@ def _split(value, areas, total, largest):
     return parts
 
 
-def _largest(areas):
-    return max(range(len(areas)), key=lambda k: (areas[k], -k))
+def _largest(areas, keys):
+    """Put the exact remainder on the least physical key among maximum areas."""
+    if len(areas) == 1:
+        return 0
+    maximum = max(areas)
+    tied = [k for k, area in enumerate(areas) if area == maximum]
+    return tied[0] if len(tied) == 1 else min(tied, key=keys)
+
+
+def _target_keys(network):
+    """Resolve only tied endpoints, sharing each description within this stage."""
+    points, boundaries, descriptions = None, None, {}
+
+    def key(target, trench=None):
+        nonlocal points, boundaries
+        at = target, trench
+        if at in descriptions:
+            return descriptions[at]
+        if points is None:
+            points = {name: tuple(map(float, point)) for name, point in
+                      zip(network.vertex_ids, network.vertex_direction, strict=False)}
+        if target is None:
+            if boundaries is None:
+                boundaries = {b.boundary_id: b.vertex_ids for b in network.boundaries}
+            result = 1, tuple(sorted(points[name] for name in boundaries[trench]))
+        else:
+            face = network.faces[target]
+            result = (0, tuple(sorted(points[name] for name in face.vertex_ids)),
+                      tuple(sorted(tuple(sorted(points[name] for name in hole)) for hole in face.holes)))
+        descriptions[at] = result
+        return result
+
+    return key
 
 
 def _birth_totals(material, supply, area):
@@ -2528,6 +2559,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
                                    precise=precise)
     exteriors, link = dict(material.exteriors), material.stock_link
     old_ids, new_index = network.face_ids, {name: i for i, name in enumerate(endpoint.face_ids)}
+    target_key = _target_keys(endpoint)
     start_s, end_s, start_step, end_step = interval
     donors, born = {}, {}
     for row, source in enumerate(rows.donor):
@@ -2592,11 +2624,21 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             if routes is not None:
                 routes.append((patch.face_id, name, patch.face_id, None, patch.stock[0]))
             if patch_routes is not None:
-                patch_routes.append((patch.patch_id, patch.patch_id, None, patch.stock[0]))
+                patch_routes.append((patch.patch_id, patch.patch_id, None, patch.stock[0], 0))
             continue
         areas = [Fraction(area) for _, _, area in members]
-        total, largest = sum(areas, Fraction(0)), _largest(areas)
+        total = sum(areas, Fraction(0))
+        largest = _largest(areas, lambda k: tuple(sorted(members[k][1])))
         parts = [_split(value, areas, total, largest) for value in patch.stock]
+        if patch_routes is not None:
+            def route_key(k):
+                row = members[k][0]
+                target = rows.receiver[row]
+                return (target_key(target) if target >= 0 else
+                        target_key(None, rows.parties[rows.party[row]][len('trench|'):]))
+            # Heat follows the emitted stock-area vector, not the geometric
+            # fragment vector. Retain only its winner, never endpoint keys.
+            route_largest = _largest(parts[0], route_key)
         if weighted_accuracy is not None:
             consumed = {}
             for k, (row, cells, _) in enumerate(members):
@@ -2638,7 +2680,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
                     child = _support._projectively_carried(child, precise[0][target][1], network.sphere.radius_m)
                 patches.append(child)
                 if patch_routes is not None:
-                    patch_routes.append((patch.patch_id, child.patch_id, None, moved[0]))
+                    patch_routes.append((patch.patch_id, child.patch_id, None, moved[0], route_largest))
                 if routes is not None:
                     routes.append((patch.face_id, name, target_id, None, moved[0]))
                 slot = exact.setdefault((target, name), [Fraction(0)]*width)
@@ -2650,7 +2692,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             if routes is not None:
                 routes.append((patch.face_id, name, None, boundary_id, moved[0]))
             if patch_routes is not None:
-                patch_routes.append((patch.patch_id, None, boundary_id, moved[0]))
+                patch_routes.append((patch.patch_id, None, boundary_id, moved[0], route_largest))
             consume(moved, boundary_id)
     # Births: one new cohort per ridge side and interval, shared by every face born on that side.
     records = []
@@ -2681,7 +2723,8 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
         for column, total in enumerate(totals, start=1):
             book(source_name, column, Fraction(total))
         areas = [value for _, _, value in born[name]]
-        parts = [_split(Fraction(total), areas, area, _largest(areas)) for total in totals]
+        largest = _largest(areas, lambda k: target_key(*born[name][k][:2]))
+        parts = [_split(Fraction(total), areas, area, largest) for total in totals]
         transient_records = []
         for k, (target, trench, _) in enumerate(born[name]):
             moved = [areas[k]]+[column[k] for column in parts]

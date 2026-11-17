@@ -817,8 +817,10 @@ def _declare_moving(sphere, records, *, enthalpy_reference_k, budget):
                     [float(u*Fraction(piece.area_m2)) for u in declared_areal_heat(record, reference, budget=budget)])
     initial = sum((Fraction(float(x)) for column in heat for x in column), Fraction(0))
     from . import integration_patch_heat as _patch_heat
-    patches = _patch_heat.seed(sphere, tuple((p.face_id, p.cohort_id) for p in sphere.material.pieces()), heat)
-    physical = _patch_heat.seed_fields(sphere, by_id, patches, reference, budget=budget)
+    winners = {}
+    patches = _patch_heat.seed(sphere, tuple((p.face_id, p.cohort_id) for p in sphere.material.pieces()), heat,
+                              winners=winners)
+    physical = _patch_heat.seed_fields(sphere, by_id, patches, reference, winners, budget=budget)
     return _issued(sphere, records, heat, initial, (), Fraction(0), Fraction(0), reference,
                    patch_heat=patches, physical_columns=physical, budget=budget)
 
@@ -1304,25 +1306,34 @@ def _transported(parent, sphere, step, advance, budget):
     born, new_records = _born(step, dict(advance.births), parent.enthalpy_reference_k, book, sinks, budget=budget)
     records.update(new_records)
     moved_ids = _moved_face_ids(sphere, step, budget)
-    moved = _patch_heat.routed(columns, step._patch_routes[0], book, sinks)
-    physical = _patch_heat.route_fields(dict(parent._physical_columns), columns, step._patch_routes[0],
+    groups = _patch_heat.route_groups(step._patch_routes[0])
+    allocated = {}
+    moved = _patch_heat.routed(columns, groups, book, sinks, allocated=allocated)
+    physical = _patch_heat.route_fields(dict(parent._physical_columns), allocated, groups,
                                          step._motion_material.support.patches)
+    del allocated
     for (target, cohort), values in born:
         patches = step._motion_material.support.patches_of_piece(moved_ids[target], cohort)
         areas = [p.stock[0] for p in patches]
-        divided = [_transfer._split(v, areas, sum(areas, Fraction(0)), _transfer._largest(areas)) for v in values]
+        total = sum(areas, Fraction(0))
+        largest = _transfer._largest(areas, lambda k: tuple(sorted(patches[k].cells)))
+        divided = [_transfer._split(v, areas, total, largest) for v in values]
         for j, patch in enumerate(patches):
             if patch.patch_id in moved:
                 raise TransportRefused('birth heat duplicates a retained position', UNRESOLVED, 'patch_heat')
             moved[patch.patch_id] = tuple(column[j] for column in divided)
         physical.update(_patch_heat.birth_fields(records[cohort], patches, values, parent.enthalpy_reference_k,
+                                                 total, largest, divided,
                                                  budget=budget))
     endpoint_ids = step.state.network.face_ids
     if step.map._mesh is not None:
         final_patches = {p.patch_id: p for p in step.state.material.support.patches}
         before_relabel = {source: final_patches[target] for source, target in step._patch_routes[2]}
-        physical = _patch_heat.route_fields(physical, moved, step._patch_routes[1], before_relabel)
-        moved = _patch_heat.routed(moved, step._patch_routes[1], book, sinks)
+        groups = _patch_heat.route_groups(step._patch_routes[1])
+        allocated = {}
+        moved = _patch_heat.routed(moved, groups, book, sinks, allocated=allocated)
+        physical = _patch_heat.route_fields(physical, allocated, groups, before_relabel)
+        del allocated
     result = {target: moved[source] for source, target in step._patch_routes[2]}
     physical = {target: physical[source] for source, target in step._patch_routes[2]}
     if set(moved) != {source for source, _ in step._patch_routes[2]}:
@@ -1434,12 +1445,15 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
                 # piece. It does not claim a spatially localised shear source.
                 patches = patches_of[piece]
                 areas = [p.stock[0] for p in patches]
-                parts = [_transfer._split(Fraction(float(q)), areas, sum(areas, Fraction(0)),
-                                          _transfer._largest(areas)) for q in energy]
-                bounds = [_patch_heat.split_bounds(Fraction(float(q)), areas) for q in energy]
+                total = sum(areas, Fraction(0))
+                largest = _transfer._largest(areas, lambda k: tuple(sorted(patches[k].cells)))
+                parts = [_transfer._split(Fraction(float(q)), areas, total,
+                                          largest) for q in energy]
+                bounds = [_patch_heat.split_bounds(shares, largest) for shares in parts]
+                deposition = tuple(Fraction(float(q))/total for q in energy)
                 for j, patch in enumerate(patches):
                     patch_mechanical[patch.patch_id] = tuple(column[j] for column in parts)
-                    physical_sources[patch.patch_id] = tuple(Fraction(float(q))/sum(areas, Fraction(0)) for q in energy)
+                    physical_sources[patch.patch_id] = deposition
                     source_bounds[patch.patch_id] = tuple(row[j] for row in bounds)
             if advance.conduction is None:
                 for key, column in patch_mechanical.items():
@@ -1526,11 +1540,13 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
             patches = patches_of[key]
             allocated = {p.patch_id: [Fraction(0)]*len(old) for p in patches}
             operation_bounds = {p.patch_id: [Fraction(0)]*len(old) for p in patches}
+            areas = [p.stock[0] for p in patches]
+            total = sum(areas, Fraction(0))
+            largest = _transfer._largest(areas, lambda k: tuple(sorted(patches[k].cells)))
             for layer, (a, b) in enumerate(zip(old, new)):
-                areas = [p.stock[0] for p in patches]
-                change = _transfer._split(Fraction(b)-Fraction(a), areas, sum(areas, Fraction(0)),
-                                           _transfer._largest(areas))
-                bounds = _patch_heat.split_bounds(Fraction(b)-Fraction(a), areas)
+                change = _transfer._split(Fraction(b)-Fraction(a), areas, total,
+                                           largest)
+                bounds = _patch_heat.split_bounds(change, largest)
                 for patch, amount, error in zip(patches, change, bounds):
                     values = list(patch_heat[patch.patch_id])
                     values[layer] += amount

@@ -720,6 +720,18 @@ source or destination is one of the saved history's
 finite stores, the amount is taken from or added to that store in the same save,
 and an empty store refuses the whole interval.
 
+**Choose a split's physical recipient.** Rounded shares retain their original
+rounding and the exact remainder goes to the maximum-area recipient selected by
+physical geometry, rather than its name. Only actual ties need physical keys.
+Heat and its forward error bound use the same selected recipient and booked
+shares, including material sent to a sink. In the retained earlier external
+qualification package, reversing the old selector changed 19 physical allocations,
+while all 648 original-order amount vectors remained unchanged. The later accepted
+source-only correction has no new numerical run. These are permutation observations,
+not a renamed-world or tied-I05-advance proof. The
+[specialist split description](../I03_SPHERICAL_NETWORK.md#r3-1-conservative-transfer-exact-intersection-first-order)
+keeps the unqualified cache, carried-chart and numerical-consumer routes explicit.
+
 **Junctions must stay closed.** Where three or more boundaries meet, each boundary's
 rule says where the meeting point should go. If they agree, it goes there. If one
 straight boundary runs through the point and a third ends on it, the point slides

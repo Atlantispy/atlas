@@ -779,7 +779,7 @@ def reconcile(patches, keys, stock, *, signed=False):
         pieces = by_key.pop(key, [])
         if not pieces:
             raise SupportError('an endpoint piece has no material footprint')
-        k = max(range(len(pieces)), key=lambda i: pieces[i].stock[0])
+        k = _tools()._largest([p.stock[0] for p in pieces], lambda j: tuple(sorted(pieces[j].cells)))
         delta = [Fraction(float(v))-sum((p.stock[j] for p in pieces), Fraction(0)) for j, v in enumerate(values)]
         adjusted = tuple(a+d for a, d in zip(pieces[k].stock, delta))
         if adjusted[0] <= 0 or any(v < 0 for v in adjusted[1:-1 if signed else None]):

@@ -58,11 +58,10 @@ def half_ulp(value):
     return Fraction(math.ulp(float(value)))/2
 
 
-def split_bounds(value, areas):
+def split_bounds(shares, largest):
     """The exact forward bound of T._split: one rounding except the remainder."""
-    total, largest = sum(areas, Fraction(0)), T._largest(areas)
-    bounds = [Fraction(0) if k == largest else half_ulp(float(value*area/total))
-              for k, area in enumerate(areas)]
+    bounds = [Fraction(0) if k == largest else half_ulp(share)
+              for k, share in enumerate(shares)]
     bounds[largest] = sum(bounds, Fraction(0))
     return bounds
 
@@ -155,7 +154,7 @@ def checked_fields(sphere, records, heat, values, reference, intervals, *, budge
                                           for c in values.values() for q in (*c[1], *c[2])), default=0))
 
 
-def seed_fields(sphere, records, heat, reference, *, budget=None):
+def seed_fields(sphere, records, heat, reference, winners, *, budget=None):
     """Seed only from an explicitly declared profile, never from a saved piece mean."""
     from .integration_material import declared_areal_heat
     out = {}
@@ -163,34 +162,32 @@ def seed_fields(sphere, records, heat, reference, *, budget=None):
         record_ = records[piece.cohort_id]
         patches = S.required(sphere.material).patches_of_piece(piece.face_id, piece.cohort_id)
         areas = [p.stock[0] for p in patches]
-        total = sum(areas, Fraction(0))
+        total, largest = winners[piece.face_id, piece.cohort_id]
         heights = tuple(s.thickness_m for s in record_.sublayers)
         energy = declared_areal_heat(record_, reference, budget=budget)
         supplied = [sum((heat[p.patch_id][k] for p in patches), Fraction(0)) for k in range(len(heights))]
         bounds = []
-        for q, u in zip(supplied, energy):
+        for layer, (q, u) in enumerate(zip(supplied, energy)):
             expected = Fraction(float(u*total))
             if q != expected:
                 raise S.SupportError('declared physical heat must reproduce the original rounded profile product')
-            bounds.append([half_ulp(float(q))*a/total+b for a, b in zip(areas, split_bounds(q, areas))])
+            bounds.append([half_ulp(float(q))*a/total+b for a, b in
+                           zip(areas, split_bounds([heat[p.patch_id][layer] for p in patches], largest))])
         for j, patch in enumerate(patches):
             out[patch.patch_id] = heights, energy, tuple(Fraction(S.upper(b[j])) for b in bounds)
     return out
 
 
-def route_fields(values, source_heat, routes, target_patches):
+def route_fields(values, allocated, groups, target_patches):
     """Rigid routing copies h/u; only known extensive allocation rounding accumulates."""
-    grouped = {}
     target = target_patches if isinstance(target_patches, dict) else {p.patch_id: p for p in target_patches}
-    for source, receiver, trench, area in routes:
-        grouped.setdefault(source, []).append((receiver, area))
-    if set(grouped) != set(values):
+    if set(groups) != set(values):
         raise S.SupportError('physical columns and material routes have different owners')
     # The only post-route area change is the already-booked piece projection:
     # one final binary64 rounding, assigned to the largest retained patch.
     by_piece = {}
-    for members in grouped.values():
-        for receiver, area in members:
+    for members, _, _ in groups.values():
+        for receiver, _, area in members:
             if receiver is not None:
                 patch = target[receiver]
                 by_piece.setdefault((patch.face_id, patch.cohort_id), []).append((receiver, area))
@@ -201,11 +198,10 @@ def route_fields(values, source_heat, routes, target_patches):
                 sum((abs(d) for _, d in changes), Fraction(0)) > half_ulp(float(total))):
             raise S.SupportError('physical column route has area change beyond final piece rounding')
     out = {}
-    for source, members in grouped.items():
+    for source, (members, total, largest) in groups.items():
         heights, energy, inherited = values[source]
-        areas = [a for _, a in members]; total = sum(areas, Fraction(0))
-        bounds = [split_bounds(q, areas) for q in source_heat[source]]
-        for j, (receiver, area) in enumerate(members):
+        bounds = [split_bounds(shares, largest) for shares in allocated[source]]
+        for j, (receiver, _, area) in enumerate(members):
             if receiver is None:
                 continue
             delta = abs(target[receiver].stock[0]-area)
@@ -215,13 +211,13 @@ def route_fields(values, source_heat, routes, target_patches):
     return out
 
 
-def birth_fields(record_, patches, amounts, reference, *, budget=None):
+def birth_fields(record_, patches, amounts, reference, total, largest, allocated, *, budget=None):
     from .integration_material import declared_areal_heat
     heights = tuple(s.thickness_m for s in record_.sublayers)
     energy = declared_areal_heat(record_, reference, budget=budget)
-    areas = [p.stock[0] for p in patches]; total = sum(areas, Fraction(0))
+    areas = [p.stock[0] for p in patches]
     bounds = []
-    for q, u in zip(amounts, energy):
+    for layer, (q, u) in enumerate(zip(amounts, energy)):
         delivered = Fraction(float(u))
         if delivered:
             original_area = q/delivered
@@ -232,7 +228,7 @@ def birth_fields(record_, patches, amounts, reference, *, budget=None):
         else:
             original_area = total
         error = abs(u)*abs(total-original_area)+abs(delivered-u)*original_area
-        bounds.append([error*a/total+b for a, b in zip(areas, split_bounds(q, areas))])
+        bounds.append([error*a/total+b for a, b in zip(areas, split_bounds(allocated[layer], largest))])
     return {p.patch_id: (heights, energy, tuple(Fraction(S.upper(b[j])) for b in bounds))
             for j, p in enumerate(patches)}
 
@@ -249,14 +245,17 @@ def add_energy(column, area, energy, *, areal=None, rounding_bound=None):
         Fraction(S.upper(a+b)) for a, b in zip(bound, allowed))
 
 
-def seed(sphere, pieces, heat):
+def seed(sphere, pieces, heat, *, winners=None):
     """An explicit homogeneous initial column over each declared piece only."""
     out = {}
     for key, values in zip(pieces, heat):
         patches = S.required(sphere.material).patches_of_piece(*key)
         areas = [p.stock[0] for p in patches]
         total = sum(areas, Fraction(0))
-        split = [T._split(Fraction(float(v)), areas, total, T._largest(areas)) for v in values]
+        largest = T._largest(areas, lambda k: tuple(sorted(patches[k].cells)))
+        if winners is not None:
+            winners[key] = total, largest
+        split = [T._split(Fraction(float(v)), areas, total, largest) for v in values]
         for j, patch in enumerate(patches):
             out[patch.patch_id] = tuple(column[j] for column in split)
     return out
@@ -300,18 +299,27 @@ def restore(rows):
     return result
 
 
-def routed(values, routes, book, sinks):
+def route_groups(routes):
+    """Use the stage's physical winner; share the emitted area total."""
+    grouped, winners = {}, {}
+    for source, target, trench, area, largest in routes:
+        grouped.setdefault(source, []).append((target, trench, area))
+        winners[source] = largest
+    return {source: (tuple(members), sum((area for _, _, area in members), Fraction(0)), winners[source])
+            for source, members in grouped.items()}
+
+
+def routed(values, groups, book, sinks, *, allocated=None):
     """Debit each patch once along the exact material route, retaining all child columns."""
     from .integration_material import _consumed
-    grouped, result = {}, {}
-    for source, target, trench, area in routes:
-        grouped.setdefault(source, []).append((target, trench, area))
-    if set(grouped) != set(values):
+    result = {}
+    if set(groups) != set(values):
         raise S.SupportError('patch heat and material routes have different source positions')
-    for source, members in grouped.items():
+    for source, (members, total, largest) in groups.items():
         areas = [area for _, _, area in members]
-        total = sum(areas, Fraction(0))
-        split = [T._split(value, areas, total, T._largest(areas)) for value in values[source]]
+        split = [T._split(value, areas, total, largest) for value in values[source]]
+        if allocated is not None:
+            allocated[source] = split
         for j, (target, trench, _) in enumerate(members):
             column = tuple(row[j] for row in split)
             if target is None:
