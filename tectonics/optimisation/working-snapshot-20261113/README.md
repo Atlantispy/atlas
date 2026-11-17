@@ -599,6 +599,23 @@ assertion kills. Full command-driver restart, new capture and actual joined
 qualification remain open. Historical cold-parity evidence remains separate.
 
 
+### Anchor spherical ring areas to captured geometry
+
+Each shell or hole selects the numerically lexicographically smallest original
+Cartesian row as its fan anchor. The scan preserves the captured sign bits,
+directed ring and fan arithmetic with constant extra storage. It fixes cyclic
+renaming in a fixed frame; it does not claim rotation/reflection invariance.
+Areas remain derived values outside geometry/atlas identity recipes, so old
+cached areas or fit/metric verdicts cannot qualify corrected generation.
+
+The independently accepted fixed-frame six-plate, seed-41, 96-patch controls
+rebuild all areas before assignment and fit, preserving the non-area primitives
+and directed rings. All 96 rebuilt areas and six owner metric records agree
+under the selected renaming comparisons. Existing cube and hole/filler methods
+also pass. Historical restore, arbitrary frames, performance, whole-process and
+scientific acceptance remain open. The separately reviewed forward spatial-index
+cap reduction is a following source change, with its own receiving commit.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

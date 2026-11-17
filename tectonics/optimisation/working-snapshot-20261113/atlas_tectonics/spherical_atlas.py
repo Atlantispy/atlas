@@ -137,9 +137,10 @@ def _angle(a, b):
 
 def _measure_ring(u):
     closed = np.concatenate((u, u[:1]))
-    # A canonical boundary vertex is the fan anchor. Changing the working chart
-    # cannot change this evaluation. Signed fans support concave simple polygons.
-    return _ring_area(closed, u[0])
+    # Choose the fan anchor from captured coordinates, independent of vertex IDs.
+    # Keep the original directed edge sequence for signed fans and concave rings.
+    anchor = min(u, key=tuple)
+    return _ring_area(closed, anchor)
 
 
 def _face_geometry(patch, points, lookup, limits, budget):

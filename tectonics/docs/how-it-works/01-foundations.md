@@ -67,6 +67,31 @@ Several patches can form one large or disconnected plate. A complete spherical
 atlas checks opposite edge pairing, junction order, connectivity, Euler's relation
 and an area sum of `4π` steradians. No area rescaling repairs a failed closure.
 
+In the nondefault working snapshot, the [atlas area producer](../../optimisation/working-snapshot-20261113/atlas_tectonics/spherical_atlas.py)
+chooses the numerically lexicographically smallest original Cartesian vertex
+as each spherical ring's fan anchor. Shells and holes choose separately. This
+keeps that captured anchor when names change the ring's cyclic start, without
+sorting or copying the vertices. The scan uses constant additional storage.
+Distinct physical rows are required; signed-zero equalities do not select a
+second distinct minimum. Original directed edges, signed fan arithmetic,
+shell-minus-holes, positive-area checks and `4π` closure remain unchanged. The
+claim is for renaming in a fixed frame, not rotating or reflecting that frame.
+
+Derived area bytes are not directly part of `geometry_id` or `atlas_id`. An
+unchanged identifier therefore cannot certify an old cached face area. A
+corrected run uses faces measured by the corrected producer or reconstructs
+them. Ordinary descriptor restore recomputes areas under the receiving source,
+but retaining a historical generated descriptor also retains its old ownership
+and fit declarations; this is not historical restore qualification.
+
+The selected six-plate, 96-patch case with fixed seed 41 preserves the physical
+rows and directed rings under cyclic renaming. All 96 rebuilt patch areas and
+the six actual plate-metric records agree bitwise; the old producer changed
+50 areas and four returned plate areas. Existing cube and filled-hole tests
+also pass. Independent review accepts this selected producer correction.
+The results do not establish cross-frame invariance, historical restart,
+performance, whole-process or geological acceptance.
+
 When neither operand fits the other's chart, the spherical overlay tries one
 joint chart. Its centre sums the individual rounded Cartesian vertex coordinates
 with `math.fsum`. Each polygon shell and hole omits exactly its repeated closing
@@ -153,6 +178,13 @@ supplied or seeded site. Convex-hull relationships construct shared junctions an
 edges; low plate counts have explicit geometric cases. Resolved sites and seed
 provenance are retained. This supplies candidate ownership, not forces that formed
 the plates. Later new-world layout adapters make additional size/shape choices.
+The nondefault [layout generator](../../optimisation/working-snapshot-20261113/atlas_tectonics/plate_layout.py)
+uses the rounded support areas during assignment and fit, before issuing the
+final atlas. Its metrics then read the issued patch areas. Regeneration must
+therefore start before the first area-consuming assignment; an old fit or metric
+verdict cannot stand in for the corrected generation. In the selected area
+control, the non-area primitives and membership declarations also match the
+old defect case, keeping its source attribution separate from the new area bits.
 
 Geological descriptions then attach ordered sediment, crust and mantle layers,
 material fractions, porosity, initial thermal profiles, faults and weak zones to
