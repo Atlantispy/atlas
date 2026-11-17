@@ -151,6 +151,18 @@ identity into its own, and reopening rebuilds the network through the same check
 that created it; a record or array edited in the file no longer matches and is
 refused.
 
+`rotate_frame` expresses the network in a new coordinate frame. It applies the
+same rotation matrix in a fixed order of products and sums to every vertex
+direction and to the vector part of each plate's quaternion. The scalar part
+goes with the rotated vector to the existing rotation constructor. The
+transform validates and captures the input shape, works in batches of at most
+65,536 rows and freezes the result under the existing allowance.
+
+Fresh coordinates may round differently from the earlier matrix path and give
+the newly rotated network a different identity. Stored networks retain exact
+recovery from their saved records. The existing physical tolerances and
+topology checks apply.
+
 [These checks](../../tests/test_i03_network.py) build small declared worlds of six
 or eight pole-to-pole sectors, confirm their coverage and boundaries, and
 deliberately try each kind of invalid declaration. They repeat the world about a

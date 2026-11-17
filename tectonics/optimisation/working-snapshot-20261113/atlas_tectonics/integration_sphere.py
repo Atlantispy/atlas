@@ -42,13 +42,13 @@ from types import MappingProxyType
 import numpy as np
 
 from . import integration_state as _state
-from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import TectonicsError, frozen, input_shape, read_array, scalar
 from .coordinates import SphericalFrame
 from .geometry import _check_cancel, _limits
 from .integration_ledger import EXACT_LIMIT, ROLES, TOKEN, LedgerError, _exact, _exact_text
 from .kinematics import Rotation, _restore_rotation
 from .materials import _json, _name, _sha
-from .resources import MemoryLimitError, select_budget
+from .resources import MemoryLimitError, elements, select_budget
 from .spherical_atlas import (SphericalAtlas, SphericalPatch, _AREA_TOLERANCE_SR, _capture_directions, _cycle,
                               build_spherical_atlas)
 from .spherical_geometry import SphericalChart, _ring_area
@@ -1260,11 +1260,33 @@ def rotate_frame(network, rotation, frame_id, *, limits=None, budget=None, cance
     if _name(frame_id, 'frame_id') == network.sphere.frame_id:
         raise SphereError('a rotated frame needs its own frame identity')
     sphere = SphericalFrame(network.sphere.radius_m, frame_id)
-    moved = rotation.apply(network.vertex_direction, budget=budget)
+    def turn(positions):
+        shape = input_shape(positions, 'positions_m')
+        if not shape or shape[-1] != 3 or not (count := elements(shape)):
+            raise TectonicsError('positions must be nonempty with final dimension 3')
+        required = 32 * count + 24 * min(count // 3, 65_536) + 8192
+        with select_budget(budget).reserve(required):
+            points = read_array(positions, 'positions_m')
+            if points.shape != shape:
+                raise TectonicsError('input shape changed during capture')
+            try:
+                with np.errstate(over='raise', invalid='raise'):
+                    flat = points.reshape(-1, 3)
+                    result = np.empty(points.shape, dtype=np.float64)
+                    output = result.reshape(-1, 3)
+                    for start in range(0, flat.shape[0], 65_536):
+                        output[start:start+65_536] = _placed(rotation, flat[start:start+65_536])
+                    del flat, output
+                del points
+                return frozen(result)
+            except FloatingPointError as exc:
+                raise TectonicsError('rotated coordinates exceed numerical range') from exc
+
+    moved = turn(network.vertex_direction)
     plates = []
     for plate in network.plates:
         w, *axis = plate.rotation.quaternion
-        turned = rotation.apply(np.asarray(axis, dtype=np.float64), budget=budget)
+        turned = turn(np.asarray(axis, dtype=np.float64))
         plates.append(Plate(plate.plate_id, Rotation((w, *(float(x) for x in turned))), plate.parent_plate_ids))
     return _network(sphere, dict(zip(network.vertex_ids, moved)), network.faces, tuple(plates), network.boundaries,
                     network.epoch_id, network.time_s, network.step, network.reference_time_s, network.lineage,
