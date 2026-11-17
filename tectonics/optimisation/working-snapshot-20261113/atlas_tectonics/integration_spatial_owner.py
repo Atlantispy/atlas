@@ -736,9 +736,17 @@ class PreparedSpatialOwner:
                 transport_graph, stocks = finite_proposal._transport_inputs()
             elif finite_exchanges is not None:
                 raise TectonicsError('unfunded finite exchange declaration')
-            with PreparedSpatialTransport(transport_graph, budget=self._budget) as operator:
-                result = operator.advance(stocks, state_id=state.state_id, source_stage_id=source.result_id,
-                    max_projection_errors=self._errors, nonnegative_fields=self._nonnegative, cancel=cancel)
+            from .integration_spatial_ale import _stock_physical_key
+            stock_rows = () if self._finite is None else r['finite_stock_state']['stocks']
+            with LIVE_SPATIAL.workspace(self._budget, 65536 + 8 * _width(stock_rows)) as key_workspace:
+                stock_keys = {'finite-stock:' + row['stock_id']: _stock_physical_key(row['lineage'])
+                              for row in stock_rows}
+                with PreparedSpatialTransport(transport_graph, budget=self._budget,
+                        stock_keys=stock_keys, physical_surfaces=getattr(graph, '_physical_surfaces', None)) as operator:
+                    result = operator.advance(stocks, state_id=state.state_id, source_stage_id=source.result_id,
+                        max_projection_errors=self._errors, nonnegative_fields=self._nonnegative, cancel=cancel)
+                del stock_keys
+            del key_workspace
             measure_audit = None
             if self._measure_policy is not None:
                 prior = {}

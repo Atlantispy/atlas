@@ -24,6 +24,7 @@ from atlas_tectonics._private import live_transport_result as LIVE_TRANSPORT
 
 import numpy as np
 from scipy import sparse
+from scipy.linalg.lapack import get_lapack_funcs
 from scipy.sparse.linalg import gmres
 
 from ._validation import TectonicsError
@@ -249,12 +250,13 @@ def _transport_plan_capacity(rows, faces, budget):
     over the graph. Floor/division products include the exact 2**1022 scale.
     """
     n, f = len(rows), len(faces)
-    with _workspace(budget, 65536 + 1024 * n, 'transport-accounting-scan'):
+    with _workspace(budget, 65536 + 1024 * (n + f), 'transport-accounting-scan'):
         indices = {row.get('cell_id'): i for i, row in enumerate(rows)}
         starts = [_hex_pair_bits(row['start_volume_m3']) for row in rows]
         ends = [_hex_pair_bits(row['end_volume_m3']) for row in rows]
         incoming = [[1, 1, 0] for _ in rows]
         outgoing = [[1, 1, 0] for _ in rows]
+        duplicate_counts = {(i, i): 1 for i in range(n)}
         retained = 65536 + 512 * (n + f)
         largest = 1
         face_n = face_d = 1
@@ -268,6 +270,10 @@ def _transport_plan_capacity(rows, faces, budget):
             retained += _rational_storage(bits)
             face_n, face_d = max(face_n, bits[0]), max(face_d, bits[1])
             largest = max(largest, sum(bits))
+            donor, receiver = indices.get(face.get('donor')), indices.get(face.get('receiver'))
+            if donor is not None and receiver is not None:
+                entry = receiver, donor
+                duplicate_counts[entry] = duplicate_counts.get(entry, 0) + 1
             for field, profiles in (('donor', outgoing), ('receiver', incoming)):
                 at = indices.get(face.get(field))
                 if at is not None:
@@ -291,7 +297,171 @@ def _transport_plan_capacity(rows, faces, budget):
         retained += csr
         transient = (65536 + 1024 * (n + f) + 4 * csr + sums +
                      64 * _integer_storage(2 * largest + 32))
+        # Every entry has its own K: all original coefficients on that pair,
+        # including parallel faces. Their integer accumulators coexist.
+        transient += sum(_integer_storage(2098 + (count - 1).bit_length())
+                         for count in duplicate_counts.values())
+        transient += 64 * _integer_storage(2098 + (max(duplicate_counts.values()) - 1).bit_length())
         return retained, transient
+
+
+def _dyadic_integer(value):
+    numerator, denominator = float(value).as_integer_ratio()
+    return numerator << (1074 - (denominator.bit_length() - 1))
+
+
+def _dyadic_float(total):
+    # Fraction's conversion rounds the exact signed sum once, including at
+    # subnormal and overflow boundaries; float(total) could overflow first.
+    try:
+        return float(Q(total, 1 << 1074))
+    except OverflowError:
+        return -math.inf if total < 0 else math.inf
+
+
+def _dyadic_sum(values):
+    """Sum finite individually rounded binary64 terms without visit order."""
+    total = 0
+    for value in values:
+        value = float(value)
+        if not math.isfinite(value):
+            # An invalid Krylov operation is a failed solve, as on the stock
+            # route. It must never become a usable finite candidate.
+            return math.nan
+        total += _dyadic_integer(value)
+    return _dyadic_float(total)
+
+
+def _reproducible_dot(first, second):
+    return _dyadic_sum(float(a) * float(b) for a, b in zip(first, second, strict=True))
+
+
+def _scaled_norm(values):
+    maximum = max((abs(float(v)) for v in values), default=0.)
+    if not maximum or not math.isfinite(maximum):
+        return maximum
+    exponent = math.frexp(maximum)[1]
+    squares = _dyadic_sum(math.ldexp(float(v), -exponent) ** 2 for v in values)
+    try:
+        return math.ldexp(math.sqrt(squares), exponent)
+    except OverflowError:
+        return math.inf
+
+
+def _reproducible_matvec(matrix, vector):
+    result = np.empty(len(vector), dtype=float)
+    for row in range(len(vector)):
+        result[row] = _dyadic_sum(float(matrix.data[k]) * float(vector[matrix.indices[k]])
+            for k in range(matrix.indptr[row], matrix.indptr[row + 1]))
+    return result
+
+
+def _equivariant_gmres(matrix, rhs, max_iterations, callback):
+    """Real unpreconditioned restarted recurrence for unresolved row order.
+
+    The stock recurrence's restart, adaptive inner tolerance, breakdown,
+    triangular pseudo-solve and legacy inner-iteration ceiling are retained.
+    Only reductions and the componentwise basis combination are prescribed.
+    """
+    n = len(rhs)
+    restart = min(40, n)
+    x = np.zeros(n, dtype=float)
+    bnrm = _scaled_norm(rhs)
+    if not bnrm:
+        return np.array(rhs, copy=True), 0
+    if not math.isfinite(bnrm):
+        return x, max_iterations
+    tolerance = 1e-13 * bnrm
+    epsilon = np.finfo(float).eps
+    factor = 1.
+    ptol = bnrm * min(factor, tolerance / bnrm)
+    lartg = get_lapack_funcs('lartg', dtype=x.dtype)
+    basis = np.empty((restart + 1, n), dtype=float)
+    h = np.zeros((restart, restart + 1), dtype=float)
+    rotations = np.zeros((restart, 2), dtype=float)
+    iterations = 0
+    residual = np.array(rhs, dtype=float, copy=True)
+    rnorm = bnrm
+    while iterations < max_iterations:
+        norm = rnorm
+        if norm < tolerance:
+            return x, 0
+        if not norm or not math.isfinite(norm):
+            return x, max_iterations
+        basis[0] = residual / norm
+        s = np.zeros(restart + 1, dtype=float)
+        s[0] = norm
+        breakdown = False
+        for col in range(restart):
+            w = _reproducible_matvec(matrix, basis[col])
+            h0 = _scaled_norm(w)
+            for k in range(col + 1):
+                coefficient = _reproducible_dot(basis[k], w)
+                h[col, k] = coefficient
+                w -= coefficient * basis[k]
+            h1 = _scaled_norm(w)
+            if not math.isfinite(h0) or not math.isfinite(h1):
+                return x, max_iterations
+            h[col, col + 1] = h1
+            basis[col + 1] = w
+            if h1 <= epsilon * h0:
+                h[col, col + 1] = 0.
+                breakdown = True
+            else:
+                basis[col + 1] /= h1
+            for k in range(col):
+                c, sn = rotations[k]
+                a, b = h[col, k], h[col, k + 1]
+                h[col, k], h[col, k + 1] = c * a + sn * b, -sn * a + c * b
+            c, sn, magnitude = lartg(h[col, col], h[col, col + 1])
+            rotations[col] = c, sn
+            h[col, col], h[col, col + 1] = magnitude, 0.
+            following = -sn * s[col]
+            s[col] *= c
+            s[col + 1] = following
+            presid = abs(float(following))
+            iterations += 1
+            callback(presid / bnrm)
+            if iterations == max_iterations or presid <= ptol or breakdown:
+                break
+        if h[col, col] == 0:
+            s[col] = 0.
+        y = s[:col + 1].copy()
+        for k in range(col, 0, -1):
+            if y[k] != 0:
+                y[k] /= h[k, k]
+                y[:k] -= y[k] * h[k, :k]
+        if y[0] != 0:
+            y[0] /= h[0, 0]
+        # Each scalar follows Krylov-index order; no row-position-dependent
+        # BLAS reduction is left in this final basis update.
+        for row in range(n):
+            increment = 0.
+            for k in range(col + 1):
+                increment += float(y[k]) * float(basis[k, row])
+            x[row] += increment
+        residual = rhs - _reproducible_matvec(matrix, x)
+        rnorm = _scaled_norm(residual)
+        if rnorm <= tolerance:
+            return x, 0
+        if iterations == max_iterations or breakdown or not math.isfinite(rnorm):
+            break
+        if presid <= ptol:
+            factor = max(epsilon, 0.25 * factor)
+        else:
+            factor = min(1., 1.5 * factor)
+        ptol = presid * min(factor, tolerance / rnorm)
+    return x, max_iterations
+
+
+def _equivariant_workspace(n):
+    restart = min(40, n)
+    # Dots/norms have K=n; a CSR row has at most n distinct terms. Original
+    # parallel-face reductions are sized separately during construction.
+    bits = 2098 + (max(1, n) - 1).bit_length()
+    arrays = ((restart + 1) * n + restart * (restart + 1) +
+              2 * restart + 4 * (restart + 1) + 16 * n)
+    return 65536 + 8 * arrays + 64 * _integer_storage(bits)
 
 
 class PreparedSpatialTransport:
@@ -316,18 +486,27 @@ class PreparedSpatialTransport:
     replaced by the single solve's, so those checks pass every field that
     the single solve passes.
     """
-    def __init__(self, geometry, *, budget, max_iterations=1000):
+    def __init__(self, geometry, *, budget, max_iterations=1000,
+                 stock_keys=None, physical_surfaces=None):
         self._closed, self._active, self._guard = False, False, None
         if type(budget) is not WorkBudget or not LIVE_SPATIAL.is_record(geometry):
             raise TectonicsError('explicit space-time graph and shared WorkBudget required')
         if type(max_iterations) is not int or max_iterations < 1:
             raise TectonicsError('positive bounded linear iteration count required')
         self._budget, self._max_iterations = budget, max_iterations
+        # exact_gmp imports this module's workspace during ALE initialisation.
+        from .integration_spatial_ale import _physical_cell_keys, _physical_region_width
         rows = geometry.get('cells'); faces = geometry.get('transfers')
         if not LIVE_SPATIAL.is_rows(rows) or not rows or not LIVE_SPATIAL.is_rows(faces):
             raise TectonicsError('complete cell and directed transfer tables required')
         encoded_bytes, encoding_scratch = LIVE_SPATIAL.graph_encoding(geometry, budget, _json_encoding_capacity)
         plan_bytes, plan_scratch = _transport_plan_capacity(rows, faces, budget)
+        # Physical declarations and ordering tables are call-local; they never
+        # enter the persistent graph or its existing encoded identity.
+        ordering_bytes = 65536 + 1024 * (16 * len(rows) + 8 * len(faces))
+        ordering_bytes += 8 * _width((stock_keys, physical_surfaces)) + 8 * _physical_region_width(geometry)
+        plan_bytes += 256 * len(rows)
+        plan_scratch += ordering_bytes
         self._guard = ExitStack()
         try:
             self._guard.enter_context(budget.reserve(encoded_bytes+plan_bytes,
@@ -375,11 +554,29 @@ class PreparedSpatialTransport:
                 if len(anchored) != nc:
                     raise TectonicsError('unanchored transient flow component has no unique endpoint solution')
                 diagonal = tuple(b+f for b, f in zip(end, out))
+                surface_cache = dict(physical_surfaces or {})
+                physical, _ = _physical_cell_keys(geometry, stock_keys=stock_keys,
+                    physical_surfaces=surface_cache)
+                physical_values = [physical[row['cell_id']] for row in rows]
+                self._equivariant = (any(v is None for v in physical_values) or
+                                     len(set(physical_values)) != nc)
+                order = (tuple(range(nc)) if self._equivariant else
+                         tuple(sorted(range(nc), key=physical_values.__getitem__)))
+                inverse = [None] * nc
+                for ordered, original in enumerate(order):
+                    inverse[original] = ordered
+                self._order, self._inverse = order, tuple(inverse)
                 # Solve for w=D*c. Column scaling avoids division by the potentially
                 # vanishing endpoint volume and needs no sparse direct factor.
-                matrix_rows = list(range(nc)); matrix_cols = list(range(nc)); data = [1.]*nc
+                # Round every original per-face coefficient before combining
+                # duplicates. COO->CSR is never allowed to choose their sum.
+                entries = {(i, i): _dyadic_integer(1.) for i in range(nc)}
                 for i, j, volume in transfers:
-                    matrix_rows.append(j); matrix_cols.append(i); data.append(-_project(volume/diagonal[i]))
+                    pair = inverse[j], inverse[i]
+                    entries[pair] = entries.get(pair, 0) + _dyadic_integer(-_project(volume/diagonal[i]))
+                matrix_rows, matrix_cols, data = [], [], []
+                for (j, i), value in entries.items():
+                    matrix_rows.append(j); matrix_cols.append(i); data.append(_dyadic_float(value))
                 self._matrix = sparse.coo_matrix((data, (matrix_rows, matrix_cols)), shape=(nc, nc)).tocsr()
                 self._matrix.sum_duplicates()
                 self._keys, self._start, self._end = tuple(keys), tuple(start), tuple(end)
@@ -394,7 +591,8 @@ class PreparedSpatialTransport:
                 self._verify()
                 # Drop scratch containers before their construction lease.
                 del keys, start, end, out, incoming, reverse, transfers, face_ids
-                del anchored, pending, matrix_rows, matrix_cols, data
+                del anchored, pending, matrix_rows, matrix_cols, data, entries
+                del physical, physical_values, order, inverse, surface_cache
         except BaseException as error:
             # Locals still own plan arrays/bytes through the escaping frame.
             # Empty self's stack before close detaches its ordinary finalizer.
@@ -406,15 +604,17 @@ class PreparedSpatialTransport:
             raise TectonicsError('closed or changed spatial transport operator')
 
     @contextmanager
-    def _operation(self, cancel):
+    def _operation(self, cancel, allowance):
         self._verify(); _cancel(cancel)
         if self._active:
             raise TectonicsError('spatial transport operator already active')
         self._active = True
         try:
-            with _native_lease():
-                yield
-            self._verify(); _cancel(cancel)
+            # Final verifier/cancellation can retain the advance frame too.
+            with _workspace(self._budget, allowance, 'spatial-transport-step') as leases:
+                with _native_lease():
+                    yield leases
+                self._verify(); _cancel(cancel)
         finally:
             self._active = False
 
@@ -452,8 +652,9 @@ class PreparedSpatialTransport:
         # Refinement holds exact residual arrays as wide as the plan's shares
         # and floors, with a few weights for every cell and transfer.
         allowance = 131072+24*size+512*(nc+nf)*(len(stocks)+2)+8*nc*(min(40, nc)+8)+4*self._wide
-        with self._operation(cancel), ExitStack() as leases:
-            leases.enter_context(self._budget.reserve(allowance, category='spatial-transport-step'))
+        if self._equivariant:
+            allowance += _equivariant_workspace(nc)
+        with self._operation(cancel, allowance) as leases:
             exact_old, exact_new, exact_faces, exact_residual, binary_residual, projected = {}, {}, {}, {}, {}, {}
             field_errors, iterations = {}, [0]
             for name in sorted(stocks):
@@ -488,12 +689,19 @@ class PreparedSpatialTransport:
                         def callback(_):
                             iterations[0] += 1; _cancel(cancel)
                         def solve(values):
-                            answer, info = gmres(self._matrix, np.asarray(values), rtol=1e-13, atol=0.,
-                                restart=min(40, nc), maxiter=self._max_iterations,
-                                callback=callback, callback_type='legacy')
+                            ordered = np.asarray(values)[list(self._order)]
+                            if self._equivariant:
+                                answer, info = _equivariant_gmres(self._matrix, ordered,
+                                    self._max_iterations, callback)
+                            else:
+                                answer, info = gmres(self._matrix, ordered, rtol=1e-13, atol=0.,
+                                    restart=min(40, nc), maxiter=self._max_iterations,
+                                    callback=callback, callback_type='legacy')
                             if info or not np.isfinite(answer).all():
                                 return None
-                            return [Q(float(w)) for w in answer]
+                            # Restore before exact per-face refinement, fallback,
+                            # positivity and every original-position output.
+                            return [Q(float(answer[self._inverse[i]])) for i in range(nc)]
                         first = weights = solve([_project(v) for v in rhs])
                         if first is None:
                             raise TectonicsError('spatial transport linear solve did not converge')
@@ -639,7 +847,8 @@ class PreparedSpatialTransport:
             self._closed = True
             self._matrix = None
             # Closed plans retain identity/statistics, not uncharged bulk data.
-            for name in ('_encoded', '_keys', '_start', '_end', '_transfers', '_diagonal', '_floor'):
+            for name in ('_encoded', '_keys', '_start', '_end', '_transfers', '_diagonal', '_floor',
+                         '_order', '_inverse'):
                 setattr(self, name, None)
             if self._guard is not None:
                 self._guard.__exit__(None, None, None); self._guard = None

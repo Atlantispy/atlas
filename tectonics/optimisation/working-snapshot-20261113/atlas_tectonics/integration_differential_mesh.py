@@ -783,7 +783,6 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
             record['thermal_subdivisions'] = thermal_subdivisions
         if shared is not None:
             record['thermal_shared_lines'] = [list(map(E._enc, axis)) for axis in shared]
-            record['thermal_witness_refinements'] = refinements
             record['max_thermal_witness_refinements'] = max_witness_refinements
         if aggregate:
             record['thermal_aggregation'] = 'exact same-physical-cell volume/moments and internal-facet cancellation'
@@ -1084,7 +1083,6 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
             record['thermal_subdivisions'] = thermal_subdivisions
         if shared is not None:
             record['thermal_shared_lines'] = [list(map(E._enc, axis)) for axis in shared]
-            record['thermal_witness_refinements'] = refinements
             record['max_thermal_witness_refinements'] = max_witness_refinements
         if aggregate:
             record['thermal_aggregation'] = 'exact same-physical-cell volume/moments and internal-facet cancellation'

@@ -11,6 +11,7 @@ into face uncertainty. Infeasible supplied native fluxes are refused.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from collections import deque
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction as Q
 from itertools import product
@@ -42,8 +43,19 @@ def _encoded(record):
     return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
-def _issue(cls, record, budget):
-    return LIVE_SPATIAL.issue(cls, record, budget, _legacy_issue)
+def _issue(cls, record, budget, *, physical_surfaces=None):
+    result = LIVE_SPATIAL.issue(cls, record, budget, _legacy_issue)
+    if physical_surfaces:
+        from .integration_regional_inventory import _width
+        lease = budget.reserve(4096 + 8 * _width(physical_surfaces), category='spatial-physical-surfaces')
+        lease.__enter__()
+        try:
+            object.__setattr__(result, '_physical_surfaces', dict(physical_surfaces))
+            weakref.finalize(result, lease.__exit__, None, None, None)
+        except BaseException:
+            lease.__exit__(None, None, None)
+            raise
+    return result
 
 
 def _legacy_issue(cls, record, budget):
@@ -65,6 +77,7 @@ def _legacy_issue(cls, record, budget):
 class SpatialALEBounds:
     _json: object = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _physical_surfaces: object = field(default=None, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('spatial bounds are issued by enclose_spatial_ale()')
@@ -81,6 +94,7 @@ class SpatialALEBounds:
 class SpatialALEGraph:
     _json: object = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _physical_surfaces: object = field(default=None, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('closed spatial graphs are issued by close_spatial_ale()')
@@ -271,7 +285,509 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
             rule='explicit FV integrals; old plus new normal correction charged without cancellation, no divergence-tolerance slack')
 
 
-def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False):
+def _physical_value(value):
+    """Typed physical value, with no recursive admission of dictionary names."""
+    if type(value) in (int, Q):
+        return (0, Q(value))
+    if type(value) is float and math.isfinite(value):
+        return (1, value.hex())
+    if type(value) in (list, tuple):
+        if len(value) == 2 and all(type(v) is str and v.lstrip('-').startswith('0x') for v in value):
+            try:
+                return (0, W._decode(value))
+            except (ValueError, ZeroDivisionError):
+                return None
+        converted = tuple(_physical_value(v) for v in value)
+        if all(v is not None for v in converted):
+            return (2, converted)
+    return None
+
+
+def _stock_physical_key(lineage, *, arena=None):
+    """Selected immutable lineage quantities in geometry/exact/binary tiers.
+
+    Field paths are enumerated here. A free label, a dynamic dictionary key,
+    a stock's current quantities or a whole nested lineage never ranks a row.
+    """
+    if not hasattr(lineage, 'get'):
+        return None
+    geometry, exact, binary = [], [], []
+
+    def add(path, value, *, geometric=False):
+        typed = _physical_value(value)
+        if typed is None:
+            return
+        def floating(v):
+            return type(v) is float or type(v) in (list, tuple) and any(floating(q) for q in v)
+        target = geometry if geometric else binary if floating(value) else exact
+        target.append((path, typed))
+
+    kind = lineage.get('kind')
+    if kind == 'finite-basal-reservoir':
+        cell = lineage.get('physical_cell', {})
+        reservoir = lineage.get('reservoir', {})
+        if not hasattr(cell, 'get') or not hasattr(reservoir, 'get'):
+            return None
+        for name in ('basis', 'lower_m', 'origin_m', 'upper_m'):
+            add('physical_cell.' + name, cell.get(name), geometric=True)
+        for name in ('face_index', 'sublayer'):
+            add('reservoir.' + name, reservoir.get(name), geometric=True)
+        # Side is a fixed physical coordinate choice, never a destination name.
+        side = reservoir.get('side')
+        if side in ('x0', 'x1', 'y0', 'y1', 'z0', 'z1'):
+            add('reservoir.side', ('x0', 'x1', 'y0', 'y1', 'z0', 'z1').index(side), geometric=True)
+        add('reservoir.depth_m', reservoir.get('depth_m'))
+    elif kind == 'declared-finite-trench-export':
+        add('destination_fraction', lineage.get('destination_fraction'))
+    elif kind == 'declared-finite-shell-birth':
+        supply = lineage.get('supply', {})
+        column = lineage.get('birth_column', {})
+        if not hasattr(supply, 'get') or not hasattr(column, 'get') or type(lineage.get('sublayer')) is not int:
+            return None
+        add('sublayer', lineage['sublayer'], geometric=True)
+        if supply.get('side') in ('left', 'right'):
+            add('supply.side', int(supply['side'] == 'right'), geometric=True)
+        for name in ('reference_radius_m', 'finite_area_m2', 'enthalpy_reference_k',
+                     'physical_temperature_k', 'admission_volume_projection_m3'):
+            add(name, lineage.get(name))
+        declared = lineage.get('declared', {})
+        if not hasattr(declared, 'get'):
+            return None
+        for name in ('absolute_heat_j', 'mass_kg', 'relative_heat_j', 'volume_m3'):
+            add('declared.' + name, declared.get(name))
+        projection = lineage.get('admission_projection', {})
+        if not hasattr(projection, 'get') or not hasattr(projection, 'items'):
+            return None
+        add('admission_projection.enthalpy_j', projection.get('enthalpy_j'))
+        # Component field names are registry labels. Only the multiset of the
+        # explicitly named admission mass projections is a physical operand.
+        mass_projection = [_physical_value(v) for k, v in projection.items()
+                           if type(k) is str and k.startswith('component_mass_kg:')]
+        if mass_projection and all(v is not None for v in mass_projection):
+            mass_projection = _physical_sorted(mass_projection, arena=arena)
+            exact.append(('admission_projection.component_mass_kg', tuple(mass_projection)))
+        for name in ('mass_per_area_kg_m2', 'thickness_m'):
+            pairs = supply.get(name, ())
+            if type(pairs) not in (list, tuple) or any(type(p) not in (list, tuple) or len(p) != 2 for p in pairs):
+                return None
+            quantities = [_physical_value(pair[1]) for pair in pairs]
+            if quantities and all(v is not None for v in quantities):
+                quantities = _physical_sorted(quantities, arena=arena)
+                binary.append(('supply.' + name, tuple(quantities)))
+        add('supply.enthalpy_per_area_j_m2', supply.get('enthalpy_per_area_j_m2'))
+        for name in ('base_temperature_k', 'radial_depths_m', 'reference_radius_m', 'surface_temperature_k'):
+            add('birth_column.' + name, column.get(name))
+        fields = ('alpha_per_k', 'bottom_temperature_k', 'conductivity_w_m_k',
+                  'heat_capacity_j_kg_k', 'pore_pressure_pa', 'radiogenic_w_m3',
+                  'reference_density_kg_m3', 'thickness_m', 'top_temperature_k')
+        layers = column.get('sublayers', ())
+        if type(layers) not in (list, tuple) or any(not hasattr(layer, 'get') for layer in layers):
+            return None
+        for at, layer in enumerate(layers):
+            for name in fields:
+                add('birth_column.sublayers.%d.%s' % (at, name), layer.get(name))
+    else:
+        return None
+    if not geometry and not exact and not binary:
+        return None
+    return (3, tuple(_physical_sorted(geometry, arena=arena)),
+            tuple(_physical_sorted(exact, arena=arena)), tuple(_physical_sorted(binary, arena=arena)))
+
+
+def _terminal_lineage_complete(lineage, stock_kind):
+    """Match the actual issuer's role and complete typed physical conditions.
+
+    Unknown/custom declarations keep the original selector. Labels below bind
+    constructor fields to each other; none becomes an ordering operand.
+    """
+    if not hasattr(lineage, 'get'):
+        return False
+    kind = lineage.get('kind')
+    if kind == 'finite-basal-reservoir':
+        if stock_kind != 'reservoir' or lineage.get('compartment_kind', 'source') != 'reservoir':
+            return False
+        cell, reservoir = lineage.get('physical_cell'), lineage.get('reservoir')
+        if not hasattr(cell, 'get') or not hasattr(reservoir, 'get'):
+            return False
+        vectors = [cell.get(name) for name in ('lower_m', 'upper_m', 'origin_m')]
+        basis = cell.get('basis')
+        def exact_vector(value):
+            if type(value) not in (list, tuple) or len(value) != 3:
+                return False
+            return all((typed := _physical_value(v)) is not None and typed[0] == 0 for v in value)
+        if (not all(exact_vector(v) for v in vectors) or
+                type(basis) not in (list, tuple) or len(basis) != 3 or
+                not all(exact_vector(v) for v in basis)):
+            return False
+        face_index = reservoir.get('face_index')
+        sublayer, source_key = reservoir.get('sublayer'), lineage.get('source_key')
+        patch = reservoir.get('patch_id')
+        depth = _physical_value(reservoir.get('depth_m'))
+        return (reservoir.get('side') in ('x0', 'x1', 'y0', 'y1', 'z0', 'z1') and
+                type(face_index) in (list, tuple) and len(face_index) == 2 and
+                all(type(v) is int and v >= 0 for v in face_index) and
+                type(sublayer) is int and sublayer >= 0 and type(patch) is str and bool(patch) and
+                type(source_key) in (list, tuple) and len(source_key) == 2 and
+                source_key[0] == patch and type(source_key[1]) is int and source_key[1] == sublayer and
+                depth is not None and depth[0] == 0 and depth[1] > 0)
+    if kind == 'declared-finite-trench-export':
+        if stock_kind != 'sink':
+            return False
+        context, sink = lineage.get('source_context'), lineage.get('sink')
+        if not hasattr(context, 'get') or not hasattr(sink, 'get'):
+            return False
+        radius = context.get('reference_radius_m')
+        boundary, destination = context.get('boundary_id'), lineage.get('destination')
+        if (type(radius) not in (int, Q, float) or type(radius) is float and not math.isfinite(radius) or
+                radius <= 0 or context.get('boundary_kind') != 'trench' or
+                type(boundary) is not str or not boundary.strip() or len(boundary) > 256 or
+                sink.get('boundary_id') != boundary or
+                type(destination) is not str or not destination.strip() or len(destination) > 256):
+            return False
+        destinations = sink.get('destinations')
+        if type(destinations) not in (list, tuple):
+            return False
+        matches = [row for row in destinations if type(row) in (list, tuple) and len(row) == 3 and type(row[2]) is bool and
+                   row[0] == destination and row[2] == lineage.get('declared_stock_node')]
+        fraction = _physical_value(lineage.get('destination_fraction'))
+        declared = None if len(matches) != 1 else _physical_value(matches[0][1])
+        if declared is not None and declared[0] == 1:
+            declared = (0, Q(float.fromhex(declared[1])))
+        return (len(matches) == 1 and type(lineage.get('declared_stock_node')) is bool and
+                len(destinations) == 1 and fraction == (0, Q(1)) and
+                context.get('subducting_side') in ('left', 'right') and declared == fraction)
+    return False
+
+
+def _terminal_condition_key(lineage, stock_kind):
+    if not _terminal_lineage_complete(lineage, stock_kind):
+        return None
+    if lineage['kind'] == 'finite-basal-reservoir':
+        return (0,)
+    if lineage['kind'] == 'declared-finite-trench-export':
+        context = lineage['source_context']
+        return (1, _physical_value(context['reference_radius_m']),
+                int(context['subducting_side'] == 'right'), lineage['declared_stock_node'])
+    # The current shell-birth constructor creates sources, not incoming-only
+    # reservoirs. A custom public reinterpretation stays on its original path.
+    return None
+
+
+@contextmanager
+def _physical_member(record, name):
+    """Borrow exactly one metadata member through its actual native route."""
+    from ._private.record_views import RecordRef
+    reference = LIVE_SPATIAL.reference(record)
+    if isinstance(reference, RecordRef):
+        try:
+            child = reference.field(name)
+        except KeyError:
+            yield None
+        else:
+            with child:
+                yield child
+    else:
+        yield record.get(name)
+
+
+def _physical_region_width(record):
+    from ._private.record_views import RecordRef
+    from .integration_regional_inventory import _width
+    with _physical_member(record, 'physical_regions') as regions:
+        return regions._logical_length() if isinstance(regions, RecordRef) else _width(regions)
+
+
+def _physical_region_keys(record, arena):
+    from ._private.record_views import RecordRef
+    from ._private.spatial_validation_patch import SMALL_BYTES
+    result = {}
+    def add(row):
+        if not hasattr(row, 'get'):
+            return
+        source, band, chart = row.get('source_key'), row.get('radial_band'), row.get('chart')
+        if (type(source) not in (list, tuple) or len(source) != 2 or type(source[0]) is not str or
+                type(source[1]) is not int or type(band) is not int or type(chart) is not int):
+            return
+        directions = []
+        try:
+            for point in row['original_cone']:
+                p = tuple(map(W._decode, point))
+                scale = max(map(abs, p))
+                if len(p) != 3 or not scale:
+                    return
+                directions.append(tuple(q / scale for q in p))
+            layer = row['radial_layer']
+            radial = tuple(W._decode(layer[k]) for k in ('radius_m', 'top_depth_m', 'bottom_depth_m'))
+        except (KeyError, ValueError, TypeError, ZeroDivisionError):
+            return
+        result[(tuple(source), band, chart)] = (2, tuple(_physical_sorted(directions, arena=arena)), radial)
+    with _physical_member(record, 'physical_regions') as regions:
+        if isinstance(regions, RecordRef):
+            for index in range(regions.size):
+                with regions.at(index) as member, member.export(
+                        max_logical_bytes=SMALL_BYTES, max_owned_bytes=SMALL_BYTES) as owned:
+                    add(owned.value)
+        elif type(regions) in (list, tuple):
+            for row in regions:
+                add(row)
+    return result
+
+
+def _surface_key(record, face, physical_surfaces=None):
+    if physical_surfaces is not None and face['face_id'] in physical_surfaces:
+        return physical_surfaces[face['face_id']]
+    value = _read_surface_key(record, face)
+    if physical_surfaces is not None:
+        physical_surfaces[face['face_id']] = value
+    return value
+
+
+def _read_surface_key(record, face):
+    certificate = face.get('physical_certificate_id')
+    if type(certificate) is not str:
+        return None
+    from ._private.record_views import RecordRef
+    from ._private.spatial_validation_patch import SMALL_BYTES
+    names = ('origin_m', 'tangent_u', 'tangent_v', 'coordinate_bounds_m')
+
+    def native_surface(table):
+        # Only the selected receipt/face fields are decoded. A graph adapter's
+        # generic get() would export the complete receipt table instead.
+        try:
+            with table.field(certificate) as receipt, receipt.field('face') as surface:
+                values = []
+                for name in names:
+                    with surface.field(name) as member, member.export(
+                            max_logical_bytes=SMALL_BYTES, max_owned_bytes=SMALL_BYTES) as owned:
+                        values.append(_physical_value(owned.value))
+                return (0, tuple(values)) if all(v is not None for v in values) else None
+        except KeyError:
+            return None
+
+    reference = LIVE_SPATIAL.reference(record)
+    if isinstance(reference, RecordRef):
+        try:
+            with reference.field('physical_measure_receipts') as table:
+                return native_surface(table)
+        except KeyError:
+            return None
+    table = record.get('physical_measure_receipts', {})
+    if isinstance(table, RecordRef):
+        return native_surface(table)
+    if not hasattr(table, 'get'):
+        return None
+    receipt = table.get(certificate)
+    if receipt is not None and hasattr(receipt, 'get'):
+        surface = receipt.get('face')
+        if hasattr(surface, 'get'):
+            values = tuple(_physical_value(surface.get(k)) for k in names)
+            if all(v is not None for v in values):
+                return (0, values)
+    return None
+
+
+def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, strict_ports=False, arena=None):
+    """Call-local physical keys; None means no established unique order.
+
+    IDs retrieve geometry or authenticate the finite port constructor. They
+    never enter the ordering key. Restored data can legitimately lack a
+    moving segment; absence supplies neither symmetry nor a new refusal.
+    """
+    from ._private.record_views import RecordRef
+    from ._private.spatial_validation_patch import SMALL_BYTES
+    rows = record['cells']
+    regions = _physical_region_keys(record, arena)
+    with _physical_member(record, 'physical_geometry_family') as family:
+        if isinstance(family, RecordRef):
+            with family.scalar(max_owned_bytes=SMALL_BYTES) as owned:
+                differential = owned.value == 'differential-plate-component-partition-v1'
+        else:
+            differential = family == 'differential-plate-component-partition-v1'
+    physical, ports, exterior_classes, exterior_details = {}, {}, {}, {}
+    for row in rows:
+        key, kind = row['cell_id'], row.get('kind')
+        value = None
+        if kind == 'collar' and type(row.get('index')) is int:
+            value = (0, row['index'])
+        elif kind == 'exterior':
+            source, voxel = row.get('source_key'), row.get('voxel_index')
+            band, chart = row.get('radial_band'), row.get('chart')
+            if (type(source) in (list, tuple) and len(source) == 2 and type(source[1]) is int and
+                    type(voxel) in (list, tuple) and len(voxel) == 3 and
+                    all(type(v) is int for v in voxel) and type(band) is int):
+                base_key = (1, source[1], tuple(voxel), band)
+                exterior_classes.setdefault(base_key, []).append(key)
+                detail = None
+                region = (regions.get((tuple(source), band, chart))
+                          if type(source[0]) is str and type(chart) in (int, str) else None)
+                if region is not None:
+                    detail = region
+                elif differential and type(row.get('shape_key')) is str:
+                    optional_chart = (0, chart) if type(chart) is int else (1,)
+                    detail = (1, optional_chart, row['shape_key'])
+                elif differential and type(chart) is int:
+                    detail = (1, (0, chart), '')
+                # A sister chart is a retrieval token, never a physical order.
+                exterior_details[key] = detail
+                value = base_key
+        elif kind in ('inventory', 'finite-inventory'):
+            value = ((stock_keys or {}).get(key) if stock_keys is not None else
+                     _stock_physical_key(row.get('stock_lineage'), arena=arena))
+        physical[key] = value
+    for base_key, members in exterior_classes.items():
+        details = [exterior_details[key] for key in members]
+        if all(d is not None for d in details) and len({d[0] for d in details}) == 1:
+            for key, detail in zip(members, details, strict=True):
+                physical[key] = (*base_key, detail)
+    for row in rows:
+        if row.get('kind') != 'algebraic-port':
+            continue
+        parent = row.get('collar_cell_id')
+        collar = physical.get(parent)
+        if arena is not None and type(parent) is str and collar is not None and collar[0] == 0:
+            arena.work(12 * (128 + len(parent)))
+        matches = [] if type(parent) is not str or collar is None or collar[0] != 0 else [
+            (axis, end, inward) for axis in range(3) for end in (0, 1) for inward in (False, True)
+            if E._hash(dict(collar=parent, axis=axis, end=end, inward=inward)) == row['cell_id']]
+        if len(matches) != 1:
+            if type(parent) is str and collar is not None and collar[0] == 0:
+                ports[row['cell_id']] = None
+            if strict_ports:
+                raise V.VolumeError('physical port construction preimage is ambiguous or missing')
+            continue
+        ports[row['cell_id']] = (2, collar[1], *matches[0])
+        physical[row['cell_id']] = ports[row['cell_id']]
+    base = dict(physical)
+    classes = {}
+    for row in rows:
+        key = row['cell_id']
+        if row.get('kind') in ('inventory', 'finite-inventory') and base[key] is not None:
+            classes.setdefault(base[key], []).append(key)
+    tied = {key for members in classes.values() if len(members) > 1 for key in members}
+    incidence = {key: [] for key in tied}
+    for face in record.get('face_intervals', record.get('transfers', ())):
+        for role, own, other in ((0, face['donor'], face['receiver']), (1, face['receiver'], face['donor'])):
+            if own in incidence:
+                partner = base.get(other)
+                incidence[own].append((role, partner, face))
+    for members in classes.values():
+        if len(members) < 2 or any(partner is None for key in members
+                                  for _, partner, _ in incidence[key]):
+            continue
+        endpoint_classes = {}
+        for key in members:
+            endpoints = tuple(_physical_sorted([(role, partner) for role, partner, _ in incidence[key]], arena=arena))
+            physical[key] = (*base[key], endpoints)
+            endpoint_classes.setdefault(endpoints, []).append(key)
+        for twins in endpoint_classes.values():
+            if len(twins) < 2:
+                continue
+            surfaces = {}
+            for key in twins:
+                connections = []
+                for role, partner, face in incidence[key]:
+                    surface = _surface_key(record, face, physical_surfaces)
+                    connections.append((role, partner, surface))
+                surfaces[key] = connections
+            if not any(surface is None for connections in surfaces.values() for _, _, surface in connections):
+                for key in twins:
+                    physical[key] = (*base[key], tuple(_physical_sorted(surfaces[key], arena=arena)))
+    return physical, ports
+
+
+def _physical_key_work(value):
+    """Logical comparison tariff, separate from storage and timing."""
+    if type(value) is tuple:
+        return 1 + sum(map(_physical_key_work, value))
+    if type(value) is str:
+        return 2 + (len(value) + 7) // 8
+    if type(value) in (int, Q, bool):
+        bits = abs(value.numerator).bit_length() + value.denominator.bit_length()
+        return 2 + (bits + 63) // 64
+    return 1
+
+
+def _physical_sorted(values, *, key=None, arena=None, adjacent=False):
+    count = len(values)
+    if arena is not None and count >= 2:
+        width = max(_physical_key_work(v if key is None else key(v)) for v in values)
+        comparisons = 2 * count * count.bit_length() + (count - 1 if adjacent else 0)
+        arena.work(2 * width * comparisons)
+    return sorted(values, key=key)
+
+
+
+def _physical_order(record, physical, physical_surfaces=None, arena=None, edges=None):
+    """Order the complete free choice; carry fixed positions by identity."""
+    rows = record['cells']
+    faces = record.get('face_intervals', record.get('transfers', ()))
+    if edges is None:
+        return None
+    active, fixed, free_endpoints, free_faces = set(), [], ([], []), []
+    for at, row in enumerate(rows):
+        for role in (0, 1):
+            index = 2 * at + role
+            if edges[index][2] == edges[index][3]:
+                fixed.append(index)
+            else:
+                active.add(row['cell_id'])
+                free_endpoints[role].append((row['cell_id'], index))
+    for at, row in enumerate(faces):
+        index = 2 * len(rows) + at
+        total = row.get('partition_total', False)
+        if type(total) is not bool:
+            return None
+        if edges[index][2] == edges[index][3]:
+            fixed.append(index)
+            continue
+        donor, receiver = row['donor'], row['receiver']
+        if donor not in physical or receiver not in physical:
+            return None
+        active.update((donor, receiver))
+        free_faces.append((index, row))
+    if any(physical[key] is None for key in active):
+        return None
+    buckets = {}
+    for identity in active:
+        buckets.setdefault(physical[identity][0], []).append(identity)
+    node_order = []
+    for kind in sorted(buckets):
+        bucket = _physical_sorted(buckets[kind], key=physical.__getitem__, arena=arena, adjacent=True)
+        if any(physical[a] == physical[b] for a, b in zip(bucket, bucket[1:], strict=False)):
+            return None
+        node_order.extend(bucket)
+    ranks = {identity: rank for rank, identity in enumerate(node_order)}
+    edge_order = []
+    for role in (0, 1):
+        by_node = dict(free_endpoints[role])
+        edge_order.extend(by_node[identity] for identity in node_order if identity in by_node)
+    def prefix(item):
+        return (ranks[item[1]['donor']], ranks[item[1]['receiver']], item[1].get('partition_total', False))
+    ordered_faces = _physical_sorted(free_faces, key=prefix, arena=arena, adjacent=True)
+    at = 0
+    while at < len(ordered_faces):
+        end = at + 1
+        while end < len(ordered_faces) and prefix(ordered_faces[at]) == prefix(ordered_faces[end]):
+            end += 1
+        group = ordered_faces[at:end]
+        if len(group) == 1:
+            edge_order.append(group[0][0])
+        else:
+            surfaces = [(index, _surface_key(record, row, physical_surfaces)) for index, row in group]
+            if any(surface is None for _, surface in surfaces):
+                return None
+            ordered = _physical_sorted(surfaces, key=lambda item: item[1], arena=arena, adjacent=True)
+            if any(a[1] == b[1] for a, b in zip(ordered, ordered[1:], strict=False)):
+                return None
+            edge_order.extend(index for index, _ in ordered)
+        at = end
+    node_order.extend(row['cell_id'] for row in rows if row['cell_id'] not in active)
+    return node_order, edge_order + fixed
+
+
+
+def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
+                  stock_keys=None, physical_surfaces=None, _resolved_ports=None):
     """Private arithmetic seam; production entry requires issued bounds."""
     if type(start_volumes_m3) is not dict or any(type(q) not in (int, Q) or q < 0 for q in start_volumes_m3.values()):
         raise V.VolumeError('exact nonnegative carried physical volumes required')
@@ -305,7 +821,11 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False):
     # Admit the additional key tables, uniqueness sets, permutations, sorting
     # workspace and restored-value vector BEFORE allocating any of them. This
     # is the existing 1024-byte container policy, not a measured heap bound.
-    with LIVE_SPATIAL.workspace(budget, 65536+1024*(16*len(rows)+8*len(transfers))) as order_workspace:
+    from .integration_regional_inventory import _width
+    order_bytes = 65536 + 1024 * (16 * len(rows) + 8 * len(transfers))
+    order_bytes += 8 * _width((stock_keys, physical_surfaces)) + 8 * _physical_region_width(record)
+    order_bytes += 8 * sum(_width(r.get('stock_lineage')) for r in rows)
+    with LIVE_SPATIAL.workspace(budget, order_bytes) as order_workspace:
         def canonical_choice(order_arena):
             if _selected_fixed:
                 # The dual selector has already chosen every arc.  Verify that
@@ -321,6 +841,10 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False):
                 row_by_id = {row['cell_id']: row for row in rows}
                 for row in rows:
                     if row['kind'] != 'algebraic-port':
+                        continue
+                    if _resolved_ports is not None and row['cell_id'] in _resolved_ports:
+                        if _resolved_ports[row['cell_id']] is None:
+                            raise V.VolumeError('physical port construction preimage is ambiguous or missing')
                         continue
                     parent = row.get('collar_cell_id')
                     if parent not in row_by_id or row_by_id[parent]['kind'] != 'collar':
@@ -341,6 +865,43 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False):
                 # Singleton arcs admit at most one vector regardless of order.
                 with B._Arena(budget) as arena:
                     return _circulation([reservoir]+ids, edges, arena)
+            surface_cache = dict(physical_surfaces or {})
+            physical, resolved_ports = _physical_cell_keys(record, stock_keys=stock_keys,
+                physical_surfaces=surface_cache, arena=order_arena)
+            ordered = _physical_order(record, physical, surface_cache, order_arena, edges)
+            if ordered is not None:
+                # Preserve original input integrity on the established route.
+                # The selected physical key supersedes source/chart ranking.
+                ids = [r['cell_id'] for r in rows]
+                if len(set(ids)) != len(ids) or any(type(k) is not str for k in ids):
+                    raise V.VolumeError('unique physical row identities required')
+                for row in rows:
+                    kind = row['kind']
+                    coordinates = ((row['index'],) if kind == 'collar' else
+                        (row['source_key'][1], *row['voxel_index'], row['radial_band'])
+                        if kind == 'exterior' else ())
+                    if any(type(v) is not int or v < 0 for v in coordinates):
+                        raise V.VolumeError('nonnegative physical cell coordinate required')
+                    if kind in ('collar', 'exterior'):
+                        digest = row.get('physical_cell_id') if kind == 'collar' else row['source_key'][0]
+                        if (type(digest) is not str or len(digest) != 64 or
+                                any(c not in '0123456789abcdef' for c in digest)):
+                            raise V.VolumeError('canonical physical source digest required')
+                    if kind == 'algebraic-port':
+                        parent = row.get('collar_cell_id')
+                        if parent not in physical or physical[parent] is None or physical[parent][0] != 0:
+                            raise V.VolumeError('physical port must name one retained collar')
+                        if resolved_ports.get(row['cell_id']) is None:
+                            raise V.VolumeError('physical port construction preimage is ambiguous or missing')
+                node_order, edge_order = ordered
+                with B._Arena(budget) as arena:
+                    values = _circulation([reservoir] + node_order, [edges[i] for i in edge_order], arena)
+                restored = [None] * len(edges)
+                for original, value in zip(edge_order, values, strict=True):
+                    restored[original] = value
+                return tuple(restored)
+            # The complete unresolved selection stays on the original canonical
+            # path below, including its pre-existing validations and refusals.
             coordinate_limbs = 1
 
             def count(value):
@@ -395,6 +956,11 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False):
                 collar_key = physical.get(parent)
                 if collar_key is None or collar_key[0] != 0:
                     raise V.VolumeError('physical port must name one retained collar')
+                if row['cell_id'] in resolved_ports:
+                    if resolved_ports[row['cell_id']] is None:
+                        raise V.VolumeError('physical port construction preimage is ambiguous or missing')
+                    physical[row['cell_id']] = resolved_ports[row['cell_id']]
+                    continue
                 # Existing records omit axis/end/inward. Authenticate exactly the
                 # constructor's finite hash preimage; never infer it from volumes,
                 # selected flow, the label's ordering or an arbitrary tie-breaker.
@@ -504,9 +1070,10 @@ def close_spatial_ale(bounds, start_volumes_m3, *, budget):
         raise V.VolumeError('exact carried volume mapping required')
     with LIVE_SPATIAL.record_access(bounds) as working:
         with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget):
-            record = _close_record(working, start_volumes_m3, budget)
+            surfaces = getattr(bounds, '_physical_surfaces', None)
+            record = _close_record(working, start_volumes_m3, budget, physical_surfaces=surfaces)
             record['bounds_id'] = bounds.bounds_id
-            result = _issue(SpatialALEGraph, record, budget)
+            result = _issue(SpatialALEGraph, record, budget, physical_surfaces=surfaces)
             del record
             return result
 

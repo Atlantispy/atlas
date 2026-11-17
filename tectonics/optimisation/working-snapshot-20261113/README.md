@@ -703,6 +703,126 @@ sensitivity. The separate total-cohort `np.sum` occupancy decision and its
 open. Maximum-shape elapsed time is unproved. This is not whole-member,
 joined or scientific acceptance.
 
+### Keep geometric choice and transported fields physically paired
+
+The interval producer gives every exterior cell row a `shape_key` made from
+that cell's own bounding half-spaces and their sides. It canonicalises each
+plane's exact stored geometry, removes duplicate encoded items, sorts those
+items and hashes them. Names only locate the planes; cell, support, plate and
+chart labels, list positions and measured volumes do not enter the digest.
+The fixed-plane and snapshot forms are used where no canonical rigid
+form exists; an unsupported form refuses. Plane owners are kept once per
+support. The key distinguishes shapes within one graph record; accumulated
+rotation history can change it later, so it never identifies a cell across
+intervals. The sister cone/radial route uses its own actual geometry.
+
+The same producer stores directed-volume and physical-measure receipt copies
+without their effort counts, and omits the mesh header's count of witness
+refinement rounds. Refined lines, the refinement ceiling, physical values and
+acceptance limits remain. Identities remain hashes of the stored bytes, under
+the existing identity and comparison rules. Directed-volume objects
+and separately kept endpoint measures retain their own counts. Exported graph
+copies no longer record measure effort and cannot establish equal work between
+runs. Counts for other measures and interval refinement rounds without an
+observer are no longer stored. This loss of effort history is intentional.
+
+The interval graph field and receipt changes first affect step 5. The mesh
+header change also reaches the initial state at step 1, so the combined joined
+reference must build its own initial state and earlier steps. The field-only
+restart boundary does not permit reuse of pre-change steps 1 to 4 for this
+combined unit. That reference procedure does not require replaying a compatible
+stored-input consumer qualification.
+
+The spatial consumer orders scratch nodes and arcs by their
+selected physical declarations, retaining the persistent row order, original
+identities and graph encoding. Carried physical surfaces and finite-stock
+declarations travel beside the call; an identity can retrieve geometry but cannot
+rank it. Every input field follows the ordering map, and every cell, directed
+face, concentration and signed account returns to its original physical position.
+The sister route retrieves its actual cone/radial geometry rather than ranking
+source digests or chart enumeration. Native records borrow only the selected
+family scalar, required receipt/face fields and original cone/radial members
+through their real interfaces, using owned values while those borrows remain
+live. One call-local surface and port cache survives dispatch and unresolved
+fallback; fixed unrelated rows need no repeated geometry reads.
+
+Geometric dispatch is once for the complete coupled free choice. After uniquely
+fixed unrelated stocks retain their own values, physical ordering and the exact
+terminal lift apply only if every remaining free node and arc is distinguishable.
+A lone face can be distinguished by endpoints and role; parallel free faces need
+their actual surfaces. Missing geometry is not symmetry. An unresolved dual call
+keeps the complete parent circulation or preferred-start minimum-L1 method in its
+original order. An unresolved free spatial call retains the parent's whole
+canonical choice, including its validation, sorting, refusals and inverse map.
+There is no partial reorder, component split or solve-and-retry. Fixed assembly
+verifies the already chosen vector without selecting another representative.
+Compatibility on that unresolved domain does not establish physical invariance there.
+The existing work allowance charges semantic key comparisons deterministically
+by kind and key width, including uniqueness comparisons. Integer node ranks
+come before surface comparisons needed only for parallel free faces. This is a
+logical work charge, not measured CPU/RAM or universal admission equivalence.
+
+Terminal eligibility follows the actual typed issuers: basal reservoirs must
+retain their reservoir role and complete cell, face, sublayer and depth
+conditions; trench sinks need their bound positive radius, trench/side and
+single nonempty full-share destination declarations. Labels authenticate those
+relationships but never rank a choice. A shell-birth source or incomplete custom
+lineage does not become an eligible incoming terminal.
+
+The narrow terminal construction groups only physically interchangeable incoming-
+only receivers with matched starts, bounds, preferred targets and corresponding
+donor/surface slots. It scales the exact group intervals and lifts each
+corresponding donor flow by the exact reciprocal group size before restoring
+original rows and port elimination. This preserves the selected primary L1
+optimum and individual bounds; it does not merge stocks, average final material
+or infer independent shares of a common proportional transfer. The existing
+multi-destination issuer restriction and unresolved geometric optima remain.
+
+Transport keeps all original cells and stocks in the coupled backward-Euler
+upwind system, including outflow-reservoir feedback. Duplicate matrix entries
+combine the original individually rounded per-face coefficients. Distinguishable
+physical rows retain the stock GMRES call; otherwise the full-state
+unpreconditioned restarted recurrence prescribes signed dyadic sums of rounded
+products, power-of-two-scaled norms and componentwise Krylov-index updates.
+It retains the initial/correction/refinement, exact zero/free-stream, positivity,
+fallback, cancellation and existing tolerance/iteration contracts. It does not
+remove terminal sinks from the coupled numerical solve. Simultaneous sparse
+arrays, bases, maps, accumulators and original-sized outputs require existing
+workspace admission; no measured speed or RAM claim follows. The step
+reservation remains held through the final verifier and cancellation poll.
+A retained error or separately held traceback keeps its buffers charged until
+the last owning reference is released; normal completion drops scratch keys
+before their workspace ends.
+
+External qualification exercises the six consumer modules through their public
+constructors and result readers, with 25 bounded mapped, terminal and resource
+controls. A retained-record comparison covers 889 cells, 1,059 directed faces
+and all 44 fields. Cell-only, face-only and combined position permutations at
+unchanged source and provenance identifiers preserve all 985 required input,
+geometry, layout, field, account, binary-array and metadata observations.
+All four stages use the exceptional full-state route, with 153 Krylov iterations
+each. The 44 historical-output observations remain separate: 27 differ and 17
+match. The complete keyed differences are retained; historical output equality
+is not established. These numerical fixtures and the retained input are external
+to the public checkout. Their coverage does not establish general terminal
+symmetry, propagated per-stock physical uncertainty across restart, the full
+joined package or scientific acceptance.
+
+The whole retained-reader/control, with its baseline held, completed in
+228.937 seconds within its 720-second, one-core, 1-GiB limit. Its Windows Job
+peak was 229,453,824 bytes; sampled process RSS was 0.27 GiB. Logical workspace
+reservations peaked at 660,899,038 bytes without byte or predicate refusals;
+34,124,359 bytes still belonged to retained baseline, cache and result owners
+at reporting. These scopes do not establish exclusive solver time, an isolated
+transport peak, zero remaining reservations, a speed-up or joined sizing.
+
+Actual as-run sizing remains open until one normal transport call in the fresh
+joined reference, after endpoint validation with the thermal mesh resident.
+There is no extra isolated transport or change to endpoint validation.
+Instantaneous reservations, cumulative high-water marks and whole-process
+observations keep their own scopes; none alone establishes an isolated transport peak,
+exclusive work, exceptional-branch incidence or speed-up.
+
 ### Choose the caloric reference from the exact physical anchor
 
 The mimetic heat plan selects its minimum cell by exact centre, volume and the

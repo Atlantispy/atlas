@@ -797,6 +797,40 @@ reuse these sources and derivations, without a new literature or physical-valida
 claim. The [specialist source list](../I03_SPHERICAL_NETWORK.md#14-sources) records
 what was actually consulted.
 
+The [spatial producer and consumer](../../optimisation/working-snapshot-20261113/README.md#keep-geometric-choice-and-transported-fields-physically-paired)
+keep each exterior cell's own canonical bounding half-spaces and sides in a
+stored shape key. Names only retrieve geometry. Equal items are deduplicated
+and encoded in sorted order; the key is local to one graph record and is not
+an identity across intervals. The graph's directed-volume and measure-receipt
+copies omit effort counts, and the mesh header omits its witness-round count.
+Physical integrals, refined lines and the refinement ceiling remain. Some
+effort history is no longer stored, so exports cannot establish equal work.
+Because the mesh header reaches the initial state, the combined joined reference
+starts from its own step 1, even though the interval graph field alone begins
+at step 5.
+
+Persistent row positions are preserved while actual physical cells, faces and
+their fields map into solver order and back. Geometric choice dispatches as a
+whole; unresolved rows keep the complete parent method and its validations.
+Only fully matched incoming-terminal symmetries receive the exact
+per-corresponding-flow lift. Missing surfaces do not establish symmetry. The
+public transport constructor keeps every stock in its coupled solve and uses
+prescribed full-state reductions when no unique physical row order exists.
+Native borrows, typed issuer conditions, shared surface/port caches and compulsory
+workspace admission through final cancellation retain their ownership contracts.
+
+External numerical qualification includes 25 bounded controls and one retained
+889-cell, 1,059-face, 44-field comparison. All 985 required observations pass
+across three position permutations at unchanged source identifiers; all four
+stages select the exceptional route with 153 iterations. Historical outputs
+remain observational, with 27 differing fields and 17 matching fields. Those
+fixtures and retained input are external to the public checkout. The whole
+reader/control's observed time and reservations do not supply an isolated
+transport peak, speed-up or zero-ledger claim. Joined qualification, general
+physical uncertainty and scientific acceptance remain separate. Joined sizing
+is one normal post-endpoint-validation transport call with the thermal mesh
+resident; no isolated transport call is added.
+
 ### Carry each cohort's history and heat with the shared network (I05)
 
 **What happens.** Every interval, the network's step carries the extensive amounts of each piece of rock. I05 carries

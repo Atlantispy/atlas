@@ -178,8 +178,9 @@ class _Streams:
     def __init__(self, cells, supports, receipts, keep):
         self.cells, self.supports, self.receipts, self.keep = cells, supports, receipts, keep
         self.faces, self.exchanges = [], []
+        self.physical_surfaces = {}
 
-    def add(self, donor, receiver, bounds, identity, **metadata):
+    def add(self, donor, receiver, bounds, identity, *, physical_surface=None, **metadata):
         lo, hi = bounds
         if lo < 0 or hi < lo:
             raise V.VolumeError('invalid directed physical-volume interval')
@@ -190,8 +191,11 @@ class _Streams:
             self.faces.append(dict(face_id=W._hash(identity), donor=donor, receiver=receiver,
                 volume_bounds_m3=list(map(D._qtext, bounds)), **metadata))
             self.keep(self.faces[-1])
+            if physical_surface is not None:
+                self.keep(physical_surface)
+                self.physical_surfaces[self.faces[-1]['face_id']] = physical_surface
 
-    def exchange(self, stock, physical, direction, bounds, certificate, identity):
+    def exchange(self, stock, physical, direction, bounds, certificate, identity, *, physical_surface=None):
         if not bounds[1]:
             return
         if stock is None or stock['kind'] not in ('reservoir', 'source' if direction == 'supply' else 'sink'):
@@ -200,6 +204,9 @@ class _Streams:
             face_id=W._hash(identity), volume_bounds_m3=list(map(D._qtext, bounds)),
             physical_certificate_id=certificate, stock_lineage=stock['lineage']))
         self.keep(self.exchanges[-1])
+        if physical_surface is not None:
+            self.keep(physical_surface)
+            self.physical_surfaces[self.exchanges[-1]['face_id']] = physical_surface
 
 
 def _native_port(ports, streams, selected, boundary_faces, native_ids, directed_id, flat, axis, end, inward):
@@ -475,8 +482,11 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
                     if ({(key, name), (other, other_name)} & represented and
                             any(_pair(measured, n)[1] for n in ('inward_volume_bounds_m3', 'outward_volume_bounds_m3'))):
                         raise second
-                    add(key, other, _pair(measured, 'outward_volume_bounds_m3'), dict(moving=token, donor=key), physical_certificate_id=ident)
-                    add(other, key, _pair(measured, 'inward_volume_bounds_m3'), dict(moving=token, donor=other), physical_certificate_id=ident)
+                    surface = (1, D._encoded(_segment_identity(plane)).decode('ascii'))
+                    add(key, other, _pair(measured, 'outward_volume_bounds_m3'), dict(moving=token, donor=key),
+                        physical_certificate_id=ident, physical_surface=surface)
+                    add(other, key, _pair(measured, 'inward_volume_bounds_m3'), dict(moving=token, donor=other),
+                        physical_certificate_id=ident, physical_surface=surface)
                 continue
             if _observer is not None:
                 _observer.begin_interface()
@@ -534,7 +544,8 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
         identity = dict(boundary=boundary_id, component=key, direction=direction)
         if len(shared[boundary_id, key, direction]) > 1:
             identity['segment'] = _segment_identity(plane)
-        exchange(stock, key, direction, bounds, ident, identity)
+        exchange(stock, key, direction, bounds, ident, identity,
+                 physical_surface=(1, D._encoded(_segment_identity(plane)).decode('ascii')))
 
     if set(resolved) != set(owned):
         raise V.VolumeError('coincident fixed face lacks its angular physical routing certificate')
@@ -619,6 +630,14 @@ def enclose_differential_ale(partition, interval, funding, collar, source_flow_s
                         automatic.finish()
 
 
+def _shape_planes(row, part, owners):
+    """The part's planes decoded as the routing reads them (:117); one owner per plane name for the support."""
+    for name, _sign in part['constraints']:
+        if name not in owners:
+            owners[name] = owned_constraint(row['constraints'][name])
+    return {name: owners[name].value for name, _sign in part['constraints']}
+
+
 def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_measures,
              native_projection, native_directed_volumes, finite_stock_state,
              max_volume_error_m3, max_stream_error_m3, max_leaves, budget, arena,
@@ -688,6 +707,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
         _component_parallel.prepare(partition.supports)
     for support in partition.supports:
         row = support_rows.project(support)
+        shape_owners = {}
         E.bind_support(_component_parallel, support, row)
         with ComponentVolumeQueries(support, budget=budget) as volumes:
             for part in row['components']:
@@ -710,7 +730,8 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
                     support_id=support.support_id, source_chart_id=row['source_chart_id'],
                     voxel_index=row['voxel_index'], radial_band=row['radial_band'], chart=row['chart'],
                     parent_cell_id=part['parent_cell_id'], start_volume_bounds_m3=endpoints['start'],
-                    end_volume_bounds_m3=endpoints['end'], **witness)
+                    end_volume_bounds_m3=endpoints['end'],
+                    shape_key=D._shape_key(_shape_planes(row, part, shape_owners), part['constraints']), **witness)
                 keep(cells[key])
                 components[key] = support_rows._handles[support.support_id], row, part
                 shape_key = row['source_chart_id'], tuple(part['partition_path'])
@@ -803,13 +824,16 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
             else getattr(getattr(_observer, 'interface_batches', None), 'claim', None), **pair)),
         _parallel=_parallel, _observer=_observer)
 
+    # A-15 row 5: receipts stored without their counts; booked as the rows are (shared parts counted again).
+    stripped_receipts = {k: D._without(r, D.DifferentialMeasure._EFFORT[1]) for k, r in receipts.items()}
+    keep(stripped_receipts)
     result = dict(schema='atlas.source-bound-spatial-ale-bounds.v1',
         physical_geometry_family='differential-plate-component-partition-v1',
         funding_id=funding.funding_id, source=p['source'], collar_plan_id=collar.plan_id,
         parent_state_id=source_flow_stage.parent_state_id, source_flow_stage_id=source_flow_stage.result_id,
         flow_id=source_flow_stage.flow.flow_id, native_measure_id=native_measures.measure_id,
         native_projection_id=native_projection.projection_id, native_directed_id=native_directed_volumes.directed_id,
-        native_flux_projection=native_projection.record(), native_directed_volumes=native_directed_volumes.record(),
+        native_flux_projection=native_projection.record(), native_directed_volumes=D._without(native_directed_volumes.record(), P.DIRECTED_EFFORT),
         interval_id=interval.interval_id, partition_id=partition.partition_id,
         finite_state_id=finite_stock_state.state_id, finite_owner_id=finite_stock_state._owner.owner_id,
         component_registry_id=finite_stock_state._owner.definition()['registry_id'],
@@ -817,7 +841,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
             'start_support_id', 'end_support_id', 'trajectory', 'trajectory_id', 'prior_trajectory_id',
             'grid_id', 'grid_lines', 'grid_origin_m', 'grid_basis', 'support_ids', 'identity_start_cells')},
         cells=sorted(cells.values(), key=lambda r: r['cell_id']), face_intervals=sorted(faces, key=lambda r: r['face_id']),
-        finite_exchange_intervals=sorted(exchanges, key=lambda r: r['face_id']), physical_measure_receipts=receipts,
+        finite_exchange_intervals=sorted(exchanges, key=lambda r: r['face_id']), physical_measure_receipts=stripped_receipts,
         coincident_fixed_face_ownership=ownership,
         max_volume_error_m3=D._qtext(width), max_stream_error_m3=D._qtext(stream_width), max_leaves=max_leaves,
         physical_outer_boundary='actual finite ridge/trench/basal exchanges; no implicit refill or volume repair',
@@ -826,6 +850,6 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
         zero_relative_interfaces='true radial spheres and material-transported chart planes, never thermal facets')
     if max_native_mask_leaves is not None:
         result['max_native_mask_leaves'] = max_native_mask_leaves
-    return A._issue(A.SpatialALEBounds, result, budget)
+    return A._issue(A.SpatialALEBounds, result, budget, physical_surfaces=streams.physical_surfaces)
 
 from atlas_tectonics._private.partition_routing_patch import owned_constraint, wall as _compact_wall, interface as _compact_interface

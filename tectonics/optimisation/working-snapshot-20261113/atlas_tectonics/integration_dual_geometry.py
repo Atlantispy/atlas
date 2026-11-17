@@ -457,7 +457,131 @@ def _selection_output_workspace(record, chosen):
 
 
 
-def select_geometry(record, *, budget, preferred_starts=None):
+def _physical_problem(record, edges, preferred_starts, physical_surfaces, arena, resolved_ports):
+    """Project only fully matched terminal symmetries; retain an exact lift.
+
+    None leaves the complete original selector unchanged. In particular it
+    cannot partially reorder an unresolved coupled choice or infer a surface.
+    """
+    from . import integration_spatial_ale as A
+    rows, faces = record['cells'], record['face_intervals']
+    n = len(rows)
+    physical, ports = A._physical_cell_keys(record, physical_surfaces=physical_surfaces, arena=arena)
+    resolved_ports.update(ports)
+    multiplicities = {}
+    for key in physical.values():
+        multiplicities[key] = multiplicities.get(key, 0) + 1
+    by_id = {row['cell_id']: at for at, row in enumerate(rows)}
+    incoming, outgoing = {key: [] for key in by_id}, {key: [] for key in by_id}
+    for at, face in enumerate(faces):
+        if face['donor'] not in by_id or face['receiver'] not in by_id:
+            return None
+        incoming[face['receiver']].append(at)
+        outgoing[face['donor']].append(at)
+    candidates, slots = {}, {}
+    isolated = {}
+    for at, row in enumerate(rows):
+        key = row['cell_id']
+        if row.get('kind') != 'finite-inventory':
+            continue
+        start, end = edges[2 * at][2:], edges[2 * at + 1][2:]
+        if not incoming[key] and not outgoing[key] and start[0] == start[1] == end[0] == end[1]:
+            isolated[key] = start[0]
+            continue
+        if physical[key] is None or multiplicities[physical[key]] < 2:
+            continue
+        lineage = row.get('stock_lineage')
+        condition_key = A._terminal_condition_key(lineage, row.get('stock_kind'))
+        if (physical[key] is None or outgoing[key] or not incoming[key] or
+                row.get('stock_kind') not in ('sink', 'reservoir') or start[0] != start[1] or condition_key is None):
+            continue
+        matched = {}
+        for fi in incoming[key]:
+            face = faces[fi]
+            donor = physical[face['donor']]
+            surface = A._surface_key(record, face, physical_surfaces)
+            if (donor is None or multiplicities[donor] != 1 or surface is None or
+                    face.get('partition_total', False)):
+                break
+            slot = (donor, surface, edges[2 * n + fi][2:])
+            if slot in matched:
+                break
+            matched[slot] = fi
+        else:
+            lineage = row.get('stock_lineage', {})
+            declared_node = lineage.get('declared_stock_node')
+            # This flag is a condition for interchangeability, never a ranking
+            # by destination names or by current heat/material quantities.
+            condition = declared_node if type(declared_node) is bool else None
+            target = None if preferred_starts is None else Q(preferred_starts[key])
+            signature = (physical[key], row['stock_kind'], start, end, target,
+                         condition, condition_key, tuple(A._physical_sorted(list(matched), arena=arena)))
+            candidates.setdefault(signature, []).append(key)
+            slots[key] = matched
+    if not any(len(members) > 1 for members in candidates.values()):
+        ordered = A._physical_order(record, physical, physical_surfaces, arena, edges)
+        if ordered is None:
+            return None
+        return ordered, edges, preferred_starts, [(i, Q(1)) for i in range(len(edges))], ports, len(rows)
+    groups = {row['cell_id']: (row['cell_id'],) for row in rows if row['cell_id'] not in isolated}
+    for members in candidates.values():
+        if len(members) > 1:
+            for key in members:
+                groups.pop(key)
+            # This name is a lookup token only. Its ordering and its output
+            # identity never select a member's flow; every member gets 1/m.
+            groups[members[0]] = tuple(members)
+    representative = {key: token for token, members in groups.items() for key in members}
+    reduced_rows, reduced_edges, reduced_faces = [], [], []
+    lift = [None] * len(edges)
+    targets = None if preferred_starts is None else {}
+    for token, value in isolated.items():
+        at = by_id[token]
+        lift[2 * at] = lift[2 * at + 1] = (None, value)
+    for token, members in groups.items():
+        row = rows[by_id[token]]
+        count = len(members)
+        current = []
+        for role in (0, 1):
+            edge = edges[2 * by_id[token] + role]
+            position = len(reduced_edges)
+            reduced_edges.append((edge[0], edge[1], edge[2] * count, edge[3] * count))
+            current.append([_enc(edge[2] * count), _enc(edge[3] * count)])
+            for member in members:
+                lift[2 * by_id[member] + role] = (position, Q(1, count))
+        reduced_rows.append(dict(row, start_volume_bounds_m3=current[0], end_volume_bounds_m3=current[1]))
+        if targets is not None and row.get('kind') != 'algebraic-port':
+            targets[token] = Q(preferred_starts[token]) * count
+    collected = set()
+    for fi, face in enumerate(faces):
+        if fi in collected:
+            continue
+        receiver = face['receiver']
+        token = representative[receiver]
+        members = groups[token]
+        if len(members) > 1:
+            slot = next(slot for slot, index in slots[receiver].items() if index == fi)
+            originals = [slots[member][slot] for member in members]
+        else:
+            originals = [fi]
+        collected.update(originals)
+        count = len(originals)
+        edge = edges[2 * n + fi]
+        position = len(reduced_edges)
+        reduced_edges.append((representative[face['donor']], token, edge[2] * count, edge[3] * count))
+        reduced_faces.append(dict(face, donor=representative[face['donor']], receiver=token,
+            volume_bounds_m3=[_enc(edge[2] * count), _enc(edge[3] * count)]))
+        for original in originals:
+            lift[2 * n + original] = (position, Q(1, count))
+    reduced = dict(record, cells=reduced_rows, face_intervals=reduced_faces)
+    reduced_physical = {row['cell_id']: physical[row['cell_id']] for row in reduced_rows}
+    ordered = A._physical_order(reduced, reduced_physical, physical_surfaces, arena, reduced_edges)
+    if ordered is None:
+        return None
+    return ordered, reduced_edges, targets, lift, ports, len(reduced_rows)
+
+
+def select_geometry(record, *, budget, preferred_starts=None, physical_surfaces=None):
     """Pure geometric feasibility, with shared ports and fixed inventory caps.
 
     No source-group sum is invented from booked material funding. Such a
@@ -466,6 +590,7 @@ def select_geometry(record, *, budget, preferred_starts=None):
     from . import integration_spatial_ale as A
     from . import integration_volume_bounds as B
     from .integration_regional_inventory import _width
+    from .integration_spatial_transport import _workspace
 
     rows, faces = record['cells'], record['face_intervals']
     keys = [r['cell_id'] for r in rows]
@@ -474,9 +599,14 @@ def select_geometry(record, *, budget, preferred_starts=None):
         raise ValueError('unique nonreserved geometry identities required')
     if len({f['face_id'] for f in faces}) != len(faces):
         raise ValueError('unique physical faces required')
-    with ExitStack() as storage:
-        storage.enter_context(budget.reserve(_selection_input_workspace(record, preferred_starts),
-            category='private-geometric-circulation'))
+    original_workspace = _selection_input_workspace(record, preferred_starts)
+    ordering_workspace = (65536 + 1024 * (16 * len(rows) + 8 * len(faces)) +
+        4 * original_workspace + 8 * _width(physical_surfaces) +
+        8 * A._physical_region_width(record) +
+        8 * sum(_width(row.get('stock_lineage')) for row in rows) +
+        128 * (len(rows) + len(faces)) * _selection_int_bytes(max(1, len(rows).bit_length())))
+    with _workspace(budget, original_workspace + ordering_workspace, 'private-geometric-circulation') as storage:
+        surface_cache = dict(physical_surfaces or {})
         edges = []
         for row in rows:
             edges.append((reservoir, row['cell_id'], *map(_pair, row['start_volume_bounds_m3'])))
@@ -484,33 +614,63 @@ def select_geometry(record, *, budget, preferred_starts=None):
         edges.extend((f['donor'], f['receiver'], *map(_pair, f['volume_bounds_m3'])) for f in faces)
         optimum = None
         with B._Arena(budget) as arena:
-            if preferred_starts is None:
-                chosen = A._circulation([reservoir]+keys, edges, arena)
-            else:
+            if preferred_starts is not None:
                 physical = {r['cell_id'] for r in rows if r['kind'] != 'algebraic-port'}
                 if set(preferred_starts) != physical or any(type(v) not in (int, Q) or v < 0
                                                           for v in preferred_starts.values()):
                     raise ValueError('complete exact nonnegative preferred starts required')
+            arena.work(64 * len(rows) + 32 * len(faces))
+            resolved_ports = {}
+            problem = _physical_problem(record, edges, preferred_starts, surface_cache, arena, resolved_ports)
+            if problem is None:
+                # Preserve the entire original callable on its unresolved
+                # domain, without claiming physical permutation closure.
+                node_order, edge_order = keys, list(range(len(edges)))
+                solver_edges, targets, solver_rows = edges, preferred_starts, len(rows)
+                lift = [(i, Q(1)) for i in range(len(edges))]
+            else:
+                (node_order, edge_order), solver_edges, targets, lift, resolved_ports, solver_rows = problem
+            if preferred_starts is None:
+                ordered = A._circulation([reservoir] + node_order,
+                                        [solver_edges[i] for i in edge_order], arena)
+                reduced = [None] * len(solver_edges)
+                for index, value in zip(edge_order, ordered, strict=True):
+                    reduced[index] = value
+            else:
                 expanded, indices = [], []
-                for index, (a, b, lo, hi) in enumerate(edges):
+                for index, (a, b, lo, hi) in enumerate(solver_edges):
                     begin = len(expanded)
-                    if index < 2*len(rows) and index % 2 == 0:
-                        preferred = Q(preferred_starts.get(b, 0))
+                    if index < 2 * solver_rows and index % 2 == 0:
+                        preferred = Q(targets.get(b, 0))
                         middle = min(hi, max(lo, preferred))
                         expanded.extend(((a, b, lo, lo, 0), (a, b, Q(0), middle-lo, -1),
                                          (a, b, Q(0), hi-middle, 1)))
                     else:
                         expanded.append((a, b, lo, hi, 0))
                     indices.append((begin, len(expanded)))
-                values, augmentations = _minimum_cost([reservoir]+keys, expanded, arena)
-                chosen = tuple(sum(values[a:b], Q(0)) for a, b in indices)
+                expanded_order = [i for edge in edge_order for i in range(*indices[edge])]
+                ordered, augmentations = _minimum_cost([reservoir] + node_order,
+                    [expanded[i] for i in expanded_order], arena)
+                values = [None] * len(expanded)
+                for index, value in zip(expanded_order, ordered, strict=True):
+                    values[index] = value
+                reduced = [sum(values[a:b], Q(0)) for a, b in indices]
+            # Lift/inverse-map BEFORE original bounds, objective, fixed graph
+            # assembly or port elimination. Fixed isolated stocks keep theirs.
+            chosen = tuple(value if index is None else reduced[index] * value for index, value in lift)
+            if preferred_starts is not None:
                 storage.enter_context(budget.reserve(
                     _selection_objective_workspace(edges, chosen, values, preferred_starts),
                     category='private-geometric-objective'))
                 objective = sum((abs(chosen[2*i]-Q(preferred_starts.get(key, 0)))
                                  for i, key in enumerate(keys)), Q(0))
-                offset = sum((abs(edges[2*i][2]-Q(preferred_starts.get(key, 0)))
-                              for i, key in enumerate(keys)), Q(0))
+                # Start arcs precede face arcs in the reduced representation.
+                offset = sum((abs(solver_edges[i][2] - Q(targets.get(solver_edges[i][1], 0)))
+                              for i in range(0, 2 * solver_rows, 2)), Q(0))
+                if problem is not None:
+                    offset += sum((abs(value - Q(preferred_starts.get(row['cell_id'], 0)))
+                                   for row, (index, value) in zip(rows, lift[:2*len(rows):2], strict=True)
+                                   if index is None), Q(0))
                 if objective != offset+sum((value*edge[4] for edge, value in zip(expanded, values)), Q(0)):
                     raise ArithmeticError('split-arc objective does not equal actual L1 rebase')
                 optimum = dict(method='exact-rational minimum-L1 geometric rebase',
@@ -536,7 +696,7 @@ def select_geometry(record, *, budget, preferred_starts=None):
         row_by_id = {r['cell_id']: r for r in rows}
         graph = A._close_record(fixed, {k: v for k, v in start.items()
                                        if row_by_id[k]['kind'] != 'algebraic-port'}, budget,
-                                _selected_fixed=True)
+                                _selected_fixed=True, _resolved_ports=resolved_ports)
         face_by_id = {f['face_id']: f for f in faces}
         for row in graph['cells']+graph['inactive_zero_measure_cells']:
             original = row_by_id[row['cell_id']]

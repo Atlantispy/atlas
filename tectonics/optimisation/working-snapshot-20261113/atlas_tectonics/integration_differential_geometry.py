@@ -2086,6 +2086,31 @@ def _interface_identity(constraint):
     return None
 
 
+# Born-row geometry (designs/born-row-geometry-r1.md s2): the planes kept as stored where no canonical form exists.
+# Only these two kinds can lack one (a fixed plane with an offset; a snapshot of an edge with no rigid path); any
+# other kind refuses, so a kind added later with an id inside cannot enter the key unread (Reviewer N-1).
+_SHAPE_AS_STORED = ('fixed-plane', 'snapshot-rotated')
+
+
+def _shape_item(constraint, sign):
+    identity = _interface_identity(constraint)
+    if identity is not None:
+        (kind, value), orientation = identity
+        form = [kind, [_store_vec(v) for v in value]] if kind == 'rigid' else [kind, value.decode('ascii')]
+        return [form, orientation*sign]
+    if constraint['kind'] not in _SHAPE_AS_STORED:
+        raise V.VolumeError(f"shape_key: no canonical form for plane kind {constraint['kind']!r}")
+    return [constraint, sign]
+
+
+def _shape_key(constraints, literals):
+    """sha256 of a cell's own bounding half-spaces: each literal's plane in canonical form times its side, equal items
+    dropped, encoded items sorted. No name, id, index, chart or volume enters. Bound to the stored form: a ray record
+    grows each interval, so the key names a shape within one graph record, never a cell across intervals (N-2)."""
+    items = {_encoded(_shape_item(constraints[name], sign)) for name, sign in literals}
+    return hashlib.sha256(b'\n'.join(sorted(items))).hexdigest()
+
+
 def _material_plane(constraint, omega):
     """Does the plane move with the material, so that nothing crosses it?
 
@@ -3896,7 +3921,7 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
 
 
 def _close_dual_differential_record(record, start_volumes_m3, material_quadrature_m3,
-                                    stock_record, budget, geometry_volume_errors):
+                                    stock_record, budget, geometry_volume_errors, physical_surfaces=None):
     """Select G0/G1/streams inside physical bounds independently of carried B.
 
     This private arithmetic seam issues nothing. Original endpoint and face
@@ -3936,7 +3961,8 @@ def _close_dual_differential_record(record, start_volumes_m3, material_quadratur
     try:
         augmented, _ = D.physical_record(record, material_quadrature_m3, geometry_volume_errors,
             stock_record, geometric_starts=start_volumes_m3, finite_measures=finite_measures)
-        closed = D.select_geometry(augmented, budget=budget, preferred_starts=preferred)
+        closed = D.select_geometry(augmented, budget=budget, preferred_starts=preferred,
+                                   physical_surfaces=physical_surfaces)
     except V.VolumeError:
         raise
     except ValueError as error:
@@ -4002,7 +4028,7 @@ def _close_dual_differential_record(record, start_volumes_m3, material_quadratur
 
 
 def _close_differential_record(record, start_volumes_m3, stock_record, budget, geometry_volume_errors=None,
-                                material_quadrature_m3=None):
+                                material_quadrature_m3=None, physical_surfaces=None):
     """Select physical and finite-inventory volumes in ONE circulation.
 
     This is the private arithmetic seam, not a geometry issuer. Source stock
@@ -4015,12 +4041,14 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
     """
     if material_quadrature_m3 is not None:
         return _close_dual_differential_record(record, start_volumes_m3, material_quadrature_m3,
-            stock_record, budget, geometry_volume_errors)
+            stock_record, budget, geometry_volume_errors, physical_surfaces=physical_surfaces)
     from . import integration_spatial_ale as A
     rows = stock_record['stocks']
     stocks = {r['stock_id']: r for r in rows}
     if len(stocks) != len(rows):
         raise V.VolumeError('unique retained finite stock identities required')
+    stock_keys = {'finite-stock:' + key: A._stock_physical_key(row['lineage'])
+                  for key, row in stocks.items()}
     physical = {r['cell_id'] for r in record['cells'] if r['kind'] != 'algebraic-port'}
     if any(r['kind'] == 'finite-inventory' for r in record['cells']):
         raise V.VolumeError('differential bounds must contain physical cells before inventory attachment')
@@ -4150,7 +4178,8 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
                                        if row['cell_id'] in chosen else row for row in augmented['cells']])
         circulations += 1
         try:
-            closed = A._close_record(trial, starts, budget)
+            closed = A._close_record(trial, starts, budget, stock_keys=stock_keys,
+                                     physical_surfaces=physical_surfaces)
         except A.GCLInfeasible:
             continue
         outer = {row['cell_id']: row['end_volume_bounds_m3'] for row in augmented['cells'] if row['cell_id'] in chosen}
@@ -4162,7 +4191,8 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
         break
     if closed is None:
         circulations += 1
-        closed = A._close_record(augmented, starts, budget)
+        closed = A._close_record(augmented, starts, budget, stock_keys=stock_keys,
+                                 physical_surfaces=physical_surfaces)
     if unwitnessed:
         # Present only when such components exist, so other graphs keep their identity.
         closed['booked_end_selection'] = dict(
@@ -4268,7 +4298,8 @@ def close_differential_ale(bounds, start_volumes_m3, finite_stock_state, *, budg
         with LIVE_SPATIAL.workspace(budget, 65536+4*LIVE_SPATIAL.holder_bytes(bounds)+4*len(finite_stock_state._encoded)):
             try:
                 result = _close_differential_record(record, start_volumes_m3, finite_stock_state.record(), budget,
-                    geometry_volume_errors=geometry_volume_errors, material_quadrature_m3=material_quadrature_m3)
+                    geometry_volume_errors=geometry_volume_errors, material_quadrature_m3=material_quadrature_m3,
+                    physical_surfaces=getattr(bounds, '_physical_surfaces', None))
             except A.GCLInfeasible as error:
                 error.circulation_failure = _circulation_failure(bounds.bounds_id, record,
                     finite_stock_state.record(), start_volumes_m3, geometry_volume_errors, error)
@@ -4277,7 +4308,8 @@ def close_differential_ale(bounds, start_volumes_m3, finite_stock_state, *, budg
                         key: _qtext(Q(value)) for key, value in material_quadrature_m3.items()}
                 raise
             result['bounds_id'] = bounds.bounds_id
-            issued_graph = A._issue(A.SpatialALEGraph, result, budget)
+            issued_graph = A._issue(A.SpatialALEGraph, result, budget,
+                                   physical_surfaces=getattr(bounds, '_physical_surfaces', None))
             del result
             return issued_graph
 
