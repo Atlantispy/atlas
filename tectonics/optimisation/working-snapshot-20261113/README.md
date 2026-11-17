@@ -690,6 +690,19 @@ agree. The tilted pair does not clear that failure or normalise zero signs.
 The one-site case shares source, not the two-site sensitivity result. No
 universal renamed-input, whole-member or joined acceptance follows.
 
+### Reduce translated mass and fraction one cell at a time
+
+`translate_material_regions` retains each moved rectangle, original overlap
+arithmetic and per-region accounts. For one cohort and target cell at a time it
+forms at most 256 original rounded volumes, then separately sums volume*density
+and volume/grid-volume with `math.fsum`. It retains no regions-by-whole-grid
+tensor. Actual cell mass/fraction feed the thermomechanical reader.
+Independent local review accepts the selected target and actual receiving-field
+sensitivity. The separate total-cohort `np.sum` occupancy decision and its
+`1e-12` gate are unchanged and unstressed, so that ordering boundary remains
+open. Maximum-shape elapsed time is unproved. This is not whole-member,
+joined or scientific acceptance.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

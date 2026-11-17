@@ -547,12 +547,6 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
                 raise TectonicsError('unresolvable physical material translation')
             current = MaterialRegion2D(region.cohort_id, new_bounds, region.mass_density_kg_m3)
             moved.append(current)
-            dx = np.maximum(0., np.minimum(x[1:], new_bounds[1])-np.maximum(x[:-1], new_bounds[0]))
-            dz = np.maximum(0., np.minimum(z[1:], new_bounds[3])-np.maximum(z[:-1], new_bounds[2]))
-            volume = dz[:, None]*dx[None, :]*grid.strike_width_m
-            k = index[region.cohort_id]
-            mass[k] += volume*region.mass_density_kg_m3
-            fraction[k] += volume/grid.volume
             scale = grid.strike_width_m*region.mass_density_kg_m3
             first = _intersection(b, old)*scale
             last = _intersection(b, pulled)*scale
@@ -564,6 +558,20 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
             row = cohort_accounts[region.cohort_id]
             for key, value in zip(row, (first, last, entering, exiting)):
                 row[key].append(value)
+        for key,k in index.items():
+            selected = [region for region in moved if region.cohort_id == key]
+            for row in range(grid.nz):
+                _cancel(cancel)
+                for col in range(grid.nx):
+                    volumes = []
+                    for region in selected:
+                        bounds = region.bounds_m
+                        dx = np.maximum(0.,np.minimum(x[col+1],bounds[1])-np.maximum(x[col],bounds[0]))
+                        dz = np.maximum(0.,np.minimum(z[row+1],bounds[3])-np.maximum(z[row],bounds[2]))
+                        volumes.append((dz*dx)*grid.strike_width_m)
+                    mass[k,row,col] = math.fsum(volume*region.mass_density_kg_m3
+                        for volume,region in zip(volumes,selected))
+                    fraction[k,row,col] = math.fsum(volume/grid.volume for volume in volumes)
         accounts = {}
         for key, row in cohort_accounts.items():
             acc = {name: math.fsum(values) for name, values in row.items()}

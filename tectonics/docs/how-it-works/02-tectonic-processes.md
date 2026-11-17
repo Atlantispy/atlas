@@ -605,6 +605,17 @@ requires separate absolute reference/current equilibria. Preserving these exchan
 boundaries makes the individual methods useful together without claiming a fully
 coupled planet.
 
+Separately, the nondefault snapshot's [translated-region input helper](../../optimisation/working-snapshot-20261113/README.md#reduce-translated-mass-and-fraction-one-cell-at-a-time)
+works on one cohort and target cell at a time: at most256 original rounded
+intersection volumes feed separate sums of volume*density and volume/grid-volume.
+The actual thermomechanical reader receives these mass/fraction fields, without
+a regions-by-whole-grid tensor. Original per-region accounts remain; the separate
+total-cohort occupancy sum and its `1e-12` gate stay an open ordering boundary.
+Independent local review accepts the selected target and actual receiving
+fields. The total-cohort occupancy gate remains unstressed and maximum-shape
+timing unproved. This does not extend the assembled homogeneous W07 route to
+arbitrary mixtures or establish whole-member/joined acceptance.
+
 A failed or interrupted viscosity change can leave an operator unusable. The
 interface closes it and prepares a replacement from the next request's material;
 a replacement from different source code is refused. If the operator remains
