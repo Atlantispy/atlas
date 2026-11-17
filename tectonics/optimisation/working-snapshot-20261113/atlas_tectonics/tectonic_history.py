@@ -222,7 +222,7 @@ class PreparedTectonicHistory:
 
     def statistics(self): return dict(self._stats,resources=self._resource.statistics())
 
-    def _validate(self,result,index):
+    def _validate(self,result,index,cancel=None):
         p = self.prepared; expected_time = self.times[index]
         d = result.descriptor()
         if self.route == 'underthrust-section':
@@ -276,9 +276,12 @@ class PreparedTectonicHistory:
             # Reconcile against real producer inputs. A compensated force sum
             # and a replaced zero top boundary cannot reconstruct per-input
             # byte hashes (including signed zeros) from aggregate output alone.
+            # x includes both staggered force fields. This existing envelope
+            # covers the aggregate/compare arrays and the same bounded scalar
+            # scratch as evaluate; _restore_bytes uses this identical lease.
             with self._resource.reserve(4*x.nbytes+65536,category='tectonic-history-input-reconcile'):
                 for axis in ('u','w'):
-                    if not np.array_equal(result.array('force_'+axis+'_n_m3'),_sum_forces(x.body_forces,axis)):
+                    if not np.array_equal(result.array('force_'+axis+'_n_m3'),_sum_forces(x.body_forces,axis,cancel=cancel)):
                         raise TectonicsError('regional history physical force mismatch')
                 for name in x.boundary.array_names:
                     expected = (-x.surface_pressure.array('downward') if name=='top_w' and x.surface_pressure is not None
@@ -292,7 +295,7 @@ class PreparedTectonicHistory:
         elif self.route == 'evolving-elastic-support':
             result = p.solve(x.state,x.surface,rigidity=x.rigidity,exterior=x.exterior,cancel=cancel)
         else: result = p.evaluate(x,cancel=cancel)
-        self._validate(result,index)
+        self._validate(result,index,cancel=cancel)
         record = dict(schema='atlas.tectonic-history-output.v1',plan_id=self.plan_id,
             route=self.route,execution=self.execution_id,index=index,time_s=self.times[index],
             checkpoint_id=self.checkpoint_id(index),result_id=history_result_id(result),
@@ -354,7 +357,7 @@ class PreparedTectonicHistory:
             arrays = self.store.get(self.checkpoint_id(index),budget=self._resource)
             if arrays is None: raise TectonicsError('checkpoint disappeared during restore')
             result = restore_history_result(arrays,meta['payload'],budget=self._resource,cancel=cancel)
-            self._validate(result,index)
+            self._validate(result,index,cancel=cancel)
             if (history_result_id(result) != meta['record']['result_id'] or
                     history_result_nbytes(result) != meta['retained_bytes']):
                 raise TectonicsError('restored tectonic result identity/size mismatch')

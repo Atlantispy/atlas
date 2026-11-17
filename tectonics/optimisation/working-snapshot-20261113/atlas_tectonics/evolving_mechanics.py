@@ -11,7 +11,7 @@ import threading
 
 import numpy as np
 
-from ._validation import TectonicsError, scalar, input_shape, read_array
+from ._validation import TectonicsError, scalar, input_shape, read_array, _replay_fsum
 from .constitutive import _cancel, _json
 from .regional_execution import (PreparedRegionalStokes2D, RegionalMechanicalSnapshot,
     RegionalMechanicsScales, RegionalReferencePressure, _name, _hash)
@@ -212,19 +212,20 @@ def regional_thermal_gravity(context, temperature_k, law, *, producer_state_id,
             effect_ids=(effect_id,),includes_total_gravity=True,budget=budget,cancel=cancel)
 
 
-def _sum_forces(blocks, name):
-    # Neumaier compensated array sum, independent of force magnitude ordering.
-    total = np.zeros_like(blocks[0].array(name)); correction = total.copy()
-    with np.errstate(over='raise', invalid='raise', under='ignore'):
-        try:
-            for block in blocks:
-                a = block.array(name); updated = total+a
-                correction += np.where(np.abs(total) >= np.abs(a), (total-updated)+a, (a-updated)+total)
-                total = updated
-            result = total+correction
-        except FloatingPointError as exc:
-            raise TectonicsError('combined physical body force exceeds binary64') from exc
+def _sum_forces(blocks, name, *, cancel=None):
+    _cancel(cancel)
+    arrays = tuple(block.array(name) for block in blocks)
+    result = np.empty_like(arrays[0])
+    for row in range(result.shape[0]):
+        _cancel(cancel)
+        for column in range(result.shape[1]):
+            index = (row, column)
+            try:
+                result[index] = _replay_fsum(lambda: (array[index] for array in arrays))
+            except OverflowError as exc:
+                raise TectonicsError('combined physical body force exceeds binary64') from exc
     if not np.isfinite(result).all(): raise TectonicsError('nonfinite total body force')
+    _cancel(cancel)
     return result
 
 
@@ -294,6 +295,9 @@ class PreparedEvolvingRegionalMechanics:
             raise TectonicsError('changed geometry/epoch/frame/boundary type requires a new mechanical plan')
         object.__setattr__(self, '_active', True)
         try:
+            # The grid allowance covers both live force outputs; the fixed pool
+            # covers their headers, immutable input views, finite mask and 8 KiB
+            # scalar replay lane (at most 16 original rounded terms per entry).
             with self._resource.reserve(3*request.nbytes+1024*context.nx*context.nz+65536,
                                         category='evolving-mechanical-inputs'):
                 material = request.material
@@ -328,7 +332,7 @@ class PreparedEvolvingRegionalMechanics:
                         self._plan.update_viscosity(material.array('centre'),material.array('vertex'),
                             material_source=material.result_id,material_sampling=md['sampling'],cancel=cancel)
                         object.__setattr__(self,'_material_id',material.result_id)
-                fu, fw = (_sum_forces(request.body_forces, name) for name in ('u','w'))
+                fu, fw = (_sum_forces(request.body_forces, name, cancel=cancel) for name in ('u','w'))
                 boundary = {side:{name:request.boundary.array(side+'_'+name) for name in ('u','w')}
                             for side in json.loads(self._pattern)}
                 if request.surface_pressure is not None:

@@ -608,6 +608,16 @@ accepts coincident material, force, boundary and surface-pressure inputs. Their
 time, frame, sampling and physical owners must agree. Changed viscosity rebuilds
 coefficients; changed force can reuse compatible geometry. It produces a
 quasi-static snapshot, not an invented path between supplied states.
+Each immutable body-force view is read once. The [same finite-word reducer](../../optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore)
+builds both staggered force fields and validates computed/restored history.
+Ordinary accurate summation runs first; only prefix overflow replays the same
+finite words once before the original binary64 boundary. Genuine final overflow,
+nonfinite values and incompatible physical owners retain their existing refusal.
+Existing cancellation and funding reach the actual evaluation and both history
+readers. The selected local range/consumer/resource case, normal control and
+pressure regression pass; maximum-shape, whole-chain and scientific claims
+remain open.
+
 [Tests](../../tests/test_evolving_mechanics.py) check hydrostatics, shear, time/frame
 refusals and duplicate force ownership. The related
 [evolving-support record](../EVOLVING_MECHANICS.md) explains why changing rigidity

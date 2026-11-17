@@ -74,6 +74,18 @@ duplicated across force, load and boundary inputs; total gravity has at most one
 owner. These are declared producer contracts, not an inference that two differently
 named physical effects are genuinely independent.
 
+The nondefault snapshot's [force-reduction correction](../optimisation/working-snapshot-20261113/README.md#use-one-body-force-reduction-for-solve-and-restore)
+reads the immutable block views once and sums each staggered entry's original
+rounded words. It uses the same shared finite-sum helper as regional emplacement:
+ordinary `fsum` first, then at most one complete same-word replay only on prefix
+overflow, with one binary64 projection and the existing final-overflow error.
+That reducer also validates computed and restored history forces; the existing
+cancellation reaches each row. Physical products, the nonfinite gate, production
+leases and restore-admission limits remain. The accepted 60-observation local
+case, 139-comparison normal control and complete pressure regression are scoped
+to the documented small fixture, including funded failure frames; wider resource,
+whole-history and scientific qualification remain separate.
+
 Surface pressure occupies a declared zero top-normal traction slot and is mapped
 to negative vertical traction. A prescribed top-normal velocity or an already
 occupied load slot refuses instead of silently overriding or adding loads.

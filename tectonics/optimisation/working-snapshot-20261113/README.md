@@ -1204,6 +1204,38 @@ advanced-reader comparisons; eight persisting/tilted comparisons have no reader
 verdict. Carrier-frame/full-step/event/path and mixed-generation outcomes remain
 unqualified.
 
+### Use one body-force reduction for solve and restore
+
+The [evolving mechanics interface](../../docs/EVOLVING_MECHANICS.md#coincident-regional-force-material-and-boundary-inputs)
+reads each immutable force-block view once. At each entry of both staggered
+fields it first sums the original rounded finite words with `math.fsum`.
+Only an intermediate-overflow exception invokes the shared finite-sum helper's
+one complete replay of those same immutable words in integer binary64 quanta,
+followed by one projection at the original output boundary. Genuine final
+overflow retains `TectonicsError`; the existing nonfinite check and physical
+products remain. The helper is the exact version first delivered with regional
+emplacement, without a force-specific copy or a helper-only publication.
+
+The same reducer supplies the Stokes input and the force validation used by
+history computation and checkpoint restore. Existing cancellation is forwarded
+to entry, row and closing polls. Production reservations, restore admission,
+physical ownership, refusals and caps are unchanged. Retained failure frames
+remain funded until released; this does not establish a maximum-shape bound.
+
+Independent acceptance covers the local force/readers and the selected 4-by-4
+fixture, including its 256-KiB caller funding. All 60 range, actual-consumer,
+source, refusal and resource observations pass: both supported extreme-cancelling
+orders produce positive zero on both staggered fields; all 45 physical fields
+match, with actual save/restore and no restore solve or replay of the history.
+Genuine projection overflow, tight-parent refusal and live evaluation/compute/
+restore-row cancellation retain their required outcomes and complete unwind.
+The unchanged normal control passes all 139 comparisons, including its small
+nonzero force, and the complete original pressure-response regression passes.
+The retained original-order negative still has two local force and two physical
+consumer differences; it was not rerun. Actual source-error/trace/nonoverwrite
+reporting also passes. These observations do not establish maximum-shape or
+whole-chain resources, universal ordering, reference-run or scientific acceptance.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
