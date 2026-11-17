@@ -1002,6 +1002,19 @@ failed; it supplies no stored two-interval result or real product/bulge
 discrimination. The actual oblique route
 is separate from the interval chain's spatial entry.
 
+### Keep plate solves and regional returns on the same physical axes
+
+The [plate method](../../docs/I04_CAUSAL_START.md#r4-1-d1-on-changing-spherical-geometry)
+reduces unchanged rounded terms and carries one prepared physical row map through
+ordinary/Newton solves, sensitivities and regional elimination/reconstruction.
+It restores public axes and retains work/error companions. Source-only operator
+reuse and the original affected mapped controls retain their scopes. Three later
+positive global, single-exterior constrained and separated-datum cases pass on
+the frozen successor and actual frozen external control. Its maintenance
+successor is unexecuted; no negative-zero witness occurred. Stored two-interval,
+two-exterior/current-pose/owned-heat, product/bulge and actual combined-runtime
+qualification remain open.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

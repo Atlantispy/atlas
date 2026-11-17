@@ -384,6 +384,16 @@ exactly for curved spherical cells with no sampling rule. The other inputs are:
 
 A missing force refuses; it is never read as zero.
 
+**Keep names out of the arithmetic order.** The same rounded edge, face and force
+terms are summed once per component. A prepared geometric order gathers both
+matrix axes and the matching torques for the ordinary and nonlinear solves,
+then returns rates to the network's original slots. Newton keeps that order
+through its iterations while belt callbacks still use network axes. Partition
+sensitivities reuse the accepted matrix or matrix-plus-tangent and solve each
+new RHS separately. Solver gates, force signs and the original work-residual
+grouping are unchanged; these coordinate keys do not claim bit equality across
+arbitrary rotations of the declared frame.
+
 **Reporting.** Every term is reported separately, as are the torque residual and the
 power account, together with the net rotation. The power account is
 driving power = drag dissipation + interface dissipation + power delivered to the
@@ -607,6 +617,20 @@ In a closed box without a declared mean pressure, the pressure is known only up
 to a constant, and that constant would shift each plate's torque unless its
 boundary motion carries no net volume flux. Such per-plate torques are therefore
 refused rather than published; totals remain available.
+
+At the regional plate connection, physical row correspondence also follows
+exterior elimination, constrained/global mode projections and reconstruction.
+Mode columns stay authored; published matrices, forces, rates, residuals and work
+bounds return to their declared axes. Temporary gather storage uses the existing
+budget. The retained one-exterior oracle and an eight-iteration, 96-piece
+Strength twin cover their original cases. Three later retained cases also pass
+their positive oracles and mapped outputs on the frozen plate successor:
+global A/B-linked authored modes, a single exterior A-z constraint, and separated
+datum reconstruction at 0, 5 and 1,000,000 Pa with four corruption rejections.
+The actual executed control remains distinct from its unexecuted maintenance
+successor. The cases contain no negative-zero witness and do not qualify a
+two-exterior reversal, current-pose/owned heat, stored two-interval or real
+product/bulge behaviour, or the actual combined package.
 
 An analytical twisting column checks the rotation, returned torque and work
 independently. The mapping is prepared once and reuses the existing solver's

@@ -138,6 +138,30 @@ So the edge sum `E` satisfies
   `a a^T (theta/2 + sin 2theta/4) + t t^T (theta/2 - sin 2theta/4) + (a t^T + t a^T) sin^2(theta)/2`, with
   `t = unit((a x b) x a)`.
 
+**Reduction and solve coordinates.** Edge products, face tensors, weighted basal
+entries and signed interface blocks retain their existing binary64 products, then
+use one `math.fsum` per component. Pressure and GPE contributions are reduced
+separately for each plate and each boundary jump; oriented slab and regional
+reaction terms keep their original signs and force-kind order. Net rotation uses
+the same rounded geometry/rate terms.
+
+The prepared plate order is geometric: each plate is keyed by its least face key,
+and a face key contains its sorted stored vertex-coordinate triples, including
+holes. In that declared frame, both axes of the matrix and the matching force
+rows are gathered together. Ordinary and complete Newton calculations use those
+physical axes, then restore the published network slots. Belt evaluations still
+receive network-order rates; returned torque and both tangent axes are gathered
+back. Native mode columns and directed pair rows retain their authored meaning;
+a generic mode matrix is not mistaken for a plate matrix.
+
+The linear partition sensitivity reuses the physical matrix already used by the
+accepted solve. The nonlinear sensitivity reuses the accepted assembled `M+J`;
+each sensitivity still solves its own RHS. At rest, the unavailable tangent stays
+unavailable. The unbalanced-work residual retains the grouping
+`(M @ omega - known) - belt_torque`, rather than rounding `known + belt_torque`
+first. Prepared maps, accepted residuals and projections are reused; live gather
+scratch is charged to existing reservations without raising a cap.
+
 **Frame and nullspace.**
 - Every plate needs `D > 0`, which makes `M` symmetric positive definite and anchors the declared mantle frame.
 - The solve reproduces the retained gates:
@@ -147,6 +171,43 @@ So the edge sum `E` satisfies
   - relative residual at most `1e-11`.
 - An ill-conditioned or relative-only resistance refuses. Nothing removes a nullspace, and net rotation is never
   subtracted.
+
+**Regional reduction and return.** The same physical plate rows follow free or
+constrained exterior Schur elimination, authored global modes, reconstruction,
+residuals, work and their error bounds. Exterior basis rows follow their physical
+plates; basis columns remain the declared modes. Full matrix/force/mode arrays
+and returned rates, torques, constraints and diagnostics retain their public
+network/exterior axes. Separated pressure-datum operands are contracted as issued,
+not recovered by subtracting two large rounded reactions.
+
+The retained external three-plate matrix/rate/moment qualification fixtures and
+numerical negatives pass.
+The original one-exterior free-Schur oracle and affected Strength comparison also
+pass within their own source scope: both outer outcomes return after eight
+iterations with equal mapped histories, rates and 96 piece/layer records. The
+earlier Strength failure and fixture-lease setup failure remain failures. This
+original evidence is reused within its source scope; it is not rerun or relabelled
+as execution of the operator-reuse successor.
+
+Three later retained regional cases were actually executed on that frozen
+successor and independently accepted: a global basis with physical A/B rates
+linked in two authored modes; a single exterior A-z constrained Schur solve;
+and separated pressure-datum reconstruction at means 0, 5 and 1,000,000 Pa.
+Both positive within-arm oracles and complete mapped outputs pass. The datum
+case preserves zero-mean absence, mean-invariant native velocity and all four
+nonzero-mean corrupted-force rejections. Its initial balance names each sphere's
+own parent, while native solve/reconstruct keeps the retained fixture's original
+current-parent token. Separated forces and their bounds are compared directly.
+
+Those runs use their original frozen external control. A separately
+source-reviewed, unexecuted maintenance successor removes a duplicate datum-input
+comparison and two repeated helper digest reads while retaining startup
+verification, truthful observed origins and the existing origin comparisons.
+This is external-control maintenance, with no production method change or new
+numerical result. The encoding distinguishes signed zero, but the three cases
+contain no negative-zero discriminator. They are not a two-exterior reversal,
+current-pose or owned-heat replay, stored two-interval proof, real product/bulge
+discriminator, actual combined package or scientific acceptance.
 
 **Mantle forcing.** Part A admits only a declared rigid mantle rotation `omega_m`, whose term is `M_i omega_m`
 exactly. A general mantle velocity field refuses as unsupported.

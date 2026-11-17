@@ -222,11 +222,46 @@ def _finite(value, name):
     return result
 
 
-def solve_torque(matrix, torque):
-    """omega and its relative residual: symmetric, positive definite, conditioned at most 1e12, residual 1e-11."""
+def _fsum0(terms):
+    """A-36 (rule S-1): each entry the correctly rounded sum of its terms along axis 0, whatever their order."""
+    terms = np.asarray(terms, dtype=float)
+    out = np.empty(terms.shape[1:])
+    for index in np.ndindex(out.shape):
+        out[index] = math.fsum(terms[(slice(None),)+index].tolist())
+    return out
+
+
+def plate_order_key(network):
+    """A-36 (ruling 34): the plates' indices in order of a geometric key made without arithmetic. A face's key is the
+    sorted tuple of its vertices' stored directions (outer ring and holes), each as stored; a plate's key is the least
+    of its faces' keys. Only physical coordinates enter the key."""
+    index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
+    directions = network.vertex_direction
+    keys = {}
+    for face in network.faces:
+        ring = face.vertex_ids+tuple(v for hole in face.holes for v in hole)
+        key = tuple(sorted(tuple(float(x) for x in directions[index[v]]) for v in ring))
+        if face.plate_id not in keys or key < keys[face.plate_id]:
+            keys[face.plate_id] = key
+    plates = network.plate_ids
+    return tuple(sorted(range(len(plates)), key=lambda i: keys[plates[i]]))
+
+
+def _rows(order):
+    """The 3n row indices of the plates in ``order``."""
+    return np.array([3*p+j for p in order for j in range(3)], dtype=np.int64)
+
+
+def solve_torque(matrix, torque, *, rows=None, with_operator=False):
+    """omega and its relative residual: symmetric, positive definite, conditioned at most 1e12, residual 1e-11.
+
+    ``with_operator`` also returns the physical matrix already used by the solve, for local sensitivities.
+    """
     matrix, torque = _finite(matrix, "matrix"), _finite(torque, "torque")
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or torque.shape != (len(matrix),):
         raise DrivingRefused("square torque system required", INVALID)
+    if rows is not None:
+        matrix, torque = matrix[np.ix_(rows, rows)], torque[rows]
     if np.linalg.norm(matrix-matrix.T) > SYMMETRY_RELATIVE*np.linalg.norm(matrix):
         raise DrivingRefused("symmetric dissipative resistance required", NULLSPACE)
     eigenvalues = np.linalg.eigvalsh(matrix)
@@ -236,7 +271,11 @@ def solve_torque(matrix, torque):
     residual = _relative(matrix @ omega, torque) if np.any(torque) else float(np.linalg.norm(omega))
     if not residual <= POLICY["algebra_relative"]:
         raise DrivingRefused("torque residual", RESIDUAL)
-    return omega, residual
+    if rows is not None:
+        network_omega = np.empty_like(omega)
+        network_omega[rows] = omega
+        omega = network_omega
+    return (omega, residual, matrix) if with_operator else (omega, residual)
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -256,7 +295,7 @@ def edge_sum(rings):
     """
     rings = [np.asarray(ring, dtype=float) for ring in rings]
     anchor = S._mean_direction(rings[0])
-    total = np.zeros((3, 3))
+    products = []
     for index, (a, b) in enumerate(_edges(rings)):
         d = b-a
         x = np.cross(d, a)
@@ -274,9 +313,9 @@ def edge_sum(rings):
                                  INVALID)
         c = x/q[:, None]
         s = a+b
-        edge = np.einsum('ij,ik->jk', c, s)
-        total += edge+edge.T
-    return total
+        products.append(c[:, :, None]*s[:, None, :])       # A-36: gathered; one fsum per entry below
+    total = _fsum0(np.concatenate(products))
+    return total+total.T
 
 
 def polygon_moment(rings, area_sr):
@@ -521,6 +560,8 @@ class Prepared(_state._Immutable):
     face_drag: np.ndarray = field(repr=False)
     face_tensor: np.ndarray = field(repr=False)
     interfaces: tuple = field(repr=False)
+    solve_rows: np.ndarray = field(repr=False)
+    network_rows: np.ndarray = field(repr=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('Prepared operators are issued by prepare()')
@@ -559,11 +600,9 @@ def prepare(network, forcing):
     geometry = np.zeros((n, 3, 3))
     for i in range(n):
         mask = face_plate == i
-        geometry[i] = scale*tensor[mask].sum(axis=0)
-        basal[i] = scale*np.einsum('f,fij->ij', face_drag[mask], tensor[mask])
-    matrix = np.zeros((3*n, 3*n))
-    for i in range(n):
-        matrix[3*i:3*i+3, 3*i:3*i+3] = basal[i]
+        geometry[i] = scale*_fsum0(tensor[mask])
+        basal[i] = scale*_fsum0(face_drag[mask][:, None, None]*tensor[mask])
+    blocks = {(i, i): [basal[i]] for i in range(n)}         # A-36: every block's terms, summed once below
     interfaces = []
     k_of = dict(forcing.interface_k_pa_s)
     known = {boundary.boundary_id: boundary for boundary in network.boundaries}
@@ -576,23 +615,28 @@ def prepare(network, forcing):
         boundary = known[name]
         chain = list(boundary.vertex_ids)
         pairs = list(zip(chain, chain[1:]))+([(chain[-1], chain[0])] if boundary.closed else [])
-        block = np.zeros((3, 3))
+        edges = []
         for first, second in pairs:
             m, theta = arc_moment(directions[index[first]], directions[index[second]])
-            block += theta*np.eye(3)-m
+            edges.append(theta*np.eye(3)-m)
+        block = _fsum0(edges)
         block *= k_of[name]*radius**3
         i, j = order[boundary.left_plate_id], order[boundary.right_plate_id]
-        matrix[3*i:3*i+3, 3*i:3*i+3] += block
-        matrix[3*j:3*j+3, 3*j:3*j+3] += block
-        matrix[3*i:3*i+3, 3*j:3*j+3] -= block
-        matrix[3*j:3*j+3, 3*i:3*i+3] -= block
+        for key, value in (((i, i), block), ((j, j), block), ((i, j), -block), ((j, i), -block)):
+            blocks.setdefault(key, []).append(value)
         interfaces.append((name, i, j, _frozen(block)))
+    matrix = np.zeros((3*n, 3*n))
+    for (i, j), terms in blocks.items():
+        matrix[3*i:3*i+3, 3*j:3*j+3] = _fsum0(terms)
     record = dict(schema=PREPARED, network_id=network.network_id, plates=list(plates),
                   basal_drag_pa_s_m=[list(p) for p in forcing.basal_drag_pa_s_m],
                   interface_k_pa_s=[list(p) for p in forcing.interface_k_pa_s])
     if forcing.basal_drag_radius_m is not None:
         record['basal_drag_radius_m'] = forcing.basal_drag_radius_m
+    solve_rows = _rows(plate_order_key(network))
     return _state._issue(Prepared, network_id=network.network_id, plate_ids=plates, radius_m=radius,
+                          solve_rows=_frozen(solve_rows, np.int64),
+                          network_rows=_frozen(np.argsort(solve_rows), np.int64),
                          basal_drag_radius_m=drag_radius,
                          prepared_id=hashlib.sha256(_json(record)).hexdigest(), matrix=_frozen(matrix),
                          basal=_frozen(basal), geometry=_frozen(geometry), face_plate=_frozen(face_plate, np.int64),
@@ -932,16 +976,16 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             raise DrivingRefused('radial pressure contrast projection overflows or erases a nonzero value', INVALID)
         # Physical radial wall: dA=r dr dtheta, lever arm=r n. Thus
         # tau_left=-int p r^2 dr * (b-a)=-R^2 K*(b-a); no planar gamma.
-        pressure = np.zeros((n, 3)); jump = {}
+        pressure = [[np.zeros(3)] for _ in range(n)]; jump = {}   # A-36: gathered, one fsum per entry
         for e, chord in enumerate(support.end-support.start):
             left, right = support.plates[e]
             contribution = -radius*radius*trace[e]*chord
-            pressure[order[left]] += contribution
-            pressure[order[right]] -= contribution
+            pressure[order[left]].append(contribution)
+            pressure[order[right]].append(-contribution)
             name = support.boundary_ids[int(support.edge_boundary[e])]
-            jump[name] = jump.get(name, 0.)-radius*radius*delta_k[e]*chord
-        terms['radial_pressure'] = pressure
-        jumps = [(name, tuple(float(x) for x in value)) for name, value in sorted(jump.items())]
+            jump.setdefault(name, [np.zeros(3)]).append(-radius*radius*delta_k[e]*chord)
+        terms['radial_pressure'] = np.array([_fsum0(values) for values in pressure])
+        jumps = [(name, tuple(float(x) for x in _fsum0(value))) for name, value in sorted(jump.items())]
         radial_record = dict(port_id=radial_pressure_port.port_id, moving_id=radial_pressure_port.moving_id,
             material_id=radial_pressure_port.material_id, source_state_id=radial_pressure_port.source_state_id,
             support_id=support.support_id, interface_pressure_rule=interface_pressure_rule,
@@ -990,18 +1034,18 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
                           water_density_kg_m3=water_density_kg_m3).reshape(-1, 2)
         trace = u[:, 0]+TRACE_PARTITION*(u[:, 1]-u[:, 0])
         chord = support.end-support.start
-        gpe = np.zeros((n, 3))
+        gpe = [[np.zeros(3)] for _ in range(n)]                # A-36: gathered, one fsum per entry
         jump = {}
         scale = -forcing.gamma*radius*radius
         for e in range(support.edges):
             left, right = support.plates[e]
             contribution = scale*trace[e]*chord[e]
-            gpe[order[left]] += contribution
-            gpe[order[right]] -= contribution
+            gpe[order[left]].append(contribution)
+            gpe[order[right]].append(-contribution)
             name = support.boundary_ids[int(support.edge_boundary[e])]
-            jump[name] = jump.get(name, 0.)+scale*(u[e, 1]-u[e, 0])*chord[e]
-        terms['gpe'] = gpe
-        jumps = [(name, tuple(float(x) for x in value)) for name, value in sorted(jump.items())]
+            jump.setdefault(name, [np.zeros(3)]).append(scale*(u[e, 1]-u[e, 0])*chord[e])
+        terms['gpe'] = np.array([_fsum0(values) for values in gpe])
+        jumps = [(name, tuple(float(x) for x in _fsum0(value))) for name, value in sorted(jump.items())]
     if forcing.slabs or forcing.slab_omitted:
         trenches = {name for name, boundary in known.items() if boundary.kind == S.TRENCH}
         slabs = dict(forcing.slabs)
@@ -1017,19 +1061,19 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             raise DrivingRefused('slab pull needs the shared Datum gravity', MISSING_FORCE)
         index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
         directions = np.asarray(network.vertex_direction, dtype=float)
-        slab = np.zeros((n, 3))
+        slab = [[np.zeros(3)] for _ in range(n)]             # A-36: gathered
         for name, record in sorted(slabs.items()):
             boundary = known[name]
             chain = list(boundary.vertex_ids)
             pairs = list(zip(chain, chain[1:]))+([(chain[-1], chain[0])] if boundary.closed else [])
-            chord = sum((directions[index[b]]-directions[index[a]] for a, b in pairs), np.zeros(3))
+            chord = _fsum0([directions[index[b]]-directions[index[a]] for a, b in pairs])
             # int r x f ds = C g S R^2 (b - a) for the left plate's outward conormal; opposite for the right.
             sign = 1. if boundary.subducting_side == 'left' else -1.
             pull = record.transmission*datum.gravity_m_s2*record.section_mass_anomaly_kg_m*radius*radius
             plate = boundary.left_plate_id if sign > 0 else boundary.right_plate_id
-            slab[order[plate]] += sign*pull*chord
+            slab[order[plate]].append(sign*pull*chord)
         if slabs:
-            terms['slab_pull'] = slab
+            terms['slab_pull'] = np.array([_fsum0(values) for values in slab])
     if forcing.authored_torque_n_m:
         authored = np.zeros((n, 3))
         for plate, value in forcing.authored_torque_n_m:
@@ -1038,13 +1082,13 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             authored[order[plate]] = value
         terms['authored_torque'] = authored
     if forcing.regional_reactions:
-        regional = np.zeros((n, 3))
+        regional = [[np.zeros(3)] for _ in range(n)]          # A-36: gathered
         for name, (left, right) in forcing.regional_reactions:
             if name not in known:
                 raise DrivingRefused('regional reaction on unknown boundary %r' % name, INVALID)
-            regional[order[known[name].left_plate_id]] += left
-            regional[order[known[name].right_plate_id]] += right
-        terms['regional_reaction'] = regional
+            regional[order[known[name].left_plate_id]].append(left)
+            regional[order[known[name].right_plate_id]].append(right)
+        terms['regional_reaction'] = np.array([_fsum0(values) for values in regional])
     if forcing.mantle_omega_rad_s is not None:
         terms['mantle_traction'] = np.einsum('pij,j->pi', prepared.basal, np.asarray(forcing.mantle_omega_rad_s))
     # Missing forces stay visible per item (rulings: driving-slab-omission, driving-partial-interface).
@@ -1057,15 +1101,17 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
     for value in terms.values():
         torque += value
     belt = None
+    rows = prepared.solve_rows
     if belt_term is None:
-        omega_flat, residual = solve_torque(prepared.matrix, torque.reshape(-1))
+        omega_flat, residual, partition_operator = solve_torque(
+            prepared.matrix, torque.reshape(-1), rows=rows, with_operator=True)
         omega = omega_flat.reshape(n, 3)
         power = _power(prepared, terms, omega, forcing)
     else:
-        omega_flat, residual, belt_torque, report, belt_tangent = _belt_newton(
-            prepared.matrix, torque.reshape(-1), belt_term, n, omega_start, with_tangent=True)
+        omega_flat, residual, belt_torque, report, partition_operator, unbalanced = _belt_newton(
+            prepared.matrix, torque.reshape(-1), belt_term, n, omega_start, with_operator=True,
+            rows=rows, back=prepared.network_rows)
         omega = omega_flat.reshape(n, 3)
-        unbalanced = prepared.matrix @ omega_flat-torque.reshape(-1)-belt_torque.reshape(-1)
         power = _power(prepared, terms, omega, forcing, belt_dissipation=report['dissipation_w'],
                        belt_column_work=report['column_work_w'],
                        unbalanced_w=math.fsum(float(x) for x in omega_flat*unbalanced))
@@ -1085,22 +1131,23 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
     # material state held fixed, not a solve at the finite new partition. At rest the nonlinear belt tangent is
     # unsupported; omit this diagnostic explicitly without changing the solved production motion.
     motion = []
-    partition_operator, partition_evaluation = prepared.matrix, None
+    partition_evaluation = None
     if belt_term is not None and jumps:
         if any(response['u'] == 0. for response in belt_term.last[1]):
             partition_operator, partition_evaluation = None, PARTITION_AT_REST
         else:
-            partition_operator = prepared.matrix+belt_tangent
             partition_evaluation = PARTITION_LOCAL
     for name, value in jumps if partition_operator is not None else ():
         boundary = known[name]
         rhs = np.zeros((n, 3))
         rhs[order[boundary.left_plate_id]] += np.asarray(value)/2
         rhs[order[boundary.right_plate_id]] -= np.asarray(value)/2
-        delta = np.linalg.solve(partition_operator, rhs.reshape(-1)).reshape(n, 3)
+        delta = np.empty(3*n)
+        delta[rows] = np.linalg.solve(partition_operator, rhs.reshape(-1)[rows])
+        delta = delta.reshape(n, 3)
         motion.append((name, _frozen(delta), float(np.max(np.linalg.norm(delta, axis=1)))*radius))
-    geometry = prepared.geometry.sum(axis=0)
-    net = np.linalg.solve(geometry, np.einsum('pij,pj->i', prepared.geometry, omega))
+    geometry = _fsum0(prepared.geometry)
+    net = np.linalg.solve(geometry, _fsum0(np.einsum('pij,pj->pi', prepared.geometry, omega)))
     record = dict(network_id=network.network_id, prepared_id=prepared.prepared_id, forcing_id=forcing.forcing_id,
                   columns_id=None if columns_port is None or forcing.gamma is None else columns_port.port_id,
                   datum=None if datum is None else datum.record(), omitted=sorted(forcing.omitted),
@@ -1211,7 +1258,7 @@ def _general_solve(matrix, rhs):
     return step, float(singular[0]/singular[-1])
 
 
-def _belt_newton(matrix, known, belt_term, n, omega_start=None, *, with_tangent=False):
+def _belt_newton(matrix, known, belt_term, n, omega_start=None, *, with_operator=False, rows=None, back=None):
     """M omega = b + tau_belt(omega) by exact-tangent Newton on omega (3P unknowns), rulings C1 and C2.
 
     ``belt_term.evaluate(omega)`` returns the belt torques (n, 3), the exact tangent J = -d tau/d omega (3n, 3n;
@@ -1223,26 +1270,45 @@ def _belt_newton(matrix, known, belt_term, n, omega_start=None, *, with_tangent=
     except a tangent that is not representable near U = 0, which refuses by name (detail 'tangent'). The accepted
     solution's assembled symmetric part of M + J must be positive semidefinite (else 'non-monotone belt response').
     Zero forcing returns omega = 0 exactly. ``omega_start`` is the start (a committed or iterate value); None starts
-    from the belt-free balance. Nothing is issued on refusal. ``with_tangent`` additionally returns the converged
-    tangent already calculated by the solve, for the local partition-sensitivity diagnostic.
+    from the belt-free balance. Nothing is issued on refusal. ``with_operator`` additionally returns the accepted
+    physical M + J and torque-residual vector already calculated by the solve, for partition sensitivity and the
+    work account. At rest no sensitivity operator is returned. Prepared physical row maps are reused directly.
     """
     known = np.asarray(known, dtype=float)
+    if rows is not None:
+        matrix = np.asarray(matrix, dtype=float)[np.ix_(rows, rows)]
+        known = known[rows]
+
+    def evaluate(value):
+        if rows is None:
+            return belt_term.evaluate(value.reshape(n, 3))
+        torque, jacobian, report = belt_term.evaluate(value[back].reshape(n, 3))
+        return (np.asarray(torque, dtype=float).reshape(-1)[rows],
+                np.asarray(jacobian, dtype=float)[np.ix_(rows, rows)], report)
     if not np.any(known):
         # omega = 0 exactly; the belt is evaluated there (U = 0 on every edge: the continuous zero limit, no kernel
         # call), so its products are the exact zeros of this balance.
-        torque, jacobian, report = belt_term.evaluate(np.zeros((n, 3)))
+        torque, jacobian, report = evaluate(np.zeros(3*n))
         report = dict(report, newton_iterations=0, newton_relative=0., omega_increment=0., condition=None)
         out = (np.zeros(3*n), 0., np.asarray(torque, dtype=float).reshape(-1), report)
-        return out+(jacobian,) if with_tangent else out
+        if with_operator:
+            residual = (matrix @ out[0]-known)-out[2]
+        if rows is not None:
+            out = (out[0][back], out[1], out[2][back], out[3])
+            if with_operator:
+                residual = residual[back]
+        return out+(None, residual) if with_operator else out
     if omega_start is None:
         omega, _ = solve_torque(matrix, known)
     else:
         omega = np.array(omega_start, dtype=float).reshape(-1)
         if omega.shape != (3*n,) or not np.all(np.isfinite(omega)):
             raise DrivingRefused('the Newton start is one finite angular velocity per plate', INVALID)
+        if rows is not None:
+            omega = omega[rows]
 
     def residual_of(value):
-        torque, jacobian, report = belt_term.evaluate(value.reshape(n, 3))
+        torque, jacobian, report = evaluate(value)
         torque = np.asarray(torque, dtype=float).reshape(-1)
         moment = matrix @ value
         residual = moment-known-torque
@@ -1295,7 +1361,11 @@ def _belt_newton(matrix, known, belt_term, n, omega_start=None, *, with_tangent=
     report = dict(report, newton_iterations=iteration, newton_relative=relative, omega_increment=increment,
                   condition=condition, symmetric_min_eigenvalue=lowest)
     out = (omega, relative, torque, report)
-    return out+(jacobian,) if with_tangent else out
+    if rows is not None:
+        out = (out[0][back], out[1], out[2][back], out[3])
+        if with_operator:
+            residual = residual[back]
+    return out+(assembled, residual) if with_operator else out
 
 
 def stage_rotations(motion):

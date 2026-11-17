@@ -397,6 +397,7 @@ class PreparedRegionalDriving:
         self._guard = budget.reserve(65536+8*(12*n*n+128*nv+64*n), category='plate-regional-driving')
         self._guard.__enter__()
         try:
+            self._solve_rows = prepared.solve_rows
             self._matrix = prepared.matrix.copy()
             b = np.zeros((len(network.plate_ids), 3))
             for term in exterior.terms.values():       # same D.balance assembly order
@@ -505,6 +506,9 @@ class PreparedRegionalDriving:
             a = np.array([3*network.plate_ids.index(p)+j for p in lift.plate_ids for j in range(3)])
             other = np.array([j for j in range(n) if j not in set(a)], dtype=np.int64)
             self._a, self._other = a, other
+            positions = {int(row): i for i, row in enumerate(other)}
+            self._other_order = np.array([positions[int(row)] for row in self._solve_rows if int(row) in positions],
+                                         dtype=np.int64)
             self._other_basis = None
             self._global_basis = None
             exterior_subspace = None
@@ -515,7 +519,8 @@ class PreparedRegionalDriving:
                         raw.shape != (n, lift._basis.shape[1]) or not np.isfinite(raw).all() or
                         not np.array_equal(raw[a], lift._basis)):
                     raise TectonicsError('global angular basis must match the issued pair basis exactly and exclude exterior subspaces')
-                D.solve_torque(raw.T@raw, np.zeros(raw.shape[1]))
+                ordered_raw = raw[self._solve_rows]
+                D.solve_torque(ordered_raw.T@ordered_raw, np.zeros(raw.shape[1]))
                 _name(global_constraint_source)
                 self._global_basis = frozen(raw)
                 global_subspace = dict(plate_ids=list(network.plate_ids), angular_rate_basis=raw.tolist(),
@@ -528,7 +533,8 @@ class PreparedRegionalDriving:
                 if (raw.ndim != 2 or raw.shape[0] != len(other) or
                         not 1 <= raw.shape[1] < len(other) or not np.isfinite(raw).all()):
                     raise TectonicsError('explicit exterior angular basis must be finite, independent and a proper subspace')
-                D.solve_torque(raw.T@raw, np.zeros(raw.shape[1]))
+                ordered_raw = raw[self._other_order]
+                D.solve_torque(ordered_raw.T@ordered_raw, np.zeros(raw.shape[1]))
                 _name(exterior_constraint_source)
                 self._other_basis = frozen(raw)
                 exterior_subspace = dict(plate_ids=[p for p in network.plate_ids if p not in lift.plate_ids],
@@ -543,22 +549,28 @@ class PreparedRegionalDriving:
                 # Thus virtual work is q.T B.T(M B q + r - b); no independent
                 # exterior solve or post-solve equality constraint is present.
                 self._other_base, self._other_response = np.zeros(len(other)), np.zeros((len(other), 6))
-                self._resistance = frozen(self._global_basis.T@self._matrix@self._global_basis)
-                self._drive = frozen(self._global_basis.T@self._b)
+                rows = self._solve_rows
+                basis = ordered_raw
+                self._resistance = frozen(basis.T@self._matrix[np.ix_(rows, rows)]@basis)
+                self._drive = frozen(basis.T@self._b[rows])
             elif len(other):
-                Mbb = self._matrix[np.ix_(other, other)]
-                Mba = self._matrix[np.ix_(other, a)]
+                ordered_other = other[self._other_order]
+                Mbb = self._matrix[np.ix_(ordered_other, ordered_other)]
+                Mba = self._matrix[np.ix_(ordered_other, a)]
                 # Each solve retains the existing D1 conditioning/residual gate.
                 if self._other_basis is None:
-                    self._other_base = D.solve_torque(Mbb, self._b[other])[0]
-                    self._other_response = np.column_stack([D.solve_torque(Mbb, c)[0] for c in Mba.T])
+                    base = D.solve_torque(Mbb, self._b[ordered_other])[0]
+                    response = np.column_stack([D.solve_torque(Mbb, c)[0] for c in Mba.T])
                 else:
-                    N = self._other_basis
+                    N = ordered_raw
                     reduced = N.T@Mbb@N
-                    self._other_base = N@D.solve_torque(reduced, N.T@self._b[other])[0]
-                    self._other_response = N@np.column_stack([D.solve_torque(reduced, c)[0] for c in (N.T@Mba).T])
-                Mab = self._matrix[np.ix_(a, other)]
-                eff, rhs = Maa-Mab@self._other_response, ba-Mab@self._other_base
+                    base = N@D.solve_torque(reduced, N.T@self._b[ordered_other])[0]
+                    response = N@np.column_stack([D.solve_torque(reduced, c)[0] for c in (N.T@Mba).T])
+                Mab = self._matrix[np.ix_(a, ordered_other)]
+                eff, rhs = Maa-Mab@response, ba-Mab@base
+                self._other_base, self._other_response = np.empty_like(base), np.empty_like(response)
+                self._other_base[self._other_order] = base
+                self._other_response[self._other_order] = response
             else:
                 self._other_base, self._other_response = np.zeros(0), np.zeros((0, 6))
                 eff, rhs = Maa, ba
@@ -652,7 +664,7 @@ class PreparedRegionalDriving:
                 or request.get('parent_state_id') != parent_state_id or request.get('time_s') != time_s):
             raise TectonicsError('native result has stale coupling, geometry, pressure reference, material source, parent or time')
         k, nv = self._lift._basis.shape[1], len(self._lift._points)
-        with self._budget.reserve(65536+mechanical.nbytes+8*(128*nv+32*len(self._b)),
+        with self._budget.reserve(65536+mechanical.nbytes+8*(2*len(self._b)**2+128*nv+64*len(self._b)),
                                   category='plate-regional-result'):
             q = _array(mechanical.array('generalized_rates_s_inv'), (k,), 'native rates')
             r = _array(mechanical.array('velocity_constraint_reaction_n'), (nv, 3), 'native reaction')
@@ -711,49 +723,63 @@ class PreparedRegionalDriving:
                 direct = np.einsum('aij,ij->a', self._lift._modes, r)
                 if _relative(direct-recorded_force, direct, recorded_force) > ALGEBRA:
                     raise TectonicsError('returned regional force does not reproduce physical virtual work')
+            rows = self._solve_rows
             omega, resisting = np.zeros(len(self._b)), np.zeros(len(self._b))
             omega[self._a], resisting[self._a] = pair, regional_pair
             if self._global_basis is None:
                 omega[self._other] = self._other_base-self._other_response@pair
             else:
-                omega = self._global_basis@q
+                basis = self._global_basis[rows]
+                omega[rows] = basis@q
             if self._current_background is not None:
                 from .integration_wall_measures import _decode
                 limit = _decode(self._current_background['angular_rate_l2_bound_s_inv'])
                 if sum(Fraction(float(v))**2 for v in omega) > limit**2:
                     raise TectonicsError('solved rate exceeds the declared current-pose virtual-work error domain')
-            exterior_force = self._matrix@omega
+            ordered_matrix, ordered_omega = self._matrix[np.ix_(rows, rows)], omega[rows]
+            exterior_force = np.empty_like(omega)
+            exterior_force[rows] = ordered_matrix@ordered_omega
             residual = exterior_force+resisting-self._b
-            other_projected = lambda v: v if self._other_basis is None else self._other_basis.T@v
-            if self._global_basis is None:
-                projected = lambda v: np.r_[self._lift._basis.T@v[self._a], other_projected(v[self._other])]
-            else:
-                projected = lambda v: self._global_basis.T@v
-            admissible = projected(residual)
-            force_relative = _relative(admissible, projected(exterior_force), projected(resisting), projected(self._b))
-            # Standard finite dot-product bound for the existing BLAS
-            # matrix product, then the two residual additions and basis
-            # projection. Retain the absolute residual independently.
+            # The owned gather is reused for its absolute-value bound, then released.
             eps = np.finfo(float).eps
             gamma = (len(omega)+2)*eps/(1-(len(omega)+2)*eps)
-            dot_error = gamma*(np.abs(self._matrix)@np.abs(omega))
+            np.abs(ordered_matrix, out=ordered_matrix)
+            dot_error = np.empty_like(omega)
+            dot_error[rows] = gamma*(ordered_matrix@np.abs(ordered_omega))
+            del ordered_matrix
+            if self._global_basis is None:
+                if self._other_basis is not None:
+                    basis = self._other_basis[self._other_order]
+                other_projected = lambda v: v if self._other_basis is None else basis.T@v[self._other_order]
+                other_admissible = other_projected(residual[self._other])
+                projected = lambda v: np.r_[self._lift._basis.T@v[self._a], other_projected(v[self._other])]
+                admissible = np.r_[self._lift._basis.T@residual[self._a], other_admissible]
+            else:
+                projected = lambda v: basis.T@v[rows]
+                admissible = projected(residual)
+            projected_exterior = projected(exterior_force)
+            projected_resisting = projected(resisting)
+            projected_driving = projected(self._b)
+            # Standard finite dot-product bound, residual additions and basis projection.
             reaction_error = np.zeros_like(resisting); reaction_error[self._a] = pair_error
             residual_error = dot_error+reaction_error+4*eps*(np.abs(exterior_force)+np.abs(resisting)+np.abs(self._b))
             projection_error = (k+7)*eps*np.abs(self._lift._basis.T)@np.abs(residual[self._a])
             other_error = residual_error[self._other]
             if self._other_basis is not None:
-                absolute_basis = np.abs(self._other_basis.T)
-                other_error = (absolute_basis@other_error+
-                    (len(self._other)+2)*eps*(absolute_basis@np.abs(residual[self._other])))
+                np.abs(basis, out=basis)
+                absolute_basis = basis.T
+                other_error = (absolute_basis@other_error[self._other_order]+
+                    (len(self._other)+2)*eps*(absolute_basis@np.abs(residual[self._other][self._other_order])))
             if self._global_basis is None:
                 bounds = np.r_[np.abs(self._lift._basis.T)@residual_error[self._a]+projection_error, other_error]
             else:
-                absolute_basis = np.abs(self._global_basis.T)
-                bounds = (absolute_basis@residual_error+
-                    (len(omega)+2)*eps*(absolute_basis@np.abs(residual)))
+                np.abs(basis, out=basis)
+                absolute_basis = basis.T
+                bounds = (absolute_basis@residual_error[rows]+
+                    (len(omega)+2)*eps*(absolute_basis@np.abs(residual[rows])))
             algebra_bound = float(np.max(np.nextafter(bounds, math.inf)))
             force_relative = _accounted_relative(admissible, bounds,
-                projected(exterior_force), projected(resisting), projected(self._b))
+                projected_exterior, projected_resisting, projected_driving)
             if force_relative > ALGEBRA:
                 raise TectonicsError('coupled global torque equations exceed the existing D1 algebra gate')
             # Reaction needed to enforce the declared constraint. At full rank it
@@ -784,8 +810,8 @@ class PreparedRegionalDriving:
                 arrays['global_angular_rate_basis'] = self._global_basis
                 # This includes internal reaction transfer between linked
                 # plates, not just transverse-pole constraint reactions.
-                work = math.fsum(float(v) for v in omega*constraint)
-                scale = math.fsum(abs(float(v)) for v in omega*(np.abs(exterior_force)+np.abs(resisting)+np.abs(self._b)))
+                work = math.fsum(float(v) for v in omega[rows]*constraint[rows])
+                scale = math.fsum(abs(float(v)) for v in omega[rows]*(np.abs(exterior_force[rows])+np.abs(resisting[rows])+np.abs(self._b[rows])))
                 if _relative(work, scale) > WORK:
                     raise TectonicsError('global angular constraint does nonzero admissible virtual work')
                 global_constraint_account = dict(work_w=work, work_operand_sum_w=scale,
@@ -798,12 +824,12 @@ class PreparedRegionalDriving:
                 arrays['exterior_constraint_torque_n_m'] = external_constraint.reshape(-1, 3)
                 # This is a physical constraint, not heat. Its admissible work
                 # is zero up to the already checked projected torque residual.
-                work = math.fsum(float(v) for v in omega*external_constraint)
-                scale = math.fsum(abs(float(v)) for v in omega*(np.abs(exterior_force)+np.abs(resisting)+np.abs(self._b)))
+                work = math.fsum(float(v) for v in omega[rows]*external_constraint[rows])
+                scale = math.fsum(abs(float(v)) for v in omega[rows]*(np.abs(exterior_force[rows])+np.abs(resisting[rows])+np.abs(self._b[rows])))
                 if _relative(work, scale) > WORK:
                     raise TectonicsError('exterior angular constraint does nonzero admissible virtual work')
                 exterior_constraint_account = dict(work_w=work, work_operand_sum_w=scale,
-                    projected_torque_residual_n_m=other_projected(residual[self._other]).tolist(),
+                    projected_torque_residual_n_m=other_admissible.tolist(),
                     scope='declared physical exterior subspace; no heat and no general pole-evolution claim')
             if datum_account is not None:
                 datum_torque = np.zeros_like(resisting); datum_torque[self._a] = datum_pair
@@ -815,9 +841,9 @@ class PreparedRegionalDriving:
                 parent_state_id=parent_state_id, time_s=time_s, constrained=constrained,
                 algebra_relative_residual=force_relative, virtual_work_relative_residual=work_relative,
                 regional_boundary_work_w=boundary_work, plate_resisting_work_w=plate_work,
-                exterior_resistance_work_w=float(omega@exterior_force),
-                external_driving_work_w=float(omega@self._b),
-                constraint_work_w=float(omega@constraint),
+                exterior_resistance_work_w=float(omega[rows]@exterior_force[rows]),
+                external_driving_work_w=float(omega[rows]@self._b[rows]),
+                constraint_work_w=float(omega[rows]@constraint[rows]),
                 algebra_absolute_residual_n_m=float(np.max(np.abs(admissible))),
                 algebra_roundoff_bound_n_m=algebra_bound,
                 native_force_absolute_residual_j=float(np.max(np.abs(mechanical.array('generalized_force_residual_j')))),
