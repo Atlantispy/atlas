@@ -305,6 +305,14 @@ and is refused unless a separately resolved endpoint law is supplied. Exact
 homogeneous finite-source exhaustion, including competing outlets, is supported;
 continuation beyond it is refused, never silently clamped or extrapolated.
 
+The nondefault snapshot's [donor-diagonal correction](../optimisation/working-snapshot-20261113/README.md#reduce-only-the-magmatic-donor-diagonal)
+sums the original signed rounded coefficients once per eligible donor, preserving
+receiver/edge rows and exact held-feed exclusion. It does not settle numerical
+node-axis permutation of either propagator. Independent local review accepts
+the reduction: the 34-target control distinguishes four old values, while the
+same six wider failures remain. Whole-operator qualification, coefficient
+overflow and the original-rate solver law are outside this local acceptance.
+
 Per segment: at most64 nodes,64 components,256 simultaneous edges,256 accepted
 integration intervals and4096 derivative evaluations; one native thread and
 128MiB admitted work. These are explicit prototype admission limits, not an RSS

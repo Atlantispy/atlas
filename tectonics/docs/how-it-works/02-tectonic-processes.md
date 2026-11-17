@@ -547,6 +547,15 @@ unsupported. [Keller and Suckale](https://academic.oup.com/gji/article/219/1/185
 provide the distinction between transported energy and phase-reaction energy;
 Atlas is not reproducing their full multiphase continuum model.
 
+The nondefault snapshot's [donor-diagonal correction](../../optimisation/working-snapshot-20261113/README.md#reduce-only-the-magmatic-donor-diagonal)
+sums each donor's already-rounded rate/mass coefficients once, preserving its
+receiver/edge entries, held-feed exclusion and empty positive zero. Local targets
+have independent local acceptance: four old values differ among 34 targets,
+while the same six wider solver/map/stock/edge failures remain. This does not
+qualify the full operator or coefficient-overflow range. Original rates,
+exact signed net and matched debit-credit-receipt remain the physical target;
+a wider replacement is not selected or implemented by this local correction.
+
 When a thermal law is supplied, each stock declared as a melt or solid source must
 match its phase under that law, at the start and in every published remainder. A
 stock with no latent heat has a temperature but no melt fraction, so it is compared

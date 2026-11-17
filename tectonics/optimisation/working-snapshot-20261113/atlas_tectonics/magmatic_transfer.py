@@ -279,7 +279,10 @@ class PreparedMagmaticTransfer:
             coefficient = rate/mass[donor]
             a[receiver, donor] += coefficient
             a[n+j, donor] = coefficient
-            if not (exact and self.feed[donor]): a[donor, donor] -= coefficient
+        for donor in range(n):
+            if not (exact and self.feed[donor]):
+                a[donor, donor] = math.fsum(-a[receiver, donor]
+                    for receiver in range(n) if self.rates[donor, receiver] != 0)
         # Two nonnegative source maps, combined with signed scalar energies at
         # evaluation. Putting signed W directly in the exponential matrix loses
         # its Metzler structure and can contaminate structural-zero mass entries.

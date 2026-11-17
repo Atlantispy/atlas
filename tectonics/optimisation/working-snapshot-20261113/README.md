@@ -662,6 +662,20 @@ same-producer control passes 14/14 comparisons; restoring the old sum changes
 four phase residuals with no other failure. Actual IV1 reach and universal
 extent remain unproved; this is not whole-member or joined qualification.
 
+### Reduce only the magmatic donor diagonal
+
+The [magmatic matrix](../../docs/W08_JOINED.md#numerical-design-and-efficiency)
+retains each already-rounded rate/mass coefficient, receiver entry and indexed
+edge row. For each eligible donor it forms one signed `math.fsum` from those
+coefficients for the diagonal. Exact-mode held-feed exclusion and empty positive
+zero remain. Independent review accepts this isolated local reduction. The
+current 34-target control distinguishes four old local values; the same six
+wider solver/map/stock/edge failures remain open. This does not canonicalise
+expm/DOP853 node axes or qualify propagated invariance. Coefficient overflow
+and the original-rate solver law lie outside the local acceptance. Original
+rates, exact signed net and matched debit-credit-receipt remain the physical
+target; this verdict does not qualify or select a general replacement.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
