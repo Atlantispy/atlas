@@ -674,7 +674,7 @@ class SphericalAtlasIndex:
                 # The vertex-mean cap is tighter when it remains hemispherical;
                 # positive dot products make that cap geodesically convex, so it
                 # contains every edge and the polygon interior (also if concave).
-                candidate = _unit(np.sum(points, axis=0))
+                candidate = _unit(np.array([math.fsum(points[:,j]) for j in range(3)]))
                 candidate_radius = float(np.max(_angle(points, candidate)))
                 if np.all(points @ candidate > 0) and candidate_radius < radius:
                     centre, radius = candidate, candidate_radius

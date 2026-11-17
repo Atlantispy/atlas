@@ -166,6 +166,26 @@ concurrent first use checks this. A valid map establishes neither fault
 physics nor plate history. [Shapely's intersection contract](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.intersection.html)
 documents the actual planar dependency.
 
+The nondefault working snapshot's spatial index forms a candidate vertex-mean
+cap by applying `math.fsum` separately to the original rounded x, y and z
+coordinates, then using the existing normalisation. Existing positive-dot and
+hemisphere tests decide whether that candidate is used. Radius and bucket
+formulas, KD-tree capacity checks, classification, limits and refusal rules
+remain unchanged.
+
+The selected comparison gives the old-sum and corrected-cap arms the same
+corrected area producer. All five physical-input groups match across arms and
+within each arm's cyclic renaming, including the 96 areas, six actual metrics
+and directed rings. Of the old arm's actually used caps, 59 change; all 96
+corrected cap records and the complete mapped query result agree. The real
+query reaches both capacity checks and classification, returning 96 owners
+from 238 candidates against 9,216 exhaustive pairs; the bounded vertex query
+retains its prescribed capacity refusal. Independent review accepts the whole
+INDEX contract for this fixed-frame six-plate, seed-41, 96-patch case. Matching
+classifications alone would not qualify it. These are selected source-bound
+controls, not a cross-frame, historical-restore, performance, whole-process or
+geological result.
+
 The integration work keeps one such closed atlas as an evolving
 [shared network](06-physical-integration.md#the-shared-spherical-network-one-owner-for-every-point-of-the-sphere)
 beside its accepted state, adding plate ownership, one record per plate boundary

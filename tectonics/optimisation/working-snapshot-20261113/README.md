@@ -613,8 +613,25 @@ rebuild all areas before assignment and fit, preserving the non-area primitives
 and directed rings. All 96 rebuilt areas and six owner metric records agree
 under the selected renaming comparisons. Existing cube and hole/filler methods
 also pass. Historical restore, arbitrary frames, performance, whole-process and
-scientific acceptance remain open. The separately reviewed forward spatial-index
-cap reduction is a following source change, with its own receiving commit.
+scientific acceptance remain open. The following spatial-index section describes its separately qualified cap
+reduction.
+
+### Stabilise the spatial index's vertex-mean cap
+
+The index applies `math.fsum` separately to each coordinate of the original
+rounded vertices before the existing mean-direction normalisation. The same
+positive-dot/hemisphere selection, radius and bucket formulas, KD-tree capacity
+checks, classification and refusal rules remain.
+
+The accepted fixed-frame six-plate, seed-41, 96-patch comparison gives both arms
+the corrected area producer. All physical-input groups, rebuilt areas, six owner
+metrics and directed rings agree. Of the old arm's used caps, 59 change under
+renaming; all 96 corrected caps and the complete mapped query result agree.
+The real query reaches both capacity checks and classification: 96 owners from
+238 candidates against 9,216 exhaustive pairs. Its bounded vertex query keeps
+the prescribed capacity refusal. This qualifies the selected whole index
+contract beyond matching classifications. Cross-frame, historical restore,
+performance, whole-process and scientific acceptance remain open.
 
 ## Reader process census
 
