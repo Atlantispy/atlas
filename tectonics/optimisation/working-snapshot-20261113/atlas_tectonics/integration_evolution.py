@@ -10,7 +10,8 @@ advanced along a thermal clock. No inflow, extraction, lateral localisation, rup
 This module is the one implementation of those retained I01 equations, moved without change from
 tools/check_i01_finite_strain.py (I02.2a) and split (I02.2b) around one immutable prepared ``Runner``: ``begin``
 balances the reference stage, ``advance`` extends an accepted ``Prefix`` by whole steps of the runner's fixed schedule
-dt = duration/steps, ``resume`` rebuilds a carried prefix and re-solves its endpoint stage, and ``finish`` constructs
+dt = duration/steps, ``resume`` rebuilds a carried prefix and solves its endpoint stage again from the carried guess,
+and ``finish`` constructs
 the result. ``evolve`` keeps its signature, defaults and output as a wrapper over exactly that path; there is one step
 loop. A piece works on local candidate values and only accepted steps reach the prefix it returns. The runner owns
 private descriptors of its preparation and operators, captured once; it hands out only fresh inspection copies, so
@@ -315,6 +316,13 @@ def _frozen_stage(s):
             for key, value in s.items()}
 
 
+def _held_guess(stage):
+    """The endpoint guess a prefix carries (A-4): the solver reads only x and rate; none when x is None (at rest)."""
+    if stage["x"] is None:
+        return None
+    return dict(x=weakening.frozen(stage["x"]), rate=float(stage["rate"]))
+
+
 def _issue(cls, **values):
     item = object.__new__(cls)
     for key, value in values.items():
@@ -418,6 +426,7 @@ class Prefix(_Issued):
     _kappa: np.ndarray = dataclasses.field(repr=False)
     _yield: np.ndarray = dataclasses.field(repr=False)
     _stage: dict = dataclasses.field(repr=False)
+    _guess: dict | None = dataclasses.field(repr=False)     # what _stage was solved from (A-4); None at rest
 
     def carried(self):
         """The carried values as fresh descriptors over immutable bytes: exactly resume()'s keywords."""
@@ -428,7 +437,9 @@ class Prefix(_Issued):
                     diagnostics=dict(self.diagnostics), yield_counts=_fresh(self._yield),
                     max_step_energy_relative=self.max_step_energy_relative,
                     max_temperature_step_k=self.max_temperature_step_k, velocity_start_m_s=self.velocity_start_m_s,
-                    column_force_start_n_m=self.column_force_start_n_m)
+                    column_force_start_n_m=self.column_force_start_n_m,
+                    endpoint_guess=None if self._guess is None else dict(x=_fresh(self._guess["x"]),
+                                                                         rate=self._guess["rate"]))
 
     @property
     def stage_work(self):
@@ -510,7 +521,8 @@ def begin(run, kappa0, theta0=None, *, deadline=None):
                   velocity_start_m_s=current["velocity_m_s"], column_force_start_n_m=current["force"],
                   accounts=tuple(dict.fromkeys(ACCOUNTS, 0.).items()), diagnostics=tuple(stats.items()),
                   _theta0=theta, _theta=theta, _kappa0=kappa0, _kappa=kappa0,
-                  _yield=frozen(current["plastic_rate"] > 0, np.int64), _stage=_frozen_stage(current))
+                  _yield=frozen(current["plastic_rate"] > 0, np.int64), _stage=_frozen_stage(current),
+                  _guess=None)
 
 
 def advance(run, prefix, steps, *, deadline=None):
@@ -612,6 +624,7 @@ def advance(run, prefix, steps, *, deadline=None):
         log_quadrature += weighted(dt, wn, wa, current, predictor, "rate")
         tau += dtau
         theta, kappa, lam, path, current = new_theta, new_kappa, new_lam, new_path, endpoint
+        guess = predictor            # taken only once the step is accepted: never a refused trial's (A-4)
         worst_step = max(worst_step, jump)
         accepted += 1
         for s in (predictor, endpoint):
@@ -626,18 +639,18 @@ def advance(run, prefix, steps, *, deadline=None):
                   column_force_start_n_m=prefix.column_force_start_n_m, accounts=tuple(acc.items()),
                   diagnostics=tuple(stats.items()), _theta0=prefix._theta0, _theta=frozen(theta),
                   _kappa0=prefix._kappa0, _kappa=frozen(kappa), _yield=frozen(yield_stages, np.int64),
-                  _stage=_frozen_stage(current)), status, reason
+                  _stage=_frozen_stage(current), _guess=_held_guess(guess)), status, reason
 
 
 def resume(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadrature, log_path, theta0, theta, kappa0,
            kappa, accounts, diagnostics, yield_counts, max_step_energy_relative, max_temperature_step_k,
-           velocity_start_m_s, column_force_start_n_m, deadline=None):
-    """Rebuild a carried accepted prefix (at least one step) and re-solve its endpoint stage cold at that state.
+           velocity_start_m_s, column_force_start_n_m, endpoint_guess, deadline=None):
+    """Rebuild a carried accepted prefix (at least one step) and solve its endpoint stage again at that state.
 
-    Only cumulative values are carried. The endpoint stage is operational warm data: it is balanced again without a
-    guess and is never noted, booked or counted, so a resumed endpoint is not observed twice. Its solver path differs
-    from the uninterrupted run's warm path, so later evaluation/iteration counts may differ while the physical results
-    agree within the solver tolerances. Inside one prepared session, advance() keeps the warm stage instead.
+    Only cumulative values and ``endpoint_guess`` are carried: the x and rate of the stage the endpoint was solved
+    from, or None when it had no x (A-4). The endpoint is solved from that guess through the same _solve call as
+    in the uninterrupted run, so it holds the same bytes and every later step follows bit for bit. It is
+    operational data, never noted, booked or counted, so a resumed endpoint is not observed twice.
     """
     if type(run) is not Runner:
         raise ValueError("a prepared runner is required")
@@ -677,7 +690,15 @@ def resume(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadra
     if (yields.dtype.kind not in "iu" or yields.shape != (base.size,) or np.any(yields < 0)
             or np.any(yields > stats["stages"])):
         raise ValueError("yield counts must be integers within the booked stages, one per material point")
-    current = _solve(run, stretch, theta, kappa, None, deadline, trial=False)
+    guess = None
+    if endpoint_guess is not None:
+        if type(endpoint_guess) is not dict or set(endpoint_guess) != {"x", "rate"}:
+            raise ValueError("a carried endpoint guess holds exactly x and rate")
+        x = np.asarray(endpoint_guess["x"])
+        if x.dtype != np.float64 or x.shape != (base.size,) or not np.all(np.isfinite(x)):
+            raise ValueError("a carried endpoint guess is one finite binary64 per material point")
+        guess = dict(x=weakening.frozen(x), rate=number(endpoint_guess["rate"], "endpoint guess rate"))
+    current = _solve(run, stretch, theta, kappa, guess, deadline, trial=False)
     frozen = weakening.frozen
     return _issue(Prefix, _runner=run, accepted=accepted, stretch=stretch, clock_s=clock_s,
                   displacement_m=displacement_m, log_strain_quadrature=log_strain_quadrature, log_path=log_path,
@@ -686,7 +707,7 @@ def resume(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadra
                   accounts=tuple((name, number(accounts[name], name)) for name in ACCOUNTS),
                   diagnostics=tuple(stats.items()), _theta0=frozen(theta0), _theta=frozen(theta),
                   _kappa0=frozen(kappa0), _kappa=frozen(kappa), _yield=frozen(yields, np.int64),
-                  _stage=_frozen_stage(current))
+                  _stage=_frozen_stage(current), _guess=guess)
 
 
 def finish(run, prefix, status, reason):

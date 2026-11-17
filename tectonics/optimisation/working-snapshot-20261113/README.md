@@ -576,6 +576,29 @@ already agree on the retained fixture and supply no sensitive negative. Issued
 mixed collar/pressure, fraction-threshold ordering, joined qualification and
 scientific acceptance remain separate. No new timing result is claimed.
 
+### Carry the accepted endpoint predictor across a restart
+
+The [column continuation](../../docs/I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b)
+keeps only the accepted predictor's immutable `x` and finite `rate`, assigning it
+at step acceptance so a refused trial cannot replace it. The v2 column record
+binds `endpoint_guess_x` and `endpoint_guess_rate`; no guess is an empty binary64
+array and zero rate. The [ledger restore](../../docs/I02_WORKFLOW.md#5-saving-reopening-and-continuing)
+supplies that array to the engine, then the continuation reconstructs the endpoint
+from the same guess without replaying accepted steps. The identical warm head is
+reused; a root still goes through `begin`. A15's evaluation/iteration identity
+exclusions remain, and reconstruction work is not booked again.
+
+This changes schema and identities, not uninterrupted physical calculations.
+Schema-v1 records refuse without migration or deletion. The sealed rebase's
+seven continuation cases, fresh-process schedules of 16 and 256 steps and seven
+selected persistence methods with their original subcases passed and received
+independent acceptance. All seven selected mutants produced an attributable
+assertion failure. For the key-validation mutant, the extra-key assertion is
+decisive; separate non-dictionary and missing-rate subcases errored and are not
+assertion kills. Full command-driver restart, new capture and actual joined
+qualification remain open. Historical cold-parity evidence remains separate.
+
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

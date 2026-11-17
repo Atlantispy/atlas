@@ -82,7 +82,7 @@ _DOMAIN = b'atlas.i02-ledger.v1\0'
 _LABEL = b'atlas.i02-transfer-label.v1\0'
 _KINDS = ('root', 'successor')
 # Arrays a successor commit stores; the reference, initial history and native payloads are the root commit's.
-CURRENT = ('theta_k', 'kappa', 'yield_stage_counts')
+CURRENT = ('theta_k', 'kappa', 'yield_stage_counts', 'endpoint_guess_x')
 EXCHANGE_ARRAYS = ('exchange.component_mass_kg', 'exchange.enthalpy_j', 'exchange.supplied_kg', 'exchange.supplied_j',
                    'ledger.applied')
 
@@ -1311,7 +1311,8 @@ class Ledger:
         try:
             state = _state.restore(self._cached(self._states, self._root), parent_state_id=s['parent_state_id'],
                                    column=s['column'], theta_k=arrays['column.theta_k'], kappa=arrays['column.kappa'],
-                                   yield_stage_counts=arrays['column.yield_stage_counts'], budget=self._budget)
+                                   yield_stage_counts=arrays['column.yield_stage_counts'],
+                                   endpoint_guess_x=arrays['column.endpoint_guess_x'], budget=self._budget)
         except (KeyError, TypeError) as exc:
             raise LedgerError('the stored commit is incomplete') from exc
         parent = path[-2][0] if len(path) > 1 else self._store.metadata(commit.parent_key)['state']['state_id']

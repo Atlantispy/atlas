@@ -1389,8 +1389,19 @@ from their stored values, which must reproduce every recorded identity exactly, 
 inside the history's limits and obey the step's own relations (for example, the recorded
 displacement must equal the change of width, and the work accounts must balance). Solvers
 are rebuilt from the recorded inputs, never read back as opaque objects, and a new process
-continues from the last entry without recalculating the earlier steps. Reopening
-also exposed a numerical precision bug:
+continues from the last entry without recalculating the earlier steps. The
+nondefault `tectonics/optimisation/working-snapshot-20261113` carried-predictor
+successor stores only the last accepted predictor, not a later
+refused trial or a complete solved stage, and reconstructs the endpoint from the
+same inputs. Its v2 column record carries one extra array and rate; a v1 record
+refuses without migration or deletion. Source/state identities move, while A15
+still keeps evaluation and iteration counts as provenance outside physical
+identity. Isolated continuation, fresh-process and persistence controls are
+independently accepted; full driver restart, actual joined qualification and
+new capture remain open. Its migrated persistence fixture qualifies that
+snapshot; the canonical `tectonics/src` v1 restore and public tests remain
+unchanged, including cold endpoint reconstruction outside the warm head.
+Reopening also exposed a numerical precision bug:
 on very stiff rock branches, two neighbouring log-stress values could lie either
 side of the answer but neither was accurate enough. Refining directly in stress
 when that happens now meets the same tolerance, without changing the rock law or
@@ -1435,9 +1446,11 @@ is refused.
 
 **What the checks establish.** Splitting the history into several requests and save
 points within one process gives exactly the same numbers and accounts as one uninterrupted
-run. Continuing in a new process, including after a time budget stops a run, re-solves the
-starting stage and agrees within the existing solver tolerance rather than bit for bit,
-and the conservation identities close. Injected failures and killed writers never expose a
+run. The recorded new-process checks, including time-budget stops, used a cold
+starting-stage solve and agreed within the existing solver tolerance, with the
+conservation identities closed. Those historical results do not establish the
+nondefault carried-predictor snapshot's bitwise continuation contract. The
+canonical route retains its warm/cold parity contract. Injected failures and killed writers never expose a
 partial save, competing writers cannot both extend the history, and on Windows a program
 polling the status while a run saves no longer makes the run fail. The
 [workflow method](../I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead)

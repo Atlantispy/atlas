@@ -363,13 +363,21 @@ bitwise inside one clock, with the reference balance solved once and two stages 
 accepted step. Savepoint spacing does not change the accepted states: it decides which
 of them are recorded as commits, and so where a history can later be continued (and,
 with transfers, their intervals are declared rather than chosen by the spacing). A new
-clock (in a new process, or after `Clock.continuation` was advanced directly) re-solves
-the head's endpoint cold, and so does the request after one whose accepted steps could
-not be committed (a refused exchange, a stop inside a transfer interval or a failed
-commit), because the warm entry is then ahead of the head. A history continued that way
-agrees with an uninterrupted one within the retained parity (section 5), not bitwise.
-Bitwise identity therefore depends on where process boundaries fall, including where a
-time budget stops a run.
+clock in the nondefault working snapshot (in a new process, or after
+`Clock.continuation` was advanced directly) solves
+the head's endpoint again from its carried accepted predictor (section 5). So does
+the request after a refused exchange, a stop inside a transfer interval or a
+failed commit, when the warm entry is ahead of the head. With identical prepared
+inputs and runtime this uses the uninterrupted endpoint's inputs; a predictor
+from a later refused trial is never substituted. The sealed carried-predictor
+rebase has independently accepted isolated continuation, fresh-process and
+persistence controls. Full driver restart, new capture and actual joined-package
+qualification remain open; historical cold-parity results are separate.
+
+The canonical `tectonics/src` route remains unchanged: a new clock or a warm
+entry ahead of the committed head re-solves that endpoint cold, not from a
+stored predictor. It retains the `1e-8` parity contract and matching booked-stage
+counts; bitwise identity can depend on process boundaries on that legacy route.
 
 ### Relative plate-velocity handoff contract (`eps_v`)
 
@@ -419,8 +427,10 @@ external benchmark was used to record the owner's decision.
 
 Saving is the commit. The root stores the reference, initial history and native
 material (and stock) payloads once. A successor stores only its current departure,
-raw history and yield counts, its stocks and transfer index, and small metadata: the
-column record, lineage (parent state and the path of pieces) and transfer records.
+raw history and yield counts, its stocks and transfer index, and small metadata:
+the column record, lineage (parent state and the path of pieces) and transfer
+records. Only the nondefault snapshot additionally stores `endpoint_guess_x`
+and its v2 column record's `endpoint_guess_rate`.
 Content-addressed chunks share every unchanged payload. Prepared operators are never
 stored.
 
@@ -437,11 +447,22 @@ retained step relations (section 2), its column record must be reproduced by its
 values, and its state identity and lineage must equal the recorded ones. Stocks are
 restored by applying the recorded transfers to the parent's
 stored stocks again; the result must reproduce the stored identity and label index.
-A `Continuation` then rebuilds operators from the pinned inputs and re-solves the
-head's endpoint cold (operational work, never booked), so a fresh process continues
-without re-running the accepted prefix. For the supported case its results agree with
-the uninterrupted run within the retained warm/cold parity (`1e-8`), with identical
-booked-stage counts and yield counts. Review found a restart-dependent failure in
+In the nondefault working snapshot, the paired ledger supplies the fourth
+successor array to its v2 engine-owned `restore`, which
+reproduces the canonical record and identity, including the accepted predictor,
+while preserving A15's effort-counter exclusions. An absent guess is an immutable
+empty binary64 array with rate zero; a present guess has one finite binary64 per
+material point and a finite rate. That v2 route refuses v1 records without
+migration or deletion; the canonical route still reads its own v1 records. A `Continuation` rebuilds operators from the pinned inputs and solves
+the head's endpoint again from that guess (operational work, never booked),
+without re-running the accepted prefix. See the [carried-predictor contract](I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b).
+The canonical `tectonics/src` restore still accepts the original three successor
+arrays, with no `endpoint_guess_x` argument, and re-solves a cold endpoint outside
+the warm head. Its `1e-8` parity contract and public persistence tests remain
+unchanged. The snapshot's seven selected persistence methods and full original
+subcases are external qualification, not a canonical-test migration. The
+earlier cold-restart controls do not qualify this changed snapshot source.
+Review also found a restart-dependent failure in
 the local constitutive solve: near a stiff plastic branch, adjacent representable
 log-stress values could both miss the unchanged residual tolerance. The solver
 now finishes in direct stress when that coordinate stalls, inside the same bracket
@@ -587,8 +608,8 @@ The source identity binds the workflow's own files and the case inputs; the runt
 identity is the package's `ExecutionContext` identity. A changed identity refuses
 continuation and load but still allows inspection. Timings stay in status files and
 are never recorded in a state, but a deadline stop or a separate request ends a
-process, and the next request re-solves its starting stage cold (section 4). This is
-not the I10 project/UI route.
+process. The canonical route re-solves its starting stage cold; the nondefault
+snapshot uses its carried accepted predictor (sections 4–5). This is not the I10 project/UI route.
 
 ## 7. Checks, coverage and measured overhead
 

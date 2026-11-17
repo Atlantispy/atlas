@@ -111,8 +111,9 @@ _ACCOUNT_MEANINGS = (
 )
 _EXTREMA_UNITS = (('max_force_relative', '1'), ('max_power_relative', '1'), ('min_source_w_m2', 'W/m2'),
                   ('min_dissipation_w_m', 'W/m'), ('max_step_energy_relative', '1'), ('max_temperature_step_k', 'K'))
-# Counters cover booked stages only: the reference balance plus a predictor and an endpoint per accepted step. A cold
-# re-solve of a resumed endpoint is operational work, reported by the continuation and never added here.
+# Counters cover booked stages only: the reference balance plus a predictor and an endpoint per accepted step. The
+# solve of a resumed endpoint from its carried guess is operational work, reported by the continuation and never
+# added here.
 _COUNTER_MEANINGS = dict(
     stages='booked stages: the reference balance plus a predictor and an endpoint per accepted step',
     evaluations='motion-root evaluations of booked stages; warm-start dependent operational diagnostic',
@@ -194,6 +195,9 @@ CATALOGUE = (
       for name, unit in _EXTREMA_UNITS),
     ('yield_stage_counts', '1', 'material point', 'column diagnostics', 'finite-strain evolve', 'required',
      'booked stages at which each point yielded; zero before any accepted step'),
+    ('endpoint_guess_x', '1', 'material point', 'column diagnostics', 'finite-strain evolve', 'required',
+     'solver guess the endpoint stage was solved from (the accepted step\'s predictor); operational, no physics; '
+     'empty when there is none'),
     ('column_force_start_n_m', 'N/m', 'whole strip', 'column diagnostics', 'finite-strain evolve', 'supported',
      'balanced column force at the reference; unknown until a piece of the history is accepted'),
     ('reference_width_m', 'm', 'whole strip', 'mechanical reference', 'external drive width', 'required',
@@ -847,6 +851,7 @@ class ColumnState(_Immutable):
     log_strain_quadrature: float
     velocity_start_m_s: float | None
     column_force_start_n_m: float | None
+    endpoint_guess_rate: float
     column_state_id: str
     _accounts: tuple = field(repr=False)
     _counters: tuple = field(repr=False)
@@ -856,6 +861,7 @@ class ColumnState(_Immutable):
     _kappa0: np.ndarray = field(repr=False)
     _kappa: np.ndarray = field(repr=False)
     _yield: np.ndarray = field(repr=False)
+    _guess: np.ndarray = field(repr=False)
     _record: bytes = field(repr=False)
 
     def __init__(self, *args, **kwargs):
@@ -872,6 +878,8 @@ class ColumnState(_Immutable):
     @property
     def yield_stage_counts(self): return _view(self._yield)
     @property
+    def endpoint_guess_x(self): return _view(self._guess)
+    @property
     def accounts_j_m(self): return dict(self._accounts)
     @property
     def counters(self): return dict(self._counters)
@@ -880,7 +888,8 @@ class ColumnState(_Immutable):
 
     @property
     def nbytes(self):
-        arrays = {id(a): a.nbytes for a in (self._theta0, self._theta, self._kappa0, self._kappa, self._yield)}
+        arrays = {id(a): a.nbytes for a in (self._theta0, self._theta, self._kappa0, self._kappa, self._yield,
+                                            self._guess)}
         return sum(arrays.values())+len(self._record)
 
     def descriptor(self):
@@ -889,11 +898,11 @@ class ColumnState(_Immutable):
     def _arrays(self):
         """The identity-bound arrays, in the order column_state_id hashes them."""
         return (('initial_theta_k', self._theta0), ('theta_k', self._theta), ('initial_kappa', self._kappa0),
-                ('kappa', self._kappa), ('yield_stage_counts', self._yield))
+                ('kappa', self._kappa), ('yield_stage_counts', self._yield), ('endpoint_guess_x', self._guess))
 
 
 _SCALARS = ('stretch', 'elapsed_s', 'accepted_steps', 'clock_s', 'displacement_m', 'log_path', 'log_strain_quadrature',
-            'velocity_start_m_s', 'column_force_start_n_m')
+            'velocity_start_m_s', 'column_force_start_n_m', 'endpoint_guess_rate')
 
 
 def _column_identity(record):
@@ -901,17 +910,28 @@ def _column_identity(record):
     return _canonical(_without(json.loads(record), COLUMN_EFFORT), 'column state')
 
 
-def _column_state(semantics, scalars, accounts, counters, extrema, theta0, theta, kappa0, kappa, yields):
-    """One column record: canonical metadata plus the exact bytes of its five immutable arrays."""
+def _column_state(semantics, scalars, accounts, counters, extrema, theta0, theta, kappa0, kappa, yields, guess):
+    """One column record: canonical metadata plus the exact bytes of its six immutable arrays."""
     arrays = (('initial_theta_k', theta0), ('theta_k', theta), ('initial_kappa', kappa0), ('kappa', kappa),
-              ('yield_stage_counts', yields))
+              ('yield_stage_counts', yields), ('endpoint_guess_x', guess))
     record = _canonical(dict(
-        schema='atlas.i02-finite-strain-column-state.v1', route=ROUTE, semantics=semantics, **scalars,
+        schema=COLUMN_SCHEMA, route=ROUTE, semantics=semantics, **scalars,
         accounts_j_m=dict(accounts), counters=dict(counters), extrema=dict(extrema),
         arrays=[_spec(name, a) for name, a in arrays]), 'column state')
     return _issue(ColumnState, **scalars, column_state_id=_identity(_column_identity(record), arrays), _accounts=accounts,
                   _counters=counters, _extrema=extrema, _theta0=theta0, _theta=theta, _kappa0=kappa0, _kappa=kappa,
-                  _yield=yields, _record=record)
+                  _yield=yields, _guess=guess, _record=record)
+
+
+COLUMN_SCHEMA = 'atlas.i02-finite-strain-column-state.v2'    # v2 carries the endpoint guess; v1 refuses (A-4)
+_NO_GUESS = np.frombuffer(b'', dtype=np.float64)
+
+
+def _guess_array(value, label, count):
+    """The carried endpoint guess: empty (none) or one finite binary64 per material point (A-4)."""
+    if value is not None and input_shape(value, label) == (0,):
+        return _NO_GUESS
+    return _floats(value, label, count)
 
 
 def _initial_column(reference, settings, theta0, kappa0, budget):
@@ -933,9 +953,10 @@ def _initial_column(reference, settings, theta0, kappa0, budget):
             'initial state at the reference geometry: nothing is booked since lam = 1, so cumulative accounts and '
             'counters are exactly zero and running extrema are undefined',
             dict(stretch=1., elapsed_s=0., accepted_steps=0, clock_s=0., displacement_m=0., log_path=0.,
-                 log_strain_quadrature=0., velocity_start_m_s=None, column_force_start_n_m=None),
+                 log_strain_quadrature=0., velocity_start_m_s=None, column_force_start_n_m=None,
+                 endpoint_guess_rate=0.),
             tuple((name, 0.) for name in STAGE_ACCOUNTS+THERMAL_ACCOUNTS), tuple((name, 0) for name in COUNTERS),
-            tuple((name, None) for name in EXTREMA), theta, theta, kappa, kappa, yields)
+            tuple((name, None) for name in EXTREMA), theta, theta, kappa, kappa, yields, _NO_GUESS)
 
 
 def _material_payload(materials, reference, width, frame, epoch, start, layer_cohorts):
@@ -1300,7 +1321,9 @@ def _carried(state):
                              for name in _evolution.DIAGNOSTICS},
                 yield_counts=column.yield_stage_counts, max_step_energy_relative=extrema['max_step_energy_relative'],
                 max_temperature_step_k=extrema['max_temperature_step_k'],
-                velocity_start_m_s=column.velocity_start_m_s, column_force_start_n_m=column.column_force_start_n_m)
+                velocity_start_m_s=column.velocity_start_m_s, column_force_start_n_m=column.column_force_start_n_m,
+                endpoint_guess=None if column._guess.size == 0 else dict(x=column.endpoint_guess_x,
+                                                                         rate=column.endpoint_guess_rate))
 
 
 SUCCESSOR_SEMANTICS = ('accepted state: cumulative since the reference at lam = 1 over whole steps of the fixed global '
@@ -1323,7 +1346,9 @@ def _successor(parent, prefix, budget):
                        log_path=float(values['log_path']),
                        log_strain_quadrature=float(values['log_strain_quadrature']),
                        velocity_start_m_s=float(values['velocity_start_m_s']),
-                       column_force_start_n_m=float(values['column_force_start_n_m']))
+                       column_force_start_n_m=float(values['column_force_start_n_m']),
+                       endpoint_guess_rate=0. if values['endpoint_guess'] is None
+                       else float(values['endpoint_guess']['rate']))
         extrema = dict({name: diagnostics[name] for name in EXTREMA[:4]},
                        max_step_energy_relative=values['max_step_energy_relative'],
                        max_temperature_step_k=values['max_temperature_step_k'])
@@ -1332,7 +1357,8 @@ def _successor(parent, prefix, budget):
             scalars, tuple((name, float(values['accounts'][name])) for name in STAGE_ACCOUNTS+THERMAL_ACCOUNTS),
             tuple((name, int(diagnostics[name])) for name in COUNTERS),
             tuple((name, float(extrema[name])) for name in EXTREMA),
-            previous._theta0, values['theta'], previous._kappa0, values['kappa'], values['yield_counts'])
+            previous._theta0, values['theta'], previous._kappa0, values['kappa'], values['yield_counts'],
+            _NO_GUESS if values['endpoint_guess'] is None else values['endpoint_guess']['x'])
     return _envelope({name: getattr(parent, name) for name in _LABELS}, parent.start_time_s, parent.frame_id,
                      parent.reference, settings, column, parent.materials, parent.layer_cohorts, parent.reservoirs,
                      parent.reservoir_basis, parent.state_id, parent.root_state_id, COMPUTED)
@@ -1346,7 +1372,8 @@ class Advance(_Immutable):
     PIECE_COMPLETE, HISTORY_COMPLETE or a retained refusal (REFUSED_STRETCH_WINDOW, REFUSED_TEMPERATURE_WINDOW,
     REFUSED_TEMPERATURE_STEP, REFUSED_CONSTITUTIVE or REFUSED_DEADLINE) with its ``reason``; a refusal keeps the exact
     accepted prefix. ``warm`` is True when the piece continued this continuation's own endpoint stage; otherwise the
-    reference was balanced (a root) or a carried endpoint was re-solved cold, whose operational work is reported in
+    reference was balanced (a root) or a carried endpoint was solved again from its carried guess, whose operational
+    work is reported in
     ``reconstruction_*`` and never booked.
     """
     state: CommonState
@@ -1371,7 +1398,8 @@ class Continuation:
     piece rebuilds an operator or reruns accepted steps. States of the same root history advance by whole steps of the
     fixed global schedule; the cumulative step index, the 1e14 s horizon, the windows and the 5 K guard are never
     reset. The warm endpoint stage of the latest accepted state is kept (one entry) and used only for that exact state
-    object; any other state's endpoint is re-solved cold as unbooked operational work. Not a transaction, store,
+    object; any other state's endpoint is solved again from its carried guess as unbooked operational work, to the
+    same bytes (A-4). Not a transaction, store,
     accepted clock or thread-safe object.
     """
     __slots__ = ('_runner', '_context', '_budget', '_head')
@@ -1476,7 +1504,7 @@ class Continuation:
         """The retained evolve result of an accepted state, including the derived account identities; books nothing.
 
         Its status is HISTORY_COMPLETE or HISTORY_INCOMPLETE. The warm head is used when ``state`` is it; otherwise
-        the endpoint is re-solved cold, and the warm head is kept.
+        the endpoint is solved again from its carried guess, and the warm head is kept.
         """
         state = self._check(state)
         prefix, _, _ = self._prefix(state, deadline)
@@ -1518,7 +1546,8 @@ def _consistent(settings, reference, scalars, accounts, worst, theta, theta0):
       at the same rate and stopping at its first evaluation (_integration_weakening.stresses:289-296); a stage where it
       does not is counted in restress_mismatches, and the engine does not bound its residual. max_power_relative is
       held to 2e-10 + 8 TOL, the motion's bound plus a margin for such a stage that is not a derived bound, and the
-      accounts, which also include the head stage a new process re-solves cold (not recorded), balance within that
+      accounts, which also include the head stage a new process solves again from its carried guess (not recorded),
+      balance within that
       bound times the drive work, within rounding. A genuine state could exceed the cap only through such a stage;
       Ledger.commit would then refuse it rather than publish it.
     - Work partition: each stage's creep plus plastic work lies within 2 TOL of its column work
@@ -1641,17 +1670,18 @@ def publishable(state):
     return state
 
 
-def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts, budget=None):
+def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts, endpoint_guess_x, budget=None):
     """I02.5 engine-owned restoration of one persisted accepted successor of ``root``; no physics is re-run.
 
     ``root`` is the verified declared initial state of the history (itself rebuilt through initial_state() from its
-    persisted inputs); ``column`` is the successor's persisted column record and the three arrays its current departure,
-    raw history and yield counts. Every scalar, account, counter, extreme and array must lie inside the admitted
+    persisted inputs); ``column`` is the successor's persisted column record and the four arrays its current departure,
+    raw history, yield counts and endpoint guess (A-4; a v1 record has none and refuses). Every scalar, account, counter, extreme and array must lie inside the admitted
     history exactly as a carried prefix (the bounds resume() applies before any re-solve) and satisfy the relations
     the engine enforces (_consistent, which Ledger.commit applies before publishing), and the rebuilt column record
     must reproduce the persisted one. The successor shares the root's reference, settings, initial departure and
     history and native payloads. The caller compares the returned identity with the persisted one: a mismatch refuses,
-    never rebinds. The returned state carries no admission; a Continuation re-solves its endpoint cold before any step.
+    never rebinds. The returned state carries no admission; a Continuation solves its endpoint again from the carried
+    guess before any step.
     """
     root = _verified(root)
     if root.parent_state_id is not None:
@@ -1660,8 +1690,9 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
     if not isinstance(column, Mapping) or set(column) != _COLUMN_KEYS:
         raise TectonicsError('the persisted column record has unexpected fields')
     record = _document(column, 'persisted column record')
-    if (record['schema'], record['route'], record['semantics']) != (
-            'atlas.i02-finite-strain-column-state.v1', ROUTE, SUCCESSOR_SEMANTICS):
+    if record['schema'] == 'atlas.i02-finite-strain-column-state.v1':
+        raise TectonicsError('a v1 column record carries no endpoint guess and cannot resume bit-equal: refused (A-4)')
+    if (record['schema'], record['route'], record['semantics']) != (COLUMN_SCHEMA, ROUTE, SUCCESSOR_SEMANTICS):
         raise TectonicsError('the persisted column record is not an accepted state of this route')
     settings, reference = root.settings, root.reference
     lo, hi, tlo, thi = settings.window
@@ -1702,6 +1733,9 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
         theta = _floats(theta_k, 'restored temperature departure', count)
         now = _floats(kappa, 'restored raw plastic history', count, nonnegative=True)
         yields = _integers(yield_stage_counts, 'restored yield stage counts', count)
+        guess = _guess_array(endpoint_guess_x, 'restored endpoint guess', count)
+        if guess.size == 0 and scalars['endpoint_guess_rate'] != 0:
+            raise TectonicsError('a restored record with no endpoint guess carries no guess rate')
         temperature = reference._steady+theta
         if not np.all((temperature >= tlo) & (temperature <= thi)):
             raise TectonicsError('restored material temperatures lie outside the declared window')
@@ -1712,7 +1746,7 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
         if np.any(yields < 0) or np.any(yields > stages):
             raise TectonicsError('restored yield counts lie outside the booked stages')
         restored = _column_state(SUCCESSOR_SEMANTICS, scalars, accounts, counters, extrema, root.column._theta0, theta,
-                                 kappa0, now, yields)
+                                 kappa0, now, yields, guess)
     if json.loads(restored._record) != record:
         raise TectonicsError('the persisted column record is not reproduced by its values: edited or foreign record')
     return _verified(_envelope({name: getattr(root, name) for name in _LABELS}, root.start_time_s, root.frame_id,

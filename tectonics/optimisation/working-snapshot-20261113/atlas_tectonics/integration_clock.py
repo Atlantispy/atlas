@@ -124,8 +124,8 @@ class Clock:
     """The accepted clock of one ledger, prepared at its current head: operators are rebuilt once and reused.
 
     One Continuation serves every request, so consecutive whole steps continue its warm endpoint stage exactly as an
-    uninterrupted run would. A new clock starts cold: its first step re-solves the head's endpoint stage (unbooked), so
-    a history continued in another process agrees with an uninterrupted one within the retained parity, not bitwise.
+    uninterrupted run would. A new clock solves the head's endpoint stage again from its carried guess (unbooked), so
+    a history continued in another process is bit-equal to an uninterrupted one (A-4).
     The same holds for the request after one whose accepted steps could not be committed (a refused exchange, a stop
     inside a transfer interval or a failed commit): the warm entry is then ahead of the head. A commit whose outcome
     could not be read is settled at the clock's next request, which adopts the clock's own record if it was published.
@@ -166,7 +166,7 @@ class Clock:
     def continuation(self):
         """The one Continuation serving this clock's requests, for reports and direct comparison. Advancing through it
         directly is outside the clock: it moves the Continuation's one warm entry, so the clock's next request
-        re-solves its starting stage cold (unbooked) and agrees within the retained parity rather than bitwise."""
+        solves its starting stage again from the carried guess (unbooked), bit-equal (A-4)."""
         return self._run
 
     def time_at(self, step):

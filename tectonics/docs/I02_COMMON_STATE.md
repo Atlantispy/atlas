@@ -296,8 +296,11 @@ connects it to this envelope. In execution order:
    runtime change does not silently rebind an existing history. Its new column record carries stretch, thermal clock,
    displacement, log-strain path and quadrature, the global accepted-step index with
    elapsed time `accepted*step_s`, the 14 accounts, counters, extrema, per-point yield
-   counts and the reference velocity and force. Identities bind these exactly, as for
-   the root. `Advance.status` is `PIECE_COMPLETE` or `HISTORY_COMPLETE` for a
+   counts and the reference velocity and force. The nondefault snapshot also
+   carries the endpoint predictor below. That snapshot retains the A15 rule: `COLUMN_EFFORT` excludes only
+   `counters.evaluations` and `counters.iterations` through `_column_identity`;
+   the record still carries both as provenance. The remaining record and exact
+   array bytes stay identity-bound. `Advance.status` is `PIECE_COMPLETE` or `HISTORY_COMPLETE` for a
    completed request: finishing a piece is not finishing the history.
 5. **Report.** `Continuation.report(state)` returns the retained `evolve` result of an
    accepted state through `finish`. Derived account identities are built on a copy and
@@ -309,18 +312,54 @@ cold-root, conduction-off and geometry-off comparators remain `evolve` options; 
 continuation uses only the production configuration. `resume` rebuilds a carried
 prefix for a state that is not a continuation's own warm head.
 
-**Diagnostic continuity decision.** Counters, extrema and yield counts cover booked
-stages only: the reference balance once, then a predictor and an endpoint per accepted
-step. A continuation keeps the balanced endpoint stage of its latest accepted state as
-warm data, bound to that prefix and runner, and uses it only for that exact state
-object. That warm path reproduces the uninterrupted run bitwise, including
-evaluation and iteration counts. Any other state (a branch, or a state handed to a new
-continuation) has its endpoint re-solved cold. The re-solve is operational work,
-reported in `Advance.reconstruction_evaluations` and `reconstruction_iterations`,
-and is never noted, booked or counted twice. Later warm guesses then start from that
-cold solution, so subsequent evaluation and iteration counts can differ from the
-uninterrupted run. Physical values must agree within the solver tolerances; the
-prepared check uses the retained `1e-8` warm/cold parity allowance.
+**Canonical route and nondefault snapshot.** The public `tectonics/src` route
+retains `atlas.i02-finite-strain-column-state.v1` and its restore interface
+without `endpoint_guess_x`. It retains the identical warm-head shortcut; another
+accepted state has its endpoint re-solved cold, with reconstruction work never
+booked twice and the retained `1e-8` warm/cold parity contract. Its public
+persistence tests continue to exercise that v1 route.
+
+The predictor/schema/restore changes below belong only to the separate
+`tectonics/optimisation/working-snapshot-20261113` implementation, pairing its
+evolution, state, ledger and clock modules. They do not replace the canonical
+route or migrate its tests.
+
+**Nondefault snapshot: carried endpoint predictor (A4 successor).** A prefix retains the `x` array and
+`rate` of the predictor from which its last accepted endpoint was solved. The
+assignment occurs only when the step is accepted, so a later refused trial cannot
+replace it. It carries no complete solved stage. `Prefix.carried()` returns fresh
+descriptors over immutable values; the successor column stores those same inputs.
+
+The snapshot's column schema is `atlas.i02-finite-strain-column-state.v2`. Its sixth array,
+`endpoint_guess_x`, is finite binary64, one value per material point, or an
+immutable empty binary64 array when there was no guess. Its tenth scalar,
+`endpoint_guess_rate`, is the finite solver rate, exactly zero with an empty
+array. Both enter the existing canonical column identity, retaining A15's two
+effort-counter exclusions. The root has no accepted predictor and carries the
+empty array and zero rate. That v2 restore refuses v1 records; nothing is migrated, deleted or silently
+solved by a second cold method. The canonical route still reads its own v1 records.
+
+`Continuation._prefix` uses `begin` for a root, the held prefix for the identical
+warm-head state object, and `resume(_carried(state))` for another accepted state.
+`resume` solves that endpoint again from its stored predictor through the same
+solver call. With identical prepared inputs and runtime, this reconstructs the
+uninterrupted endpoint rather than choosing a cold root. It replays no accepted
+steps. With `warm_start` disabled the solver ignores the guess in both paths.
+Reports use this same route while keeping the held warm head.
+
+Counters, extrema and yield counts still cover booked stages only: the reference
+balance once, then a predictor and an endpoint per accepted step. The resumed
+endpoint's operational work is reported in `Advance.reconstruction_evaluations`
+and `reconstruction_iterations`, never booked twice. The `warm` flag and these
+reconstruction counters describe execution, rather than new physical state.
+Uninterrupted physical calculations are unchanged. The extra array and scalar
+move schema/state identities and require new source-bound capture; historical
+receipts remain unchanged. The sealed rebased continuation, fresh-process and
+persistence controls are independently accepted on their selected cases. The
+seven selected persistence methods and their full subcases use an external
+migrated qualification fixture, not migrated canonical public tests. Full
+command-driver restart, actual joined-package qualification and new capture
+remain open. The older cold-restart parity results below are separate evidence.
 
 **Native payload decision.** The W02 cohorts and any W08 stocks are carried unchanged
 with their own date, the history start, and the record labels their roles. The
@@ -438,8 +477,9 @@ covers extension, compression and rest, a signed initial departure and inherited
 history, temperature, geometry, clock, displacement, the 14 carried energy accounts
 and the report's ten derived totals/relative identities, conservation and every
 retained diagnostic. An independently prepared column must
-agree at round-off. A cold rebuild in a new continuation must agree within the retained
-`1e-8` parity while booking each stage once. A two-piece homogeneous continuation is
+agree at round-off. The canonical route's cold rebuild must agree within the
+retained `1e-8` parity while booking each stage once. That evidence is not the
+nondefault v2 snapshot's byte-bound qualification. A two-piece homogeneous continuation is
 judged against the independent DOP853/Brent oracle, not only against the wrapper. The
 retained original-algorithm checks remain. Instrumentation counts stage solves and
 refuses any eigensystem, support or preparation rebuild, to show that pieces do not
