@@ -365,8 +365,6 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
             census.append(retained.value['diagnostics'])
             if observe is not None:
                 observe('certified-row', dict(row=rows[-1], diagnostics=census[-1]))
-        if not partial and set(validated) != face_ids-set(prepared['two_point']):    # a two-point face has no moment
-            raise AssertionError('Complete reconstruction omitted a polygon validation')
         interval_faces = exact_faces = exact_attempts = 0
         for entry in census:
             if entry.get('prescribed_power_exact') or entry.get('two_point_exact'):

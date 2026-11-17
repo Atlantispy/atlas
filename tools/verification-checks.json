@@ -1188,6 +1188,47 @@
       "qualification_scope": "Five existing test methods compiled from actual class with actual public entry module and disposable workflow fixtures; external diadem_safety and real scientific successor were not imported. Exact duplicate check used static source inspection, not science execution."
     },
     {
+      "id": "atlas.snapshot.heat.reconstruction.complete-face-coverage-assertion",
+      "purpose": "Compared the reconstruction's recorded validated faces with the set of all non-two-point faces after a complete pass.",
+      "module": "Working snapshot r5 heat functionals reconstruction",
+      "process": "Complete r5 reconstruction after the face loop",
+      "entry_point": "r5 reconstruct, after processing the complete face payload",
+      "owner": "R5 heat reconstruction owner",
+      "consumers": [
+        "Complete r5 reconstruction",
+        "Heat driver"
+      ],
+      "classification": "DEBUG_ONLY",
+      "classification_reason": "The assertion checked coverage of the producer's loop. Actual polygon and moment work belongs to the shared face routine.",
+      "classification_refs": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity",
+        "tectonics/docs/how-it-works/06-physical-integration.md#choose-heat-reconstruction-workers-and-prepare-exact-geometry-proofs",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "snapshot runtime"
+        ],
+        "trigger": "Formerly at the end of each complete reconstruction, including a completed pooled route.",
+        "release_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "debug_state": "OFF_IN_SNAPSHOT_SOURCE",
+        "actual_enabled": "OFF_REMOVED",
+        "control": "The post-loop comparison is absent from r5. It was an explicit runtime assertion whenever the complete branch executed. Installed Release state is unknown."
+      },
+      "on_failure": "Historical AssertionError after the reconstruction loop if the recorded validated-face set differed.",
+      "affected_by": [
+        "Face dispatch, complete or partial reconstruction or worker fallback",
+        "Choice of two-point or prescribed-power faces",
+        "Polygon or moment ownership and accounting"
+      ],
+      "evidence": [
+        "tectonics/optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity",
+        "tectonics/docs/how-it-works/06-physical-integration.md#choose-heat-reconstruction-workers-and-prepare-exact-geometry-proofs"
+      ],
+      "retirement_basis": "Source review followed the shared face routine through worker and fallback paths. Each non-two-point face performs the actual validation and moment work, including prescribed-power faces. The earlier r1 route has its own source.",
+      "cost_note": "Removed construction and comparison of validation coverage sets. Elapsed cost was not measured."
+    },
+    {
       "id": "cleanup.step4.terrain-launch-source-closure",
       "purpose": "Launch-source inventory includes every selected first-party engine member and changes its recorded digest when a selected member changes.",
       "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",

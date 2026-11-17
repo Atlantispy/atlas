@@ -1741,6 +1741,12 @@ comparison and its time/RAM trade-off; the global default remains six.
 proofs and their resource and identity boundaries. Neither establishes a
 whole-interval speed-up or new physical acceptance.
 
+In the [later r5 reconstruction](../../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity),
+each face requiring a moment goes through the polygon checks in the shared
+face routine. This includes prescribed-power faces. Workers and their local
+fallback keep the validation and moment counts. The completed reconstruction
+omits the extra assertion over its own validated face set.
+
 ### Order moving-face and interface proofs by their geometry
 
 The later [moving-moment prototype](../../optimisation/working-snapshot-20261113/README.md#order-moving-moment-and-zero-proofs-by-their-exact-geometry)

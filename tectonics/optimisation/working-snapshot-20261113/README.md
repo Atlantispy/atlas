@@ -1108,7 +1108,11 @@ here is for the closed source-free case.
 
 Only the ordered fitted-face subset is sent to reconstruction workers. The
 kernel constructs two-point rows locally, then rejoins fitted rows in that same
-payload order with their census. The current source construction preserves the
+payload order with their census. The r5 face routine validates the polygon and
+accounts for its moment on every non-two-point face, including prescribed-power
+faces. The pool and local fallback use that routine and keep its results and
+counts. The complete pass drops the final assertion that compared its reported
+validated faces with the same set enumerated again. The source preserves the
 published worker pool; frozen isolated sizing, stored-step proof and combined
 worker-pool qualification remain distinct. The selected ordinary join
 omits its two superseded pooled-length assertions without adding a substitute;
