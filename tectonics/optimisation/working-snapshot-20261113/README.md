@@ -703,6 +703,38 @@ sensitivity. The separate total-cohort `np.sum` occupancy decision and its
 open. Maximum-shape elapsed time is unproved. This is not whole-member,
 joined or scientific acceptance.
 
+### Choose the caloric reference from the exact physical anchor
+
+The mimetic heat plan selects its minimum cell by exact centre, volume and the
+multiset of physical face metrics, retaining multiplicity and every cell tied
+at that minimum. Names, public row order and the current thermal state do not
+break the tie. A single anchor uses the original NumPy division. For a tied
+class, the reference is the exact sum of its represented binary64 energies
+divided by the exact sum of its represented capacities, projected once to
+binary64 with round-to-nearest-even. It is not a sum of rounded temperatures
+or a ratio of already-rounded totals.
+
+Both public advance methods and their precision/fallback paths use that same
+projected datum. Original target formulas, physical loads, axes, bookings and
+refusal policies remain. Integer accumulation in least-subnormal units avoids
+overflowing the separate floating totals. Projection follows active native
+NumPy IEEE signalling. On the bound runtime, the tested inexact value just
+below minimum normal can signal underflow even when its result rounds to
+minimum normal; exact and adjacent cases and the tested temporary-rounding
+tie remain quiet.
+
+Anchor positions and projection work are admitted to the existing budget.
+Reference failure clears its borrowed positions before an escaping traceback
+can outlive the plan's position owner. Independent review accepts the corrected
+reference successor using valid ordinary tied-anchor evidence and the affected
+IEEE/position boundary pairs. The ordinary two-cube control keeps mapped
+temperatures and zero exact storage while references and solver targets agree
+under the input swap. Revised IEEE controls exercise the real producer and
+both public early-error prefixes before solve/advance/CG/stencil work; binary
+matrix preparation may already have occurred. They do not qualify downstream
+tiny-temperature solving, arbitrary solver ordering, every cap/recovery path,
+a joined runtime or scientific acceptance.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

@@ -93,6 +93,110 @@ def _retain(obj, size, budget):
 
 
 
+def _binary64_units(value):
+    """The exact signed integer in units of the least binary64 subnormal."""
+    numerator, denominator = float(value).as_integer_ratio()
+    return numerator << (1074-(denominator.bit_length()-1))
+
+
+def _positive_binary64_ratio(numerator, denominator):
+    """One half-even projection, without overflowing either exact total."""
+    exponent = numerator.bit_length()-denominator.bit_length()
+    if exponent >= 0:
+        if numerator < denominator << exponent:
+            exponent -= 1
+    elif numerator << -exponent < denominator:
+        exponent -= 1
+    quantum = max(exponent-52, -1074)
+    if quantum >= 0:
+        scaled, divisor = numerator, denominator << quantum
+    else:
+        scaled, divisor = numerator << -quantum, denominator
+    significand, remainder = divmod(scaled, divisor)
+    twice = remainder << 1
+    if twice > divisor or twice == divisor and significand & 1:
+        significand += 1
+    if quantum > 971 or quantum == 971 and significand == 1 << 53:
+        # Use NumPy's IEEE overflow operation so its active warn/raise/call/log
+        # policy is retained; a Python big-int conversion must not select it.
+        return float(np.float64(float.fromhex('0x1p1023'))/np.float64(.5))
+    if quantum == -1074 and remainder and (
+            significand < 1 << 52 or scaled << 2 < ((1 << 54)-1)*divisor):
+        # Tininess is rounded to 53 bits with an unbounded exponent. Just
+        # below minimum normal this includes values below N-u/4, even when
+        # final binary64 rounding gives N. The tie at N-u/4 rounds to N.
+        # The signalling operation does not supply or change the result.
+        np.float64(float.fromhex('0x1p-1022'))/np.float64(3.)
+    return math.ldexp(float(significand), quantum)
+
+
+def _minimum_reference_positions(geometry):
+    best, positions = None, []
+    for ci, row in enumerate(geometry._cells):
+        # Equal centres give the same order for face centres and offsets.
+        # Borrow decoded rational vectors and preserve repeated face metrics.
+        faces = tuple(sorted(zip(row[4], row[5], strict=False)))
+        key = row[1], row[0], faces
+        if best is None or key < best:
+            best, positions = key, [ci]
+        elif key == best:
+            positions.append(ci)
+    return tuple(positions)
+
+
+def _prepare_reference_positions(geometry, budget):
+    """Admit the exact-key scan, then retain only its minimum member positions."""
+    from .integration_spatial_transport import _integer_storage, _preserve_workspace
+    largest = faces = 1
+    for row in geometry._cells:
+        faces = max(faces, len(row[2]))
+        for value in (row[0], *row[1]):
+            largest = max(largest, value.numerator.bit_length(), value.denominator.bit_length())
+        for vectors in (row[4], row[5]):
+            for vector in vectors:
+                for value in vector:
+                    largest = max(largest, value.numerator.bit_length(), value.denominator.bit_length())
+    nc = len(geometry._cells)
+    retained = 1024+nc*(8+_integer_storage(nc.bit_length()))
+    # Best/current sorted descriptors, list/tuple overlap, member positions,
+    # and exact-comparison cross-products are simultaneously covered.
+    scratch = 65536+512*faces+16*nc+8*_integer_storage(2*largest+1)
+    owner = ExitStack()
+    try:
+        lease = owner.enter_context(_ResizableLease(budget, category='mimetic-reference-plan'))
+        lease.resize(retained+scratch)
+        positions = _minimum_reference_positions(geometry)
+        lease.resize(retained)
+        return positions, owner
+    except BaseException as error:
+        _failure_owner = _preserve_workspace(error, owner)
+        raise
+
+
+def _reference_temperature(old, capacity, positions, budget, cancel):
+    """One physical caloric datum for binary and all precision/nonlinear routes."""
+    try:
+        if len(positions) == 1:
+            return float(old[positions[0]]/capacity[positions[0]])
+        from .integration_spatial_transport import _integer_storage, _workspace
+        bits = 2098+(len(positions)-1).bit_length()
+        # Both totals and their prior generations, term shifts/ratios, division
+        # workspace, quotient/remainder/tie test and the final small conversion.
+        work = (8192+12*_integer_storage(bits)+16*_integer_storage(bits+1077)+
+                8*_integer_storage(1075))
+        with _workspace(budget, work, 'mimetic-reference-step'):
+            energy = capacitance = 0
+            for at, ci in enumerate(positions):
+                if not at % 32:
+                    _cancel(cancel)
+                energy += _binary64_units(old[ci])
+                capacitance += _binary64_units(capacity[ci])
+            return _positive_binary64_ratio(energy, capacitance)
+    finally:
+        # The plan owns these positions; an escaping frame must not borrow them.
+        del positions
+
+
 def _stream_encoding_capacity(record, budget):
     """Canonical bytes plus only the active iterencode path/token workspace."""
     from .integration_spatial_transport import _json_encoding_capacity, _workspace
@@ -543,6 +647,7 @@ class PreparedMimeticHeat3D:
     """
     def __init__(self, geometry, conductivity_w_m_k, *, budget, positivity_method='refuse'):
         self._guard = None
+        self._reference_owner, self._reference_positions = None, ()
         self._closed, self._active = False, False
         if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
             raise TectonicsError('issued exact thermal metrics on the shared budget required')
@@ -560,6 +665,7 @@ class PreparedMimeticHeat3D:
             conductivity = np.broadcast_to(np.asarray(conductivity_w_m_k, dtype=float), (self._nc,)).copy()
             if not np.isfinite(conductivity).all() or np.any(conductivity <= 0):
                 raise TectonicsError('positive finite cell conductivity required')
+            self._reference_positions, self._reference_owner = _prepare_reference_positions(geometry, budget)
             if positivity_method == EXTREMUM:
                 self._prepare_extremum(conductivity)
                 return
@@ -612,7 +718,7 @@ class PreparedMimeticHeat3D:
                 linear_method='symmetric CG with diagonal preconditioner; same-form matrix-free precision fallback; no dense factor',
                 linear_relative_tolerance=ALGEBRA, energy_relative_tolerance=ALGEBRA,
                 binary64_affine_patch_relative_error=patch_roundoff,
-                arithmetic_policy='binary64 unless local affine consistency or current-capacity addition loses the existing algebra tolerance; then decimal80',
+                arithmetic_policy='binary64 unless local affine consistency or current-capacity addition loses the existing algebra tolerance; then decimal80; minimum exact physical anchor class, tied exact total E/C projected once to binary64',
                 positivity_method=positivity_method,
                 positivity_policy='original refusal by default; explicit experimental opt-in enables insulated Scheme 2; active correction has unverified thin-cell accuracy and no second-order claim',
                 boundary='declared whole-domain thermal boundary; omitted faces explicitly insulated',
@@ -666,7 +772,7 @@ class PreparedMimeticHeat3D:
             old, capacity = cells(enthalpy_j, 'enthalpy', True), cells(capacity_j_k, 'capacity', True)
             source = cells(source_w, 'source power')
             boundary = {} if boundary is None else dict(boundary)
-            reference = float(old[0]/capacity[0])
+            reference = _reference_temperature(old, capacity, self._reference_positions, self._budget, cancel)
             initial = old-capacity*reference
             rhs = np.r_[initial+dt*source, np.zeros(self._nf)]
             A = dt*self._matrix+sparse.diags(np.r_[capacity, np.zeros(self._nf)], format='csr')
@@ -787,7 +893,7 @@ class PreparedMimeticHeat3D:
             linear_method='bounded frozen-weight M-matrix steps and Newton trials; subtraction-free binary64 '
                           'elimination applied and refined in decimal80; no dense factor',
             linear_relative_tolerance=ALGEBRA, energy_relative_tolerance=ALGEBRA,
-            arithmetic_policy='decimal80 for every advance',
+            arithmetic_policy='decimal80 for every advance; minimum exact physical anchor class, tied exact total E/C projected once to binary64',
             positivity_method=EXTREMUM,
             positivity_policy='explicit selection; with zero boundary power every cell and face temperature '
                               'stays within the range of the backward-Euler loads and prescribed temperatures; '
@@ -817,7 +923,7 @@ class PreparedMimeticHeat3D:
             old, capacity = cells(enthalpy_j, 'enthalpy', True), cells(capacity_j_k, 'capacity', True)
             source = cells(source_w, 'source power')
             boundary = {} if boundary is None else dict(boundary)
-            reference = float(old[0]/capacity[0])
+            reference = _reference_temperature(old, capacity, self._reference_positions, self._budget, cancel)
             ids = {name: i for i, name in enumerate(self._geometry._face_ids)}
             fixed = set()
             for name, entry in boundary.items():
@@ -941,6 +1047,9 @@ class PreparedMimeticHeat3D:
             self._closed = True
             self._matrix, self._local = None, ()
             self._release_extremum()
+            self._reference_positions = ()
+            if self._reference_owner is not None:
+                self._reference_owner.close(); self._reference_owner = None
             if self._guard is not None:
                 self._guard.__exit__(None, None, None); self._guard = None
 

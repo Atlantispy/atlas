@@ -1172,6 +1172,15 @@ The [reviewed controls](../../evidence/i01-basal-closure-r1.json) now connect th
 
 Neighbouring columns also exchange heat sideways. The [lateral-heat criterion](../I01_LATERAL_HEAT.md) asks how much temperature error ignoring those connections could accumulate. For a supplied whole-interval temperature contrast, it sums each contact's possible heat flow, divides by the cell's heat capacity and accumulates the result over time. It uses the conservative contact law described by [NIST FiPy](https://pages.nist.gov/fipy/en/stable/numerical/discret.html), with the mesh and monotonicity restrictions discussed by [Droniou](https://arxiv.org/html/1407.1567v1). The error inequality is derived in the Atlas method, not a published tectonic calibration. A two-cell exact solution and a small independent matrix solution check the calculation. Endpoint snapshots alone cannot supply the required bound. This selects the thermal criterion, while moving geometry and feedback from changed temperature into rock strength still need the later coupled implementation.
 
+The nondefault snapshot's [mimetic caloric reference](../../optimisation/working-snapshot-20261113/README.md#choose-the-caloric-reference-from-the-exact-physical-anchor)
+uses the minimum exact physical anchor class. A tie takes exact totals of the
+represented energies and capacities and one half-even binary64 projection;
+a singleton retains native division. Both public methods and fallback targets
+share that datum. Active native IEEE signalling and position ownership through
+failure are preserved. Independent review accepts the selected successor and
+its ordinary/boundary evidence; the tiny tests cover the producer and early
+public errors, not downstream tiny-temperature solving or general ordering.
+
 ## 6. Produce melt, then account for extraction and delivery
 
 The [common-provider connection](../I01_THERMO_PROVIDER_CONTRACT.md) identifies the ingredients, units, energy reference and conditions supported by a melt calculation. It carries actual mass and energy rather than just a percentage melted. An experimental connection now uses MAGEMin's corrected Green et al. (2025) igneous model. Its composition and phase-equilibrium calculations supply a single energy basis for melt and solid rock; the independent analytical controls below remain separate references.
