@@ -204,6 +204,19 @@ from defining contradictory copies of their boundary. Area/resolution failures
 remain failures: the generator does not secretly remove a difficult small plate
 or search seeds until it finds an attractive answer.
 
+Morphology totals combine the same already-rounded patch areas with one
+`math.fsum` per plate. Each crossing edge's original rounded length contributes
+once to each side's physical owner, followed by one sum per plate. The final
+boundary length is `fsum` of those rounded plate perimeters divided by two;
+summing unique edges instead would change the rounding contract. Connectivity,
+axes, ranking, compactness calculations and existing limits remain.
+
+The selected legal renames preserve all mapped operands and distinguish the old
+area/perimeter reductions. A separate same-case plate order changes only the old
+final boundary total by one unit in its last place; corrected totals and every
+mapped output agree. These aggregation controls do not establish name-invariance
+of upstream patch-area construction or the separate spatial index.
+
 **Basis and checks.** [Bird (2003), PB2002](https://doi.org/10.1029/2001GC000252)
 provides an Earth reference, not a recipe for creating every planet. The retained
 implementation uses [SciPy's sparse Dijkstra routine](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.dijkstra.html)

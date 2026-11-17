@@ -135,16 +135,24 @@ def layout_metrics(atlas, *, budget=None, cancel=None):
     from scipy.sparse.csgraph import connected_components
     ids=atlas.plate_ids;lookup={n:i for i,n in enumerate(ids)}
     with select_budget(budget).reserve(256*(len(atlas.patches)+atlas.edge_count)+16384,category='plate-layout-metrics'):
-        areas=np.zeros(len(ids));perimeters=np.zeros(len(ids));degree=np.zeros(len(ids),dtype='i8')
-        for p,a in zip(atlas.patches,atlas.patch_areas_sr):areas[lookup[p.plate_id]]+=a
+        degree=np.zeros(len(ids),dtype='i8')
+        area_terms=[[] for _ in ids]
+        for p,a in zip(atlas.patches,atlas.patch_areas_sr):area_terms[lookup[p.plate_id]].append(float(a))
+        areas=np.array([math.fsum(terms) for terms in area_terms])
+        del area_terms
         points=atlas.vertex_directions;lengths=_angle(points[atlas.edge_vertices[:,0]],points[atlas.edge_vertices[:,1]])
         graph=_graph(atlas);owners=np.array([lookup[p.plate_id] for p in atlas.patches]);components=[]
         for i in range(len(ids)):
             _check_cancel(cancel);nodes=np.flatnonzero(owners==i)
             components.append(int(connected_components(graph[nodes][:,nodes],directed=False,return_labels=False)))
+        perimeter_terms=[[] for _ in ids]
         for j,(a,b) in enumerate(atlas.side_patches):
             left,right=owners[a],owners[b]
-            if left!=right:perimeters[left]+=lengths[j];perimeters[right]+=lengths[j]
+            if left!=right:
+                length=float(lengths[j])
+                perimeter_terms[left].append(length);perimeter_terms[right].append(length)
+        perimeters=np.array([math.fsum(terms) for terms in perimeter_terms])
+        del perimeter_terms
         for a,b in atlas.adjacency():degree[lookup[a]]+=1;degree[lookup[b]]+=1
         positive=perimeters>0
         compact=np.ones(len(ids));compact[positive]=areas[positive]*(4*math.pi-areas[positive])/perimeters[positive]**2
@@ -155,7 +163,7 @@ def layout_metrics(atlas, *, budget=None, cancel=None):
             'compactness':compact.tolist(),'neighbour_count':degree.tolist(),
             'connected_components':components,'largest_fraction':float(fr.max()),
             'smallest_fraction':float(fr.min()),'area_ratio':float(fr.max()/fr.min()),
-            'boundary_length_radians':float(perimeters.sum()/2),
+            'boundary_length_radians':float(math.fsum(perimeters)/2),
             'maximum_support_area_sr':float(atlas.patch_areas_sr.max()),
             'morphology_validated':False,'dynamics_validated':False}
 

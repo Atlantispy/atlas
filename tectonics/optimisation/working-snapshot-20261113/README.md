@@ -473,6 +473,20 @@ remains, without a whole-suite PASS. Actual-parent composition, publication and
 scientific acceptance remain separate. Gamma representation/admission, physical
 ordering and A40 are outside this accepted scope.
 
+### Make layout measurements independent of labels
+
+`plate_layout.py` collects the supplied rounded patch areas and crossing lengths
+per plate and sums each collection with `math.fsum`. The total boundary length
+uses the same operation on the rounded per-plate perimeters, then divides by two.
+The original operands and physical associations are preserved. The
+[new-world guide](../../docs/how-it-works/04-new-worlds.md) explains the method.
+
+Independent review accepted the isolated area, perimeter and total corrections.
+The controlled naming changes distinguish the old reductions while preserving all
+mapped candidate outputs. Bucket accounting stays within the existing fixture
+reservation. This does not qualify the separate spatial-index area producer, a
+joined package, a whole-process memory bound or scientific acceptance.
+
 ### Choose a joint-chart centre from physical vertices
 
 When neither operand fits the other's chart, `spherical_geometry.py` sums the
