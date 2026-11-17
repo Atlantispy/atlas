@@ -1236,6 +1236,18 @@ example leaves broader signal/trap/refusal parity open; no corresponding full
 public geometry/trap case was qualified. General replay cost, whole-solver
 ordering and scientific acceptance remain open.
 
+The [exact-remainder support cache](../../optimisation/working-snapshot-20261113/README.md#key-cached-heat-supports-by-the-exact-remainder)
+uses each cell's current Decimal remainder tuple as its key. Distinct tuples no
+longer share an entry solely because normalisation and binary64 rounding give
+the same direction. Existing certification, decomposition, fallback and funded
+lifetime remain. A retained external 100 K equilibrium fixture observes one
+original cached reuse versus two exact-key decompositions through complete
+preparation and public issuance. All nine arrays, four rational accounts and
+five report scalars agree, including all eight faces and zero transfers,
+residuals and nonlinear iterations. This tests cache behaviour and issued binding;
+it supplies no nonuniform accuracy, performance, global support or general
+ordering result. The retained fixture is external to the public checkout.
+
 ## 6. Produce melt, then account for extraction and delivery
 
 The [common-provider connection](../I01_THERMO_PROVIDER_CONTRACT.md) identifies the ingredients, units, energy reference and conditions supported by a melt calculation. It carries actual mass and energy rather than just a percentage melted. An experimental connection now uses MAGEMin's corrected Green et al. (2025) igneous model. Its composition and phase-equilibrium calculations supply a single energy basis for melt and solid rock; the independent analytical controls below remain separate references.

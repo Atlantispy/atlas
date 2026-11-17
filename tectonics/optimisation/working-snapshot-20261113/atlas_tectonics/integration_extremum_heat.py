@@ -678,8 +678,7 @@ def _prepare(geometry, conductivity, fixed, cancel, lp_support):
                 statistics['wide_candidates'] += len(table)-own
                 statistics['largest_candidate_table'] = max(statistics['largest_candidate_table'], len(table))
             vectors = [row[0] for row in table]
-            size = norm(remainder)
-            key = tuple(round(float(c)/size, 11) for c in remainder)
+            key = tuple(remainder)
             found = _certify(remainder, vectors, cache[key]) if key in cache else None
             if found is None and radius:
                 # Remainder bound of each difference plus, for a point whose value is

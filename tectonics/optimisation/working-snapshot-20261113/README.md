@@ -949,6 +949,30 @@ observed or qualified. Broader signal/trap/refusal parity, arbitrary Gamma
 inputs, whole-solver ordering, exhaustive resource/recovery cases and
 scientific acceptance remain open.
 
+### Key cached heat supports by the exact remainder
+
+During each cell's extremum-heat preparation, the support cache is keyed by
+the tuple of the current Decimal remainder values. Lookup no longer normalises
+that vector, converts it to binary64 and rounds its components to eleven decimal
+places. Separate remainder tuples therefore do not share an entry merely because
+their rounded normalised directions agree. A matching entry still undergoes the
+existing certification; a miss or unsuccessful certification follows the existing
+decomposition route. Support selection, fallback, cancellation, reservations and
+the cache's per-cell lifetime retain their existing rules.
+
+One retained external equilibrium fixture follows two distinct nonzero remainders
+with positive supports through preparation and a complete public result. At
+100 K, with capacity 1,024 J/K and enthalpy 102,400 J, the original key reuses
+one cached support while the exact key performs two decompositions and keeps
+two entries. Both preparations bind their own issued stencil, and all nine
+arrays, four rational account fields and five balance/report scalars agree:
+the cell and eight faces remain at 100 K, with zero transfers, balances,
+residuals and nonlinear iterations. Equal physical output is part of this
+case, not a missing discriminator: the observed difference is the cache route.
+The fixture is external to the public checkout. It qualifies this cache-to-issued
+boundary only, without a nonuniform accuracy, performance, global support-optimum,
+general ordering, joined-package or scientific claim.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
