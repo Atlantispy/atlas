@@ -230,17 +230,28 @@ class CertifiedGammaRow:
         self.statistics['calls']+=1
         for precision in _LEVELS:
             _cancel(self.cancel)
+            low=high=low80=high80=digits=None
             try:
                 low,high=self._enclosure(delta,precision)
                 low80,high80=self.target.plus(low),self.target.plus(high)
                 if low80.is_finite() and high80.is_finite() and low80==high80:
-                    self.statistics['certified_'+str(precision)]+=1
-                    # Gamma is nonnegative; never expose a negative signed zero.
-                    return _ZERO if not low80 else low80
+                    # Equality certifies the value. A full-precision coefficient
+                    # ending in a nonzero digit also fixes the representation
+                    # returned by exact division in this target context.
+                    digits=low80.as_tuple().digits
+                    if len(digits)==self.target.prec and digits[-1]:
+                        self.statistics['certified_'+str(precision)]+=1
+                        return low80
+                    # More interval precision cannot determine a preferred
+                    # exponent for a shorter coefficient, trailing zero or zero.
+                    break
             except (DecimalException,_Uncertain):
                 # No approximate endpoint escapes. A context range/trap or
                 # unresolved interval proceeds to a stronger level or exact Q.
                 pass
+            finally:
+                # Endpoint payloads do not overlap the exact fallback scratch.
+                low=high=low80=high80=digits=None
         self.statistics['exact_fallbacks']+=1
         # Free interval enclosures before the original exact scratch is used.
         self.levels.clear()

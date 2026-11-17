@@ -767,6 +767,50 @@ static ownership. This does not average approximate mirrors or arbitrary
 supports, settle wider native/linear/nonlinear ordering, exhaust resource or
 recovery cases, qualify a joined runtime or establish scientific acceptance.
 
+### Preserve the returned Gamma representation at its readers
+
+The mimetic bounded-KSS geometry bound enters the prepared graph, workspace
+span estimates and the issued minimum report. Numeric equality alone does not
+preserve those consumers: `2.00` and `2` have different Decimal tuples and
+spans. The reference is the returned representation of the existing exact
+division in the Decimal80 half-even target.
+
+Finite equal rounded enclosure endpoints keep the accelerated return only
+when their nonzero coefficient uses all 80 digits and ends in a nonzero digit.
+That sufficient condition fixes the returned representation. Other singleton
+results, including zero, short coefficients and trailing-zero coefficients,
+leave refinement immediately for the existing funded exact calculation.
+Unequal endpoints retain the original refinement and fallback. Endpoint and
+digit temporaries are released before cached interval levels are cleared and
+exact scratch is reused. Existing row/delta admission, cancellation,
+MemoryLimit continuations and evaluation counters remain. The target retains
+its Decimal80 half-even rule, inherited exponent limits and trap settings.
+
+Independent review accepts this returned-representation correction. The
+selected legal one-cell public KSS pair changes two returned bounds from
+`2.00`, span 5, to `2`, span 1, with two exact fallbacks replacing two
+96-digit certifications. Both full public solves finish two nonlinear
+iterations; actual minimum reports and issued descriptors follow the corrected
+representation. Physical arrays and encoded accounts match across the pair,
+including the original nonzero storage residual. Explicit adjacent-workspace
+and event-search readers use the genuine still-owned graph/state with a valid
+zero direction; their observed charges are unchanged. These probes establish
+neither a naturally selected Newton branch nor a budget crossing. General
+replay frequency, exact-replay time and size feasibility remain unmeasured.
+
+Equal returned tuples do not establish equal Decimal signals, traps or
+refusals. A pre-existing helper example takes `A = 10**79 + 1`, off-node vector
+`(A, 0, 0)` with its balancing self vector, direction `(1, 0, 0)` and common
+volume `1/10`. The directed route can return the 80-digit coefficient `2A`
+with decimal exponent `+1` without rounding, while exact division `20A/1`
+can discard a zero and signal `Rounded`. The predecessor has the same fast
+return. Python's [Rounded signal](https://docs.python.org/3/library/decimal.html#decimal.Rounded)
+can occur when every discarded digit is zero. This is a helper-level source
+counterexample; no corresponding full public geometry/trap case has been
+observed or qualified. Broader signal/trap/refusal parity, arbitrary Gamma
+inputs, whole-solver ordering, exhaustive resource/recovery cases and
+scientific acceptance remain open.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

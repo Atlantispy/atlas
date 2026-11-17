@@ -1191,6 +1191,17 @@ dies. Independent review accepts the selected trace and lifetime scope, with
 ordinary arithmetic evidence reused; arbitrary support/mirror ordering,
 exhaustive resource recovery and joined/scientific acceptance remain open.
 
+The nondefault snapshot's [Gamma representation correction](../../optimisation/working-snapshot-20261113/README.md#preserve-the-returned-gamma-representation-at-its-readers)
+preserves the exact Decimal80 division's returned tuple at the public KSS
+producer and actual span/minimum readers. A sufficient unique-representation
+condition keeps the accelerated return; other singleton results use the
+existing funded exact path. Inherited exponent limits and trap settings remain.
+Independent acceptance covers the returned representation and selected public
+producer/explicit-reader evidence. The documented pre-existing `Rounded`
+example leaves broader signal/trap/refusal parity open; no corresponding full
+public geometry/trap case was qualified. General replay cost, whole-solver
+ordering and scientific acceptance remain open.
+
 ## 6. Produce melt, then account for extraction and delivery
 
 The [common-provider connection](../I01_THERMO_PROVIDER_CONTRACT.md) identifies the ingredients, units, energy reference and conditions supported by a melt calculation. It carries actual mass and energy rather than just a percentage melted. An experimental connection now uses MAGEMin's corrected Green et al. (2025) igneous model. Its composition and phase-equilibrium calculations supply a single energy basis for melt and solid rock; the independent analytical controls below remain separate references.
