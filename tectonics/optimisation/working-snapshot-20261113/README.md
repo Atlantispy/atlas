@@ -455,6 +455,24 @@ Independent source review accepted the isolated change. The focused control exer
 
 Two fresh candidate imports from different homes produced identical loaded-inventory bytes; the mapping-removed control exposed the seven original paths. Independent review accepted the corrected nested-Path handling by source inspection. This is controlled relocation evidence, not a new reference run or a proof for every source-provenance dependency.
 
+### Refuse an unadmitted selected method
+
+Five selected mimetic preconditioner/direct/Newton resource handlers propagate
+allocation refusal instead of changing the numerical route. Numerical-exception
+fallbacks, cleanup, tolerances and projection points remain. Separately, the
+[regional auto rule](../../docs/REGIONAL_MECHANICS_3D.md#automatic-choice-between-gmres-and-multigrid-methodauto)
+chooses from workload features, then refuses if that method is not admitted.
+POLICY v2 still binds both admitted-method booleans: a changed mask refuses saved
+continuation before mechanical preparation, while different budgets with the
+same mask can continue.
+
+The isolated A3/O1 source and three current companion controls are independently
+accepted; all three passed. Adequate older seven-case/six-mutant evidence keeps
+its original source bound. The unrelated historical whole-suite fixture error
+remains, without a whole-suite PASS. Actual-parent composition, publication and
+scientific acceptance remain separate. Gamma representation/admission, physical
+ordering and A40 are outside this accepted scope.
+
 ### Attribute kept-worker RSS to the batch it served
 
 `integration_parallel_dispatch.py` stamps the existing post-collection resource report with its batch name. The parent clears RSS when a batch starts and uses a report for recycling only when that name matches the batch it served. If replacement fails and the previous report is reread, current RSS stays unknown and the existing recycle rule applies. The live memory guard, thresholds, timing marks and result receipt are unchanged.

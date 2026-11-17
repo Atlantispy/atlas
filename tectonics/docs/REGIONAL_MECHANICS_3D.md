@@ -601,17 +601,17 @@ ms in the measured runs, against preparations of 0.2-10 s.
    prediction equals the actual peak reservation for both methods.
    - If neither method fits the budget's available bytes, the plan is refused
      with `MemoryLimitError` before anything is reserved. No limit is raised.
-   - If only one fits, it is chosen.
+   - Workload features select the method under rules 2 and 3. If that method
+     is not admitted, the plan refuses; the other method is not substituted.
 2. *Multigrid inside its shown range.* Multigrid is chosen when the workload lies
    where it has been shown to meet every gate:
    - viscosity contrast (max/min over all Gauss points) at most 1e5 with brick
      aspect ratio (largest over smallest spacing) at most 2, or contrast at most
      1e3 with aspect at most 4;
    - at least 4 cells along every axis.
-3. *Otherwise the assembled route.* `gmres` is used outside that range. If only
-   multigrid fits the budget there, multigrid is used and the record says it is
-   outside its shown range. Its failure mode is a visible refusal
-   (`3D FGMRES-DR did not converge`), never a wrong answer.
+3. *Otherwise the assembled route.* `gmres` is selected outside that range.
+   If its reservation is not admitted, the plan refuses even if multigrid fits.
+   Neither a budget nor a failed preparation silently selects another method.
 
 The corrected assembled-factor allowance can remove GMRES from the admitted set
 at an unchanged budget; it does not change this multigrid-first rule or any
@@ -631,8 +631,8 @@ method is unchanged, and releases the old structure otherwise. There is no retry
 or fallback: a refused or unconverged solve is reported exactly as for an
 explicit method.
 
-The decision depends only on the inputs, the budget and the policy, not on the
-machine or timings. A 3D evolution plan records `mechanics_method`, and for
+Features and the policy select the method; the budget controls admission.
+Neither machine identity nor timing selects a route. A 3D evolution plan records `mechanics_method`, and for
 `auto` the policy version and admitted-method mask established after fixed
 preparation and allowance for the advance workspace. Evolution pins that
 admission context across rebuilds: later shared-budget pressure may refuse an
@@ -642,6 +642,14 @@ limits admitting the same methods are compatible; raw free-byte counts are not
 part of the identity. To continue a run, pass its recorded `mechanics_method`
 and use a budget supporting the same admission choices. States from before
 this change are refused because the package's execution identity changed.
+
+The isolated [A3/O1 refusal correction](../optimisation/working-snapshot-20261113/README.md#refuse-an-unadmitted-selected-method)
+is independently accepted. POLICY v2 and both admitted-method booleans remain in
+the auto plan identity. The retained three controls refuse a selected method
+when only the other fits, refuse a saved state reopened under a changed mask
+before mechanical preparation, and continue at different byte limits with the
+same mask. Earlier range/timing tables retain their original source attribution;
+these controls are not a new performance comparison or joined qualification.
 
 A continued run reproduces the continuous one bit for bit (R7, 1 October 2026).
 Each mechanical solve of the evolution starts its constitutive iteration from

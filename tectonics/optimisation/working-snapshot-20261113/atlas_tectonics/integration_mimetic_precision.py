@@ -306,8 +306,8 @@ def solve(geometry, conductivity, old, capacity, dt, source, boundary, reference
     solve that converges slowly, and that the iteration alone would complete,
     can take the factor instead: its result meets the same two residual gates
     and its evidence carries ``direct_factor``. When the budget does not admit
-    the factor, the iteration continues unaltered to its limit of twice the
-    unknowns, and the solve is refused only if that also fails. The plan
+    the factor, the solve is refused (ruling 34); the iteration does not
+    continue in its place. The plan
     descriptor's ``linear_method`` does not mention the factor: the evidence
     of each advance, not the plan, names it.
     """
@@ -599,7 +599,7 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     iterations, converged = 0, False
     limit = 2*size
     best, improved = norm(r), 0
-    form, give_way = None, True
+    form = None
     while iterations < limit:
         if 2*norm(r) <= best:
             best, improved = norm(r), iterations
@@ -615,15 +615,11 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
         # The newest residual has been judged for halving and convergence
         # above, so a solve that converges on its last permitted iteration
         # leaves there and never here.
-        if give_way and (iterations-improved >= _STAGNATION or
-                         (correction_at is not None and iterations == 0)):
-            try:
-                form = direct_form()
-                break
-            except MemoryLimitError:
-                # The budget does not admit the factor. The iteration carries
-                # on unaltered to its own limit, as it does without this rule.
-                give_way = False
+        if (iterations-improved >= _STAGNATION or
+                (correction_at is not None and iterations == 0)):
+            # Ruling 34 (A-3): a budget that does not admit the factor refuses the solve.
+            form = direct_form()
+            break
         ad = reduced_action(direction)
         denominator = dot(direction, ad)
         if denominator <= 0 or not denominator.is_finite():
@@ -758,118 +754,116 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
                 best_residual = true_residual
             best_merit = dot(best_residual, best_residual)
             corrections = actual_corrections
-            try:
-                with budget.reserve(N.workspace_bytes(size), category='mimetic-newton-direction'):
-                    helper_identity = N.assert_current()
-                    derivative = (N.prepare_scheme2_derivative(local, next_iterate,
-                        correction_fixed, local_faces=_local_faces, cancel=cancel) if limiter is None else
-                        limiter.derivative(next_iterate))
-                    def jacobian(values):
-                        expanded = [zero]*size
-                        for j, value in zip(free, values):
-                            expanded[j] = value
-                        diffusion = derivative(expanded)
-                        if limiter is not None:
+            # Ruling 34 (A-3): a budget that does not admit the direction refuses; no mixing fallback.
+            with budget.reserve(N.workspace_bytes(size), category='mimetic-newton-direction'):
+                helper_identity = N.assert_current()
+                derivative = (N.prepare_scheme2_derivative(local, next_iterate,
+                    correction_fixed, local_faces=_local_faces, cancel=cancel) if limiter is None else
+                    limiter.derivative(next_iterate))
+                def jacobian(values):
+                    expanded = [zero]*size
+                    for j, value in zip(free, values):
+                        expanded[j] = value
+                    diffusion = derivative(expanded)
+                    if limiter is not None:
+                        for entry in local:
+                            flux = _local_faces(expanded, entry)
+                            diffusion[entry[0]] -= sum(flux, zero)
+                            for j, value in zip(entry[1], flux):
+                                diffusion[j] += value
+                    return [(capacity[j]*expanded[j] if j < nc else zero)+dt*diffusion[j]
+                            for j in free]
+                # A vanishing inexact-Newton forcing term avoids a fixed
+                # ten-percent linear-convergence tail near the much
+                # stricter physical acceptance target. This controls work
+                # only; every proposed state is tested on the true action.
+                forcing = min(D('.1'), (norm(best_residual)/max(rhs_max, norm(best_residual))).sqrt())
+                def newton_direction(selected):
+                    fallback = direct_solve if direct is not None else precondition
+                    load = [-best_residual[j] for j in free]
+                    if limiter is None or limiter.bounds is None:
+                        return N.gmres(jacobian, fallback, load, cancel=cancel,
+                                       max_restarts=1, relative_target=forcing)
+                    def sources():
+                        N.assert_current(); L.assert_current()
+                    return J.solve_direction(local, base_blocks, capacity, dt, free, size,
+                        selected.active_coefficients, action=jacobian, rhs=load,
+                        relative_target=forcing, budget=budget, fallback=fallback,
+                        source_check=sources, cancel=cancel, permutation=factor.perm_c,
+                        symbolic_fill=_factor_fill)
+                direction = newton_direction(derivative)
+                nonlinear['newton'] = {k: v for k, v in direction.items() if k != 'solution'}
+                nonlinear['newton']['source_sha256'] = helper_identity
+                origin = next_iterate
+                def propose(values, record):
+                    """One direction, bounded search, true-action merit only."""
+                    nonlocal corrections, next_iterate, best_merit
+                    expanded = [zero]*size
+                    for j, value in zip(free, values):
+                        expanded[j] = value
+                    adjacent = None
+                    def check(step):
+                        nonlocal corrections, next_iterate, best_merit
+                        _cancel(cancel)
+                        trial = [a+step*b for a, b in zip(origin, expanded)]
+                        corrections = correction(trial)
+                        trial_action = action(trial)
+                        residual = [trial_action[j]-rhs[j] if j not in fixed else zero
+                                    for j in range(size)]
+                        merit = dot(residual, residual)
+                        if merit < best_merit:
+                            next_iterate, best_merit = trial, merit
+                            record.update(accepted_step_decimal=str(step),
+                                          proposal_residual_decimal=str(norm(residual)))
+                            return True
+                        return False
+                    for power in range(24):
+                        if check(D(2)**-power):
+                            return True, adjacent, expanded
+                        if power == 0 and limiter is not None and limiter.bounds is not None:
+                            base_direction = [(capacity[j]*expanded[j] if j < nc else zero)
+                                              for j in range(size)]
                             for entry in local:
                                 flux = _local_faces(expanded, entry)
-                                diffusion[entry[0]] -= sum(flux, zero)
+                                base_direction[entry[0]] -= dt*sum(flux, zero)
                                 for j, value in zip(entry[1], flux):
-                                    diffusion[j] += value
-                        return [(capacity[j]*expanded[j] if j < nc else zero)+dt*diffusion[j]
-                                for j in free]
-                    # A vanishing inexact-Newton forcing term avoids a fixed
-                    # ten-percent linear-convergence tail near the much
-                    # stricter physical acceptance target. This controls work
-                    # only; every proposed state is tested on the true action.
-                    forcing = min(D('.1'), (norm(best_residual)/max(rhs_max, norm(best_residual))).sqrt())
-                    def newton_direction(selected):
-                        fallback = direct_solve if direct is not None else precondition
-                        load = [-best_residual[j] for j in free]
-                        if limiter is None or limiter.bounds is None:
-                            return N.gmres(jacobian, fallback, load, cancel=cancel,
-                                           max_restarts=1, relative_target=forcing)
-                        def sources():
-                            N.assert_current(); L.assert_current()
-                        return J.solve_direction(local, base_blocks, capacity, dt, free, size,
-                            selected.active_coefficients, action=jacobian, rhs=load,
-                            relative_target=forcing, budget=budget, fallback=fallback,
-                            source_check=sources, cancel=cancel, permutation=factor.perm_c,
-                            symbolic_fill=_factor_fill)
-                    direction = newton_direction(derivative)
-                    nonlinear['newton'] = {k: v for k, v in direction.items() if k != 'solution'}
-                    nonlinear['newton']['source_sha256'] = helper_identity
-                    origin = next_iterate
-                    def propose(values, record):
-                        """One direction, bounded search, true-action merit only."""
-                        nonlocal corrections, next_iterate, best_merit
-                        expanded = [zero]*size
-                        for j, value in zip(free, values):
-                            expanded[j] = value
-                        adjacent = None
-                        def check(step):
-                            nonlocal corrections, next_iterate, best_merit
-                            _cancel(cancel)
-                            trial = [a+step*b for a, b in zip(origin, expanded)]
-                            corrections = correction(trial)
-                            trial_action = action(trial)
-                            residual = [trial_action[j]-rhs[j] if j not in fixed else zero
-                                        for j in range(size)]
-                            merit = dot(residual, residual)
-                            if merit < best_merit:
-                                next_iterate, best_merit = trial, merit
-                                record.update(accepted_step_decimal=str(step),
-                                              proposal_residual_decimal=str(norm(residual)))
-                                return True
-                            return False
-                        for power in range(24):
-                            if check(D(2)**-power):
+                                    base_direction[j] += dt*value
+                            search = L.event_line_search(limiter, origin, expanded,
+                                best_residual, base_direction, dt, budget=budget,
+                                fixed=fixed, cancel=cancel)
+                            record['event_line_search'] = {
+                                k: str(v) if isinstance(v, D) else v for k, v in search.items()}
+                            adjacent = search['adjacent_step_ratio']
+                            if search['step'] and check(search['step']):
                                 return True, adjacent, expanded
-                            if power == 0 and limiter is not None and limiter.bounds is not None:
-                                base_direction = [(capacity[j]*expanded[j] if j < nc else zero)
-                                                  for j in range(size)]
-                                for entry in local:
-                                    flux = _local_faces(expanded, entry)
-                                    base_direction[entry[0]] -= dt*sum(flux, zero)
-                                    for j, value in zip(entry[1], flux):
-                                        base_direction[j] += dt*value
-                                search = L.event_line_search(limiter, origin, expanded,
-                                    best_residual, base_direction, dt, budget=budget,
-                                    fixed=fixed, cancel=cancel)
-                                record['event_line_search'] = {
-                                    k: str(v) if isinstance(v, D) else v for k, v in search.items()}
-                                adjacent = search['adjacent_step_ratio']
-                                if search['step'] and check(search['step']):
-                                    return True, adjacent, expanded
-                        return False, adjacent, expanded
-                    accepted, adjacent, expanded = propose(direction['solution'], nonlinear['newton'])
-                    if adjacent is not None and (not accepted or (
-                            best_merit > D(direction['target_norm_decimal'])**2 and
-                            limiter.matches_derivative(next_iterate, derivative.active_coefficients))):
-                        # ONE alternative Jacobian from the exact next affine
-                        # region. Solve the SAME origin residual; the region
-                        # point is never accepted as a heat state. Reuse the
-                        # existing factor and workspace, and never recurse.
-                        # A partial update within the SAME selected affine
-                        # branch can repeat the same stalled Newton line.
-                        # Compare an adjacent proposal even after tiny gains,
-                        # unless the primary meets the existing inner target
-                        # or changes the actual rounded-state selection.
-                        # The latter gives the next iteration a new J.
-                        # Shared best_merit preserves a better primary; this
-                        # work policy changes no physical acceptance gate.
-                        del direction, derivative
-                        derivative = limiter.derivative(origin, line_direction=expanded,
-                                                        line_step=Q(*adjacent), budget=budget)
-                        direction = newton_direction(derivative)
-                        alternative = {k: v for k, v in direction.items() if k != 'solution'}
-                        alternative.update(source_sha256=helper_identity, region_step_ratio=adjacent,
-                            origin='unchanged primary Newton origin; no uphill state accepted', maximum_attempts=1)
-                        nonlinear['newton']['adjacent_branch'] = alternative
-                        propose(direction['solution'], alternative)
-                    N.assert_current()
-                    del derivative, jacobian, direction, propose, newton_direction
-            except MemoryLimitError:
-                nonlinear['newton'] = dict(admitted=False)
+                    return False, adjacent, expanded
+                accepted, adjacent, expanded = propose(direction['solution'], nonlinear['newton'])
+                if adjacent is not None and (not accepted or (
+                        best_merit > D(direction['target_norm_decimal'])**2 and
+                        limiter.matches_derivative(next_iterate, derivative.active_coefficients))):
+                    # ONE alternative Jacobian from the exact next affine
+                    # region. Solve the SAME origin residual; the region
+                    # point is never accepted as a heat state. Reuse the
+                    # existing factor and workspace, and never recurse.
+                    # A partial update within the SAME selected affine
+                    # branch can repeat the same stalled Newton line.
+                    # Compare an adjacent proposal even after tiny gains,
+                    # unless the primary meets the existing inner target
+                    # or changes the actual rounded-state selection.
+                    # The latter gives the next iteration a new J.
+                    # Shared best_merit preserves a better primary; this
+                    # work policy changes no physical acceptance gate.
+                    del direction, derivative
+                    derivative = limiter.derivative(origin, line_direction=expanded,
+                                                    line_step=Q(*adjacent), budget=budget)
+                    direction = newton_direction(derivative)
+                    alternative = {k: v for k, v in direction.items() if k != 'solution'}
+                    alternative.update(source_sha256=helper_identity, region_step_ratio=adjacent,
+                        origin='unchanged primary Newton origin; no uphill state accepted', maximum_attempts=1)
+                    nonlinear['newton']['adjacent_branch'] = alternative
+                    propose(direction['solution'], alternative)
+                N.assert_current()
+                del derivative, jacobian, direction, propose, newton_direction
             corrections = actual_corrections
             proposal = _mix([*correction_history[-5:], (solution, true_residual)])
             # Nonlinear residual mixing, not mixing unweighted Kelvin defects

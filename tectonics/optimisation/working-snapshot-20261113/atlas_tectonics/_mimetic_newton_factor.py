@@ -349,7 +349,7 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
 @contextmanager
 def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
                    fallback, source_check, cancel=None, permutation=None, symbolic_fill=None):
-    """Yield (right inverse, evidence); numerical/admission refusal falls back.
+    """Yield (right inverse, evidence); a numerical refusal falls back, a budget refusal propagates.
 
     Invalid input, source changes and cancellation propagate. The fallback
     already belongs to the heat caller; this helper never releases it.
@@ -366,7 +366,8 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
         try:
             owner = _build(local,blocks,capacity,dt,free,size,active,held,budget,
                            fallback,cancel,source_check,evidence)
-        except (MemoryLimitError,DecimalException,_Unavailable) as exc:
+        except (DecimalException,_Unavailable) as exc:
+            # Ruling 34 (A-3): MemoryLimitError propagates; only problem refusals fall back.
             # No refused candidate storage remains live during fallback GMRES.
             held.close()
             evidence.update(fallback_type=type(exc).__name__,fallback_reason=str(exc))
@@ -377,7 +378,7 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
                 owner = _build(local,blocks,capacity,dt,free,size,active,held,budget,
                     fallback,cancel,source_check,evidence,precision=160,
                     permutation=permutation,symbolic_fill=symbolic_fill)
-            except (MemoryLimitError,DecimalException,_Unavailable) as exc:
+            except (DecimalException,_Unavailable) as exc:
                 held.close()
                 evidence.update(fallback_type=type(exc).__name__,fallback_reason=str(exc))
                 if evidence.get('phase_records'):
@@ -477,7 +478,7 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
                     retry['status'] = 'improved-direction'
                 else:
                     retry['status'] = 'retained-initial-direction'
-            except (MemoryLimitError, DecimalException, _Unavailable) as exc:
+            except (DecimalException, _Unavailable) as exc:
                 retry.update(refusal_type=type(exc).__name__, refusal_reason=str(exc))
             finally:
                 if owner is not None:

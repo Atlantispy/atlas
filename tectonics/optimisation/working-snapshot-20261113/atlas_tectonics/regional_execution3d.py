@@ -538,9 +538,10 @@ class PreparedRegionalStokes3D:
                             viscosity_pa_s, decision_available)
         if record['method'] is None:
             needs = record['admission']
-            raise MemoryLimitError('automatic 3D solver selection refused: neither gmres (%d bytes) nor '
-                                   'multigrid (%d bytes) fits the %d bytes available; no limit was raised'
-                                   % (needs['gmres']['bytes'], needs['multigrid']['bytes'], decision_available))
+            raise MemoryLimitError('automatic 3D solver selection refused: %s (gmres %d bytes, multigrid %d '
+                                   'bytes, %d bytes available); no limit was raised'
+                                   % (record['reason'], needs['gmres']['bytes'], needs['multigrid']['bytes'],
+                                      decision_available))
         return record, available
 
     def with_viscosity(self, viscosity_pa_s, *, material_source, cancel=None, release=False):

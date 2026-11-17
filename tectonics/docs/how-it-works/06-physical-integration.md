@@ -520,19 +520,25 @@ MFEM) and what the scratch measurements found.
 Which solver runs is now decided per prepared problem, unless the caller names
 one. Before anything is reserved, Atlas works out how much memory each solver
 would need, and measures how varied the viscosity is, the shape of the cells and
-how many cells there are. The new solver runs whenever it fits the memory
-allowance and the problem lies in the range where it has been shown to converge:
+how many cells there are. Workload features select the new solver inside the
+range where it has been shown to converge:
 - viscosity varying by up to a factor of 100,000 in near-cubic cells, or up to
   1,000 in cells as flat as 4:1;
 - at least 4 cells along every axis.
 
-Outside that range, or when only the original solver fits, the original solver
-runs. If neither fits, the problem is refused. The rule solves nothing to decide
-and takes about a millisecond. Each result records which solver ran and why, and
+Outside that range, features select the original solver. If the selected
+solver does not fit the admitted memory, the problem is refused even if the
+other solver fits. The rule solves nothing to decide. Each result records which
+solver ran and why, and
 a saved run can only be continued with the same selection policy and set of
 admitted solvers. Evolution keeps those admission choices fixed: temporary
 competition for shared memory refuses work rather than silently switching
 solver. Changed viscosity can still change the choice under the recorded rule.
+
+The accepted [A3/O1 controls](../../optimisation/working-snapshot-20261113/README.md#refuse-an-unadmitted-selected-method)
+retain policy v2 and distinguish a changed admission mask from different byte
+limits with the same mask. They do not establish a new whole-interval result.
+The following timing comparison describes the earlier measured source.
 
 On 29 measured problems, the new solver was faster or about equal in 27 and
 passed every check in all of them. Choosing it everywhere took about a quarter

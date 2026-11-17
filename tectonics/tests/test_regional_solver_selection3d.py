@@ -75,11 +75,12 @@ class SelectionRuleTests(unittest.TestCase):
     def test_admission_decides_first(self):
         self.assertIsNone(choose(features(), available=99)['method'])
         only = choose(features(), needs=(100, 200), available=150)
-        self.assertEqual((only['method'], only['reason']), ('gmres', 'only gmres is admitted by the budget'))
+        self.assertEqual((only['method'], only['reason']), (None, 'multigrid is not admitted by the budget'))
         only = choose(features(contrast=9.), needs=(200, 100), available=150)
-        self.assertEqual(only['method'], 'multigrid')
-        self.assertIn('outside its shown range', only['reason'])
+        self.assertEqual((only['method'], only['reason']), (None, 'gmres is not admitted by the budget'))
         self.assertFalse(only['multigrid_supported'])
+        only = choose(features(contrast=9.), needs=(100, 200), available=150)
+        self.assertEqual((only['method'], only['reason']), ('gmres', 'only gmres is admitted by the budget'))
 
     def test_multigrid_inside_its_shown_range(self):
         top = selection.MAX_LOG10_CONTRAST
@@ -184,7 +185,7 @@ class AutoPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(TectonicsError, 'auto, gmres'):
             reference.prepare(method='ilu')
 
-    def test_memory_decides_when_only_one_method_fits(self):
+    def test_memory_refuses_rather_than_switching_method(self):
         spec = case('inclusion', 6)
         with plan_for(spec) as probe:
             needs = probe.solver_selection()['admission']
@@ -193,14 +194,13 @@ class AutoPlanTests(unittest.TestCase):
             plan_for(spec, method='gmres', budget=budget)
         self.assertEqual(budget.reserved_bytes, 0)
         high = np.where(spec['eta'] < 1e20, 1e14, spec['eta'])                  # contrast 1e7
-        with plan_for(spec, eta=high, budget=budget) as plan:
-            self.assertEqual(plan.method, 'multigrid')
-            self.assertEqual(plan.solver_selection()['reason'],
-                             'only multigrid is admitted by the budget; outside its shown range')
+        with self.assertRaisesRegex(MemoryLimitError, 'refused: gmres is not admitted by the budget'):
+            plan_for(spec, eta=high, budget=budget)
+        self.assertEqual(budget.reserved_bytes, 0)
 
     def test_refusal_when_neither_method_fits(self):
         budget = WorkBudget(1024)
-        with self.assertRaisesRegex(MemoryLimitError, 'neither gmres .* nor multigrid'):
+        with self.assertRaisesRegex(MemoryLimitError, r'refused: neither method is admitted by the budget [(]gmres'):
             reference.prepare(budget=budget)
         self.assertEqual((budget.reserved_bytes, budget.peak_reserved_bytes), (0, 0))
 
@@ -327,29 +327,36 @@ class EvolutionSelectionTests(unittest.TestCase):
 
     def test_saved_auto_state_refuses_a_changed_admission_context(self):
         import test_regional_evolution3d as evolution
-        with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(75*1024**2)) as recorded:
+        with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(256*1024**2)) as recorded:
             admission = recorded.descriptor()['mechanics_selection_admission']
-            self.assertEqual(admission, {'gmres': True, 'multigrid': False})
+            self.assertEqual(admission, {'gmres': True, 'multigrid': True})
             first = evolution.advance(recorded, evolution.initial(recorded))
-            self.assertEqual(first.mechanics.descriptor()['plan']['method'], 'gmres')
-            with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(256*1024**2)) as reopened:
+            self.assertEqual(first.mechanics.descriptor()['plan']['method'], 'multigrid')
+            with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(75*1024**2)) as reopened:
                 self.assertEqual(reopened.descriptor()['mechanics_selection_admission'],
-                                 {'gmres': True, 'multigrid': True})
+                                 {'gmres': True, 'multigrid': False})
                 self.assertNotEqual(reopened.plan_id, recorded.plan_id)
                 with self.assertRaisesRegex(TectonicsError, 'different regional plan'):
                     evolution.advance(reopened, first.state)
                 self.assertEqual(reopened.statistics()['mechanical_preparations'], 0)
 
-    def test_saved_auto_state_accepts_different_budgets_with_the_same_admission(self):
+
+    def test_auto_state_refuses_a_budget_that_admits_only_the_other_method(self):
         import test_regional_evolution3d as evolution
         with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(75*1024**2)) as recorded:
+            with self.assertRaisesRegex(MemoryLimitError, 'refused: multigrid is not admitted by the budget'):
+                evolution.advance(recorded, evolution.initial(recorded))
+
+    def test_saved_auto_state_accepts_different_budgets_with_the_same_admission(self):
+        import test_regional_evolution3d as evolution
+        with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(256*1024**2)) as recorded:
             first = evolution.advance(recorded, evolution.initial(recorded))
-            with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(76*1024**2)) as reopened:
+            with evolution.prepare(cells=(4, 4, 4), budget=WorkBudget(257*1024**2)) as reopened:
                 self.assertEqual(reopened.descriptor()['mechanics_selection_admission'],
                                  recorded.descriptor()['mechanics_selection_admission'])
                 self.assertEqual(reopened.plan_id, recorded.plan_id)
                 continued = evolution.advance(reopened, first.state)
-                self.assertEqual(continued.mechanics.descriptor()['plan']['method'], 'gmres')
+                self.assertEqual(continued.mechanics.descriptor()['plan']['method'], 'multigrid')
                 self.assertAlmostEqual(continued.state.descriptor()['time_s'], .2)
 
     def test_temporary_budget_contention_refuses_without_rerouting_auto(self):
