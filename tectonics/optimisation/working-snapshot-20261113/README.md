@@ -735,6 +735,38 @@ matrix preparation may already have occurred. They do not qualify downstream
 tiny-temperature solving, arbitrary solver ordering, every cap/recovery path,
 a joined runtime or scientific acceptance.
 
+### Reconstruct power-plane traces without choosing a twin
+
+Before approximate mirror deduplication, the extremum preparation captures each
+exact equal-metric, same-owner exposed power-plane class with its candidate
+role and traversal relation. A query on one member keeps that face's own power
+and original relation. A fixed third observer outside the class receives one
+correctly rounded Decimal80 contribution of the original coefficient times
+the exact mean of the represented member powers, in the original trace slot.
+It does not split the coefficient into rounded per-face weights. Fixed-face,
+flux/support selection and individual boundary-power bookings remain.
+
+Singletons and identical binary encodings keep their original multiplication;
+mixed signed zeros are independent of class order. Membership is stored once
+with the prepared stencil and enters its digest. Exact power sums are cached
+only for the current advance. Existing workspaces cover class construction,
+retained membership and live integer/Decimal operations.
+
+A cached supplied stencil owns one static reservation until its last prepared
+reference is released, including a failed-work frame surviving plan close or
+fixed-set replacement. Existing weak-reference finalisation provides that
+ownership without a second healthy-hit charge or retaining the stencil itself.
+The separate self-prepared route keeps its own workspace ownership.
+
+Independent review accepts this successor after the reference fix. The ordinary
+same-plane control keeps own-face temperatures at 100 K and 99 K and gives the
+fixed third observer 99.75 K in either incidence order, with original impulses,
+source/outward bookings and zero exact storage. Valid ordinary evidence is
+reused; the affected close/fixed-replacement failure pair verifies retained
+static ownership. This does not average approximate mirrors or arbitrary
+supports, settle wider native/linear/nonlinear ordering, exhaust resource or
+recovery cases, qualify a joined runtime or establish scientific acceptance.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`

@@ -908,12 +908,14 @@ class PreparedMimeticHeat3D:
 
     def _release_extremum(self):
         if getattr(self, '_extremum', None) is not None:
-            self._extremum[2].__exit__(None, None, None)
+            # Surviving solver/error frames keep the one static lease alive.
+            # Normal cache release still frees it at the last stencil reference.
             self._extremum = None
 
     def _advance_extremum(self, enthalpy_j, capacity_j_k, dt, state_id, source_w, boundary, cancel):
         """The same issued result and accounts, from the cell-centred discretisation."""
         from . import integration_extremum_heat as X
+        from .integration_spatial_transport import _workspace
         with self._operation(cancel), self._budget.reserve(2*1024**2+1024*self._n, category='mimetic-heat-step'):
             def cells(value, label, positive=False):
                 result = np.broadcast_to(np.asarray(value, dtype=float), (self._nc,)).copy()
@@ -944,10 +946,15 @@ class PreparedMimeticHeat3D:
                 # Stencils depend on geometry, conductivity and WHICH faces hold a
                 # temperature, never on a boundary value, capacity or duration.
                 self._release_extremum()
-                with self._budget.reserve(X.workspace_bytes(self._geometry), category='extremum-heat-stencil'):
+                with _workspace(self._budget, X.workspace_bytes(self._geometry), 'extremum-heat-stencil'):
                     prepared = X.prepare(self._geometry, self._conductivity, fixed, budget=self._budget, cancel=cancel)
                     lease = self._budget.reserve(prepared.bytes, category='extremum-heat-retained')
                     lease.__enter__()
+                    try:
+                        weakref.finalize(prepared, lease.__exit__, None, None, None)
+                    except BaseException:
+                        lease.__exit__(None, None, None)
+                        raise
                 self._extremum = (fixed, prepared, lease)
                 self._stats['stencil_builds'] += 1
                 self._stats['stencil_seconds'] += prepared.seconds

@@ -1181,6 +1181,16 @@ failure are preserved. Independent review accepts the selected successor and
 its ordinary/boundary evidence; the tiny tests cover the producer and early
 public errors, not downstream tiny-temperature solving or general ordering.
 
+Its [power-plane trace successor](../../optimisation/working-snapshot-20261113/README.md#reconstruct-power-plane-traces-without-choosing-a-twin)
+preserves each exact-class member's own power relation, while a fixed third
+observer receives one Decimal80 contribution from the exact mean power and
+original coefficient. Every face's energy is still booked separately. Static
+class membership belongs to the prepared stencil; a cached stencil keeps its
+single charge through an escaping failed-work frame until the last reference
+dies. Independent review accepts the selected trace and lifetime scope, with
+ordinary arithmetic evidence reused; arbitrary support/mirror ordering,
+exhaustive resource recovery and joined/scientific acceptance remain open.
+
 ## 6. Produce melt, then account for extraction and delivery
 
 The [common-provider connection](../I01_THERMO_PROVIDER_CONTRACT.md) identifies the ingredients, units, energy reference and conditions supported by a melt calculation. It carries actual mass and energy rather than just a percentage melted. An experimental connection now uses MAGEMin's corrected Green et al. (2025) igneous model. Its composition and phase-equilibrium calculations supply a single energy basis for melt and solid rock; the independent analytical controls below remain separate references.

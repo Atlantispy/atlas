@@ -404,10 +404,71 @@ def _substitute(factor, rhs, order):
     return x
 
 
+def _power_plane_retained_bytes(geometry):
+    from .integration_spatial_transport import _integer_storage
+    incidences = sum(len(row[2]) for row in geometry._cells)
+    nf = len(geometry._incidence)
+    # One membership tuple per class, borrowed face handles, and trace refs.
+    return 4096+incidences*(128+_integer_storage(nf.bit_length()))+512*nf
+
+
+def _power_plane_workspace_bytes(geometry):
+    from .integration_spatial_transport import _integer_storage
+    largest = incidences = 1
+    for row in geometry._cells:
+        incidences += len(row[2])
+        for vectors in (row[4], row[5]):
+            for vector in vectors:
+                for value in vector:
+                    largest = max(largest, value.numerator.bit_length(), value.denominator.bit_length())
+    # Class dictionaries, active bucket lists/tuples, repr/digest scratch and
+    # exact rational hash/comparison work, before any of them is constructed.
+    return (3*_power_plane_retained_bytes(geometry)+1024*incidences+
+            32*_integer_storage(2*largest+1))
+
+
+def _power_plane_classes(geometry, fixed):
+    classes, by_face = [], {}
+    for row in geometry._cells:
+        buckets = {}
+        for fi, offset, vector in zip(row[2], row[4], row[5], strict=False):
+            if len(geometry._incidence[fi]) == 1 and fi not in fixed:
+                buckets.setdefault((offset, vector), []).append(fi)
+        # A bucket never crosses its source owner or the exposed power role.
+        # The candidate caller fixes the own/wider traversal relation. Reuse
+        # only membership there; its mirror/weight remain that caller's own.
+        for members in buckets.values():
+            group = len(classes)
+            classes.append(tuple(members))
+            for fi in members:
+                by_face[fi] = group
+    return tuple(classes), by_face
+
+
+def _power_trace_workspace_bytes(classes):
+    from .integration_spatial_transport import _integer_storage
+    cache = largest = denominator = 0
+    for members in classes:
+        m = len(members)
+        if m > 1:
+            bits = 2098+(m-1).bit_length()
+            cache += 256+_integer_storage(bits)
+            largest = max(largest, bits)
+            denominator = max(denominator, m.bit_length()+1074)
+    if not largest:
+        return 0
+    product = largest+266
+    # Integer sums/products and generations; exact Decimal/digit operands,
+    # the coefficient tuple, division temporaries and one rounded result.
+    digits = (product+2)//3+(denominator+2)//3+_PRECISION+4
+    return (65536+cache+12*_integer_storage(product)+8*_integer_storage(denominator)+
+            64*digits)
+
+
 class _Prepared:
     """Geometry-only stencils for one conductivity field and one set of fixed faces."""
     __slots__ = ('nc', 'nf', 'fixed', 'interior', 'dirichlet', 'neumann', 'traces', 'order',
-                 'statistics', 'conductivity', 'fill', 'bytes', 'seconds', 'geometry_id')
+                 'statistics', 'conductivity', 'fill', 'bytes', 'seconds', 'geometry_id', 'power_classes', '__weakref__')
 
 
 def workspace_bytes(geometry):
@@ -419,7 +480,8 @@ def workspace_bytes(geometry):
     """
     incidences = sum(len(row[2]) for row in geometry._cells)
     n = len(geometry._cells)+len(geometry._incidence)
-    return 2*1024**2+4*_width(geometry._cells)+6144*incidences+8192*n
+    return (2*1024**2+4*_width(geometry._cells)+6144*incidences+8192*n+
+            _power_plane_workspace_bytes(geometry))
 
 
 def prepare(geometry, conductivity, fixed, *, budget, cancel=None):
@@ -445,6 +507,7 @@ def _prepare(geometry, conductivity, fixed, cancel, lp_support):
     cells, incidence = geometry._cells, geometry._incidence
     nc, nf = len(cells), len(incidence)
     fixed = frozenset(fixed)
+    power_classes, plane_class = _power_plane_classes(geometry, fixed)
     zero, one, two = D(0), D(1), D(2)
     dec = _dec
     dot = lambda a, b: a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
@@ -497,7 +560,7 @@ def _prepare(geometry, conductivity, fixed, cancel, lp_support):
                 key = _same(mirror)
                 if key not in keys:
                     keys.add(key)
-                    rows.append((mirror, 2, (fi, two*distance/(k[ci]*aa))))
+                    rows.append((mirror, 2, (fi, two*distance/(k[ci]*aa), plane_class[fi])))
         for fi, (area, offset, dk, aa) in local[ci].items():
             if len(incidence[fi]) == 2:
                 cj = other(ci, fi)
@@ -564,7 +627,22 @@ def _prepare(geometry, conductivity, fixed, cancel, lp_support):
         costs = [float(sum(((a-b)*(a-b) for a, b in zip(row[0], offset)), zero)-reach) if row[1] != 2
                  else row[3]*row[3] for row in table]
         found = _decompose(offset, vectors, costs, bounded=[row[1] != 2 for row in table], lp_support=lp_support)
-        return None if found is None else (ci, terms(table, found))
+        if found is None:
+            return None
+        cell_terms, fixed_terms, plane_terms = terms(table, found)
+        bindings = {}
+        for j, _ in found:
+            _, kind, payload, _ = table[j]
+            if kind == 2:
+                fj, _, group = payload
+                member_query = plane_class.get(fi) == group
+                bindings[fj] = (fi if member_query else fj,
+                    None if member_query or len(power_classes[group]) == 1 else group)
+        # Keep the original contribution slots. Only their trace payload is
+        # specialised; the same terms() used for fluxes is left untouched.
+        power_terms = tuple((bindings[fj][0], weight, bindings[fj][1])
+                            for fj, weight in sorted(plane_terms.items()))
+        return ci, (tuple(sorted(cell_terms.items())), tuple(sorted(fixed_terms.items())), power_terms)
 
     # The owner whose centre is nearer the face centroid interpolates it.
     preferred = [min(owners, key=lambda item: (dot(local[item[0]][fi][1], local[item[0]][fi][1]), item[0]))[0]
@@ -681,19 +759,20 @@ def _prepare(geometry, conductivity, fixed, cancel, lp_support):
     result = _Prepared()
     result.nc, result.nf, result.fixed = nc, nf, fixed
     result.interior, result.dirichlet, result.neumann = tuple(interior), tuple(dirichlet), tuple(neumann)
-    result.traces = tuple(None if t is None else (t[0], None if t[1] is None else freeze(t[1])) for t in traces)
+    result.traces, result.power_classes = tuple(traces), power_classes
     result.order, result.conductivity = tuple(order), tuple(k)
     result.geometry_id = geometry.geometry_id
     result.fill = _symbolic(pattern, order)
     # Every stored support, weight and ordering. A float programme selected the
     # supports, so the record names exactly which stencils produced a result.
     digest = hashlib.sha256(repr((result.interior, result.dirichlet, result.neumann, result.traces,
-                                  result.order, result.conductivity)).encode()).hexdigest()
+                                  result.order, result.conductivity, result.power_classes)).encode()).hexdigest()
     statistics.update(interior_faces=len(interior), fixed_faces=len(dirichlet), power_faces=len(neumann),
                       pattern_entries=entries, factor_entry_bound=result.fill, stencil_sha256=digest)
     # Wall-clock time is kept beside, never inside, the record that is hashed.
     result.statistics, result.seconds = statistics, perf_counter()-started
-    result.bytes = 65536+4096*(len(interior)+len(dirichlet)+nf)+256*entries
+    result.bytes = (65536+4096*(len(interior)+len(dirichlet)+nf)+256*entries+
+                    _power_plane_retained_bytes(geometry))
     return result
 
 
@@ -726,18 +805,21 @@ def solve(geometry, conductivity, old, capacity, dt, source, boundary, reference
         kinds[fi] = entry
     fixed = frozenset(fi for fi, (kind, _) in kinds.items() if kind == 'temperature')
     begin = perf_counter()
-    with localcontext() as context:
+    from .integration_spatial_transport import _workspace
+    with localcontext() as context, _workspace(budget, 0, 'extremum-heat-owned-stencil') as owned:
         context.prec, context.rounding = _PRECISION, ROUND_HALF_EVEN
         if prepared is None:
-            with budget.reserve(workspace_bytes(geometry), category='extremum-heat-stencil'):
+            with _workspace(budget, workspace_bytes(geometry), 'extremum-heat-stencil'):
                 prepared = prepare(geometry, conductivity, fixed, budget=budget, cancel=cancel)
+                owned.enter_context(budget.reserve(prepared.bytes, category='extremum-heat-retained'))
         if (type(prepared) is not _Prepared or prepared.geometry_id != geometry.geometry_id or
                 prepared.nc != nc or prepared.nf != nf or prepared.fixed != fixed or
                 prepared.conductivity != tuple(D.from_float(float(x)) for x in np.broadcast_to(conductivity, (nc,)))):
             raise TectonicsError('prepared extremum stencils belong to another geometry, conductivity or boundary type')
         # Krylov bases, Decimal factors (768 bytes an entry) and state vectors.
-        work = 2*1024**2+N.workspace_bytes(nc, _BASIS)+768*prepared.fill+16384*nc+4096*nf
-        with budget.reserve(work, category='extremum-heat-work'):
+        work = (2*1024**2+N.workspace_bytes(nc, _BASIS)+768*prepared.fill+16384*nc+4096*nf+
+                _power_trace_workspace_bytes(prepared.power_classes))
+        with _workspace(budget, work, 'extremum-heat-work'):
             return _solve(geometry, prepared, old, capacity, dt, source, kinds, reference,
                           cancel=cancel, begin=begin, work=work)
 
@@ -956,6 +1038,37 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
         del factor
     if not inside:
         raise TectonicsError('converged extremum heat state lies outside its positive backward-Euler temperature bounds')
+    power_sums = {}
+    def trace_power(group, coefficient):
+        from .integration_mimetic_heat import _binary64_units
+        members = prepared.power_classes[group]
+        cached = power_sums.get(group)
+        if cached is None:
+            first = power(members[0])
+            encoding = float(first).hex()
+            total, uniform = 0, True
+            for at, fj in enumerate(members):
+                if not at % 32:
+                    _cancel(cancel)
+                amount = float(power(fj))
+                uniform = uniform and amount.hex() == encoding
+                total += _binary64_units(amount)
+            cached = total, first if uniform else None
+            power_sums[group] = cached
+        total, uniform = cached
+        if uniform is not None:
+            return coefficient*uniform
+        parts = coefficient.as_tuple()
+        integer = 0
+        for digit in parts.digits:
+            integer = 10*integer+digit
+        if parts.sign:
+            integer = -integer
+        product = D(integer*total).as_tuple()
+        numerator = D((product.sign, product.digits, parts.exponent))
+        denominator = D(len(members) << 1074)
+        return numerator/denominator
+
     # Face-centroid temperatures: certified convex combinations about one owner.
     traces = [zero]*nf
     for fi, entry in enumerate(prepared.traces):
@@ -973,8 +1086,8 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
             total += weight*(u[cj]-own)
         for fj, weight in fixed_terms:
             total += weight*(value[fj]-own)
-        for fj, weight in plane_terms:
-            total -= weight*power(fj)
+        for fj, weight, group in plane_terms:
+            total -= weight*power(fj) if group is None else trace_power(group, weight)
         traces[fi] = total
     # With zero boundary power every face value is a convex combination of cell
     # and prescribed temperatures and shares their bounds. A declared power
@@ -1041,7 +1154,9 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
                 elimination='subtraction-free binary64 factors applied and refined in Decimal'),
             corrected_faces=stencil['corrected_faces'], limited_faces=limited, active_faces=active,
             transfer_shares=shares, stencil=stencil, decomposition_defect_bound_decimal=str(_DEFECT),
-            face_temperature='certified convex combination at the face centroid about one owner; prescribed '
+            face_temperature='certified convex combination at the face centroid about one owner; exact equal-metric '
+                             'power classes use the mean normal contribution for a fixed third observer and each '
+                             'member uses its own power; prescribed '
                              'value on fixed-temperature faces; where no such combination exists the entry is '
                              'the nearer owner\'s cell temperature and the face index is listed below',
             face_temperature_cell_substitutes=[fi for fi, entry in enumerate(prepared.traces)
