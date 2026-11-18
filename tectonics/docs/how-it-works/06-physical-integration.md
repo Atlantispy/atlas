@@ -155,8 +155,10 @@ refused.
 same rotation matrix in a fixed order of products and sums to every vertex
 direction and to the vector part of each plate's quaternion. The scalar part
 goes with the rotated vector to the existing rotation constructor. The
-transform validates and captures the input shape, works in batches of at most
-65,536 rows and freezes the result under the existing allowance.
+transform reads the issued atlas's immutable vertex view and each local
+three-component quaternion vector directly. These finite binary64 arrays
+come from the validated atlas and rotations. The transform works in batches
+of at most 65,536 rows and freezes the result under the existing allowance.
 
 Fresh coordinates may round differently from the earlier matrix path and give
 the newly rotated network a different identity. Stored networks retain exact

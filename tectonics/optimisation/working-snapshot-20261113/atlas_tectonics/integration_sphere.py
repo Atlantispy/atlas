@@ -48,7 +48,7 @@ from .geometry import _check_cancel, _limits
 from .integration_ledger import EXACT_LIMIT, ROLES, TOKEN, LedgerError, _exact, _exact_text
 from .kinematics import Rotation, _restore_rotation
 from .materials import _json, _name, _sha
-from .resources import MemoryLimitError, elements, select_budget
+from .resources import MemoryLimitError, select_budget
 from .spherical_atlas import (SphericalAtlas, SphericalPatch, _AREA_TOLERANCE_SR, _capture_directions, _cycle,
                               build_spherical_atlas)
 from .spherical_geometry import SphericalChart, _ring_area
@@ -1260,15 +1260,13 @@ def rotate_frame(network, rotation, frame_id, *, limits=None, budget=None, cance
     if _name(frame_id, 'frame_id') == network.sphere.frame_id:
         raise SphereError('a rotated frame needs its own frame identity')
     sphere = SphericalFrame(network.sphere.radius_m, frame_id)
-    def turn(positions):
-        shape = input_shape(positions, 'positions_m')
-        if not shape or shape[-1] != 3 or not (count := elements(shape)):
+    def turn(points):
+        # Both callers supply established binary64 arrays: the issued atlas view or a local quaternion axis.
+        count = points.size
+        if not count:
             raise TectonicsError('positions must be nonempty with final dimension 3')
         required = 32 * count + 24 * min(count // 3, 65_536) + 8192
         with select_budget(budget).reserve(required):
-            points = read_array(positions, 'positions_m')
-            if points.shape != shape:
-                raise TectonicsError('input shape changed during capture')
             try:
                 with np.errstate(over='raise', invalid='raise'):
                     flat = points.reshape(-1, 3)
