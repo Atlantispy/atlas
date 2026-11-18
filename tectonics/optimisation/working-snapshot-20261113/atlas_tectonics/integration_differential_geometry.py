@@ -1696,18 +1696,25 @@ def _quadratic_radial_planes(face, bounds, layer, inner, padding=Q(0)):
     """
     vertices = tuple(W._point(face, p) for p in W._rectangle(bounds))
     centre = W._point(face, tuple((a+b)/2 for a, b in bounds))
-    residual = max(O._dot(O._minus(p, centre), O._minus(p, centre)) for p in vertices)
+    deltas = (O._minus(p, centre) for p in vertices)
+    residual = max(O._dot(delta, delta) for delta in deltas)
     u, v = face[1:3]
     aa, ab, bb = O._dot(u, u), O._dot(u, v), O._dot(v, v)
-    candidates = list(W._rectangle(bounds))
+    candidates = []
     for fixed in bounds[1]:
         candidates.append((max(bounds[0][0], min(bounds[0][1], -ab*fixed/aa)), fixed))
     for fixed in bounds[0]:
         candidates.append((fixed, max(bounds[1][0], min(bounds[1][1], -ab*fixed/bb))))
     if all(a <= 0 <= b for a, b in bounds):
         candidates.append((Q(0), Q(0)))
-    minimum = min(O._dot(W._point(face, p), W._point(face, p)) for p in candidates)
-    maximum = max(O._dot(p, p) for p in vertices)
+    corner_norms = (O._dot(p, p) for p in vertices)
+    minimum = maximum = next(corner_norms)
+    for squared_norm in corner_norms:
+        minimum = min(minimum, squared_norm)
+        maximum = max(maximum, squared_norm)
+    for parameter in candidates:
+        point = W._point(face, parameter)
+        minimum = min(minimum, O._dot(point, point))
     lo2, hi2 = layer.bottom_radius_m**2, layer.top_radius_m**2
     if minimum-padding >= hi2 or maximum+padding <= lo2:
         return ((Q(0), Q(0), Q(-1)),)
@@ -3743,6 +3750,14 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
 
 def _moving_interface_leaf(layer, voxel, first, second, outward_sign, omega, constraints,
                             literals, bounds, t0, t1, level, arena):
+    # One clip chain per leaf, chosen at its entry (opt-prep-gmp-chain s3-s4; decision 603).
+    with W._chain(arena) as chain:
+        return _moving_interface_chain_leaf(layer, voxel, first, second, outward_sign, omega, constraints,
+                                            literals, bounds, t0, t1, level, arena, chain)
+
+
+def _moving_interface_chain_leaf(layer, voxel, first, second, outward_sign, omega, constraints,
+                                 literals, bounds, t0, t1, level, arena, chain):
     posed_rays = tuple(_ray_box(_load_vec(ray['direction']), _load_vec(ray['angular_velocity_rad_s']),
                                t0, t1, level, arena, _history(ray.get('prior_rotations', ()))) for ray in (first, second))
     (a, ea, ia), (b, eb, ib) = posed_rays
@@ -3755,30 +3770,32 @@ def _moving_interface_leaf(layer, voxel, first, second, outward_sign, omega, con
         coefficients.append(tuple(outward_sign*q for q in pair) if outward_sign > 0 else tuple(outward_sign*q for q in reversed(pair)))
     face = ((Q(0),)*3, a, b, O._cross(a, b), bounds)
     original = W._rectangle(bounds)
-    absolute = sum(max(abs(W._point(face, p)[j]) for p in original) for j in range(3))
+    absolute = sum(max(abs(a[j]*u+b[j]*v) for u, v in original) for j in range(3))
     position_error = bounds[0][1]*ea+bounds[1][1]*eb
     radial_error = 2*absolute*position_error+position_error**2
     posed = {name: _constraint_pose(constraints[name], t0, t1, level, arena) for name, _ in literals}
     fixed = tuple((tuple(-q for q in p[:3]), -p[3]) for p in O._box_planes(voxel))
     result = []
+    # Only the private starting rectangle repeats across all four clips.
+    original_widths = []
     for flow_sign in (-1, 1):
         values = []
+        pair = coefficients if flow_sign > 0 else tuple((-hi, -lo) for lo, hi in coefficients)
         for inner in (True, False):
             index = 0 if inner else 1
-            pair = coefficients if flow_sign > 0 else tuple((-hi, -lo) for lo, hi in coefficients)
             linear = (pair[0][index], pair[1][index], Q(0))
-            poly = W._clip2(original, linear, arena)
+            poly = chain.clip(original, linear, width_cache=original_widths)
             for name, sign in literals:
                 normal, error, offset = posed[name]
                 total_error = error*absolute+position_error*sum(map(abs, normal))+error*position_error
-                poly = W._clip2(poly, W._line(face, tuple(sign*q for q in normal),
-                    sign*offset+(1 if inner else -1)*total_error), arena)
+                poly = chain.clip(poly, W._line(face, tuple(sign*q for q in normal),
+                    sign*offset+(1 if inner else -1)*total_error))
             for normal, offset in fixed:
                 error = position_error*sum(map(abs, normal))
-                poly = W._clip2(poly, W._line(face, normal, offset+(1 if inner else -1)*error), arena)
+                poly = chain.clip(poly, W._line(face, normal, offset+(1 if inner else -1)*error))
             for line in _quadratic_radial_planes(face, bounds, layer, inner, radial_error):
-                poly = W._clip2(poly, line, arena)
-            values.append(W._integral(poly, linear, arena)*(t1-t0))
+                poly = chain.clip(poly, line)
+            values.append(chain.integral(poly, linear)*(t1-t0))
         result.append(tuple(values))
     arena.work(256+64*len(posed))
     return tuple(result)

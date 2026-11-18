@@ -223,7 +223,7 @@ class _Chain:
     def __exit__(self, *_):
         return False
 
-    def clip(self, poly, line):
+    def clip(self, poly, line, *, width_cache=None):
         return _clip2(poly, line, self.arena)
 
     def integral(self, poly, linear):

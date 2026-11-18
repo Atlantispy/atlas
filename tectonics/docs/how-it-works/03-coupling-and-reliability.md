@@ -270,6 +270,16 @@ normal polynomial, the second sign's interval swaps and negates the
 first interval's endpoints. Both signs keep their work admission and
 each still evaluates its required integrals.
 
+The moving-interface leaf uses the same chain for the lower and upper
+bounds in both flow directions. Each of the four passes starts with the
+original rectangle and admits its clips in order before integrating the
+bound. The eligible GMP path reuses the original rectangle's coordinate
+widths. Each pass still builds and admits its own native vertices. The
+leaf computes only the world-space component needed for each bound and
+prepares the coefficients once per flow direction. The radial bounds
+reuse each corner and its squared norm within each evaluation. The same
+rules apply to unsupported inputs and retained vertices.
+
 Contiguous arrays support bulk operations and bounded batches. Safe immutable
 buffers may be borrowed; mutable inputs are detached, and published slices are
 compacted so a small result does not retain a large parent. SciPy supplies bulk

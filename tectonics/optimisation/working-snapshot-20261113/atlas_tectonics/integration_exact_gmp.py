@@ -397,13 +397,21 @@ class _Chain2:
         poly.held = None
         return poly
 
-    def clip(self, poly, line):
+    def clip(self, poly, line, *, width_cache=None):
         resident = type(poly) is _Res
-        if (not poly or not resident and not _exact_pairs(poly) or type(line) is not tuple or len(line) != 3
+        cached = width_cache if width_cache and width_cache[0] is poly else None
+        if (not poly or not resident and cached is None and not _exact_pairs(poly)
+                or type(line) is not tuple or len(line) != 3
                 or any(type(q) is not Fraction for q in line)):
             return self.W._clip2(self.exact(poly), line, self.arena)
-        bits = poly.bits if resident else tuple(V._bits(p[0])+V._bits(p[1]) for p in poly)
-        with _work(sum(V._bits(q) for q in line)+sum(bits), 3+2*len(poly), V.select_budget(self.arena.resource)):
+        if cached is None:
+            bits = poly.bits if resident else tuple(V._bits(p[0])+V._bits(p[1]) for p in poly)
+            vertex_bits = sum(bits)
+            if not resident and width_cache is not None:
+                width_cache[:] = (poly, bits, vertex_bits)
+        else:
+            bits, vertex_bits = cached[1], cached[2]
+        with _work(sum(V._bits(q) for q in line)+vertex_bits, 3+2*len(poly), V.select_budget(self.arena.resource)):
             if not resident:
                 entries = []
                 for p, width in zip(poly, bits):
