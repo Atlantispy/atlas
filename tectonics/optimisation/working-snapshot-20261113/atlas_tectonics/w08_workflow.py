@@ -14,7 +14,7 @@ from time import perf_counter
 
 import numpy as np
 
-from ._validation import TectonicsError, scalar, frozen
+from ._validation import TectonicsError, scalar, frozen, _float_quanta
 from . import _w08_history_funding as _history
 from .materials import _json, _name
 from .constitutive import _cancel
@@ -313,91 +313,190 @@ class PreparedW08Workflow:
                 raise TectonicsError('restored current/reference geometry or deformation mismatch')
 
     def _validate_history(self,record,inventory,*,issued_here=False,retirement_heat_present=False):
-        """Reconcile tagged transfers, not replay a physical solver or its flux."""
+        """Reconcile tagged transfers without replaying a physical solver or its flux."""
         history = record['transfer_history']
         i = record['interval_index']
         if type(history) is not list or len(history) != i+1:
             raise TectonicsError('incomplete tagged transfer provenance')
-        c = self.initial.component_mass_kg.copy(); e = self.initial.enthalpy_j.copy()
-        cscale = abs(c); escale = abs(e); total_steps = 0
+        components = len(self.initial.component_ids)
         node_index = {n:j for j,n in enumerate(self.initial.node_ids)}
         verify_heat_book = not issued_here or retirement_heat_present
-        heat_total = []; absolute_heat = []
-        for j,r in enumerate(history):
-            spec = self.intervals[j].descriptor()
-            end = record['end_time_s'] if j==i else self.intervals[j].end_time_s
-            duration = end-(self.initial.time_s if j==0 else self.intervals[j-1].end_time_s)
-            if j==i and record['stopped_at_exhaustion']: duration=r['duration_s']
-            if spec['retirement'] is None and spec['magmatism'] is None:
-                if r is not None: raise TectonicsError('unexpected transfer in kinematic/cessation interval')
-                if self._history_enabled:
-                    del spec
-                total_steps += 1; continue
-            start = self.initial.time_s if j==0 else self.intervals[j-1].end_time_s
-            exact_end = (type(r) is dict and r.get('exhaustion_duration_s') == r.get('duration_s')
-                         and type(r.get('duration_s')) is float and start+r['duration_s'] == end)
-            if (type(r) is not dict or r.get('source_id') != spec['source_id']
-                    or (r.get('duration_s') != duration and not exact_end)):
-                raise TectonicsError('transfer event source or duration mismatch')
-            selected = r['selected_node_ids']
-            if spec['retirement'] is not None:
-                a = spec['retirement']
-                if selected != a['selected_node_ids'] or r['destination_ids'] != a['destination_ids']:
-                    raise TectonicsError('retirement owner mapping mismatch')
-                dc = np.asarray(r['transferred_component_mass_kg'],float)
-                de = np.asarray(r['transferred_enthalpy_j'],float)
-                if dc.shape != (3,len(selected),c.shape[1]) or de.shape != (3,len(selected)):
-                    raise TectonicsError('retirement receipt shape mismatch')
-                for dest,row in zip(a['destination_ids'],range(3)):
-                    for src,col in zip(selected,range(len(selected))):
-                        si,di = node_index[src],node_index[dest]
-                        c[si] -= dc[row,col]; c[di] += dc[row,col]
-                        e[si] -= de[row,col]; e[di] += de[row,col]
-                        cscale[si] += dc[row,col]; cscale[di] += dc[row,col]
-                        escale[si] += abs(de[row,col]); escale[di] += abs(de[row,col])
-                total_steps += 1
-            else:
-                a = spec['magmatism']
-                if selected != a['selected_node_ids']: raise TectonicsError('magma owner mapping mismatch')
-                rates = np.asarray(a['rates_kg_s'],float)
-                edges = [(selected[x],selected[y]) for x,y in zip(*np.nonzero(rates))]
-                if r['edge_ids'] != [list(edge) for edge in edges]: raise TectonicsError('magma edge mapping mismatch')
-                dc = np.asarray(r['transferred_component_mass_kg'],float).reshape(len(edges),c.shape[1])
-                de = np.asarray(r['transferred_enthalpy_j'],float)
-                heat = np.asarray(r['external_heat_j'],float)
-                # A rounded exhaustion endpoint can have a different booked duration.
-                if not issued_here or r['duration_s'] != duration:
-                    expected_heat = np.zeros(len(selected)) if a['heat_w'] is None else np.asarray(a['heat_w'],float)*duration
-                    if not np.array_equal(heat,expected_heat): raise TectonicsError('external heat receipt mismatch')
-                    del expected_heat
-                if de.shape != (len(edges),): raise TectonicsError('edge heat shape mismatch')
-                for edge,k in zip(edges,range(len(edges))):
-                    si,di = (node_index[n] for n in edge)
-                    c[si] -= dc[k]; c[di] += dc[k]; e[si] -= de[k]; e[di] += de[k]
-                    cscale[si] += dc[k]; cscale[di] += dc[k]
-                    escale[si] += abs(de[k]); escale[di] += abs(de[k])
-                for node,q in zip(selected,heat):
-                    absolute = abs(q)
-                    e[node_index[node]] += q; escale[node_index[node]] += absolute
-                    if verify_heat_book:
-                        heat_total.append(q)
-                        absolute_heat.append(absolute)
-                steps = r['kernel']['accepted_intervals']
-                if type(steps) is not int or not 1 <= steps <= 256: raise TectonicsError('invalid accepted magma steps')
-                total_steps += steps
-                if self._history_enabled:
-                    del rates, heat
-            if not np.isfinite(dc).all() or np.any(dc<0) or not np.isfinite(de).all():
-                raise TectonicsError('invalid extensive transfer receipt')
-            if self._history_enabled:
-                del dc, de, spec, a
-        tol = 128*np.finfo(float).eps
-        if (np.any(abs(c-inventory.component_mass_kg)>tol*(cscale+abs(inventory.component_mass_kg))) or
-                np.any(abs(e-inventory.enthalpy_j)>tol*(escale+abs(inventory.enthalpy_j))) or
-                total_steps != record['accepted_intervals'] or
-                (verify_heat_book and (math.fsum(heat_total) != record['cumulative_external_heat_j'] or
-                    math.fsum(absolute_heat) != record['cumulative_absolute_heat_j']))):
-            raise TectonicsError('tagged transfer/stock/heat history does not reconcile')
+        # Issue has a validated parent and the adapter's new receipt; restore checks every row.
+        check_payload = not issued_here
+        total_steps = 0
+        reshaped = bytearray(len(history))
+        try:
+            dc = de = rates = edges = heat = expected_heat = spec = a = None
+            try:
+                for j,r in enumerate(history):
+                    spec = self._binding['intervals'][j]
+                    prior_row = issued_here and j != i
+                    if not prior_row:
+                        end = record['end_time_s'] if j==i else self.intervals[j].end_time_s
+                        start = self.initial.time_s if j==0 else self.intervals[j-1].end_time_s
+                        duration = end-start
+                        if j==i and record['stopped_at_exhaustion']: duration=r['duration_s']
+                    if spec['retirement'] is None and spec['magmatism'] is None:
+                        if not prior_row and r is not None:
+                            raise TectonicsError('unexpected transfer in kinematic/cessation interval')
+                        spec = None
+                        total_steps += 1; continue
+                    if not prior_row:
+                        exact_end = (type(r) is dict and r.get('exhaustion_duration_s') == r.get('duration_s')
+                                     and type(r.get('duration_s')) is float and start+r['duration_s'] == end)
+                        if (type(r) is not dict or r.get('source_id') != spec['source_id']
+                                or (r.get('duration_s') != duration and not exact_end)):
+                            raise TectonicsError('transfer event source or duration mismatch')
+                    selected = r['selected_node_ids']
+                    if spec['retirement'] is not None:
+                        a = spec['retirement']
+                        if not prior_row:
+                            if check_payload:
+                                wrong_mapping = (selected != a['selected_node_ids']
+                                                 or r['destination_ids'] != a['destination_ids'])
+                            else:
+                                # The adapter emits the labels from tuple(raw) as a list in the same order.
+                                wrong_mapping = (type(a['selected_node_ids']) is not list
+                                                 or type(a['destination_ids']) is not list)
+                            if wrong_mapping:
+                                raise TectonicsError('retirement owner mapping mismatch')
+                        if check_payload:
+                            dc = np.asarray(r['transferred_component_mass_kg'], float)
+                            de = np.asarray(r['transferred_enthalpy_j'], float)
+                            if dc.shape != (3, len(selected), components) or de.shape != (3, len(selected)):
+                                raise TectonicsError('retirement receipt shape mismatch')
+                        total_steps += 1
+                    else:
+                        a = spec['magmatism']
+                        if not prior_row:
+                            if check_payload:
+                                wrong_mapping = selected != a['selected_node_ids']
+                            else:
+                                wrong_mapping = type(a['selected_node_ids']) is not list
+                            if wrong_mapping:
+                                raise TectonicsError('magma owner mapping mismatch')
+                        if check_payload:
+                            rates = np.asarray(a['rates_kg_s'], float)
+                            edges = [[selected[x], selected[y]] for x, y in zip(*np.nonzero(rates), strict=False)]
+                            if r['edge_ids'] != edges:
+                                raise TectonicsError('magma edge mapping mismatch')
+                            dc = np.asarray(r['transferred_component_mass_kg'], float)
+                            edge_count = len(edges)
+                            shape = (edge_count, components)
+                            if dc.shape != shape:
+                                if edge_count:
+                                    reshaped[j] = 1
+                                dc = dc.reshape(shape)
+                            de = np.asarray(r['transferred_enthalpy_j'], float)
+                            heat = np.asarray(r['external_heat_j'], float)
+                        else:
+                            heat = r['external_heat_j']
+                            if prior_row and r['edge_ids']:
+                                # A validated legacy receipt can be scalar or rectangular at a different rank.
+                                dc = r['transferred_component_mass_kg']
+                                if (not isinstance(dc, list) or not isinstance(dc[0], list)
+                                        or len(dc[0]) != components or isinstance(dc[0][0], list)):
+                                    reshaped[j] = 1
+                        # A rounded exhaustion endpoint can have a different booked duration.
+                        if not prior_row and (check_payload or r['duration_s'] != duration):
+                            expected_heat = (np.zeros(len(selected)) if a['heat_w'] is None
+                                             else np.asarray(a['heat_w'], float)*duration)
+                            if not np.array_equal(heat, expected_heat):
+                                raise TectonicsError('external heat receipt mismatch')
+                            expected_heat = None
+                        if check_payload:
+                            if de.shape != (edge_count,):
+                                raise TectonicsError('edge heat shape mismatch')
+                            iter(heat)  # The existing heat iteration precedes the magma step check.
+                        steps = r['kernel']['accepted_intervals']
+                        if not prior_row and (type(steps) is not int or not 1 <= steps <= 256):
+                            raise TectonicsError('invalid accepted magma steps')
+                        total_steps += steps
+                        rates = edges = heat = None
+                    if check_payload and (not np.isfinite(dc).all() or np.any(dc<0) or not np.isfinite(de).all()):
+                        raise TectonicsError('invalid extensive transfer receipt')
+                    dc = de = spec = a = None
+            finally:
+                # Do not hold conversion tables past the enclosing step/restore lease on failure.
+                del dc, de, rates, edges, heat, expected_heat, spec, a
+
+            def flat_word(values, index, length):
+                # Earlier magma receipts may use any rectangular C-order reshape.
+                while isinstance(values,list):
+                    length //= len(values)
+                    row,index = divmod(index,length)
+                    values = values[row]
+                return values
+
+            def transfers(column):
+                key = 'transferred_enthalpy_j' if column is None else 'transferred_component_mass_kg'
+                for j,r in enumerate(history):
+                    if r is None:
+                        continue
+                    values = r[key]
+                    if self.intervals[j].regime == 'subduction':
+                        for dest,allocation in zip(r['destination_ids'],values,strict=False):
+                            for src,value in zip(r['selected_node_ids'],allocation,strict=False):
+                                yield node_index[src],node_index[dest],value if column is None else value[column]
+                    else:
+                        edges = r['edge_ids']
+                        if column is None:
+                            words = iter(values)
+                        elif reshaped[j]:
+                            length = len(edges)*components
+                            words = (flat_word(values,k*components+column,length) for k in range(len(edges)))
+                        else:
+                            words = (row[column] for row in values)
+                        for (src,dest),value in zip(edges,words,strict=False):
+                            yield node_index[src],node_index[dest],value
+
+            def heat_words():
+                for j,r in enumerate(history):
+                    if self.intervals[j].regime == 'magmatism':
+                        yield from zip(r['selected_node_ids'],r['external_heat_j'],strict=False)
+
+            def reconciles(stock, observed, column):
+                # The decoded words were structurally checked above. Keep one column of
+                # exact signed and magnitude totals, in units of the smallest binary64.
+                signed = [_float_quanta(word) for word in stock]
+                magnitude = []
+                amount = absolute = final = None
+                try:
+                    magnitude = [abs(word) for word in signed]
+                    for src,dest,word in transfers(column):
+                        amount = _float_quanta(word)
+                        absolute = abs(amount)
+                        signed[src] -= amount
+                        signed[dest] += amount
+                        magnitude[src] += absolute
+                        magnitude[dest] += absolute
+                    if column is None:
+                        for node,word in heat_words():
+                            k = node_index[node]
+                            amount = _float_quanta(word)
+                            signed[k] += amount
+                            magnitude[k] += abs(amount)
+                    for k,word in enumerate(observed):
+                        final = _float_quanta(word)
+                        if (abs(signed[k]-final) << 45) > magnitude[k]+abs(final):
+                            return False
+                    return True
+                finally:
+                    signed.clear()
+                    magnitude.clear()
+                    del amount, absolute, final
+
+            initial = self.initial.component_mass_kg
+            current = inventory.component_mass_kg
+            if (any(not reconciles(initial[:,k],current[:,k],k) for k in range(components))
+                    or not reconciles(self.initial.enthalpy_j,inventory.enthalpy_j,None)
+                    or total_steps != record['accepted_intervals']
+                    or (verify_heat_book and (math.fsum(float(q) for _,q in heat_words()) != record['cumulative_external_heat_j']
+                        or math.fsum(abs(float(q)) for _,q in heat_words()) != record['cumulative_absolute_heat_j']))):
+                raise TectonicsError('tagged transfer/stock/heat history does not reconcile')
+        finally:
+            # Release the backing buffer through the shared closure cell, even on refusal.
+            reshaped = None
 
     def _event_endpoint(self,index,record):
         expected=self.intervals[index].end_time_s

@@ -594,6 +594,17 @@ its supplied end time, even when start plus duration rounds one unit short. Cess
 emptying reservoirs. Exact supported exhaustion is committed before unspecified
 continuation stops. Saved transfers cannot be spent again on restart.
 
+Before committing a checkpoint and after verifying its identity on restore, the
+workflow reconciles each row's component masses and signed enthalpy against the
+initial stock, final stock and labelled receipts. Each retirement destination or
+magmatic edge contributes the same issued amount with opposite signs at its two
+endpoints. External heat contributes once to its selected row. The comparison
+sums signed amounts and their magnitudes exactly, one column at a time. The
+absolute residual may be at most 128 times binary64 machine epsilon times the
+sum of magnitudes. This keeps the comparison meaningful when finite amounts
+have a magnitude sum outside the binary64 range. The cumulative heat books and
+the cross-regime balances each have their own check.
+
 Its [regional view](../../src/atlas_tectonics/w08_region.py) allocates stocks to
 disjoint parcels and reports thickness, volume, advected enthalpy and pressure
 load change. A stock and its spatial view are the same material. Non-affine fault
