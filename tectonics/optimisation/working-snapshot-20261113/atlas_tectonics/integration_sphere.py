@@ -1268,7 +1268,8 @@ def rotate_frame(network, rotation, frame_id, *, limits=None, budget=None, cance
         raise SphereError('a SphereNetwork and a Rotation are required')
     if _name(frame_id, 'frame_id') == network.sphere.frame_id:
         raise SphereError('a rotated frame needs its own frame identity')
-    sphere = SphericalFrame(network.sphere.radius_m, frame_id)
+    # The issued network's immutable radius and this new frame ID have already been validated.
+    sphere = _state._issue(SphericalFrame, radius_m=network.sphere.radius_m, frame_id=frame_id)
     def turn(points):
         # Both callers supply established binary64 arrays: the issued atlas view or a local quaternion axis.
         count = points.size

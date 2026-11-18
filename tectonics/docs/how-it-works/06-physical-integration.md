@@ -156,9 +156,15 @@ identity into its own, and reopening rebuilds the network through the same check
 that created it; a record or array edited in the file no longer matches and is
 refused.
 
-`rotate_frame` expresses the network in a new coordinate frame. It applies the
-same rotation matrix in a fixed order of products and sums to every vertex
-direction and to the vector part of each plate's quaternion. The scalar part
+`rotate_frame` expresses the network in a new coordinate frame. The call
+checks the network and rotation, then validates the requested name and
+refuses the current frame. It issues the new frame with that checked name and
+the source network's validated radius. The standalone frame constructor
+validates both its inputs.
+
+The transform applies the same rotation matrix in a fixed order of products
+and sums to every vertex direction and to the vector part of each plate's
+quaternion. The scalar part
 goes with the rotated vector to the existing rotation constructor. The
 transform reads the issued atlas's immutable vertex view and each local
 three-component quaternion vector directly. These finite binary64 arrays
