@@ -531,15 +531,11 @@ def _mechanical_sources(pieces, records, supplied):
     return out
 
 
-def _lateral_workspace(columns, contacts, budget, kind):
-    """Incremental row buffers, projection and exceptional-sum scratch."""
-    from contextlib import nullcontext
+def _lateral_workspace_sizes(columns, contacts, kind):
+    """Derive only the caller-selected counts from one dimension pass."""
     import struct
     import sys
-    from .resources import select_budget
-    from .integration_spatial_transport import _integer_storage, _workspace
-    if not contacts:
-        return nullcontext()
+    from .integration_spatial_transport import _integer_storage
     pieces = len(columns)
     layers = sum(len(column[2]) for column in columns)
     incidences = sum(len(values) for _, _, values in contacts)
@@ -552,16 +548,25 @@ def _lateral_workspace(columns, contacts, budget, kind):
     term_slots = (2*pieces+8)+(2*layers+8*pieces)+(8*incidences+8*layers+8)
     projected_slots = (2*pieces+8)+(2*layers+8*pieces)
     count = 65536+(2*pieces+layers+2)*header+pointer*(term_slots+projected_slots)
-    count += scalar*(layers+16+(2*incidences if kind == 'piece-flux' else 0))
+    count += scalar*(layers+16)
     # At most 2I inputs in a row: partial arrays and their resize overlap.
     count += 32*(2*incidences+32)
     bits = 2098+(2*incidences-1).bit_length()
     count += 24*allocated(_integer_storage(bits+2))+8*allocated(_integer_storage(1075))
-    if kind == 'patch-loss':
-        # NumPy header/dimension/stride allowance, arrays and the temporary
-        # projected Python row coexist. No scalar-array view is retained.
-        count += pieces*allocated(np.ndarray.__basicsize__+4*pointer)+8*layers
-    return _workspace(select_budget(budget), count, 'thermal-lateral-'+kind)
+    if kind == 'piece':
+        return count, count+scalar*(2*incidences)
+    # Patch arrays coexist with the projected Python row.
+    return count+pieces*allocated(np.ndarray.__basicsize__+4*pointer)+8*layers
+
+
+def _lateral_workspace(contacts, budget, kind, byte_count):
+    """Fresh workspace using the caller-selected byte count."""
+    from contextlib import nullcontext
+    from .resources import select_budget
+    from .integration_spatial_transport import _workspace
+    if not contacts:
+        return nullcontext()
+    return _workspace(select_budget(budget), byte_count, 'thermal-lateral-'+kind)
 
 
 def _lateral_sum(terms, *, numpy=False, finite_heat=False):
@@ -685,8 +690,10 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
             capacity = [float(c)*piece.area_m2 for c in PH.capacity_area(record, thickness, budget=budget)]
         thermal, propagator = _prepared(record, thickness, dt, cache, budget=budget)
         columns.append((record, piece, thickness, capacity, thermal, propagator))
+    loss_workspace_bytes, flux_workspace_bytes = (
+        _lateral_workspace_sizes(columns, contacts, 'piece') if contacts else (None, None))
     worst = 0.
-    with _lateral_workspace(columns, contacts, budget, 'piece-loss'):
+    with _lateral_workspace(contacts, budget, 'piece-loss', loss_workspace_bytes):
         if contacts:
             lateral_terms = [[[] for _ in column[2]] for column in columns]
             for i, j, conductances in contacts:
@@ -741,7 +748,7 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
         low, high = min(values), max(values)
     totals = [dict(top=0., base=0., radiogenic=0., lateral=0.) for _ in columns]
     for substep in range(substeps):
-        with _lateral_workspace(columns, contacts, budget, 'piece-flux'):
+        with _lateral_workspace(contacts, budget, 'piece-flux', flux_workspace_bytes):
             if contacts:
                 flux_terms = [[[] for _ in c[2]] for c in columns]      # original rounded W
                 for i, j, conductances in contacts:
@@ -1029,7 +1036,9 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
             for col, source in zip(columns, mechanical) for q, c, s in zip(source, col[3], col[0].sublayers))
         if not math.isfinite(rate):
             raise ThermalRefused('patch temperature source bound is not representable', 'unsupported', 'source bound')
-        with _lateral_workspace(columns, contacts, budget, 'patch-loss'):
+        patch_loss_bytes = (
+            _lateral_workspace_sizes(columns, contacts, 'patch-loss') if contacts else None)
+        with _lateral_workspace(contacts, budget, 'patch-loss', patch_loss_bytes):
             if contacts:
                 loss_terms = [[[] for _ in col[2]] for col in columns]
                 for i, j, conductances in contacts:

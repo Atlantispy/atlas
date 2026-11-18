@@ -526,8 +526,14 @@ a non-finite signed power projection raises the existing `ThermalRefused`
 with code `unsupported` and no detail before a heat consumer uses it.
 Before allocating the reduction buffers, the step books its incremental
 workspace on the caller's budget. The allowance grows with pieces, layers and
-contact incidences. It covers the stability decision or last use of the flux.
-An original failure traceback keeps the charge for the workspace it retains.
+contact incidences. With contacts, the piece path counts these dimensions
+once and supplies the resulting integer loss and flux allowances to their
+workspace calls. The loss check and every flux substep select the current
+budget and make their own reservations. The patch path computes its own
+loss allowance at the stability check. Calls without contacts use no
+lateral workspace. The workspace covers the stability decision or last
+use of the flux. An original failure traceback keeps the charge for the
+workspace it retains.
 
 **Occupied-material means:**
 - `occupied_mean` and `face_mean` average over occupied pieces only, each at its own state, so the result is the

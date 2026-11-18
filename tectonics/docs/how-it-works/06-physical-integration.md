@@ -928,9 +928,12 @@ three parts:
     followed by the exact downward conduction.
 
      The working snapshot reduces each row's rounded losses and powers before
-     the stability or energy step. It books the added workspace with the existing
-     caller budget. The [moving-state heat method](../I05_MOVING_STATE.md#6-heat-i052)
-     describes the final projection and the scoped refusal for non-finite power.
+     the stability or energy step. The piece path derives both workspace
+     allowances from one count of pieces, layers and contact incidences.
+     Each flux substep books a fresh workspace on the current budget. The
+     patch stability check sizes its own loss workspace. The
+     [moving-state heat method](../I05_MOVING_STATE.md#6-heat-i052) describes
+     the final projection and the scoped refusal for non-finite power.
   - **No new extremes.** Each of these two operations keeps every temperature between the coldest and hottest of the
     starting and boundary temperatures, so together they do too. Without internal heat sources, a step that would
     leave that range is refused.
