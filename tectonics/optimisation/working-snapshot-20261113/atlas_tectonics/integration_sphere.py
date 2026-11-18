@@ -1169,11 +1169,12 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
             layout = _checked_layout(names, faces, plates, boundaries, declaration_points=points)
         names, points = layout.names, _directions(layout)
         lookup = {name: i for i, name in enumerate(names)}
+        lookup_keys = lookup.keys()
         patches = []
         for face in faces:
             _check_cancel(cancel)
             rings = (face.vertex_ids, *face.holes)
-            if any(type(ring) is not tuple or not set(ring) <= lookup.keys() for ring in rings):
+            if any(type(ring) is not tuple or not set(ring) <= lookup_keys for ring in rings):
                 raise SphereError('face %r names an unregistered vertex' % face.face_id)
             chart = _chart(sphere, points[[lookup[name] for ring in rings for name in ring]], face.face_id)
             patches.append(SphericalPatch(face.face_id, face.plate_id if face.block_id is None else face.block_id,
