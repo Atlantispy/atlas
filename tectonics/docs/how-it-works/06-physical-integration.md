@@ -1802,6 +1802,31 @@ face routine. This includes prescribed-power faces. Workers and their local
 fallback keep the validation and moment counts. The completed reconstruction
 omits the extra assertion over its own validated face set.
 
+For compact thermal geometry, the encoded rational widths, ID widths and
+face incidence feed the same capacity calculation as the dictionary route.
+Once admitted, the scan calculates the fixed face ID width once. It reuses
+each exact integer storage size in the adjacent capacity calculations that
+need it. The scan, retained geometry and validation allocations keep their
+original amounts and lifetimes.
+
+The complete capacity scan checks every incident face index on the same
+compact view used for decoding. Once the retained geometry and validation
+work are funded, the constructor consumes one owned metric row per face
+and cell in source order. It reads the face centres and area vectors, then
+cell volumes, centres and signed links. The typed cell reader supplies
+integer links and signs. The constructor checks the signs and rejects
+duplicate incidences. The standalone face-profile reader retains its index
+and ID-pool checks, and ordinary reopen keeps its existing reader checks.
+
+The native proof checks positive signed distances and exact area-vector
+closure before the first-moment identity. The bounded final comparison
+reads one or two claimed owner indices to match the expected owners
+and probes for a surplus claim. It accepts either order for two distinct
+owners and refuses missing, extra, wrong or duplicate claims. The result
+keeps the compact mesh's logical identity and its scoped view ownership
+for heat preparation and restore. A failed read or proof keeps the charges
+for any row and workspace held by the original traceback.
+
 ### Order moving-face and interface proofs by their geometry
 
 The later [moving-moment prototype](../../optimisation/working-snapshot-20261113/README.md#order-moving-moment-and-zero-proofs-by-their-exact-geometry)

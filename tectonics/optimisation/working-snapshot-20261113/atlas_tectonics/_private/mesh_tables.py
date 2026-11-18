@@ -1069,6 +1069,20 @@ class CompactMesh:
         n, d = (self.integer(int(v)) for v in self._arrays['q.pair'][index])
         return Fraction(n, d)
 
+    def _integer_hex_bits(self, index):
+        """The original hex-token width, from the canonical magnitude only."""
+        a = self._arrays
+        require(type(index) is int and 0 <= index < len(a['int.sign']), 'integer index outside pool')
+        start, stop = int(a['int.offset'][index]), int(a['int.offset'][index+1])
+        length = stop-start
+        digits = 1 if not length else 2*length-(int(a['int.bytes'][stop-1]) < 16)
+        return 4*(digits+2+(int(a['int.sign'][index]) < 0))
+
+    def _rational_hex_bits(self, index):
+        a = self._arrays
+        require(type(index) is int and 0 <= index < len(a['q.pair']), 'rational index outside pool')
+        return tuple(self._integer_hex_bits(int(v)) for v in a['q.pair'][index])
+
     def _pair(self, index):
         q = self.rational(int(index))
         return [hex(q.numerator), hex(q.denominator)]
@@ -1151,22 +1165,74 @@ class CompactMesh:
             value['reservoir_cut'] = dict(cell_id=self.ident(int(r[0])), axis=int(r[1]), end=int(r[2]))
         return OwnedRow(value, owner)
 
+    def face_metric_profile(self, index):
+        """Bounded scalar widths/counts, without decoding a metric or ID."""
+        require(type(index) is int and 0 <= index < self.face_count, 'face index outside table')
+        ids = self._arrays['id.bytes']
+        id_width = 64+8*math.prod(ids.shape[1:])*ids.dtype.itemsize
+        return self._face_metric_profile(index, id_width)
+
+    def _face_metric_profiles(self):
+        """One scan's immutable ID width, computed only when the scan iterates."""
+        ids = self._arrays['id.bytes']
+        id_width = 64+8*math.prod(ids.shape[1:])*ids.dtype.itemsize
+        for index in range(self.face_count):
+            yield self._face_metric_profile(index, id_width)
+
+    def _face_metric_profile(self, index, id_width):
+        # The public scalar reader checks its index; the scan supplies range(F).
+        a = self._arrays
+        ident = int(a['f.id'][index])
+        require(0 <= ident < len(a['id.bytes']), 'ID index outside pool')
+        bits = tuple(self._rational_hex_bits(int(q)) for q in a['f.q'][index])
+        linked = self._range('f.owner_offset', index)
+        start, stop, _ = linked.indices(len(a['f.owner']))
+        return index, id_width, bits[:3], bits[3:], stop-start
+
+    def cell_metric_profile(self, index):
+        """One cell's fixed widths and a scalar incidence iterator."""
+        require(type(index) is int and 0 <= index < self.cell_count, 'cell index outside table')
+        a = self._arrays
+        bits = tuple(self._rational_hex_bits(int(q)) for q in a['c.q'][index, :4])
+        linked = self._range('c.face_offset', index)
+        start, stop, _ = linked.indices(len(a['c.face']))
+
+        def faces():
+            for at in range(start, stop):
+                fi = int(a['c.face'][at])
+                require(0 <= fi < self.face_count, 'face index outside table')
+                yield fi
+
+        return bits[0], bits[1:], stop-start, faces()
+
+    def face_owner_indices(self, index):
+        """Stream claims; native comparison need retain only two indices."""
+        require(type(index) is int and 0 <= index < self.face_count, 'face index outside table')
+        a = self._arrays
+        linked = self._range('f.owner_offset', index)
+        start, stop, _ = linked.indices(len(a['f.owner']))
+        for at in range(start, stop):
+            ci = int(a['f.owner'][at])
+            require(0 <= ci < self.cell_count, 'cell index outside table')
+            yield ci
+
     def cell_metrics(self, index):
-        self.cell_id(index)
+        ident = self.cell_id(index)
         a = self._arrays
         linked = self._range('c.face_offset', index)
         owner = self._row_owner(a['c.q'][index, :4], 64*(linked.stop-linked.start))
-        return OwnedRow(dict(cell_id=self.cell_id(index), volume=self.rational(int(a['c.q'][index, 0])),
+        return OwnedRow(dict(cell_id=ident, volume=self.rational(int(a['c.q'][index, 0])),
             centre=tuple(self.rational(int(q)) for q in a['c.q'][index, 1:4]),
             face_indices=tuple(map(int, a['c.face'][linked])), signs=tuple(map(int, a['c.sign'][linked]))), owner)
 
-    def face_metrics(self, index):
-        self.face_id(index)
+    def face_metrics(self, index, *, include_owners=True):
+        ident = self.face_id(index)
         a = self._arrays
         owner = self._row_owner(a['f.q'][index])
-        return OwnedRow(dict(face_id=self.face_id(index), centre=tuple(self.rational(int(q)) for q in a['f.q'][index, :3]),
+        claimed = tuple(map(int, a['f.owner'][self._range('f.owner_offset', index)])) if include_owners else None
+        return OwnedRow(dict(face_id=ident, centre=tuple(self.rational(int(q)) for q in a['f.q'][index, :3]),
             normal=tuple(self.rational(int(q)) for q in a['f.q'][index, 3:]),
-            owners=tuple(map(int, a['f.owner'][self._range('f.owner_offset', index)]))), owner)
+            owners=claimed), owner)
 
     def _support_position(self, table, ident):
         require(table in self._tables, 'support table absent')

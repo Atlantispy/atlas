@@ -35,7 +35,7 @@ _PINS = {
     'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
     'private_heat_interval_inventory_r1.py': 'e83a13052c413672f17f84f145ca4bdb1f273735e041a9d20c3d773735895bb9',
     'private_heat_decimal_inventory_r1.py': 'b005c9b48a1fad993a1255e25a1126199f545075fa6e5d0877943d84784fcb26',
-    _atlas_identity.relkey(HEAT.__file__): '646f30b176bcb97b7e08015748a651d0e4d7cd8c51af1b7bc5124f4c3361e230',
+    _atlas_identity.relkey(HEAT.__file__): '8afa0b24b2c8cef00dcdbfd6c18b109834c777a325d48198dd7b9db9c5c6b61b',
 }
 UNIT = L.CONTAINER_UNIT
 

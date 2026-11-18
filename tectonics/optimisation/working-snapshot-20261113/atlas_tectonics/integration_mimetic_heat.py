@@ -261,50 +261,34 @@ def _stream_json(record, encoded_capacity, scratch, budget):
         return bytes(view[:offset])
 
 
-def _metric_allocation_capacity(record, budget):
-    """Fund new exact metrics and work, not the caller's borrowed provenance.
-
-    Hex widths bound parsing without decoding rationals. Each incidence uses
-    its own face/centre widths. Denominator products bound exact sums without
-    assuming cancellation; only one arithmetic expression is evaluated at once.
-    """
-    from .integration_spatial_transport import (_workspace, _hex_pair_bits,
+def _metric_profile_capacity(cell_count, face_count, cells, faces, budget):
+    """The shared exact metric capacity arithmetic, over projected widths."""
+    from .integration_spatial_transport import (_workspace,
         _rational_storage, _difference_bits, _sum_profile_bits, _add_profile)
-    cells, faces = record['cells'], record['faces']
-    with _workspace(budget, 65536+2048*len(faces), 'mimetic-metric-capacity-scan'):
-        def vector_bits(value):
-            if type(value) is not list or len(value) != 3:
-                return ((1, 1),)*3
-            return tuple(_hex_pair_bits(pair) for pair in value)
+    with _workspace(budget, 65536+2048*face_count, 'mimetic-metric-capacity-scan'):
         profiles = {}
         face_work = face_ids = largest_parse = largest_claim = 0
-        for row in faces:
-            face_ids += _width(row['face_id'])
-            centre, normal = vector_bits(row['centroid_m']), vector_bits(row['area_vector_m2'])
+        for key, id_width, centre, normal, claimed_count in faces:
+            face_ids += id_width
             for bits in (*centre, *normal):
-                face_work += _rational_storage(bits)
-                largest_parse = max(largest_parse, 8*_rational_storage(bits)+sum(bits))
-            if type(row['face_id']) is str:
-                profiles[row['face_id']] = centre, normal
-            claimed = row.get('owners')
-            if type(claimed) in (list, tuple, dict, str):
-                largest_claim = max(largest_claim, 256*len(claimed))
-        retained = 8192+256*(len(cells)+len(faces))+face_ids
-        scratch = 65536+1024*len(faces)+512*len(cells)+face_work+largest_claim
+                storage = _rational_storage(bits)
+                face_work += storage
+                largest_parse = max(largest_parse, 8*storage+sum(bits))
+            if key is not None:
+                profiles[key] = centre, normal
+            largest_claim = max(largest_claim, 256*claimed_count)
+        retained = 8192+256*(cell_count+face_count)+face_ids
+        scratch = 65536+1024*face_count+512*cell_count+face_work+largest_claim
         arithmetic = 0
-        for row in cells:
-            row['cell_id']
-            volume = _hex_pair_bits(row['volume_m3'])
-            centre = vector_bits(row['centroid_m'])
-            retained += 512+_rational_storage(volume)+sum(map(_rational_storage, centre))
+        for volume, centre, linked_count, linked in cells:
+            retained += 512
             for bits in (volume, *centre):
-                largest_parse = max(largest_parse, 8*_rational_storage(bits)+sum(bits))
+                storage = _rational_storage(bits)
+                retained += storage
+                largest_parse = max(largest_parse, 8*storage+sum(bits))
             sums = [[0, 0, 0] for _ in range(12)]
-            linked = row['faces'] if type(row['faces']) is list else ()
-            for item in linked:
-                if type(item) not in (list, tuple) or len(item) != 2 or type(item[0]) is not str:
-                    continue  # The original incidence validation remains decisive.
-                face_centre, normal = profiles.get(item[0], (((1, 1),)*3, ((1, 1),)*3))
+            for key in linked:
+                face_centre, normal = profiles.get(key, (((1, 1),)*3, ((1, 1),)*3))
                 offset = tuple(_difference_bits(a, b) for a, b in zip(face_centre, centre))
                 distance_profile = [0, 0, 0]
                 for i in range(3):
@@ -324,43 +308,110 @@ def _metric_allocation_capacity(record, budget):
                 # Includes cross-products against the exact volume and GCD work.
                 arithmetic = max(arithmetic, 32*_rational_storage(
                     (2*max(bits[0], volume[0])+2, 2*max(bits[1], volume[1])+2)))
-            scratch += 512+256*len(linked)
-        return retained, scratch+arithmetic+largest_parse
+            scratch += 512+256*linked_count
+        result = retained, scratch+arithmetic+largest_parse
+        profiles.clear()
+        return result
 
 
-class _CompactMetricRow:
-    """One explicitly owned decoded row; never a whole-record substitute."""
-    __slots__ = ('_owned',)
+def _metric_allocation_capacity(record, budget):
+    """Project legacy widths without changing its malformed-item defaults."""
+    from .integration_spatial_transport import _hex_pair_bits
 
-    def __init__(self, owned):
-        self._owned = owned
+    def vector_bits(value):
+        if type(value) is not list or len(value) != 3:
+            return ((1, 1),)*3
+        return tuple(_hex_pair_bits(pair) for pair in value)
 
-    def __getitem__(self, key):
-        return self._owned.value[key]
+    def faces():
+        for row in record['faces']:
+            key = row['face_id']
+            id_width = _width(key)
+            centre, normal = vector_bits(row['centroid_m']), vector_bits(row['area_vector_m2'])
+            claimed = row.get('owners')
+            yield (key if type(key) is str else None, id_width, centre, normal,
+                   len(claimed) if type(claimed) in (list, tuple, dict, str) else 0)
 
-    def get(self, key, default=None):
-        return self._owned.value.get(key, default)
+    def cells():
+        for row in record['cells']:
+            row['cell_id']
+            volume = _hex_pair_bits(row['volume_m3'])
+            centre = vector_bits(row['centroid_m'])
+            linked = row['faces'] if type(row['faces']) is list else ()
+            keys = (item[0] for item in linked if type(item) in (list, tuple)
+                    and len(item) == 2 and type(item[0]) is str)
+            yield volume, centre, len(linked), keys
+
+    return _metric_profile_capacity(len(record['cells']), len(record['faces']), cells(), faces(), budget)
 
 
-class _CompactMetricRows:
-    """A bounded row accessor, not an eagerly reconstructed metric record."""
-    __slots__ = ('view', 'kind')
+def _compact_metric_allocation_capacity(view, budget):
+    return _metric_profile_capacity(view.cell_count, view.face_count,
+        (view.cell_metric_profile(i) for i in range(view.cell_count)),
+        view._face_metric_profiles(), budget)
 
-    def __init__(self, view, kind):
-        self.view, self.kind = view, kind
 
-    def __len__(self):
-        return self.view.cell_count if self.kind == 'cell' else self.view.face_count
+def _append_compact_face(view, index, faces, centres, normals):
+    """Consume one owned metric row; no row borrow escapes on success."""
+    owned = view.face_metrics(index, include_owners=False)
+    row = owned.value
+    key = row['face_id']
+    if type(key) is not str or not key or key in faces:
+        raise TectonicsError('unique named thermal faces required')
+    faces[key] = index
+    centres.append(tuple(Q(q) for q in row['centre']))
+    normal = tuple(Q(q) for q in row['normal'])
+    if not any(normal):
+        raise TectonicsError('zero-area thermal face')
+    normals.append(normal)
 
-    def __getitem__(self, index):
-        if type(index) is not int or not 0 <= index < len(self):
-            raise IndexError(index)
-        owned = self.view.cell(index) if self.kind == 'cell' else self.view.face(index)
-        return _CompactMetricRow(owned)
 
-    def __iter__(self):
-        for index in range(len(self)):
-            yield self[index]
+def _append_compact_cell(view, ci, centres, normals, incidence, keys, decoded, budget):
+    """Validate one typed row after the complete scan checked incidence bounds."""
+    owned = view.cell_metrics(ci)
+    row = owned.value
+    key = row['cell_id']
+    if type(key) is not str or not key or key in keys:
+        raise TectonicsError('unique named thermal cells required')
+    keys.add(key)
+    volume, centre = Q(row['volume']), tuple(Q(q) for q in row['centre'])
+    if volume <= 0 or len(row['face_indices']) < 4:
+        raise TectonicsError('positive three-dimensional thermal cell required')
+    indexes, signs, offsets, vectors, distances = [], [], [], [], []
+    for fi, sign in zip(row['face_indices'], row['signs'], strict=True):
+        # cell_metrics converts both fields to built-in ints. The unchanged
+        # cell_metric_profile scan has checked every index on this same view.
+        if sign not in (-1, 1):
+            raise TectonicsError('named signed thermal face incidence required')
+        if fi in indexes:
+            raise TectonicsError('duplicate face in one thermal cell')
+        vector = normals[fi] if sign == 1 else tuple(-v for v in normals[fi])
+        offset = tuple(x-y for x, y in zip(centres[fi], centre, strict=True))
+        distance = _dot(vector, offset)
+        if distance <= 0:
+            raise TectonicsError('thermal centre must be strictly inside every planar face')
+        indexes.append(fi); signs.append(sign); offsets.append(offset)
+        vectors.append(vector); distances.append(distance)
+        incidence[fi].append((ci, sign))
+    if any(sum(n[j] for n in vectors) != 0 for j in range(3)):
+        raise TectonicsError('exact thermal face vectors do not close')
+    # Closure must stand before the unchanged area-by-centroid first moment.
+    if _admitted_moment_fails(vectors, centres, indexes, volume, budget):
+        raise TectonicsError('thermal metric moments violate the exact divergence identity')
+    decoded.append((volume, centre, tuple(indexes), tuple(signs), tuple(offsets),
+                    tuple(vectors), tuple(distances)))
+
+
+def _compact_owners_disagree(view, index, linked):
+    """Compare one or two integer claims without temporary lists or sorting."""
+    source = view.face_owner_indices(index)
+    first = next(source, None)
+    if len(linked) == 1:
+        return next(source, None) is not None or first != linked[0][0]
+    second = next(source, None)
+    return (next(source, None) is not None or
+            not ((first == linked[0][0] and second == linked[1][0]) or
+                 (first == linked[1][0] and second == linked[0][0])))
 
 
 class MimeticGeometry:
@@ -489,13 +540,7 @@ class MimeticGeometry:
             raise TectonicsError('compact thermal mesh belongs to a different budget')
         if not view.cell_count or not view.face_count:
             raise TectonicsError('empty thermal metric complex')
-        face_rows = _CompactMetricRows(view, 'face')
-        cell_rows = _CompactMetricRows(view, 'cell')
-        # This bounded scan retains bit-width profiles, not a decoded copy of
-        # geometry/support provenance. The original exact arithmetic capacity
-        # calculation is reused with indexed sequences.
-        metric_retained, metric_scratch = _metric_allocation_capacity(
-            {'faces': face_rows, 'cells': cell_rows}, budget)
+        metric_retained, metric_scratch = _compact_metric_allocation_capacity(view, budget)
         self = object.__new__(cls)
         retained = ExitStack()
         committed = False
@@ -506,68 +551,23 @@ class MimeticGeometry:
             live.resize(metric_retained+4096)
             with _workspace(budget, metric_scratch, 'mimetic-metric-validation'):
                 faces, centres, normals = {}, [], []
-                for i, row in enumerate(face_rows):
-                    key = row.get('face_id')
-                    if type(key) is not str or not key or key in faces:
-                        raise TectonicsError('unique named thermal faces required')
-                    faces[key] = i
-                    centres.append(_vector(row['centroid_m']))
-                    normal = _vector(row['area_vector_m2'])
-                    if not any(normal):
-                        raise TectonicsError('zero-area thermal face')
-                    normals.append(normal)
+                for i in range(view.face_count):
+                    _append_compact_face(view, i, faces, centres, normals)
                 incidence = [[] for _ in faces]
                 keys, decoded = set(), []
-                for ci, row in enumerate(cell_rows):
-                    key = row.get('cell_id')
-                    if type(key) is not str or not key or key in keys:
-                        raise TectonicsError('unique named thermal cells required')
-                    keys.add(key)
-                    volume, centre = _q(row['volume_m3']), _vector(row['centroid_m'])
-                    if volume <= 0 or type(row['faces']) is not list or len(row['faces']) < 4:
-                        raise TectonicsError('positive three-dimensional thermal cell required')
-                    indexes, signs, offsets, vectors, distances = [], [], [], [], []
-                    for face, sign in row['faces']:
-                        if face not in faces or type(sign) is not int or sign not in (-1, 1):
-                            raise TectonicsError('named signed thermal face incidence required')
-                        fi = faces[face]
-                        if fi in indexes:
-                            raise TectonicsError('duplicate face in one thermal cell')
-                        vector = tuple(sign*v for v in normals[fi])
-                        offset = tuple(x-y for x, y in zip(centres[fi], centre))
-                        distance = _dot(vector, offset)
-                        if distance <= 0:
-                            raise TectonicsError('thermal centre must be strictly inside every planar face')
-                        indexes.append(fi); signs.append(sign); offsets.append(offset)
-                        vectors.append(vector); distances.append(distance)
-                        incidence[fi].append((ci, sign))
-                    if any(sum(n[j] for n in vectors) != 0 for j in range(3)):
-                        raise TectonicsError('exact thermal face vectors do not close')
-                    # The closure statement directly above has refused every
-                    # cell whose area vectors do not sum to zero exactly, so
-                    # sum(n_i*(x_f-x_c)_j) = sum(n_i*x_f,j)-x_c,j*sum(n_i)
-                    # equals sum(n_i*x_f,j). The first moment is therefore
-                    # summed over the face centroids, with the same exact
-                    # value in each of the nine entries. This equivalence
-                    # depends on that statement standing first, unconditionally.
-                    if _admitted_moment_fails(vectors, centres, indexes, volume, budget):
-                        raise TectonicsError('thermal metric moments violate the exact divergence identity')
-                    decoded.append((volume, centre, tuple(indexes), tuple(signs), tuple(offsets),
-                                    tuple(vectors), tuple(distances)))
+                for ci in range(view.cell_count):
+                    _append_compact_cell(view, ci, centres, normals, incidence, keys, decoded, budget)
                 for fi, linked in enumerate(incidence):
                     if len(linked) not in (1, 2) or (len(linked) == 2 and linked[0][1]+linked[1][1] != 0):
                         raise TectonicsError('thermal face requires one boundary owner or opposite paired owners')
-                    claimed = face_rows[fi].get('owners')
-                    if claimed is not None and sorted(claimed) != sorted(cell_rows[i]['cell_id'] for i, _ in linked):
+                    if _compact_owners_disagree(view, fi, linked):
                         raise TectonicsError('thermal face owners disagree with actual signed cell incidence')
                 self._indexed = view
                 self._encoded = None
                 self._cells, self._incidence = tuple(decoded), tuple(map(tuple, incidence))
                 self._face_ids, self._budget = tuple(faces), budget
                 self.geometry_id = view.geometry_id
-                del faces, centres, normals, incidence, keys, decoded
-                del indexes, signs, offsets, vectors, distances
-                del normal, centre, vector, offset, distance, volume
+                del faces, centres, normals, incidence, keys, decoded, linked
                 weakref.finalize(self, retained.close)
                 committed = True
                 return self
