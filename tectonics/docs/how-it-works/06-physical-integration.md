@@ -122,6 +122,11 @@ valid. The lines that separate plates are also kept apart from the mesh used for
 bookkeeping: an edge between two faces of the same plate is only a seam of that
 mesh, and it can later be redrawn without touching a plate boundary.
 
+Before building each face's chart, the builder checks cancellation and
+requires tuple rings for the outer boundary and holes. It tests their
+vertex names against the existing lookup's keys and refuses an unregistered
+name before chart construction.
+
 The separate [declared starting family](../I04_CAUSAL_START.md#3-the-starting-family-i041)
 keeps its target-area priority when offering province anchors; equal targets use
 the stored centroid and chart centre. On a face, rounded outline contributions
