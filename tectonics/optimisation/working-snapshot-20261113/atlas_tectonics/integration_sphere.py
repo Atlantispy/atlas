@@ -1032,6 +1032,7 @@ def _owned(atlas, boundaries, plates):
     follows no seam inside a plate.
     """
     lookup = {name: i for i, name in enumerate(atlas.vertex_ids)}
+    lookup_keys = lookup.keys()
     edges = {(int(a), int(b)): i for i, (a, b) in enumerate(atlas.edge_vertices)}
     sides, patches = atlas.side_patches, atlas.patches
     around = [set() for _ in atlas.vertex_ids]
@@ -1045,7 +1046,7 @@ def _owned(atlas, boundaries, plates):
         if not {boundary.left_plate_id, boundary.right_plate_id} <= declared:
             raise SphereError('boundary %r names an undeclared plate' % boundary.boundary_id)
         chain = boundary.vertex_ids
-        if not set(chain) <= set(lookup):
+        if not set(chain) <= lookup_keys:
             raise SphereError('boundary %r names an unregistered vertex' % boundary.boundary_id)
         steps = list(zip(chain, chain[1:]))+([(chain[-1], chain[0])] if boundary.closed else [])
         for a, b in steps:

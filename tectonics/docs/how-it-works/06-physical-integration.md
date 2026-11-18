@@ -127,6 +127,14 @@ requires tuple rings for the outer boundary and holes. It tests their
 vertex names against the existing lookup's keys and refuses an unregistered
 name before chart construction.
 
+Construction and issued-state verification share the boundary-ownership
+check. Each call reuses one view of the vertex registry's keys across all
+boundaries. It checks that both plates are declared before checking the
+names in the boundary's vertex chain. The shared check verifies edge
+ownership and side agreement and rejects seams within one plate.
+Construction then derives junctions. Verification compares the network's
+junctions with the issued records.
+
 The separate [declared starting family](../I04_CAUSAL_START.md#3-the-starting-family-i041)
 keeps its target-area priority when offering province anchors; equal targets use
 the stored centroid and chart centre. On a face, rounded outline contributions
