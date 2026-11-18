@@ -165,6 +165,13 @@ vertex IDs in order. It applies the existing direction normalisation and
 signed-zero handling inside the network reservation. Raw vertex mappings
 and independently supplied or restored layouts retain their own validation.
 
+For a fresh declaration, the layout checker constructs the homes and required
+copies before the common checks and uses those derived relations directly.
+Temporary carrier and vertex-use data stays within construction. The checker
+independently verifies eligible home carriers and required copy keys for
+supplied and restored layouts. The registry, frame and ridge records, unit
+directions and copy placement are checked on either path.
+
 Fresh coordinates may round differently from the earlier matrix path and give
 the newly rotated network a different identity. Stored networks retain exact
 recovery from their saved records. The existing physical tolerances and

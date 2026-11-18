@@ -833,8 +833,11 @@ def _declared_layout(names, points, faces, plates, boundaries):
                    tuple((boundary_id, IDENTITY) for boundary_id in _ridge_ids(boundaries)), None)
 
 
-def _checked_layout(layout, faces, plates, boundaries):
+def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=None):
     """A layout whose homes, frames and copies are exactly those its faces, plates and ridge records need."""
+    declared_here = declaration_points is not None
+    if declared_here:
+        layout = _declared_layout(layout, declaration_points, faces, plates, boundaries)
     if type(layout) is not _Layout:
         raise SphereError('a vertex layout is required')
     names, declared = layout.names, tuple(plate.plate_id for plate in plates)
@@ -846,14 +849,15 @@ def _checked_layout(layout, faces, plates, boundaries):
         raise SphereError('the vertex layout does not match its vertex registry, plates and ridge records')
     for name in names:
         _name(name, 'vertex ID')
-    # A stored home is state (A-22, ruling 34): chosen at a declaration or an event and kept. Here it is only
-    # confirmed to be a carrier of one of the vertex's records of the lowest rank (or the one plate a vertex no record
-    # carries lies inside); which of two such carriers is first is not asked again.
-    for name, home, records in zip(names, layout.home, _carriers(names, faces, boundaries)):
-        allowed = {plate for plate, _ in records}
-        if home not in allowed:
-            raise SphereError('vertex %r is kept by %r, not by a carrier of its records of the lowest rank (%s)'
-                              % (name, home, ', '.join(sorted(repr(plate) for plate in allowed))))
+    if not declared_here:
+        # A stored home is state (A-22, ruling 34): chosen at a declaration or an event and kept. Here it is only
+        # confirmed to be a carrier of one of the vertex's records of the lowest rank (or the one plate a vertex no record
+        # carries lies inside); which of two such carriers is first is not asked again.
+        for name, home, records in zip(names, layout.home, _carriers(names, faces, boundaries)):
+            allowed = {plate for plate, _ in records}
+            if home not in allowed:
+                raise SphereError('vertex %r is kept by %r, not by a carrier of its records of the lowest rank (%s)'
+                                  % (name, home, ', '.join(sorted(repr(plate) for plate in allowed))))
     _unit_rows(reference, 'vertex reference directions')
     if tuple(plate for plate, _ in layout.frames) != declared or any(
             type(rotation) is not Rotation for _, rotation in layout.frames):
@@ -861,10 +865,11 @@ def _checked_layout(layout, faces, plates, boundaries):
     if tuple(boundary_id for boundary_id, _ in layout.ridges) != ridges or any(
             type(rotation) is not Rotation for _, rotation in layout.ridges):
         raise SphereError('every ridge record has exactly one frame rotation')
-    owner = dict(zip(names, layout.home))
-    needed = sorted((name, plate) for name, plate in _used(faces) if name in owner and owner[name] != plate)
-    if [key for key, _ in layout.views] != needed:
-        raise SphereError("a plate's copies of vertices kept elsewhere are exactly those its faces use")
+    if not declared_here:
+        owner = dict(zip(names, layout.home))
+        needed = sorted((name, plate) for name, plate in _used(faces) if name in owner and owner[name] != plate)
+        if [key for key, _ in layout.views] != needed:
+            raise SphereError("a plate's copies of vertices kept elsewhere are exactly those its faces use")
     copies = np.asarray([value for _, value in layout.views], dtype=np.float64).reshape(-1, 3)
     _unit_rows(copies, "a plate's copies of vertices kept elsewhere")
     checked = _Layout(names, tuple(layout.home), _frozen(reference, np.float64),
@@ -1161,8 +1166,7 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
             else:
                 # Only rotate_frame supplies finite frozen rows in the issued registry's sorted ID order.
                 names, points = rotated_vertex_ids, _capture_directions(vertices)+0.
-            layout = _checked_layout(_declared_layout(names, points, faces, plates, boundaries), faces, plates,
-                                     boundaries)
+            layout = _checked_layout(names, faces, plates, boundaries, declaration_points=points)
         names, points = layout.names, _directions(layout)
         lookup = {name: i for i, name in enumerate(names)}
         patches = []
