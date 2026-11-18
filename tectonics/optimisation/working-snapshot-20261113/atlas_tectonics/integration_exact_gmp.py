@@ -342,6 +342,139 @@ def _work(bits, count, budget, *, pairs=0):
         yield
 
 
+class _Res(tuple):
+    """A wall polygon held native inside one _Chain2 (one leaf); never returned by a leaf.
+
+    exacts  per vertex, the caller's exact pair when it was converted in, else None (computed);
+    bits    per vertex, integration_volume._bits summed over its two coordinates, as the reference counts;
+    ints    per vertex, whether a converted-in coordinate is an int;
+    held    exact()'s result, built once.
+    """
+
+
+class _Chain2:
+    """GMP twin of integration_wall_measures._Chain for one wall leaf (opt-prep-gmp-chain-r1 s3, decision 534).
+
+    Each clip and integral takes the reference lease (the bits and count integration_volume._work computes)
+    before any native value is built, then follows the reference body statement for statement. Converted-in
+    vertices keep their exact objects, so exact() gives back what the reference would hold. The native
+    surcharge of settled vertices is reserved under NATIVE_RETAINED on this chain's stack.
+    On failure, the charge follows the escaping error and traceback.
+    A polygon with a value that is not int/Fraction, a line that is not three Fractions, and an integral the
+    reference could evaluate by int/int division run the reference body on exact() (R-1, R-3).
+    """
+
+    def __init__(self, arena):
+        from . import integration_wall_measures as W
+        self.arena, self.W, self.stack = arena, W, ExitStack()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, kind, error, traceback):
+        if error is None:
+            self.stack.close()
+            return False
+        from .integration_spatial_transport import _preserve_workspace
+
+        # Keep the lease in this frame when only the traceback survives.
+        failure_owner = _preserve_workspace(error, self.stack)
+        try:
+            raise error.with_traceback(traceback)
+        finally:
+            # Avoid a reference cycle when neither error nor traceback is retained.
+            del error, traceback
+
+    def _retain(self, extra):
+        if extra:
+            self.stack.enter_context(self.arena.resource.reserve(extra, category=NATIVE_RETAINED))
+
+    def _new(self, entries):
+        poly = _Res(e[0] for e in entries)
+        poly.exacts = tuple(e[1] for e in entries)
+        poly.bits = tuple(e[2] for e in entries)
+        poly.ints = tuple(e[3] for e in entries)
+        poly.held = None
+        return poly
+
+    def clip(self, poly, line):
+        resident = type(poly) is _Res
+        if (not poly or not resident and not _exact_pairs(poly) or type(line) is not tuple or len(line) != 3
+                or any(type(q) is not Fraction for q in line)):
+            return self.W._clip2(self.exact(poly), line, self.arena)
+        bits = poly.bits if resident else tuple(V._bits(p[0])+V._bits(p[1]) for p in poly)
+        with _work(sum(V._bits(q) for q in line)+sum(bits), 3+2*len(poly), V.select_budget(self.arena.resource)):
+            if not resident:
+                entries = []
+                for p, width in zip(poly, bits):
+                    point, row = _settle((_native(p[0]), _native(p[1])))
+                    try:
+                        self._retain(row[2])
+                    except BaseException:
+                        # The temporary lease unwinds before the traceback is read.
+                        del point
+                        raise
+                    entries.append((point, p, width, type(p[0]) is int or type(p[1]) is int))
+                poly = self._new(entries)
+            a, b, c = (_native(q) for q in line)
+            signs = tuple(a*p[0]+b*p[1]+c for p in poly)
+            if min(signs) >= 0:
+                return poly
+            if max(signs) <= 0:
+                return ()
+            out, count = [], len(poly)
+            for i in range(count):
+                j = (i+1) % count
+                sp, sq = signs[i], signs[j]
+                if sp >= 0:
+                    out.append((poly[i], poly.exacts[i], poly.bits[i], poly.ints[i]))
+                if sp*sq < 0:
+                    p, q = poly[i], poly[j]
+                    f = sp/(sp-sq)
+                    point, row = _settle(tuple(p[k]+f*(q[k]-p[k]) for k in range(2)))
+                    try:
+                        self._retain(row[2])
+                    except BaseException:
+                        # Drop the rejected vertex and scratch funded by _work.
+                        del point, a, b, c, signs, sp, sq, f
+                        raise
+                    out.append((point, None, row[0], False))
+            if len(out) < 3:
+                return ()
+            return self._new([e for k, e in enumerate(out) if e[0] != out[k-1][0]])
+
+    def integral(self, poly, linear):
+        if (type(poly) is not _Res or not poly or type(linear) is not tuple or len(linear) != 3
+                or any(type(q) not in (int, Fraction) for q in linear)
+                or any(poly.ints) and all(type(q) is int for q in linear)):
+            return self.W._integral(self.exact(poly), linear, self.arena)
+        with _work(sum(V._bits(q) for q in linear)+sum(poly.bits), 3+2*len(poly),
+                   V.select_budget(self.arena.resource)):
+            l0, l1, l2 = (_native(q) for q in linear)
+            total, (ax, ay) = _zero, poly[0]
+            for (bx, by), (cx, cy) in zip(poly[1:-1], poly[2:]):
+                twice = (bx-ax)*(cy-ay)-(by-ay)*(cx-ax)
+                if twice < 0:
+                    raise V.VolumeError('wall polygon orientation changed')
+                total += twice*(l0*(ax+bx+cx)+l1*(ay+by+cy)+3*l2)/6
+            if total < 0:
+                raise V.VolumeError('negative sign-split wall integral')
+            return _exact(total)
+
+    def exact(self, poly):
+        if type(poly) is not _Res:
+            return poly
+        if poly.held is None:
+            poly.held = tuple(e if e is not None else (_exact(p[0]), _exact(p[1]))
+                              for p, e in zip(poly, poly.exacts))
+        return poly.held
+
+
+def _exact_pairs(poly):
+    return type(poly) is tuple and all(type(p) is tuple and len(p) == 2 and type(p[0]) in (int, Fraction)
+                                       and type(p[1]) in (int, Fraction) for p in poly)
+
+
 def _face(vertices, indices, normal, *, _coplanar_cap=False):
     """integration_volume_overlap._face; normal may be any positive multiple."""
     omitted = max(range(3), key=lambda j: abs(normal[j]))

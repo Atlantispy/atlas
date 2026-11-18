@@ -3512,10 +3512,12 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
         # Prove this in the actual world-space face frame, before constructing
         # thousands of moving polygons for walls parallel to rigid motion.
         # Requested scalar moments still require their real masked geometry.
-        with V._work((*omega, *(q for point in face[:4] for q in point)), budget):
-            velocity = tuple(O._dot(face[3], O._cross(omega, p))
-                             for p in (face[1], face[2], face[0]))
-            zero_flux = not polynomials and not any(velocity if normal is None else normal.values())
+        with V._work((*omega, *(q for point in face[:4] for q in point)), budget,
+                     convert_values=False):
+            if normal is None:
+                velocity = tuple(O._dot(face[3], O._cross(omega, p))
+                                 for p in (face[1], face[2], face[0]))
+            zero_flux = not polynomials and not (any(velocity) if normal is None else normal)
         zero_wall = None
         if not zero_flux and endpoint is None and normal is None and not polynomials:
             # The full-time OUTER face contains every instantaneous material
@@ -3542,7 +3544,7 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
                 from .integration_parallel_results import adopt
                 return adopt(DifferentialMeasure, funded, budget)
         pose_cache, pose = None, [False]
-        def leaf(bounds, a, b, level):
+        def _chain_leaf(bounds, a, b, level, chain):
             weight = b-a
             if endpoint is not None:
                 a = b = Q(0) if endpoint == 'start' else duration
@@ -3559,50 +3561,58 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
                 for name, sign in component['constraints']:
                     normal_box, offset = posed[name]
                     line = _boxed_constraint_line(face, bounds, normal_box, offset, sign, inner)
-                    poly = W._clip2(poly, line, arena)
+                    poly = chain.clip(poly, line)
                     if not poly:
                         break
                 for line in W._radial_planes(face, bounds, layer, inner):
-                    poly = W._clip2(poly, line, arena)
+                    poly = chain.clip(poly, line)
                 shapes.append(poly)
             result = []
             for flow_sign in (-1, 1):
                 if normal is None:
                     linear = tuple(flow_sign*q for q in velocity)
-                    result.append(tuple(W._integral(W._clip2(poly, linear, arena), linear, arena)*weight for poly in shapes))
+                    result.append(tuple(chain.integral(chain.clip(poly, linear), linear)*weight for poly in shapes))
                 else:
                     # A general native Q2 trace may change sign inside a leaf.
                     # The lower Jensen bound and interval upper bound enclose
                     # its actual positive part; subdivision resolves the zero
                     # curve without pretending the nine Gauss signs are exact.
-                    polynomial = {key: flow_sign*q for key, q in normal.items()}
-                    low, high = _polynomial_range(polynomial, bounds)
-                    # Both are certified ranges of the same polynomial. The
-                    # hull decides the sign beside the zero curve, where the
-                    # termwise range cannot, and bounds the unresolved stream
-                    # by the trace's own size there.
-                    hull = _bernstein_hull(polynomial, bounds)
-                    low, high = max(low, hull[0]), min(high, hull[1])
+                    if flow_sign < 0:
+                        polynomial = {key: -q for key, q in normal.items()}
+                        low, high = _polynomial_range(polynomial, bounds)
+                        # The hull tightens the termwise enclosure at the zero curve.
+                        hull = _bernstein_hull(polynomial, bounds)
+                        low, high = max(low, hull[0]), min(high, hull[1])
+                    else:
+                        # Both exact range constructions commute with sign reversal.
+                        polynomial = normal
+                        low, high = -high, -low
                     arena.work(32*len(polynomial))
                     if high <= 0:
                         pair = (Q(0), Q(0))
                     elif low >= 0:
-                        pair = tuple(_polynomial_integral(poly, polynomial, arena) for poly in shapes)
+                        pair = tuple(_polynomial_integral(chain.exact(poly), polynomial, arena) for poly in shapes)
                     else:
-                        pair = (max(Q(0), _polynomial_integral(shapes[0], polynomial, arena)),
-                                high*W._integral(shapes[1], (0, 0, 1), arena))
+                        pair = (max(Q(0), _polynomial_integral(chain.exact(shapes[0]), polynomial, arena)),
+                                high*chain.integral(shapes[1], (0, 0, 1)))
                     result.append(tuple(q*weight for q in pair))
-            inner_area, outer_area = (W._integral(poly, (0, 0, 1), arena) for poly in shapes)
+            inner_area, outer_area = (chain.integral(poly, (0, 0, 1)) for poly in shapes)
             if inner_area > outer_area:
                 raise V.VolumeError('physical component enclosure lost containment')
+            unknown = None
             for polynomial in polynomials:
-                known = _polynomial_integral(shapes[0], polynomial, arena)
+                known = _polynomial_integral(chain.exact(shapes[0]), polynomial, arena)
                 low, high = _polynomial_range(polynomial, bounds)
-                unknown = outer_area-inner_area
+                if unknown is None:
+                    unknown = outer_area-inner_area
                 result.append(((known+min(Q(0), low)*unknown)*weight,
                                (known+max(Q(0), high)*unknown)*weight))
             arena.work(128+64*len(posed))
             return tuple(result)
+        def leaf(bounds, a, b, level):
+            # One clip chain per leaf, chosen at its entry (opt-prep-gmp-chain-r1 s3-s4).
+            with W._chain(arena) as chain:
+                return _chain_leaf(bounds, a, b, level, chain)
         temporal, native_integral = None, None
         native_method, native_certificate, native_digest = None, None, None
         try:

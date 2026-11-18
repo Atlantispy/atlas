@@ -257,6 +257,19 @@ candidates before exact intersections; dense overlaps can still be expensive.
 Pools and applicable backend setup are created when needed. These mechanisms
 reduce repeated preparation, not the requested physical calculation.
 
+For a fixed component wall, the exact polygon chain keeps eligible
+rational vertices in GMP through the clips and integrals of one leaf and
+returns exact rational bounds. Unsupported operands use the reference
+operations. Each clip and integral admits its usual workspace. The extra
+reservation for retained vertices can trigger an earlier refusal under a
+tight budget. A successful leaf releases it at exit. On failure, it stays
+charged while the error or its traceback holds the vertices. The wall
+computes the difference between the outer and inner areas when the first
+requested polynomial needs it and reuses that value. For an explicit
+normal polynomial, the second sign's interval swaps and negates the
+first interval's endpoints. Both signs keep their work admission and
+each still evaluates its required integrals.
+
 Contiguous arrays support bulk operations and bounded batches. Safe immutable
 buffers may be borrowed; mutable inputs are detached, and published slices are
 compacted so a small result does not retain a large parent. SciPy supplies bulk

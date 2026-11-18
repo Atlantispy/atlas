@@ -209,6 +209,30 @@ def _integral(poly, linear, arena=None):
     return total
 
 
+class _Chain:
+    """One leaf's clip chain on the reference route: the three functions, unchanged, behind one object.
+
+    integration_exact_gmp._Chain2 is its GMP-resident twin (_chain chooses, once per leaf).
+    """
+    def __init__(self, arena):
+        self.arena = arena
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def clip(self, poly, line):
+        return _clip2(poly, line, self.arena)
+
+    def integral(self, poly, linear):
+        return _integral(poly, linear, self.arena)
+
+    def exact(self, poly):
+        return poly
+
+
 def _face(cell, axis, end):
     transverse = tuple(j for j in range(3) if j != axis)
     fixed = cell.lower_m[axis] if end == 0 else cell.upper_m[axis]
@@ -231,6 +255,21 @@ def _point(face, uv):
 
 def _line(face, normal, offset=0):
     return O._dot(normal, face[1]), O._dot(normal, face[2]), O._dot(normal, face[0])-offset
+
+
+_CHAIN_REFERENCE = (_clip2, _line, _integral)
+
+
+def _chain(arena):
+    """The chain for ONE leaf, fixed at its entry by B._resident's rule.
+
+    A wrapped or replaced _clip2, _line or _integral keeps the reference route, so instrumentation still sees
+    every call.
+    """
+    K = B._resident()
+    if K is B or (_clip2, _line, _integral) != _CHAIN_REFERENCE:
+        return _Chain(arena)
+    return K._Chain2(arena)
 
 
 def _radial_planes(face, bounds, layer, inner):

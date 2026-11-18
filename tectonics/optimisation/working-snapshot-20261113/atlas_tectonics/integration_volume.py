@@ -46,14 +46,14 @@ def _bits(value):
 
 
 @contextmanager
-def _work(values, budget, *, pairs=0):
+def _work(values, budget, *, pairs=0, convert_values=True):
     bits = sum(_bits(v) for v in values)
     # Includes rational products/GCD temporaries, encoding and object overhead.
     # The pair allowance also bounds the explicit O(n^2) convex-cone validation;
     # callers cannot turn a small byte budget into unbounded predicate work.
     with select_budget(budget).reserve(65536+128*bits+256*len(values)+256*pairs,
                                        category='i03-physical-volume'):
-        yield tuple(Fraction(v) for v in values)
+        yield tuple(Fraction(v) for v in values) if convert_values else None
 
 
 def _triple(value, name):
