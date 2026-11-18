@@ -160,6 +160,11 @@ three-component quaternion vector directly. These finite binary64 arrays
 come from the validated atlas and rotations. The transform works in batches
 of at most 65,536 rows and freezes the result under the existing allowance.
 
+The rotated declaration takes the frozen moved directions and their issued
+vertex IDs in order. It applies the existing direction normalisation and
+signed-zero handling inside the network reservation. Raw vertex mappings
+and independently supplied or restored layouts retain their own validation.
+
 Fresh coordinates may round differently from the earlier matrix path and give
 the newly rotated network a different identity. Stored networks retain exact
 recovery from their saved records. The existing physical tolerances and

@@ -1109,7 +1109,7 @@ def _joined(atlas, boundaries, plates, limits=None, budget=None, cancel=None):
 
 
 def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step, reference_time_s, lineage, limits,
-             budget, cancel, restored):
+             budget, cancel, restored, *, rotated_vertex_ids=None):
     _check_cancel(cancel)
     if type(sphere) is not SphericalFrame:
         raise SphereError('an explicit SphericalFrame is required')
@@ -1129,8 +1129,9 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
         raise SphereError('a typed Lineage is required')
     limits, policy = _limits(limits), select_budget(budget)
     count = sum(len(face.vertex_ids)+sum(len(hole) for hole in face.holes) for face in faces)
-    registered = len(vertices.names) if type(vertices) is _Layout else len(
-        vertices if isinstance(vertices, Mapping) else ())
+    registered = (len(rotated_vertex_ids) if rotated_vertex_ids is not None else
+                  len(vertices.names) if type(vertices) is _Layout else len(
+                      vertices if isinstance(vertices, Mapping) else ()))
     with policy.reserve(2048*count+(1024+24*len(plates))*registered+65536, category='i03-network-build'):
         faces = tuple(sorted(faces, key=lambda face: face.face_id))
         plates = tuple(sorted(plates, key=lambda plate: plate.plate_id))
@@ -1155,7 +1156,11 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
         if type(vertices) is _Layout:
             layout = _checked_layout(vertices, faces, plates, boundaries)
         else:
-            names, points = _captured(vertices, restored)
+            if rotated_vertex_ids is None:
+                names, points = _captured(vertices, restored)
+            else:
+                # Only rotate_frame supplies finite frozen rows in the issued registry's sorted ID order.
+                names, points = rotated_vertex_ids, _capture_directions(vertices)+0.
             layout = _checked_layout(_declared_layout(names, points, faces, plates, boundaries), faces, plates,
                                      boundaries)
         names, points = layout.names, _directions(layout)
@@ -1286,9 +1291,9 @@ def rotate_frame(network, rotation, frame_id, *, limits=None, budget=None, cance
         w, *axis = plate.rotation.quaternion
         turned = turn(np.asarray(axis, dtype=np.float64))
         plates.append(Plate(plate.plate_id, Rotation((w, *(float(x) for x in turned))), plate.parent_plate_ids))
-    return _network(sphere, dict(zip(network.vertex_ids, moved)), network.faces, tuple(plates), network.boundaries,
+    return _network(sphere, moved, network.faces, tuple(plates), network.boundaries,
                     network.epoch_id, network.time_s, network.step, network.reference_time_s, network.lineage,
-                    limits, budget, cancel, False)
+                    limits, budget, cancel, False, rotated_vertex_ids=network.vertex_ids)
 
 
 _NETWORK_KEYS = frozenset(('schema', 'sphere', 'epoch_id', 'time_unit', 'time_s', 'step', 'reference_time_s',
