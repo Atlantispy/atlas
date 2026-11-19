@@ -26,10 +26,13 @@ tectonic vertical response must describe **the same evolved world**. Supported
 regional detail must derive from that world and return its accounted consequences,
 not exist as unrelated demonstration arrays.
 
-Atlas 1.0 can still deliver a fixed point in time. A represented tectonic history
-is an internal means of obtaining a consistent snapshot, not a requirement that
-the user manually author every timestep. Conversely, merely preparing starting
-conditions or exporting each solver's results does not satisfy this outcome.
+The user chooses the planet radius, global process resolution, regional detail,
+physical parameters and geological duration within a documented range. Run the
+history automatically and return the requested epoch. Record the settings,
+physical scales actually resolved, accuracy and cost. A change of display sampling
+uses that same history. The release must demonstrate a long history at the
+[reference planetary workload](#8-performance-and-growth-are-part-of-implementation)
+as well as useful changes of scale, resolution and physical inputs.
 
 Required user routes:
 
@@ -44,9 +47,11 @@ Required user routes:
 5. **Consume:** geology, terrain and other modules can use typed, spatially and
    temporally compatible outputs without reverse-engineering internal arrays.
 
-Whole-sphere **coarse tectonic** generation and supported regional detail are part
-of this completion target. Regional examples alone cannot close it. This does
-not promise global metre-scale mechanics or a particular planetary run time.
+The whole sphere evolves, with detailed mechanics where the physics requires it.
+State the supported range of each control and identify the limiting physical,
+numerical or resource condition for a request outside it. The user chooses any
+revised settings. The [steps to completion](#dependencies-and-sensible-parallel-work)
+give the route from the current foundations to that usable module.
 
 ## 2. Scope and scientific ownership
 
@@ -461,6 +466,14 @@ and supported events; it must stop at unsupported physics, not manufacture an
 event or silently step past it. Future adaptive/event-localising adapters need
 their own admitted policy; storage chunking must never choose the physical step.
 
+The [column controls](I02_WORKFLOW.md) include 16 steps spanning up to
+10¹⁴ seconds in total (about 3.17 Myr). The separate differential diagnostic
+chose 73.6 ns from its mechanical-heating allowance. Neither duration sets
+the planetary timestep. I09 identifies what limits a connected interval and
+demonstrates the effect of refining it. If the required history exceeds this
+route's admitted horizon, select and qualify geological-time continuation
+before claiming it; reopening a save retains the cumulative limits.
+
 **Done when:** multiple requested advances retain one clock and the same numerical
 path; failures report the last accepted time and cannot reset cumulative limits.
 
@@ -581,6 +594,17 @@ a new dependency; decide reuse versus a bounded native implementation explicitly
    Carry history/enthalpy through the same transfers; handle rigid rotation,
    stationary fields, seams/poles and mesh changes without resetting ages. Agree
    the transport interface with I05, which owns its evolving constitutive content.
+   For a partial remesh, index the already computed bounds of changed receiving
+   faces by plate and location, once per remesh. Each changed donor queries
+   possible neighbours in its plate frame. Keep receiver order, the original
+   cap comparison, exact containment, clipped areas and closure. Use a
+   conservative fallback for broad or ill-conditioned caps and when the optional
+   index cannot fit. Compare ordered pairs and transfer rows with the exhaustive
+   method on seams, poles, holes, splits/merges and near contact. Count candidate
+   visits separately from exact intersections. With 10,000 changed faces on each
+   side, the old loop makes 100 million visits; dense overlap can still require
+   all pairs. Cover fresh construction and the actual saved-state replay route
+   wherever it reconstructs or consumes the transfer.
 3. **I03.3 — Build both spatial bridges.** Implement sphere-to-region extraction
    and region-to-sphere replacement with width, depth, orientation, quadrature,
    projection validity and coverage. Preserve full vectors, forces/work and
@@ -724,6 +748,11 @@ front/inversion treatment is implemented and checked.
    retained-memory cases with time/space refinement and resumed parity. Deliver
    current properties to I04 and a tested energy-bearing supply contract for I06;
    no requirement to finish I06 crust birth before implementing its inputs.
+   Carry a sharp material or thermal front across the joined moving interface.
+   Compare its position and width at matched time under refinement as well as
+   its integral: conserved heat alone can hide a smeared or misplaced front.
+   Use the composed route's positioned material traces by default. Qualify
+   an explicitly selected cell-mean approximation separately.
 
 **Efficiency/exclusions:** reuse correctly keyed thermal/filter operators and
 unchanged cohort projections, not accumulated historical factors. No cooling at
@@ -959,6 +988,9 @@ thickness from temperature.
    exterior sensitivity. Check energy/work where claimed and absence of repeated
    thermal/compaction/flexure contributions. Use a small supplied external-feedback
    control, then actual upstream results for stage acceptance.
+   Sample velocity at the evolving surface height and integrate loads and
+   exchanges over its changing physical area. Use the same datum and time on
+   both sides so that stale geometry is visible in the displacement and work.
 
 **Efficiency/exclusions:** cache prepared support operators only under matching
 geometry/rigidity/boundary identities, reuse independent right-hand sides where
@@ -1019,6 +1051,12 @@ split is justified by an error bound before implementing the controller.
    assembled execution and interrupted/resumed results, plus feedback and spatial/
    time transfer error. Prepare the missing I11 H/K coverage and cost forecast;
    do not silently launch their larger withheld/global acceptance campaigns.
+   At each exchange distinguish the instantaneous state, rate and interval
+   total. Close each region's debit and credit as well as the global sum.
+   Vary exchange cadence at the same physical endpoint to expose feedback lag.
+   Identify the limiting timestep term and compare event time, displacement,
+   material and heat on finer steps. Use the existing case to report elapsed
+   seconds per accepted Myr and the work split in section 8.
 
 **Efficiency/exclusions:** forecast active supports, nonzeros, iteration counts,
 cohorts and checkpoint growth; use measured cost estimates before deciding on
@@ -1076,6 +1114,10 @@ that route and its isolation rather than assuming an unrelated packager is in us
    The UI owner implements controls and presentation separately; Codex checks
    the shared native route, not just mock responses. Do not run two writers on
    the UI or scientific files. A return must include actual UI/backend evidence.
+   Expose planet radius, physical mesh spacing or resolution, regional refinement,
+   declared forcing/material settings, duration and output cadence. Give units,
+   supported ranges and a resource estimate before an expensive request.
+   Show the selected settings, actual scales and accepted time after reopening.
 5. **I10.5 — Connect one actual downstream reader.** Feed an existing compatible
    geology or terrain consumer the evolved fields through typed ports; prove
    reference/time/support preservation and mismatch refusal. This is a tectonic
@@ -1171,6 +1213,13 @@ universal constraint on generated planets.
    regressions. Correct evidenced bottlenecks with matched quality; no automatic
    realism downgrade, bigger ceilings or multi-hour R4.4 substitute. Finish only
    when the required physical, lifecycle and practical gates below all pass.
+   Use short Case K for multi-region coupling, then extend the acceptance route
+   to the long reference history in section 8. Identify any scientific
+   continuation or clock limit first. Prove that changing physical resolution
+   preserves converged observables and that changing a physical parameter gives
+   the expected response. Use existing case H and refinement evidence where
+   applicable. Acceptance requires the actual long run at the declared settings,
+   with its scientific criteria and elapsed-time target met together.
 5. **I11.5 — Separate strict validation from release execution.** Apply the
    existing [execution policy](../../docs/CODING_SAFETY.md#strict-checkout-and-packaged-release-execution).
    Development/debug work, ordinary tests, scientific benchmarks and evidence
@@ -1273,7 +1322,9 @@ source-bound examples, current evidence and downstream contract versions. Mark
 old initial-world and stationary-column demonstrations accurately, preserving
 their provenance. Record installed versus actually tested platform paths.
 
-**Finish when:** all five user routes in section 1 work; the mandatory scientific
+**Finish when:** the user can run the long planetary workload in section 8
+from the distributed module using the qualified settings and performance evidence
+for the shipped calculation. All five user routes in section 1 work; the mandatory scientific
 and engineering cases are accepted; the three observed generation defects are
 resolved at their causes; no hidden manual arrays or unsupported bridges are
 needed; and a user can operate tectonics without completing the other 17 modules.
@@ -1281,17 +1332,23 @@ Technical release and Git publication remain separate actions.
 
 ### Dependencies and sensible parallel work
 
-The execution order is not a strict I01, I02, ..., I12 loop. Use these dependency
-milestones to avoid circular waits and premature stage-complete claims:
+Use these steps as the completion sequence. Each row closes an existing I-stage
+obligation. Track delivery in [Current state](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance).
 
-| Milestone | Dependency-ready work | What still cannot be claimed |
+| Step | Work and dependency | Evidence that closes the step |
 | --- | --- | --- |
-| Shared foundation | Reuse I01, the bounded I02 lifecycle and I03 prescribed-history geometry/maps; complete only their named missing coverage | An evolving planet or physically generated event |
-| Driving/state pair | Agree I04/I05 ports; implement initial/driving producers alongside conservative material/thermal properties, then their first feedback control | Full regional feedback merely because both producers run |
-| Shared mechanics prerequisite | I07.1–I07.2 use available I02/I03/I05 contracts before complete I06; return the actual neck/separation evidence to I06.2 | I07 ocean-to-collision acceptance from a material kernel or neck alone |
-| Compatible supply and breakup | I05.4 supplies supported phase/energy transport; I06 joins that and the mechanical prerequisite to real separation/birth/history | Generated oceanic crust from prescribed splitting or missing phase-front support |
-| Joined regimes and support | I06 cohorts feed I07.4; shared mechanisms support I07.3/I07.5; I08 joins the resulting columns/loads | Full initiation/junction acceptance from contact or scalar feasibility tests |
-| Full feedback and delivery | I09 closes all returned reactions/accounts; I10 exposes the actual evolving world; I11 accepts it; I12 packages the accepted release | End-to-end acceptance from component, mock API or packaging checks |
+| 1. Fix the reference run and reuse the foundations (I01–I03) | Adopt the workload in section 8. Declare the scientific observables, hardware, scale and supported settings. Reuse the selected physics, accepted clock, restart and spherical geometry. Finish the changed-face search in I03.2. | A reproducible input and output specification, known numerical limits, and conservative remesh rows with local candidate counts. |
+| 2. Evolve one connected world state (I04–I05) | Join plate driving to moving material, heat, strength and history using the accepted foundation. | Changed forcing changes motion; a transported boundary retains its location and width to the declared accuracy, and a saved world continues from the same physical state. |
+| 3. Complete the tectonic processes (I05.4, I07.1–2, I06, remainder of I07, I08) | Use regional mechanics to establish breakup, then create and age ocean crust from finite supplies. Follow that crust into subduction or collision. Connect transform/oblique motion, junctions and the supported surface. | The same material can be followed through the applicable transitions. Motion, heat, mass, loads and surface displacement agree with the existing process controls. |
+| 4. Run one small globe through a real boundary change (I09.1–5) | Join the global sphere, detailed region and returned forces on one clock. Establish the physical interval Atlas can advance, what limits it and where elapsed time goes. | Event time and transferred material/heat converge. Local and global accounts close. The run gives seconds per accepted Myr, peak RAM, history growth and a first forecast against section 8. |
+| 5. Put the controls in the user's hands (I10) | Connect the real simulation to New World, save/reopen/continue, maps, sections and a downstream reader. | Changing a physical parameter changes the simulated result. Changing display detail reuses it. The saved project reproduces the settings and world the user saw. |
+| 6. Qualify interacting regions and the long history (I11) | Run the existing physical/lifecycle matrix, including withheld cases and short multi-region Case K. Resolve limiting time/space scales or cost before the long reference run. | At the declared effective resolution, the long run meets section 8's time target **and** predeclared scientific criteria. Publish the demonstrated range, resource needs and remaining model limits. |
+| 7. Deliver the standalone module (I12) | Package the qualified calculation, controls, example and compatible reader. | A user can generate, inspect, save and continue the qualified planetary history from the distribution on the supported platforms. |
+
+A new proposal belongs on this path only when it closes a named requirement or
+repairs a measured failure that prevents one of these outcomes. Record other
+ideas separately from the requirements for this release. External geology,
+hydrology and terrain contribute through the existing interfaces in section 2.
 
 I04 and I05's feedback is physical, not a reason to require each completed stage
 before the other can start. Likewise, I07's reusable mechanical kernels are
@@ -1325,7 +1382,7 @@ failure or missing required coverage. Do not rerun every W-suite for every edit.
 | G: topology events and regional exchange | Shared junction/plate network stays closed; births, splits, mergers and retirements conserve the represented accounts; no overlap/gap repair hiding loss |
 | H: generation robustness and morphology | A fixed, predeclared development/withheld seed and parameter matrix; actual boundary/continent/ocean-age outputs at matched physical scales, never cherry-picked successful worlds |
 | J: integrated lifecycle | Fresh create, save/load, cancellation at commit boundaries, resume, changed-source/input refusal, correct cache reuse/invalidation, consumer and UI agreement |
-| K: bounded global acceptance | A coarse full sphere evolved for a declared physically meaningful interval, containing multiple active regimes and supported local detail, within the agreed resource envelope |
+| K: whole-planet evolution | First qualify a short sphere-wide case with several interacting regions and retained exterior history. Then qualify the long reference history in section 8 at its agreed physical resolution, output coverage and wall time. Keep the two results distinct. |
 
 Before executing H/K, record exact seeds, physical scenario, interval, outputs,
 resolutions, tolerances and budget in the existing case/evidence machinery. Start
@@ -1361,6 +1418,45 @@ genuinely different bounded validity claim or obtain authority to address the
 held case; do not bypass it through the new assembly.
 
 ## 8. Performance and growth are part of implementation
+
+**Release target.** Keep pace with the documented Ecliptic Worldgen 0.8.1
+`cortial_2m` run. It evolved an Earth-sized planet through 4,036 Myr with
+2,100,001 reference samples and 35 snapshots. The simulation and resolution-3
+output took 4 h 09 min with 12 threads and 23.2 GB peak memory. A separate
+resolution-5 export took 9 min 18 s and peaked at 21.6 GB. The primary target
+is **at most 4 h 09 min** for the comparable main run (about **3.70 elapsed
+seconds per accepted Myr**, including startup and the corresponding writes).
+For the equivalent high-resolution delivery also report export and combined
+time against approximately **4 h 18 min**. Source: Ecliptic Worldgen, process
+flowchart, chapter 03 *Crust*, sections on runtime and disk size, example
+`cortial_2m`. These are reference measurements and a target for Atlas.
+
+Fix the comparison before using it for acceptance. Record machine, available
+cores, memory, initialisation, history length, output fields/times, export work
+and effective physical resolution. Ecliptic's reference samples, its exported
+map cells, Atlas surface faces and Atlas regional volume cells count different
+things. Specify the comparable surface spacing/coverage and the active regional
+depth and detail. Report differing model work and any hardware uncertainty.
+Atlas must satisfy its own scientific tolerances. State the range supported
+around the reference using the existing parameter, mesh and time controls.
+
+Use one accounting method from I09.5 through both parts of Case K. Separate
+fixed startup, recurring global advances, regional solves, feedback iterations
+and rejected attempts, checkpoint writes and requested exports. Count active
+faces and regions, candidates and accepted overlap rows, mean and busiest-face
+material pieces, peak live memory and stored bytes. The retained three-plate
+split-history case reached 67 pieces on one face after 11 intervals and 277
+after 23, with a mean of 2.85 at 23. Check which pieces the selected positioned
+route actually carries. Compression affects stored size; every piece consumed
+by the next solve still costs work. [Material history evidence](I05_MOVING_STATE.md)
+
+Use the **855 thermal-volume-cell** case for like-for-like optimisation estimates.
+Use the connected globe's measured accepted time and work mix for a planetary
+forecast, with its uncertainty. If the required duration, accuracy or rate
+cannot be reached within the existing step, memory or run limits, identify the
+limiting operation or scientific assumption and resolve that specific design
+decision. A restart retains the existing limits. A forecast can guide that
+decision; only the qualifying long history can close the time target.
 
 No token-usage instrumentation. Measure elapsed seconds, peak RAM and persisted
 bytes when they answer an actual implementation/scale question. For comparisons,
@@ -1439,9 +1535,9 @@ those closures with a graphics recipe.
 
 ## 10. Completion and next action
 
-Integration is complete only at **I12**, when the section-1 outcome and required
-matrix are met. A new shared-state class, connected graph, green unit suite,
-regional demo, export table or visually attractive world is not a substitute.
+Integration is complete at **I12** when the user can choose and run a planet's
+tectonic history, the scientific cases in section 7 pass, and the long reference
+run meets section 8. For the next deliverable follow the [seven steps](#dependencies-and-sensible-parallel-work).
 
 Select the next authorised assignment from [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 and the affected owner's remaining obligations. This plan does not carry a second
