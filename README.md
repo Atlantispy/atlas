@@ -169,6 +169,7 @@ Bootstrap refuses an existing environment rather than overwriting it. Changes to
 | [`tectonics/requirements/`](tectonics/requirements/) | [Windows tectonics environment pins and metadata checks](docs/TECTONICS_ENVIRONMENT.md), distinct from the offline public-component environment and exact native restart identity. |
 | [`tools/`](tools/) and [`tests/`](tests/) | Development entry point, source-wiring checks, R5 recovery tools and focused tooling tests. |
 | [`docs/`](docs/) | [Current state](docs/CURRENT_STATE.md), [coding/dependency map](docs/CODING_SAFETY.md), [recovery runbook](docs/R5_OPERATIONS.md), [development workflow](docs/INDEPENDENT_DEVELOPMENT.md), [development speed tools](docs/DEVELOPMENT_TOOLS.md) and [current evidence register](docs/CURRENT_EVIDENCE.md), with evidence records. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Changes in each tagged version of the tectonics package, newest first. |
 
 ## Development direction
 
