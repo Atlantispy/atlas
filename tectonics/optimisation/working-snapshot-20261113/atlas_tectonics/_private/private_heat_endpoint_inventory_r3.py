@@ -9,7 +9,6 @@ policy, not a guarantee about an allocator, caches, imports or reconstruction.
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
-import hashlib
 from itertools import chain
 import math
 from pathlib import Path
@@ -18,7 +17,7 @@ import sys
 from atlas_tectonics._private import private_heat_interval_assembly_kernel_r1 as A
 from atlas_tectonics._private import private_heat_rounding_inventory_r1 as ROUND
 
-ASSEMBLER_SHA = '2d0bd98b4d296a6c90a7f7b7c11ed2f74388d8e307872a631d47e1aadbfc7c6f'
+ASSEMBLER_SHA = '867f6ed92d0d21b5f8e5ebb82666caa5f54667b090a5a6b422e7b086404bfc96'
 
 
 @dataclass(frozen=True)
@@ -59,6 +58,8 @@ class InventoryPlan:
     shallow_maximum: int = 2048
     refinement_original_maximum: int = 1
     refinement_original_eligible: bool = True
+    owned_retained_count: int = 0    # Landing E B-13: summed on the owned route only
+    owned_endpoint_storage: int = 0
 
 
 def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
@@ -88,9 +89,11 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
             or type(boundary) is not dict):
         raise ValueError('Typed owned rows, positive cells and plain boundary required')
     gmp = A._library()
+    # Landing E B-2: helper_source_digest
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
     from atlas_tectonics.integration_spatial_transport import _json_encoding_capacity
-    if hashlib.sha256(Path(A.__file__).read_bytes()).hexdigest() != ASSEMBLER_SHA:
+    from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
+    if _helper_source_digest(Path(A.__file__), owner_file=__file__) != ASSEMBLER_SHA:
         raise ValueError('Reviewed assembler changed')
 
     def owned_bytes(value):
@@ -161,6 +164,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
         max_bits = conversion_bits = conversion_part = 1
         tie_bits = tie_part = 0
         retained_endpoint_bytes = 0
+        owned_retained = owned_endpoint_storage = 0
         bshape = {key: shape(entry[1]) for key, entry in boundary.items()}
         for row in rows:
             owners_validated = False
@@ -229,6 +233,16 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                         conversion_part = max(conversion_part, result.numerator, result.denominator)
                         target[j] = result
                 owners_validated = True
+                if owned and not (all(value == 0 for value in pair)
+                                  or kind != 'cell' and boundary[index][1] == 0):
+                    # Landing E B-13: the interval inventory's retained endpoint storage, from this pass's shapes
+                    # (plan40b_c8 inventory, exact-zero pairs skipped as there).
+                    owned_retained += len(row['owners'])
+                    for value, s in zip(pair, source_bounds, strict=True):
+                        if kind != 'cell':
+                            s = zero if value == 0 else multiply_shape(s, bshape[index])
+                        owned_endpoint_storage += len(row['owners'])*max(
+                            R.native_slot_allowance(R.RationalShape(s.numerator, s.denominator)), sys.getsizeof(value))
         for pair in chain(op.values(), wall):
             for s in pair:
                 retained_endpoint_bytes += R.native_slot_allowance(R.RationalShape(s.numerator, s.denominator))
@@ -257,4 +271,5 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
             ('metadata_scan', scan_bytes), ('codec', codec)), len(op)+cells, conversion_bits, growth,
             contribution_count=owners, shallow_maximum=shallow_maximum,
             refinement_original_maximum=refinement_original_maximum,
-            refinement_original_eligible=refinement_original_eligible)
+            refinement_original_eligible=refinement_original_eligible,
+            owned_retained_count=owned_retained, owned_endpoint_storage=owned_endpoint_storage)

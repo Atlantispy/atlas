@@ -18,7 +18,7 @@ import sys
 
 from atlas_tectonics._private import private_heat_interval_assembly_kernel_r1 as A
 
-ASSEMBLER_SHA = '2d0bd98b4d296a6c90a7f7b7c11ed2f74388d8e307872a631d47e1aadbfc7c6f'
+ASSEMBLER_SHA = '867f6ed92d0d21b5f8e5ebb82666caa5f54667b090a5a6b422e7b086404bfc96'
 
 
 @dataclass(frozen=True)

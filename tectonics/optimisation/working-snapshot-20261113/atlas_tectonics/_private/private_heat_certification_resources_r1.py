@@ -16,7 +16,6 @@ coefficients while estimating sizes.
 """
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
-from hashlib import sha256
 from itertools import chain
 from pathlib import Path
 import sys
@@ -27,7 +26,7 @@ from atlas_tectonics._private import private_heat_decimal_inventory_r1 as D
 
 HERE = Path(__file__).resolve().parent
 PUBLIC_BINDING = 'plan40b.c3.public-receiving.r2'
-PINS = {'private_heat_certification_kernel_r1.py': 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'private_heat_low_ledger_inventory_r1.py': '55ecce26c2dffba1f113c463f1fbe6558e33ca6fa6cb4508a7b2a3a0cf8705e6', 'private_heat_interval_inventory_r1.py': 'e83a13052c413672f17f84f145ca4bdb1f273735e041a9d20c3d773735895bb9', 'private_heat_decimal_inventory_r1.py': '8f1a73e84ce16c9544799a88f419ae17fa0b1e8a240f6dfd44f86ee5db608f43'}
+PINS = {'private_heat_certification_kernel_r1.py': 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'private_heat_low_ledger_inventory_r1.py': 'e335ca6da5ba008acc6e09628eb621605dc468f17763d9cb0e42392580b091b1', 'private_heat_interval_inventory_r1.py': '0e7085f9f7d2d78df755570693de215e154c930d43d493f9964ab138b8f0caad', 'private_heat_decimal_inventory_r1.py': '1e3b678ce38bbeab989a5f4320d6fb00bbca8e7e56dd301d700a8e0a6bcb983b'}
 
 
 def check(cancel):
@@ -93,14 +92,11 @@ def source_paths():
 def verify_sources(cancel):
     D._runtime(cancel)
     paths = source_paths()
+    # Landing E B-1: each pin is compared on every call; the bytes are read once a process (ruling 1).
+    from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
     for name, expected in PINS.items():
         check(cancel)
-        digest = sha256()
-        with paths[name].open('rb') as stream:
-            while block := stream.read(65536):
-                check(cancel)
-                digest.update(block)
-        if digest.hexdigest() != expected:
+        if _helper_source_digest(paths[name], owner_file=__file__, cancel=cancel) != expected:
             raise ValueError('Reviewed certificate dependency changed: '+name)
 
 

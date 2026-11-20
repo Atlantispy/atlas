@@ -19,7 +19,6 @@ No reconstruction, factorisation, native origin or whole-method admission.
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
-from hashlib import sha256
 from pathlib import Path
 import struct
 import sys
@@ -28,7 +27,7 @@ from atlas_tectonics._private import private_heat_endpoint_inventory_r3 as BASE
 from atlas_tectonics._private import private_heat_interval_assembly_kernel_plan40b_c8_r1 as A
 
 HERE = Path(__file__).resolve().parent
-_PINS = {'private_heat_endpoint_inventory_r3.py': '07346c8d36a802d5bfd4dbd2f7c61c891098543f861b47eb2879e2963c23d1e4', 'private_heat_rounding_inventory_r1.py': '5db9dd5616c20907d627a915a457be5267dbda0baab0c4c1dcf2d5348bc3d500', 'private_heat_interval_assembly_kernel_r1.py': '2d0bd98b4d296a6c90a7f7b7c11ed2f74388d8e307872a631d47e1aadbfc7c6f', 'private_heat_rational_decimal_kernel_r1.py': '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'integration_exact_gmp.py': '70d290b48ad78813dcb1585d1bce3f02347491cd150af68fb5cbededb288d1a0', 'private_heat_interval_assembly_kernel_plan40b_c8_r1.py': '2611416258ada390af62c4093d3bf9074210804e6fa4a22a2efffd779c342385'}
+_PINS = {'private_heat_endpoint_inventory_r3.py': '1a60804cd2041f7188fbb01b12503e9c6fe3c866bf42801aef5f30ccff2e2897', 'private_heat_rounding_inventory_r1.py': '5db9dd5616c20907d627a915a457be5267dbda0baab0c4c1dcf2d5348bc3d500', 'private_heat_interval_assembly_kernel_r1.py': '867f6ed92d0d21b5f8e5ebb82666caa5f54667b090a5a6b422e7b086404bfc96', 'private_heat_rational_decimal_kernel_r1.py': '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'integration_exact_gmp.py': '70d290b48ad78813dcb1585d1bce3f02347491cd150af68fb5cbededb288d1a0', 'private_heat_interval_assembly_kernel_plan40b_c8_r1.py': 'ad1cb68bcd29246725df3cb2efe57c2c7e62452ed3e6703403d3c55cb7d58c42'}
 
 
 def _check(cancel):
@@ -56,9 +55,11 @@ def source_paths():
 
 def verify_sources(cancel=None):
     paths = source_paths()
+    # Landing E B-2
+    from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
     for name, expected in _PINS.items():
         _check(cancel)
-        if sha256(paths[name].read_bytes()).hexdigest() != expected:
+        if _helper_source_digest(paths[name], owner_file=__file__, cancel=cancel) != expected:
             raise ValueError('Reviewed aggregate inventory dependency changed: '+name)
 
 
@@ -146,9 +147,12 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
             else:
                 raise ValueError('Only typed owned numeric endpoints are admitted')
             return BASE.Shape(max(1, n.bit_length()), d.bit_length(), d.bit_count() == 1)
-        boundary_shapes = {key: shape(item[1]) for key, item in boundary.items()}
-        endpoint_storage = retained_count = 0
-        for row in rows:
+        # Landing E B-13: on the owned route BASE._derive_owned summed these from its own shapes of the same
+        # stable rows; the public entry keeps its own pass (a caller's hook can change the rows).
+        boundary_shapes = {} if owned else {key: shape(item[1]) for key, item in boundary.items()}
+        endpoint_storage = base.owned_endpoint_storage if owned else 0
+        retained_count = base.owned_retained_count if owned else 0
+        for row in () if owned else rows:
             for key, pair in row['bounds'].items():
                 _check(cancel)
                 known_zero = (all(value == 0 for value in pair)

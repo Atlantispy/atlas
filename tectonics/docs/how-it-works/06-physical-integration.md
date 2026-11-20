@@ -874,6 +874,14 @@ caps use the original scan, as does the whole operation when the extra index can
 fit its optional memory reservation. The boxes introduce no area cutoff or new
 physical tolerance. Motion and redraw share classifications, sweep measures,
 donor totals and patch facts; a transfer given no mesh change works it out as before.
+On a fresh redraw the transfer audit does not repeat the cap and angle test for rows
+that test has just made; stored and prepared rows keep it, and the closure sums, plate
+and membership checks and whole-face bounds run on every path. In each transfer step
+a carried patch that is the very object admitted at issue or restore skips the checks
+of its own cells, and a fragment on an imprecise receiver reuses the area just
+measured on the same cells with the same radius. Every check that reads the network
+still runs: area closure, the sampling-face test, stock joins and overlap between
+patches. A patch made again gets the full check.
 When a saved mesh is rebuilt, replay keeps every other field of the original motion,
 including the supplied junction paths, events, returns, sources and destinations.
 Replacing the mesh is not permission to reconstruct an older, shorter version of
@@ -1767,9 +1775,17 @@ consumer, and the sparse solve takes the operator already ordered and checked fo
 finite entries and unique rows, with its factor limits and conversion sizes. Cold
 entries, mutable callbacks and later refinement groups keep their own checks. Owner
 points are reused only where a call has no cancellation hook, and a face without a
-saved digest is hashed again. The finisher encodes the canonical bytes once. Rows
-that refinement leaves untouched are still rounded again, so the arithmetic and its
-rounding are unchanged.
+saved digest is hashed again. The finisher encodes the canonical bytes once. During
+refinement, a face row from the last complete pass is reused when the whole decimal
+context equals that pass's, so the row and its rounding are those the pass would
+compute again. This applies to an issued, unobserved call whose cancellation hook
+is absent or is the run's own continuation guard, recognised by its exact type;
+any other hook, a cold call or an observed call recomputes every row.
+On the owned route the assembly does not check again the input rows that the owned
+derivation has already refused, and it builds its stage labels only when a step fails.
+The decimal core converts a boundary value once for each weight, and the pinned source
+hashes of the heat files are read once per process in strict mode, while each pin is
+still compared on every call.
 
 The later [small-cell finite-volume heat rule](../../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity)
 uses two-point rows where a cell cannot support its fitted row. A capacity-to-low-
@@ -1844,8 +1860,9 @@ Scratch and routing owners carry the support facts and sizes already issued.
 Scheduling, endpoint and checkpoint lookups reuse existing indices and allowances.
 Wall, collar and moving-interface paths reuse parent identities, adjacent geometry
 and signed wall pairs; walls keep the original member route. A compact support
-streamed back from the store is hashed again when issued, which proves the rebuilt
-bytes and not only the stored files.
+rebuilt from the store's stream is hashed once per sealed view, which proves the
+rebuilt bytes and not only the stored files. The view's freshness check still runs
+at every issue, and older views without a proof slot hash every time.
 
 ### Choose heat reconstruction workers and prepare exact geometry proofs
 
@@ -2024,6 +2041,11 @@ An adopted interface member reuses the result receipt's proof of canonical encod
 and request when its immutable request token matches the funded claim. The claim
 still decodes the payload for its work, result-shape and certificate checks. Other
 sessions, and a receipt that fails the staging check, take the full validation.
+Each side of the worker hop checks what crosses it once. A worker checks the inputs
+it reads from disk on arrival, and the parent hashes each result where it arrives.
+The parent does not hash again the inputs it has held since launch, the worker does
+not repeat the parent's carry check, a one-job worker decodes its binding once, and
+a request is compared through the token encoded at dispatch.
 
 The [working snapshot](../../optimisation/working-snapshot-20261113/README.md#keep-the-loaded-heat-inventory-independent-of-recognised-home-paths) maps recognised package and interpreter path constants into their own relative namespaces when constructing the loaded heat inventory. File opening still uses the original constants; unknown absolute paths keep their spelling. Controlled two-home imports agree on the inventory. This affects loaded identities, and supplies no new physical or whole-chain result.
 

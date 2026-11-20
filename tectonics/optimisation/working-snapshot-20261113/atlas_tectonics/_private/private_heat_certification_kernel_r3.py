@@ -8,7 +8,6 @@ integer is needed under clamp=0. Other contexts retain the original route.
 Not a complete reconstruction, native method or allocator/RSS proof.
 """
 from decimal import localcontext, ROUND_HALF_EVEN
-from hashlib import sha256
 from pathlib import Path
 import sys
 from time import perf_counter
@@ -199,7 +198,9 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
     work.__enter__()
     try:
         INVENTORY.verify_sources(cancelled)
-        if sha256(Path(DECIMAL.__file__).read_bytes()).hexdigest() != '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f':
+        # Landing E B-1: read once a process
+        from atlas_tectonics.reuse import helper_source_digest
+        if helper_source_digest(Path(DECIMAL.__file__), owner_file=__file__, cancel=cancelled) != '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f':
             raise ValueError('Reviewed exact Decimal converter changed')
         # No copied key set, source audit or exact coefficient until admitted.
         screen, support = INVENTORY.screen_plan(matrix, rhs, conversion, signed_tau, G, R, cancelled,

@@ -216,11 +216,8 @@ def _validate_issued(system, boundary, target, context, cancel):
     """Validate live state on the certified assembly/small-cell handoff."""
     if system.context_signature != context_signature(context):
         raise ValueError('Matching immutable Decimal-80 system and ordered cell arrays required')
-    if system.boundary_signature != boundary_signature(boundary):
-        raise ValueError('Numerical prescribed observations changed after assembly')
-    if any(kind not in ('temperature', 'power') or not math.isfinite(float(value))
-           for kind, value in boundary.values()):
-        raise ValueError('Finite physical boundary observations required')
+    # Landing E B-12: decimal_inventory_r1._derive, run just before on these objects (core r2), proved the
+    # signature canonical and equal to the boundary, each observation a declared kind with a finite binary64 value.
     target_decimal = D(target)
     if not target_decimal.is_finite() or target_decimal <= 0:
         raise ValueError('Finite original inputs and positive capacity/dt/target required')

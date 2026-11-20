@@ -13,7 +13,7 @@ from types import MappingProxyType
 from pathlib import Path
 
 PINS = {
-    'provider': ('q297_end_provider_v2.py', '21f45f56b2a42f103235292a69f1d241f25b6dc2df08ec2b9d643b0a4aebf829'),
+    'provider': ('q297_end_provider_v2.py', '4a6a7eca480579e25d1cce310ada6da66ec4c1570469b121107e0c1e19afb24c'),
     'pieces': ('q297_end_pieces_v2.py', '9542c8460d9a859868424f25837c5339846a69353abdd340b0cfc6a44d5e8fe8'),
     'piece_builder': ('interval_piece_candidate.py', 'ad034d0405e59850ec40133d3f7bae7e816381959777fb8542b974c63e8e299c'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),
@@ -21,7 +21,7 @@ PINS = {
     'start': ('material_start_candidate.py', '03c0dba5331bc4702254a3dcffcc888ad7326dc70b4e2b692956a7e207e95acf'),
     'checkpoint': ('tile_checkpoint_candidate.py', '05aca97ba4b17357339895475a81b5cf67086f2563ee390671c6f461a5a0d135'),
 }
-GRID_SHA = 'c4d7c6b5300288bb702c9bf51d1330c0cb079949ac53279f622a29b34418f10c'
+GRID_SHA = '7365149f3f1b781e9abe5707ac44982d5595fbaee3eeeac8af22745b0cf94fe2'
 RUNS = (
     ('q297-q336-production-attempt-g-r1', '06b9cb35-ee24-4796-bf15-1b8395390514',
      'da4027b5a8e6b61b0e5b88a14cd1b2de113050643e4b1f59dd6656d4ea5e4283',
@@ -80,23 +80,23 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
     grid_path = Path(grid_path)
     for spec in RUNS:
         _process_record(run_root, spec)
-    proof_root=run_root/'landing-bdc-correspondence-r2'
+    proof_root=run_root/'landing-p2-correspondence-r1'
     command=json.loads(_pinned(proof_root/'command.json',
-        '3fd57c15760aaa21f80986e86e17643120104186b8368d0ac8511573ab5a6db2',1 << 20))
-    entry=run_root.parent/'iv1-diagnostic-prep/landing-bdc-r1/bdc_end_proof_r1.py'
-    _pinned(entry,'8035096cfc57e5a04f0f9216892e8e57628844a9f75f0f9aedd283253539d735',2 << 20)
-    if (command.get('ticket')!='q1053' or len(command['argv'])!=14 or
+        'af57b16ed846cf70d919801d48958c80a785c048af640fd63fda0f4445d17993',1 << 20))
+    entry=run_root.parent/'iv1-diagnostic-prep/landing-p2-r1/p2_end_proof_r1.py'
+    _pinned(entry,'e08c661846cfd63b2652a242d74ff730e82dc973c470a8d08758238c9babce2e',2 << 20)
+    if (command.get('ticket')!='q1073' or len(command['argv'])!=14 or
             Path(command['argv'][12]).resolve()!=entry.resolve() or
             Path(command['argv'][13]).resolve()!=(proof_root/'result-data.json').resolve()):
         raise ValueError('correspondence producer command differs')
     output=_pinned(proof_root/'queue.out',
-        'dbb4170dd6e9de99acf083c8dce2ab643f24d48de2c28a1410666661660743f4',4096).splitlines()
-    if (sum(line[9:].startswith(b'q1053 started') for line in output)!=1 or
-            sum(line[9:].startswith(b'q1053 exit 0,') for line in output)!=1):
+        '1605e0c50a21dd9e8dbd508df865199a3cb65a00abeaac35c714db0bbee5a50b',4096).splitlines()
+    if (sum(line[9:].startswith(b'q1073 started') for line in output)!=1 or
+            sum(line[9:].startswith(b'q1073 exit 0,') for line in output)!=1):
         raise ValueError('correspondence producer ticket differs')
     _guard(output, 7200)
     records=[json.loads(line) for line in output if line.startswith(b'{')]
-    if len(records)!=1 or records[0].get('sha256')!='441e2b4034b4bd3d7451094e8632aaa8954e9d5ab937aefeb04d634c5f20700c':
+    if len(records)!=1 or records[0].get('sha256')!='05a44721c11cac5e0533bcccbe42072d4d1c742aecec258c139c1b5ca732facb':
         raise ValueError('correspondence producer output differs')
     _pinned(grid_path, GRID_SHA, 4 << 20)
     modules = {}
@@ -140,7 +140,7 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
             if selected_observer is not None:
                 selected_observer(dict(graph_id=closed_graph.geometry_id, grid_sha256=GRID_SHA,
                     sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-                    carry_proof_sha256='441e2b4034b4bd3d7451094e8632aaa8954e9d5ab937aefeb04d634c5f20700c',
+                    carry_proof_sha256='05a44721c11cac5e0533bcccbe42072d4d1c742aecec258c139c1b5ca732facb',
                     inherited_witness_refinements=1, qualification_grid_split='-33/8'))
         except BaseException:
             release(result)

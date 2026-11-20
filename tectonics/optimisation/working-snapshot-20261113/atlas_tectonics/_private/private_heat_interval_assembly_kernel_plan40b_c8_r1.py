@@ -86,7 +86,7 @@ def _rounded(bounds, label, gmp, cancel=None):
     lo, hi = bounds
     lower = dec(lo, cancelled=cancel)
     equal = lo == hi
-    upper = lower if equal else dec(hi, cancelled=cancel)    # decision 569: one value is decoded once
+    upper = lower if equal else dec(hi, cancelled=cancel)    # an equal pair is decoded once
     if not lower.is_finite() or not upper.is_finite() or lower != upper:
         raise UnresolvedRounding(label+': endpoint Decimal-80 rounding differs or is nonfinite')
     if equal:
@@ -204,18 +204,20 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             reuse_row = reuse_faces and fid not in _refined
             if reuse_row:
                 _face_pass[1] += 1
+            face_label = 'face '+fid    # Landing E: built once a face, not once a key
             weights = []
             for key in keys:
                 B._check(cancel)
-                if len(key) != 2:
+                # Landing E: on the owned route BASE._derive_owned has refused these four on the same stable rows.
+                if not owned and len(key) != 2:
                     raise ValueError('Observation keys must be (kind,key) pairs')
                 kind, index = key
                 if kind == 'cell':
-                    if type(index) is not int or not 0 <= index < cell_count:
+                    if not owned and (type(index) is not int or not 0 <= index < cell_count):
                         raise ValueError('Cell observation outside the original cell ordering')
-                elif kind not in ('wall', 'power'):
+                elif not owned and kind not in ('wall', 'power'):
                     raise ValueError('Observation kind must be cell, wall or power')
-                elif index not in boundary:
+                elif not owned and index not in boundary:
                     raise ValueError('Boundary observation has no explicit prescribed value')
                 elif boundary[index][0] != ('temperature' if kind == 'wall' else 'power'):
                     raise ValueError('Boundary observation kind does not match its declaration')
@@ -223,7 +225,7 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                 if len(bounds) != 2 or bounds[0] > bounds[1]:
                     raise ValueError('Ordered lower/upper exact coefficient bounds required')
                 word = (dec(bounds[0], cancelled=cancel) if reuse_row else
-                        _rounded(bounds, 'face '+fid, gmp, cancel))
+                        _rounded(bounds, face_label, gmp, cancel))
                 weights.append((key, word))
                 for owner, sign in owners:
                     B._check(cancel)
@@ -248,10 +250,13 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             # No old row, Decimal word or assessment owner is retained.
             _face_pass[0] = stamp
         rounded_op, issues = [], []
-        def rounded_or_issue(bounds, label, kind, owner, column=None):
+        def rounded_or_issue(bounds, kind, owner, column=None):
             try:
-                return _rounded(bounds, label, gmp, cancel)
+                return _rounded(bounds, '', gmp, cancel)
             except UnresolvedRounding as error:
+                # Landing E: the label is built only on failure; the message text is unchanged.
+                label = kind+' '+str(owner if column is None else (owner, column))
+                error.args = (label+error.args[0],)
                 if not collect:
                     raise
                 issues.append(AmbiguousAggregate(label, kind, owner, column, bounds,
@@ -264,12 +269,12 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                 bounds = row[j]
                 if bounds == zero:
                     continue
-                entries.append((j, rounded_or_issue(bounds, 'operator '+str((i, j)), 'operator', i, j)))
+                entries.append((j, rounded_or_issue(bounds, 'operator', i, j)))
             rounded_op.append(tuple(entries))
         rounded_wall = []
         for i, bounds in enumerate(wall):
             B._check(cancel)
-            rounded_wall.append(rounded_or_issue(bounds, 'wall '+str(i), 'wall', i))
+            rounded_wall.append(rounded_or_issue(bounds, 'wall', i))
         bindings = tuple(sorted(source_bindings.items()))
         if issues:
             requested = {part.face_id for item in issues for part in item.contributions}

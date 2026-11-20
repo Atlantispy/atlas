@@ -38,9 +38,9 @@ RoundedSystem, RoundedFace, OwnedSolve = P.RoundedSystem, P.RoundedFace, P.Owned
 context_signature, boundary_signature = P.context_signature, P.boundary_signature
 HERE = Path(__file__).resolve().parent
 PINS = {
-    'private_heat_decimal_sparse_core_r1.py': 'e9f1e7126908f518b225dbbe42994f18e0737d06410b65ac775248baabff905f',
-    'private_heat_decimal_inventory_r1.py': '8f1a73e84ce16c9544799a88f419ae17fa0b1e8a240f6dfd44f86ee5db608f43',
-    'private_heat_mpfr_lu_resources_r1.py': '0f588e9c996702c2678da0a964644c5b0b526ca69bcf9b4b15143bf35355d3e9',
+    'private_heat_decimal_sparse_core_r1.py': 'fd477367fe27f27bad1c0e9aca5a72159741d65b8275fec521187179ac042eea',
+    'private_heat_decimal_inventory_r1.py': '1e3b678ce38bbeab989a5f4320d6fb00bbca8e7e56dd301d700a8e0a6bcb983b',
+    'private_heat_mpfr_lu_resources_r1.py': 'fe0d6dccbac2fdf141a4fb71aa8a9c5afd4581659713a29d7fcf8d228dca45d4',
     'private_heat_rational_decimal_r1.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
     'private_heat_sparse_resources_r1.py': '63f677352a5d9d4a65ad2fe94a044c26957211aa225121f083f48b555d5e2294',
 }
@@ -328,9 +328,10 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
         u = [t+d for t, d in zip(u, update, strict=True)]
     P._checkpoint(cancel, observe, 'before-face-fluxes')
     fluxes = []
+    observed = {key: D.from_float(float(entry[1])) for key, entry in boundary.items()}    # Landing E: once a key
     for row in rows:
         P._checkpoint(cancel, None, 'face-flux-row')
-        value = delta*sum((w*(u[key] if kind == 'cell' else D.from_float(float(boundary[key][1])))
+        value = delta*sum((w*(u[key] if kind == 'cell' else observed[key])
                            for (kind, key), w in row.weights), D(0))
         fluxes.append([(i, sign, str(sign*value)) for i, sign in row.owners])
     P._checkpoint(cancel, observe, 'after-face-fluxes')

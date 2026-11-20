@@ -20,7 +20,6 @@ No partial release is credited while any new-owner generation remains live.
 Caller-owned mutable inputs must remain unchanged while borrowed.
 """
 from dataclasses import dataclass; import atlas_tectonics._identity as _atlas_identity
-from hashlib import sha256
 from pathlib import Path
 import sys
 
@@ -31,14 +30,16 @@ CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
 HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = '8e5183f9da5e88f5029e5a6fce8742dd9a8ba5ad684f84c7d490c9bdab6e5517'
+INVENTORY_SHA = 'edef0796fe54357338d51e25080f19feb9e9bf2879cf52f17d830e762c96e4d0'
 SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
                 *(str(path) for path in I.source_paths().values()))
 
 
 def _verify_sources(cancel):
     I._check(cancel)
-    if sha256(_atlas_identity.as_path(I.__file__).read_bytes()).hexdigest() != INVENTORY_SHA:
+    # Landing E B-2
+    from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
+    if _helper_source_digest(_atlas_identity.as_path(I.__file__), owner_file=__file__, cancel=cancel) != INVENTORY_SHA:
         raise ValueError('Reviewed assessment inventory changed')
     I.verify_sources(cancel)
 
