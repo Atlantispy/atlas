@@ -621,7 +621,8 @@ the cross-regime balances each have their own check.
 
 Its [regional view](../../src/atlas_tectonics/w08_region.py) allocates stocks to
 disjoint parcels and reports thickness, volume, advected enthalpy and pressure
-load change. A stock and its spatial view are the same material. Non-affine fault
+load change. Each parcel shape is validated once, when it is made; the test
+that parcels are disjoint runs every time. A stock and its spatial view are the same material. Non-affine fault
 networks, steady wedge diagnostics, explicit host replacement and heat-paid melting
 remain separate component operations rather than arbitrary joined transient
 histories. [Workflow tests](../../tests/test_w08_workflow.py) and the

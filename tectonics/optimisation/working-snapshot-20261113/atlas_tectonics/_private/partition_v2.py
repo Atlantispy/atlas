@@ -318,7 +318,7 @@ class PartitionBodyRef(RecordRef):
 class PartitionV2:
     """Sealed descriptor with a separately verified body and support inventory."""
     __slots__ = ('_record', '_index', '_body_fields', '_body_length', '_partition_id', '_segment_ref', '_sealed',
-                 '_carrier_pool')
+                 '_carrier_pool', '_proven')
 
     def __setattr__(self, name, value):
         if getattr(self, '_sealed', False):
@@ -336,6 +336,8 @@ class PartitionV2:
         with record._read_batch():
             self._validate_domain(expected_partition_id, check)
         self._carrier_pool = record.scope.partition_carrier_pool(record.identity(), self.support_count)
+        # Landing E C-1: 1 where this process has rebuilt a support from this view and proved its hash.
+        self._proven = bytearray(self.support_count)
         self._sealed = True
 
     def _validate_domain(self, expected_partition_id, check):
@@ -449,6 +451,13 @@ class PartitionV2:
         self.identity()
         _require(support_id in self._index.value[1], 'missing partition support ID')
         return self._index.value[2][self._index.value[1][support_id]]
+
+    def support_entry(self, support_id):
+        """(node, identity) of one support under one freshness check (landing E)."""
+        self.identity()
+        _require(support_id in self._index.value[1], 'missing partition support ID')
+        index = self._index.value[1][support_id]
+        return self._index.value[3][index], self._index.value[2][index]
 
     def support_node(self, support_id):
         self.identity()

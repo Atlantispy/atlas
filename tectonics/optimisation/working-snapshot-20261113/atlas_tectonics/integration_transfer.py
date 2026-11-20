@@ -1533,6 +1533,13 @@ class _Shapes:
         return _sphere._rings_of(self.network, index, self.lookup, self.order)
 
 
+def _shapes_of(network, memo):
+    held = memo.get(('shapes', id(network)))
+    if held is None or held[0] is not network:
+        held = memo[('shapes', id(network))] = network, _Shapes(network)
+    return held[1]
+
+
 def _cap(rings):
     """A geodesically convex cap that contains a face: (centre, angular radius)."""
     outer = rings[0]
@@ -1936,7 +1943,7 @@ def _motion_rows(network, endpoint, moved, cancel, budget=None, *, sweep_areas=N
     sphere = network.sphere
     old = {name: i for i, name in enumerate(network.face_ids)}
     new = {name: i for i, name in enumerate(endpoint.face_ids)}
-    before, after = _Shapes(network), _Shapes(endpoint)
+    before, after = _shapes_of(network, sweep_areas), _shapes_of(endpoint, sweep_areas)
     parties, donor, receiver, party, area = {}, [], [], [], []
     areas = endpoint.face_area_m2
     for face_id, boundary_id, side in moved.strips:
@@ -2209,7 +2216,7 @@ def _audited(network, endpoint, moved, rows, *, sweep_areas=None, transient_cach
     for boundary_id, plate, ring in moved.swept:
         name = 'trench|'+boundary_id
         eats.setdefault(name, (plate, []))[1].append(_metres(_sweep_sr(ring, sweep_areas), sphere))
-    before, after, reach = _Shapes(network), _Shapes(endpoint), {}
+    before, after, reach = _shapes_of(network, sweep_areas), _shapes_of(endpoint, sweep_areas), {}
 
     def cap(index, parent):
         """The bounding cap of a parent face or of an endpoint face, in their plate's reference frame."""
@@ -2467,7 +2474,7 @@ def _whole_face_bounds(parent, endpoint, before, after, triples, *, measured_inn
             {target: cap(('endpoint', target)) for target in received})
 
 
-def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None, measured_inner=None):
+def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None, measured_inner=None, produced=False):
     """Check mesh rows: the same physical network on other faces, and rows that close on both meshes.
 
     Returns the thin-face bounds of the closures (donor, receiver; _whole_face_bounds) and, with ``ceilings``, the
@@ -2487,13 +2494,14 @@ def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None, measur
         if (party != -1 or source not in given or target not in received
                 or parent.atlas.patches[source].plate_id != endpoint.atlas.patches[target].plate_id):
             raise TransferRefused('a mesh row joins faces of different plates, an unchanged face or an exterior')
-        for key, shapes in ((source, before), (~target, after)):
-            if key not in reach:
-                reach[key] = _cap(shapes.rings(key if shapes is before else target))
-        (here, reach_here), (there, reach_there) = reach[source], reach[~target]
-        if float(_angle(here, there)) > reach_here+reach_there:
-            raise TransferRefused('a mesh row joins two faces that cannot overlap: unresolved overlap',
-                                  UNRESOLVED_OVERLAP)
+        if not produced:    # landing E C-6: rows made this step passed this test in _mesh_pairs
+            for key, shapes in ((source, before), (~target, after)):
+                if key not in reach:
+                    reach[key] = _cap(shapes.rings(key if shapes is before else target))
+            (here, reach_here), (there, reach_there) = reach[source], reach[~target]
+            if float(_angle(here, there)) > reach_here+reach_there:
+                raise TransferRefused('a mesh row joins two faces that cannot overlap: unresolved overlap',
+                                      UNRESOLVED_OVERLAP)
         given[source].append(area)
         received[target].append(area)
     donor_bound, receiver_bound, ceiling = _whole_face_bounds(
@@ -2734,6 +2742,8 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
                                       % old_ids[source], UNRESOLVED_OVERLAP)
             kept[new_index[old_ids[source]], name] = stock[piece]
     fragments = {}
+    # Landing E B-8: this step's carried and cut patches, held by object for checked(); dropped when the step ends.
+    known = {}
     for patch, row, cells, area in _support.row_fragments(network, material, endpoint, rows, sweeps=sweeps,
                                                        cancel=cancel, precise=precise, support=support, groups=donors):
         fragments.setdefault(patch.patch_id, (patch, []))[1].append((row, cells, area))
@@ -2741,6 +2751,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
         name = patch.cohort_id
         if len(members) == 1 and members[0][0] is None:
             patches.append(patch)
+            known[id(patch)] = (patch, True, None, None)    # admitted at issue or restore; cells unchanged
             if routes is not None:
                 routes.append((patch.face_id, name, patch.face_id, None, patch.stock[0]))
             if patch_routes is not None:
@@ -2798,6 +2809,8 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
                                        patch.declared_density)
                 if precise is not None and target in precise[0]:
                     child = _support._projectively_carried(child, precise[0][target][1], network.sphere.radius_m)
+                else:
+                    known[id(child)] = (child, False, members[k][2], network.sphere.radius_m)    # row_fragments' area
                 patches.append(child)
                 if patch_routes is not None:
                     patch_routes.append((patch.patch_id, child.patch_id, None, moved[0], route_largest))
@@ -2996,7 +3009,8 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             budget, (), slack,
             support=_support.reconcile(patches,
                 [(endpoint.faces[keys[i][0]].face_id, keys[i][1]) for i in chosen], selected_stock,
-                signed=material.enthalpy_basis is not None))         # every face was measured just above
+                signed=material.enthalpy_basis is not None),         # every face was measured just above
+            known=known)
     except ExchangeRefused:
         raise
     except TectonicsError as exc:
@@ -3195,6 +3209,7 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
             raise TransferRefused('mesh rows are carried exactly when the motion declares a mesh change')
         mesh_bounds = None if mesh_rows is None else _audited_mesh(
             moved, endpoint, mesh_rows, ceilings=True, change=mesh_change, measured_inner=measured_inner,
+            produced=fresh,
         )
     finally:
         if measured_inner is not None:

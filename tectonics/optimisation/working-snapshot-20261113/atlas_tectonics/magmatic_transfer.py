@@ -38,8 +38,8 @@ def _sum(values):
     return value
 
 
-def _identity(record, *arrays):
-    h = hashlib.sha256(_json(record))
+def _identity(record, *arrays, encoded=None):
+    h = hashlib.sha256(_json(record) if encoded is None else encoded)
     for a in arrays:
         h.update(_json((a.shape, a.dtype.str))); h.update(a.tobytes())
     return h.hexdigest()
@@ -405,9 +405,10 @@ class PreparedMagmaticTransfer:
                     exhausted_nodes=self.exhausted_node_ids if duration==self.exhaustion_duration_s else (),
                     heat_owner='external_heat_j only; advected edge enthalpy is not an additional heat source',
                     spending='branch of initial inventory; cumulative history owner required')
-                result = MagmaticTransferResult(remaining,self.plan_id,_identity(record,final,edges),duration,
-                    edge_ids,_keep(edge_mass,self.budget),_keep(edges[:,:k],self.budget),
-                    _keep(edges[:,k],self.budget),_keep(heat,self.budget),_json(record))
+                encoded = _json(record)    # landing E: one encoding for the identity and the stored record
+                result = MagmaticTransferResult(remaining,self.plan_id,_identity(record,final,edges,encoded=encoded),
+                    duration,edge_ids,_keep(edge_mass,self.budget),_keep(edges[:,:k],self.budget),
+                    _keep(edges[:,k],self.budget),_keep(heat,self.budget),encoded)
                 _cancel(cancel); self.context.verify(); self._latest = result
                 return result
         finally: self._active = False

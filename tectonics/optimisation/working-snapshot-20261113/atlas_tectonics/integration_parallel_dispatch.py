@@ -125,8 +125,9 @@ def _wall_request(support, key, axis, pair, width, leaves):
 
 
 def _support(raw, identity, budget):
-    # Private transport of a parent's issued object, not a public restore.
-    if not 0 < len(raw) <= MAX_INPUT or hashlib.sha256(raw).hexdigest() != identity:
+    # Private transport of a parent's issued object, not a public restore. identity None: the batch's first live
+    # check has bound these copied bytes to the binding's digest (landing E B-5); the one-job route hashes them here.
+    if not 0 < len(raw) <= MAX_INPUT or identity is not None and hashlib.sha256(raw).hexdigest() != identity:
         raise ValueError('complete issued support bytes differ')
     value = G._issue(G.DifferentialSupport, json.loads(raw), budget)
     if value._json != raw:
@@ -231,8 +232,7 @@ def worker_main(directory):
         if 'batch_seconds' in record:
             return _owned_batch_worker(directory, process, binding_bytes, record)
         return _batch_worker(directory, process, binding_bytes, _record=record)
-    binding = JobBinding(binding_bytes)
-    record = binding.record()
+    binding = JobBinding(binding_bytes)    # validates; record (above) is the same canonical decode (landing E)
     request = record['request']
     inputs = {}
     for name, identity in (('support', request['support_id']), ('other', request.get('other_support_id'))):
@@ -366,8 +366,8 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
                     held = None
                     ledger = new_ledger()
                     # Reissued support retention is inside E too, as for a one-job worker.
-                    support = _support(inputs[pair[0]], pair[0], ledger)
-                    other = None if pair[1] is None else _support(inputs[pair[1]], pair[1], ledger)
+                    support = _support(inputs[pair[0]], None, ledger)    # bound by the first check (B-5)
+                    other = None if pair[1] is None else _support(inputs[pair[1]], None, ledger)
                     held = pair, ledger, support, other, ledger.reserved_bytes
                 begun = time.perf_counter()
                 try:
@@ -1602,7 +1602,8 @@ class BatchParallelSession(InterfaceParallelSession):
             # Volume/initial/pressure subclasses and walls retain the raw validating factory.
             factory = (BatchBinding._create_owned if type(self) is BatchParallelSession and
                        not self.wall and self.batch_seconds is not None else BatchBinding.create)
-            binding = factory(requests=requests, source_bindings=_inventory(inputs),
+            sources = _inventory(inputs)    # Landing E B-4: kept for the receipt
+            binding = factory(requests=requests, source_bindings=sources,
                 context=self.context, child_bytes=self.child_bytes, predicate_units=self.units,
                 batch_seconds=self.batch_seconds)
             path = Path(self.directory.name)/('batch-%d' % self.stats['started'])
@@ -1629,7 +1630,7 @@ class BatchParallelSession(InterfaceParallelSession):
                 worker.deadline = timeout
                 child = _Served(worker, path)
             batch = dict(index=self.stats['started'], fit=fit, baseline=baseline, child=child,
-                dispatch=OwnedBatchDispatch(binding), inputs=inputs, requests=requests, tokens=tokens,
+                dispatch=OwnedBatchDispatch(binding), inputs=inputs, sources=sources, requests=requests, tokens=tokens,
                 binding=binding, digest=hashlib.sha256(binding.encoded).hexdigest(), path=str(path),
                 timeout=timeout, answers=None, left=len(requests), failed=False, results=0, decided=0,
                 adopted=0, declined=0, clock=[0.0])
@@ -1755,7 +1756,8 @@ class BatchParallelSession(InterfaceParallelSession):
             receiver = dispatch._interface_result if interface else dispatch.result
             args = (batch['tokens'], batch['digest']) if interface else ()
             answers = receiver(*args, timeout=batch['timeout']+15, requests=batch['requests'],
-                source_bindings=_inventory(batch['inputs']), context=self.context,
+                source_bindings=batch['sources'] if 'sources' in batch else _inventory(batch['inputs']),
+                context=self.context,
                 child_bytes=self.child_bytes, predicate_units=self.units, batch_seconds=self.batch_seconds)
             if not (child.exited or child.served):
                 raise RuntimeError('worker exit not confirmed before adoption')

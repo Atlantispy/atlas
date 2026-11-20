@@ -909,26 +909,30 @@ def _home_index(layout):
     return {key: i for i, key in enumerate(keys)}
 
 
-def _home_rows(layout, home):
+def _home_rows(layout, home, memo=None):
+    if memo is not None:    # landing E: one mask per home for callers that need it twice
+        if home not in memo:
+            memo[home] = _home_rows(layout, home)
+        return memo[home]
     return np.fromiter((value == home for value in layout.home), dtype=bool, count=len(layout.home))
 
 
-def _directions(layout):
+def _directions(layout, memo=None):
     """Every vertex in the sphere's axes: its home's frame rotation applied once to its reference."""
     out = np.empty_like(layout.reference)
     for home, rotation in (*layout.frames, *(((RIDGE, b), rotation) for b, rotation in layout.ridges)):
-        rows = _home_rows(layout, home)
+        rows = _home_rows(layout, home, memo)
         if np.any(rows):
             out[rows] = _placed(rotation, layout.reference[rows])
     return out
 
 
-def _local(layout, plates, index, order):
+def _local(layout, plates, index, order, memo=None):
     """Per plate, every vertex its faces can use, in that plate's reference frame; NaN where it has no copy."""
     tables = []
     for plate in plates:
         table = np.full_like(layout.reference, np.nan)
-        rows = _home_rows(layout, plate.plate_id)
+        rows = _home_rows(layout, plate.plate_id, memo)
         table[rows] = layout.reference[rows]
         tables.append(table)
     for (name, plate), value in layout.views:
@@ -1604,7 +1608,7 @@ def _account(value, label):
 
 
 def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, stock, initial, supplied, rounding,
-              allowance, budget, checked=None, occupancy_allowance=None, *, support=None):
+              allowance, budget, checked=None, occupancy_allowance=None, *, support=None, known=None):
     """Issue a material over already-assembled arrays and exact accounts, checking every join.
 
     ``checked`` names the faces whose occupancy is measured against their pieces; None, every face, is what every
@@ -1692,7 +1696,8 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
                 raise SphereError('typed material support is required')
             with (select_budget(budget).reserve(support.workspace_bytes(), category='i03-material-support'),
                   _support.geometry_workspace(budget)):
-                support = _support.checked(network, face, cohort, stock, cohorts, support, signed=basis is not None)
+                support = _support.checked(network, face, cohort, stock, cohorts, support, signed=basis is not None,
+                                           known=known)
                 packed += (('material_support', _pack([support.record()])),)
         units = dict({AREA: 'm2', ENTHALPY: 'J'}, **{MASS+':'+p: 'kg' for p in phases},
                      **{VOLUME+':'+p: 'm3' for p in phases})
@@ -2027,13 +2032,14 @@ def _network_joined(network):
                        None if patch.region_id == patch.plate_id else patch.region_id) for patch in atlas.patches)
     order = {plate.plate_id: i for i, plate in enumerate(network.plates)}
     lookup = {name: i for i, name in enumerate(layout.names)}
-    local = _local(layout, network.plates, lookup, order)
+    masks = {}
+    local = _local(layout, network.plates, lookup, order, masks)
     measured = np.asarray([(_measure([local[order[face.plate_id]][[lookup[name] for name in ring]]
                                       for ring in (face.vertex_ids, *face.holes)])*radius)*radius
                            for face in faces], dtype=np.float64)
     return (record['sphere'] == network.sphere.descriptor() and atlas.sphere == network.sphere
             and layout.names == tuple(atlas.vertex_ids)
-            and _same(_frozen(_directions(layout), np.float64), _frozen(atlas.vertex_directions, np.float64))
+            and _same(_frozen(_directions(layout, masks), np.float64), _frozen(atlas.vertex_directions, np.float64))
             and record['frames'] == [list(rotation.quaternion) for _, rotation in layout.frames]
             and record['ridge_frames'] == [list(rotation.quaternion) for _, rotation in layout.ridges]
             and record['end_poles'] == [[boundary_id, role, list(pole)] for (boundary_id, role), pole in layout.poles]

@@ -465,7 +465,7 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
         metadata = _json(record)
         buffers = tuple(a.tobytes() for a in arrays)
         result = object.__new__(EmplacementResult)
-        attrs = dict(result_id=_identity(record,*buffers),payload=payload,target=target,host=host,
+        attrs = dict(result_id=_identity_bytes(metadata,*buffers),payload=payload,target=target,host=host,
                      mode=mode,source_id=source_id,host_destination_id=host_destination_id,
                      _metadata=metadata)
         attrs.update(zip(('_incoming','_outgoing','_remaining','_geometry','_in_components',

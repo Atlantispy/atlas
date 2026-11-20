@@ -253,14 +253,15 @@ class JobBinding:
             raise ValueError('live request/source/runtime/limits differ from dispatched job')
 
 
-def _carried_record(raw, request, fields):
+def _carried_record(raw, request, fields, expected=None):
     record = _decode(raw)
     if fields is None:
         fields = request_fields(request)
     if not fields <= record.keys():
         raise ValueError('result does not carry the exact dispatched request')
     carried = canonical({key: record[key] for key in fields})
-    expected = canonical(request)
+    if expected is None:
+        expected = canonical(request)
     if carried != expected:
         raise ValueError('result does not carry the exact dispatched request')
     return record, expected
@@ -446,8 +447,11 @@ def batch_worker_complete(binding_bytes, *, context, read_bindings, requests, ru
 def _batch_worker_complete(binding, record, *, context, read_bindings, requests, run):
     """Invocation-local binding/record, already validated or issued by the owned private route."""
     limits, seconds = record['child_budget'], record.get('batch_seconds')
+    bindings = []
     def verify():
-        binding._verify_record(record, requests=requests, source_bindings=read_bindings(), context=context,
+        if not bindings:    # Landing E B-5: the inputs are copies; the second check reuses the first inventory
+            bindings.append(read_bindings())
+        binding._verify_record(record, requests=requests, source_bindings=bindings[0], context=context,
                        child_bytes=limits['max_bytes'],
                        predicate_units=limits['max_predicate_work_units'], batch_seconds=seconds)
     def new_ledger():
@@ -461,7 +465,7 @@ def _batch_worker_complete(binding, record, *, context, read_bindings, requests,
         if returning and answer != 'returned':
             raise ValueError('returned members form an unstarted suffix')
         if type(answer) is bytes:
-            raw = _carries(answer, request, _fields=request.keys())
+            raw = answer    # Landing E B-7: the parent checks it carries its request; the receipt binds its digest
             results.append({'outcome': 'result', 'canonical_json': raw.decode('utf8'),
                             'record_sha256': hashlib.sha256(raw).hexdigest()})
         elif type(answer) is str and (answer in UNANSWERED or answer == 'returned' and seconds is not None):
@@ -550,7 +554,8 @@ class OwnedBatchDispatch:
             raw = row.pop('canonical_json').encode('utf8')
             if not _digest(row['record_sha256']) or hashlib.sha256(raw).hexdigest() != row['record_sha256']:
                 raise ValueError('complete worker-result digest differs')
-            member, expected = _carried_record(raw, request, request.keys())
+            # Landing E C-2: tokens[index] is canonical(requests[index]), made by the dispatch from the same list.
+            member, expected = _carried_record(raw, request, request.keys(), None if tokens is None else tokens[index])
             answer = raw
             if tokens is not None and tokens[index] == expected:
                 from .integration_parallel_results import _interface_facts

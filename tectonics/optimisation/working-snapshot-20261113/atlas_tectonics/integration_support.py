@@ -656,8 +656,11 @@ def declared(network, face, cohort, stock, cohorts, footprints=None, *, areal_de
     return Support(tuple(patches))
 
 
-def checked(network, face, cohort, stock, cohorts, support, *, signed=False):
-    """Exact stock joins and existing relative geometric closure; no new tolerance."""
+def checked(network, face, cohort, stock, cohorts, support, *, signed=False, known=None):
+    """Exact stock joins and existing relative geometric closure; no new tolerance.
+
+    known: a transfer step's map of patches it carried or cut (landing E B-8); made by integration_transfer._transferred.
+    """
     if type(support) is not Support or any(type(p) is not Patch for p in support.patches):
         raise SupportError('typed material support is required')
     T = _tools()
@@ -692,17 +695,24 @@ def checked(network, face, cohort, stock, cohorts, support, *, signed=False):
                     raise SupportError('declared area, mass and volume densities are nonnegative')
         if not math.isfinite(patch.area_allowance_m2) or patch.area_allowance_m2 < 0:
             raise SupportError('a patch geometry allowance must be finite and nonnegative')
-        for cell in patch.cells:
-            if any(type(v) is not int for p in cell for v in p):
-                raise SupportError('material geometry requires exact integer coordinates')
-            if _canonical(cell) != cell:
-                raise SupportError('a material cell is not canonical')
-            if any(T._dot(T._cross(a, b), p) < 0 for a, b in zip(cell, cell[1:]+cell[:1]) for p in cell):
-                raise SupportError('a material cell is not convex')
-        for i, cell in enumerate(patch.cells):
-            if any(intersect_cell(cell, other) for other in patch.cells[i+1:]):
-                raise SupportError('cells within a material patch overlap')
-        measured = area_sr(patch.cells)*radius2
+        entry = None if known is None else known.get(id(patch))
+        if entry is not None and entry[0] is not patch:    # by identity only, never by equality (N-2)
+            entry = None
+        if entry is None or not entry[1]:
+            for cell in patch.cells:
+                if any(type(v) is not int for p in cell for v in p):
+                    raise SupportError('material geometry requires exact integer coordinates')
+                if _canonical(cell) != cell:
+                    raise SupportError('a material cell is not canonical')
+                if any(T._dot(T._cross(a, b), p) < 0 for a, b in zip(cell, cell[1:]+cell[:1]) for p in cell):
+                    raise SupportError('a material cell is not convex')
+            for i, cell in enumerate(patch.cells):
+                if any(intersect_cell(cell, other) for other in patch.cells[i+1:]):
+                    raise SupportError('cells within a material patch overlap')
+        if entry is not None and entry[2] is not None and entry[3] == network.sphere.radius_m:
+            measured = entry[2]
+        else:
+            measured = area_sr(patch.cells)*radius2
         if abs(measured-float(patch.stock[0])) > max(
                 T.RELATIVE_TOLERANCE*max(measured, float(patch.stock[0])), patch.area_allowance_m2):
             raise SupportError('patch area and its retained geometry do not close within the existing tolerance')

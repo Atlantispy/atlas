@@ -60,9 +60,10 @@ def _bound_ref(support):
     if isinstance(ref, RecordRef):
         origin = getattr(ref, '_partition', None)
         if (not P._is_v2(origin) or not origin._sealed or origin.record is not ref._view or
-                ref.scope.run_budget is not support._resource or
-                origin.support_node(support.support_id) != ref.index or
-                origin.support_identity(support.support_id).canonical_bytes != len(support._json)):
+                ref.scope.run_budget is not support._resource):
+            raise ValueError('support reference, inventory or budget differs')
+        node, held = origin.support_entry(support.support_id)    # one freshness check (landing E)
+        if node != ref.index or held.canonical_bytes != len(support._json):
             raise ValueError('support reference, inventory or budget differs')
         ref._live()
         return ref
@@ -532,10 +533,12 @@ def issue_compact_operand(view, index, node, size, capacity):
     ref = view.support(index)
     if ref.index != node or not 0 < size <= P.MAX_NATIVE_SUPPORT_BYTES:
         raise ValueError('compact support binding or length differs')
+    proven = None
     if P._is_v2(view):
         view.identity()
         if view._index.value[2][index].canonical_bytes != size:
             raise ValueError('compact support binding or length differs')
+        proven = getattr(view, '_proven', None)    # None: test_inventory_compact's _View double
     retained = view.budget.reserve(8192+size, category='differential-geometry-retained')
     retained.__enter__()
     # Both stream implementations own their walk stack and chunk. The retained
@@ -553,8 +556,10 @@ def issue_compact_operand(view, index, node, size, capacity):
     finally:
         parts.close()
     encoded = bytes(raw)
-    if position != size or sha256(encoded).hexdigest() != identity:
+    if position != size or not (proven is not None and proven[index]) and sha256(encoded).hexdigest() != identity:
         raise ValueError('compact encoded support identity differs')
+    if proven is not None:
+        proven[index] = 1
     result = object.__new__(D.DifferentialSupport)
     for key, value in dict(_json=encoded, _resource=view.budget, _support_id=identity,
                            _compact_ref=ref, _decoded_capacity=capacity).items():

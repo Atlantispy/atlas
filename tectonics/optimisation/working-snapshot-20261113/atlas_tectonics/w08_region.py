@@ -12,7 +12,7 @@ import numpy as np
 from shapely.strtree import STRtree
 
 from ._validation import TectonicsError, input_shape, read_array, scalar, _replay_fsum
-from .geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS, _validate_shape
+from .geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS
 from .magmatic_emplacement import (_allocate, _budget, _cancel, _identity_bytes,
     _ids, _json, _quotient, _sum, _text, _text_allowance)
 from .planar_projection import _disjoint
@@ -41,9 +41,8 @@ def _footprints(polygons, *, count=None, frame_id=None):
 
 
 def _validate_footprints(polygons, budget, cancel):
-    for g in polygons:
-        _cancel(cancel)
-        _validate_shape(g._geom, DEFAULT_GEOMETRY_LIMITS, allow_empty=False)
+    # Landing E B-11: each parcel was validated when made and _footprints checked the default limits.
+    _cancel(cancel)
     shapes = tuple(g._geom for g in polygons)
     _disjoint(shapes, STRtree(shapes), budget, cancel, 'regional parcel')
 

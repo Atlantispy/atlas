@@ -262,8 +262,11 @@ def _prepared(record, thickness, dt, cache, *, budget=None, fixed_step=False):
     """The exact modal conduction of one column (reused only while its support, properties and step match)."""
     key = (record.cohort_id, tuple(thickness), dt)
     if record.volume_convention != 'reference_prism':
-        from .materials import _json
-        key += (hashlib.sha256(_json(record.record())).hexdigest(),)
+        memo = cache.get(('record-sha256', record.cohort_id))
+        if memo is None or memo[0] is not record:
+            from .materials import _json
+            memo = cache[('record-sha256', record.cohort_id)] = record, hashlib.sha256(_json(record.record())).hexdigest()
+        key += (memo[1],)
     if key not in cache:
         if record.volume_convention != 'reference_prism':
             try:
