@@ -153,7 +153,15 @@ def _run(rows, cell_count, boundary, *, witness, source_bindings, budget,
         raise
 
 
-def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, gmp, collect, owned=False):
+def _face_settings(context, gmp):
+    # Only the private unobserved F13 context may omit Decimal operations.
+    # Flags die with this local context; traps and every effective setting do not.
+    return (dec, gmp, gmp.mpq, context.prec, context.rounding, context.Emin,
+            context.Emax, context.clamp, context.capitals, tuple(context.traps.items()))
+
+
+def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, gmp, collect, owned=False,
+              _face_pass=None, _refined=None):
     if not isinstance(witness, dict) or not witness or not isinstance(source_bindings, dict) or not source_bindings:
         raise ValueError('Explicit nonempty witness and source-binding metadata required')
     for name, digest in source_bindings.items():
@@ -165,6 +173,9 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
     boundary_identity = B._boundary_signature(boundary, gmp, cancel)
     with localcontext() as context:
         context.prec, context.rounding = 80, ROUND_HALF_EVEN
+        record_pass = owned and _face_pass is not None
+        stamp = _face_settings(context, gmp) if record_pass else None
+        reuse_faces = record_pass and _refined is not None and _face_pass[0] == stamp
         zero = (gmp.mpq(0), gmp.mpq(0))
         op = [{} for _ in range(cell_count)]
         wall = [zero for _ in range(cell_count)]
@@ -188,6 +199,11 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             if (len(key_set) != len(keys) or key_set !=
                     (row['bounds'].keys() if type(row['bounds']) is dict else set(row['bounds']))):
                 raise ValueError('Ordered unique observation keys and complete matching bounds required')
+            # The private merge preserves every original row absent from used.
+            # Previously selected rows always receive the complete check again.
+            reuse_row = reuse_faces and fid not in _refined
+            if reuse_row:
+                _face_pass[1] += 1
             weights = []
             for key in keys:
                 B._check(cancel)
@@ -206,7 +222,9 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                 bounds = tuple(B._q(value, gmp) for value in row['bounds'][key])
                 if len(bounds) != 2 or bounds[0] > bounds[1]:
                     raise ValueError('Ordered lower/upper exact coefficient bounds required')
-                weights.append((key, _rounded(bounds, 'face '+fid, gmp, cancel)))
+                word = (dec(bounds[0], cancelled=cancel) if reuse_row else
+                        _rounded(bounds, 'face '+fid, gmp, cancel))
+                weights.append((key, word))
                 for owner, sign in owners:
                     B._check(cancel)
                     if kind == 'cell':
@@ -225,6 +243,10 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                     if collect and contribution != zero:
                         contributors.setdefault(label_key, []).append(Contribution(fid, key, sign, contribution))
             certified_rows.append(CertifiedFace(fid, owners, tuple(weights)))
+        if record_pass:
+            # All faces passed before any aggregate request can be returned.
+            # No old row, Decimal word or assessment owner is retained.
+            _face_pass[0] = stamp
         rounded_op, issues = [], []
         def rounded_or_issue(bounds, label, kind, owner, column=None):
             try:

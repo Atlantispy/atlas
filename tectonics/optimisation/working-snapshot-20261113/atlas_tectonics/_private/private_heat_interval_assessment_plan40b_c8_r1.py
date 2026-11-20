@@ -31,7 +31,7 @@ CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
 HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = '19c1967d14ad9d91e5a42abb87b0ce87d242cb01a2c87b49baba8c92c4ccc0e7'
+INVENTORY_SHA = '8e5183f9da5e88f5029e5a6fce8742dd9a8ba5ad684f84c7d490c9bdab6e5517'
 SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
                 *(str(path) for path in I.source_paths().values()))
 
@@ -100,14 +100,15 @@ def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
 
 
 def _assess_owned(rows, cell_count, boundary, *, witness, source_bindings, budget,
-                  retained=(), cancel=None):
+                  retained=(), cancel=None, _face_pass=None, _refined=None):
     """Fixed forward owner: borrowed rows remain stable through callbacks."""
     return _assess(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
-                   budget=budget, retained=retained, cancel=cancel, owned=True)
+                   budget=budget, retained=retained, cancel=cancel, owned=True,
+                   face_pass=_face_pass, refined=_refined)
 
 
 def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
-            retained, cancel, owned):
+            retained, cancel, owned, face_pass=None, refined=None):
     """Return OwnedAssessment; no guessed refinement/inventory byte inputs.
 
     `retained` must be a tuple of earlier live owners from this exact wrapper
@@ -141,7 +142,8 @@ def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
         generations = tuple(owner._snapshot() for owner in retained)
         inputs = (rows, boundary, witness, source_bindings)
         result = A._assemble(rows, cell_count, boundary, witness=witness,
-            source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=True, owned=owned)
+            source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=True, owned=owned,
+            _face_pass=face_pass, _refined=refined)
         _verify_sources(cancel)
         return OwnedAssessment(result, workspace, inputs, generations, plan, amount, budget)
     except BaseException:

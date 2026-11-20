@@ -56,7 +56,7 @@ from pathlib import Path
 import sys
 import threading
 from time import perf_counter
-from types import ModuleType
+from types import MethodType, ModuleType
 
 from atlas_tectonics._private import private_heat_geometry_inventory_r3 as GEOMETRY
 from atlas_tectonics._private import private_heat_low_solver_kernel_r5 as LOW
@@ -267,7 +267,7 @@ def _beside(solve, stop):
     return thread, box, events
 
 
-def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe, issued=False):
+def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe, issued=False, owned_guard=False, counts=None):
     """Own all producer frames until success; return before final union transfer.
 
 The outer ``advance`` frame never borrows producer temporaries. On an escaping
@@ -380,6 +380,8 @@ frame disappears before the returned result graph replaces its entire stack.
                     or any(a >= b for a, b in zip(ladder, ladder[1:], strict=False))):
                 raise AssertionError('Strictly increasing finite precision ladder required')
             used, first = {}, {}
+            # One scalar/settings proof, owned by this invocation, no saved words.
+            face_pass = [None, 0] if owned_guard else None     # [stamp, rows not checked again]
             assess = ASSEMBLY._assess_owned if issued else ASSEMBLY.assess
             for attempt in range(len(ladder)):
                 if attempt:
@@ -434,8 +436,13 @@ frame disappears before the returned result graph replaces its entire stack.
                     selection.close()  # each merge proof independently owns its tuple
                     selection = None
                 stage('assemble-certified-high')
-                assessment = retain(assess(rows, len(capacity), normalized,
-                    witness=witness, source_bindings=_SOURCES, budget=budget, cancel=check))
+                if owned_guard:
+                    assessment = retain(ASSEMBLY._assess_owned(rows, len(capacity), normalized,
+                        witness=witness, source_bindings=_SOURCES, budget=budget, cancel=check,
+                        _face_pass=face_pass, _refined=used))
+                else:
+                    assessment = retain(assess(rows, len(capacity), normalized,
+                        witness=witness, source_bindings=_SOURCES, budget=budget, cancel=check))
                 if isinstance(assessment.value, ASSEMBLY.CertifiedAssembly):
                     # Construct/cache the rounded view while its original
                     # assessment reservation still funds that construction.
@@ -444,7 +451,9 @@ frame disappears before the returned result graph replaces its entire stack.
                     break
             else:
                 raise ASSEMBLY.UnresolvedRounding('Aggregate rounding unresolved after unchanged finite precision ladder')
-            used = first = ladder = None  # only borrowed face identifiers and rungs
+            if counts is not None:
+                counts['face_rows_reused'] = face_pass[1]
+            used = first = ladder = face_pass = None  # only borrowed face identifiers and rungs
             rows = None
             proof_only(row_owner)
             row_owner = None
@@ -503,6 +512,29 @@ class _IssuedInputs(tuple):
     __slots__ = ()
 
 
+_GUARD_WRAPPER = ('atlas_tectonics._private.heat_interval_r9_spec', '_Cancel')
+_GUARD_CLASS = ('atlas_tectonics._private.private_heat_continuation_guard_r3', 'ContinuationGuard')
+
+
+def _own_guard(hook):
+    """True only for the drivers' guard: heat_interval_r9_spec._Cancel holding ContinuationGuard's own check.
+
+Identity alone (landing C section 9): the exact wrapper type, the exact guard type and the class's own check
+function, each by ``is``; never a subclass, an attribute anyone can set, or being callable. That guard reads its
+clock and two files and never answers true, so it can stop the call but cannot change a result that completes.
+A class whose module is not loaded cannot have made the hook, so nothing is imported here.
+"""
+    spec, owner = sys.modules.get(_GUARD_WRAPPER[0]), sys.modules.get(_GUARD_CLASS[0])
+    if spec is None or owner is None:
+        return False
+    wrapper, guard = vars(spec).get(_GUARD_WRAPPER[1]), vars(owner).get(_GUARD_CLASS[1])
+    if type(wrapper) is not type or type(guard) is not type or type(hook) is not wrapper:
+        return False
+    check = hook._check
+    return (type(check) is MethodType and type(check.__self__) is guard
+            and check.__func__ is vars(guard).get('check'))
+
+
 def advance(geometry, old, capacity, dt, source, boundary, *, conductivity,
             absolute_residual_target, budget, cancelled=None, observe=None, _issued_inputs=None):
     """Return a compact owner of (sealed result, diagnostics), with fixed physics.
@@ -518,6 +550,10 @@ work; no old-generation credit precedes independent output admission.
         issued = len(_issued_inputs) == len(actual) and all(x is y for x, y in zip(_issued_inputs, actual, strict=True))
         del actual
     del _issued_inputs
+    # Internal meter/predictor guards remain real callables; eligibility refers
+    # to the original external hook, independently of those wrappers. The
+    # package's own guard is the one hook admitted, by identity (_own_guard).
+    owned_guard = issued and observe is None and (cancelled is None or _own_guard(cancelled))
     def check():
         if cancelled is not None and cancelled():
             raise CancelledError('Private composed heat cancelled')
@@ -555,9 +591,10 @@ work; no old-generation credit precedes independent output admission.
             meter.stage(name)
             if observe is not None:
                 observe(name)
+    counts = dict(face_rows_reused=0) if owned_guard else None
     try:
         raw = _run(geometry, old, capacity, dt, source, boundary, Q(value),
-                   absolute_residual_target, budget, check, stage, observe, issued)
+                   absolute_residual_target, budget, check, stage, observe, issued, owned_guard, counts)
         try:
             # _run has gone: no omitted LOW/HIGH/prepared/proof temporaries survive
             # in a producer frame when its entire old stack closes atomically.
@@ -573,6 +610,9 @@ work; no old-generation credit precedes independent output admission.
         except BaseException:
             output.close()
             raise
+        if counts is not None and cancelled is not None:
+            # The admitted guard's own record, its trace of effort; read only, never a stop.
+            cancelled._check.__self__.record.setdefault('f13_paths', []).append(counts)
         return OwnedAdvance(output, geometry)
     except BaseException:
         if meter is not None:
