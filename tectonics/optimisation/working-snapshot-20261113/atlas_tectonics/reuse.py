@@ -948,7 +948,7 @@ def helper_source_digest(path, *, owner_file, cancel=None):
     """Source SHA-256; share only package-private members of a verified held set.
 
     Strict mode reads each source and owner pair in full once per process
-    (ruling 1). A later call skips the read and the link/reparse walk of both
+    (the owner's ruling). A later call skips the read and the link/reparse walk of both
     paths: those are edit checks, proved when first read, not kept safety
     checks. The cancellation check stays on every call. In release, external/
     uncovered source files are read in full on every call. Release never creates a capture or acquires a hold here: a cold/partial
@@ -1328,21 +1328,42 @@ class ExecutionContext:
     maintain that hold refuses. Strict retains per-context holds. This is not a sandbox.
     """
     def __init__(self, backend="reference"):
+        self._open(backend, self._fill)
+
+    @staticmethod
+    def adopted(backend="reference"):
+        """A fresh worker's context on its parent's proved identity (W-3 E-4); refused with no bound record.
+
+        It captures nothing: verify_boundary is the selection check alone (design section 4)."""
+        from . import integration_worker_bootstrap as bootstrap
+        if bootstrap._worker_mode_token is None:
+            raise TectonicsError("no bound worker startup record to adopt")
+        identity = bootstrap.worker_execution_identity()
+        if identity is None:  # sixth issue: a record with no identity (run_worker, B:280) is captured in full, as today
+            return ExecutionContext(backend)
+        self = object.__new__(ExecutionContext)  # exactly this type: capture_runtime refuses any other (N-5)
+        self._open(backend, lambda backend: self._adopt(backend, identity))
+        return self
+
+    def _adopt(self, backend, identity):
+        self.backend = backend
+        self._runtime_locations = {}
+        self._runtime = _runtime_record(backend, self._runtime_locations)
+        self._fixture_binding = _fixture_identity_binding()
+        self._identity = identity
+        self._source_handles = None
+        self._closed = False
+        self._proved = {'boundary'}
+        self._close_verified = False
+        self._close_lock = threading.RLock()
+        self._adopted = True
+
+    def _open(self, backend, fill):
         lease = _application_source_lease()
         token = None if lease is None else lease._application_token
         try:
             self._mode = execution_mode()
-            if self._mode == 'release':
-                with _release_state.lock:
-                    snapshot = _release_state.captures.get(backend)
-                    if snapshot is None:
-                        self._capture(backend)
-                        _release_state.captures[backend] = self.__dict__.copy()
-                    else:
-                        self.__dict__.update(snapshot)
-                        self._proved = set()  # its own proof, not the snapshot's (per context, review G-4)
-            else:
-                self._capture(backend)
+            fill(backend)
         except BaseException as error:
             if lease is not None:
                 try:
@@ -1365,6 +1386,19 @@ class ExecutionContext:
         # shared-context use, owner-thread exit and ordinary object collection.
         # The release snapshot predates these per-object lifetime attributes.
         self._application_token = token
+
+    def _fill(self, backend):
+        if self._mode == 'release':
+            with _release_state.lock:
+                snapshot = _release_state.captures.get(backend)
+                if snapshot is None:
+                    self._capture(backend)
+                    _release_state.captures[backend] = self.__dict__.copy()
+                else:
+                    self.__dict__.update(snapshot)
+                    self._proved = set()  # its own proof, not the snapshot's (per context, review G-4)
+        else:
+            self._capture(backend)
 
     def _capture(self, backend):
         self._source_handles = None
@@ -1462,6 +1496,8 @@ class ExecutionContext:
 
     def verify_boundary(self):
         """The unchanged full live-source/instruction/default check in both modes."""
+        if getattr(self, '_adopted', False):
+            return self._verify_selection()  # W-3 E-4: the parent proved the sources; nothing captured to compare
         with _application_context_scope(getattr(self, '_application_token', None)):
             if self._closed:
                 raise TectonicsError("execution context is closed")

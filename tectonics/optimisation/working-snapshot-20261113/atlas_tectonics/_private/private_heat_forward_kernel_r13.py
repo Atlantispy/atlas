@@ -519,7 +519,7 @@ _GUARD_CLASS = ('atlas_tectonics._private.private_heat_continuation_guard_r3', '
 def _own_guard(hook):
     """True only for the drivers' guard: heat_interval_r9_spec._Cancel holding ContinuationGuard's own check.
 
-Identity alone (landing C section 9): the exact wrapper type, the exact guard type and the class's own check
+Identity alone: the exact wrapper type, the exact guard type and the class's own check
 function, each by ``is``; never a subclass, an attribute anyone can set, or being callable. That guard reads its
 clock and two files and never answers true, so it can stop the call but cannot change a result that completes.
 A class whose module is not loaded cannot have made the hook, so nothing is imported here.

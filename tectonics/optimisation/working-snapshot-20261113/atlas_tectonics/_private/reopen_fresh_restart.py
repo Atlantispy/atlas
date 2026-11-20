@@ -117,6 +117,7 @@ from atlas_tectonics._private import reopen_prepared_restart as RO
 from atlas_tectonics._private import run_fresh_interval as F
 from atlas_tectonics._private import run_prepared_restart as RUN
 from atlas_tectonics._private import start_gate as SG
+from atlas_tectonics import machine_resources_monitor as MONITOR
 from atlas_tectonics._private import overlap_reader as OR
 from atlas_tectonics._private import reader_overlap_gate as OG
 from atlas_tectonics._private import reuse_previous_run as REUSE
@@ -689,15 +690,16 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
             RUN.ordinary(output, directory=True) == output,
             'guard and reader output directory differ')
     import psutil
-    available = psutil.virtual_memory().available
+    available = MONITOR.free_memory()
     admitted = SG.child_admit(start_gate, available)
-    guard.budget = budget = WorkBudget(RUN.LOGICAL_BYTES, max_predicate_work_units=1 << 44)
-    RUN._guard_boundary(sources, guard, budget)
+    selected_limits = SG.guard_limits(admitted)
+    guard.budget = budget = WorkBudget(selected_limits['logical_budget_bytes'], max_predicate_work_units=1 << 44)
+    RUN._guard_boundary(sources, guard, budget, limits=selected_limits)
     check = lambda: guard.check(force=True)
     if not records:
         H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
         record['source_proof'] = sources.verify()
-    record.update(guard_limits=SG.guard_limits(admitted), start_gate=admitted,
+    record.update(guard_limits=selected_limits, start_gate=admitted,
                   memory_at_start={'available_bytes': available},
                   launch_environment={name: os.environ.get(name) for name in sorted(RUN.LAUNCH_ENV)},
                   production_acceptance=False)
@@ -747,7 +749,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                         receipt_sha256=pin, consumer_pid=os.getpid(), review=False, interval=_explicit(number)),
                     producer_pins=lambda value: producer_gate_pins(profile, value, mode=mode, interval=_explicit(number)),
                     memory_admit=lambda free: SG.child_admit(start_gate, free),
-                    available_memory=lambda: psutil.virtual_memory().available, waiter=guard.identity))
+                    available_memory=MONITOR.free_memory, waiter=guard.identity))
                 require(producer['measurement_store'] == seeded['store'],
                         'the producer receipt names another measurement store than the one this reader admitted from')
             else:
@@ -756,7 +758,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                 # repeat the unchanged prediction immediately before pending access.
                 sources.check_imported()
                 guard.check(force=True)
-                record['memory_before_open_pending'] = SG.child_admit(start_gate, psutil.virtual_memory().available)
+                record['memory_before_open_pending'] = SG.child_admit(start_gate, MONITOR.free_memory())
                 save()
             # o2 C2: the admission route actually used (never keyed initial_parallel: chain driver :881).
             report = a.initial_parallel
@@ -975,7 +977,7 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
             if overlap_spec is None:
                 # o2: the producer's worker startup (run_fresh_interval :1448); a serial reader needs none
                 record['pressure_worker_startup'] = sources.configure_pressure_workers()
-            guard = G.ContinuationGuard(output, record, save)
+            guard = G.ContinuationGuard(output, record, save, **SG.child_limits(start_gate))
             context = json.loads(os.environ[G.ENV])
             record['reader_guard_binding'] = {'job_name': context['job_name'], 'nonce': guard.nonce,
                                               'parent': guard.identity}
@@ -1120,7 +1122,8 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
     RO.validate_retained_producer(reopen, retained)
     supervisor = reopen.get('supervisor')
     require(type(supervisor) is dict, 'reader supervisor record required')
-    RO.validate_guard(guard_receipt, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'), recorded=recorded)
+    RO.validate_guard(guard_receipt, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'), recorded=recorded,
+                      limits=SG.guardian_limits(reopen.get('start_gate')))
     import ctypes
     directory = ctypes.create_unicode_buffer(32768)
     require(ctypes.windll.kernel32.GetSystemDirectoryW(directory, len(directory)) > 0,
@@ -1318,7 +1321,7 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
         from atlas_tectonics.resources import WorkBudget
         from atlas_tectonics._private.compact_contracts import SegmentRef
         from atlas_tectonics._private.content_cache import create_retained_scope
-        budget = WorkBudget(RUN.LOGICAL_BYTES)
+        budget = WorkBudget(MONITOR.machine_memory())
         scope = create_retained_scope(budget, process_epoch='fresh-adopt-'+str(os.getpid()))
         catalog = store_directory/F.CATALOG
         try:
@@ -1452,8 +1455,7 @@ def main(argv=None):
                       'production_acceptance': False}), flush=True)
     if not args.launch:
         return 0
-    import psutil
-    SG.admit(gate, psutil.virtual_memory().available)
+    SG.admit(gate, MONITOR.free_memory())
     output = reader_output(profile.record(), args.mode, args.interval, fallback=args.reader_fallback)
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=F.pressure_launch_environment(), cwd=output)

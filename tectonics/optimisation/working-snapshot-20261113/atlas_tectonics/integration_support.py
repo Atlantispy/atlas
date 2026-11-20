@@ -659,7 +659,7 @@ def declared(network, face, cohort, stock, cohorts, footprints=None, *, areal_de
 def checked(network, face, cohort, stock, cohorts, support, *, signed=False, known=None):
     """Exact stock joins and existing relative geometric closure; no new tolerance.
 
-    known: a transfer step's map of patches it carried or cut (landing E B-8); made by integration_transfer._transferred.
+    known: a transfer step's map of patches it carried or cut; made by integration_transfer._transferred.
     """
     if type(support) is not Support or any(type(p) is not Patch for p in support.patches):
         raise SupportError('typed material support is required')

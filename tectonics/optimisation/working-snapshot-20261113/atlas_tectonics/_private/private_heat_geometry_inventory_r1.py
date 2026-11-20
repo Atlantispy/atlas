@@ -34,7 +34,7 @@ _PINS = {
     'private_heat_low_ledger_inventory_r1.py': 'e335ca6da5ba008acc6e09628eb621605dc468f17763d9cb0e42392580b091b1',
     'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
     'private_heat_interval_inventory_r1.py': '0e7085f9f7d2d78df755570693de215e154c930d43d493f9964ab138b8f0caad',
-    'private_heat_decimal_inventory_r1.py': '1e3b678ce38bbeab989a5f4320d6fb00bbca8e7e56dd301d700a8e0a6bcb983b',
+    'private_heat_decimal_inventory_r1.py': '7d5f7fbdbd3f3fe80ae824bb577b6a0d4f9572a6707b5a6fb5a8192f5bbfb04c',
     _atlas_identity.relkey(HEAT.__file__): '590a8f04599b454436271af5467a8cc634ff414e3ee29ec4aee65e05e021e80f',
 }
 UNIT = L.CONTAINER_UNIT

@@ -154,7 +154,7 @@ def _run(rows, cell_count, boundary, *, witness, source_bindings, budget,
 
 
 def _face_settings(context, gmp):
-    # Only the private unobserved F13 context may omit Decimal operations.
+    # Only the private unobserved context may omit Decimal operations.
     # Flags die with this local context; traps and every effective setting do not.
     return (dec, gmp, gmp.mpq, context.prec, context.rounding, context.Emin,
             context.Emax, context.clamp, context.capitals, tuple(context.traps.items()))
@@ -204,11 +204,11 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             reuse_row = reuse_faces and fid not in _refined
             if reuse_row:
                 _face_pass[1] += 1
-            face_label = 'face '+fid    # Landing E: built once a face, not once a key
+            face_label = 'face '+fid    # built once a face, not once a key
             weights = []
             for key in keys:
                 B._check(cancel)
-                # Landing E: on the owned route BASE._derive_owned has refused these four on the same stable rows.
+                # on the owned route BASE._derive_owned has refused these four on the same stable rows.
                 if not owned and len(key) != 2:
                     raise ValueError('Observation keys must be (kind,key) pairs')
                 kind, index = key
@@ -254,7 +254,7 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             try:
                 return _rounded(bounds, '', gmp, cancel)
             except UnresolvedRounding as error:
-                # Landing E: the label is built only on failure; the message text is unchanged.
+                # the label is built only on failure; the message text is unchanged.
                 label = kind+' '+str(owner if column is None else (owner, column))
                 error.args = (label+error.args[0],)
                 if not collect:

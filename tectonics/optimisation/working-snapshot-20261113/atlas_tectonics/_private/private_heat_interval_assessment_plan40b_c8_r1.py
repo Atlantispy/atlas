@@ -30,14 +30,14 @@ CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
 HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = 'edef0796fe54357338d51e25080f19feb9e9bf2879cf52f17d830e762c96e4d0'
+INVENTORY_SHA = 'b2796870588a595eeaaf96621dc83d06d717f49ddbdadaae0c9da47e2147b506'
 SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
                 *(str(path) for path in I.source_paths().values()))
 
 
 def _verify_sources(cancel):
     I._check(cancel)
-    # Landing E B-2
+    # helper_source_digest
     from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
     if _helper_source_digest(_atlas_identity.as_path(I.__file__), owner_file=__file__, cancel=cancel) != INVENTORY_SHA:
         raise ValueError('Reviewed assessment inventory changed')

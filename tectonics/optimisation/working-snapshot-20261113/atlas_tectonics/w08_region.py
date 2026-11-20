@@ -41,7 +41,7 @@ def _footprints(polygons, *, count=None, frame_id=None):
 
 
 def _validate_footprints(polygons, budget, cancel):
-    # Landing E B-11: each parcel was validated when made and _footprints checked the default limits.
+    # each parcel was validated when made and _footprints checked the default limits.
     _cancel(cancel)
     shapes = tuple(g._geom for g in polygons)
     _disjoint(shapes, STRtree(shapes), budget, cancel, 'regional parcel')

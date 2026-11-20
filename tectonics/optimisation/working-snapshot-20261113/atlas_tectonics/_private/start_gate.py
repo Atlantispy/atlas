@@ -12,8 +12,8 @@ caller names. Only when there is no such record does an explicit declared bookin
 neither, the gate refuses. Nothing is defaulted, and a record that is not a completed PASS of that step, stage
 and interval is refused rather than skipped (the caller reads its own records and passes their peaks here).
 
-The in-run guards are unchanged and are what protect the machine: 12 GiB tree RSS, 1 GiB available floor and
-the 16 GiB logical budget. A prediction that is too low can only start a run that those guards then stop
+The in-run guards are what protect the machine: the tree-RSS cap and the logical ledger the resources gate
+adds to each decision from the machine's reading, and the 1 GiB available floor. A prediction that is too low can only start a run that those guards then stop
 cleanly; it cannot change a result. A gate above the available memory refuses before the caller writes any
 output.
 
@@ -31,8 +31,9 @@ import sys
 from hashlib import sha256
 from pathlib import Path
 
-RSS_BYTES, FREE_BYTES, LOGICAL_BYTES = 12 << 30, 1 << 30, 16 << 30
-ALLOWANCE_BYTES = 1 << 30
+from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics import resources_gate as GATE
+
 SCHEMA = 'atlas.private.start-gate.r1'
 MEASURED, BOOKING = 'largest measured peak of a completed PASS', 'declared booking (no completed PASS record)'
 
@@ -53,15 +54,16 @@ def _bytes(value):
 def gate_bytes(predicted_peak_bytes):
     """The predicted peak with a fifth more (rounded up), the free floor and the allowance, in exact bytes."""
     require(_bytes(predicted_peak_bytes), 'the start gate needs a positive integer predicted peak')
-    return predicted_peak_bytes + -(-predicted_peak_bytes // 5) + FREE_BYTES + ALLOWANCE_BYTES
+    return GATE.start_need(predicted_peak_bytes)
 
 
-def decide(key, *, measured=(), booking=None):
+def decide(key, *, measured=(), booking=None, machine=None, environ=None):
     """The prediction and gate for one step of one stage and interval; refuses when it has no prediction.
 
     ``key``: what the records must match (for example step, stage and interval), recorded as given.
     ``measured``: (source, peak bytes) for every completed PASS record of that key the caller read; the source
     names the record (path and SHA-256). ``booking``: None, or (bytes, basis) declared by whoever launches.
+    ``machine``, ``environ``: the reading and the setting the memory limits are decided from (tests pass stand-ins).
     """
     require(type(key) is dict and key and all(type(name) is str for name in key), 'an explicit gate key is required')
     measured = list(measured)
@@ -78,12 +80,14 @@ def decide(key, *, measured=(), booking=None):
     else:
         raise StartGateRefused('no completed PASS record of %s and no declared booking: the start gate has no '
                                'prediction and refuses (there is no default)' % (key,))
+    machine = MONITOR.reading(load=0) if machine is None else machine    # its limits use memory only: no CPU sample
+    limits = GATE.limits(machine, GATE.setting(machine, environ), predicted)
     return {'schema': SCHEMA, 'key': dict(key), 'predicted_peak_bytes': predicted, 'basis': basis,
             'measured': [{'record': source, 'peak_bytes': peak} for source, peak in measured],
             'booking': None if booking is None else {'bytes': booking[0], 'basis': booking[1],
                                                      'used': not measured},
-            'gate_bytes': gate_bytes(predicted), 'margin': '1/5', 'free_floor_bytes': FREE_BYTES,
-            'allowance_bytes': ALLOWANCE_BYTES}
+            'gate_bytes': gate_bytes(predicted), 'margin': '1/5', 'free_floor_bytes': GATE.FLOOR_BYTES,
+            'allowance_bytes': GATE.ALLOWANCE_BYTES, 'limits': limits}
 
 
 def admit(decision, available_bytes, flags=None):
@@ -98,6 +102,9 @@ def admit(decision, available_bytes, flags=None):
     if not (type(gate) is int and decision.get('schema') == SCHEMA and decision.get('basis') in (MEASURED, BOOKING)
             and gate == gate_bytes(decision.get('predicted_peak_bytes'))):
         raise StartGateRefused('start gate decision differs from its own prediction')
+    # A decision made before the gate has no limits, and its receipts are still validated.
+    require('limits' not in decision or GATE.check_limits(decision['limits']),
+            'start gate decision memory limits differ from the gate\'s arithmetic on their own entries')
     if not (type(available_bytes) is int and available_bytes >= gate):
         raise StartGateRefused('start gate refused: %s bytes available, the gate is %d (predicted peak %d bytes, '
                                '%s)' % (available_bytes, gate, decision['predicted_peak_bytes'], decision['basis']))
@@ -189,18 +196,47 @@ def child_admit(text, available_bytes, flags=None):
         decision = json.loads(text)
     except ValueError:
         decision = None
+    require(type(decision) is not dict or 'limits' in decision,
+            'this start gate decision has no memory limits: launch it again with this build')
     return admit(decision, available_bytes, flags)
 
 
+def run_limits(decision):
+    """A start's cap, floor and ledger: its decision's, or the earlier figures for a decision made before the gate."""
+    limits = decision.get('limits') if type(decision) is dict else None
+    if limits is None:
+        return dict(GATE.EARLIER_LIMITS)
+    require(GATE.check_limits(limits), 'start gate memory limits differ from the gate\'s arithmetic on their own entries')
+    return {name: limits[name] for name in ('rss_bytes', 'free_floor_bytes', 'logical_budget_bytes')}
+
+
+def guardian_limits(decision):
+    """The guard's cap and floor of a start's decision."""
+    limits = run_limits(decision)
+    return {'rss_bytes': limits['rss_bytes'], 'free_floor_bytes': limits['free_floor_bytes']}
+
+
+def child_limits(text):
+    """A guarded child's guard cap and floor, from its launcher's decision, before the run admits it."""
+    try:
+        decision = json.loads(text) if type(text) is str else None
+    except ValueError:
+        decision = None
+    require(type(decision) is dict and 'limits' in decision,
+            'this run has no start gate decision with memory limits: launch it with --peak-record or a booking')
+    return guardian_limits(decision)
+
+
 def guard_limits(admitted):
-    """The receipts' guard_limits: the unchanged in-run guards, and start_available_bytes = this start's gate."""
-    return {'rss_bytes': RSS_BYTES, 'free_floor_bytes': FREE_BYTES, 'start_available_bytes': admitted['gate_bytes'],
-            'logical_budget_bytes': LOGICAL_BYTES}
+    """The receipts' guard_limits: the start's cap, floor and ledger, and start_available_bytes = this start's gate."""
+    limits = run_limits(admitted)
+    return {'rss_bytes': limits['rss_bytes'], 'free_floor_bytes': limits['free_floor_bytes'],
+            'start_available_bytes': admitted['gate_bytes'], 'logical_budget_bytes': limits['logical_budget_bytes']}
 
 
-# Release decision 5: sizing of the packaged launcher only; everything above is the strict
-# route's and is unchanged. The in-run cap is min(12 GiB, physical - 1 GiB floor - OS reserve), so it never goes
-# above today's 12 GiB; the 2 GiB reserve keeps a 16 GiB machine at 12 GiB. The start gate is the predicted peak
+# Sizing of the packaged launcher only; everything above is the strict route's. The in-run cap is the memory
+# available at admission less the 1 GiB floor and the OS reserve, with no fixed top; the ledger is the machine's
+# memory. The start gate is the predicted peak
 # with a fifth more plus the 1 GiB floor (one end-user run: no allowance for queued jobs). The prediction comes
 # only from a shipped table of strict-measured peaks bound to the composition: release never books and has no
 # default, and a predicted peak above the cap refuses at the start instead of stopping mid-run.
@@ -214,10 +250,10 @@ def _hex64(value):
     return type(value) is str and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
 
 
-def release_cap_bytes(physical_bytes):
-    """The packaged run's in-run tree-RSS cap on a machine of ``physical_bytes``; refuses when nothing is left."""
-    require(_bytes(physical_bytes), 'the release cap needs the positive integer physical memory')
-    cap = min(RSS_BYTES, physical_bytes - FREE_BYTES - RELEASE_OS_RESERVE_BYTES)
+def release_cap_bytes(available_bytes):
+    """The packaged run's in-run tree-RSS cap with ``available_bytes`` free at admission; refuses when nothing is left."""
+    require(_bytes(available_bytes), 'the release cap needs the positive integer available memory')
+    cap = available_bytes - GATE.FLOOR_BYTES - RELEASE_OS_RESERVE_BYTES
     require(cap > 0, 'this machine has no memory left for a run after the 1 GiB floor and the OS reserve')
     return cap
 
@@ -225,7 +261,7 @@ def release_cap_bytes(physical_bytes):
 def release_gate_bytes(predicted_peak_bytes):
     """The predicted peak with a fifth more (rounded up) and the free floor, in exact bytes."""
     require(_bytes(predicted_peak_bytes), 'the release start gate needs a positive integer predicted peak')
-    return predicted_peak_bytes + -(-predicted_peak_bytes // 5) + FREE_BYTES
+    return predicted_peak_bytes + -(-predicted_peak_bytes // 5) + GATE.FLOOR_BYTES
 
 
 def release_decision(route, composition, table):
@@ -254,7 +290,7 @@ def release_decision(route, composition, table):
     peak = entry['peak_bytes']
     return {'schema': RELEASE_SCHEMA, 'route': route, 'composition': composition, 'predicted_peak_bytes': peak,
             'basis': RELEASE_BASIS, 'record': entry['record'], 'gate_bytes': release_gate_bytes(peak),
-            'margin': '1/5', 'free_floor_bytes': FREE_BYTES, 'os_reserve_bytes': RELEASE_OS_RESERVE_BYTES}
+            'margin': '1/5', 'free_floor_bytes': GATE.FLOOR_BYTES, 'os_reserve_bytes': RELEASE_OS_RESERVE_BYTES}
 
 
 def release_admit(decision, available_bytes, physical_bytes, flags=None):
@@ -269,7 +305,8 @@ def release_admit(decision, available_bytes, physical_bytes, flags=None):
     if not (type(gate) is int and decision.get('schema') == RELEASE_SCHEMA and decision.get('basis') == RELEASE_BASIS
             and gate == release_gate_bytes(decision.get('predicted_peak_bytes'))):
         raise StartGateRefused('release start gate decision differs from its own prediction')
-    cap = release_cap_bytes(physical_bytes)
+    require(_bytes(physical_bytes), 'the release ledger needs the positive integer physical memory')
+    cap = release_cap_bytes(available_bytes)
     if decision['predicted_peak_bytes'] > cap:
         raise StartGateRefused('this machine is too small for %s: its predicted peak is %d bytes and the in-run cap '
                                'is %d bytes' % (decision.get('route'), decision['predicted_peak_bytes'], cap))
@@ -281,9 +318,10 @@ def release_admit(decision, available_bytes, physical_bytes, flags=None):
 
 
 def release_guard_limits(admitted):
-    """guard_limits of a packaged run: the machine-sized cap, the unchanged floor and logical budget."""
+    """guard_limits of a packaged run: the admission's cap, the floor and the machine's memory as the ledger."""
     require(type(admitted) is dict and admitted.get('schema') == RELEASE_SCHEMA
-            and admitted.get('rss_cap_bytes') == release_cap_bytes(admitted.get('physical_bytes')),
+            and admitted.get('rss_cap_bytes') == release_cap_bytes(admitted.get('available_bytes'))
+            and _bytes(admitted.get('physical_bytes')),
             'release guard limits need an admitted release decision')
-    return {'rss_bytes': admitted['rss_cap_bytes'], 'free_floor_bytes': FREE_BYTES,
-            'start_available_bytes': admitted['gate_bytes'], 'logical_budget_bytes': LOGICAL_BYTES}
+    return {'rss_bytes': admitted['rss_cap_bytes'], 'free_floor_bytes': GATE.FLOOR_BYTES,
+            'start_available_bytes': admitted['gate_bytes'], 'logical_budget_bytes': admitted['physical_bytes']}

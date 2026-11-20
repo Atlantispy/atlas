@@ -336,7 +336,7 @@ class PartitionV2:
         with record._read_batch():
             self._validate_domain(expected_partition_id, check)
         self._carrier_pool = record.scope.partition_carrier_pool(record.identity(), self.support_count)
-        # Landing E C-1: 1 where this process has rebuilt a support from this view and proved its hash.
+        # 1 where this process has rebuilt a support from this view and proved its hash.
         self._proven = bytearray(self.support_count)
         self._sealed = True
 
@@ -453,7 +453,7 @@ class PartitionV2:
         return self._index.value[2][self._index.value[1][support_id]]
 
     def support_entry(self, support_id):
-        """(node, identity) of one support under one freshness check (landing E)."""
+        """(node, identity) of one support under one freshness check."""
         self.identity()
         _require(support_id in self._index.value[1], 'missing partition support ID')
         index = self._index.value[1][support_id]

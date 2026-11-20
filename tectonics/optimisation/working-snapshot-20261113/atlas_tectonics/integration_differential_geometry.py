@@ -20,6 +20,7 @@ import hashlib
 import heapq
 import json
 import math
+import threading
 import weakref
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private import live_finite_patch as LIVE_FINITE
@@ -2315,11 +2316,47 @@ class _PartitionScratch(B._Arena):
         self.work_units += count
 
 
+def _v2_scaled(values):
+    """V-2: (whole numerators, one positive denominator) of ints and fractions; None for any other type."""
+    if any(type(q) is not Q and type(q) is not int for q in values):
+        return None
+    d = math.lcm(*(q.denominator for q in values))
+    return tuple(q.numerator*(d//q.denominator) for q in values), d
+
+
+def _v2_points(vertices):
+    """V-2: a voxel's vertices as whole-number triples over one denominator, or None."""
+    flat = _v2_scaled(tuple(q for p in vertices for q in p))
+    if flat is None:
+        return None
+    n, d = flat
+    return tuple(n[i:i+3] for i in range(0, len(n), 3)), d
+
+
+def _v2_signed(whole, sign):
+    """V-2: _v2_scaled(sign*v) from _v2_scaled(v): the numerators negated, the denominator kept."""
+    if whole is None or sign == 1:
+        return whole
+    return tuple(-q for q in whole[0]), whole[1]
+
+
+def _v2_max(normal, whole, vertices, points, offset=0, sign=1):
+    """V-2: max(sign*(O._dot(normal, p)-offset) for p in vertices) as the same fraction; whole numbers when every
+    input is an int or a fraction, else today's statements. The largest does not depend on how its members are
+    written, and dn*d > 0, so the largest numerator gives the largest value."""
+    if (whole is None or points is None or type(sign) is not int    # Q-2: a carried sign comes from a record
+            or (type(offset) is not Q and type(offset) is not int)):
+        return max(sign*(O._dot(normal, p)-offset) for p in vertices)
+    (a, b, c), dn = whole
+    rows, d = points
+    return Q(max(sign*(a*x+b*y+c*z) for x, y, z in rows), dn*d)-sign*offset
+
+
 def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
                                kind='inherited', source_cones=None, exclusion_cells=(),
                                max_components, budget, _owner_face_ids=None, _source_chart=None,
                                _start_fans=None, _owner_fan_indices=None, _pose_cache=None,
-                               _angular_cache=None, _interval_record=None, _owned_result=False):
+                               _angular_cache=None, _interval_record=None, _owned_result=False, _points=None):
     """Conforming convex angular pieces valid over the WHOLE interval.
 
     A birth domain is current ownership minus the actual advected start owner.
@@ -2421,8 +2458,13 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
         outer_planes = {(name, sign): (*(-sign*q for q in normal), -sign*offset+error*absolute)
                         for name, (normal, error, offset) in posed.items() for sign in (-1, 1)}
         arena.work((16+8*len(vertices))*len(outer_planes))
+        # V-2: each posed normal scaled once (an outer plane's normal is -sign*normal); the voxel's points as
+        # the grid loop wrote them when it passes them (sweep w5 items 1 and 2).
+        posed_whole = {name: _v2_scaled(normal) for name, (normal, _, _) in posed.items()}
+        points = _v2_points(vertices) if _points is None else _points
         impossible = {literal for literal, plane in outer_planes.items()
-                      if (any(plane[:3]) and min(O._dot(plane[:3], p)-plane[3] for p in vertices) >= 0)
+                      if (any(plane[:3]) and -_v2_max(plane[:3], _v2_signed(posed_whole[literal[0]], -literal[1]),
+                                                      vertices, points, plane[3], -1) >= 0)
                       or (not any(plane[:3]) and plane[3] < 0)}
         # The immutable box and exact halfspace broad phase are shared across
         # every candidate. This is only a proof of zero positive volume; no
@@ -2888,6 +2930,13 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                 carried_planes[region['source_chart_id']] = tuple((sign, *_cached_constraint_pose(
                     chart['constraints'][name], W._decode(current['duration_s']), arena, pose_cache))
                     for name, sign in chart['literals'])
+        # V-2: every normal written once as whole numbers for the whole grid.
+        owner_whole = {plate: tuple(tuple(_v2_scaled(normal) for normal, _, _ in planes) for planes in groups)
+                       for plate, groups in owner_planes.items()}
+        carried_whole = {chart: tuple(_v2_scaled(normal) for _, normal, _, _ in planes)
+                         for chart, planes in carried_planes.items()}
+        region_whole = [None if normals is None else tuple(map(_v2_scaled, normals))
+                        for *_, normals in prepared_regions]
         for at in product(*(range(n) for n in shape)):
             box = V.CartesianCell(tuple(lines[j][at[j]] for j in range(3)),
                 tuple(lines[j][at[j]+1] for j in range(3)), origin, basis, budget=budget)
@@ -2906,20 +2955,25 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
             vertices = box._vertices()
             absolute = sum(max(abs(p[j]) for p in vertices) for j in range(3))
             arena.work((16+8*len(vertices))*sum(len(planes) for groups in owner_planes.values() for planes in groups))
+            points = _v2_points(vertices)
             fan_candidates = {plate: tuple(i for i, planes in enumerate(groups) if not any(
-                max(O._dot(normal, p)-offset for p in vertices)+error*absolute <= 0
-                for normal, error, offset in planes)) for plate, groups in owner_planes.items()}
+                _v2_max(normal, whole, vertices, points, offset)+error*absolute <= 0
+                for (normal, error, offset), whole in zip(planes, owner_whole[plate][i], strict=True)))
+                for plate, groups in owner_planes.items()}
             pending_supports = []
-            for region, layer, cone, normals in prepared_regions:
+            for (region, layer, cone, normals), wholes in zip(prepared_regions, region_whole, strict=True):
                 if radial_min >= layer.top_radius_m**2 or radial_max <= layer.bottom_radius_m**2:
                     continue
                 # Convex linear predicates: an entire box outside one source
                 # halfspace has exactly zero source volume. No angular sliver
                 # or near-zero margin is removed by this broad phase.
-                if static and normals is not None and any(max(O._dot(normal, p) for p in vertices) <= 0 for normal in normals):
+                if static and normals is not None and any(_v2_max(normal, whole, vertices, points) <= 0
+                                                          for normal, whole in zip(normals, wholes, strict=True)):
                     continue
-                if any(max(sign*(O._dot(normal, p)-offset) for p in vertices)+error*absolute <= 0
-                       for sign, normal, error, offset in carried_planes.get(region['source_chart_id'], ())):
+                chart_id = region['source_chart_id']
+                if any(_v2_max(normal, whole, vertices, points, offset, sign)+error*absolute <= 0
+                       for (sign, normal, error, offset), whole in zip(carried_planes.get(chart_id, ()),
+                                                                      carried_whole.get(chart_id, ()), strict=True)):
                     continue
                 support = partition_physical_support(geometry, region['plate_id'], layer, box,
                     source_key=region['source_key'], source_cones=None if cone is None else (cone,),
@@ -2931,7 +2985,7 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                     _angular_cache=angular_cache,
                     _interval_record=current,
                     _owner_face_ids=(region['source_face_id'],) if static else None,
-                    _owned_result=True)
+                    _owned_result=True, _points=points)
                 row_owner = support
                 row = support.value
                 if not row['components']:
@@ -3407,11 +3461,40 @@ def _mesh_posed_support(support, record, *, endpoint, booked, budget):
     return _issue(DifferentialMeasure, result, budget)
 
 
+# U-2 / R-1: the decoded records of the last four supports asked for, keyed by the record's own bytes (a hit
+# compares them), each with its first component per logical cell id; at most four times the largest record of the
+# world in hand. Lower-case: the execution identity captures upper-case module values. Callers only read what they
+# get. The lock: interface and batch threads call here.
+_support_records = {}
+_support_lock = threading.Lock()
+
+
+def _support_kept(support):
+    key = support._json
+    with _support_lock:
+        kept = _support_records.pop(key, None)
+        if kept is not None:
+            _support_records[key] = kept                # now the newest
+            return kept
+    record = support.record()
+    cells = {}
+    for row in record['components']:
+        cells.setdefault(row['logical_cell_id'], row)   # the first row of an id, as the search found it
+    with _support_lock:
+        _support_records[key] = kept = (record, cells)
+        while len(_support_records) > 4:
+            del _support_records[next(iter(_support_records))]
+    return kept
+
+
 def _support_component(support, logical_cell_id, budget):
     if type(support) is not DifferentialSupport or support._resource is not budget:
         raise V.VolumeError('issued physical support and its shared WorkBudget required')
-    record = support.record()
-    component = next((row for row in record['components'] if row['logical_cell_id'] == logical_cell_id), None)
+    record, cells = _support_kept(support)
+    try:
+        component = cells.get(logical_cell_id)
+    except TypeError:                                   # an unhashable id matched no row before either
+        component = None
     if component is None:
         raise V.VolumeError('unknown physical support logical cell')
     layer = V.RadialLayer(*(W._decode(record['radial_layer'][key])
@@ -3734,6 +3817,7 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
                 max_width_m3=_qtext(widths[0]), max_leaves=max_leaves, moments_only=moments_only)
             if normal is not None:
                 query['normal_polynomial'] = [[i, j, _qtext(q)] for (i, j), q in sorted(normal.items())]
+            # R-1 (N-14): `record` is the shared held decode; the payload only reads it, no copy is taken.
             error.component_moment_failure = _wall_failure_payload(record, query, budget, error,
                 budget_scope='component arena still live; failed integration scratch has unwound')
             raise
@@ -5451,7 +5535,7 @@ class _ComponentVolumeStorage:
 
 
 def component_volume_bounds(support, logical_cell_id, *, endpoint, max_width_m3,
-                            max_leaves, positive_witness=False, budget, relative_error=None):
+                            max_leaves, positive_witness=False, budget, relative_error=None, _funded=None):
     """Physical volume of the SAME convex component used by graph and heat.
 
     Positive witnesses are exact inner subsets of true geometry, never the
@@ -5479,7 +5563,7 @@ def component_volume_bounds(support, logical_cell_id, *, endpoint, max_width_m3,
             decoder.close()
         return _component_volume_bounds_decoded(support, logical_cell_id, record, arena,
             endpoint=endpoint, max_width_m3=max_width_m3, max_leaves=max_leaves,
-            positive_witness=positive_witness, budget=budget, relative_error=relative_error)
+            positive_witness=positive_witness, budget=budget, relative_error=relative_error, _funded=_funded)
 
 
 def _component_longest_side(cell, arena, depth=None, _query=None):

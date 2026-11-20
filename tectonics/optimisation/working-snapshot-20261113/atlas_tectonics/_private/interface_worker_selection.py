@@ -1,8 +1,12 @@
-"""Interface worker ceiling chosen at launch, from interval 2 on (coordinator, 16 Oct 2026).
+"""Worker ceilings chosen at launch (coordinator, 16 Oct 2026; decisions 1505-1507, 20 Nov 2026).
 
-Default 4. Six only when the measured parent footprint leaves room for six by the
-interface policy's own admission formula (integration_parallel_selection's planner
-_resources, evaluated here at launch with the parent's measured peaks):
+The ceiling is the run's cores less one for the parent, as resources_gate counts them: the set or
+ceiling cores of ATLAS_RESOURCES, else the queue ticket's booking, else the measured physical cores.
+
+From interval 2 on, the count steps down one at a time from that ceiling until it fits the
+measured parent footprint by the interface policy's own admission formula
+(integration_parallel_selection's _resources, evaluated here at launch with the parent's
+measured peaks):
 
 - cores: free physical cores >= n + 1 (the parent keeps one core beside its workers);
 - memory: available physical memory - the parent's measured real peak
@@ -10,33 +14,30 @@ _resources, evaluated here at launch with the parent's measured peaks):
 - budget: the parent's fixed storage + n x (per-worker booking + one raw result)
   <= policy.budget_fraction x (logical budget - the parent's measured logical peak).
 
-The per-worker booking is policy.child_bytes + integration_parallel_dispatch.CHILD_BASELINE
-(0.75 GiB in RC1); the real use measured by the geometry chat is 0.15-0.25 GiB. The count
-is then clamped to the largest one the composed policy accepts: 2 in RC1, until the
-geometry chat's worker-cap lift is in the composition. The policy still makes its own
-per-plan cuts at dispatch; this sets only its ceiling. Execution only: no equation,
-tolerance, record or result depends on it. Interval 1 keeps r9's literal workers=2.
+It never goes below one. Interval 1, with no measured parent, takes the ceiling bounded by
+free memory per worker (first_interval_workers). The policy still steps down at dispatch,
+to serial only when it cannot keep one worker beside the parent. Execution only: no
+equation, tolerance, record or result depends on it.
 """
 SCHEMA = 'atlas.interface-worker-selection.v1'
-DEFAULT = 4
-WIDE = 6
 PARENT_FIXED_EXTRA = 8192    # the planner's fixed term beside PARENT_STORAGE (its node term is not known at launch)
 
 
-def policy_maximum(policy_type, *, upto=WIDE):
-    """The largest worker count the composed policy accepts (it refuses others at construction)."""
-    for workers in range(upto, 0, -1):
-        try:
-            policy_type(workers=workers)
-        except ValueError:
-            continue
-        return workers
-    raise ValueError('the interface policy accepts no worker count')
+def first_interval_workers(policy, load=None, stage=None):
+    """Interval 1 (no measured parent): the gate's launch width for the stage, a worker counted at the stored
+    largest peak of an interface pool's worker, else at the policy's booking, beside the policy's reserve."""
+    from atlas_tectonics import integration_parallel_dispatch as dispatch
+    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_tectonics import resources_gate as RG
+    machine, times = MON.reading(load), MON.Timings()
+    peak = max(times.peak((family, 'worker', 'peak')) or 0 for family in ('interface', 'wall'))
+    return RG.launch_width(machine, RG.setting(machine), peak or policy.child_bytes+dispatch.CHILD_BASELINE,
+                           policy.ram_reserve_bytes, stage)
 
 
 def _fits(workers, *, booking, raw, fixed, policy, parent, machine, logical_budget_bytes):
-    busy = machine['logical_cpus']*machine['load_percent']/100
-    free_cores = max(0.0, machine['physical_cores']-busy)
+    from atlas_tectonics.resources_gate import free_cores as cores_free
+    free_cores = cores_free(machine, machine['physical_cores'])
     free_memory = machine['available_bytes']-parent['real_peak_bytes']
     free_budget = logical_budget_bytes-parent['logical_peak_bytes']
     checks = {'cores': free_cores >= workers+1,
@@ -47,7 +48,7 @@ def _fits(workers, *, booking, raw, fixed, policy, parent, machine, logical_budg
 
 
 def select(*, policy_type, child_baseline_bytes, parent_storage_bytes, raw_result_bytes, parent, machine,
-           logical_budget_bytes):
+           logical_budget_bytes, ceiling=None):
     """The interface worker ceiling and the record run.json keeps.
 
     parent: {'real_peak_bytes', 'logical_peak_bytes'}, the parent's measured peaks (the
@@ -62,25 +63,24 @@ def select(*, policy_type, child_baseline_bytes, parent_storage_bytes, raw_resul
             raise ValueError('measured machine resources required: '+name)
     if not 0 <= machine.get('load_percent', -1) <= 100:
         raise ValueError('measured CPU load percentage required')
+    if not 0 <= machine.get('busy_cores', -1) <= machine['logical_cpus']:
+        raise ValueError('measured busy cores required')
     policy = policy_type()
     booking = policy.child_bytes+child_baseline_bytes
     fixed = parent_storage_bytes+PARENT_FIXED_EXTRA
     options = {'booking': booking, 'raw': raw_result_bytes, 'fixed': fixed, 'policy': policy, 'parent': parent,
                'machine': machine, 'logical_budget_bytes': logical_budget_bytes}
-    wide, free = _fits(WIDE, **options)
-    default, _ = _fits(DEFAULT, **options)
-    if all(wide.values()):
-        selected, reason = WIDE, 'six fit the measured parent footprint by the policy formula'
+    from atlas_tectonics.resources_gate import step_down
+    ceiling = max(1, machine['physical_cores']-1 if ceiling is None else ceiling)
+    chosen = max(1, step_down(ceiling, lambda n: all(_fits(n, **options)[0].values())))    # decision 1507
+    checks, free = _fits(chosen, **options)
+    if all(checks.values()):
+        reason = f'{chosen} of a ceiling of {ceiling} fit the measured parent footprint by the policy formula'
     else:
-        selected = DEFAULT
-        reason = 'default four; six do not fit: ' + ', '.join(name for name, ok in wide.items() if not ok)
-    maximum = policy_maximum(policy_type)
-    chosen = min(selected, maximum)
-    if chosen < selected:
-        reason += f'; clamped to {maximum} by the policy (its accepted maximum)'
-    return {'schema': SCHEMA, 'chosen': chosen, 'selected': selected, 'policy_maximum': maximum, 'reason': reason,
-            'default': DEFAULT, 'wide': WIDE, 'per_worker_booked_bytes': booking,
-            'checks': {'six': wide, 'four': default}, 'free_at_launch': free,
+        reason = 'one: no count fits: ' + ', '.join(name for name, ok in checks.items() if not ok)
+    return {'schema': SCHEMA, 'chosen': chosen, 'selected': chosen, 'ceiling': ceiling, 'reason': reason,
+            'per_worker_booked_bytes': booking,
+            'checks': {str(chosen): checks}, 'free_at_launch': free,
             'inputs': {'parent': dict(parent), 'machine': dict(machine), 'logical_budget_bytes': logical_budget_bytes,
                        'child_bytes': policy.child_bytes, 'child_baseline_bytes': child_baseline_bytes,
                        'raw_result_bytes': raw_result_bytes, 'fixed_bytes': fixed,
@@ -90,16 +90,18 @@ def select(*, policy_type, child_baseline_bytes, parent_storage_bytes, raw_resul
 
 def select_composed(*, parent, logical_budget_bytes):
     """select() against the composed runtime's policy and constants, with the machine measured now."""
-    import psutil
     from atlas_tectonics import integration_parallel_dispatch as dispatch
+    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_tectonics import resources_gate as RG
     from atlas_tectonics.integration_parallel_results import raw_capacity
     from atlas_tectonics.integration_parallel_selection import InterfaceParallelPolicy
-    cores = psutil.cpu_count(logical=False) or 1
-    machine = {'physical_cores': cores, 'logical_cpus': max(cores, psutil.cpu_count() or cores),
-               'load_percent': psutil.cpu_percent(interval=0.05), 'available_bytes': psutil.virtual_memory().available}
-    return select(policy_type=InterfaceParallelPolicy, child_baseline_bytes=dispatch.CHILD_BASELINE,
-                  parent_storage_bytes=dispatch.PARENT_STORAGE, raw_result_bytes=raw_capacity(0), parent=parent,
-                  machine=machine, logical_budget_bytes=logical_budget_bytes)
+    machine = MON.reading()
+    host, source = RG.run_cores(machine, RG.setting(machine))
+    result = select(policy_type=InterfaceParallelPolicy, child_baseline_bytes=dispatch.CHILD_BASELINE,
+                    parent_storage_bytes=dispatch.PARENT_STORAGE, raw_result_bytes=raw_capacity(0), parent=parent,
+                    machine=machine, logical_budget_bytes=logical_budget_bytes, ceiling=host-1)
+    result['ceiling_source'] = source
+    return result
 
 
 PARENT_SELECTION_SCHEMA = 'atlas.parent-measured-interface-workers.v1'
@@ -119,11 +121,15 @@ def policy_from_selection(selection):
             any(type(v) is not int or v < 0 for v in parent.values()) or
             parent['real_peak_bytes'] == 0 or type(decision) is not dict or
             decision.get('schema') != SCHEMA or type(decision.get('chosen')) is not int or
-            decision['chosen'] not in (4, 6) or decision.get('policy_maximum') != 6 or
-            decision.get('selected') != decision['chosen'] or
+            decision['chosen'] < 1 or decision.get('selected') != decision['chosen'] or
             decision.get('inputs', {}).get('parent') != parent):
-        raise ValueError('measured parent and current six-worker policy required')
-    if decision['chosen'] == 6 and decision.get('checks', {}).get('six') != {
-            'cores': True, 'memory': True, 'budget': True}:
+        raise ValueError('measured parent and a positive worker count required')
+    fits = {'cores': True, 'memory': True, 'budget': True}
+    if 'ceiling' in decision:    # decisions 1505-1507: a count above one fits every gate, within its ceiling
+        if (type(decision['ceiling']) is not int or decision['chosen'] > decision['ceiling'] or
+                decision['chosen'] > 1 and decision.get('checks', {}).get(str(decision['chosen'])) != fits):
+            raise ValueError('the chosen workers must fit every measured-parent gate within the ceiling')
+    elif (decision['chosen'] not in (4, 6) or decision.get('policy_maximum') != 6 or    # a four-or-six record
+          decision['chosen'] == 6 and decision.get('checks', {}).get('six') != fits):
         raise ValueError('six workers must fit every measured-parent gate')
     return {'mode': 'auto', 'workers': decision['chosen']}

@@ -5,7 +5,7 @@ longer cold-reopens an interval's successor at all (owner decision),
 so this reader performs that successor cold reopen. This entry point
 reads the producer's pinned receipt and guard records store-free, then, in a
 NEW guarded process with the same source-bound profile, preparation and memory
-limits (by-need start gate, 12 GiB RSS / 1 GiB free guard, 16 GiB ledger):
+limits (by-need start gate; the guard's cap, floor and ledger from its decision):
 
 - copies the producer checkpoint into a new output directory and opens only
   that copy, read-only when the reviewed adapter is selected;
@@ -101,6 +101,8 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
 from atlas_tectonics._private import run_prepared_restart as RUN
 
 SG, RG = RUN.SG, RUN.RG
+from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics import resources_gate as GATE
 
 
 READER_SCHEMA = 'atlas.prepared-restart-reopen-result.v1'
@@ -201,24 +203,23 @@ def _producer_policy(receipt, policy=None):
     Actual producer_inputs obtains policy from RUN.producer_policy with its selected sources.
     This pure validator cannot authenticate a Release packet without that source-bound return.
     """
-    old_limits = dict(rss_bytes=RUN.RSS_BYTES, free_floor_bytes=RUN.FREE_BYTES)
     if policy is None:
         require('production_release' not in receipt and receipt.get('execution_mode', 'strict') == 'strict',
                 'Release producer requires source-authenticated production policy')
-        return 'strict', old_limits
+        return 'strict', SG.guardian_limits(receipt.get('start_gate'))
     require(type(policy) is dict and set(policy) == {'execution_mode', 'guard_limits'},
             'complete source-authenticated producer policy required')
     mode, limits = policy['execution_mode'], policy['guard_limits']
     require(mode in ('strict', 'release') and type(limits) is dict and set(limits) == {
             'rss_bytes', 'free_floor_bytes', 'start_available_bytes', 'logical_budget_bytes'} and
             all(type(value) is int and value > 0 for value in limits.values()) and
-            limits['rss_bytes'] <= RUN.RSS_BYTES and limits['free_floor_bytes'] >= RUN.FREE_BYTES and
-            limits['logical_budget_bytes'] == RUN.LOGICAL_BYTES,
+            limits['free_floor_bytes'] >= GATE.FLOOR_BYTES,
             'producer resource policy exceeds the retained bounds')
-    selected = {name: limits[name] for name in old_limits}
+    selected = {name: limits[name] for name in ('rss_bytes', 'free_floor_bytes')}
     if mode == 'strict':
         require('production_release' not in receipt and receipt.get('execution_mode', 'strict') == 'strict' and
-                selected == old_limits, 'historical strict producer policy differs')
+                {name: limits[name] for name in ('rss_bytes', 'free_floor_bytes', 'logical_budget_bytes')}
+                == SG.run_limits(receipt.get('start_gate')), 'strict producer policy differs from its start decision')
     else:
         require(receipt.get('execution_mode') == 'release' and type(receipt.get('production_release')) is dict and
                 receipt.get('guard_limits') == limits, 'Release producer policy differs from its receipt')
@@ -414,11 +415,11 @@ def validate_guard(guard, control, *, pid, supervisor_pid, limits=None, recorded
     guardian = guard.get('guardian')
     require(type(guardian) is dict and type(guardian.get('pid')) is int and guardian['pid'] == supervisor_pid,
             'guardian process differs from the recorded supervisor')
-    strict_limits = dict(rss_bytes=RUN.RSS_BYTES, free_floor_bytes=RUN.FREE_BYTES)
+    strict_limits = {name: GATE.EARLIER_LIMITS[name] for name in ('rss_bytes', 'free_floor_bytes')}
     limits = strict_limits if limits is None else limits
     require(type(limits) is dict and set(limits) == set(strict_limits) and
-            type(limits['rss_bytes']) is int and 0 < limits['rss_bytes'] <= RUN.RSS_BYTES and
-            type(limits['free_floor_bytes']) is int and limits['free_floor_bytes'] >= RUN.FREE_BYTES,
+            type(limits['rss_bytes']) is int and limits['rss_bytes'] > 0 and
+            type(limits['free_floor_bytes']) is int and limits['free_floor_bytes'] >= GATE.FLOOR_BYTES,
             'guardian limits exceed the retained bounds')
     require(guard.get('limits') == limits and control.get('limits') == limits,
             'exact 12 GiB / 1 GiB guardian limits required' if limits == strict_limits else
@@ -1075,8 +1076,7 @@ def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, 
             sources.profile is profile and sources.selected_now, 'actual selected pinned sources required')
     require(mode in MODES and store_route in STORE_ROUTES and type(producer) is dict and
             producer.get('mode') == mode, 'validated producer expectation for this mode required')
-    import psutil
-    available = psutil.virtual_memory().available
+    available = MONITOR.free_memory()
     admitted = SG.child_admit(start_gate, available)
     row = profile.record()
     H = sources.module('historical_admission')
@@ -1099,10 +1099,11 @@ def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, 
     historical_root = RUN._check_historical_root(sources, H, row)
     output = guard.output.parent
     reader_output(profile, sources, str(output), exists=True)
-    guard.budget = budget = WorkBudget(RUN.LOGICAL_BYTES, max_predicate_work_units=1 << 44)
-    RUN._guard_boundary(sources, guard, budget)
+    selected_limits = SG.guard_limits(admitted)
+    guard.budget = budget = WorkBudget(selected_limits['logical_budget_bytes'], max_predicate_work_units=1 << 44)
+    RUN._guard_boundary(sources, guard, budget, limits=selected_limits)
     check = lambda: guard.check(force=True)
-    record.update(guard_limits=SG.guard_limits(admitted), start_gate=admitted,
+    record.update(guard_limits=selected_limits, start_gate=admitted,
         memory_at_start=dict(available_bytes=available), source_proof=sources.verify(),
         launch_environment={name: os.environ.get(name) for name in sorted(RUN.LAUNCH_ENV)},
         production_acceptance=False)
@@ -1256,8 +1257,7 @@ def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, 
 
 def _workload(profile, *, producer_receipt_sha256, output_directory, mode, store_route, start_gate=None):
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
-    import psutil
-    SG.child_admit(start_gate, psutil.virtual_memory().available)
+    admitted = SG.child_admit(start_gate, MONITOR.free_memory())
     sources = RUN.RestartSources(profile)
     output = reader_output(profile, sources, output_directory, exists=True)/'reopen.json'
     record = dict(schema=READER_SCHEMA, status='STARTED', pid=os.getpid(), profile_sha256=profile.sha256,
@@ -1271,7 +1271,7 @@ def _workload(profile, *, producer_receipt_sha256, output_directory, mode, store
         G = sources.module('private_heat_continuation_guard_r3')
         save = lambda: G._write(output, record)
         try:
-            guard = G.ContinuationGuard(output, record, save)
+            guard = G.ContinuationGuard(output, record, save, **SG.guardian_limits(admitted))
             producer = producer_inputs(profile, sources=sources, receipt_sha256=producer_receipt_sha256,
                                        mode=mode, consumer_pid=os.getpid())
             budget = reopen_prepared_restart(profile, sources=sources, guard=guard, record=record, save=save,
@@ -1357,7 +1357,8 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
         validate_retained_producer(reopen, retained)
     supervisor = reopen.get('supervisor')
     require(type(supervisor) is dict, 'reader supervisor record required')
-    validate_guard(guard_receipt, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'))
+    validate_guard(guard_receipt, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'),
+                   limits=SG.guardian_limits(reopen.get('start_gate')))
 
 
 def finalise(profile, *, producer_receipt_sha256, output_directory, mode, store_route, reopen_receipt_sha256):
@@ -1448,8 +1449,7 @@ def main(argv=None):
         production_acceptance=False)), flush=True)
     if not args.launch:
         return 0
-    import psutil
-    SG.admit(gate, psutil.virtual_memory().available)
+    SG.admit(gate, MONITOR.free_memory())
     output = Path(args.output_directory)
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=RUN.launch_environment(), cwd=output)

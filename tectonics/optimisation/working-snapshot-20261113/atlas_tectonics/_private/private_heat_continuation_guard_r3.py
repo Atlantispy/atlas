@@ -1,6 +1,6 @@
 """Launch-bound continuation guard, successor of the preserved guard r2.
 
-Same 12 GiB sampled RSS ceiling, 1 GiB free floor, .25 s nominal sample period,
+Sampled RSS ceiling and free floor from the resources gate, .25 s nominal sample period,
 five-second cooperative grace, cancel filename and receipt ownership. Windows
 job membership replaces every PID/creation-time ancestry decision. The external
 supervisor owns the job through driver exit, including final receipt writes.
@@ -98,7 +98,7 @@ def _prepare_packaged_guard(argv):
     exec(compile(raw, str(bootstrap), 'exec', dont_inherit=True), helper.__dict__)
     helper.prepare_installed_runner(profile_path, profile_pin, __file__,
                                     runner_modules=('private_heat_resource_diagnostics_r1', 'windows_workload_job',
-                                                    'private_heat_check3_recording_r1'))
+                                                    'private_heat_check3_recording_r1', 'start_gate'))
 
 
 if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private'
@@ -110,9 +110,9 @@ from atlas_tectonics._private import private_heat_resource_diagnostics_r1 as RES
 from atlas_tectonics._private import private_heat_check3_recording_r1 as CHECK3
 
 from atlas_tectonics._private.windows_workload_job import WindowsJob, verify_current_membership
+from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics import resources_gate as GATE
 
-RSS_LIMIT = 12 << 30
-FREE_FLOOR = 1 << 30
 RETRIES, RETRY_SECONDS = 50, .02
 PATIENT_TRIES = 500
 ENV = 'ATLAS_CONTINUATION_JOB_CONTEXT'
@@ -213,10 +213,10 @@ def _reader_exit_census(job, host):
 
 
 def _limits(rss_bytes, free_floor_bytes, sample_interval, grace_seconds):
-    if type(rss_bytes) is not int or not 0 < rss_bytes <= RSS_LIMIT:
-        raise ValueError('RSS guard must be positive and at most the authorised 12 GiB')
-    if type(free_floor_bytes) is not int or free_floor_bytes < FREE_FLOOR:
-        raise ValueError('Free-memory floor cannot fall below the authorised 1 GiB')
+    if type(rss_bytes) is not int or not 0 < rss_bytes <= GATE.cap_bound(MONITOR.machine_memory()):
+        raise ValueError('RSS guard must be positive and at most the machine\'s memory less the free floor')
+    if type(free_floor_bytes) is not int or free_floor_bytes < GATE.FLOOR_BYTES:
+        raise ValueError('Free-memory floor cannot fall below the gate\'s floor')
     if not math.isfinite(sample_interval) or not .01 <= sample_interval <= 1:
         raise ValueError('Guard sampling interval must be between .01 and 1 second')
     if not math.isfinite(grace_seconds) or not 0 < grace_seconds <= 5:
@@ -269,8 +269,9 @@ def _terminal_main(output, receipt):
 
 
 class ContinuationGuard:
-    def __init__(self, output, record, save, *, rss_bytes=RSS_LIMIT,
-                 free_floor_bytes=FREE_FLOOR, sample_interval=.25, grace_seconds=5.):
+    def __init__(self, output, record, save, *, rss_bytes=None,
+                 free_floor_bytes=GATE.FLOOR_BYTES, sample_interval=.25, grace_seconds=5.):
+        rss_bytes = GATE.cap_bound(MONITOR.machine_memory()) if rss_bytes is None else rss_bytes
         _limits(rss_bytes, free_floor_bytes, sample_interval, grace_seconds)
         self.output = Path(output).resolve()
         self.record, self.save = record, save
@@ -400,9 +401,11 @@ class ContinuationGuard:
 Guard = ContinuationGuard
 
 
-def supervise(output, command, *, rss_bytes=RSS_LIMIT, free_floor_bytes=FREE_FLOOR,
+def supervise(output, command, *, rss_bytes=None, free_floor_bytes=GATE.FLOOR_BYTES,
               sample_interval=.25, grace_seconds=5., cwd=None, diagnostic_reader_integrity=False):
     """Own and observe a workload until exit; return nonzero on any guard failure."""
+    # Started before the run's decision reaches it: the most a tree could hold, lowered by the run's request.
+    rss_bytes = GATE.cap_bound(MONITOR.machine_memory()) if rss_bytes is None else rss_bytes
     _limits(rss_bytes, free_floor_bytes, sample_interval, grace_seconds)
     output = Path(output).resolve()
     paths = {name: output.with_suffix(suffix) for name, suffix in
@@ -504,7 +507,7 @@ def supervise(output, command, *, rss_bytes=RSS_LIMIT, free_floor_bytes=FREE_FLO
             check3_sample_after = time.monotonic_ns()
             check3_samples.observe(sample, check3_sample_before, check3_sample_after,
                                   receipt['phase'], receipt['samples']+1)
-            sample.update(available_ram_bytes=psutil.virtual_memory().available,
+            sample.update(available_ram_bytes=MONITOR.free_memory(),
                           guardian_rss_bytes=psutil.Process().memory_info().rss)
             if resource_summary is not None:
                 # Passive: a diagnostic failure disables only this summary.

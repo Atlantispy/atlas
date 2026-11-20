@@ -216,7 +216,7 @@ def _validate_issued(system, boundary, target, context, cancel):
     """Validate live state on the certified assembly/small-cell handoff."""
     if system.context_signature != context_signature(context):
         raise ValueError('Matching immutable Decimal-80 system and ordered cell arrays required')
-    # Landing E B-12: decimal_inventory_r1._derive, run just before on these objects (core r2), proved the
+    # decimal_inventory_r1._derive, run just before on these objects (core r2), proved the
     # signature canonical and equal to the boundary, each observation a declared kind with a finite binary64 value.
     target_decimal = D(target)
     if not target_decimal.is_finite() or target_decimal <= 0:

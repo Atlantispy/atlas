@@ -40,7 +40,7 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 from atlas_tectonics import integration_mimetic_newton as _POLICY
 
 HERE = Path(__file__).resolve().parent
-CORE_SHA256 = 'fd477367fe27f27bad1c0e9aca5a72159741d65b8275fec521187179ac042eea'
+CORE_SHA256 = 'e007fce52b6d623029688df2c630d25feed3dd3ac361b88e3b2c9b4873a0b8df'
 POLICY_SHA256 = 'a4a9493ceebfeb9740e279f5fdf1a158226d782fe900b8713e2a0d3da67d5790'
 # Existing low-solver source closures consume this public path constant too.
 POLICY_PATH = Path(_POLICY.__file__).resolve()
@@ -94,7 +94,7 @@ def _runtime(cancel):
     from atlas_tectonics import integration_mimetic_newton as POLICY
     if Path(POLICY.__file__).name != 'integration_mimetic_newton.py':
         raise RuntimeError('Unexpected Decimal accounting policy module')
-    # Landing E B-1: compared every call, read once a process (ruling 1).
+    # compared every call, read once a process.
     from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
     if (_helper_source_digest(Path(P.__file__), owner_file=__file__, cancel=cancel) != CORE_SHA256
             or _helper_source_digest(Path(POLICY.__file__).resolve(), owner_file=__file__, cancel=cancel)

@@ -40,6 +40,8 @@ from . import resources as R
 from .integration_parallel_binding import BATCH_LIMIT
 from .integration_parallel_owner import nodes_for
 from .integration_parallel_results import MOMENTS, raw_capacity
+from . import machine_resources_monitor as MON
+from . import resources_gate as RG
 
 DECISION_SCHEMA = 'atlas.interface-parallel-decision.v1'
 MODES = ('auto', 'serial', 'off')
@@ -82,17 +84,16 @@ class InterfaceParallelPolicy:
     minimum_job_seconds an optional per-contact floor (120 restores the
     earlier rule). workers is 1 to 6 (rolling batches; the single-contact
     planner still dispatches at most 2). A class needs minimum_samples integrator
-    observations before it yields an estimate. startup_seconds and
-    transfer_seconds are the measured fixed costs of one worker and of its
-    parent-side handling, contention the slow-down of a worker's body,
-    parent_slowdown the measured slow-down of the parent's own contacts while
-    a worker is alive, and a plan must save benefit_ratio times the overhead
+    observations before it yields an estimate. A worker's start, the
+    parent's hand-over, a worker's slow-down against its estimate and the
+    parent's own slow-down while a worker is alive are measured
+    (machine_resources_monitor), and a plan must save benefit_ratio times the overhead
     it pays. child_bytes and
     predicate_units are the worker envelope, screen_bytes and screen_units the
     scratch of one exact screen. timeout_seconds is the ceiling of a plan's
     worker timeout, 4 times the high estimate plus the start-up and at least
     120 s; a contact whose worker is itself modelled to need longer than that
-    (start-up plus contention times its high estimate) is never dispatched.
+    (start-up plus its measured slow-down times its high estimate) is never dispatched.
     ram_reserve_bytes of physical memory must remain free, the parent keeps
     one free core beside its workers, and the optional envelope may use
     budget_fraction of what the budget has available. profile_path is an
@@ -104,8 +105,7 @@ class InterfaceParallelPolicy:
     rule alone. batch_jobs bounds the requests of one batch and horizon the
     requests a pass may read ahead of its parent. The rolling schedule applies
     minimum_seconds to the eligible work it expects in the whole pass, and
-    rates the parent's own stretches beside its workers instead of using
-    parent_slowdown. keep_workers keeps each batch worker for the session's
+    rates the parent's own stretches beside its workers. keep_workers keeps each batch worker for the session's
     life, one batch at a time (decision 143); False is the one-shot worker.
     """
     mode: str = 'auto'
@@ -114,15 +114,11 @@ class InterfaceParallelPolicy:
     workers: int = 2
     lookahead: int = 64
     minimum_samples: int = 5
-    startup_seconds: float = 3.0
-    transfer_seconds: float = 0.4
-    contention: float = 1.3
-    parent_slowdown: float = 2.5
     benefit_ratio: float = 1.0
     child_bytes: int = 512 << 20
     predicate_units: int = 1 << 34
     timeout_seconds: float = 1800.0
-    ram_reserve_bytes: int = 2 << 30
+    ram_reserve_bytes: int = RG.RESERVE_BYTES
     budget_fraction: float = 0.5
     screen_bytes: int = 8 << 20
     screen_units: int = 65536
@@ -136,18 +132,17 @@ class InterfaceParallelPolicy:
     def __post_init__(self):
         if self.mode not in MODES:
             raise ValueError('interface parallel mode must be auto, serial or off')
-        if (not _real(self.minimum_seconds, 0) or not _real(self.startup_seconds, 0)
-                or not _real(self.transfer_seconds, 0) or not _real(self.benefit_ratio, 0)
-                or not _real(self.contention, 1) or not _real(self.parent_slowdown, 1)
+        if (not _real(self.minimum_seconds, 0) or not _real(self.benefit_ratio, 0)
                 or self.minimum_job_seconds is not None and not _real(self.minimum_job_seconds, 0)):
-            raise ValueError('finite nonnegative timing policy and slow-downs of at least one required')
+            raise ValueError('finite nonnegative timing policy required')
         if not _real(self.timeout_seconds, 0, MAX_TIMEOUT_SECONDS) or not self.timeout_seconds:
             raise ValueError('worker timeout must be positive and at most 1800 seconds')
         if not _real(self.budget_fraction, 0, 1) or not self.budget_fraction:
             raise ValueError('budget fraction must lie in (0, 1]')
-        if (not _whole(self.workers, 1, 6) or not _whole(self.lookahead, 1, D.SCAN_LIMIT)
+        if (not _whole(self.workers, 1) or not _whole(self.lookahead, 1, D.SCAN_LIMIT)
                 or not _whole(self.minimum_samples, 1)):
-            raise ValueError('one to six workers, a lookahead within the scan limit and a positive sample count required')
+            raise ValueError('a positive worker count, a lookahead within the scan limit and a positive sample count '
+                             'required')
         if (not _whole(self.child_bytes, 1) or not _whole(self.predicate_units, 1)
                 or not _whole(self.ram_reserve_bytes, 0) or not _whole(self.screen_units, 1)
                 or not _whole(self.screen_bytes, 1, D.PARENT_STORAGE//4)):
@@ -169,9 +164,18 @@ class InterfaceParallelPolicy:
 DEFAULT_POLICY = InterfaceParallelPolicy()
 
 
-def _median(values):
-    ordered = sorted(values)
-    return (ordered[(len(ordered)-1)//2]+ordered[len(ordered)//2])/2
+def _stored(rows):
+    """(start, hand-over) stored in these dispatch rows: the medians of the worker starts and of the parents'
+    hand-over seconds; None for a figure none is stored for."""
+    starts = [row[0] for row in rows if row[0] is not None]
+    hands = [row[4] for row in rows if len(row) == 5 and row[4] is not None]
+    return (MON.median(starts) if starts else None), (MON.median(hands) if hands else None)
+
+
+def _save_samples(store):
+    """The machine's measured samples are saved beside the profile, when the profile is."""
+    if store['path'] is not None:
+        MON.save_store(os.path.dirname(store['path']))
 
 
 def class_estimate(row, minimum_samples):
@@ -186,7 +190,7 @@ def class_estimate(row, minimum_samples):
     integrator, shortcut = row['integrator'], row['shortcut']
     seconds = sorted(sample[0] for sample in row['samples'])
     if integrator >= minimum_samples and len(seconds) >= min(minimum_samples, PF.MAX_SAMPLES):
-        return dict(basis='class', low=seconds[(len(seconds)-1)//4], mid=_median(seconds),
+        return dict(basis='class', low=seconds[(len(seconds)-1)//4], mid=MON.median(seconds),
                     high=1.25*seconds[-1], samples=integrator, share=integrator/(integrator+shortcut))
     if not integrator and shortcut >= minimum_samples:
         return dict(basis='class', low=0.0, mid=0.0, high=0.0, samples=shortcut, share=0.0)
@@ -308,6 +312,7 @@ class _Observer:
         self._calls = self._kept = self._adopted = self._declined = self._waits = 0
         self._contended = False
         self.instrumented = False
+        self.beside = deque(maxlen=PF.MAX_SAMPLES)    # (class key, seconds) the parent ran beside a worker
         self._mark = perf_counter()
 
     def _fail(self, error):
@@ -423,6 +428,9 @@ class _Observer:
                 window[2] += integrator
                 if seconds > window[3]:
                     window[3] = seconds
+            if route == 'integrator' and not clean and not spoilt and session is not None and self.components is not None:
+                # A contact the parent ran while a worker was alive rates the parent's own slow-down.
+                self.beside.append((self._class_key(self._class_token(key, name, other)), seconds))
             if not clean:
                 return
             self._kept += 1
@@ -499,6 +507,7 @@ class _Automatic:
         self._rows, self._classes, self._exact, self._finished, self.workers = [], {}, False, False, 0
         self._observations_checked = False
         self.stale = False
+        self._times = MON.Timings()
         # Whether every gate that does not depend on a profile passed: the rolling passes ask this.
         self.admitted = False
         self.lookahead, self.screen_bytes, self.screen_units = 0, 1, 1
@@ -566,6 +575,8 @@ class _Automatic:
         self.digest = PF.binding_digest(record)
         decision['binding'] = dict(record, digest=self.digest, loaded_code=loaded, changed=False)
         self.store, note = PF.open_store(policy.profile_path) if store is None else (store, None)
+        if self.store['path'] is not None:
+            MON.use_store(os.path.dirname(self.store['path']))    # the machine's samples sit beside the profile
         decision['profile'] = dict(PF.summary(self.store, self.digest), read_error=note, save_error=None, saved=False)
         decision['overhead_seconds']['binding'] = perf_counter()-begun
         self.observer = self._new_observer(max_leaves, self.bucket, policy.lookahead)
@@ -588,9 +599,10 @@ class _Automatic:
         registered = any(node._revoker is not None for node in nodes_for((budget, budget._predicate_work)))
         if not self._gate('owner', registered, not registered):
             return self._serial('owner', 'another optional owner is registered on this budget ancestry')
-        cpus = os.cpu_count() or 1
-        if not self._gate('workers', dict(policy=policy.workers, logical_cpus=cpus), cpus >= 2):
-            return self._serial('workers', 'one logical CPU cannot overlap a worker with its parent')
+        machine = MON.reading(load=0)    # the gate counts cores, so no load sample
+        cpus, _ = RG.run_cores(machine, RG.setting(machine))
+        if not self._gate('workers', dict(policy=policy.workers, host_cores=cpus), cpus >= 2):
+            return self._serial('workers', 'one core cannot overlap a worker with its parent')
         self.admitted = True
         # Without a session the enclosure runs its unchanged serial calls: no
         # claim and no request is built per contact. So a profile that cannot
@@ -737,31 +749,31 @@ class _Automatic:
         policy, budget = self.policy, self.budget
         try:
             try:
-                import psutil
+                import psutil  # noqa: F401  (the gate: a worker is watched and stopped through it)
             except ImportError:
                 self._gate('psutil', False, False)
                 self._serial('psutil', 'psutil is required to watch and stop a worker')
                 return False
-            cores = psutil.cpu_count(logical=False) or max(1, (os.cpu_count() or 1)//2)
-            logical = max(cores, psutil.cpu_count() or os.cpu_count() or cores)
-            load = psutil.cpu_percent(interval=0.05)
+            machine = MON.reading()
+            cores, _ = RG.run_cores(machine, RG.setting(machine))
             # Conservative on both counts. The sample is of logical CPUs, and
             # each busy one is taken to occupy a physical core of its own:
             # eight busy threads on eight cores read as half idle. And the
             # parent slept through the sample, so the core it will go on
             # using looked idle: workers need that many free cores beside it.
-            busy = logical*load/100
-            free = max(0.0, cores-busy)
-            memory = psutil.virtual_memory().available
+            logical, busy, load = machine['logical_cpus'], machine['busy_cores'], machine['load_percent']
+            free, memory = RG.free_cores(machine, cores), machine['available_bytes']
             one = policy.child_bytes+D.CHILD_BASELINE
+            # Free memory counts a worker at its pool's largest measured peak, at the allowance before one.
+            peak = self._times.peak((self.family, 'worker', 'peak')) or one
             fixed = D.PARENT_STORAGE+8192+256*len(nodes_for((budget,)))
             free_bytes, free_units = budget.available_bytes, budget._predicate_work.available_bytes
             limits = (
                 ('cpu', dict(physical_cores=cores, logical_cpus=logical, busy_cpus=round(busy, 2),
                              free_cores=round(free, 2), idle_cores=round(cores*(1-load/100), 2)),
                  lambda n: free >= n+1, 'fewer free cores than the parent and its workers need'),
-                ('memory', dict(available_bytes=memory, per_worker_bytes=one, reserve_bytes=policy.ram_reserve_bytes),
-                 lambda n: memory >= n*one+policy.ram_reserve_bytes, 'not enough free physical memory beside the reserve'),
+                ('memory', dict(available_bytes=memory, per_worker_bytes=peak, reserve_bytes=policy.ram_reserve_bytes),
+                 lambda n: memory >= n*peak+policy.ram_reserve_bytes, 'not enough free physical memory beside the reserve'),
                 ('budget', dict(available_bytes=free_bytes, fixed_bytes=fixed, per_worker_bytes=one+raw_capacity(0)),
                  lambda n: fixed+n*(one+raw_capacity(0)) <= policy.budget_fraction*free_bytes,
                  'the optional envelope exceeds the allowed fraction of the available budget'),
@@ -770,8 +782,7 @@ class _Automatic:
                  'the worker unit envelope exceeds the allowed fraction of the available predicate units'))
             workers = policy.workers
             for name, value, fits, refusal in limits:
-                while workers and not fits(workers):
-                    workers -= 1
+                workers = RG.step_down(workers, fits)
                 if not self._gate(name, dict(value, workers=workers), workers > 0):
                     self._serial(name, refusal)
                     return False
@@ -803,8 +814,8 @@ class _Automatic:
         if not self._current_timing_binding():
             return [], self.policy.timeout_seconds
         policy, rows, plan = self.policy, self._rows, self.decision['plan']
-        observed = [row[0] for row in PF.dispatch_rows(self.store, self.digest) if row[0] is not None]
-        startup = _median(observed) if len(observed) >= 3 else policy.startup_seconds
+        startup, transfer = (0.0 if seen is None else seen for seen in _stored(PF.dispatch_rows(self.store, self.digest)))
+        contention, slowdown = (self._times.figure((self.family, kind, 'slowdown')) or 1.0 for kind in ('worker', 'parent'))
         reasons, costs, eligible, late, floored = dict(_SCREENED), [0.0]*len(rows), [], [], 0
         for row in rows:
             outcome = row['screen'] = screens.get(row['index'])
@@ -818,7 +829,7 @@ class _Automatic:
             # would be stopped there, its sibling revoked with it and both
             # rerun serially: all cost, no saving. The right-hand side is a
             # lower bound on the timeout of any plan that holds this contact.
-            if startup+policy.contention*row['high'] > min(policy.timeout_seconds, max(120.0, 4*row['high']+startup)):
+            if startup+contention*row['high'] > min(policy.timeout_seconds, max(120.0, 4*row['high']+startup)):
                 row['why_not'] = 'cannot finish inside the worker timeout'
                 late.append(row['index'])
             elif policy.minimum_job_seconds is None or row['low'] >= policy.minimum_job_seconds:
@@ -847,9 +858,9 @@ class _Automatic:
             return [], policy.timeout_seconds
         # The single-contact planner's exhaustive search and its 2-thread dispatcher keep
         # their old bound; extra workers serve the rolling batches.
-        found = schedule(costs, eligible, workers=min(self.workers, 2), startup=startup, transfer=policy.transfer_seconds,
-                         contention=policy.contention, benefit_ratio=policy.benefit_ratio,
-                         parent_slowdown=policy.parent_slowdown)
+        found = schedule(costs, eligible, workers=min(self.workers, 2), startup=startup, transfer=transfer,
+                         contention=contention, benefit_ratio=policy.benefit_ratio,
+                         parent_slowdown=slowdown)
         selected = list(found['selected'])
         plan.update(workers=min(self.workers, 2), startup_seconds=startup, serial_seconds=found['serial_seconds'],
                     saving=found['saving'],
@@ -928,10 +939,25 @@ class _Automatic:
             # Python does not try the removal again, so say what is left and where to look.
             decision['notes'].append('session directory not removed (an atlas-interfaces- folder of the '
                                      'temporary directory still holds files): %s' % _public(plan['cleanup']))
+        lows = {row['index']: row['low'] for row in self._rows}
         for outcome in session.outcomes:
             total, body = outcome['total_seconds'], outcome['body_seconds']
             report['jobs'].append(dict(outcome, startup_seconds=None if total is None or body is None
                                        else max(0.0, total-body)))
+            if body and lows.get(outcome['index'], 0) > 0:
+                # A worker's slow-down: its body against the estimate it was sent at.
+                self._times.add((self.family, 'worker', 'slowdown'), body/lows[outcome['index']])
+        if stats['peak_child_rss']:
+            self._times.add((self.family, 'worker', 'peak'), stats['peak_child_rss'])
+        spent = low = 0.0
+        for label, seconds in self.observer.beside:
+            row = self._classes.get(label)
+            found = None if row is None else class_estimate(row, self.policy.minimum_samples)
+            if found is not None and found['low'] > 0:
+                spent, low = spent+seconds, low+found['low']
+        if spent > 0 and low > 0:
+            # The parent's own slow-down while a worker is alive: its seconds against their estimates.
+            self._times.add((self.family, 'parent', 'slowdown'), spent/low)
         decision['overhead_seconds']['screens'] = plan.get('screen_seconds', 0.0)
         if stats['started']:
             if decision['reason'] is not None:
@@ -977,8 +1003,9 @@ class _Automatic:
         decision['observations'].update(summary)
         for job in decision['dispatch']['jobs']:
             if job['total_seconds'] is not None:
-                observed['dispatch'].append([job['startup_seconds'], job['body_seconds'],
-                                             job['total_seconds'], job['adopted']])
+                observed['dispatch'].append([job['startup_seconds'], job['body_seconds'], job['total_seconds'],
+                                             job['adopted']] + ([] if job.get('parent_seconds') is None
+                                                                else [job['parent_seconds']]))
         if not (observed['walls']['count'] or observed['interfaces'] or observed['dispatch']):
             return    # nothing was timed: no second source inventory, nothing to fold or save
         stale = self.stale
@@ -1007,6 +1034,7 @@ class _Automatic:
         else:
             PF.fold(self.store, self.digest, observed)
             error = PF.save(self.store)
+            _save_samples(self.store)
             decision['profile'].update(PF.summary(self.store, self.digest), save_error=error,
                                        saved=error is None and self.store['path'] is not None)
         decision['overhead_seconds']['save'] = perf_counter()-begun
@@ -1055,7 +1083,7 @@ class _AutomaticWalls(_Automatic):
 
     def _new_observer(self, leaves, bucket, lookahead):
         observer = _WallObserver(leaves, bucket, lookahead)
-        observer.exact_floor = self.policy.startup_seconds+self.policy.transfer_seconds
+        observer.exact_floor = RB.line(*_stored(PF.dispatch_rows(self.store, self.digest)))[0]
         return observer
 
     def _new_session(self, **kwargs):
@@ -1184,7 +1212,9 @@ class _WallBatches:
                 for job in decision['dispatch']['jobs']:
                     if job['total_seconds'] is not None:
                         observed['dispatch'].append([job['startup_seconds'], job['body_seconds'],
-                                                     job['total_seconds'], job['adopted']])
+                                                     job['total_seconds'], job['adopted']]
+                                                    + ([] if job.get('parent_seconds') is None
+                                                       else [job['parent_seconds']]))
                 PF.fold(self.working, self.digest, observed)
                 PF.fold(self.pending, self.digest, observed)
                 report['recorded'] += summary['recorded']
@@ -1218,6 +1248,7 @@ class _WallBatches:
         if valid and self.pending['bindings']:
             PF.fold(self.store, self.digest, PF.entry_observations(self.pending, self.digest))
             error = PF.save(self.store)
+            _save_samples(self.store)
             report.update(saved=error is None and self.store['path'] is not None, save_error=error)
         elif self.pending['bindings']:
             report['discarded'] += report['recorded']
@@ -1255,6 +1286,8 @@ class _Rolling:
         self.record = PF.current_binding(parent.budget, code=parent.code, family=self.family)
         self.digest = PF.binding_digest(self.record)
         self.rows, self.labels, self.cache, self.walls = {}, {}, {}, {}
+        self.ceiling = None    # the line the cached class estimates were made with
+        self.stored = _stored(PF.dispatch_rows(parent.store, self.digest))
         self.identities, self.total, self.closed, self.finished = {}, 0, False, False
         # Two supports for each request in sight: a plan never empties the cache under its own feet.
         self.cached = 2*policy.horizon+64
@@ -1273,8 +1306,7 @@ class _Rolling:
                 capacity=D.MAX_BATCH_INPUT, adoption=self.adoption,
                 workers=policy.workers, batch_seconds=policy.batch_seconds, batch_jobs=policy.batch_jobs,
                 horizon=policy.horizon, minimum_seconds=policy.minimum_seconds,
-                startup_seconds=policy.startup_seconds, transfer_seconds=policy.transfer_seconds,
-                contention=policy.contention, benefit_ratio=policy.benefit_ratio,
+                family=self.family, benefit_ratio=policy.benefit_ratio,
                 timeout_seconds=policy.timeout_seconds)
 
     def _admission(self):
@@ -1299,14 +1331,22 @@ class _Rolling:
         if held and held['count']:
             self.prefix = [held['count'], held['seconds']]
 
+    def _line(self):
+        """This pass's line: measured in the run, else stored; a pass with no schedule has the stored line."""
+        return RB.line(*self.stored) if self.schedule is None else self.schedule.line(*self.stored)
+
     def _expect(self, label):
+        ceiling = self._line()[1]
+        if ceiling != self.ceiling:
+            self.cache.clear()    # the class estimates are made again when the line moves
+            self.ceiling = ceiling
         if label not in self.cache:
             row = self.rows.get(label)
             # Requests at least as long as a worker's fixed cost are remembered one by one:
             # the class describes the others.
             self.cache[label] = None if row is None else RB.expectation(
                 row[0], row[1], row[2], self.policy.minimum_samples,
-                ceiling=self.policy.startup_seconds+self.policy.transfer_seconds)
+                ceiling=ceiling)
         return self.cache[label]
 
     def _learn(self, label, integrator, seconds):
@@ -1375,6 +1415,7 @@ class _Rolling:
     def _machine(self):
         """The unfunded machine and ledger gates of the single-contact planner, for this pass."""
         probe = _Automatic()
+        probe.family = self.family    # its memory gate reads this pass's measured peaks
         probe.policy, probe.budget = self.policy, self.parent.budget
         probe.workers = self.policy.workers
         admitted = probe._resources()
@@ -1546,7 +1587,9 @@ class _RollingWalls(_Rolling):
         self.instrumented = False
         self.seen = [0, 0, None]    # components and queries offered so far, and the last component
         self.report = dict(family='wall', batches=0, contacts=0, started=0, adopted=0, declined=0,
-            peak_child_rss=0, recorded=0, discarded=0, saved=False, reasons={}, recent=[], notes=[])
+            peak_child_rss=0, recorded=0, discarded=0, saved=False, reasons={}, recent=[], notes=[],
+            screen={'screened': 0, 'decided': 0, 'seconds': 0.0, 'saved': 0.0, 'off': False})
+        self.width = None    # W-2s: the decoded width, once a pass
 
     def _settings(self, key):
         return key.rsplit(',', 3)[0] == PF.wall_class_key(self.parent.leaves, self.parent.bucket, 0, 0, 0).rsplit(',', 3)[0]
@@ -1574,6 +1617,7 @@ class _RollingWalls(_Rolling):
         schedule, seen = self.schedule, self.seen
         if schedule is None or self.closed or schedule.stopped is not None:
             return
+        window = [0.0, 0.0]    # W-2s: this router window's screen seconds and the worker seconds it saved
         try:
             prefix = self._typical_prefix()
             for event in events:
@@ -1593,9 +1637,42 @@ class _RollingWalls(_Rolling):
                         self._identity(support), key, axis, end, self.parent.width_text, self.parent.leaves))
                     if held is not None:
                         exact = (held[1], 1.25*held[1]) if held[0] == 'integrator' else (0.0, 0.0)
-                schedule.offer((support, key, axis, dict(end=end)), prefix, self._label(key, axis, end), exact)
+                job, label = (support, key, axis, dict(end=end)), self._label(key, axis, end)
+                if exact is None:
+                    exact = self._screen(schedule, job, label, window)
+                schedule.offer(job, prefix, label, exact)
         except Exception as error:
             schedule._stop('schedule error', _text(error))
+        screen = self.report['screen']
+        screen['seconds'] += window[0]
+        screen['saved'] += window[1]
+        if window[0] and window[0] >= window[1]:
+            screen['off'] = True    # the screen cost this window more worker seconds than it saved
+
+    def _screen(self, schedule, job, label, window):
+        """W-2s: (0.0, 0.0) when the parent's exact proofs decide a wall a batch would carry, else None.
+
+        The parent proves it again at the wall's place, so an undecided wall pays the screen twice.
+        """
+        screen = self.report['screen']
+        found = schedule._estimate(label)
+        if screen['off'] or found is None or found[0] <= 0 or not self._shippable(job):
+            return None    # no estimate, no screen: such a wall stays with the parent
+        parent, policy = self.parent, self.parent.policy
+        begun = perf_counter()
+        if self.width is None:
+            self.width = G.W._decode(parent.width_text)    # once a pass (sweep w5 finding 2)
+        request = D._wall_request(*job, self.width, parent.leaves)
+        # The session's own screen reads nothing of its session, and none may be open yet.
+        outcome = D.WallParallelSession._screen(None, job[0], None, request,
+            scratch_bytes=policy.screen_bytes, scratch_units=policy.screen_units)
+        window[0] += perf_counter()-begun
+        screen['screened'] += 1
+        if outcome != 'decided':
+            return None
+        screen['decided'] += 1
+        window[1] += schedule.target if found is None else found[0]*schedule.scale
+        return 0.0, 0.0
 
     def prepare(self, jobs):
         """The router enters a window: its clean timings are observed as one bounded set."""
@@ -1608,7 +1685,7 @@ class _RollingWalls(_Rolling):
         self.report['batches'] += 1
         self.report['contacts'] += len(jobs)
         observer = self.window = _WallObserver(self.parent.leaves, self.parent.bucket, self.limit)
-        observer.exact_floor = self.policy.startup_seconds+self.policy.transfer_seconds
+        observer.exact_floor = self._line()[0]
         self._follow(observer, self.session)
         observer.lookahead(self.components, self.boxes)
 
@@ -1690,6 +1767,7 @@ class _RollingWalls(_Rolling):
         if valid and self.pending['bindings']:
             PF.fold(self.store, self.digest, PF.entry_observations(self.pending, self.digest))
             error = PF.save(self.store)
+            _save_samples(self.store)
             report.update(saved=error is None and self.store['path'] is not None, save_error=error)
         elif self.pending['bindings']:
             report['discarded'] += report['recorded']

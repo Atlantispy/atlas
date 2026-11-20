@@ -102,7 +102,7 @@ def validate_failed_overlap(original, *, reason, directory, receipt_limit=64 << 
             failed.get('pid') == parent['pid'] and control.get('parent') == parent and
             guard.get('schema') == 'atlas.private.continuation-guard.r3' and
             type(guard.get('nonce')) is str and guard['nonce'] and control.get('nonce') == guard['nonce'] and
-            guard.get('limits') == control.get('limits') == {'rss_bytes': 12 << 30, 'free_floor_bytes': 1 << 30} and
+            type(guard.get('limits')) is dict and guard['limits'] == control.get('limits') and
             guard.get('workload_exit_confirmed') is True and
             guard.get('cleanup') == {'remaining': [], 'action_errors': []},
             'failed overlap reader and confirmed empty-job guard evidence required')

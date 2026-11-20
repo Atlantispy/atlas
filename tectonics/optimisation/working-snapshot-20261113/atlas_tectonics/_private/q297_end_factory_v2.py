@@ -13,15 +13,15 @@ from types import MappingProxyType
 from pathlib import Path
 
 PINS = {
-    'provider': ('q297_end_provider_v2.py', 'd6d04c42417f02bb73471003eb56c810a64ab0654c00205729d11fd1c4231800'),
-    'pieces': ('q297_end_pieces_v2.py', '9542c8460d9a859868424f25837c5339846a69353abdd340b0cfc6a44d5e8fe8'),
+    'provider': ('q297_end_provider_v2.py', '8ad5f6489a28996f03d947d78c87dce0a72cf3ceb3987af0b3edbf00a3cdd31d'),
+    'pieces': ('q297_end_pieces_v2.py', '704a04ececfdcc865e24dfed00378b04a0ea65d6429bcba153dc6e67c7dab12b'),
     'piece_builder': ('interval_piece_candidate.py', 'ad034d0405e59850ec40133d3f7bae7e816381959777fb8542b974c63e8e299c'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),
     'family': ('material_family_context_candidate.py', '6de91cedc3e1131ba51d49df0f7110d0767a3646f42026f24e2f8dda1a32730e'),
     'start': ('material_start_candidate.py', '03c0dba5331bc4702254a3dcffcc888ad7326dc70b4e2b692956a7e207e95acf'),
     'checkpoint': ('tile_checkpoint_candidate.py', '05aca97ba4b17357339895475a81b5cf67086f2563ee390671c6f461a5a0d135'),
 }
-GRID_SHA = '7365149f3f1b781e9abe5707ac44982d5595fbaee3eeeac8af22745b0cf94fe2'
+GRID_SHA = '0afc36b4b7e13d2422b34c02ea1704b099c062101e793344223ed6109939871f'
 RUNS = (
     ('q297-q336-production-attempt-g-r1', '06b9cb35-ee24-4796-bf15-1b8395390514',
      'da4027b5a8e6b61b0e5b88a14cd1b2de113050643e4b1f59dd6656d4ea5e4283',
@@ -80,23 +80,23 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
     grid_path = Path(grid_path)
     for spec in RUNS:
         _process_record(run_root, spec)
-    proof_root=run_root/'landing-p2-correspondence-r1'
+    proof_root=run_root/'landing-gp-correspondence-r1'
     command=json.loads(_pinned(proof_root/'command.json',
-        'af57b16ed846cf70d919801d48958c80a785c048af640fd63fda0f4445d17993',1 << 20))
-    entry=run_root.parent/'iv1-diagnostic-prep/landing-p2-r1/p2_end_proof_r1.py'
-    _pinned(entry,'e08c661846cfd63b2652a242d74ff730e82dc973c470a8d08758238c9babce2e',2 << 20)
-    if (command.get('ticket')!='q1073' or len(command['argv'])!=14 or
+        'c730441f6ada091cf67aa3888cd4298da85ff7e4ba5cf132f382bec976e0074c',1 << 20))
+    entry=run_root.parent/'iv1-diagnostic-prep/landing-gp-r1/gp_end_proof_r1.py'
+    _pinned(entry,'283aefd417a349c5b4b30c99330bb7ba2dc6e4372f6423d65f9e263a063177a0',2 << 20)
+    if (command.get('ticket')!='q1101' or len(command['argv'])!=14 or
             Path(command['argv'][12]).resolve()!=entry.resolve() or
             Path(command['argv'][13]).resolve()!=(proof_root/'result-data.json').resolve()):
         raise ValueError('correspondence producer command differs')
     output=_pinned(proof_root/'queue.out',
-        '1605e0c50a21dd9e8dbd508df865199a3cb65a00abeaac35c714db0bbee5a50b',4096).splitlines()
-    if (sum(line[9:].startswith(b'q1073 started') for line in output)!=1 or
-            sum(line[9:].startswith(b'q1073 exit 0,') for line in output)!=1):
+        'aa4636fa63f46df74ad5ae591ab42e31ffc8c4de380a7db4db41512fd1be6566',4096).splitlines()
+    if (sum(line[9:].startswith(b'q1101 started') for line in output)!=1 or
+            sum(line[9:].startswith(b'q1101 exit 0,') for line in output)!=1):
         raise ValueError('correspondence producer ticket differs')
     _guard(output, 7200)
     records=[json.loads(line) for line in output if line.startswith(b'{')]
-    if len(records)!=1 or records[0].get('sha256')!='05a44721c11cac5e0533bcccbe42072d4d1c742aecec258c139c1b5ca732facb':
+    if len(records)!=1 or records[0].get('sha256')!='cae83be7428db8c3a7a9a48bfcb0ab9e1c870c9949dbaf585c911c3ded70fc93':
         raise ValueError('correspondence producer output differs')
     _pinned(grid_path, GRID_SHA, 4 << 20)
     modules = {}
@@ -109,7 +109,7 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
         _pinned(path, digest, 2 << 20)
         modules[key] = module
     used = False
-    def factory(*, interval, partition, funding, bounds, closed_graph, budget):
+    def factory(*, interval, partition, funding, bounds, closed_graph, budget, ale_parallel=None):
         nonlocal used
         with _LOCK:
             if used:
@@ -131,7 +131,7 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
                 funding=funding, bounds=bounds, closed_graph=closed_graph, budget=budget,
                 grid_bytes=grid, D=D, H=H, W=W, V=V, B=B, E=E, dependencies=dependencies,
                 sweep_output=run_root/RUNS[0][0]/'process'/'stdout.log',
-                physical_output=run_root/RUNS[1][0]/'process'/'stdout.log')
+                physical_output=run_root/RUNS[1][0]/'process'/'stdout.log', ale_parallel=ale_parallel)
         with _LOCK:
             _REGISTRY[result] = {'type': type(result), 'core': dict(vars(result)),
                                  'prepare': type(result).prepare, 'support': type(result).support_cells,
@@ -140,7 +140,7 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
             if selected_observer is not None:
                 selected_observer(dict(graph_id=closed_graph.geometry_id, grid_sha256=GRID_SHA,
                     sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-                    carry_proof_sha256='05a44721c11cac5e0533bcccbe42072d4d1c742aecec258c139c1b5ca732facb',
+                    carry_proof_sha256='cae83be7428db8c3a7a9a48bfcb0ab9e1c870c9949dbaf585c911c3ded70fc93',
                     inherited_witness_refinements=1, qualification_grid_split='-33/8'))
         except BaseException:
             release(result)

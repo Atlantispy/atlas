@@ -58,7 +58,7 @@ class InventoryPlan:
     shallow_maximum: int = 2048
     refinement_original_maximum: int = 1
     refinement_original_eligible: bool = True
-    owned_retained_count: int = 0    # Landing E B-13: summed on the owned route only
+    owned_retained_count: int = 0    # summed on the owned route only
     owned_endpoint_storage: int = 0
 
 
@@ -89,7 +89,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
             or type(boundary) is not dict):
         raise ValueError('Typed owned rows, positive cells and plain boundary required')
     gmp = A._library()
-    # Landing E B-2: helper_source_digest
+    # helper_source_digest
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
     from atlas_tectonics.integration_spatial_transport import _json_encoding_capacity
     from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
@@ -235,7 +235,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                 owners_validated = True
                 if owned and not (all(value == 0 for value in pair)
                                   or kind != 'cell' and boundary[index][1] == 0):
-                    # Landing E B-13: the interval inventory's retained endpoint storage, from this pass's shapes
+                    # the interval inventory's retained endpoint storage, from this pass's shapes
                     # (plan40b_c8 inventory, exact-zero pairs skipped as there).
                     owned_retained += len(row['owners'])
                     for value, s in zip(pair, source_bounds, strict=True):

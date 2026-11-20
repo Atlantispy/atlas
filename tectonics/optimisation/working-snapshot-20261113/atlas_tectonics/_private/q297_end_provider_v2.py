@@ -11,10 +11,10 @@ from pathlib import Path
 from types import MappingProxyType
 from fractions import Fraction
 
-GRID_SHA = '7365149f3f1b781e9abe5707ac44982d5595fbaee3eeeac8af22745b0cf94fe2'
-GRAPH_SHA = '81e750e0cd94580d236e68239424c7ff10ccb1aa61ca134fc53650123f42a16f'
-PARTITION_ID = '1d9bc3614c7dd504f4403ed357ddb77df606b3f096eef50fad6000935dab4abb'
-CARRY_SHA = '05a44721c11cac5e0533bcccbe42072d4d1c742aecec258c139c1b5ca732facb'
+GRID_SHA = '0afc36b4b7e13d2422b34c02ea1704b099c062101e793344223ed6109939871f'
+GRAPH_SHA = '921d2058c9ba88b69c5adec07d702af14c97dfed51c0aee975a68a633b48fb8d'
+PARTITION_ID = '4a2d96b7cd047381fb845a68802781f1337515fa48cc993cdd5e397c55530e70'
+CARRY_SHA = 'cae83be7428db8c3a7a9a48bfcb0ab9e1c870c9949dbaf585c911c3ded70fc93'
 GENERATION = '0f83587b3bddc3dcf8cea05910d408269a7b847db60fe5db83533f2c81be6d0e'
 SWEEP_SHA = '3ac636974d9909304c52cf071caa12316c249322491c18307a4ee6cf2e3a8205'
 PHYSICAL_SHA = 'e78918f8b9344b8ed06d21256628f9ad801a876336f669374faf405598e026ce'
@@ -102,7 +102,7 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
     """
     old_count = len(read_verified_totals(sweep_output=sweep_output, physical_output=physical_output,
                                          checkpoint=checkpoint, arena=arena))
-    path = Path(sweep_output).parent.parent.parent/'landing-p2-correspondence-r1/result-data.json'
+    path = Path(sweep_output).parent.parent.parent/'landing-gp-correspondence-r1/result-data.json'
     size = path.stat().st_size
     if not 0 < size <= 4 << 20:
         raise ValueError('correspondence proof exceeds source bound')
@@ -136,7 +136,8 @@ class EndGeometryProvider:
     """Bind the exact issued END inputs without taking ownership of them."""
 
     def __init__(self, *, interval, partition, funding, bounds, closed_graph,
-                 budget, grid_bytes, D, H, W, V, B, E, dependencies, sweep_output, physical_output):
+                 budget, grid_bytes, D, H, W, V, B, E, dependencies, sweep_output, physical_output,
+                 ale_parallel=None):
         from atlas_tectonics.integration_spatial_ale import SpatialALEGraph
         if (type(interval) is not D.DifferentialInterval or type(partition) is not D.DifferentialPartition or
                 type(funding) is not H.FullCellFunding or type(bounds) is not H.SpatialALEBounds or
@@ -172,6 +173,8 @@ class EndGeometryProvider:
             self.D, self.H, self.W, self.V, self.B, self.E = D, H, W, V, B, E
             self.dependencies = dependencies
             self.sweep_output, self.physical_output = sweep_output, physical_output
+            # M-1 E-4: one holder bound at issue (the factory's registry compares attributes by identity).
+            self._end_pass = {'policy': ale_parallel}
             self._lease, self._state = lease, 'NEW'
             self._finalizer = weakref.finalize(self, lease.__exit__, None, None, None)
         except BaseException:
@@ -223,6 +226,10 @@ class EndGeometryProvider:
         self._arena, self._measures, self._booked = arena, measures, booked
         self._shared, self._totals = grid, MappingProxyType(totals)
         self._contexts = {}
+        policy = self._end_pass['policy']    # N-2: nothing of an earlier prepare is kept
+        self._end_pass.clear()
+        self._end_pass.update(policy=policy, supports=supports, width=integration_width, leaves=max_leaves,
+                              opened=False, automatic=None, endpoints=None, built=0)
         self._rays = deps['rays'].IntervalRays(self.interval, budget=budget, arena=arena,
             D=self.D, W=self.W, V=self.V, E=self.E)
         arena._retain(4096 * len(supports) + 1024 * len(totals))
@@ -264,16 +271,69 @@ class EndGeometryProvider:
         from atlas_tectonics._private.q297_end_factory_v2 import validate_active
         validate_active(self)
         row = support.record()
+        state = self._end_pass
+        endpoint_pass = _open_end_pass(state, self.budget, self._arena, self.H, booked)
+        if endpoint_pass is not None:
+            # Every support binds in order, booked or not: the pass counts them all (E:55).
+            from atlas_tectonics.integration_component_volume_auto import bind_support
+            bind_support(endpoint_pass, support, row)
         active = any(not self.H._unbooked(booked, part['logical_cell_id'])
                      for part in row['components'])
         if not active:
-            return self.H._support_cells(support, endpoint=endpoint, integration_width=integration_width,
+            cells = self.H._support_cells(support, endpoint=endpoint, integration_width=integration_width,
                 max_leaves=max_leaves, budget=budget, arena=arena, subdivisions=subdivisions,
                 shared_lines=shared_lines, measures=measures, booked=booked, unbooked=unbooked)
-        context = self._context(row)
-        return self.dependencies['pieces'].build_support_pieces(support, endpoint=endpoint,
-            integration_width=integration_width, max_leaves=max_leaves, budget=budget, arena=arena,
-            subdivisions=subdivisions, shared_lines=shared_lines, measures=measures, booked=booked,
-            unbooked=unbooked, interval_rays=self._rays, context=context,
-            nominal_totals=self._totals, piece_builder=self.dependencies['piece_builder'],
-            D=self.D, H=self.H, W=self.W, V=self.V, B=self.B, E=self.E)
+        else:
+            context = self._context(row)
+            cells = self.dependencies['pieces'].build_support_pieces(support, endpoint=endpoint,
+                integration_width=integration_width, max_leaves=max_leaves, budget=budget, arena=arena,
+                subdivisions=subdivisions, shared_lines=shared_lines, measures=measures, booked=booked,
+                unbooked=unbooked, interval_rays=self._rays, context=context,
+                nominal_totals=self._totals, piece_builder=self.dependencies['piece_builder'],
+                D=self.D, H=self.H, W=self.W, V=self.V, B=self.B, E=self.E, endpoint_pass=endpoint_pass)
+        state['built'] += 1
+        if state['built'] == len(state['supports']):
+            _close_end_pass(state)    # the last support's pieces are built: the workers end now
+        return cells
+
+
+def _open_end_pass(state, budget, arena, H, booked):
+    """M-1 E-4: at the first support (after the witness observer read the peak, DM:982), a parent and an endpoint
+    pass as the enclosure opens them (A:607-611), with the mesh's width and leaf limit, listing the END of the
+    booked components only. No policy, or mode off, opens nothing. The mesh's arena closes it on any error."""
+    if not state['opened']:
+        state['opened'] = True
+        policy = state['policy']
+        if policy is not None and policy.mode != 'off':
+            from atlas_tectonics import integration_parallel_selection as S
+            from atlas_tectonics import integration_component_volume_auto as AE
+            arena.stack.callback(_close_end_pass, state)
+            state['automatic'] = S.open_automatic(budget=budget, max_width_m3=state['width'],
+                                                  max_leaves=state['leaves'], policy=policy)
+            endpoints = AE.open_automatic_endpoints(state['automatic'], state['width'],
+                keep=lambda key: not H._unbooked(booked, key), endpoints=('end',))
+            if endpoints is not None:
+                endpoints.prepare(state['supports'])
+            state['endpoints'] = endpoints
+    return state['endpoints']
+
+
+def _close_end_pass(state):
+    """Close the pass, then the parent, then finish it, as the enclosure's finally does (A:626-642); then print
+    the mesh's decision once, as the control prints the enclosure's (J:163). Scheduling evidence only."""
+    endpoints, automatic = state.get('endpoints'), state.get('automatic')
+    state['endpoints'] = state['automatic'] = None
+    try:
+        if endpoints is not None:
+            endpoints.close()
+    finally:
+        if automatic is not None:
+            try:
+                automatic.close()
+            finally:
+                automatic.finish()
+                try:
+                    import json
+                    print('ACTUAL_END_MESH_PARALLEL', json.dumps(automatic.decision, sort_keys=True), flush=True)
+                except Exception:
+                    pass    # a print that fails is dropped, never an error

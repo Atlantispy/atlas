@@ -123,8 +123,8 @@ def runtime_facts():
     with _state.lock:
         if _state.machine is None:
             try:
-                import psutil
-                cores, memory = psutil.cpu_count(logical=False), psutil.virtual_memory().total >> 30
+                from . import machine_resources_monitor as MON
+                cores, memory = MON.reported_cores(), MON.machine_memory() >> 30
             except Exception:
                 cores = memory = None
             _state.machine = dict(python=sys.version, implementation=sys.implementation.name,
@@ -216,7 +216,8 @@ def new_observations():
     classes[key] = dict(shortcut, integrator, samples=[[seconds, work units,
     leaves]]); exact[key] = [route, seconds, work units, leaves]; dispatch rows
     are [start-up seconds or None, body seconds or None, total seconds,
-    adopted]; walls and interfaces[route] are aggregate counters for reports.
+    adopted] and, where the result was adopted, the parent's hand-over
+    seconds after them; walls and interfaces[route] are aggregate counters for reports.
     A contact adopted from a worker is a wait, not a serial observation: it
     belongs in dispatch only.
     """
@@ -311,8 +312,8 @@ def _clean(record):
                     and _seconds(row[1]) and all(map(_count, row[2:]))):
                 clean['exact'][key] = [row[0], float(row[1]), *row[2:]]
         for row in (dispatch if type(dispatch) is list else ()):
-            if (type(row) is list and len(row) == 4 and all(v is None or _seconds(v) for v in row[:2])
-                    and _seconds(row[2]) and type(row[3]) is bool):
+            if (type(row) is list and len(row) in (4, 5) and all(v is None or _seconds(v) for v in row[:2])
+                    and _seconds(row[2]) and type(row[3]) is bool and (len(row) == 4 or _seconds(row[4]))):
                 clean['dispatch'].append(row)
         for route in REPORTED:
             if type(interfaces) is dict and route in interfaces:

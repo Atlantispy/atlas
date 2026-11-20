@@ -67,14 +67,20 @@ SURVEY = 0.25                 # seconds between two system-wide process surveys 
 _source_digests = None    # lower case: an upper-case module value would enter the execution identity
 
 
-def _inventory(inputs):
+def _inventory(inputs, context=None, binding_bytes=None, binding_record=None):
     global _source_digests
-    if _source_digests is None:
-        from .reuse import _source_bytes
-        # Ruling 1: the package source is read once per process; the inputs bind each batch.
-        _source_digests = {'src/atlas_tectonics/'+k: hashlib.sha256(v).hexdigest()
-                           for k, v in _source_bytes().items()}
-    result = dict(_source_digests)
+    if getattr(context, '_adopted', False):  # W-3 E-5: the parent proved these; it compares the binding handed back
+        # S-2: the caller's own decode of these bytes, where it has one
+        record = json.loads(binding_bytes) if binding_record is None else binding_record
+        result = {name: digest for name, digest in record['source_bindings'].items()
+                  if not name.startswith('input:')}
+    else:
+        if _source_digests is None:
+            from .reuse import _source_bytes
+            # Ruling 1: the package source is read once per process; the inputs bind each batch.
+            _source_digests = {'src/atlas_tectonics/'+k: hashlib.sha256(v).hexdigest()
+                               for k, v in _source_bytes().items()}
+        result = dict(_source_digests)
     result.update({'input:'+name: hashlib.sha256(raw).hexdigest()
                    for name, raw in inputs.items()})
     return result
@@ -126,7 +132,7 @@ def _wall_request(support, key, axis, pair, width, leaves):
 
 def _support(raw, identity, budget):
     # Private transport of a parent's issued object, not a public restore. identity None: the batch's first live
-    # check has bound these copied bytes to the binding's digest (landing E B-5); the one-job route hashes them here.
+    # check has bound these copied bytes to the binding's digest; the one-job route hashes them here.
     if not 0 < len(raw) <= MAX_INPUT or identity is not None and hashlib.sha256(raw).hexdigest() != identity:
         raise ValueError('complete issued support bytes differ')
     value = G._issue(G.DifferentialSupport, json.loads(raw), budget)
@@ -232,7 +238,7 @@ def worker_main(directory):
         if 'batch_seconds' in record:
             return _owned_batch_worker(directory, process, binding_bytes, record)
         return _batch_worker(directory, process, binding_bytes, _record=record)
-    binding = JobBinding(binding_bytes)    # validates; record (above) is the same canonical decode (landing E)
+    binding = JobBinding(binding_bytes)    # validates; record (above) is the same canonical decode
     request = record['request']
     inputs = {}
     for name, identity in (('support', request['support_id']), ('other', request.get('other_support_id'))):
@@ -248,7 +254,7 @@ def worker_main(directory):
     supports = [_support(inputs['support'], request['support_id'], child_budget)]
     other = None if 'other' not in inputs else _support(inputs['other'], request['other_support_id'], child_budget)
     body = []
-    with ExecutionContext('reference') as context:
+    with ExecutionContext.adopted('reference') as context:
         def run(actual_budget):
             begun = time.perf_counter()
             result = _call(supports[0], other, request, actual_budget)
@@ -257,7 +263,7 @@ def worker_main(directory):
                 raise ValueError('result exceeds optional wire envelope')
             return result._json
         receipt = worker_complete(binding_bytes, context=context,
-            read_bindings=lambda: _inventory(inputs), request=request,
+            read_bindings=lambda: _inventory(inputs, context, binding_bytes, record), request=request,
             child_budget=child_budget, run=run)
         if len(receipt) > MAX_RECEIPT:
             raise ValueError('receipt exceeds optional wire envelope')
@@ -306,10 +312,10 @@ def _batch_body(directory, process, binding, record):
     if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
         # Pressure P1: pressure walls load and answer their own digest-checked inputs.
         from .integration_pressure_walls import batch_worker
-        return batch_worker(directory, process, binding_bytes, requests)
+        return batch_worker(directory, process, binding_bytes, requests, record)
     inputs = _read_inputs(directory, requests)
     observed = dict(body=0.0, peak=0)
-    with ExecutionContext('reference') as context:
+    with ExecutionContext.adopted('reference') as context:
         _complete(directory, binding_bytes, requests, inputs, context, observed,
                   batch_seconds=record.get('batch_seconds'), _binding=binding, _record=record)
     try:
@@ -366,7 +372,7 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
                     held = None
                     ledger = new_ledger()
                     # Reissued support retention is inside E too, as for a one-job worker.
-                    support = _support(inputs[pair[0]], None, ledger)    # bound by the first check (B-5)
+                    support = _support(inputs[pair[0]], None, ledger)    # bound by the first check
                     other = None if pair[1] is None else _support(inputs[pair[1]], None, ledger)
                     held = pair, ledger, support, other, ledger.reserved_bytes
                 begun = time.perf_counter()
@@ -393,10 +399,10 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
 
     if _binding is None:
         receipt = batch_worker_complete(binding_bytes, context=context,
-            read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
+            read_bindings=lambda: _inventory(inputs, context, binding_bytes), requests=requests, run=run)
     else:
         receipt = _bound_batch_complete(_binding, _record, context=context,
-            read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
+            read_bindings=lambda: _inventory(inputs, context, binding_bytes, _record), requests=requests, run=run)
     if len(receipt) > MAX_RECEIPT:
         raise ValueError('receipt exceeds optional wire envelope')
     with (directory/'result.json').open('xb') as stream:
@@ -414,7 +420,7 @@ def _kept_worker(home, process):
     exits non-zero. The context's closing check runs once, at the end.
     """
     from .reuse import ExecutionContext
-    with ExecutionContext('reference') as context:
+    with ExecutionContext.adopted('reference') as context:
         for line in sys.stdin.buffer:          # end of input: the parent has finished with this worker, or is gone
             directory = Path(line.rstrip(b'\r\n').decode('utf8')).resolve()
             gc.collect()
@@ -640,7 +646,7 @@ class _Child:
         # foreign Future or accept an arbitrary completion file.
         if (self.directory/'binding.json').read_bytes() != binding_bytes:
             raise ValueError('dispatch file changed before launch')
-        command, env = _worker_launch(self.directory)
+        command, env = _worker_launch(self.directory, json.loads(binding_bytes)['execution_identity'])
         started = time.monotonic()
         launched = time.perf_counter()
         process = self._popen(command, env, subprocess.DEVNULL)
@@ -710,7 +716,7 @@ class _Child:
         self.body_seconds = self.ledger_peak = None
         try:
             if self.process is None:
-                command, env = _worker_launch(self.directory)
+                command, env = _worker_launch(self.directory, json.loads(binding_bytes)['execution_identity'])
                 self._popen(command, env, subprocess.PIPE)
             process = self.process
             with self.lock:
@@ -1035,6 +1041,7 @@ class InterfaceParallelSession:
         return self._screen(support, other, request, scratch_bytes=2 << 20, scratch_units=8192) != 'integrator'
 
     def _dispatch(self, support, other, request):
+        begun = time.perf_counter()    # the parent's seconds for this request, part of its hand-over
         with self.owner.condition:
             if self.owner.state != 'ACTIVE':
                 return
@@ -1091,6 +1098,7 @@ class InterfaceParallelSession:
                 dispatch.submit(self.pool, child.run)
                 dispatch._future.add_done_callback(lambda _future, event=child.done: event.set())
                 self.stats['started'] += 1
+                job['dispatch_seconds'] = time.perf_counter()-begun
             except BaseException:
                 # If ownership reached self.jobs, _stop confirms child exit.
                 if not any(j['fit'] is fit for j in self.jobs.values()):
@@ -1158,11 +1166,12 @@ class InterfaceParallelSession:
         self.outcomes.append(dict(index=job.get('index'), adopted=adopted,
             total_seconds=getattr(child, 'elapsed', None),
             body_seconds=getattr(child, 'body_seconds', None),
-            peak_rss=getattr(child, 'peak_rss', None)))
+            peak_rss=getattr(child, 'peak_rss', None), parent_seconds=job.get('handover_seconds')))
 
     def _claim_ready(self, job, request, budget):
         # owner.condition is held through decoding/validation. Revocation
         # cannot free the storage while this frame owns its large descendants.
+        begun = time.perf_counter()
         try:
             dispatch, binding, child = job['dispatch'], job['binding'], job['child']
             raw = dispatch.result(timeout=self.timeout+15, request=request,
@@ -1194,6 +1203,8 @@ class InterfaceParallelSession:
             self.stats['adopted'] += 1
             job['fit'].release()
             job['baseline'].close()
+            # The hand-over: the parent's seconds to send the request and to adopt its result.
+            job['handover_seconds'] = job.get('dispatch_seconds', 0.0)+time.perf_counter()-begun
             self._outcome(job, True)
             return result
         except Exception as error:
@@ -1602,7 +1613,7 @@ class BatchParallelSession(InterfaceParallelSession):
             # Volume/initial/pressure subclasses and walls retain the raw validating factory.
             factory = (BatchBinding._create_owned if type(self) is BatchParallelSession and
                        not self.wall and self.batch_seconds is not None else BatchBinding.create)
-            sources = _inventory(inputs)    # Landing E B-4: kept for the receipt
+            sources = _inventory(inputs)    # kept for the receipt
             binding = factory(requests=requests, source_bindings=sources,
                 context=self.context, child_bytes=self.child_bytes, predicate_units=self.units,
                 batch_seconds=self.batch_seconds)

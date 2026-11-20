@@ -59,7 +59,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 from collections import deque
 from time import perf_counter
 
-RATIOS = 5           # finished batches and parent stretches whose realised seconds rescale the expectations
+from .machine_resources_monitor import Timings
+
 SCALE = (0.25, 2.0)  # bounds of that rescaling
 PROBATION = 3        # finished batches before the realised saving may stop the schedule
 REPLAN = 64          # requests the parent passes before a declined plan is looked at again
@@ -99,9 +100,10 @@ def expectation(shortcut, integrator, samples, minimum_samples, ceiling=None):
     return None
 
 
-def _median(values):
-    ordered = sorted(values)
-    return (ordered[(len(ordered)-1)//2]+ordered[len(ordered)//2])/2
+def line(start, hand):
+    """(floor, ceiling) between requests remembered one by one and those a class describes: a new worker's measured
+    start plus the hand-over. While no start is measured, nothing is kept one by one and a class has no ceiling."""
+    return (float('inf'), None) if start is None else (start+(hand or 0.0),)*2
 
 
 class _Window:
@@ -179,17 +181,20 @@ class Schedule:
     raises, which is an unconfirmed worker shutdown and nothing else.
     """
     def __init__(self, *, session, estimate, beyond, workers, batch_seconds, batch_jobs, horizon,
-                 minimum_seconds, startup_seconds, transfer_seconds, contention, benefit_ratio,
-                 timeout_seconds, gate=None, shippable=None, weigh=None, capacity=None, adoption=1.0,
+                 minimum_seconds, benefit_ratio,
+                 timeout_seconds, family=None, gate=None, shippable=None, weigh=None, capacity=None, adoption=1.0,
                  replan=REPLAN, clock=perf_counter):
         self._open, self._estimate, self._beyond, self._gate = session, estimate, beyond, gate
         self._shippable = (lambda job: True) if shippable is None else shippable
         self._weigh = (lambda job: ()) if weigh is None else weigh
         self.capacity = capacity
         self.workers, self.target, self.limit, self.horizon = workers, batch_seconds, batch_jobs, horizon
-        self.minimum, self.startup, self.transfer = minimum_seconds, startup_seconds, transfer_seconds
-        self.contention, self.timeout = contention, timeout_seconds
-        self.worth = benefit_ratio*(startup_seconds+transfer_seconds)
+        self.minimum, self.family = minimum_seconds, family
+        self.timeout = timeout_seconds
+        # 2b: a plan's start, hand-over and worth are those measured for the worker it would use (_price).
+        self.ratio, self._kind = benefit_ratio, 'new'
+        self._times, self._kinds = Timings(), {}
+        self.startup = self.transfer = self.worth = 0.0
         self.adoption, self.replan, self.clock = adoption, replan, clock
         self.session = None
         # ahead: [job, prefix seconds, held batch or None, class label, exact estimate or None,
@@ -199,7 +204,7 @@ class Schedule:
         self.position = self.offered = 0
         self.closed, self.stopped, self.engaged = False, None, False
         self.reason = self.detail = None
-        self.scale, self._ratios = 1.0, deque(maxlen=RATIOS)
+        self._rescale()
         self._stretch, self._head = [0.0, 0.0], None
         self._plans, self._settled = {}, set()
         self._sight, self._free, self._wanted = 0.0, 0, 0
@@ -313,13 +318,42 @@ class Schedule:
         held[0] += max(0.0, seconds-entry[1])
         held[1] += found[0]
         if held[1] >= self.target:
-            self._ratios.append(held[0]/held[1])
+            self._times.add((self.family, 'worker', 'slowdown'), held[0]/held[1])
             held[0] = held[1] = 0.0
             self.totals['stretches'] += 1
             self._rescale()
 
+    def _figure(self, kind, figure, stored=None):
+        """A figure measured for this kind of worker: this pass's, else the run's earlier passes', else the stored
+        one given; None while there is none."""
+        return self._times.figure((self.family, kind, figure), None if stored is None else (stored,))
+
+    def line(self, start=None, hand=None):
+        """This pass's line for a new worker (module line), from its measured start and hand-over; start and hand
+        are the stored figures, taken only where nothing is measured in the run."""
+        return line(self._figure('new', 'start', start), self._figure('new', 'hand', hand))
+
+    def _idle(self, session):
+        """Whether a kept worker is idle: the condition for the kept price."""
+        return session is not None and getattr(session, 'keep', False) and any(
+            worker.batch is None for worker in getattr(session, 'kept', ()))
+
+    def _price(self, session):
+        """2b: this plan's overhead and worth, by whether a kept worker is idle."""
+        self._kind = 'kept' if self._idle(session) else 'new'
+        # Nothing is charged for a start or a hand-over until one is measured.
+        self.startup, self.transfer = (self._figure(self._kind, name) or 0.0 for name in ('start', 'hand'))
+        self.worth = self.ratio*(self.startup+self.transfer)
+
+    def _found(self, entry):
+        """An entry's (expected, high) and whether it stands unscaled: an identical request's."""
+        if entry[4] is not None:
+            return entry[4], True
+        return self._estimate(entry[3]), False
+
     def _rescale(self):
-        self.scale = min(SCALE[1], max(SCALE[0], _median(self._ratios)))
+        figure = self._times.figure((self.family, 'worker', 'slowdown'))
+        self.scale = 1.0 if figure is None else min(SCALE[1], max(SCALE[0], figure))
 
     def advance(self):
         """Start whatever is worth starting now. Cheap when nothing changed since it last looked.
@@ -397,7 +431,7 @@ class Schedule:
                     return self._stop('session not opened', 'the optional session, its storage or its owner was refused')
                 session.on_wait = self.advance
                 handback = getattr(session, 'batch_seconds', None) is not None
-            timeout = min(self.timeout, max(120.0, self.startup+4*self.contention*high))
+            timeout = min(self.timeout, max(120.0, self.startup+4*max(1.0, self.scale)*high))
             refused = session.stats['refused']
             batch = session.launch([entry[0] for entry in members], timeout)
             if batch is None:
@@ -436,7 +470,8 @@ class Schedule:
             held['checkpoint_excluded'] = True
             self.totals['checkpoint_excluded_batches'] += 1
         # What of its expected seconds came from class estimates, unscaled, and what from identical requests.
-        known = sum(entry[4][0] for entry in members if entry[4] is not None)
+        self._kinds[batch['index']] = self._kind
+        known = sum(found[0] for found, given in map(self._found, members) if given)
         if contributions is None:
             self._plans[batch['index']] = (cost-known)/self.scale, known, prefix, cost
         else:
@@ -452,8 +487,8 @@ class Schedule:
             if contributions is None:
                 contributions = []
                 for entry in members:
-                    found = entry[4] if entry[4] is not None else self._estimate(entry[3])
-                    plain, exact = (0.0, found[0]) if entry[4] is not None else (found[0], 0.0)
+                    found, given = self._found(entry)
+                    plain, exact = (0.0, found[0]) if given else (found[0], 0.0)
                     contributions.append((plain, exact, entry[1], found[1], plain*self.scale+exact))
             rows = [(entry, position, contribution, token)
                 for entry, position, contribution, token in
@@ -517,6 +552,7 @@ class Schedule:
                     return self._recover(session, 'hand-back gate failed', self.detail)
                 if refusal is not None:
                     return self._recover(session, *refusal)
+            self._price(session)
             chosen, shared, size = [], set(), 0
             try:
                 for row in self.pending:
@@ -536,7 +572,7 @@ class Schedule:
             members = [row[0] for row in chosen]
             contributions = [row[2] for row in chosen]
             cost, prefix, high = (sum(row[index] for row in contributions) for index in (4, 2, 3))
-            timeout = min(self.timeout, max(120.0, self.startup+4*self.contention*high))
+            timeout = min(self.timeout, max(120.0, self.startup+4*max(1.0, self.scale)*high))
             batch = session.launch([entry[0] for entry in members], timeout)
             if batch is None:
                 if not session.active():
@@ -546,7 +582,7 @@ class Schedule:
                                      'the existing worker or funding admission refused')
             for _ in chosen:
                 self.pending.popleft()
-            finish = self.clock()+self.startup+self.contention*(cost+prefix)
+            finish = self.clock()+self.startup+cost+prefix
             if self._guard(lambda: self._launched(batch, members, cost, prefix, finish,
                     chosen[0][1]-self.position, chosen[-1][1]-self.position, timeout,
                     returned=True, positions=[row[1] for row in chosen],
@@ -575,7 +611,7 @@ class Schedule:
             return True
         # Past its target a batch grows only while the parent would still arrive after it.
         return (grown <= GROW*self.target and
-                now+self.startup+self.contention*(grown+window.prefix+prefix) <= window.first())
+                now+self.startup+grown+window.prefix+prefix <= window.first())
 
     def _choose(self, now):
         """The next batch as (entries, expected, prefix, high, finish, first, last), or None with a note.
@@ -592,6 +628,7 @@ class Schedule:
         that is too small to judge, that second choice waits for it.
         """
         session = self.session
+        self._price(session)
         rows, spans, gates = [], [], []
         window, arrival, seen = _Window(rows), now, None
         sight, known, unassigned = 0.0, 0, 0
@@ -631,7 +668,7 @@ class Schedule:
             self.totals['projected_seconds'] = projected
         if not known:
             return self._note('no compatible observations', 'no request in the lookahead has an estimate')
-        if not self.engaged and projected < self.minimum:
+        if not self.engaged and self._kind == 'new' and projected < self.minimum:
             return self._note('eligible work below threshold',
                 'expected %.3f s of eligible work in this pass (%.3f s in a lookahead of %d); threshold %.3f s'
                 % (projected, sight, len(self.ahead), self.minimum))
@@ -647,7 +684,7 @@ class Schedule:
         rated = []
         for span in spans:
             start, count, cost, prefix, high, first = span
-            finish = now+self.startup+self.contention*(cost+prefix)
+            finish = now+self.startup+cost+prefix
             wait = max(0.0, finish-first)
             # What the parent would have paid for these requests itself, less what it still pays.
             gain = cost+prefix*(1.0-self.adoption)-wait
@@ -695,7 +732,14 @@ class Schedule:
             self._settled.add(index)
             self.totals['finished'] += 1
             plain, known, prefix, cost = self._plans.pop(index, (0.0, 0.0, 0.0, 0.0))
-            body = row['body_seconds']
+            body, total, kind = row['body_seconds'], row.get('total_seconds'), self._kinds.pop(index, None)
+            if kind is not None and body is not None and total is not None:
+                self._times.add((self.family, kind, 'start'), max(0.0, total-body))
+            if row.get('peak_rss'):
+                self._times.add((self.family, 'worker', 'peak'), row['peak_rss'])
+            if kind is not None and row.get('receive_seconds') is not None:
+                # A batch never received gives no hand-over.
+                self._times.add((self.family, kind, 'hand'), (row.get('start_seconds') or 0.0)+row['receive_seconds'])
             # A wait is charged with its own batch: one for a batch still held is not yet set against it.
             self.totals['waited_seconds'] += row['waited_seconds']
             if row.get('returned'):
@@ -705,7 +749,7 @@ class Schedule:
                 continue
             if plain >= RATED*self.target:
                 ratio = max(0.0, body-known-prefix)/plain
-                self._ratios.append(ratio)
+                self._times.add((self.family, 'worker', 'slowdown'), ratio)
                 if ratio > SCALE[1]:
                     # Longer than the rescaling can express: a surprise, not a verdict on batches.
                     self.totals['surprises'] += 1
@@ -714,8 +758,7 @@ class Schedule:
             self.totals['judged'] += 1
             # The share of the worker's seconds that the parent's own exact prefix would not have paid.
             self.totals['avoided_seconds'] += body*cost/(cost+prefix)
-        if self._ratios:
-            self._rescale()
+        self._rescale()
         spent = self.totals['waited_seconds']+sum(
             seconds for name, seconds in session.seconds.items() if name != 'waited')
         if self.totals['judged'] >= PROBATION and self.totals['avoided_seconds'] < spent:

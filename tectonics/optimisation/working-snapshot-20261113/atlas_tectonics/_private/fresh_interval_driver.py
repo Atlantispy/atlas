@@ -25,6 +25,7 @@ observer, selector gate and compact-aware coverage gate are the current
 composition's (prepared_interval_driver), as for the migrated lineage. Nothing
 here seals, promotes or reads back; the runner owns the store protocol.
 """
+import functools
 import json
 import os
 from atlas_tectonics._private.runtime_checks import Checks
@@ -47,10 +48,72 @@ PRESSURE_FORCE = {'pressure_max_leaves': 2**19, 'initial_trace_max_leaves': 2**1
 # policy (o3). A successor entered without a measured
 # worker selection keeps fixed serial ALE: that is Plan11's comparison arm, and it establishes
 # no automatic or parallel ALE parity of its own.
-PARALLEL = {'mode': 'auto', 'workers': 2}
+PARALLEL = {'mode': 'auto', 'workers': 2}    # pressure walls; the count is replaced by first_workers at launch
 ALE_PARALLEL = {'mode': 'auto', 'workers': 4, 'keep_workers': True}    # o3, Part B: execution-only policy; no result depends on it
+
+
+def launch_samples():
+    """The store's folder, its samples read once: a pool sized before it has a worker counts one at the stored peak."""
+    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_tectonics._private.prepared_interval_driver import profile_folder
+    folder = profile_folder()
+    MON.use_store(folder)
+    return folder
+
+
+def samples_saved():
+    """The launch's measured samples go to the store when the launch ends, however it ends."""
+    from atlas_tectonics import machine_resources_monitor as MON
+    end = ExitStack()
+    end.callback(MON.save_store, launch_samples())
+    return end
+
+
+def first_workers(policy_type, policy, load=None, stage=None):
+    """An interval-1 interface pool: the resources gate's launch width for its stage (ATLAS_RESOURCES).
+
+    The policy's gates still step the count down at each dispatch. Execution only.
+    """
+    from atlas_tectonics._private.interface_worker_selection import (
+        first_interval_workers,
+    )
+    launch_samples()
+    return first_interval_workers(policy_type(**policy), load, stage)
+
+
+def _width(stage, allowance, load):
+    # A worker is counted at the stored largest peak of its pool, at the allowance before one is stored.
+    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_tectonics import resources_gate as RG
+    launch_samples()
+    machine = MON.reading(load)
+    return RG.launch_width(machine, RG.setting(machine), MON.Timings().peak((stage, 'worker', 'peak')) or allowance,
+                           stage=stage)
+
+
+def initial_admission_workers(load=None):
+    """The producer's admission pool by the resources gate's launch rule."""
+    from atlas_tectonics import integration_initial_parallel as I
+    from atlas_tectonics import integration_parallel_dispatch as D
+    return _width('admission', D.CHILD_BASELINE+I.CHILD_BYTES, load)
+
+
+def heat_workers(load=None):
+    """The heat pool by the resources gate's launch rule; its per-call bound still applies."""
+    from atlas_tectonics._private.private_heat_process_meter_r1 import CHILD_START
+    return _width('heat', CHILD_START, load)
+
+
+def pool_widths(load, admission):
+    """This launch's record of widths: the setting as given, its mode, the cores counted and their source, and each
+    stage's width (heat, pressure and ale are added from their configured pools)."""
+    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_tectonics import resources_gate as RG
+    machine = MON.reading(load)
+    return RG.widths_record(machine, RG.setting(machine), {'admission': admission})
+
+
 SUCCESSOR_COMPARISON_ALE = {'mode': 'serial', 'workers': 2}    # the one explicit policy prepared_interval_driver accepts
-SUCCESSOR_ALE_POLICY = 'authenticated-parent-four-or-six'
 # The runner's sealed-lineage record for interval N >= 2 (prepared_interval_driver checks the same schema).
 LINEAGE_SCHEMA = 'atlas.fresh-interval-lineage.v1'
 
@@ -102,7 +165,8 @@ def preparation_ids(case, owner):
             'collar': collar.plan_id, 'map': collar._map.volume_map_id, 'funding': case['funding'].funding_id}
 
 
-def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None):
+def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None,
+              launch_load=None):
     """r9's deterministic admission with r9's execution contexts and measurement cache open.
 
     A plain function returning the context manager, not a decorated one: the loaded-source
@@ -120,22 +184,22 @@ def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers
     """
     return contextmanager(_admission)(m, budget=budget, artifacts=artifacts, phase=phase,
                                       measurements=measurements, initial_workers=initial_workers,
-                                      before_measurements=before_measurements)
+                                      before_measurements=before_measurements, launch_load=launch_load)
 
 
 # A2: queries per Plan09 admission batch (the pool accepts 1 to 64; its default is 16).
 INITIAL_BATCH_JOBS = 64
-# R1 (decision 384): producer admission workers, one per core; 16 batches run in two rounds.
-INITIAL_WORKERS = 8
 
 
-def _admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None):
+def _admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None,
+               launch_load=None):
     # Plan09 eight-worker initial admission (R1): producers, and since o2 the ordinary reader. 0 = serial (an overlap
     # reader, Plan11 section 4).
-    _require(type(initial_workers) is int and initial_workers in (0, INITIAL_WORKERS),
-             'initial admission requires the serial reader or selected eight-worker producer route')
+    from atlas_tectonics.integration_initial_parallel import initial_ceiling
+    _require(type(initial_workers) is int and (initial_workers == 0 or 1 <= initial_workers <= initial_ceiling()),
+             'initial admission requires the serial reader or a producer pool within the host ceiling')
     phase('begin-fresh-native-admission')
-    m.J.I.F.FUNCTIONS.PARALLEL.configure(workers=8)    # H1: one face per task, rows by index
+    m.J.I.F.FUNCTIONS.PARALLEL.configure(workers=heat_workers(launch_load))    # H1: one face per task, rows by index
     with m.ExecutionContext('reference') as reference_execution, \
             m.ExecutionContext('scipy') as heat_execution, \
             m.radial_differential_fixture(budget=budget, **FIXTURE) as case:
@@ -192,7 +256,7 @@ def create_root(m, *, open_store, budget, artifacts, phase, finish_root, measure
     """
     _seed_pinned()
     with admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a:
+                   measurements=measurements, initial_workers=initial_admission_workers()) as a:
         collar, funding = a.case['collar'], a.case['funding']
         workflow_id = m.Workflow._identity(collar, funding,
                                            m.Workflow._exterior_inputs(a.owner, collar, funding, budget))
@@ -228,7 +292,7 @@ def reopen_root(m, *, store, expected_root, budget, artifacts, phase, measuremen
     """
     _seed_pinned()
     with admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a:
+                   measurements=measurements, initial_workers=initial_admission_workers()) as a:
         phase('reopen-adopted-fresh-root')
         with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
                              a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow:
@@ -265,25 +329,34 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
     stages, ticks = _stages(m), _ticks(m)
     record['observed_stages'] = [name for _, name in stages]
     record['heat_workers_strict'] = m.J.I.F.FUNCTIONS.PARALLEL.strict()     # a value other than unset, '' or 1 refuses
-    with guard.check3.forward(budget, [name for _, name in _stages(m)
+    from atlas_tectonics import machine_resources_monitor as MON
+    load = MON.launch_load()    # this launch's one CPU sample, shared by its pools
+    record['initial_admission_workers'] = width = initial_admission_workers(load)    # this launch's own width (Q-1)
+    record['pool_widths'] = pool_widths(load, width)    # effective width per stage and its source
+    with samples_saved(), guard.check3.forward(budget, [name for _, name in _stages(m)
                                       if name != 'actual-differential-geometry'], __file__), \
             admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a, \
+                   measurements=measurements, initial_workers=width, launch_load=load) as a, \
             m.geometry_observer.observe(guard, stages, ticks, joined=m.joined,
                                         geometry=m.G.enclose_differential_ale), \
             m.threadpool_limits(1), query_checkpoints(a.heat_execution) as checkpoints:
         _bind_record_scope(store, a.owner, budget)
+        record['pool_widths']['widths']['heat'] = m.J.I.F.FUNCTIONS.PARALLEL.configure()    # as configured
         record['selector_gate_before_advance'] = m.prepared_interval_driver.selector_gate(m.PF)
         save()
         test = Checks()
         from atlas_tectonics import integration_pressure_walls
         # Plan11 separates the selected ALE policy from Plan07 pressure.
-        parallel_policy = m.InterfaceParallelPolicy(**PARALLEL,
-            profile_path=str(artifacts/'parallel-profile.json'))
-        ale_policy = m.InterfaceParallelPolicy(**ALE_PARALLEL,
-            profile_path=str(artifacts/'ale-parallel-profile.json'))
+        costs = m.prepared_interval_driver.profile_folder()    # W-1 (c): outside the home, which PF refuses
+        parallel_policy = m.InterfaceParallelPolicy(**dict(PARALLEL, workers=first_workers(m.InterfaceParallelPolicy,
+                                                                                      PARALLEL, load, 'pressure')),
+            profile_path=str(costs/'parallel-profile.json'))
+        ale_policy = m.InterfaceParallelPolicy(**dict(ALE_PARALLEL, workers=first_workers(m.InterfaceParallelPolicy,
+                                                                                          ALE_PARALLEL, load, 'ale')),
+            profile_path=str(costs/'ale-parallel-profile.json'))
         record['pressure_parallel_policy'] = asdict(parallel_policy)
         record['ale_parallel_policy'] = asdict(ale_policy)
+        record['pool_widths']['widths'].update(pressure=parallel_policy.workers, ale=ale_policy.workers)
         save()
 
         def prepared(driver, pressure, datum, **extra):
@@ -313,7 +386,7 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
                         completed_observer=_completed(m, a, workflow, record, phase, artifacts=artifacts),
                         endpoint_checkpoints=checkpoints,
                         **({} if end_geometry_provider_factory is None else {'end_geometry_provider_factory':
-                            end_geometry_provider_factory}),
+                            functools.partial(end_geometry_provider_factory, ale_parallel=ale_policy)}),
                         ale_parallel=ale_policy,
                         **m.D.ADVANCE_OPTIONS, **extra)
                     record['joined_global_and_created_tracer_controls'] = report
@@ -361,11 +434,16 @@ def advance_successor_interval(m, *, store, expected_root, lineage, budget, arti
     _stages(m)
     _ticks(m)
     record['heat_workers_strict'] = m.J.I.F.FUNCTIONS.PARALLEL.strict()     # a value other than unset, '' or 1 refuses
-    with guard.check3.forward(budget, [name for _, name in _stages(m)
+    from atlas_tectonics import machine_resources_monitor as MON
+    load = MON.launch_load()    # this launch's one CPU sample, shared by its pools
+    record['initial_admission_workers'] = width = initial_admission_workers(load)    # this launch's own width (Q-1)
+    record['pool_widths'] = pool_widths(load, width)    # effective width per stage and its source
+    with samples_saved(), guard.check3.forward(budget, [name for _, name in _stages(m)
                                       if name != 'actual-differential-geometry'], __file__), \
             admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a:
+                   measurements=measurements, initial_workers=width, launch_load=load) as a:
         _bind_record_scope(store, a.owner, budget)
+        record['pool_widths']['widths']['heat'] = m.J.I.F.FUNCTIONS.PARALLEL.configure()    # as configured
         phase('reopen-adopted-successor-head')
         with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
                              a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow, \
@@ -390,7 +468,7 @@ def advance_successor_interval(m, *, store, expected_root, lineage, budget, arti
                     execution=a.heat_execution, guard=guard, record=record, save=save, artifacts=artifacts,
                     query_checkpoints=checkpoints, lineage=lineage, joined_module=m.joined,
                     ale_policy=SUCCESSOR_COMPARISON_ALE if worker_selection is None else None,
-                    worker_selection=worker_selection)
+                    worker_selection=worker_selection, heat_pool_set=True)
                 after = workflow.inspect()
                 _require(after['intervals'] == interval+1 and after['funding_id'] == before['funding_id'] and
                          after['head'] != before['head'] and workflow._root == root_bytes,

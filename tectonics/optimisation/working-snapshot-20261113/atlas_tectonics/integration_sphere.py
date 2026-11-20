@@ -910,7 +910,7 @@ def _home_index(layout):
 
 
 def _home_rows(layout, home, memo=None):
-    if memo is not None:    # landing E: one mask per home for callers that need it twice
+    if memo is not None:    # one mask per home for callers that need it twice
         if home not in memo:
             memo[home] = _home_rows(layout, home)
         return memo[home]

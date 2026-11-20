@@ -138,7 +138,7 @@ def _validate(key, snapshots):
         hash_randomization = admitted.get('hash_randomization')
     SG.admit(admitted, admitted.get('available_bytes'), Seed())
     SG.require(run.get('guard_limits') == SG.guard_limits(admitted), 'workload guard/admission mismatch')
-    limits = dict(rss_bytes=SG.RSS_BYTES, free_floor_bytes=SG.FREE_BYTES)
+    limits = SG.guardian_limits(admitted)
     SG.require(guard.get('schema') == 'atlas.private.continuation-guard.r3' and
                guard.get('status') == 'STOPPED' and not guard.get('reason') and
                guard.get('workload_exit_confirmed') is True and type(guard.get('workload_exit_code')) is int and

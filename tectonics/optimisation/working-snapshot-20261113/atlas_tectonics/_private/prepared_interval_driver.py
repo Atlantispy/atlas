@@ -282,6 +282,19 @@ def _note(record, key, read):
         record[key+'_unavailable'] = repr(error)
 
 
+def profile_folder():
+    """FS unit 2c (W-1 c): the planner's cost store, in a folder beside the ticket home.
+
+    integration_parallel_profile refuses a store inside the folder two levels above the package (the home), so
+    the folder is that home's sibling, named after it. Stores of another binding are ignored there, never rewritten.
+    """
+    from atlas_tectonics import integration_parallel_profile as PF
+    home = Path(PF.__file__).absolute().parents[2]
+    folder = home.parent/(home.name+'.parallel-profile')
+    folder.mkdir(exist_ok=True)
+    return folder
+
+
 def selector_gate(PF):
     """Record what the unchanged native selector reads, inside our observer scope.
 
@@ -323,7 +336,7 @@ def selected_ale_policy(policy, *, ordinary, worker_selection=None):
 
 def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
                              save, artifacts, query_checkpoints, lineage=None, joined_module=None,
-                             ale_policy=None, worker_selection=None):
+                             ale_policy=None, worker_selection=None, heat_pool_set=False):
     from atlas_tectonics._private import heat_interval_r9_spec as D
     from atlas_tectonics._private import private_heat_geometry_observer_r1 as geometry_observer
     from atlas_tectonics._private import private_heat_original_continuation_r1 as continuation
@@ -406,10 +419,10 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
     from atlas_tectonics._private.compact_restart_patch import require_capture_route
     require_capture_route(workflow._store)
     derivations = dict(joined=joined.derivation(), continuation=continuation.derivation())
-    query_directory = Path(query_checkpoints.directory)
     # Bindings are keyed by code, seed, instrumentation and machine; a retry of
-    # the same source reuses observations instead of relearning serially.
-    profile_path = query_directory.parent/(query_directory.name+'.parallel-profile.json')
+    # the same source reuses observations instead of relearning serially. W-1 (c): interval 1's ALE store, so a
+    # successor starts from its class costs.
+    profile_path = profile_folder()/'ale-parallel-profile.json'
     before = workflow.inspect()
     root = workflow._root
     prior_id = workflow.differential_interval.interval_id
@@ -441,8 +454,9 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
                  (J.I.F.FUNCTIONS._face, 'heat_faces'),
                  (J.I.F.FUNCTIONS.PARALLEL.completed, 'heat_faces_collected')]
     record['heat_workers_strict'] = J.I.F.FUNCTIONS.PARALLEL.strict()     # a value other than unset, '' or 1 refuses
-    # The fresh driver's admission sets the same count (fresh_interval_driver._admission).
-    J.I.F.FUNCTIONS.PARALLEL.configure(workers=8)
+    if not heat_pool_set:    # a fresh successor launch has set this launch's width (its _admission); restarts set it here
+        from atlas_tectonics._private.fresh_interval_driver import heat_workers
+        J.I.F.FUNCTIONS.PARALLEL.configure(workers=heat_workers())
 
     def second(driver, pressure, datum, current, partition, prior_interval, network,
                state, spatial_state, owner, provenance, **extra):

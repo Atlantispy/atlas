@@ -26,7 +26,7 @@ from atlas_tectonics._private import private_heat_decimal_inventory_r1 as D
 
 HERE = Path(__file__).resolve().parent
 PUBLIC_BINDING = 'plan40b.c3.public-receiving.r2'
-PINS = {'private_heat_certification_kernel_r1.py': 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'private_heat_low_ledger_inventory_r1.py': 'e335ca6da5ba008acc6e09628eb621605dc468f17763d9cb0e42392580b091b1', 'private_heat_interval_inventory_r1.py': '0e7085f9f7d2d78df755570693de215e154c930d43d493f9964ab138b8f0caad', 'private_heat_decimal_inventory_r1.py': '1e3b678ce38bbeab989a5f4320d6fb00bbca8e7e56dd301d700a8e0a6bcb983b'}
+PINS = {'private_heat_certification_kernel_r1.py': 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'private_heat_low_ledger_inventory_r1.py': 'e335ca6da5ba008acc6e09628eb621605dc468f17763d9cb0e42392580b091b1', 'private_heat_interval_inventory_r1.py': '0e7085f9f7d2d78df755570693de215e154c930d43d493f9964ab138b8f0caad', 'private_heat_decimal_inventory_r1.py': '7d5f7fbdbd3f3fe80ae824bb577b6a0d4f9572a6707b5a6fb5a8192f5bbfb04c'}
 
 
 def check(cancel):
@@ -92,7 +92,7 @@ def source_paths():
 def verify_sources(cancel):
     D._runtime(cancel)
     paths = source_paths()
-    # Landing E B-1: each pin is compared on every call; the bytes are read once a process (ruling 1).
+    # each pin is compared on every call; the bytes are read once a process.
     from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest
     for name, expected in PINS.items():
         check(cancel)

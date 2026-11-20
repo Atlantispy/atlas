@@ -34,6 +34,9 @@ import sys
 import threading
 import types
 
+from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics import resources_gate as GATE
+
 
 HERE = Path(__file__).resolve().parent
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
@@ -44,7 +47,7 @@ MAX_SOURCES = 4096
 MAX_AUDIT = 128 << 20
 # The live fence binds the reviewed successor guard (resource_guard_patch output);
 # the historical r3 guard stays bound by its own pinned receipts and evidence.
-GUARD_PIN = '6dbb77d5c00a901a064d8e18c10e9a92ce25e7547b7877bcefae95ca9fd9c627'
+GUARD_PIN = '7c78f42d135fee7aae97652278238d1090fa052d15a932a5fe248e4b93b3c0b9'
 HISTORICAL_GUARD_PIN = '2d23f4bbc3b31b5aad3d68ef6e9b1a9800042fc75b12475b51dff468492ad796'
 JOB_PIN = '56f66b8826b148a31b85d490c75766422eb210fdfb35c665c449d2e73788f0b4'
 DIAGNOSTICS_PIN = '02cf04bff222880c4142eff804afbb2ff52801b5b6ef6e9ded020ec0148bc83c'
@@ -679,8 +682,9 @@ def guardian_fence(guard, *, budget, check):
              'check' not in vars(guard) and not guard.closed and guard.budget is budget,
              'actual live shared-budget guardian check required')
     limits = guard._control['limits']
-    _require(0 < limits['rss_bytes'] <= 12 << 30 and limits['free_floor_bytes'] >= 1 << 30,
-             '12 GiB ceiling and 1 GiB free-floor safeguards must remain')
+    _require(0 < limits['rss_bytes'] <= GATE.cap_bound(MONITOR.machine_memory())
+             and limits['free_floor_bytes'] >= GATE.FLOOR_BYTES,
+             'a cap within the machine\'s memory less the floor, and the gate\'s free floor, must remain')
     _loaded_source_fence(module, GUARD_PIN, check)
     _loaded_source_fence(job, JOB_PIN, check)
     diagnostics = sys.modules.get('atlas_tectonics._private.private_heat_resource_diagnostics_r1')
@@ -713,7 +717,8 @@ def admit_historical_endpoint(store, *, root=None, historical_inputs=None, execu
     from atlas_tectonics.reuse import ExecutionContext
     from atlas_tectonics.resources import WorkBudget
     _require(type(execution) is ExecutionContext and type(budget) is WorkBudget and
-             budget.max_bytes <= 16 << 30, 'strict execution and existing 16 GiB logical ledger required')
+             budget.max_bytes <= MONITOR.machine_memory(),
+             'strict execution and a logical ledger within the machine\'s memory required')
     inputs = _historical_inputs(historical_inputs)
     root = historical_root(root, historical_inputs=inputs)
 

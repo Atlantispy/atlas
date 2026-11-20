@@ -81,7 +81,8 @@ def _require_compact_witness(box, layer, component, posed, measure, grid, cuts, 
 
 def build_support_pieces(support, *, endpoint, integration_width, max_leaves, budget, arena,
                          subdivisions, shared_lines, measures, booked, unbooked,
-                         interval_rays, context, nominal_totals, piece_builder, D, H, W, V, B, E):
+                         interval_rays, context, nominal_totals, piece_builder, D, H, W, V, B, E,
+                         endpoint_pass=None):
     """Construct H-shaped ordered pieces; caller must separately bind all inputs."""
     if (endpoint != 'end' or subdivisions != 1 or type(support) is not D.DifferentialSupport or
             support._resource is not budget or arena.resource is not budget or
@@ -119,7 +120,10 @@ def build_support_pieces(support, *, endpoint, integration_width, max_leaves, bu
             # The query owns its failures independently of certificate decoding.
             issued_measure = D.component_volume_bounds(support, logical, endpoint=endpoint,
                 max_width_m3=integration_width, max_leaves=max_leaves,
-                positive_witness=True, budget=budget)
+                positive_witness=True, budget=budget,
+                _funded=None if endpoint_pass is None else endpoint_pass.claim)
+            if endpoint_pass is not None:
+                endpoint_pass.observed()
         with _workspace(budget, 0, 'q297-certificate-owner') as certificate_arena:
             if issued_measure is not None:
                 certificate_arena.enter_context(budget.reserve(4096 + _decoded_json_capacity(issued_measure._json),

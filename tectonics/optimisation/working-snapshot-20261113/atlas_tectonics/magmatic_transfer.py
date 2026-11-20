@@ -405,7 +405,7 @@ class PreparedMagmaticTransfer:
                     exhausted_nodes=self.exhausted_node_ids if duration==self.exhaustion_duration_s else (),
                     heat_owner='external_heat_j only; advected edge enthalpy is not an additional heat source',
                     spending='branch of initial inventory; cumulative history owner required')
-                encoded = _json(record)    # landing E: one encoding for the identity and the stored record
+                encoded = _json(record)    # one encoding for the identity and the stored record
                 result = MagmaticTransferResult(remaining,self.plan_id,_identity(record,final,edges,encoded=encoded),
                     duration,edge_ids,_keep(edge_mass,self.budget),_keep(edges[:,:k],self.budget),
                     _keep(edges[:,k],self.budget),_keep(heat,self.budget),encoded)

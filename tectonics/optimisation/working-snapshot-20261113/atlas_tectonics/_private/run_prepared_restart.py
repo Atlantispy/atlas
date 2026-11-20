@@ -104,8 +104,9 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
 
 from atlas_tectonics._private import start_gate as SG
 from atlas_tectonics._private import route2_gate as RG
+from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics import resources_gate as GATE
 
-RSS_BYTES, FREE_BYTES, LOGICAL_BYTES = SG.RSS_BYTES, SG.FREE_BYTES, SG.LOGICAL_BYTES
 PROFILE_SCHEMA = 'atlas.prepared-restart-launch.v3'
 RESULT_SCHEMA = 'atlas.prepared-restart-result.v1'
 PASS_STATUS = 'PASS_ONE_INTERVAL_PENDING_INDEPENDENT_REOPEN'
@@ -570,6 +571,14 @@ class RestartSources:
             object.__setattr__(self, '_proof', proof)
         return dict(proof)
 
+    def adopt_proof(self, proof):
+        """A fresh worker takes its parent's verify() result, bound by its startup record's digest (W-3 E-2)."""
+        require(getattr(self, '_proof', None) is None and not self.selected_now and type(proof) is dict
+                and proof.keys() == {'source_manifest_sha256', 'native_source_digest'}
+                and all(type(v) is str and len(v) == 64 and not v.strip('0123456789abcdef') for v in proof.values())
+                and proof['source_manifest_sha256'] == self.manifest_pin, 'parent source proof is not adoptable')
+        object.__setattr__(self, '_proof', dict(proof))
+
     def _verify_once(self):
         self.profile.verify()
         observed = pinned_json(self.manifest_path, self.manifest_pin)
@@ -927,26 +936,25 @@ def producer_policy(receipt, sources, *, expected_route):
         require(receipt.get('execution_mode','strict') == 'strict', 'unbound Release producer refused')
         limits = receipt.get('guard_limits')
         require(type(limits) is dict and set(limits) == {'rss_bytes','free_floor_bytes','start_available_bytes','logical_budget_bytes'}
-                and limits['rss_bytes'] == RSS_BYTES and limits['free_floor_bytes'] == FREE_BYTES
-                and limits['logical_budget_bytes'] == LOGICAL_BYTES
+                and {name: limits[name] for name in ('rss_bytes', 'free_floor_bytes', 'logical_budget_bytes')}
+                    == SG.run_limits(receipt.get('start_gate'))
                 and type(limits['start_available_bytes']) is int and limits['start_available_bytes'] > 0,
-                'historical producer requires the unchanged exact strict guard limits')
+                'strict producer requires the exact guard limits of its own start decision')
         return {'execution_mode':'strict','guard_limits':dict(limits)}
     with nullcontext() if sources.selected_now else sources.selected():
         return production_policy_module(sources).producer_policy(receipt,sources=sources,gate=SG,expected_route=expected_route)
 
 
-def _guard_boundary(sources, guard, budget, *, limits=None):
+def _guard_boundary(sources, guard, budget, *, limits):
     H = sources.module('historical_admission')
     G = sources.module('private_heat_continuation_guard_r3')
     J = sources.module('windows_workload_job')
     R = sources.module('private_heat_resource_diagnostics_r1')
     require(type(guard) is G.ContinuationGuard and not guard.closed and guard.budget is budget,
             'actual active shared-budget Windows-job guardian required')
-    expected = dict(rss_bytes=RSS_BYTES, free_floor_bytes=FREE_BYTES) if limits is None else dict(
-        rss_bytes=limits['rss_bytes'],free_floor_bytes=limits['free_floor_bytes'])
-    require(type(expected['rss_bytes']) is int and 0 < expected['rss_bytes'] <= RSS_BYTES
-            and expected['free_floor_bytes'] >= FREE_BYTES, 'resource guards cannot be widened')
+    expected = dict(rss_bytes=limits['rss_bytes'],free_floor_bytes=limits['free_floor_bytes'])
+    require(type(expected['rss_bytes']) is int and 0 < expected['rss_bytes'] <= GATE.cap_bound(MONITOR.machine_memory())
+            and expected['free_floor_bytes'] >= GATE.FLOOR_BYTES, 'resource guards cannot be widened')
     require(guard._control['limits'] == expected, 'exact authenticated resource guards required')
     check = lambda: guard.check(force=True)
     H._loaded_source_fence(G, H.GUARD_PIN, check)
@@ -1447,8 +1455,7 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
     require(type(profile) is RestartProfile and type(sources) is RestartSources and
             sources.profile is profile and sources.selected_now, 'actual selected pinned sources required')
     require(type(stop_before_advance) is bool, 'explicit stop-before-advance mode required')
-    import psutil
-    available = psutil.virtual_memory().available
+    available = MONITOR.free_memory()
     admission = production_admission(sources,'prepared',start_gate) if production_release else None
     admitted = admission['start_gate'] if admission is not None else SG.child_admit(start_gate, available)
     selected_limits = admission['guard_limits'] if admission is not None else SG.guard_limits(admitted)
@@ -1506,8 +1513,8 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
     query_directory.mkdir(exist_ok=True)
     ordinary(query_directory, directory=True)
     query_limits = row['completed_query_limits']
-    guard.budget = budget = WorkBudget(LOGICAL_BYTES, max_predicate_work_units=1 << 44)
-    _guard_boundary(sources, guard, budget, limits=selected_limits if production_release else None)
+    guard.budget = budget = WorkBudget(selected_limits['logical_budget_bytes'], max_predicate_work_units=1 << 44)
+    _guard_boundary(sources, guard, budget, limits=selected_limits)
     H._loaded_source_fence(driver_module, row['advance_driver']['sha256'],
                            lambda: guard.check(force=True))
     record.update(guard_limits=selected_limits, start_gate=admitted,
@@ -1715,11 +1722,9 @@ def command(profile, python, *, stop_before_advance=False, dev_timing=False, sta
 def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gate=None, production_release=False):
     dev_timing = _dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
-    import psutil
     require(type(production_release) is bool and not (production_release and dev_timing),
             'production Release is explicit and development diagnostics remain strict-only')
-    if not production_release:
-        SG.child_admit(start_gate, psutil.virtual_memory().available)
+    child = None if production_release else SG.child_admit(start_gate, MONITOR.free_memory())
     sources = RestartSources(profile)
     admitted = production_admission(sources,'prepared',start_gate) if production_release else None
     output = Path(profile.record()['output_directory'])/'run.json'
@@ -1742,7 +1747,7 @@ def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gat
         try:
             guard = G.ContinuationGuard(output, record, save,
                 **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
-                   if admitted is not None else {}))
+                   if admitted is not None else SG.guardian_limits(child)))
             with timing.collect(guard, output.parent, enabled=dev_timing, record=record,
                                 metadata=dict(profile_sha256=profile.sha256)):
                 budget = run_prepared_restart(profile, sources=sources, guard=guard, record=record, save=save,
@@ -1820,11 +1825,10 @@ def main(argv=None):
         production_acceptance=False)), flush=True)
     if not args.launch:
         return 0
-    import psutil
     if args.production_release:
         production_admission(RestartSources(profile),'prepared',SG.encode(gate))
     else:
-        SG.admit(gate, psutil.virtual_memory().available)
+        SG.admit(gate, MONITOR.free_memory())
     output = Path(profile.record()['output_directory'])
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=launch_environment(), cwd=output)

@@ -11,7 +11,6 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, CancelledError
 from dataclasses import dataclass, field
 import multiprocessing
-import os
 import threading
 from typing import Iterable
 
@@ -28,10 +27,11 @@ from ._validation import scalar
 from .materials import (MaterialState, advect_materials, material_work_bytes,
                         validate_material_result, _definition as _material_definition)
 from .resources import WorkBudget, MemoryLimitError, elements, select_budget
+from .machine_resources_monitor import process_cpus
 
 
 def _default_workers():
-    return min(2, getattr(os,"process_cpu_count",os.cpu_count)() or 1)
+    return min(2, process_cpus())
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,7 +54,7 @@ class ExecutionPolicy:
                 raise TectonicsError(name+" must be a positive integer")
         if self.max_workers > 32 or self.max_inflight > 128:
             raise TectonicsError("bounded local executor supports at most 32 workers/128 in-flight jobs")
-        available = getattr(os,"process_cpu_count",os.cpu_count)() or 1
+        available = process_cpus()
         if self.max_workers*self.inner_threads > available:
             raise TectonicsError("outer/inner thread request exceeds available logical CPUs")
 
@@ -529,7 +529,7 @@ class KernelExecutor:
             global _POOL_SLOTS
             slots = self.policy.max_workers * self.policy.inner_threads
             with _LIMIT_LOCK:
-                available = getattr(os, "process_cpu_count", os.cpu_count)() or 1
+                available = process_cpus()
                 if _POOL_SLOTS + slots > available:
                     raise TectonicsError("combined executor pools exceed available CPU slots")
                 _POOL_SLOTS += slots

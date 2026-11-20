@@ -73,6 +73,7 @@ else:
 
 from atlas_tectonics._private import run_prepared_restart as RUN
 from atlas_tectonics._private import start_gate as SG
+from atlas_tectonics import machine_resources_monitor as MONITOR
 
 PROFILE_SCHEMA = 'atlas.fresh-interval-profile.v2'
 RESULT_SCHEMA = 'atlas.fresh-interval-result.v1'
@@ -705,7 +706,7 @@ def sealed_lineage(store_directory, interval, parent_adopted_sha256, *, interval
             'parent_adopted_sha256': parent_adopted_sha256}
 
 
-def measured_successor_workers(profile, lineage, number, selector, recorded=None):
+def measured_successor_workers(profile, lineage, number, selector, recorded=None, *, logical_budget_bytes):
     """Bind N>=2 worker selection to the adopted parent's exact producer receipt."""
     require(type(number) is int and number >= 2 and lineage['lineage']['interval'] == number-1,
             'successor worker selection requires its adopted parent')
@@ -741,7 +742,7 @@ def measured_successor_workers(profile, lineage, number, selector, recorded=None
             'actual parent RSS and logical peak measurements required; no fallback estimate')
     result = {'schema': selector.PARENT_SELECTION_SCHEMA,
               'parent_receipt': {'path': str(path), 'sha256': pin}, 'parent': parent,
-              'decision': selector.select_composed(parent=parent, logical_budget_bytes=RUN.LOGICAL_BYTES)}
+              'decision': selector.select_composed(parent=parent, logical_budget_bytes=logical_budget_bytes)}
     selector.policy_from_selection(result)
     return result
 
@@ -1171,13 +1172,12 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
             guard.output == output/'run.json', 'guard and fresh run output directory differ')
     catalog = store_directory/CATALOG
     limits = row['completed_query_limits']
-    import psutil
-    available = psutil.virtual_memory().available
+    available = MONITOR.free_memory()
     admission = RUN.production_admission(sources,'fresh-'+mode,start_gate) if production_release else None
     admitted = admission['start_gate'] if admission is not None else SG.child_admit(start_gate, available)
     selected_limits = admission['guard_limits'] if admission is not None else SG.guard_limits(admitted)
-    guard.budget = budget = WorkBudget(RUN.LOGICAL_BYTES, max_predicate_work_units=1 << 44)
-    RUN._guard_boundary(sources, guard, budget, limits=selected_limits if production_release else None)
+    guard.budget = budget = WorkBudget(selected_limits['logical_budget_bytes'], max_predicate_work_units=1 << 44)
+    RUN._guard_boundary(sources, guard, budget, limits=selected_limits)
     check = lambda: guard.check(force=True)
     H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
     proof = sources.verify()
@@ -1246,7 +1246,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                                          recorded=recorded)
                 record['lineage'] = lineage['lineage']
                 lineage['worker_selection'] = measured_successor_workers(
-                    profile, lineage, number, bound['interface_worker_selection'], recorded=recorded)
+                    profile, lineage, number, bound['interface_worker_selection'], recorded=recorded,
+                    logical_budget_bytes=selected_limits['logical_budget_bytes'])
                 record['interface_worker_selection'] = lineage['worker_selection']
                 save()
             with CRS.CompactRestartStore.open_catalog(catalog, scope=scope) as store:
@@ -1314,12 +1315,12 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             record['q297_end_geometry'].update(selection='issued for actual END mesh', **selection)
             save()
         end_provider_factory = make_factory(run_root=qualification/'runs',
-            grid_path=qualification/'iv1-diagnostic-prep/landing-p2-r1/successor-grid.json',
+            grid_path=qualification/'iv1-diagnostic-prep/landing-gp-r1/successor-grid.json',
             selected_observer=note_q297_provider)
         record['q297_end_geometry'] = dict(selection='configured first-interval END provider',
-            scientific_changes=True, grid_sha256='7365149f3f1b781e9abe5707ac44982d5595fbaee3eeeac8af22745b0cf94fe2',
+            scientific_changes=True, grid_sha256='0afc36b4b7e13d2422b34c02ea1704b099c062101e793344223ed6109939871f',
             sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-            carry_proof_sha256='05a44721c11cac5e0533bcccbe42072d4d1c742aecec258c139c1b5ca732facb',
+            carry_proof_sha256='cae83be7428db8c3a7a9a48bfcb0ab9e1c870c9949dbaf585c911c3ded70fc93',
             inherited_witness_refinements=1, qualification_grid_split='-33/8',
             graph_id='not yet issued', scientifically_certified=False)
         save()
@@ -1632,7 +1633,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
         try:
             guard = G.ContinuationGuard(output, record, save,
                 **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
-                   if admitted is not None else {}))
+                   if admitted is not None else SG.child_limits(start_gate)))
             with timing.collect(guard, output.parent, enabled=dev_timing, record=record,
                                 metadata={'profile_sha256': profile.sha256, 'mode': mode}):
                 budget = run_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save, mode=mode,
@@ -1737,11 +1738,10 @@ def main(argv=None):
                       'production_acceptance': False}), flush=True)
     if not args.launch:
         return 0
-    import psutil
     if args.production_release:
         RUN.production_admission(FreshSources(profile),'fresh-'+args.mode,SG.encode(gate))
     else:
-        SG.admit(gate, psutil.virtual_memory().available)
+        SG.admit(gate, MONITOR.free_memory())
     output = mode_output(profile.record(), args.mode, args.interval)
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=pressure_launch_environment(), cwd=output)

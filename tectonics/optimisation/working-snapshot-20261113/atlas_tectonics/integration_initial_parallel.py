@@ -28,11 +28,13 @@ from fractions import Fraction as Q
 
 from . import integration_differential_geometry as G
 from . import integration_parallel_dispatch as P
+from . import machine_resources_monitor as MON
+from . import resources_gate as RG
 from .integration_component_volume_parallel import ComponentParallelSession, request_for
 
-# Worker bound for this family: eight, one per core (decision 384, R1; the session bypasses
-# ComponentParallelSession's own bound of two).
-MAX_WORKERS = 8
+# Worker bound for this family: the host's cores less one (decisions 1505-1506; was eight, one per core on the
+# eight-core PC, decision 384, R1). The session bypasses ComponentParallelSession's own bound of two.
+CHILD_BYTES = 128 << 20     # a worker's booking beside CHILD_BASELINE
 BATCH_JOBS = 16
 _ACTIVE: contextvars.ContextVar = contextvars.ContextVar('atlas_initial_parallel', default=None)
 
@@ -91,12 +93,19 @@ def validated_initial_volume(record, request, fit):
     return True
 
 
+def initial_ceiling():
+    """The widest admission pool the resources setting allows on this machine."""
+    machine = MON.reading(load=0)    # the ceiling counts cores, so no load sample
+    return RG.pool_ceiling(machine, RG.setting(machine))
+
+
 class InitialParallelSession(ComponentParallelSession):
     """The component session for start-endpoint queries with one exact relative error."""
 
     def __init__(self, *, workers=1, relative_error, **kwargs):
-        if type(workers) is not int or not 1 <= workers <= MAX_WORKERS:
-            raise ValueError('one to %d initial workers required' % MAX_WORKERS)
+        ceiling = initial_ceiling()
+        if type(workers) is not int or not 1 <= workers <= ceiling:
+            raise ValueError('one to %d initial workers required' % ceiling)
         if type(relative_error) not in (int, Q) or not 0 <= relative_error < 1:
             raise ValueError('explicit exact relative error below one required')
         # ComponentParallelSession's own initialisation, under this family's bound.
@@ -122,9 +131,10 @@ class InitialParallel:
     """
 
     def __init__(self, *, workers, budget, context, batch_jobs=BATCH_JOBS, outstanding=None,
-                 child_bytes=128 << 20, predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0):
-        if type(workers) is not int or not 1 <= workers <= MAX_WORKERS:
-            raise ValueError('one to %d initial workers required' % MAX_WORKERS)
+                 child_bytes=CHILD_BYTES, predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0):
+        ceiling = initial_ceiling()
+        if type(workers) is not int or not 1 <= workers <= ceiling:
+            raise ValueError('one to %d initial workers required' % ceiling)
         if type(batch_jobs) is not int or not 1 <= batch_jobs <= 64:
             raise ValueError('one to 64 queries per batch required')
         outstanding = 3*workers if outstanding is None else outstanding
@@ -361,6 +371,9 @@ class InitialParallel:
                 self.report.update(stats=dict(session.stats), cause=session.cause, log=list(session.log),
                                    seconds={k: round(v, 3) for k, v in session.seconds.items()},
                                    last_error=None if session.last_error is None else str(session.last_error)[:512])
+                if session.stats.get('peak_child_rss'):
+                    # The admission pool's largest worker peak sizes the next launch's pool.
+                    MON.Timings().add(('admission', 'worker', 'peak'), session.stats['peak_child_rss'])
         self._stop_reading()
         self.positions, self.held, self.session = None, [], None
         self.closed = True

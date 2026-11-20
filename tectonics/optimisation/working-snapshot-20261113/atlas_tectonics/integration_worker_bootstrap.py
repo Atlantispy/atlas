@@ -222,17 +222,22 @@ def bind_worker_mode(startup_path, startup_sha256):
     mode = state.get('execution_mode','strict')
     _require(mode in ('strict','release'), "worker execution mode is invalid")
     _require(path == _path(state['directory'])/'startup.json', "worker mode is outside its owned startup")
-    _worker_mode_token = (str(path),startup_sha256,mode)
+    _worker_mode_token = (str(path),startup_sha256,mode,state.get('execution_identity'))
 
 
 def worker_execution_mode():
     """Strict by default; Release needs the immutable source-bound startup transport."""
     if _worker_mode_token is None:
         return 'strict'
-    path,pin,mode = _worker_mode_token
+    path,pin,mode,_ = _worker_mode_token
     state = _json(_raw(_path(path),pin))
     _require(state.get('execution_mode','strict') == mode, "worker execution mode changed")
     return mode
+
+
+def worker_execution_identity():
+    """The parent's execution identity from the bound fresh startup record; None with none bound (every parent)."""
+    return None if _worker_mode_token is None else _worker_mode_token[3]
 
 
 def _parent_worker_mode(state):
@@ -243,10 +248,10 @@ def _parent_worker_mode(state):
         state['execution_mode'] = mode
 
 
-def launch(directory):
+def launch(directory, execution_identity):
     """Create a bounded startup record and return command/env; never spawn."""
     if type(_selection) is bytes and _json(_selection).get("schema") == FRESH_STARTUP_SCHEMA:
-        return _launch_fresh(directory)
+        return _launch_fresh(directory, execution_identity)
     _require(type(_selection) is bytes, "worker startup has not been configured")
     _validate_interpreter()
     state = _json(_selection)
@@ -368,13 +373,14 @@ def _validate_fresh_selection(selection):
     return profile
 
 
-def _load_fresh_modules(selection, *, include_runner):
+def _load_fresh_modules(selection, *, include_runner, parent_proved=False):
     """Compile checked orchestration bytes; never use an adjacent pyc."""
     names = FRESH_RUNNER_MODULES if include_runner else FRESH_RUNNER_MODULES[:-1]
     runner_path = _path(selection['runner_modules']['run_fresh_interval'][0])
     if runner_path.parent.name == '_private' and runner_path.parent.parent.name == 'atlas_tectonics':
         binding = selection['profile']
-        prepare_installed_runner(binding['path'], binding['sha256'], str(runner_path), runner_modules=names)
+        prepare_installed_runner(binding['path'], binding['sha256'], str(runner_path), runner_modules=names,
+                                 parent_proved=parent_proved)
         return
     _require(not any(name in sys.modules for name in names) and _fresh_bound_importables(selection, runner_path),
              "fresh startup requires unloaded orchestration")
@@ -461,7 +467,7 @@ def record_installed_module(module, path, pin):
 
 
 def prepare_installed_runner(profile_path, profile_sha256, runner_path, *,
-                             runner_modules=('start_gate', 'route2_gate')):
+                             runner_modules=('start_gate', 'route2_gate'), parent_proved=False):
     """Authenticate a folded script before its qualified orchestration imports.
 
     The existing profile and complete source/data manifest remain authority.
@@ -480,15 +486,16 @@ def prepare_installed_runner(profile_path, profile_sha256, runner_path, *,
     files, data = manifest['files'], manifest['data_only']
     _require(type(files) is dict and files and type(data) is dict and not files.keys() & data.keys(),
              'installed startup requires disjoint complete source/data bindings')
-    for name, pin in {**files, **data}.items():
-        _raw(_fresh_relative(workspace,name),pin)
-    actual = {p.relative_to(root).as_posix():sha256(p.read_bytes()).hexdigest()
-              for p in sorted((root/'atlas_tectonics').rglob('*.py'))}
-    _require(actual and actual == manifest['source_hashes'] and _bound_importables(root, workspace, files), 'installed package source inventory differs')
-    for name, pin in actual.items():
-        path = root/name
-        _require(files.get(path.relative_to(workspace).as_posix()) == pin,
-                 'installed native source missing from import closure')
+    if not parent_proved:  # W-3 E-1: a fresh worker holds its parent's proof (source_proof); imports stay checked
+        for name, pin in {**files, **data}.items():
+            _raw(_fresh_relative(workspace,name),pin)
+        actual = {p.relative_to(root).as_posix():sha256(p.read_bytes()).hexdigest()
+                  for p in sorted((root/'atlas_tectonics').rglob('*.py'))}
+        _require(actual and actual == manifest['source_hashes'] and _bound_importables(root, workspace, files), 'installed package source inventory differs')
+        for name, pin in actual.items():
+            path = root/name
+            _require(files.get(path.relative_to(workspace).as_posix()) == pin,
+                     'installed native source missing from import closure')
     for path in (root/'atlas_tectonics/__init__.py',private/'__init__.py',runner,Path(__file__).resolve()):
         _require(path.is_relative_to(workspace) and
                  files.get(path.relative_to(workspace).as_posix()) == sha256(path.read_bytes()).hexdigest(),
@@ -559,7 +566,7 @@ def configure_fresh_sources(sources, runner_module):
     _validate_interpreter()
     _require(type(sources) is runner_module.FreshSources and sources.selected_now,
              "fresh worker startup requires active typed source selection")
-    sources.verify()
+    proof = sources.verify()
     sources.check_imported()
     finder = sys.meta_path[0]
     _require(getattr(finder, "owner", None) is sources
@@ -590,14 +597,15 @@ def configure_fresh_sources(sources, runner_module):
     _require(paths[:len(prefix)] == prefix and paths[len(prefix):],
              "fresh worker selection has changed its final import paths")
     state = {"schema": FRESH_STARTUP_SCHEMA, "selection": selection,
-             "paths": paths, "base_paths": paths[len(prefix):], "runtime": _runtime()}
+             "paths": paths, "base_paths": paths[len(prefix):], "runtime": _runtime(),
+             "source_proof": proof}
     _selection = _encode(state)
     return {"schema": FRESH_STARTUP_SCHEMA, "profile_sha256": sources.profile.sha256,
             "source_manifest_sha256": sources.manifest_pin,
             "helper_sha256": selection["helper"][1]}
 
 
-def _launch_fresh(directory):
+def _launch_fresh(directory, execution_identity):
     _validate_interpreter()
     state = _json(_selection)
     _require(state["runtime"] == _runtime() and state["paths"] == _paths(),
@@ -606,6 +614,7 @@ def _launch_fresh(directory):
     _ordinary(job)
     _require(job.is_dir(), "worker job directory is absent")
     state["directory"] = str(job)
+    state["execution_identity"] = execution_identity
     _parent_worker_mode(state)
     raw = _encode(state)
     startup = job / "startup.json"
@@ -625,9 +634,11 @@ def run_fresh_worker(startup_path, startup_sha256, marker_directory):
              "worker startup record exceeds its bound")
     state = _json(_raw(startup, startup_sha256))
     _require(type(state) is dict
-             and set(state) in ({"schema", "selection", "paths", "base_paths", "runtime", "directory"},
-                                {"schema", "selection", "paths", "base_paths", "runtime", "directory", "execution_mode"})
-             and state["schema"] == FRESH_STARTUP_SCHEMA,
+             and set(state) - {"execution_mode"} == {"schema", "selection", "paths", "base_paths", "runtime",
+                                                    "directory", "source_proof", "execution_identity"}
+             and state["schema"] == FRESH_STARTUP_SCHEMA
+             and type(state["execution_identity"]) is str and len(state["execution_identity"]) == 64
+             and not state["execution_identity"].strip("0123456789abcdef"),
              "fresh worker startup schema differs")
     job = _path(state["directory"])
     _require(startup == job / "startup.json" and _path(marker_directory) == job,
@@ -640,10 +651,11 @@ def run_fresh_worker(startup_path, startup_sha256, marker_directory):
     selection = state["selection"]
     _validate_fresh_selection(selection)
     sys.path[:] = state["base_paths"]
-    _load_fresh_modules(selection, include_runner=True)
+    _load_fresh_modules(selection, include_runner=True, parent_proved=True)
     runner = _fresh_runner(_path(selection['runner_modules']['run_fresh_interval'][0]))
     profile = runner.FreshProfile.read(selection["profile"]["path"], selection["profile"]["sha256"])
     sources = runner.FreshSources(profile)
+    sources.adopt_proof(state["source_proof"])  # W-3 E-2: the parent's verify(), under the startup digest
     # Original selected() verifies the complete inventory, loaded imports and
     # historical/data-only exclusions; its finally restores paths and verifies.
     with sources.selected():
@@ -653,6 +665,7 @@ def run_fresh_worker(startup_path, startup_sha256, marker_directory):
         selected = dict(state)
         selected.pop("directory")
         selected.pop("execution_mode",None)
+        selected.pop("execution_identity")
         _require(canonical._selection == _encode(selected),
                  "reconstructed Runner selection differs from parent")
         import runpy

@@ -17,8 +17,10 @@ from .integration_component_volume_parallel import ComponentParallelSession
 class AutomaticEndpoints(S._Rolling):
     family, adoption = 'endpoint-volume', 1.0
 
-    def __init__(self, parent, width):
+    def __init__(self, parent, width, keep=None, endpoints=('start', 'end')):
         self.width = width
+        # M-1 E-3: the jobs listed per support; the default is every component, both endpoints.
+        self.keep, self.endpoints = keep, endpoints
         self.order, self.jobs, self.left = deque(), None, 0
         self.label = self.started = None
         self.prepared = False
@@ -80,7 +82,7 @@ class AutomaticEndpoints(S._Rolling):
                     # Offer the small retained handle, not the temporary native support.
                     from atlas_tectonics._private.partition_routing_patch import retain_support
                     support = retain_support(support)
-                self._begin_support(index, support, _summary(row['components']))
+                self._begin_support(index, support, _summary(row['components'], self.keep))
                 if compact:
                     self._retained(index, support)
             self._fill()
@@ -100,11 +102,12 @@ class AutomaticEndpoints(S._Rolling):
         """The endpoint requests of support ``index`` in router order, from its (id, has parent,
         constraint count, partition path length) summary."""
         self.cursor = index+1
-        self.left = sum(1 + has_parent for _, has_parent, _, _ in summary)
+        self.left = sum(sum(endpoint != 'start' or has_parent for endpoint in self.endpoints)
+                        for _, has_parent, _, _ in summary)
         self.read[0] += 1
         self.read[1] += self.left
         self.jobs = ((index, support, key, endpoint, {}, (endpoint, constraints, path))
-                     for key, has_parent, constraints, path in summary for endpoint in ('start', 'end')
+                     for key, has_parent, constraints, path in summary for endpoint in self.endpoints
                      if endpoint != 'start' or has_parent) if self.left else None
 
     def _retained(self, index, handle):
@@ -143,7 +146,7 @@ class AutomaticEndpoints(S._Rolling):
             del support
             owned = support_fields(held, ('components',))
             try:
-                summary = _summary(owned.value['components'])
+                summary = _summary(owned.value['components'], self.keep)
             finally:
                 del owned
             ident = held.support_id
@@ -151,7 +154,7 @@ class AutomaticEndpoints(S._Rolling):
             # One decode within the existing prepaid routing decode envelope, sequential
             # with its other users; the graph dies before this returns.
             held, ident = support, support.support_id
-            summary = _summary(support.record()['components'])
+            summary = _summary(support.record()['components'], self.keep)
         self.unbound.append((index, ident))
         self.peak[0] = max(self.peak[0], len(self.unbound))
         self._begin_support(index, held, summary)
@@ -214,7 +217,8 @@ class AutomaticEndpoints(S._Rolling):
         session = ComponentParallelSession(budget=self.parent.budget,
             max_width_m3=self.width, max_leaves=self.parent.leaves, workers=self.workers,
             child_bytes=policy.child_bytes, predicate_units=policy.predicate_units,
-            timeout_seconds=policy.timeout_seconds, budget_fraction=policy.budget_fraction)
+            timeout_seconds=policy.timeout_seconds, budget_fraction=policy.budget_fraction,
+            keep_workers=policy.keep_workers)    # W-1 (a): as the wall and interface sessions
         self.schedule.workers = self.workers
         self.session = session
         if not session.open(self.parent.context):
@@ -304,10 +308,11 @@ class AutomaticEndpoints(S._Rolling):
         self.finished = True
 
 
-def _summary(parts):
-    """(logical id, has parent, constraint count, partition path length) per component, in order."""
+def _summary(parts, keep=None):
+    """(logical id, has parent, constraint count, partition path length) per kept component, in order."""
     return tuple((part['logical_cell_id'], part['parent_cell_id'] is not None,
-                  len(part['constraints']), len(part['partition_path'])) for part in parts)
+                  len(part['constraints']), len(part['partition_path'])) for part in parts
+                 if keep is None or keep(part['logical_cell_id']))
 
 
 # The schedule's notes (Schedule._choose) for eligible, estimated work it could not cut yet: with
@@ -320,7 +325,7 @@ def _wanting(schedule):
     return schedule.offered < schedule._wanted or schedule.reason in _WANTING
 
 
-def open_automatic_endpoints(parent, width):
+def open_automatic_endpoints(parent, width, keep=None, endpoints=('start', 'end')):
     """Use the enclosure's policy; optional setup failures retain serial work."""
     if parent is None or parent.policy is None or parent.policy.mode == 'off':
         return None
@@ -328,7 +333,7 @@ def open_automatic_endpoints(parent, width):
         width = S.G.W._q(width)
         if width < 0:
             return None
-        return AutomaticEndpoints(parent, width)
+        return AutomaticEndpoints(parent, width, keep, endpoints)
     except Exception as error:
         parent.decision['notes'].append('endpoint selection unavailable: ' + S._text(error))
         return None

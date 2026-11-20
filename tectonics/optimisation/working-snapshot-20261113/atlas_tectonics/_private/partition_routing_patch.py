@@ -62,7 +62,7 @@ def _bound_ref(support):
         if (not P._is_v2(origin) or not origin._sealed or origin.record is not ref._view or
                 ref.scope.run_budget is not support._resource):
             raise ValueError('support reference, inventory or budget differs')
-        node, held = origin.support_entry(support.support_id)    # one freshness check (landing E)
+        node, held = origin.support_entry(support.support_id)    # one freshness check
         if node != ref.index or held.canonical_bytes != len(support._json):
             raise ValueError('support reference, inventory or budget differs')
         ref._live()

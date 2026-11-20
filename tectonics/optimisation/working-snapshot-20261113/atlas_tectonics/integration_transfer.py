@@ -2494,7 +2494,7 @@ def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None, measur
         if (party != -1 or source not in given or target not in received
                 or parent.atlas.patches[source].plate_id != endpoint.atlas.patches[target].plate_id):
             raise TransferRefused('a mesh row joins faces of different plates, an unchanged face or an exterior')
-        if not produced:    # landing E C-6: rows made this step passed this test in _mesh_pairs
+        if not produced:    # rows made this step passed this test in _mesh_pairs
             for key, shapes in ((source, before), (~target, after)):
                 if key not in reach:
                     reach[key] = _cap(shapes.rings(key if shapes is before else target))
@@ -2742,7 +2742,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
                                       % old_ids[source], UNRESOLVED_OVERLAP)
             kept[new_index[old_ids[source]], name] = stock[piece]
     fragments = {}
-    # Landing E B-8: this step's carried and cut patches, held by object for checked(); dropped when the step ends.
+    # this step's carried and cut patches, held by object for checked(); dropped when the step ends.
     known = {}
     for patch, row, cells, area in _support.row_fragments(network, material, endpoint, rows, sweeps=sweeps,
                                                        cancel=cancel, precise=precise, support=support, groups=donors):

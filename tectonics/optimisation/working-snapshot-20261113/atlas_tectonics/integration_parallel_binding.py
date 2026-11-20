@@ -449,7 +449,7 @@ def _batch_worker_complete(binding, record, *, context, read_bindings, requests,
     limits, seconds = record['child_budget'], record.get('batch_seconds')
     bindings = []
     def verify():
-        if not bindings:    # Landing E B-5: the inputs are copies; the second check reuses the first inventory
+        if not bindings:    # the inputs are copies; the second check reuses the first inventory
             bindings.append(read_bindings())
         binding._verify_record(record, requests=requests, source_bindings=bindings[0], context=context,
                        child_bytes=limits['max_bytes'],
@@ -465,7 +465,7 @@ def _batch_worker_complete(binding, record, *, context, read_bindings, requests,
         if returning and answer != 'returned':
             raise ValueError('returned members form an unstarted suffix')
         if type(answer) is bytes:
-            raw = answer    # Landing E B-7: the parent checks it carries its request; the receipt binds its digest
+            raw = answer    # the parent checks it carries its request; the receipt binds its digest
             results.append({'outcome': 'result', 'canonical_json': raw.decode('utf8'),
                             'record_sha256': hashlib.sha256(raw).hexdigest()})
         elif type(answer) is str and (answer in UNANSWERED or answer == 'returned' and seconds is not None):
@@ -554,7 +554,7 @@ class OwnedBatchDispatch:
             raw = row.pop('canonical_json').encode('utf8')
             if not _digest(row['record_sha256']) or hashlib.sha256(raw).hexdigest() != row['record_sha256']:
                 raise ValueError('complete worker-result digest differs')
-            # Landing E C-2: tokens[index] is canonical(requests[index]), made by the dispatch from the same list.
+            # tokens[index] is canonical(requests[index]), made by the dispatch from the same list.
             member, expected = _carried_record(raw, request, request.keys(), None if tokens is None else tokens[index])
             answer = raw
             if tokens is not None and tokens[index] == expected:
