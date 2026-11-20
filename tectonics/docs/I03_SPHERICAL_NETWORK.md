@@ -154,8 +154,11 @@ normalisation, is refused here because a closed network has none.
 
 **Search.** Only changed faces are intersected (the boundary cells of a subducting
 plate, or the faces replaced by a mesh change), within one plate, after a
-bounding-cap rejection test. The tree search of Kritsikis et al. (their section 3.2)
-is not implemented; see section 12.
+bounding-cap rejection test. For a mesh change, the search groups changed
+receivers by plate. Small caps can use a temporary spatial index of loose
+Cartesian bounds on the existing cap centres. Each donor visits the returned
+faces in their original order and applies the same cap and overlap predicates.
+The other motion paths retain their existing searches. See section 12.
 
 The separate differential-partition source also orders new charts and each voxel's
 retained supports by their physical geometry before assigning storage slots,
@@ -2054,9 +2057,10 @@ adds nothing here. Its cost is one bound per face an event measures again: twelv
   depend on them, would be accepted. Detecting that needs the intersections
   measured again on restore, which this version avoids so that a restore does not
   depend on the platform's GEOS build.
-- **Search is not sub-quadratic.** Changed faces are tested pairwise within a plate
-  after a bounding-cap test. A mesh change that replaces every face of a large plate
-  is quadratic in its face count.
+- **Dense searches can remain quadratic.** The mesh-change index eliminates
+  distant candidate visits when its boxes separate. Overlapping bounds, broad
+  donor caps or insufficient optional workspace can still require a full scan.
+  The accepted pairs and measured areas use the same predicates in both paths.
 - **Face count grows at ridges** by two faces per ridge segment and interval until a
   mesh change merges them.
 - **Each commit stores the whole endpoint geometry and all pieces.** Unchanged

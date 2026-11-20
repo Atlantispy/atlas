@@ -2294,6 +2294,52 @@ def _mesh_change(parent, endpoint, change):
     return change[0]
 
 
+def _mesh_cap_box(centre, radius):
+    """Loose XY bounds for the existing small-cap angle test in a plate's unit frame."""
+    # For r+s < 0.5, |a-b| = |a+b| tan(angle/2) < 2(r+s) for unit directions.
+    # The wider box and absolute roundoff margin only admit extra candidates.
+    width = 4*radius + 1e-8
+    return shapely.box(centre[0]-width, centre[1]-width, centre[0]+width, centre[1]+width)
+
+
+def _mesh_pairs(parent, endpoint, donors, receivers, before, caps, mine, indexed, cancel):
+    """Select pairs in the original face order, releasing index storage before clipping."""
+    by_plate, indexes = {}, {}
+    if indexed:
+        for j in receivers:
+            by_plate.setdefault(endpoint.atlas.patches[j].plate_id, []).append(j)
+        for plate, members in by_plate.items():
+            if len(members) == 1:
+                continue
+            _check_cancel(cancel)
+            local, broad, boxes = [], [], []
+            for j in members:
+                centre, radius = caps[j]
+                if radius < 0.25:
+                    local.append(j)
+                    boxes.append(_mesh_cap_box(centre, radius))
+                else:
+                    broad.append(j)
+            if local:
+                indexes[plate] = local, broad, shapely.STRtree(boxes)
+    pairs = []
+    for i in donors:
+        _check_cancel(cancel)
+        mine[i] = before.rings(i)
+        centre, radius = _cap(mine[i])
+        plate = parent.atlas.patches[i].plate_id
+        if radius < 0.25 and plate in indexes:
+            local, broad, tree = indexes[plate]
+            hits = tree.query(_mesh_cap_box(centre, radius))
+            candidates = sorted([local[k] for k in hits] + broad)
+        elif indexed:
+            candidates = by_plate.get(plate, ())
+        else:
+            candidates = (j for j in receivers if endpoint.atlas.patches[j].plate_id == plate)
+        pairs.extend((i, j) for j in candidates if float(_angle(centre, caps[j][0])) <= radius+caps[j][1])
+    return pairs
+
+
 def _mesh_rows(parent, endpoint, cancel, *, budget=None, change=None):
     """Measure the rows of a mesh change: every changed parent face against the new faces of its plate.
 
@@ -2307,13 +2353,12 @@ def _mesh_rows(parent, endpoint, cancel, *, budget=None, change=None):
     before, after, donors, receivers = _mesh_change(parent, endpoint, change)
     rings = {j: after.rings(j) for j in receivers}
     caps = {j: _cap(value) for j, value in rings.items()}
-    pairs, mine = [], {}
-    for i in donors:
-        mine[i] = before.rings(i)
-        centre, radius = _cap(mine[i])
-        plate = parent.atlas.patches[i].plate_id
-        pairs.extend((i, j) for j in receivers if endpoint.atlas.patches[j].plate_id == plate
-                     and float(_angle(centre, caps[j][0])) <= radius+caps[j][1])
+    mine = {}
+    if len(donors) > 1 and len(receivers) > 1:
+        with select_budget(budget).try_reserve(1536*len(receivers)+16384, category='i03-mesh-cap-index') as indexed:
+            pairs = _mesh_pairs(parent, endpoint, donors, receivers, before, caps, mine, indexed, cancel)
+    else:
+        pairs = _mesh_pairs(parent, endpoint, donors, receivers, before, caps, mine, False, cancel)
     rows, whole = {}, set()
     for i, j in pairs:
         if (i, None) in whole or (None, j) in whole:

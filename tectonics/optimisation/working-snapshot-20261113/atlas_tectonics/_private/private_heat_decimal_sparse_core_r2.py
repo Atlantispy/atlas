@@ -40,7 +40,7 @@ HERE = Path(__file__).resolve().parent
 PINS = {
     'private_heat_decimal_sparse_core_r1.py': 'e9f1e7126908f518b225dbbe42994f18e0737d06410b65ac775248baabff905f',
     'private_heat_decimal_inventory_r1.py': '8f1a73e84ce16c9544799a88f419ae17fa0b1e8a240f6dfd44f86ee5db608f43',
-    'private_heat_mpfr_lu_resources_r1.py': 'a6ce384da39cf3d8e2523461e902a3e99a7c1aeddd94cc83eeb36530e0d48cf8',
+    'private_heat_mpfr_lu_resources_r1.py': '0f588e9c996702c2678da0a964644c5b0b526ca69bcf9b4b15143bf35355d3e9',
     'private_heat_rational_decimal_r1.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
     'private_heat_sparse_resources_r1.py': '63f677352a5d9d4a65ad2fe94a044c26957211aa225121f083f48b555d5e2294',
 }

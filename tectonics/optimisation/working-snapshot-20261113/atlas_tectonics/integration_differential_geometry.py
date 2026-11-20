@@ -5770,7 +5770,7 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
         endpoint, max_width_m3, max_leaves, positive_witness, budget, relative_error, _funded=None, _checkpoint=None, _component_index=None):
     component = (next((c for c in record['components'] if c['logical_cell_id'] == logical_cell_id), None)
                  if _component_index is None else record['components'][_component_index])
-    if component is None:
+    if component is None or component['logical_cell_id'] != logical_cell_id:
         raise V.VolumeError('unknown physical support component')
     width = W._q(max_width_m3)
     if width < 0 or type(max_leaves) is not int or max_leaves < 1:

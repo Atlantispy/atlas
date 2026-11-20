@@ -237,7 +237,7 @@ def audit_factor(factors, envelope, *, cancel=None):
                 raise ValueError('Finite represented factor entries and original columns required')
             if value.precision != envelope.precision:
                 raise ValueError('Factor entry exceeds declared logical precision/slot policy')
-            if slot_limit is None or cancel is not None:
+            if slot_limit is None:
                 slot_limit = mpfr_slot(envelope.precision)
             value_bytes = sys.getsizeof(value)
             if value_bytes > slot_limit:
