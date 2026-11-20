@@ -401,12 +401,14 @@ def _edge_order(constraints, literals):
 
     def order(name):
         if isinstance(name, tuple):
-            if name[0] not in _EDGE_CLASS:
+            edge_class = _EDGE_CLASS.get(name[0])
+            if edge_class is None:
                 raise V.VolumeError('an edge label of unknown class has no order')
-            return (1, _EDGE_CLASS[name[0]], *name[1:])
-        if name not in keys:
+            return (1, edge_class, *name[1:])
+        key = keys.get(name)
+        if key is None:
             raise V.VolumeError('an edge name outside the literals has no order')
-        return keys[name]
+        return key
     return order
 
 

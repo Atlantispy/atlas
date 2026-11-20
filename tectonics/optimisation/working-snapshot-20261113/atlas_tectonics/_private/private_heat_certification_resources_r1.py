@@ -173,7 +173,7 @@ def endpoint_shape(value, G, ar):
     return I.Shape(precision+max(0, exponent-precision), max(0, precision-exponent)+1, True)
 
 
-def export_plan(bounds, dual, proof, G, R, cancel):
+def export_plan(bounds, dual, proof, G, R, cancel, *, retain_decimal=True):
     ar = L.RationalGrowth(G, R, cancel)
     retained = scratch = largest_bits = 1
     count = 0
@@ -194,7 +194,11 @@ def export_plan(bounds, dual, proof, G, R, cancel):
             shape = endpoint_shape(value, G, ar)
             retained += ar.slot(shape)
             largest_bits = max(largest_bits, shape.numerator+shape.denominator)
-    retained += D.CONTAINER_UNIT*(8*len(bounds)+4*len(dual)+64)+len(bounds)*D.decimal_slot(80)
+    retained += D.CONTAINER_UNIT*(8*len(bounds)+4*len(dual)+64)
+    if retain_decimal:
+        retained += len(bounds)*D.decimal_slot(80)
+    elif bounds:
+        scratch += 2*D.decimal_slot(80)
     return Plan('exact-dyadic-export-and-original-rounding', (
         ('retained_values_and_output_containers', size(retained)),
         ('simultaneous_export_decimal_copies', size(scratch)),

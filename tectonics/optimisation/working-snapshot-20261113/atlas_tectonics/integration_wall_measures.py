@@ -604,8 +604,29 @@ def _history(prior_trajectory, epoch, start):
     return tuple(rotations), records
 
 
+def _funded_source_volume(exterior, account, basal, budget):
+    lower, upper = exterior['geometry_volume_enclosure_m3']
+    error = account['component_volume_max_deviation_m3']
+    if basal:
+        # The difference includes every prism cut from this patch and layer.
+        operands = (lower, upper, error, account['source']['volume_m3'], exterior['stocks']['volume_m3'])
+    else:
+        operands = (lower, upper, error, account['debit']['volume_m3'])
+    # The physical-volume workspace policy budgets 128 bytes per operand bit.
+    # Bound the integers from their hex strings before decoding any Fraction.
+    width = sum(len(n) + len(d) for n, d in operands)
+    with budget.try_reserve(65536 + 512*width + 256*len(operands), category='wall-source-volume') as admitted:
+        if admitted:
+            lo, hi, deviation, offset, *peeled_stock = map(_decode, operands)
+            if basal:
+                offset -= peeled_stock[0]
+            return lo + offset + deviation, hi + offset - deviation
+    return None
+
+
 def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, end_time_s,
-                   angular_velocity_rad_s, max_volume_error_m3, max_leaves, budget, original, prior_trajectory=()):
+                   angular_velocity_rad_s, max_volume_error_m3, max_leaves, budget, original, prior_trajectory=(),
+                   _issued_volumes=False):
     """Issue source-bound wall partitions and independent endpoint/GCL bounds.
 
     The finite-volume cells are the ORIGINAL source cone/shell rotated along
@@ -737,13 +758,24 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     endpoints = []
     start_support_id = end_support_id = None
     previous_patch = None
-    for key in keys:
+    radius_squared = None
+    basal = 'basal_inventory' in original
+    for index, key in enumerate(keys):
         layer = geometry[key]
-        if key[0] != previous_patch:
-            with U.geometry_workspace(budget):
-                area = U.area_interval_sr(patches[key[0]].cells)
-            previous_patch = key[0]
-        source_volume = tuple(q*Q(sphere.network.sphere.radius_m)**2*layer.volume_per_area_m for q in area)
+        source_volume = None
+        if _issued_volumes:
+            source_volume = _funded_source_volume(original['exterior_remainder'][index],
+                original['source_accounts'][index], basal, budget)
+        if source_volume is None:
+            if key[0] != previous_patch:
+                with U.geometry_workspace(budget):
+                    area = U.area_interval_sr(patches[key[0]].cells)
+                previous_patch = key[0]
+            if radius_squared is None:
+                radius_squared = Q(sphere.network.sphere.radius_m)**2
+            volume_per_area = layer.volume_per_area_m
+            source_volume = tuple(q*radius_squared*volume_per_area for q in area)
+            del volume_per_area
         inside = tuple(_endpoint_volume(layer, cones[key[0]], grid, omega, t-start, width, max_leaves, budget, prior)
                        for t in (start, end))
         outside = tuple((max(Q(0), source_volume[0]-hi), source_volume[1]-lo) for lo, hi in inside)
@@ -826,4 +858,5 @@ def measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, end
             return _measure_walls(funding, sphere, collar, parent_state_id=parent_state_id,
                 start_time_s=start_time_s, end_time_s=end_time_s, angular_velocity_rad_s=angular_velocity_rad_s,
                 max_volume_error_m3=max_volume_error_m3, max_leaves=max_leaves, budget=budget,
-                original=original, prior_trajectory=prior_trajectory)
+                original=original, prior_trajectory=prior_trajectory,
+                _issued_volumes=getattr(funding, '_source_volume_proven', False))

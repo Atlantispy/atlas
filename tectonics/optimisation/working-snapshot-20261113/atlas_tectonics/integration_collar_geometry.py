@@ -93,6 +93,7 @@ def _candidate_and_coverage(cell, groups, budget):
 class FullCellFunding:
     _snapshot: RegionalMechanicalSnapshot = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _source_volume_proven: bool = field(repr=False, compare=False, init=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('FullCellFunding is issued by fund_full_cells()')
@@ -369,6 +370,7 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
         result = object.__new__(FullCellFunding)
         object.__setattr__(result, '_snapshot', snapshot)
         object.__setattr__(result, '_resource', budget)
+        object.__setattr__(result, '_source_volume_proven', True)
         lease = budget.reserve(8192+2*snapshot.nbytes, category='collar-funding-retained')
         lease.__enter__()
         try:

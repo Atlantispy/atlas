@@ -152,6 +152,7 @@ def carve_basal_inventory(funding, sphere, moving, collar, reservoirs, *, budget
         result = object.__new__(FullCellFunding)
         object.__setattr__(result, '_snapshot', snapshot)
         object.__setattr__(result, '_resource', budget)
+        object.__setattr__(result, '_source_volume_proven', getattr(funding, '_source_volume_proven', False))
         lease = budget.reserve(8192+2*snapshot.nbytes, category='finite-basal-funding-retained')
         lease.__enter__()
         try:

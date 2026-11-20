@@ -2340,7 +2340,7 @@ def _mesh_pairs(parent, endpoint, donors, receivers, before, caps, mine, indexed
     return pairs
 
 
-def _mesh_rows(parent, endpoint, cancel, *, budget=None, change=None):
+def _mesh_rows(parent, endpoint, cancel, *, budget=None, change=None, measured_inner=None):
     """Measure the rows of a mesh change: every changed parent face against the new faces of its plate.
 
     Where one face lies wholly within the other, decided exactly (_nested), the row is the inner face's own measured
@@ -2359,26 +2359,40 @@ def _mesh_rows(parent, endpoint, cancel, *, budget=None, change=None):
             pairs = _mesh_pairs(parent, endpoint, donors, receivers, before, caps, mine, indexed, cancel)
     else:
         pairs = _mesh_pairs(parent, endpoint, donors, receivers, before, caps, mine, False, cancel)
-    rows, whole = {}, set()
-    for i, j in pairs:
+    rows, whole = {}, {}
+    for pair in pairs:
+        i, j = pair
         if (i, None) in whole or (None, j) in whole:
             continue
         _check_cancel(cancel)
         inside, around = _nested(mine[i], rings[j])
         if inside or around:
-            rows[i, j] = float(parent.face_area_m2[i] if inside else endpoint.face_area_m2[j])
-            whole.update(((i, None),) if inside else ())
-            whole.update(((None, j),) if around else ())
-    for i, j in pairs:
-        if (i, j) in rows or (i, None) in whole or (None, j) in whole:
+            rows[pair] = float(parent.face_area_m2[i] if inside else endpoint.face_area_m2[j])
+            if inside:
+                whole[i, None] = j
+            if around:
+                whole[None, j] = i
+    for pair in pairs:
+        i, j = pair
+        if pair in rows or (i, None) in whole or (None, j) in whole:
             continue
         _check_cancel(cancel)
         value = _metres(_overlap_sr(mine[i], rings[j], sphere, budget=budget), sphere)
         if value > 0:
-            rows[i, j] = value
+            rows[pair] = value
         if len(rows) > MAX_ROWS:
             raise TransferRefused('the overlap map exceeds its row limit; change the mesh in smaller parts')
     keys = sorted(rows)
+    if measured_inner is not None:
+        # Only emitted pairs need evidence beyond the measurement pass.
+        del pairs, mine, rings, caps
+        for i, j in keys:
+            if whole.get((i, None)) == j:
+                measured_inner.append(('parent', i))
+            elif whole.get((None, j)) == i:
+                measured_inner.append(('endpoint', j))
+            else:
+                measured_inner.append(None)
     return _Rows(tuple(i for i, _ in keys), tuple(j for _, j in keys), (-1,)*len(keys),
                  tuple(rows[key] for key in keys), ())
 
@@ -2397,7 +2411,7 @@ def _c7_range_limit(rings, area, *, area_sr=None):
     return math.inf if ratio < THIN_FACE_RATIO else 2*RELATIVE_TOLERANCE*area if ratio < 2*THIN_FACE_RATIO else 0.
 
 
-def _whole_face_bounds(parent, endpoint, before, after, triples):
+def _whole_face_bounds(parent, endpoint, before, after, triples, *, measured_inner=None):
     """(donor bounds, receiver bounds, receiver ceilings) in m2 of the thin-face criterion C7 (whole-face rows only).
 
 
@@ -2407,8 +2421,8 @@ def _whole_face_bounds(parent, endpoint, before, after, triples):
     (integration_sphere._measure_bound). E is used only within the approved range: in full where F's area over
     perimeter is below THIN_FACE_RATIO, up to 2 rho mu(F) below twice that ratio, and not at all above it. Any closure
     with a clipped row, or a face outside the bound's derivation, keeps the existing relative criterion alone (bound
-    0). A receiver's ceiling is the same range limit, which caps its occupancy allowance (D7'). Everything here is
-    recomputed from the faces' rings and the rows, the same way when a step is measured and when it is restored.
+    0). A receiver's ceiling is the same range limit, which caps its occupancy allowance (D7'). Fresh rows carry
+    the producer's containment decisions. An independent row is classified from its rings and measured face areas.
     """
     scale = parent.sphere.radius_m*parent.sphere.radius_m
     cache = {}
@@ -2420,15 +2434,17 @@ def _whole_face_bounds(parent, endpoint, before, after, triples):
             cache[key] = None if value is None else value*scale
         return cache[key]
 
-    inner, given, received = [], {}, {}
+    inner = [] if measured_inner is None else measured_inner
+    given, received = {}, {}
     for k, (source, target, area) in enumerate(triples):
-        inside, around = _nested(before.rings(source), after.rings(target))
-        if inside and area == float(parent.face_area_m2[source]):
-            inner.append(('parent', source))
-        elif around and area == float(endpoint.face_area_m2[target]):
-            inner.append(('endpoint', target))
-        else:
-            inner.append(None)
+        if measured_inner is None:
+            inside, around = _nested(before.rings(source), after.rings(target))
+            if inside and area == float(parent.face_area_m2[source]):
+                inner.append(('parent', source))
+            elif around and area == float(endpoint.face_area_m2[target]):
+                inner.append(('endpoint', target))
+            else:
+                inner.append(None)
         given.setdefault(source, []).append(k)
         received.setdefault(target, []).append(k)
 
@@ -2451,7 +2467,7 @@ def _whole_face_bounds(parent, endpoint, before, after, triples):
             {target: cap(('endpoint', target)) for target in received})
 
 
-def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None):
+def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None, measured_inner=None):
     """Check mesh rows: the same physical network on other faces, and rows that close on both meshes.
 
     Returns the thin-face bounds of the closures (donor, receiver; _whole_face_bounds) and, with ``ceilings``, the
@@ -2480,8 +2496,10 @@ def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None):
                                   UNRESOLVED_OVERLAP)
         given[source].append(area)
         received[target].append(area)
-    donor_bound, receiver_bound, ceiling = _whole_face_bounds(parent, endpoint, before, after,
-                                                              list(zip(rows.donor, rows.receiver, rows.area_m2)))
+    donor_bound, receiver_bound, ceiling = _whole_face_bounds(
+        parent, endpoint, before, after, list(zip(rows.donor, rows.receiver, rows.area_m2, strict=False)),
+        measured_inner=measured_inner,
+    )
     for source, values in given.items():
         _closed(math.fsum(values), float(parent.face_area_m2[source]), 'face %r' % parent.face_ids[source],
                 donor_bound.get(source, 0.))
@@ -3129,6 +3147,7 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
     geometry = _moved(network, motion, cancel, limits, budget)
     moved = _issued(network, geometry, end, motion.end_step, limits, budget, cancel)
     births = None
+    fresh = stored is None and prepared is None
     mesh_change, sweep_areas, transient_cache = [None], {}, [None]
     if stored is not None:
         rows, mesh_rows, births = stored['rows'], stored['mesh_rows'], stored['births']
@@ -3163,15 +3182,24 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
         else:
             rows = _motion_rows(network, moved, geometry, cancel, budget, sweep_areas=sweep_areas,
                                 transient_cache=transient_cache)
-            mesh_rows = None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget,
-                                                                    change=mesh_change)
-    audited_totals = _audited(network, moved, geometry, rows, sweep_areas=sweep_areas,
-                              transient_cache=transient_cache)
-    if (mesh_rows is None) != (motion.mesh is None):
-        raise TransferRefused('mesh rows are carried exactly when the motion declares a mesh change')
-    mesh_bounds = None if mesh_rows is None else _audited_mesh(moved, endpoint, mesh_rows, ceilings=True,
-                                                               change=mesh_change)
-    if prepared is not None or stored is not None:
+            mesh_rows = None
+    measured_inner = None
+    try:
+        if fresh and motion.mesh is not None:
+            measured_inner = []
+            mesh_rows = _mesh_rows(moved, endpoint, cancel, budget=budget, change=mesh_change,
+                                   measured_inner=measured_inner)
+        audited_totals = _audited(network, moved, geometry, rows, sweep_areas=sweep_areas,
+                                  transient_cache=transient_cache)
+        if (mesh_rows is None) != (motion.mesh is None):
+            raise TransferRefused('mesh rows are carried exactly when the motion declares a mesh change')
+        mesh_bounds = None if mesh_rows is None else _audited_mesh(
+            moved, endpoint, mesh_rows, ceilings=True, change=mesh_change, measured_inner=measured_inner,
+        )
+    finally:
+        if measured_inner is not None:
+            measured_inner.clear()
+    if not fresh:
         # Rows are numerical overlap evidence and candidate indices, not
         # material mixing weights. Authenticate supplied evidence against its
         # deterministic original producer, including its fast/exact choice.

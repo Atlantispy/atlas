@@ -556,6 +556,7 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     allocation = N._Allocation(collar._budget, payload+32768+4*N._width(expected_definition)+
         1024*(len(funding_arrays)+len(spatial_arrays)), category='spatial-transfer-retained')
     funding = object.__new__(FullCellFunding)
+    object.__setattr__(funding, '_source_volume_proven', False)
     object.__setattr__(funding, '_snapshot', _retained_snapshot(funding_body, funding_arrays,
         funding_record['funding_id'], funding_metadata, allocation, collar._budget))
     object.__setattr__(funding, '_resource', collar._budget)

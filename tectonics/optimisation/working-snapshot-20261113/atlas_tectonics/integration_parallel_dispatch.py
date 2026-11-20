@@ -356,10 +356,11 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
                 break
             pair = request['support_id'], request.get('other_support_id')
             try:
-                if held is not None and held[0] == pair and held[1].reserved_bytes != held[4]:
-                    # Garbage of the previous member still holds a lease.
+                reuse = held is not None and held[0] == pair
+                if reuse and held[1].reserved_bytes != held[4]:
                     gc.collect()
-                if held is None or held[0] != pair or held[1].reserved_bytes != held[4]:
+                    reuse = held[1].reserved_bytes == held[4]
+                if not reuse:
                     if held is not None:
                         observed['peak'] = max(observed['peak'], held[1].statistics()['peak_reserved_bytes'])
                     held = None
@@ -405,8 +406,9 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
 def _kept_worker(home, process):
     """One context for the worker's life; one batch folder per line on standard input (decision 143).
 
-    Each batch keeps both binding checks, a new ledger for each member and a
-    collection of garbage before it. A batch is finished only when its
+    Each batch starts after garbage collection and checks its binding at both
+    ends. Consecutive wall or interface members can reuse a settled ledger for
+    the same support pair. A batch is finished only when its
     result.json is closed and then its done file created. Nothing is caught:
     an exception leaves the loop, the context's exit runs and the process
     exits non-zero. The context's closing check runs once, at the end.
@@ -1729,7 +1731,10 @@ class BatchParallelSession(InterfaceParallelSession):
         result, failed = None, False
         if type(answer) is bytes:
             if type(self) is BatchParallelSession and not self.wall and self.batch_seconds is not None:
-                result = self._adopt(batch, index, request, budget, answer, receipt_request=batch['tokens'][index])
+                try:
+                    result = self._adopt(batch, index, request, budget, answer, receipt_request=batch['tokens'][index])
+                finally:
+                    batch['requests'][index] = None
             else:
                 result = self._adopt(batch, index, request, budget, answer)
             failed = result is None
@@ -1743,9 +1748,13 @@ class BatchParallelSession(InterfaceParallelSession):
     def _receive(self, batch):
         # owner.condition is held through decoding and validation, as for one job.
         begun = time.perf_counter()
+        interface = type(self) is BatchParallelSession and not self.wall and self.batch_seconds is not None
         try:
             child = batch['child']
-            answers = batch['dispatch'].result(timeout=batch['timeout']+15, requests=batch['requests'],
+            dispatch = batch['dispatch']
+            receiver = dispatch._interface_result if interface else dispatch.result
+            args = (batch['tokens'], batch['digest']) if interface else ()
+            answers = receiver(*args, timeout=batch['timeout']+15, requests=batch['requests'],
                 source_bindings=_inventory(batch['inputs']), context=self.context,
                 child_bytes=self.child_bytes, predicate_units=self.units, batch_seconds=self.batch_seconds)
             if not (child.exited or child.served):
@@ -1759,9 +1768,12 @@ class BatchParallelSession(InterfaceParallelSession):
             # its own baseline. The envelope stays charged until the last adoption.
             if batch['baseline'] is not None:
                 batch['baseline'].close()
-            batch['answers'] = answers
             cut = None
             for index, answer in enumerate(answers):
+                if type(answer) is tuple:
+                    # Only the owned interface receiver can return a staged proof.
+                    batch['requests'][index] = answer
+                    answer = answers[index] = answer[0]
                 if type(answer) is bytes:
                     batch['results'] += 1
                 elif answer == 'decided':
@@ -1788,6 +1800,9 @@ class BatchParallelSession(InterfaceParallelSession):
                 self.handbacks.append((held, rows[cut-1][1], rows[cut:]))
             self.stats['results'] += batch['results']
             self.stats['decided'] += batch['decided']
+            if interface:
+                dispatch._consumed = batch['requests']
+            batch['answers'] = answers
             # result() consumed this Future once. Its raw receipt need not outlive acceptance.
             batch['dispatch']._future = None
         except Exception as error:
@@ -1795,6 +1810,8 @@ class BatchParallelSession(InterfaceParallelSession):
             error.__traceback__ = None
             self.last_error = str(error)[:4096]
             batch['failed'] = True
+            if interface:
+                batch['requests'] = None
             self.cause = self.cause or 'worker failure'
         finally:
             batch['receive_seconds'] = time.perf_counter()-begun    # Part B parent mark
@@ -1823,7 +1840,12 @@ class BatchParallelSession(InterfaceParallelSession):
             except BaseException:
                 slot.close()
                 raise
-            if not hint.receive_under(self.owner, answer, hashlib.sha256(answer).hexdigest()):
+            dispatch = batch['dispatch'] if receipt_request is not None else None
+            # The hint checks this candidate digest against actual dispatch custody
+            # under the live fit. An independently supplied payload uses its own hash.
+            entry = batch['requests'][index] if type(dispatch) is OwnedBatchDispatch else None
+            digest = entry[2] if entry is not None else hashlib.sha256(answer).hexdigest()
+            if not hint.receive_under(self.owner, answer, digest):
                 raise ValueError('optional result slot declined')
             if receipt_request is None:
                 result = hint.claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
@@ -1831,7 +1853,7 @@ class BatchParallelSession(InterfaceParallelSession):
             else:
                 result = hint._claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
                     request=request, binding=member, fit=batch['fit'], digests=digests,
-                    receipt_request=receipt_request)
+                    receipt_request=receipt_request, receipt_dispatch=dispatch)
             if result is None:
                 raise ValueError('optional result verification declined')
             self.stats['adopted'] += 1
@@ -1856,6 +1878,10 @@ class BatchParallelSession(InterfaceParallelSession):
         interrupt in between leaves it to the close that follows. Both returns
         may be repeated.
         """
+        dispatch = batch['dispatch']
+        if type(dispatch) is OwnedBatchDispatch and dispatch._consumed is batch['requests']:
+            dispatch._consumed = True
+            batch['requests'] = None
         batch['fit'].release()
         if batch['baseline'] is not None:    # never a kept worker's baseline
             batch['baseline'].close()
@@ -1867,7 +1893,7 @@ class BatchParallelSession(InterfaceParallelSession):
         self.stats['peak_child_rss'] = max(self.stats['peak_child_rss'], child.peak_rss)
         self.stats['peak_child_ledger'] = max(self.stats['peak_child_ledger'], child.ledger_peak or 0)
         self.stats['retired'] += 1
-        self.log.append(dict(index=batch['index'], jobs=len(batch['requests']), results=batch['results'],
+        self.log.append(dict(index=batch['index'], jobs=len(batch['tokens']), results=batch['results'],
             decided=batch['decided'], adopted=batch['adopted'], declined=batch['declined'],
             failed=batch['failed'], total_seconds=child.elapsed, body_seconds=child.body_seconds,
             peak_rss=child.peak_rss, ledger_peak=child.ledger_peak, waited_seconds=batch['clock'][0],
@@ -1880,7 +1906,6 @@ class BatchParallelSession(InterfaceParallelSession):
         worker = getattr(child, 'worker', None)
         if worker is not None and worker.batch is batch:
             worker.batch = None
-        dispatch = batch['dispatch']
         if dispatch is not None:
             dispatch._future = None
         batch['dispatch'] = batch['binding'] = None

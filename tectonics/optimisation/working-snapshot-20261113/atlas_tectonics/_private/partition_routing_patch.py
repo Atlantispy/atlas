@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 import json
 import sys
+import weakref
 
 from atlas_tectonics._private import mesh_tables as M
 from atlas_tectonics._private import partition_native_patch as P
@@ -522,6 +523,44 @@ def _iter_ref(ref):
                     yield part.value
     else:
         yield from ref._view.iter_legacy_json(ref)
+
+
+def issue_compact_operand(view, index, node, size, capacity):
+    """Issue the originally admitted support from its bounded canonical stream."""
+    D = P._native()
+    identity = view.support_id(index)
+    ref = view.support(index)
+    if ref.index != node or not 0 < size <= P.MAX_NATIVE_SUPPORT_BYTES:
+        raise ValueError('compact support binding or length differs')
+    if P._is_v2(view):
+        view.identity()
+        if view._index.value[2][index].canonical_bytes != size:
+            raise ValueError('compact support binding or length differs')
+    retained = view.budget.reserve(8192+size, category='differential-geometry-retained')
+    retained.__enter__()
+    # Both stream implementations own their walk stack and chunk. The retained
+    # lease funds the final bytes. Only the fixed writable buffer overlaps them.
+    _scratch = M._Allocation(view.budget, 4096+size)
+    raw, position = memoryview(bytearray(size)), 0
+    parts = _iter_ref(ref)
+    try:
+        for piece in parts:
+            end = position+len(piece)
+            if end > size:
+                raise ValueError('compact encoded support length differs')
+            raw[position:end] = piece
+            position = end
+    finally:
+        parts.close()
+    encoded = bytes(raw)
+    if position != size or sha256(encoded).hexdigest() != identity:
+        raise ValueError('compact encoded support identity differs')
+    result = object.__new__(D.DifferentialSupport)
+    for key, value in dict(_json=encoded, _resource=view.budget, _support_id=identity,
+                           _compact_ref=ref, _decoded_capacity=capacity).items():
+        object.__setattr__(result, key, value)
+    weakref.finalize(result, retained.__exit__, None, None, None)
+    return result
 
 
 def _trace_parts(view, index=None):

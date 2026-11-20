@@ -717,7 +717,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
     # partition, while every carried positive parent keeps its own field.
     if _component_parallel is not None:
         _component_parallel.prepare(partition.supports)
-    for support in partition.supports:
+    for support in support_rows.operands(partition.supports):
         row = support_rows.project(support)
         shape_owners = {}
         E.bind_support(_component_parallel, support, row)

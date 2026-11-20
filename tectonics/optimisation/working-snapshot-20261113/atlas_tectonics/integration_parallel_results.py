@@ -188,6 +188,7 @@ ENVELOPE = 'parallel-body-envelope'
 ZERO_AREA, MOMENTS = 'zero_area_certificate', 'moving_interface_moments'
 RESULT_FIELDS = frozenset((
     'inward_volume_bounds_m3', 'outward_volume_bounds_m3', 'leaves', 'met', 'rule', 'work_units'))
+_INTERFACE_FIELDS = REQUEST_FIELDS | RESULT_FIELDS
 # Every rule the serial body can issue, and its only optional certificate key
 # (G 3027-3084). Zero rules always carry leaves == 1 and met is True.
 CERTIFICATE = {
@@ -486,6 +487,50 @@ def _validated_volume(record, request, fit):
     return True
 
 
+def _interface_facts(record):
+    """Defer live work and certificate admission to the funded serial claim."""
+    rule = record.get('rule')
+    if type(rule) is not str:
+        return None
+    extra = CERTIFICATE.get(rule, ...)
+    if extra is ...:
+        return None
+    if (len(record) != len(_INTERFACE_FIELDS) + (extra is not None)
+            or not _INTERFACE_FIELDS <= record.keys() or extra is not None and extra not in record):
+        return None
+    work, leaves, met = record['work_units'], record['leaves'], record['met']
+    if type(work) is not int or work < 0 or type(leaves) is not int or leaves < 1 or type(met) is not bool:
+        return None
+    if extra != MOMENTS and (leaves != 1 or met is not True):
+        return None
+    for name in ('inward_volume_bounds_m3', 'outward_volume_bounds_m3'):
+        if type(record[name]) is not list or len(record[name]) != 2:
+            return None
+    source = None
+    if extra is not None:
+        detail = record[extra]
+        if type(detail) is not dict or type(detail.get('source_sha256')) is not str:
+            return None
+        source = detail['source_sha256']
+        if rule == 'exact-zero-area-from-complementary-moving-cuts':
+            extra = 'complementary-cuts'
+    return work, extra, source
+
+
+def _admits_interface(facts, digests, fit):
+    if facts is None or not fit.admits_work(facts[0]):
+        return False
+    _, extra, source = facts
+    if extra is None:
+        return True
+    if extra == 'complementary-cuts':
+        from . import integration_differential_geometry as geometry
+        expected = getattr(geometry, '_CP_SOURCE_SHA256', None)
+    else:
+        expected = digests[extra]
+    return type(expected) is str and source == expected
+
+
 def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interface=False):
     """Structural admission of one worker record; no decoded object escapes.
 
@@ -508,35 +553,10 @@ def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interfac
             return _validated_volume(record, request, fit)
         if record.get('kind') == WALL_KIND:
             return _validated_wall(record, request, digests, fit)
-        rule = record.get('rule')
-        if type(rule) is not str or rule not in CERTIFICATE:
-            return False
-        extra = CERTIFICATE[rule]
-        if record.keys() != REQUEST_FIELDS | RESULT_FIELDS | ({extra} if extra else frozenset()):
-            return False
-        # Byte comparison keeps 1, 1.0 and true distinct.
-        if not _owned_interface and canonical({key: record[key] for key in REQUEST_FIELDS}) != request:
-            return False
-        work, leaves, met = record['work_units'], record['leaves'], record['met']
-        if (type(work) is not int or work < 0 or not fit.admits_work(work)
-                or type(leaves) is not int or leaves < 1 or type(met) is not bool):
-            return False
-        if extra != MOMENTS and (leaves != 1 or met is not True):
-            return False
-        for key in ('inward_volume_bounds_m3', 'outward_volume_bounds_m3'):
-            if type(record[key]) is not list or len(record[key]) != 2:
-                return False
-        if extra is not None:
-            detail = record[extra]
-            # The PARENT's loaded module digest, not one echoed by the worker.
-            expected = digests[extra]
-            if rule == 'exact-zero-area-from-complementary-moving-cuts':
-                # Issued by the geometry module's certificate helper: the parent's loaded constant.
-                from . import integration_differential_geometry as _geometry
-                expected = getattr(_geometry, '_CP_SOURCE_SHA256', None)
-            if type(expected) is not str or type(detail) is not dict or detail.get('source_sha256') != expected:
-                return False
-        return True
+        facts = _interface_facts(record)
+        return (facts is not None and (_owned_interface or canonical(
+            {key: record[key] for key in REQUEST_FIELDS}) == request)
+            and _admits_interface(facts, digests, fit))
     except (ValueError, TypeError, OverflowError, RecursionError):
         return False
 
@@ -567,7 +587,8 @@ class MeasureHint(Hint):
         return self._claim_measure(room, cls=cls, budget=budget, request=request, binding=binding,
                                    fit=fit, digests=digests)
 
-    def _claim_measure(self, room, *, cls, budget, request, binding, fit, digests, receipt_request=None):
+    def _claim_measure(self, room, *, cls, budget, request, binding, fit, digests, receipt_request=None,
+                       receipt_dispatch=None):
         fields = _complete_request(request)
         digest_keys = (frozenset() if fields in (VOLUME_REQUEST_FIELDS, INITIAL_VOLUME_REQUEST_FIELDS) else
                        WALL_DIGEST_KEYS if fields == WALL_REQUEST_FIELDS else DIGEST_KEYS)
@@ -587,8 +608,18 @@ class MeasureHint(Hint):
                     return None
                 token = FundedMeasure._mint(cls, budget, self.payload, self.slot)
                 try:
-                    if not _validated(self.payload, self.digest, self.request, digests, fit, token,
-                                      _owned_interface=receipt_request == self.request):
+                    entry = None
+                    if receipt_dispatch is not None and receipt_request == self.request:
+                        from .integration_parallel_binding import OwnedBatchDispatch
+                        if type(receipt_dispatch) is OwnedBatchDispatch:
+                            entry = receipt_dispatch._receipt_for(binding['index'], self.payload,
+                                                                  self.request, binding['batch'])
+                    if entry is None:
+                        valid = _validated(self.payload, self.digest, self.request, digests, fit, token,
+                                           _owned_interface=receipt_dispatch is None and receipt_request == self.request)
+                    else:
+                        valid = self.digest == entry[2] and _admits_interface(entry[3], digests, fit)
+                    if not valid:
                         token._finalizer.detach()  # the hint keeps the whole slot
                         return None
                 except BaseException:

@@ -35,22 +35,25 @@ def _round_bounds(bounds, cancelled, *, _return_exact=False):
         context.rounding = ROUND_HALF_EVEN
         exact_lo = G.mpq(lo)
         a = DECIMAL.dec(exact_lo, context=context, cancelled=cancelled)
-    with localcontext() as context:
-        context.prec = 80
-        context.rounding = ROUND_HALF_EVEN
-        exact_hi = G.mpq(hi)
-        b = DECIMAL.dec(exact_hi, context=context, cancelled=cancelled)
+    if hi is lo and cancelled is None:
+        exact_hi, b = exact_lo, a
+    else:
+        with localcontext() as context:
+            context.prec = 80
+            context.rounding = ROUND_HALF_EVEN
+            exact_hi = exact_lo if hi is lo else G.mpq(hi)
+            b = DECIMAL.dec(exact_hi, context=context, cancelled=cancelled)
     if a != b or (a.is_zero() and a.is_signed() != b.is_signed()):
         raise Unresolved('Enclosure crosses a Decimal80 rounding boundary')
     return (a, (exact_lo, exact_hi)) if _return_exact else a
 
 
-def _export_plan(bounds, dual, proof, R, cancelled):
+def _export_plan(bounds, dual, proof, R, cancelled, *, retain_decimal=True):
     with localcontext() as context:
         context.prec = 80
         context.rounding = ROUND_HALF_EVEN
         if context.clamp:
-            return INVENTORY.export_plan(bounds, dual, proof, G, R, cancelled)
+            return INVENTORY.export_plan(bounds, dual, proof, G, R, cancelled, retain_decimal=retain_decimal)
         # |adjusted exponent| <= max(numerator bits, denominator bits)+1.
         # quantum=max(exponent-79,Etiny): a negative Etiny cannot increase
         # the magnitude beyond that bound; positive Etiny can and is included.
@@ -75,7 +78,11 @@ def _export_plan(bounds, dual, proof, R, cancelled):
     # pow10, product, quotient/remainder, num_digits and comparison temporaries
     # plus endpoint getters are sequential; reserve their simultaneous slots.
     scratch += 48*R.native_slot_allowance(R.RationalShape(converter_bits, converter_bits))
-    retained += INVENTORY.D.CONTAINER_UNIT*(8*len(bounds)+4*len(dual)+64)+len(bounds)*INVENTORY.D.decimal_slot(80)
+    retained += INVENTORY.D.CONTAINER_UNIT*(8*len(bounds)+4*len(dual)+64)
+    if retain_decimal:
+        retained += len(bounds)*INVENTORY.D.decimal_slot(80)
+    elif bounds:
+        scratch += 2*INVENTORY.D.decimal_slot(80)
     return INVENTORY.Plan('exact-dyadic-export-and-fast-rounding', (
         ('retained_values_and_output_containers', INVENTORY.size(retained)),
         ('simultaneous_export_decimal_copies', INVENTORY.size(scratch)),
@@ -85,7 +92,7 @@ def _export_plan(bounds, dual, proof, R, cancelled):
 
 def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
              precision, largest_owned_bytes, budget, cancelled, audit, resource_evidence, keys_unique=False,
-             private_output=False):
+             private_output=False, retain_decimal=True):
     """One isolated frame; normal refusal cannot retain prior numerical locals."""
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
     plan = INVENTORY.interval_plan(len(matrix), len(rhs), precision, largest_owned_bytes, R)
@@ -105,7 +112,8 @@ def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
                 if not bounds[key][0] <= value <= bounds[key][1]:
                     raise ArithmeticError('Proved singleton moment conflicts with the certified enclosure')
                 bounds[key] = value, value
-            export = _export_plan(bounds, () if private_output else dual, proof, R, cancelled)
+            export = _export_plan(bounds, () if private_output else dual, proof, R, cancelled,
+                                  retain_decimal=retain_decimal)
             if private_output and cancelled is not None:
                 # The private fit exports no dual endpoints. Preserve their
                 # existing cancellation opportunities without sizing copies.
@@ -114,32 +122,33 @@ def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
             # All prior MPFR values remain live. Exact export, int/Decimal
             # scratch and retained values are an ADDITION, not a replacement.
             work.resize_before_allocation_or_after_drop(plan.total+export.total)
-            def checked_round(value):
-                INVENTORY.check(cancelled)
-                return _round_bounds(value, cancelled)
             def exact_pair(value):
                 INVENTORY.check(cancelled)
                 return tuple(map(G.mpq, value))
-            if private_output:
-                rounded, exact_bounds = {}, {}
-                for key, value in bounds.items():
-                    INVENTORY.check(cancelled)
+            rounded = {} if retain_decimal else None
+            # A standalone caller's callback can observe the original two export stages.
+            exact_bounds = None if not private_output and cancelled is not None else {}
+            for key, value in bounds.items():
+                INVENTORY.check(cancelled)
+                if exact_bounds is None:
+                    rounded[key] = _round_bounds(value, cancelled)
+                elif rounded is None:
+                    exact_bounds[key] = _round_bounds(value, cancelled, _return_exact=True)[1]
+                else:
                     rounded[key], exact_bounds[key] = _round_bounds(value, cancelled, _return_exact=True)
-            else:
-                rounded = {key: checked_round(value) for key, value in bounds.items()}
             proof['exact_singleton_observation_coefficients'] = len(physical)
-            if private_output:
-                for _ in range(len(bounds)):
+            if exact_bounds is None:
+                exact_bounds = {key: exact_pair(bound) for key, bound in bounds.items()}
+            elif cancelled is not None:
+                export_checks = len(bounds) + (len(dual) if private_output else 0)
+                for _ in range(export_checks):
                     INVENTORY.check(cancelled)
-                for _ in range(len(dual)):
-                    INVENTORY.check(cancelled)
-                result = dict(keys=list(bounds), bounds=exact_bounds, decimal80=rounded,
-                              precision_bits=precision, proof=proof)
-            else:
-                result = dict(keys=list(bounds), bounds={key: exact_pair(bound)
-                                                         for key, bound in bounds.items()},
-                              decimal80=rounded, precision_bits=precision, proof=proof,
-                              dual_bounds=[exact_pair(bound) for bound in dual])
+            result = dict(keys=list(bounds), bounds=exact_bounds)
+            if retain_decimal:
+                result['decimal80'] = rounded
+            result.update(precision_bits=precision, proof=proof)
+            if not private_output:
+                result['dual_bounds'] = [exact_pair(bound) for bound in dual]
         except Unresolved as error:
             reason = str(error)
         # The loop target otherwise keeps the last MPFR enclosure through
@@ -242,7 +251,7 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
             owner, reason = _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical,
                 precision=precision, largest_owned_bytes=largest, budget=budget,
                 cancelled=cancelled, audit=audit, resource_evidence=resources['attempts'], keys_unique=True,
-                private_output=_private_output)
+                private_output=_private_output, retain_decimal=not _private_output)
             if owner is not None:
                 work.stack.enter_context(owner)
                 attempt.update(status='CERTIFIED', seconds=perf_counter()-began)

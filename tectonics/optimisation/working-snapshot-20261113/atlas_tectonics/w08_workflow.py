@@ -202,9 +202,12 @@ class PreparedW08Workflow:
             self._context = ExecutionContext('scipy'); self.execution_id = self._context.identity
             # Validates represented owners before any state is accepted.
             _regional_view(region, initial, region.polygons, initial, None, self._resource, cancel, emit=False)
-            histories = []
+            # The preparation allowance covers this schedule during affine setup.
+            histories, schedule = [], []
             for i in intervals:
-                m = (d if i is interval else i.descriptor())['motion'] or dict(gradient_s=[[0.,0.],[0.,0.]],velocity_m_s=[0.,0.],anchor_m=[0.,0.])
+                descriptor = d if i is interval else i.descriptor()
+                schedule.append(descriptor)
+                m = descriptor['motion'] or dict(gradient_s=[[0.,0.],[0.,0.]],velocity_m_s=[0.,0.],anchor_m=[0.,0.])
                 histories.append(AffineMotionInterval(i.end_time_s,**m,source_id=i.source_id))
             self._motion = PreparedAffineMotion(region.polygons,tuple(histories),parcel_ids=region.parcel_ids,
                 time_s=initial.time_s,source_id=source_id,budget=self._resource,cancel=cancel)
@@ -213,12 +216,14 @@ class PreparedW08Workflow:
                                                    'w08-history-binding-scratch')
             self._binding = dict(schema='atlas.w08-workflow.v1',source_status='WORKING NON-CANON',
                 source_id=source_id,initial_id=initial.inventory_id,region_id=region.region_id,
-                intervals=[d if i is interval else i.descriptor() for i in intervals],execution=self.execution_id,
+                intervals=schedule,execution=self.execution_id,
                 thermodynamics=None if thermodynamics is None else thermodynamics.thermodynamics_id,
                 owners=OWNERS,limits=dict(work_bytes=CAP,intervals=256,native_threads=1))
             self.plan_id = _hash(self._binding)
             self._check(cancel)
         except BaseException:
+            # Drop the staged graph before close releases the ordinary preparation lease.
+            schedule = descriptor = m = None
             self.close(); raise
 
     def _history_hold(self, size, category):

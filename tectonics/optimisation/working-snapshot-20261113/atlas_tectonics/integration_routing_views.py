@@ -292,13 +292,21 @@ class SupportRoutingRows:
         arena.stack.enter_context(budget.reserve(65536+256*len(supports),
             category='routing-diagnostic-metadata'))
         largest = second = workspace = 0
-        self._compact_capacities = {}
+        from array import array
+        from atlas_tectonics._private.partition_native_patch import _Supports
+        self._compact_view = supports.view if type(supports) is _Supports else None
+        if self._compact_view is not None:
+            self._compact_capacities = array('Q')
+            self._compact_lengths = array('Q')
+            self._compact_nodes = array('Q')
         for support in supports:
             # record() also inserts its issued identity outside the encoded body.
-            size = 4096+support.decoded_capacity
-            ref = getattr(support, '_compact_ref', None)
-            if ref is not None:
-                self._compact_capacities[(id(ref._view), support.support_id)] = size-4096
+            capacity = support.decoded_capacity
+            size = 4096+capacity
+            if self._compact_view is not None:
+                self._compact_capacities.append(capacity)
+                self._compact_lengths.append(len(support._json))
+                self._compact_nodes.append(support._compact_ref.index)
             if size > largest:
                 largest, second = size, largest
             elif size > second:
@@ -319,14 +327,23 @@ class SupportRoutingRows:
         if getattr(support, '_compact_ref', None) is not None:
             # Issued from a compact partition: retain DAG references and a handle.
             from atlas_tectonics._private.partition_routing_patch import project_compact
-            ref = support._compact_ref
-            capacity = self._compact_capacities.get((id(ref._view), support.support_id))
-            if capacity is not None:
-                object.__setattr__(support, '_decoded_capacity', capacity)
             return project_compact(self, support)
         view = self._views.project(support.record())
         self._handles[support.support_id] = support
         return view
+
+    def operands(self, supports):
+        if self._compact_view is None:
+            yield from supports
+            return
+        from atlas_tectonics._private.partition_native_patch import _Supports
+        from atlas_tectonics._private.partition_routing_patch import issue_compact_operand
+        if type(supports) is not _Supports or supports.view is not self._compact_view:
+            raise ValueError('compact support inventory differs')
+        for index in range(len(supports)):
+            yield issue_compact_operand(self._compact_view, index,
+                self._compact_nodes[index], self._compact_lengths[index],
+                self._compact_capacities[index])
 
     def measure_record(self, measure):
         size = 4096+_decoded_json_capacity(measure._json)

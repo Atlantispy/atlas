@@ -13,7 +13,7 @@ from types import MappingProxyType
 from pathlib import Path
 
 PINS = {
-    'provider': ('q297_end_provider_v2.py', 'f2387b4681c32cd0bf500bf96be2ef4cb22e98f26b7c36b4ccdb4d6f572de413'),
+    'provider': ('q297_end_provider_v2.py', '21f45f56b2a42f103235292a69f1d241f25b6dc2df08ec2b9d643b0a4aebf829'),
     'pieces': ('q297_end_pieces_v2.py', '9542c8460d9a859868424f25837c5339846a69353abdd340b0cfc6a44d5e8fe8'),
     'piece_builder': ('interval_piece_candidate.py', 'ad034d0405e59850ec40133d3f7bae7e816381959777fb8542b974c63e8e299c'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),
@@ -21,7 +21,7 @@ PINS = {
     'start': ('material_start_candidate.py', '03c0dba5331bc4702254a3dcffcc888ad7326dc70b4e2b692956a7e207e95acf'),
     'checkpoint': ('tile_checkpoint_candidate.py', '05aca97ba4b17357339895475a81b5cf67086f2563ee390671c6f461a5a0d135'),
 }
-GRID_SHA = 'ae57b07bec820d9efb8434671b0e1c2d407ad09622c5ab27c011985f347cbf23'
+GRID_SHA = 'c4d7c6b5300288bb702c9bf51d1330c0cb079949ac53279f622a29b34418f10c'
 RUNS = (
     ('q297-q336-production-attempt-g-r1', '06b9cb35-ee24-4796-bf15-1b8395390514',
      'da4027b5a8e6b61b0e5b88a14cd1b2de113050643e4b1f59dd6656d4ea5e4283',
@@ -31,10 +31,6 @@ RUNS = (
      'e1c84553a4f489d29d5d6ca46dcd1120e87cfe214c9445b563a5b7f31cfceda9',
      'e66b9500d93b4115daebffd97835222b327ab82f502266af58c7b3ed903b9376',
      'e80aad2b147c09ef63fd1a9e1ec0a0667a7e32582e52988e14b9f5798549a00d', 7200),
-    ('e28-joined-correspondence-r2', '5a85ba29-a665-44a5-a9cb-e10724edd605',
-     '262576712e2f4dc1919e87f1d193dcefde6678e678e598d95490dd3bf9ba42b6'.replace(' ',''),
-     'd62d69f743d82122e62fe4958f7839517a2a5ea411d57aa2ac35492063246538',
-     'afcc1c294aa3e67b381f85bd8d79539cf4f5a1c7825b4fcc5f84952097fad8ae', 7200),
 )
 
 
@@ -57,7 +53,11 @@ def _process_record(run_root, spec):
             process.get('outcome') != 'succeeded' or process.get('exit_code') != 0 or
             process.get('tree_final') is not True or process.get('active_members') != 0):
         raise ValueError('q297 source process was not cleanly completed')
-    guards = [json.loads(line[len(b'heat_h3_guard: '):]) for line in error.splitlines()
+    _guard(error.splitlines(), deadline)
+
+
+def _guard(lines, deadline):
+    guards = [json.loads(line[len(b'heat_h3_guard: '):]) for line in lines
               if line.startswith(b'heat_h3_guard: ')]
     if len(guards) != 1:
         raise ValueError('q297 guard receipt missing or ambiguous')
@@ -80,20 +80,23 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
     grid_path = Path(grid_path)
     for spec in RUNS:
         _process_record(run_root, spec)
-    proof_root=run_root/'e28-joined-correspondence-r2'
-    request=json.loads(_pinned(proof_root/'request.json',RUNS[2][3],1 << 20))
-    command=json.loads(_pinned(proof_root/'process/command.json',
-        '714448ada1b3487308c18796fb3eaef30b3b81c06f9ba669a80bbb7c28e188a7',1 << 20))
-    entry=run_root.parent/'iv1-diagnostic-prep/codex-e28-r1/joined_end_proof_r3.py'
-    _pinned(entry,'1a1b080e41f3a59c81d039e5118bc454a2a30595150602677632a8f8641966ad',2 << 20)
-    if (request.get('argv')!=command.get('argv') or request.get('cwd')!=command.get('cwd') or
-            len(command['argv'])!=22 or Path(command['argv'][20]).resolve()!=entry.resolve() or
-            Path(command['argv'][21]).resolve()!=(proof_root/'result-data.json').resolve()):
+    proof_root=run_root/'landing-bdc-correspondence-r2'
+    command=json.loads(_pinned(proof_root/'command.json',
+        '3fd57c15760aaa21f80986e86e17643120104186b8368d0ac8511573ab5a6db2',1 << 20))
+    entry=run_root.parent/'iv1-diagnostic-prep/landing-bdc-r1/bdc_end_proof_r1.py'
+    _pinned(entry,'8035096cfc57e5a04f0f9216892e8e57628844a9f75f0f9aedd283253539d735',2 << 20)
+    if (command.get('ticket')!='q1053' or len(command['argv'])!=14 or
+            Path(command['argv'][12]).resolve()!=entry.resolve() or
+            Path(command['argv'][13]).resolve()!=(proof_root/'result-data.json').resolve()):
         raise ValueError('correspondence producer command differs')
-    output=_pinned(proof_root/'process/stdout.log',
-        '652a72b6a147895379dc8b1206ec1f4d6e4de57a670268b9cc5eeaa33f4af493',4096)
-    records=[json.loads(line) for line in output.splitlines() if line.startswith(b'{')]
-    if len(records)!=1 or records[0].get('sha256')!='42c524121e94bd5c01ae1fcd38fff15756ad7b5aa8545b09dcdfa81c0b3c0e56':
+    output=_pinned(proof_root/'queue.out',
+        'dbb4170dd6e9de99acf083c8dce2ab643f24d48de2c28a1410666661660743f4',4096).splitlines()
+    if (sum(line[9:].startswith(b'q1053 started') for line in output)!=1 or
+            sum(line[9:].startswith(b'q1053 exit 0,') for line in output)!=1):
+        raise ValueError('correspondence producer ticket differs')
+    _guard(output, 7200)
+    records=[json.loads(line) for line in output if line.startswith(b'{')]
+    if len(records)!=1 or records[0].get('sha256')!='441e2b4034b4bd3d7451094e8632aaa8954e9d5ab937aefeb04d634c5f20700c':
         raise ValueError('correspondence producer output differs')
     _pinned(grid_path, GRID_SHA, 4 << 20)
     modules = {}
@@ -137,7 +140,7 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
             if selected_observer is not None:
                 selected_observer(dict(graph_id=closed_graph.geometry_id, grid_sha256=GRID_SHA,
                     sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-                    carry_proof_sha256='42c524121e94bd5c01ae1fcd38fff15756ad7b5aa8545b09dcdfa81c0b3c0e56',
+                    carry_proof_sha256='441e2b4034b4bd3d7451094e8632aaa8954e9d5ab937aefeb04d634c5f20700c',
                     inherited_witness_refinements=1, qualification_grid_split='-33/8'))
         except BaseException:
             release(result)

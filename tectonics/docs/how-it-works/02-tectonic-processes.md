@@ -594,6 +594,20 @@ its supplied end time, even when start plus duration rounds one unit short. Cess
 emptying reservoirs. Exact supported exhaustion is committed before unspecified
 continuation stops. Saved transfers cannot be spent again on restart.
 
+A newly issued interval records the transitions it applied and the nodes it
+emptied. On restart the workflow compares those lists with the prepared
+schedule and the restored stocks. It checks the endpoint, transfer history
+and component and heat accounts before adopting the interval. The workflow
+reuses checkpoint keys, issued step totals, the final schedule binding and its
+motion descriptor. Material and thermal contacts reuse densities, unit
+conversions, conductivity bounds and shared edge geometry.
+
+A saved reference parcel with exactly the issued geometry bytes can reuse
+that parcel. The restored output holds its own memory allowance. Current
+parcel geometry and deformation are still compared with the prescribed
+motion. The saved deformation digest can be reused when the verified and
+retained array representations are identical.
+
 Before committing a checkpoint and after verifying its identity on restore, the
 workflow reconciles each row's component masses and signed enthalpy against the
 initial stock, final stock and labelled receipts. Each retirement destination or

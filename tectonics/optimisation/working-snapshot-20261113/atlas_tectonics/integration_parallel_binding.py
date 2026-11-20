@@ -56,6 +56,12 @@ BATCH_LIMIT = 1024    # requests one batch binding may hold
 # shortcut that the parent's own prefix decides, or no result at all.
 UNANSWERED = ('decided', 'declined')
 
+# Already-owned payload and token references are included in the outer tuple.
+# The selector is one of the local constants in integration_parallel_results.
+_FACT_BYTES = (sum((sys.getsizeof(value)+15) & ~15 for value in
+                   ((None,)*5, (None,)*3, '0'*64, '0'*64, sys.maxsize))
+               if sys.implementation.name == 'cpython' else 0)
+
 
 def request_fields(request):
     """Exactly one supported request shape; walls are full-interval rigid flux."""
@@ -247,12 +253,21 @@ class JobBinding:
             raise ValueError('live request/source/runtime/limits differ from dispatched job')
 
 
-def _carries(raw, request, *, _fields=None):
+def _carried_record(raw, request, fields):
     record = _decode(raw)
-    fields = request_fields(request) if _fields is None else _fields
-    if (not fields <= record.keys()
-            or canonical({key: record[key] for key in fields}) != canonical(request)):
+    if fields is None:
+        fields = request_fields(request)
+    if not fields <= record.keys():
         raise ValueError('result does not carry the exact dispatched request')
+    carried = canonical({key: record[key] for key in fields})
+    expected = canonical(request)
+    if carried != expected:
+        raise ValueError('result does not carry the exact dispatched request')
+    return record, expected
+
+
+def _carries(raw, request, *, _fields=None):
+    _carried_record(raw, request, _fields)
     return raw
 
 
@@ -465,7 +480,8 @@ class OwnedBatchDispatch:
     """OwnedDispatch for one batch: one submit, one result attempt, no receipt input.
 
     result() returns one answer per bound request, in order: verified measure
-    bytes carrying that request, 'decided' or 'declined'.
+    bytes carrying that request, 'decided', 'declined', or a timed batch's
+    unstarted 'returned' suffix.
     """
     def __init__(self, binding):
         if type(binding) is not BatchBinding:
@@ -486,6 +502,20 @@ class OwnedBatchDispatch:
             self._future = future
 
     def result(self, *, timeout=None, **live):
+        return self._result(None, None, timeout, live)
+
+    def _interface_result(self, tokens, batch_digest, *, timeout=None, **live):
+        return self._result(tokens, batch_digest, timeout, live)
+
+    def _receipt_for(self, index, payload, token, batch_digest):
+        receipts = self._consumed
+        if type(receipts) is list and 0 <= index < len(receipts):
+            entry = receipts[index]
+            if entry is not None and entry[0] is payload and entry[1] == token and entry[4] == batch_digest:
+                return entry
+        return None
+
+    def _result(self, tokens, batch_digest, timeout, live):
         with self._guard:
             if not self._submitted or self._future is None or self._consumed:
                 raise RuntimeError('one result attempt from the dispatched Future required')
@@ -502,7 +532,7 @@ class OwnedBatchDispatch:
                 or type(receipt['results']) is not list or len(receipt['results']) != len(requests)):
             raise ValueError('completion is not for this exact dispatched batch/token')
         answers, returning = [], False
-        for row, request in zip(receipt['results'], requests, strict=True):
+        for index, (row, request) in enumerate(zip(receipt['results'], requests, strict=True)):
             if type(row) is not dict or type(row.get('outcome')) is not str:
                 raise ValueError('complete batch member outcome required')
             if returning and row['outcome'] != 'returned':
@@ -517,9 +547,30 @@ class OwnedBatchDispatch:
             if (row['outcome'] != 'result' or row.keys() != {'outcome', 'canonical_json', 'record_sha256'}
                     or type(row['canonical_json']) is not str):
                 raise ValueError('complete batch member outcome required')
-            raw = row['canonical_json'].encode('utf8')
+            raw = row.pop('canonical_json').encode('utf8')
             if not _digest(row['record_sha256']) or hashlib.sha256(raw).hexdigest() != row['record_sha256']:
                 raise ValueError('complete worker-result digest differs')
-            answers.append(_carries(raw, request, _fields=request.keys()))
+            member, expected = _carried_record(raw, request, request.keys())
+            answer = raw
+            if tokens is not None and tokens[index] == expected:
+                from .integration_parallel_results import _interface_facts
+                # On CPython the two tuples, two ASCII digests and bounded work int
+                # take at most these rounded allocation sizes. The discarded receipt
+                # string funds staging. The spent request dict funds the retained facts.
+                if (sys.implementation.name == 'cpython' and len(raw) >= _FACT_BYTES + 256
+                        and type(live['requests'][index]) is dict
+                        and sys.getsizeof(live['requests'][index]) >= _FACT_BYTES):
+                    facts = _interface_facts(member)
+                    if facts is None or (facts[0] <= sys.maxsize and
+                            (facts[2] is None or len(facts[2]) == 64 and facts[2].isascii())):
+                        answer = (raw, tokens[index], row['record_sha256'], facts, batch_digest)
+                    del facts
+            del member, expected
+            answers.append(answer)
         self.binding._verify_record(record, **live)
+        if tokens is not None:
+            # The second binding check has consumed these private per-member dicts.
+            # Keep the list's extent for accounting. Staging remains local on a failed stop.
+            for index in range(len(answers)):
+                live['requests'][index] = None
         return answers

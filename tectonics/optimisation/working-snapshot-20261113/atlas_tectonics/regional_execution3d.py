@@ -11,7 +11,7 @@ traction of sigma=2*eta*symgrad(u)+extra_stress-p*I.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import asdict
 from concurrent.futures import CancelledError
 import hashlib
@@ -715,7 +715,20 @@ class PreparedRegionalStokes3D:
         field = _array(field_m, (self._mesh.nv, 3), 'boundary field')
         return self._net_flux_free(field.ravel())
 
-    def _linear(self, load, prescribed, mean, cancel, requested=False, matrix_state=None):
+    @contextmanager
+    def _publication_products(self):
+        # Cover a complete CSR copy and two binary64 divergence rows while an
+        # accepted iterate and a refinement trial coexist.
+        count = 4096+_sparse_bytes(self._B)+16*self._pressure_dofs
+        with self._resource.try_reserve(count, category='regional3d-publication-products') as retain:
+            state = {'retain_b': retain}
+            try:
+                yield state
+            finally:
+                state.clear()
+
+    def _linear(self, load, prescribed, mean, cancel, requested=False, matrix_state=None, *,
+                publish=False):
         d = prescribed.ravel()[self._fixed]
         lift = np.zeros(3*self._mesh.nv)
         lift[self._fixed] = d
@@ -740,19 +753,28 @@ class PreparedRegionalStokes3D:
         _cancel(cancel)
         count = 0
         nf, npr = len(self._free), self._pressure_dofs
-        if multigrid:
-            # Assembled |A| row sums and products are regenerated from element
-            # contributions (summed before the absolute value), not stored.
-            magnitude_a, magnitude_b = None, _magnitude(self._B)
-            stiffness = float(np.max(self._mg.row_magnitudes()[self._free], initial=0.))
-        else:
-            magnitude_a, magnitude_b = _magnitude(self._A), _magnitude(self._B)
-            if matrix_state is not None and 'stiffness' in matrix_state:
-                stiffness = matrix_state['stiffness']
+        magnitude_a = magnitude_b = stiffness = None
+        retain_divergence = publish and forced and matrix_state is not None and matrix_state.get('retain_b', False)
+        if matrix_state is not None:
+            magnitude_a = matrix_state.get('magnitude_a')
+            magnitude_b = matrix_state.get('magnitude_b')
+            stiffness = matrix_state.get('stiffness')
+        if not multigrid and magnitude_a is None:
+            magnitude_a = _magnitude(self._A)
+            if matrix_state is not None and matrix_state.get('retain_a', False):
+                matrix_state['magnitude_a'] = magnitude_a
+        if magnitude_b is None:
+            magnitude_b = _magnitude(self._B)
+            if matrix_state is not None and matrix_state.get('retain_b', False):
+                matrix_state['magnitude_b'] = magnitude_b
+        if stiffness is None:
+            if multigrid:
+                # Multigrid forms row sums from assembled element contributions.
+                stiffness = float(np.max(self._mg.row_magnitudes()[self._free], initial=0.))
             else:
                 stiffness = float(np.max((magnitude_a@np.ones(3*self._mesh.nv))[self._free], initial=0.))
-                if matrix_state is not None:
-                    matrix_state['stiffness'] = stiffness
+            if matrix_state is not None:
+                matrix_state['stiffness'] = stiffness
         latest = {}
 
         def products(u):
@@ -849,7 +871,7 @@ class PreparedRegionalStokes3D:
             p = x[nf:nf+npr]
             balance = au+self._B.T@p-load
             momentum_error = continuity_error = 0.
-            residual = None
+            residual = raw_divergence = None
             if forced:
                 # Blockwise backward errors against the magnitudes each block sums,
                 # so a dominant continuity (or momentum) right-hand side cannot hide
@@ -871,6 +893,8 @@ class PreparedRegionalStokes3D:
                 # |B||u| alone is no scale, but a larger share would let an inflated
                 # pressure-balanced scale hide continuity error.
                 continuity = self._B@u
+                if retain_divergence:
+                    raw_divergence = continuity
                 continuity_terms = magnitude_b@(ua+(64*_EPS/2e-9)*implied)
                 if self._gauge:
                     continuity = continuity+self._w*x[-1]
@@ -882,9 +906,12 @@ class PreparedRegionalStokes3D:
                                               + (([float(self._w@p)],) if self._gauge else ()))
             if multigrid:
                 error = float(np.linalg.norm(residual, np.inf)/rhs_norm) if forced else 0.
-            return dict(error=error, momentum=momentum_error, continuity=continuity_error,
-                        u=u, p=p, balance=balance, magnitude=viscous, residual=residual,
-                        correction_residual=correction_residual)
+            assessment = dict(error=error, momentum=momentum_error, continuity=continuity_error,
+                              u=u, p=p, balance=balance, magnitude=viscous, residual=residual,
+                              correction_residual=correction_residual)
+            if retain_divergence:
+                assessment['raw_divergence'] = raw_divergence
+            return assessment
 
         passes = lambda a: a['error'] <= 2e-9 and a['momentum'] <= 2e-9 and a['continuity'] <= 2e-9
         badness = lambda a: max(a['error'], a['momentum'], a['continuity'])
@@ -955,6 +982,8 @@ class PreparedRegionalStokes3D:
             raise TectonicsError('3D linear residual exceeds fixed acceptance tolerance')
         if not (momentum_error <= 2e-9 and continuity_error <= 2e-9):
             raise TectonicsError('3D momentum or continuity block residual exceeds fixed acceptance tolerance')
+        if retain_divergence:
+            matrix_state['raw_divergence'] = state.pop('raw_divergence')
         # Free equations carry numerical residual, not externally applied force.
         constrained_reaction = np.zeros_like(balance)
         constrained_reaction[self._fixed] = balance[self._fixed]
@@ -1010,8 +1039,11 @@ class PreparedRegionalStokes3D:
                 mean -= hydro['mean']
             requested = self._requested(f,d,t,s) if self._pressure_reference is None and hydro is None else bool(
                 np.any(load) or np.any(d.ravel()[self._fixed]))
-            u,p,r,error,count,momentum,datum = self._linear(load,d,mean,cancel,requested)
-            result = self._result(u,p,r,s,body,natural,load,momentum,metadata,error,count,datum,hydro)
+            with self._publication_products() as products:
+                u,p,r,error,count,momentum,datum = self._linear(load,d,mean,cancel,requested,
+                                                                 products,publish=True)
+                result = self._result(u,p,r,s,body,natural,load,momentum,metadata,error,count,datum,hydro,
+                                      products=products)
             _cancel(cancel)
             self._verify()
             self._latest, self._latest_key = result, key
@@ -1074,7 +1106,7 @@ class PreparedRegionalStokes3D:
         """
         with self._operation(cancel), (nullcontext() if hydrostatic_lift is None else
                 self._resource.reserve(65536+8192*self._mesh.nc+1024*self._mesh.nv,
-                                       category='regional3d-hydrostatic-request')):
+                                       category='regional3d-hydrostatic-request')), ExitStack() as product_scope:
             _name(coupling_source,'coupling source')
             expected_reference = (None if self._pressure_reference is None else
                                   self._definition['pressure_reference']['reference_id'])
@@ -1110,35 +1142,44 @@ class PreparedRegionalStokes3D:
             # A pressure datum projects to exactly zero on the (necessarily
             # net-flux-free) coupling modes; keep it out of the coupling solve so
             # a large datum adds no round-off to the rates. It is published below.
-            matrix_state = {}
-            _,_,base_r,_,_,_,_ = self._linear(load,d,0.,cancel,requested, matrix_state)
-            force_conversion = lambda r: _factored_scale(r,(self._eta0,V,L),(),'reaction force')
-            if hydro is not None:
-                base_r = base_r+hydro['reaction'].reshape(-1, 3)
-            q0 = np.einsum('mij,ij->m',modes,force_conversion(base_r))
-            mode_key = _digest_array(modes)
-            if self._mode_cache is not None and self._mode_cache[0] == mode_key:
-                response = self._mode_cache[1]
-                self._stats['coupling_response_hits'] += 1
-            else:
-                response = np.empty((n,n))
-                zero_load = np.zeros(3*self._mesh.nv)
-                for j in range(n):
-                    _cancel(cancel)
-                    _,_,r,_,_,_,_ = self._linear(zero_load,modes_d[j],0.,cancel, matrix_state=matrix_state)
-                    response[:,j] = np.einsum('mij,ij->m',modes,force_conversion(r))
-                response = frozen(response)
-                scale = max(np.max(np.abs(response)),np.finfo(float).tiny)
-                if np.max(np.abs(response-response.T)) > 2e-8*scale:
-                    raise TectonicsError('regional coupling violates reciprocal mechanical work')
-            drag_matrix = _factored_scale(drag,(V,),(L,),'scaled exterior resistance')
-            matrix = response+drag_matrix
-            eig = np.linalg.eigvalsh((matrix+matrix.T)/2)
-            if eig[0] <= 1e-12*max(np.max(np.abs(eig)),np.finfo(float).tiny):
-                raise TectonicsError('coupled motion lacks independent resisting constraints')
-            amplitudes = np.linalg.solve(matrix,drive-q0)
-            prescribed = d+np.einsum('m,mij->ij',amplitudes,modes_d)
-            u,p,r,error,count,momentum,datum = self._linear(load,prescribed,mean,cancel,requested, matrix_state)
+            products = product_scope.enter_context(self._publication_products())
+            velocity_work = (nullcontext(False) if self._method == 'multigrid' else
+                             self._resource.try_reserve(4096+_sparse_bytes(self._A),
+                                                        category='regional3d-coupled-magnitude-a'))
+            with velocity_work as retain_a:
+                products['retain_a'] = retain_a
+                try:
+                    _,_,base_r,_,_,_,_ = self._linear(load,d,0.,cancel,requested,products)
+                    force_conversion = lambda r: _factored_scale(r,(self._eta0,V,L),(),'reaction force')
+                    if hydro is not None:
+                        base_r = base_r+hydro['reaction'].reshape(-1, 3)
+                    q0 = np.einsum('mij,ij->m',modes,force_conversion(base_r))
+                    mode_key = _digest_array(modes)
+                    if self._mode_cache is not None and self._mode_cache[0] == mode_key:
+                        response = self._mode_cache[1]
+                        self._stats['coupling_response_hits'] += 1
+                    else:
+                        response = np.empty((n,n))
+                        zero_load = np.zeros(3*self._mesh.nv)
+                        for j in range(n):
+                            _cancel(cancel)
+                            _,_,r,_,_,_,_ = self._linear(zero_load,modes_d[j],0.,cancel,matrix_state=products)
+                            response[:,j] = np.einsum('mij,ij->m',modes,force_conversion(r))
+                        response = frozen(response)
+                        scale = max(np.max(np.abs(response)),np.finfo(float).tiny)
+                        if np.max(np.abs(response-response.T)) > 2e-8*scale:
+                            raise TectonicsError('regional coupling violates reciprocal mechanical work')
+                    drag_matrix = _factored_scale(drag,(V,),(L,),'scaled exterior resistance')
+                    matrix = response+drag_matrix
+                    eig = np.linalg.eigvalsh((matrix+matrix.T)/2)
+                    if eig[0] <= 1e-12*max(np.max(np.abs(eig)),np.finfo(float).tiny):
+                        raise TectonicsError('coupled motion lacks independent resisting constraints')
+                    amplitudes = np.linalg.solve(matrix,drive-q0)
+                    prescribed = d+np.einsum('m,mij->ij',amplitudes,modes_d)
+                    u,p,r,error,count,momentum,datum = self._linear(load,prescribed,mean,cancel,requested,
+                                                                     products,publish=True)
+                finally:
+                    products.pop('magnitude_a', None)
             rates = _factored_scale(amplitudes,(V,),(L,),'generalized rates')
             force_r = r if hydro is None else r+hydro['reaction'].reshape(-1, 3)
             # A nonzero datum is restored only in the published full reaction.
@@ -1168,7 +1209,8 @@ class PreparedRegionalStokes3D:
                           generalized_external_force_j=drive,generalized_drag_force_j=exterior_force,
                           generalized_force_residual_j=residual)
             result = self._result(u,p,r,s,body,natural,load,momentum,meta,error,count,datum,hydro,
-                                  coupling_arrays=coupling_arrays)
+                                  coupling_arrays=coupling_arrays,products=products)
+            product_scope.close()
             _cancel(cancel)
             self._verify()
             self._mode_cache = (mode_key,response)
@@ -1252,7 +1294,7 @@ class PreparedRegionalStokes3D:
             load = load-reference['body']-reference['natural']
         return f,d,t,s,body,natural,load
 
-    def _work_roundoff(self, u, p, r, extra, load, body, natural, pressure_q, viscous):
+    def _work_roundoff(self, u, p, r, extra, load, body, natural, pressure_q, viscous, magnitude_b=None):
         """Binary64 round-off bound of the work identity.
 
         Bounded by the magnitudes of the terms actually multiplied and summed
@@ -1262,7 +1304,9 @@ class PreparedRegionalStokes3D:
         ``viscous`` is |A||u| (assembled entries) of this same solution.
         """
         ua = np.abs(u.ravel())
-        operands = float(ua@viscous+np.abs(p)@(_magnitude(self._B)@ua)
+        viscous_operand = ua@viscous
+        pressure_operand = np.abs(p)@((_magnitude(self._B) if magnitude_b is None else magnitude_b)@ua)
+        operands = float(viscous_operand+pressure_operand
                          +ua@(np.abs(load)+np.abs(body)+np.abs(natural)+np.abs(r.ravel())))
         gradient_bound = 108/float(np.min(self._mesh._spacing))*np.max(
             np.abs(u)[self._mesh.velocity_cells], axis=(1, 2))
@@ -1271,7 +1315,7 @@ class PreparedRegionalStokes3D:
         return 64*_EPS*(operands+quadrature)
 
     def _result(self,u,p,r,extra,body,natural,load,momentum,metadata,error,count,datum,hydro=None,
-                coupling_arrays=None):
+                coupling_arrays=None, products=None):
         mesh = self._mesh
         if self._pressure_space == 'q1-p0':
             from .regional_conservative3d import evaluate
@@ -1300,7 +1344,7 @@ class PreparedRegionalStokes3D:
         work_scale = max(abs(viscous_power)+abs(extra_power)+abs(pressure_power),
                          abs(body_power)+abs(natural_power)+abs(reaction_power))
         work_scale += self._work_roundoff(u,p,r,extra,load,body,natural,values['pressure_q'],
-                                          datum['viscous_magnitude'])/5e-9
+            datum['viscous_magnitude'], None if products is None else products.pop('magnitude_b', None))/5e-9
         if not (math.isfinite(work_scale) and math.isfinite(work_error)):
             raise TectonicsError('3D mechanical work is outside binary64 range; '
                                  'choose RegionalMechanicsScales near the problem magnitudes')
@@ -1404,11 +1448,16 @@ class PreparedRegionalStokes3D:
                 prescribed_traction_work=float(u.ravel()@hydro['natural']),
                 velocity_constraint_work=float(u.ravel()@hydro['reaction']),
                 sampled_body_quadrature_difference=float(u.ravel()@(hydro['body']-hydro['sampled_body']))).items()}
+        raw_divergence = None if products is None else products.pop('raw_divergence', None)
+        if raw_divergence is None:
+            raw_divergence = self._B@u.ravel()
+        weak_divergence_max = float(np.max(np.abs(raw_divergence)/self._pw))
+        del raw_divergence
         data = dict(schema='atlas.regional3d-snapshot.v1', plan_id=self.plan_id,
             plan=self._definition, request=metadata, physical_pressure_defined=self._physical,
             numerical_pressure_gauge='volume-weighted mean' if self._gauge else 'natural traction',
             velocity_dofs=3*mesh.nv, pressure_dofs=self._pressure_dofs,
-            weak_divergence_max=float(np.max(np.abs(self._B@u.ravel())/self._pw)),
+            weak_divergence_max=weak_divergence_max,
             quadrature_divergence_l2=float(np.sqrt(np.sum(div*div*weights))),
             linear_relative_residual=error['linear'],momentum_backward_error=error['momentum'],
             continuity_backward_error=error['continuity'],linear_refinements=error['refinements'],

@@ -154,7 +154,9 @@ changes no rock. An account that was not declared is reported as unknown, not as
 zero, and so is a formation date that was not given. The pieces of a face must fill
 it: this is checked for every face when a world is declared, after every interval and
 whenever a saved state is reopened. All the pieces together must always cover the
-sphere once.
+sphere once. A fresh declaration takes its exact opening totals from the
+stocks it has just issued. On restore, the saved starting totals, supplies
+and rounding must reconcile with the restored stocks.
 
 The totals are also kept as exact fractions, so "what is stored equals what was
 declared plus what has since been supplied" can be checked exactly rather than
@@ -190,6 +192,12 @@ Temporary carrier and vertex-use data stays within construction. The checker
 independently verifies eligible home carriers and required copy keys for
 supplied and restored layouts. The registry, frame and ridge records, unit
 directions and copy placement are checked on either path.
+
+Network construction uses the directions from that checked placement.
+The material declaration counts its pieces once and uses face order to find
+their supports. On a mixed face the declared footprints must cover it.
+The initial differential partition groups funded patches and components by
+face while keeping their declared traversal order.
 
 Fresh coordinates may round differently from the earlier matrix path and give
 the newly rotated network a different identity. Stored networks retain exact
@@ -859,6 +867,13 @@ rock. It may still lose old rock at the trench; no zero-area birth is manufactur
 example to merge the narrow strips that many small openings leave behind. Rock is
 transferred by the same measured overlaps. A redraw cannot move a plate boundary,
 give a cell to another plate or change any formation date.
+For a redraw, a temporary index groups changed cells by plate and searches loose
+boxes around their already calculated spherical caps. The original cap comparison
+still decides which pairs are measured, in the same order. Large or unconditioned
+caps use the original scan, as does the whole operation when the extra index cannot
+fit its optional memory reservation. The boxes introduce no area cutoff or new
+physical tolerance. Motion and redraw share classifications, sweep measures,
+donor totals and patch facts; a transfer given no mesh change works it out as before.
 When a saved mesh is rebuilt, replay keeps every other field of the original motion,
 including the supplied junction paths, events, returns, sources and destinations.
 Replacing the mesh is not permission to reconstruct an older, shorter version of
@@ -965,6 +980,10 @@ three parts:
      patch stability check sizes its own loss workspace. The
      [moving-state heat method](../I05_MOVING_STATE.md#6-heat-i052) describes
      the final projection and the scoped refusal for non-finite power.
+     A physical column with fixed substeps reuses its modal increment factor
+     and the modal projection of an unchanged issued source. Within one
+     patch flux update, the layers share the column's exact capacity calculation.
+     Radiogenic contributions are added in the original order.
   - **No new extremes.** Each of these two operations keeps every temperature between the coldest and hottest of the
     starting and boundary temperatures, so together they do too. Without internal heat sources, a step that would
     leave that range is refused.
@@ -1741,11 +1760,30 @@ selects C3 and forward-only C8 while excluding C13; its
 [receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
 does not establish runtime admission, old-checkpoint migration or whole-interval benefit.
 
+The first heat certificate takes the matrix sizes, column support and observation
+keys that reconstruction has already computed. On issued inputs, the native issuer
+passes sizing, stable owner facts and the first original-row maximum to the next
+consumer, and the sparse solve takes the operator already ordered and checked for
+finite entries and unique rows, with its factor limits and conversion sizes. Cold
+entries, mutable callbacks and later refinement groups keep their own checks. Owner
+points are reused only where a call has no cancellation hook, and a face without a
+saved digest is hashed again. The finisher encodes the canonical bytes once. Rows
+that refinement leaves untouched are still rounded again, so the arithmetic and its
+rounding are unchanged.
+
 The later [small-cell finite-volume heat rule](../../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity)
 uses two-point rows where a cell cannot support its fitted row. A capacity-to-low-
 conductance ratio blends between 100 and 10,000; a capacity guard of 1,000 further
 limits the fitted share. Both owners use the same final face flux. The original
-signwise finish is retained. In one retained external 855-cell replay, stored final heat
+signwise finish is retained. The heat step guarantees its energy exactly and keeps
+every temperature within the field's two bounds. It does not certify how close a
+cell's temperature is to the solution of the heat equation. Where two admissible
+fits differ, a cell's temperature can differ by up to about a five-hundredth of the
+temperature spread over the cells its fitted rows reach; on the stored step that is
+at most `5e-4 K`. Whether that difference comes from the geometric choice of fit
+points or from the conditioning of the fit is being measured. Heat results are
+compared between packages by a declared size, not bit for bit. In one retained
+external 855-cell replay, stored final heat
 and temperature match exactly, while the HIGH predictor has a measured nonzero
 input-range excursion of about `3.56325e-6 K`. Predictor behaviour, final-output
 parity and exact closed-case ledger conservation are separate observations.
@@ -1773,6 +1811,10 @@ reuses bounded worker-local calculations where admitted and retains the original
 fallback, directed bounds and resource controls. Its
 [runtime selection](../../optimisation/workbench/plan40/pressure/implementation/runtime/README.md)
 does not establish a changed default, whole-interval benefit or scientific acceptance.
+The force-trace, traction, pressure and balance steps reuse geometry, projections,
+the pressure product of the same iterate, residuals and response facts. On the
+multigrid path, or where the memory reservation for retained magnitudes is refused,
+they are recomputed as before.
 
 ### Choose rolling geometry workers from an authenticated parent
 
@@ -1797,6 +1839,13 @@ The later [combined selection](../../optimisation/workbench/combined-runtime-r1/
 adds a separate per-partition carrier allowance while keeping transient reads and
 exports in the fixed budget. Whole-run and machine guards still apply; a capacity
 projection does not prove that a larger interval will complete.
+
+Scratch and routing owners carry the support facts and sizes already issued.
+Scheduling, endpoint and checkpoint lookups reuse existing indices and allowances.
+Wall, collar and moving-interface paths reuse parent identities, adjacent geometry
+and signed wall pairs; walls keep the original member route. A compact support
+streamed back from the store is hashed again when issued, which proves the rebuilt
+bytes and not only the stored files.
 
 ### Choose heat reconstruction workers and prepare exact geometry proofs
 
@@ -1970,6 +2019,11 @@ key/layer/exclusions still define those identifiers. This leaves the spatial
 owner's different recipe and mesh ordering unchanged. Earlier small-collar
 controls contained no wall rows and used one funding per chain; full-chain and
 mixed-funding cache coverage remain open.
+
+An adopted interface member reuses the result receipt's proof of canonical encoding
+and request when its immutable request token matches the funded claim. The claim
+still decodes the payload for its work, result-shape and certificate checks. Other
+sessions, and a receipt that fails the staging check, take the full validation.
 
 The [working snapshot](../../optimisation/working-snapshot-20261113/README.md#keep-the-loaded-heat-inventory-independent-of-recognised-home-paths) maps recognised package and interpreter path constants into their own relative namespaces when constructing the loaded heat inventory. File opening still uses the original constants; unknown absolute paths keep their spelling. Controlled two-home imports agree on the inventory. This affects loaded identities, and supplies no new physical or whole-chain result.
 

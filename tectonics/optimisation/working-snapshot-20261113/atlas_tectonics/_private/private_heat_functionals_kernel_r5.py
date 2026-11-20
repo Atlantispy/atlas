@@ -221,7 +221,7 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
         def observation(key):
             I.check(cancelled)
             if key[0] != 'power':
-                if cancelled is None:
+                if cancelled is None or prepared.get('_owned_guard', False):
                     if key == ki:
                         return pi
                     if key == kj:
