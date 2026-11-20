@@ -13,7 +13,7 @@ from types import MappingProxyType
 from pathlib import Path
 
 PINS = {
-    'provider': ('q297_end_provider_v2.py', '4a6a7eca480579e25d1cce310ada6da66ec4c1570469b121107e0c1e19afb24c'),
+    'provider': ('q297_end_provider_v2.py', 'd6d04c42417f02bb73471003eb56c810a64ab0654c00205729d11fd1c4231800'),
     'pieces': ('q297_end_pieces_v2.py', '9542c8460d9a859868424f25837c5339846a69353abdd340b0cfc6a44d5e8fe8'),
     'piece_builder': ('interval_piece_candidate.py', 'ad034d0405e59850ec40133d3f7bae7e816381959777fb8542b974c63e8e299c'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),

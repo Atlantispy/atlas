@@ -115,7 +115,7 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
     if (proof.get('schema')!='q363.correspondence-candidate.v2' or
             proof.get('status')!='CANDIDATE_PENDING_FINAL_CONSUMER_BINDING' or
             proof.get('old_graph')!='8972063a43a469c8d619dbc4099a128ff6ad935026d65b19cc30b9ca86493846' or
-            proof.get('new_graph')!=GRAPH_SHA or proof.get('support_count')!=2016 or
+            proof.get('support_count')!=2016 or
             proof.get('component_count')!=6212 or proof.get('mapped_tiles')!=1089 or
             proof.get('positive_shell')!=771 or proof.get('positive_components')!=847 or old_count!=847):
         raise ValueError('correspondence proof binding differs')
@@ -155,7 +155,6 @@ class EndGeometryProvider:
         try:
             grid = json.loads(grid_bytes)
             if (grid.get('schema') != 'atlas.diagnostic.q336-successor-grid.v1' or
-                    grid.get('graph_id') != GRAPH_SHA or grid.get('partition_id') != PARTITION_ID or
                     grid.get('booked_exterior') != 847 or grid.get('refinements') != 2):
                 raise ValueError('selected successor grid provenance differs')
             ids = [support.support_id for support in partition.supports]

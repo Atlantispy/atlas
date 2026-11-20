@@ -942,6 +942,21 @@ Because the mesh header reaches the initial state, the combined joined reference
 starts from its own step 1, even though the interval graph field alone begins
 at step 5.
 
+At the end of the interval the provider still compares the live closed graph and
+partition with its two issued identifiers, but no longer requires the stored
+successor grid and correspondence proof to name the same identifiers. Each
+identifier hashes its record together with the code identity and the names of
+upstream records, so a change of code alone moves it. The two pins can then be
+issued again without rebuilding the grid and the proof: the run driver, which is
+not part of this snapshot, accepts a new issue before launch only when a digest of
+each record's own content equals the reference's. So the two pins bind the closed
+graph's own record and the partition's own record, with the code identity and the
+names of upstream records taken out. They no longer bind which funding, flow,
+mechanical solution, start state, finite inventory and parent partition the graph
+came from. No reader at the end of the interval reads those upstream records: what
+they did to the end mesh is in the graph's own values, which stay bound, and every
+stored step keeps its own identity.
+
 Persistent row positions are preserved while actual physical cells, faces and
 their fields map into solver order and back. Geometric choice dispatches as a
 whole; unresolved rows keep the complete parent method and its validations.
