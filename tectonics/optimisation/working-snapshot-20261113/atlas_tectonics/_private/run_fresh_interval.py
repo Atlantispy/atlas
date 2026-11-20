@@ -1314,12 +1314,12 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             record['q297_end_geometry'].update(selection='issued for actual END mesh', **selection)
             save()
         end_provider_factory = make_factory(run_root=qualification/'runs',
-            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-b1.json',
+            grid_path=qualification/'iv1-diagnostic-prep/codex-e28-r1/q363-successor-grid-joined.json',
             selected_observer=note_q297_provider)
         record['q297_end_geometry'] = dict(selection='configured first-interval END provider',
-            scientific_changes=True, grid_sha256='ebc38dfbdfa1a48211b516d36a648f1080b3b445b5c8f15639258b7c128c9303',
+            scientific_changes=True, grid_sha256='ae57b07bec820d9efb8434671b0e1c2d407ad09622c5ab27c011985f347cbf23',
             sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-            carry_proof_sha256='18d898d121d5b1f464821d155e4606cb0098bc36575b8e0724534dbcacdcc481',
+            carry_proof_sha256='42c524121e94bd5c01ae1fcd38fff15756ad7b5aa8545b09dcdfa81c0b3c0e56',
             inherited_witness_refinements=1, qualification_grid_split='-33/8',
             graph_id='not yet issued', scientifically_certified=False)
         save()
@@ -1527,6 +1527,21 @@ def _error(error):
             'innermost_selected_frame': selected}
 
 
+def _heat_faces(folder, sources, production_release):
+    """U-2 (designs/step5-save-as-it-goes-r1.md s3): the heat pool of this process saves its faces in ``folder`` and a
+    later run of the same call takes them. Diagnostic trees only, as _recording, and never in a Release step: a proof
+    or real run has no such manifest. Returns the folder, or None (the variable is then unset, whatever was given)."""
+    variable = 'ATLAS_HEAT_FACES_DIR'
+    os.environ.pop(variable, None)
+    if production_release:
+        return None
+    manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
+    if manifest['installed_binding']['qualification_status'] != 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION':
+        return None
+    os.environ[variable] = str(folder)
+    return folder
+
+
 def _profile_sampler(folder, mode):
     """PROFILING ARM ONLY. Every 0.2 s count the stacks of all other threads; a finished minute keeps its top 50."""
     import collections, threading
@@ -1596,6 +1611,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     admitted = RUN.production_admission(sources,'fresh-'+mode,start_gate) if production_release else None
     output = mode_output(profile.record(), mode, interval)/'run.json'
     _profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', mode)
+    _heat_faces(Path(profile.record()['output_directory']).parent/'completed-heat', sources, production_release)
     record: dict = {'schema': RESULT_SCHEMA, 'status': 'STARTED', 'pid': os.getpid(), 'mode': mode,
                     'profile_sha256': profile.sha256, 'errors': [], 'production_acceptance': False,
                     'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed,

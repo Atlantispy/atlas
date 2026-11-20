@@ -21,7 +21,7 @@ from atlas_tectonics._private import private_heat_exact_growth_r1 as E
 from atlas_tectonics._private import private_heat_low_ledger_inventory_r1 as L
 
 G = F.G
-FUNCTIONALS_SHA = 'bf848f2204e5c7dbd22c02874a38518b8abfab5134e5eca58a3d2c29e058b942'
+FUNCTIONALS_SHA = 'a1b6c2dba955c148ff4153cf1701d9d3eab5a3e63b69a648bb83e22f3e956e8b'
 
 
 def _verify(cancelled):

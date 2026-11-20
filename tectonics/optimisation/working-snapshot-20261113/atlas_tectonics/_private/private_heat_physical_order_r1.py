@@ -7,13 +7,14 @@ New pointer/container storage is admitted before allocation. The figures below
 are the existing 1024-byte native container policy, not a heap or RSS bound.
 No source identity, public row order, precision or tolerance is replaced.
 """
+from fractions import Fraction
 import traceback
 
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
 
 
-POLICY = "physical-support-scratch-order-v1"
+POLICY = "interior-point-scratch-order-v2"
 UNIT = 1024
 PREPARED_FIELDS = frozenset((
     "rows", "boundary", "conductivity", "cells", "face_ids", "geometry_id"))
@@ -147,8 +148,25 @@ def _indices(value, count):
     return tuple(value)
 
 
+def _interior_point(row):
+    """The row's stored interior point, exact, x then y then z (ruling 34: a numerical order is set by
+    geometry, never by a hash, an id or a set). Equal points are refused by _permutation."""
+    point = row.get("centroid_m")
+    if type(point) is not list or len(point) != 3:
+        raise ValueError("Native cell interior point required")
+    key = []
+    for pair in point:
+        if type(pair) is not list or len(pair) != 2 or any(type(v) is not str for v in pair):
+            raise ValueError("Native cell interior point coordinate differs")
+        numerator, denominator = int(pair[0], 16), int(pair[1], 16)
+        if denominator <= 0:
+            raise ValueError("Native cell interior point coordinate differs")
+        key.append(Fraction(numerator, denominator))
+    return tuple(key)
+
+
 def _physical_key(row):
-    """Use authenticated physical support references, never numerical results."""
+    """Authenticate the physical support references, then key by the interior point, never by them."""
     support = row.get("physical_support")
     if type(support) is not dict:
         raise ValueError("Native physical support is required")
@@ -158,7 +176,8 @@ def _physical_key(row):
         voxel = _digest(support["voxel_id"])
         if row.get("physical_cell_id") != voxel:
             raise ValueError("Collar physical cell and support differ")
-        return ("collar", voxel, _indices(row.get("index"), 3))
+        _indices(row.get("index"), 3)
+        return _interior_point(row)
     if row.get("kind") == "exterior":
         if set(support) != {"voxel_id", "radial_layer_id", "cone_id"}:
             raise ValueError("Unsupported exterior/differential support")
@@ -168,10 +187,11 @@ def _physical_key(row):
         band, chart = row.get("radial_band"), row.get("chart")
         if type(band) is not int or type(chart) is not int or min(band, chart) < 0:
             raise ValueError("Native radial band/chart required")
-        return ("exterior", _digest(support["voxel_id"]),
-                _digest(support["radial_layer_id"]), _digest(support["cone_id"]),
-                _digest(source[0]), source[1],
-                _indices(row.get("voxel_index"), 3), band, chart)
+        for name in ("voxel_id", "radial_layer_id", "cone_id"):
+            _digest(support[name])
+        _digest(source[0])
+        _indices(row.get("voxel_index"), 3)
+        return _interior_point(row)
     raise ValueError("Unsupported physical cell family")
 
 
@@ -212,7 +232,7 @@ def _differential_key(row, view):
         pairs.append((_digest(pair[0]), pair[1]))
     if len(set(pairs)) != len(pairs):
         raise ValueError("Duplicate differential face incidence")
-    return min(pairs)
+    return _interior_point(row)
 
 
 def _permutation(keys, cancel):
@@ -233,10 +253,9 @@ def _detached_differential_key(view, index, expected_cell_id):
     row = row_owner.value
     if row["cell_id"] != expected_cell_id:
         raise ValueError("Native physical and numerical row alignment changed")
-    digest, sign = _differential_key(row, view)
-    # The original exact digest and sign are validated by _differential_key.
-    # Copy before the row/support owners leave this frame; ±1 are code literals.
-    return (digest.encode('ascii').decode('ascii'), 1 if sign == 1 else -1)
+    # The key's rationals are decoded from the row's strings, so they are new
+    # objects: nothing of the row/support owners outlives this frame.
+    return _differential_key(row, view)
 
 
 def _prepared_copy(prepared, payload, order, inverse, cancel):

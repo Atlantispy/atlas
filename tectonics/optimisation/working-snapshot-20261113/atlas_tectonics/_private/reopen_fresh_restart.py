@@ -1254,7 +1254,12 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
                    **({} if gate is None else {'width_gate': gate}),
                    **({'review_only': True, 'preseal_refused': producer['runner']['preseal_refused'],
                        'record_identities': reopen['record_identities']} if review else {})}
-        verdict_sha256 = F.write_durable(F.verdict_path(Path(row['store_directory']), producer['interval']), verdict)
+        verdict_file = F.verdict_path(Path(row['store_directory']), producer['interval'])
+        verdict_raw = F.canonical(verdict)
+        if os.path.lexists(verdict_file) and RUN.ordinary(verdict_file).read_bytes() == verdict_raw:   # S-3: stopped
+            verdict_sha256 = sha256(verdict_raw).hexdigest()     # before its final record: the same verdict, taken
+        else:
+            verdict_sha256 = F.write_durable(verdict_file, verdict)     # other bytes refuse, as before
     except Exception as error:  # noqa: BLE001 - the final record carries every refusal
         errors.append(F._error(error))
     result = {'schema': FINAL_SCHEMA, 'status': 'FAILED' if errors else F.READER_PASS[mode], 'mode': mode,
@@ -1305,7 +1310,7 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
     row = profile.record()
     store_directory, interval = Path(row['store_directory']), F.interval_number(mode, interval)
     path = adopted_path(store_directory, interval)
-    require(not path.exists(), 'this interval was already adopted')
+    done = path.exists()                  # S-4: the record written, the driver not told
     verdict, runner, sealed = adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256)
     entry = sealed['entry']
     with sources.selected():
@@ -1317,11 +1322,14 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
         scope = create_retained_scope(budget, process_epoch='fresh-adopt-'+str(os.getpid()))
         catalog = store_directory/F.CATALOG
         try:
+            fresh = sealed['expected_catalog_digest'] is None and not done and not os.path.lexists(catalog)
             stores = (IS.IntervalStoreSet.create_migration(catalog, workflow_id=runner['workflow_id'], scope=scope)
-                      if sealed['expected_catalog_digest'] is None else
-                      IS.IntervalStoreSet.open_catalog(catalog, scope=scope))
+                      if fresh else IS.IntervalStoreSet.open_catalog(catalog, scope=scope))
             try:
-                adopted = stores.adopt_and_promote(entry['filename'], expected_sha256=entry['file_sha256'],
+                promoted = ((done or stores.catalog_digest != sealed['expected_catalog_digest'])   # S-4: reopened,
+                            and stores.head is not None and stores.head.to_wire() == entry)     # never retried
+                require(promoted or not done, 'this interval was already adopted')
+                adopted = stores.head if promoted else stores.adopt_and_promote(entry['filename'], expected_sha256=entry['file_sha256'],
                     expected_logical_seal=entry['logical_seal'], head=SegmentRef.from_wire(runner['head']),
                     producer_identity=runner['producer_identity'], runtime_identity=runner['runtime_identity'],
                     expected_catalog_digest=sealed['expected_catalog_digest'],
@@ -1343,7 +1351,12 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
              'catalog_digest': catalog_digest, 'catalog_sha256': RUN.file_hash(catalog),
              'verdict_sha256': verdict_sha256, 'runner_record_sha256': verdict['runner_record_sha256'],
              'adopter_pid': os.getpid(), **({'review_approval_sha256': approval_sha256} if approval_sha256 else {})}
-    pin = F.write_durable(path, value)
+    if done:                              # S-4: equal but for adopter_pid; the same line again
+        earlier = F.read_record(path, schema=ADOPTED_SCHEMA)
+        require(dict(earlier, adopter_pid=None) == dict(value, adopter_pid=None), 'this interval was already adopted')
+        pin = sha256(RUN.ordinary(path).read_bytes()).hexdigest()
+    else:
+        pin = F.write_durable(path, value)
     print(json.dumps({'status': ADOPTED_STATUS, 'adopted': str(path), 'sha256': pin}), flush=True)
     return 0
 

@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
-from decimal import Decimal, localcontext
+from decimal import Context, Decimal, localcontext, ROUND_HALF_EVEN
 from fractions import Fraction
 import hashlib
 import json
@@ -1648,8 +1648,7 @@ def _exact_triangle_sr(a, b, c):
     numerator = _dot(a, _cross(b, c))
     if not numerator:
         return 0.
-    with localcontext() as context:
-        context.prec = 80
+    with localcontext(Context(prec=80, rounding=ROUND_HALF_EVEN)):
         na, nb, nc = (Decimal(_dot(v, v)).sqrt() for v in (a, b, c))
         denominator = na*nb*nc+Decimal(_dot(a, b))*nc+Decimal(_dot(b, c))*na+Decimal(_dot(c, a))*nb
         numerator = Decimal(numerator)

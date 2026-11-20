@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict, fields
 from functools import lru_cache
-from decimal import Decimal, localcontext
+from decimal import Context, Decimal, localcontext, ROUND_HALF_EVEN
 import hashlib
 import json
 import math
@@ -87,8 +87,7 @@ def _json(value):
 
 def _printed_midpoint(bounds):
     # Dataset identity must not depend on an application's ambient Decimal context.
-    with localcontext() as context:
-        context.prec=40
+    with localcontext(Context(prec=40, rounding=ROUND_HALF_EVEN)):
         return float((Decimal(str(bounds[0]))+Decimal(str(bounds[1])))/2)
 
 
@@ -185,15 +184,13 @@ class PropertyDatum:
 
     @property
     def value_si(self):
-        with localcontext() as context:
-            context.prec=40
+        with localcontext(Context(prec=40, rounding=ROUND_HALF_EVEN)):
             return float(Decimal(str(self.reported_value))*Decimal(str(_unit_info(self.reported_unit)[1])))
     @property
     def bounds_si(self):
         a,b=self.reported_bounds or (self.reported_value,self.reported_value)
         scale=_unit_info(self.reported_unit)[1]
-        with localcontext() as context:
-            context.prec=40
+        with localcontext(Context(prec=40, rounding=ROUND_HALF_EVEN)):
             return tuple(float(Decimal(str(v))*Decimal(str(scale))) for v in (a,b))
     @property
     def is_secant(self): return self.temperature_span_k is not None

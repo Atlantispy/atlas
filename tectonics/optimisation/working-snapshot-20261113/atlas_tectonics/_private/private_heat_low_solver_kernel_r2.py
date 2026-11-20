@@ -19,7 +19,7 @@ numerical/runtime dependencies are loaded only at invocation.
 from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
-from decimal import Decimal as D, localcontext
+from decimal import Context, Decimal as D, localcontext, ROUND_HALF_EVEN
 from fractions import Fraction as Q
 import hashlib
 import math
@@ -105,8 +105,7 @@ def existing_target(prepared, old, capacity, dt, source, reference):
     stocks, as that inherited target policy does. A caller with an already
     established target should pass that target straight to solve instead.
     """
-    with localcontext() as context:
-        context.prec = 80
+    with localcontext(Context(prec=80, rounding=ROUND_HALF_EVEN)):
         decimal = lambda value: D.from_float(float(value))
         e0, cap, src = [list(map(decimal, values)) for values in (old, capacity, source)]
         delta, ref = decimal(dt), decimal(reference)

@@ -322,7 +322,26 @@ def _addresses(rows, length, keep):
     return np.array(lo, dtype=np.int64).reshape(shape), np.array(hi, dtype=np.int64).reshape(shape)
 
 
-def pair_dots(x_rows, y_rows, down, up, *, gram=False, check=None):
+def prepare(y_rows, down, up):
+    """y_rows read by address and classified once (C5): (rows, length, kept tuples, lo, hi, classes, precision).
+    The kept tuples hold the very objects whose addresses are read, for as long as the result is held."""
+    if not contexts_ok(down, up):
+        raise Unavailable('contexts are not the reviewed directed pair')
+    length = len(y_rows[0]) if y_rows else 0
+    if not y_rows or not length:
+        raise Unavailable('empty batch')
+    keep = []
+    y_lo, y_hi = _addresses(y_rows, length, keep)
+    saved = mpfr_flags_save()
+    mpfr_flags_clear(FLAGS_ALL)
+    try:
+        y_cls = _compiled(_classes, y_lo, y_hi)
+    finally:
+        mpfr_flags_restore(saved, FLAGS_ALL)
+    return y_rows, length, keep, y_lo, y_hi, y_cls, down.precision
+
+
+def pair_dots(x_rows, y_rows, down, up, *, gram=False, check=None, prepared=None):
     """[[dot(x, y) for y in y_rows] for x in x_rows] for Arithmetic contexts down/up.
 
     gram=True requires y_rows to be x_rows. check() is called before every block after
@@ -340,7 +359,12 @@ def pair_dots(x_rows, y_rows, down, up, *, gram=False, check=None):
         raise Unavailable('gram requires the same rows')
     keep = []
     x_lo, x_hi = _addresses(x_rows, length, keep)
-    y_lo, y_hi = (x_lo, x_hi) if gram else _addresses(y_rows, length, keep)
+    if prepared is not None:
+        if gram or prepared[0] is not y_rows or prepared[1] != length or prepared[6] != precision:
+            raise Unavailable('prepared rows are not these rows')
+        y_lo, y_hi = prepared[3], prepared[4]
+    else:
+        y_lo, y_hi = (x_lo, x_hi) if gram else _addresses(y_rows, length, keep)
     count = nx*ny
     lows = [G.mpfr(0, precision) for _ in range(count)]
     highs = [G.mpfr(0, precision) for _ in range(count)]
@@ -358,7 +382,7 @@ def pair_dots(x_rows, y_rows, down, up, *, gram=False, check=None):
     mpfr_flags_clear(FLAGS_ALL)
     try:
         x_cls = _compiled(_classes, x_lo, x_hi)
-        y_cls = x_cls if gram else _compiled(_classes, y_lo, y_hi)
+        y_cls = prepared[5] if prepared is not None else (x_cls if gram else _compiled(_classes, y_lo, y_hi))
         x_free = (x_cls != 0).all(axis=1)
         for start in range(0, nx, step):
             if start and check is not None:

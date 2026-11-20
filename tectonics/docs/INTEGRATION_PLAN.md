@@ -116,6 +116,13 @@ Entry points are the [coding route map](../../docs/CODING_SAFETY.md#1-choose-the
 [causal-generation diagnosis](NEW_WORLD_LAYOUT.md#causal-generation-diagnosis-and-replacement-design).
 This inventory is not a fresh acceptance run of those components.
 
+The [review snapshot method record](../optimisation/working-snapshot-20261113/README.md#source-fixes-after-the-reference)
+covers a separate assembly route and its published producer and reader
+contracts. Joined qualification follows those selected producers and readers
+from an admissible checkpoint through the actual driver. Use the
+[source and runtime identity contract](OPTIMISATION_REFERENCE.md#source-and-runtime-identity)
+to bind the run. Record the limits of any reader the route does not reach.
+
 ## 4. Architecture: one evolving physical state
 
 Use a coarse spherical world, regional process domains where needed, and separate

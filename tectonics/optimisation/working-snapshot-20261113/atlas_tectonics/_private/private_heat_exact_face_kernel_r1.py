@@ -26,7 +26,7 @@ from atlas_tectonics._private import private_heat_exact_functional_kernel_r2 as 
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 
 G = K.G
-FUNCTIONALS_SHA = 'bf848f2204e5c7dbd22c02874a38518b8abfab5134e5eca58a3d2c29e058b942'
+FUNCTIONALS_SHA = 'a1b6c2dba955c148ff4153cf1701d9d3eab5a3e63b69a648bb83e22f3e956e8b'
 
 
 def exact_face(matrix, target, keys, base_keys, signed_tau, conversion, *,

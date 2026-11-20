@@ -766,7 +766,7 @@ arithmetic and per-region accounts. For one cohort and target cell at a time it
 forms at most 256 original rounded volumes, then separately sums volume*density
 and volume/grid-volume with `math.fsum`. It retains no regions-by-whole-grid
 tensor. Actual cell mass/fraction feed the thermomechanical reader.
-Independent local review accepts the selected target and actual receiving-field
+Local checks establish the selected target and the actual receiving-field
 sensitivity. The separate total-cohort `np.sum` occupancy decision and its
 `1e-12` gate are unchanged and unstressed, so that ordering boundary remains
 open. Maximum-shape elapsed time is unproved. This is not whole-member,
@@ -1080,8 +1080,8 @@ handling, arithmetic/enclosure contracts, tolerances and caps remain unchanged.
 The order can move last digits of a bound or lose or gain a zero proof under the
 same cap. A zero not proved can take the existing enclosing fallback. Retained
 external component fixtures distinguish the old order dependence, while two
-inherited mutants remain unreached. Source review accepts the selected unit with
-those limits. One isolated eight-step diagnostic chain completed; it does not
+inherited mutants remain unreached. Source checks establish the selected unit
+within those limits. One isolated eight-step diagnostic chain completed; it does not
 establish the outstanding field-by-field sizing or selected large-scale proof
 coverage. Key preparation cost, proof losses/gains and runtime savings remain
 unmeasured in that wider scope.
@@ -1126,9 +1126,10 @@ payload order with their census. The r5 face routine validates the polygon and
 accounts for its moment on every non-two-point face, including prescribed-power
 faces. The pool and local fallback use that routine and keep its results and
 counts. The complete pass drops the final assertion that compared its reported
-validated faces with the same set enumerated again. The source preserves the
-published worker pool; frozen isolated sizing, stored-step proof and combined
-worker-pool qualification remain distinct. The selected ordinary join
+validated faces with the same set enumerated again. The isolated small-cell source retains
+its published worker pool. The joined route binds the pool source, its callers
+and worker settings to the issued package. Isolated sizing and stored-step
+proof apply to their recorded configurations. The selected ordinary join
 omits its two superseded pooled-length assertions without adding a substitute;
 the driver/pool failure contracts and exact composed-pool qualification remain.
 

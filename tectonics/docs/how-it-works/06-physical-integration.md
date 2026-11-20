@@ -1756,6 +1756,16 @@ limits remain. The isolated measurement handoff is accepted. Mixed-interface
 accuracy, composed-pool/reference/recovery and scientific acceptance remain open;
 the overlapped chain is not an isolated speed benchmark.
 
+The interval solve of a heat certificate forms each approximate-inverse row's
+dot products against the same right-hand columns. Those columns are read by
+address and classified once for the whole loop. A batch uses the prepared rows
+only when they are the very rows passed, with the same length and precision;
+otherwise it refuses them and the original per-call read runs. The approximate
+inverse updates only the columns right of each pivot, the only ones read again,
+and the physical bounds reuse the solve's converted matrix when it is the same
+matrix. Rounding, directed bounds and accounts are unchanged; only repeated
+reads and conversions are removed.
+
 ### Reduce repeated pressure arithmetic while preserving certified bounds
 
 The [Plan40 pressure route](../../optimisation/workbench/plan40/pressure/FINDINGS.md)
@@ -1796,6 +1806,21 @@ comparison and its time/RAM trade-off; the global default remains six.
 proofs and their resource and identity boundaries. Neither establishes a
 whole-interval speed-up or new physical acceptance.
 
+The native and compact-record heat meshes share the geometric order. Cells
+follow their exact interior points. Faces follow centroid and area vector,
+with positive incidence first in the owner list. Each cell lists its faces
+in the shared face order. Oriented rings rotate to their least vertex. The
+mesh rejects duplicate cell or face ordering keys.
+
+Witness preparation collects candidates and orders them by physical point,
+layer radii and chart point before the existing greedy insertion. The END
+provider route bypasses this witness construction when it supplies the mesh.
+
+The indexed heat solve authenticates the support rows and orders its scratch
+cells by exact interior point. It maps the result back to the issued order
+before the existing finish. Both the initial support shell and the full
+ranking break equal squared distances by exact point, then by input position.
+
 In the [later r5 reconstruction](../../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity),
 each face requiring a moment goes through the polygon checks in the shared
 face routine. This includes prescribed-power faces. Workers and their local
@@ -1808,6 +1833,23 @@ Once admitted, the scan calculates the fixed face ID width once. It reuses
 each exact integer storage size in the adjacent capacity calculations that
 need it. The scan, retained geometry and validation allocations keep their
 original amounts and lifetimes.
+
+For a reopened mesh backed by ordinary sealed segment columns, the scan
+opens the store set's existing read batch after the scan workspace admits.
+Both profile loops and every deferred incidence read finish inside that
+batch. The capacity pair is returned after the batch and workspace exit,
+before retained geometry and typed-row validation are admitted. Fresh
+arrays, published views retaining their arrays, candidate intervals and
+other backings keep their existing read paths.
+
+The store checks its verified sealed-file tokens on batch entry. Column
+reads retain cancellation, liveness, locks, owned ranges and payload
+checksums and hashes. An ordinary escaping error runs the existing
+failure diagnostic; a clean exit ends batch bookkeeping without another
+physical file-identity sweep. The scope adds no scan-wide segment pin or
+column-page registry. It ends before the scan workspace transfers failure
+custody. This placement supplies no measured constructor speed-up or
+captured-scale fit.
 
 The complete capacity scan checks every incident face index on the same
 compact view used for decoding. Once the retained geometry and validation
@@ -1826,6 +1868,41 @@ owners and refuses missing, extra, wrong or duplicate claims. The result
 keeps the compact mesh's logical identity and its scoped view ownership
 for heat preparation and restore. A failed read or proof keeps the charges
 for any row and workspace held by the original traceback.
+
+In diagnostic trees the heat reconstruction pool can save each accepted face
+result to a file, and a later run of the same call can take it. A saved face
+is taken only when the header's shared inputs, runtime and settings, every file
+the workers loaded, and the face's own inputs all compare equal; it then passes
+the same acceptance as a newly arrived result. Each record carries its lengths
+and a SHA-256, and a cut-off last record is dropped. The runner sets the folder
+only for a diagnostic, uncertified installation and never in a Release step, so
+proof and real runs neither save nor take faces. On a guarded chain the
+driver's face count does not admit a taken face, so the read path is not
+exercised there. This route supplies no measured speed-up.
+
+### Set Decimal rounding for shared inputs and heat reconstruction
+
+The support-area, perimeter and transfer-triangle calculations start their
+Decimal work at 80 digits with half-even rounding. The area enclosure keeps
+directed floor and ceiling for its endpoints. Regional readers scale those
+bounds by radius squared for area, then by shell volume per unit area for
+volume. Perimeter in radians still supplies the re-expression allowance.
+Triangle solid angles in steradians still feed spherical overlap and stock
+transfer. The printed material midpoint and conversion of reported values
+and bounds to SI use a local 40-digit half-even context before binary64
+conversion.
+
+Parallel heat reconstruction chooses a local Decimal context before packing
+the shared operands. It uses the caller's precision and half-even rounding.
+Each child installs that context and reports the settings it observes before
+admission. The parent independently derives the expected settings and
+refuses a mismatch before the existing native and resource admissions.
+Serial fallback uses the caller's arithmetic. Assembly and recovery retain
+the caller's actual settings.
+
+The external LOW comparison calculates the stock-scaled residual target in
+joules in a fresh 80-digit half-even context. The forward heat solve takes
+the target already supplied by its caller.
 
 ### Order moving-face and interface proofs by their geometry
 

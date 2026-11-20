@@ -152,9 +152,9 @@ SUCCESSOR_CHECKS = ('live_head_identity', 'live_head_advanced_exactly_one_interv
 # name. check_imported accepts that one registration only as RestartSources._sealed_h3 proves it.
 # Both names are stems, as REQUIRED_MODULES: installed, the kernel is __package__ + '.' + H3_KERNEL.
 H3_NAME = 'private_heat_compiled_dot_r1'
-H3_SHA256 = '18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5'
+H3_SHA256 = '3a4e1da27afd6188b5a6cde97b56e7b96f89b0bb2a8063c32c97942da030b901'
 H3_KERNEL = 'private_heat_certification_kernel_r1'
-H3_KERNEL_SHA256 = '6ae1a0ab413dd36f4544a147aedc0f58e3347bf52501a7f205a25e9c09b62eeb'
+H3_KERNEL_SHA256 = '5bd0d0df45734aece34ec4a167ea022ee364d2fdb2e585940bab35198e2b306c'
 
 
 class RestartRefused(ValueError):

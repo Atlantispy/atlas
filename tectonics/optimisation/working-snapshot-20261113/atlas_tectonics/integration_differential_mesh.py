@@ -148,6 +148,7 @@ def _aggregate_cells(cells, faces, groups, boxes, arena):
             sign = signs[old][face['face_id']]
             merged[new]['faces'].append([face['face_id'], sign])
     by_face = {f['face_id']: f for f in kept}
+    points = {}
     for key, cell in merged.items():
         centre = tuple(map(W._decode, cell['centroid_m']))
         about, scale = E._cleared(centre)
@@ -179,8 +180,17 @@ def _aggregate_cells(cells, faces, groups, boxes, arena):
         volume = W._decode(cell['volume_m3'])
         if E._admitted_closure_fails([term for _, term in rows], volume, arena.resource):
             raise V.VolumeError('aggregated thermal metric closure or first-moment identity failed')
-        cell['faces'].sort()
-    return [merged[k] for k in sorted(merged)], kept
+        points[key] = centre
+    # Ruling 34: merged cells by their stored point; kept is in _assemble's geometric face order.
+    arena.keep(tuple(q for p in points.values() for q in p), len(points))
+    order = sorted(merged, key=points.__getitem__)
+    for a, b in zip(order, order[1:]):
+        if points[a] == points[b]:
+            raise V.VolumeError('two aggregated thermal cells share an interior point')
+    rank = {f['face_id']: i for i, f in enumerate(kept)}
+    for cell in merged.values():
+        cell['faces'].sort(key=lambda row: rank[row[0]])
+    return [merged[k] for k in order], kept
 
 
 def _compact_witness(box, encoded, component, posed, layer):
@@ -380,6 +390,7 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
     """
     knots = [set(axis) for axis in lines]
     measures = {} if measures is None else measures
+    items = []
     refined = False
     for support in supports:
         row = support.record()
@@ -422,6 +433,16 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
                 physical = tuple(box.origin_m[i]+sum(box.basis[i][j]*local[j] for j in range(3))
                                  for i in range(3))
                 square = O._dot(physical, physical)
+            arena.stack.enter_context(budget.reserve(1024+4*sum((V._bits(v)+7)//8 for v in (*physical, *local, square)),
+                category='thermal-certified-volume-cache'))
+            items.append(((*physical, layer.top_radius_m, layer.bottom_radius_m, *local), values, box, layer,
+                          local, square))
+    # Ruling 34: the greedy insertion below depends on the order of the points, so they are taken in a geometric
+    # order (the full key: physical point, the layer's radii, the chart point), never the given order, which
+    # follows a hash of names upstream.
+    items.sort(key=lambda item: item[0])
+    for _, values, box, layer, local, square in items:
+            with V._work((*values, *box._geometry(), *layer._geometry()), budget):
                 # The interpolation error is separable even for a translated,
                 # rationally rotated orthogonal chart: all cross/linear terms
                 # interpolate exactly. Insert the largest remaining error

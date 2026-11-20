@@ -332,6 +332,24 @@ are exact. This does not rebind or overwrite historical checkpoints/evidence.
 
 The bounded combined-start benchmark has an independent historical source boundary: [`source_audit`](../tools/benchmark_combined_start_r4_4.py) requires detached base `49c6603fad2ed9a92f6f2a302037dd425f154c3c`, exact source membership and exact runner/case/project/reference bytes, including this document. Later reference edits do not qualify that benchmark or authorise repinning it. Its synthetic harness tests verify those refusals.
 
+The [working snapshot](../optimisation/working-snapshot-20261113/README.md#source-fixes-after-the-reference)
+records the producer and reader changes published on the review branch.
+Qualification of the assembled route binds the selected source composition,
+the issued runtime package and the proposed Git tree separately. Bind the
+actual driver, interpreter and saved state to that route. The
+[graph and mesh producer](../optimisation/working-snapshot-20261113/README.md#keep-geometric-choice-and-transported-fields-physically-paired)
+changes the initial mesh record before the interval graph. Use the latest
+compatible stored state for the first affected operation. A prefix that
+depends on the previous mesh cannot supply the changed root.
+
+A comparison across source or method changes pairs physical records and
+declares the expected field presence, changed quantities and their producing
+members. The [small-cell heat method](../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity)
+keeps its measured cross-method differences separate from its own-input replay.
+An equal-input restart comparison uses one issued package in both arms and
+checks complete stored values and order, including the sign of zero. Component
+observations retain their original sources and workloads.
+
 
 ### Exact live verification and prepared input
 

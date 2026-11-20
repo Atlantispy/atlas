@@ -620,7 +620,7 @@ def round_bounds(bounds):
 
 # H3: compiled interval dot batches (private_heat_compiled_dot_r1, pinned below).
 _H3_NAME = 'private_heat_compiled_dot_r1'
-_H3_SHA256 = '18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5'
+_H3_SHA256 = '3a4e1da27afd6188b5a6cde97b56e7b96f89b0bb2a8063c32c97942da030b901'
 _h3_route = []  # per-process route choice; lower-case, so the loaded identity binds no state here
 
 
@@ -673,7 +673,20 @@ def _h3_plain(ar):
     return type(ar) is Arithmetic and not any(name in ar.__dict__ for name in ('check', 'point', 'dot', 'mul', 'add'))
 
 
-def _h3_batch(ar, x_rows, y_rows, gram=False):
+def _h3_prepare(ar, y_rows):
+    """The right-hand rows read and classified once (C5), or None: each call then reads them as today."""
+    if not _h3_plain(ar) or not y_rows or not len(y_rows[0]):
+        return None
+    module = _h3_module()
+    if module is None or not hasattr(module, 'prepare'):
+        return None
+    try:
+        return module.prepare(y_rows, ar.down, ar.up)
+    except module.Unavailable:
+        return None
+
+
+def _h3_batch(ar, x_rows, y_rows, gram=False, prepared=None):
     """[[ar.dot(x, y) for y in y_rows] for x in x_rows] compiled, or None to run the original."""
     if not _h3_plain(ar):
         return None
@@ -684,8 +697,11 @@ def _h3_batch(ar, x_rows, y_rows, gram=False):
         return None
     ar.check('interval-product')
     try:
+        if prepared is None:
+            return module.pair_dots(x_rows, y_rows, ar.down, ar.up, gram=gram,
+                                    check=lambda: ar.check('interval-product'))
         return module.pair_dots(x_rows, y_rows, ar.down, ar.up, gram=gram,
-                                check=lambda: ar.check('interval-product'))
+                                check=lambda: ar.check('interval-product'), prepared=prepared)
     except module.Unavailable:
         return None
 
@@ -823,13 +839,13 @@ def approximate_inverse(a, arithmetic):
             raise Unresolved('Rounded proposal has zero pivot; no rank conclusion')
         rows[j], rows[index] = rows[index], rows[j]
         pivot = rows[j][j]
-        rows[j] = [ar.near.div(v, pivot) for v in rows[j]]
+        rows[j][j+1:] = [ar.near.div(v, pivot) for v in rows[j][j+1:]]   # the pivot column and left: never read again
         for i in range(n):
             ar.check('approximate-inverse-row')
             if i != j:
                 value = rows[i][j]
-                rows[i] = [ar.near.sub(x, ar.near.mul(value, y))
-                           for x, y in zip(rows[i], rows[j], strict=True)]
+                rows[i][j+1:] = [ar.near.sub(x, ar.near.mul(value, y))
+                                 for x, y in zip(rows[i][j+1:], rows[j][j+1:], strict=True)]
     return [row[n:] for row in rows]
 
 
@@ -840,6 +856,7 @@ def solve_enclosure(matrix, rhs, *, precision, cancelled=None, evidence=None):
     if not n or not matrix or any(len(row) != n for row in matrix):
         raise ValueError('Nonempty rectangular observations and matching target required')
     m = [[ar.point(q) for q in row] for row in matrix]
+    ar.converted = matrix, m   # for physical_bounds of this attempt (CK3:95-97)
     b = [ar.point(q) for q in rhs]
     columns = list(zip(*m, strict=True))
     a = _h3_batch(ar, columns, columns, gram=True)
@@ -857,15 +874,17 @@ def solve_enclosure(matrix, rhs, *, precision, cancelled=None, evidence=None):
         xhat.append(value)
     a_columns = list(zip(*a, strict=True))
     rho = ar.zero
+    prepared = _h3_prepare(ar, a_columns)
     for i, row in enumerate(ri):
         total = ar.zero
-        dots = _h3_batch(ar, [row], a_columns)
+        dots = _h3_batch(ar, [row], a_columns, prepared=prepared)
         dots = None if dots is None else dots[0]
         for j, column in enumerate(a_columns):
             eye = ar.one if i == j else ar.zero
             item = ar.sub((eye, eye), ar.dot(row, column) if dots is None else dots[j])
             total = ar.up.add(total, ar.absmax(item))
         rho = max(rho, total)
+    prepared = None
     if not G.is_finite(rho) or rho >= ar.one:
         raise Unresolved('Inverse defect norm is not certified below one')
     dots = _h3_batch(ar, a, [[(x, x) for x in xhat]])
@@ -897,7 +916,8 @@ def physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar):
     rows = dots = None
     if _h3_plain(ar) and _h3_module() is not None:
         try:
-            rows = [[ar.point(q) for q in row] for row in matrix]
+            held = ar.__dict__.pop('converted', None)
+            rows = held[1] if held is not None and held[0] is matrix else [[ar.point(q) for q in row] for row in matrix]
         except CancelledError:
             raise  # observed at a conversion, as r1's first check is one
         except Exception:

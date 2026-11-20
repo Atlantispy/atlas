@@ -241,6 +241,23 @@ sampled memory and unchanged fixed heat inputs; they do not establish a heat
 solution, full coupled propagation or a whole-run speedup. Runtime reader tables
 and the continuation gate remain required.
 
+The [working snapshot's graph and transport route](../../optimisation/working-snapshot-20261113/README.md#keep-geometric-choice-and-transported-fields-physically-paired)
+gives each exterior row a shape key from its own bounding geometry. The
+graph's measurement copies omit selected effort counts, and the initial mesh
+record omits the count of witness refinement rounds. The retained geometry,
+refinement limits and physical accounts continue to govern the outputs.
+Compare corresponding cells and oriented faces using their actual geometry
+and incidence, and check each declared field's presence before comparing its
+value. The [source and runtime identity contract](../OPTIMISATION_REFERENCE.md#source-and-runtime-identity)
+sets the separate boundaries for comparison across methods and recovery
+within one issued package.
+
+The working-snapshot driver settles the last interrupted step first. At steps
+3 and 7, finalisation can reuse an identical persisted verdict. At steps 4 and
+8, adoption can reuse its matching promoted catalogue entry or adoption
+record. The saved records and the issued interpreter tree, reader and runtime
+configuration must agree.
+
 ## W11: spend work on changed science
 
 The optimisations of the coupled interval runtime (independent reader, heat certificates,

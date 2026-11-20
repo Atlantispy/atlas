@@ -6,7 +6,7 @@ Exact metric identities here establish linear consistency and paired incidence.
 Method: Droniou (2014), section 4, equations 42--44 (HFV/HMM formulation).
 SPDX-License-Identifier: AGPL-3.0-only
 """
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
@@ -261,57 +261,59 @@ def _stream_json(record, encoded_capacity, scratch, budget):
         return bytes(view[:offset])
 
 
-def _metric_profile_capacity(cell_count, face_count, cells, faces, budget):
+def _metric_profile_capacity(cell_count, face_count, cells, faces, budget,
+                             *, read_context=nullcontext):
     """The shared exact metric capacity arithmetic, over projected widths."""
     from .integration_spatial_transport import (_workspace,
         _rational_storage, _difference_bits, _sum_profile_bits, _add_profile)
     with _workspace(budget, 65536+2048*face_count, 'mimetic-metric-capacity-scan'):
-        profiles = {}
-        face_work = face_ids = largest_parse = largest_claim = 0
-        for key, id_width, centre, normal, claimed_count in faces:
-            face_ids += id_width
-            for bits in (*centre, *normal):
-                storage = _rational_storage(bits)
-                face_work += storage
-                largest_parse = max(largest_parse, 8*storage+sum(bits))
-            if key is not None:
-                profiles[key] = centre, normal
-            largest_claim = max(largest_claim, 256*claimed_count)
-        retained = 8192+256*(cell_count+face_count)+face_ids
-        scratch = 65536+1024*face_count+512*cell_count+face_work+largest_claim
-        arithmetic = 0
-        for volume, centre, linked_count, linked in cells:
-            retained += 512
-            for bits in (volume, *centre):
-                storage = _rational_storage(bits)
-                retained += storage
-                largest_parse = max(largest_parse, 8*storage+sum(bits))
-            sums = [[0, 0, 0] for _ in range(12)]
-            for key in linked:
-                face_centre, normal = profiles.get(key, (((1, 1),)*3, ((1, 1),)*3))
-                offset = tuple(_difference_bits(a, b) for a, b in zip(face_centre, centre))
-                distance_profile = [0, 0, 0]
-                for i in range(3):
-                    _add_profile(sums[i], normal[i])
-                    for j in range(3):
-                        product = normal[i][0]+offset[j][0], normal[i][1]+offset[j][1]
-                        _add_profile(sums[3+3*i+j], product)
-                        if i == j:
-                            _add_profile(distance_profile, product)
-                distance = _sum_profile_bits(distance_profile)
-                retained += (512+sum(map(_rational_storage, normal))+
-                    sum(map(_rational_storage, offset))+_rational_storage(distance))
-                arithmetic = max(arithmetic, 32*_rational_storage(
-                    (2*distance[0]+2, 2*distance[1]+2)))
-            for profile in sums:
-                bits = _sum_profile_bits(profile)
-                # Includes cross-products against the exact volume and GCD work.
-                arithmetic = max(arithmetic, 32*_rational_storage(
-                    (2*max(bits[0], volume[0])+2, 2*max(bits[1], volume[1])+2)))
-            scratch += 512+256*linked_count
-        result = retained, scratch+arithmetic+largest_parse
-        profiles.clear()
-        return result
+        with read_context():
+            profiles = {}
+            face_work = face_ids = largest_parse = largest_claim = 0
+            for key, id_width, centre, normal, claimed_count in faces:
+                face_ids += id_width
+                for bits in (*centre, *normal):
+                    storage = _rational_storage(bits)
+                    face_work += storage
+                    largest_parse = max(largest_parse, 8*storage+sum(bits))
+                if key is not None:
+                    profiles[key] = centre, normal
+                largest_claim = max(largest_claim, 256*claimed_count)
+            retained = 8192+256*(cell_count+face_count)+face_ids
+            scratch = 65536+1024*face_count+512*cell_count+face_work+largest_claim
+            arithmetic = 0
+            for volume, centre, linked_count, linked in cells:
+                retained += 512
+                for bits in (volume, *centre):
+                    storage = _rational_storage(bits)
+                    retained += storage
+                    largest_parse = max(largest_parse, 8*storage+sum(bits))
+                sums = [[0, 0, 0] for _ in range(12)]
+                for key in linked:
+                    face_centre, normal = profiles.get(key, (((1, 1),)*3, ((1, 1),)*3))
+                    offset = tuple(_difference_bits(a, b) for a, b in zip(face_centre, centre))
+                    distance_profile = [0, 0, 0]
+                    for i in range(3):
+                        _add_profile(sums[i], normal[i])
+                        for j in range(3):
+                            product = normal[i][0]+offset[j][0], normal[i][1]+offset[j][1]
+                            _add_profile(sums[3+3*i+j], product)
+                            if i == j:
+                                _add_profile(distance_profile, product)
+                    distance = _sum_profile_bits(distance_profile)
+                    retained += (512+sum(map(_rational_storage, normal))+
+                        sum(map(_rational_storage, offset))+_rational_storage(distance))
+                    arithmetic = max(arithmetic, 32*_rational_storage(
+                        (2*distance[0]+2, 2*distance[1]+2)))
+                for profile in sums:
+                    bits = _sum_profile_bits(profile)
+                    # Includes cross-products against the exact volume and GCD work.
+                    arithmetic = max(arithmetic, 32*_rational_storage(
+                        (2*max(bits[0], volume[0])+2, 2*max(bits[1], volume[1])+2)))
+                scratch += 512+256*linked_count
+            result = retained, scratch+arithmetic+largest_parse
+            profiles.clear()
+    return result
 
 
 def _metric_allocation_capacity(record, budget):
@@ -346,9 +348,19 @@ def _metric_allocation_capacity(record, budget):
 
 
 def _compact_metric_allocation_capacity(view, budget):
+    from ._private.mesh_tables import SegmentColumn
+    read_context = nullcontext
+    column = view._arrays['id.bytes']
+    if type(column) is SegmentColumn:
+        from ._private.record_views import _Segment
+        if type(column.columns) is _Segment:
+            from ._private.interval_store_set import IntervalStoreSet
+            segment = column.columns.segment
+            if type(segment.resolver) is IntervalStoreSet:
+                read_context = lambda: segment.resolver.read_batch(cancel=segment.cancel)
     return _metric_profile_capacity(view.cell_count, view.face_count,
         (view.cell_metric_profile(i) for i in range(view.cell_count)),
-        view._face_metric_profiles(), budget)
+        view._face_metric_profiles(), budget, read_context=read_context)
 
 
 def _append_compact_face(view, index, faces, centres, normals):

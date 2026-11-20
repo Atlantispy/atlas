@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from contextlib import contextmanager, ExitStack
 from contextvars import ContextVar
-from decimal import Decimal, localcontext, ROUND_FLOOR, ROUND_CEILING
+from decimal import Context, Decimal, localcontext, ROUND_FLOOR, ROUND_CEILING, ROUND_HALF_EVEN
 from fractions import Fraction
 from functools import wraps
 from types import MappingProxyType
@@ -287,8 +287,7 @@ def area_interval_sr(cells, *, cancel=None):
         return (math.nextafter(rounded, -math.inf) if q > exact else rounded,
                 math.nextafter(rounded, math.inf) if q < exact else rounded)
 
-    with localcontext() as context:
-        context.prec = 80
+    with localcontext(Context(prec=80, rounding=ROUND_HALF_EVEN)) as context:
         for cell in cells:
             T._check_cancel(cancel)
             for i in range(1, len(cell)-1):
@@ -330,8 +329,7 @@ def perimeter_rad(cell):
     """Minor-arc perimeter without collapsing nearby homogeneous vertices."""
     T = _tools()
     angles = []
-    with localcontext() as context:
-        context.prec = 80
+    with localcontext(Context(prec=80, rounding=ROUND_HALF_EVEN)):
         for p, q in zip(cell, cell[1:]+cell[:1]):
             cross = T._cross(p, q)
             sine, cosine = Decimal(T._dot(cross, cross)).sqrt(), Decimal(T._dot(p, q))
