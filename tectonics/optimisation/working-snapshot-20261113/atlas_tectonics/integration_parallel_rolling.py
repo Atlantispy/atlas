@@ -195,6 +195,7 @@ class Schedule:
         # ahead: [job, prefix seconds, held batch or None, class label, exact estimate or None,
         #         seconds in sight, whether it must stay with the parent]
         self.ahead, self.live = deque(), deque()
+        self.pending = deque()    # IF-1: references to already-offered rows, never a second offer
         self.position = self.offered = 0
         self.closed, self.stopped, self.engaged = False, None, False
         self.reason = self.detail = None
@@ -326,9 +327,23 @@ class Schedule:
         The session's own calls (check, launch) are made outside every guard:
         whatever they raise is a worker that could not be confirmed stopped.
         """
-        if self.closed or self.stopped is not None:
+        if self.closed:
             return
         session = self.session
+        handback = session is not None and getattr(session, 'batch_seconds', None) is not None
+        if handback:
+            if not session.check():
+                return self._stop(*session.ended())
+            if self._guard(self._cuts, session) is _FAILED:
+                return self._recover(session, 'hand-back scheduling failed', self.detail)
+            self._retire_passed(session)
+            if self._guard(self._settle, session) is _FAILED:
+                return self._recover(session, 'hand-back accounting failed', self.detail)
+            # A cost verdict ends fresh speculation, not work already owed by an accepted cut.
+            if self.pending and not self._dispatch_pending(session):
+                return
+        if self.stopped is not None:
+            return
         if session is None and self._retry is not None and self.clock() < self._retry:
             return      # the machine gates refused the first session: nothing can start before the retry
         running, held = (0, 0) if session is None else (session.running(), len(session.batches))
@@ -337,13 +352,25 @@ class Schedule:
             if self.position < position and self.offered < offered and running >= ran and held >= kept:
                 return
             self._again = None
-        if session is not None:
+        if session is not None and not handback:
             # A worker that failed is noticed here, before anything further is started.
             if not session.check():
                 return self._stop(*session.ended())
             if self._guard(self._settle, session) is _FAILED or self.stopped is not None:
                 return
         while running < self.workers and (session is None or len(session.batches) < 2*self.workers):
+            if handback:
+                # A previous launch may already be done but still own its kept worker.
+                if not session.check():
+                    return self._stop(*session.ended())
+                if self._guard(self._cuts, session) is _FAILED:
+                    return self._recover(session, 'hand-back scheduling failed', self.detail)
+                self._retire_passed(session)
+                if self.pending and not self._dispatch_pending(session):
+                    return
+                running = session.running()
+                if running >= self.workers or len(session.batches) >= 2*self.workers:
+                    break
             self.totals['plans'] += 1
             begun = self.clock()
             chosen = self._guard(self._choose, begun)
@@ -369,6 +396,7 @@ class Schedule:
                 if session is None:
                     return self._stop('session not opened', 'the optional session, its storage or its owner was refused')
                 session.on_wait = self.advance
+                handback = getattr(session, 'batch_seconds', None) is not None
             timeout = min(self.timeout, max(120.0, self.startup+4*self.contention*high))
             refused = session.stats['refused']
             batch = session.launch([entry[0] for entry in members], timeout)
@@ -399,25 +427,142 @@ class Schedule:
             self._stop('schedule error', '%s: %s' % (type(error).__name__, error))
             return _FAILED
 
-    def _launched(self, batch, members, cost, prefix, finish, first, last, timeout):
+    def _launched(self, batch, members, cost, prefix, finish, first, last, timeout, *,
+                  returned=False, positions=None, contributions=None):
         """The schedule's books for a batch its session has just started."""
         held = dict(batch=batch, first=self.position+first, last=self.position+last, estimate=finish,
                     index=batch['index'])
+        if returned and any(entry[2].get('checkpoint_excluded', False) for entry in members):
+            held['checkpoint_excluded'] = True
+            self.totals['checkpoint_excluded_batches'] += 1
         # What of its expected seconds came from class estimates, unscaled, and what from identical requests.
         known = sum(entry[4][0] for entry in members if entry[4] is not None)
-        self._plans[batch['index']] = (cost-known)/self.scale, known, prefix, cost
+        if contributions is None:
+            self._plans[batch['index']] = (cost-known)/self.scale, known, prefix, cost
+        else:
+            self._plans[batch['index']] = (sum(row[0] for row in contributions),
+                sum(row[1] for row in contributions), prefix, cost)
+        if held.get('checkpoint_excluded', False):
+            self._plans.pop(batch['index'], None)
+        if getattr(self.session, 'batch_seconds', None) is not None:
+            if positions is None:
+                # A chosen batch can leave holes: positions are those of the actual rows.
+                offsets = {id(entry): self.position+index for index, entry in enumerate(self.ahead)}
+                positions = [offsets[id(entry)] for entry in members]
+            if contributions is None:
+                contributions = []
+                for entry in members:
+                    found = entry[4] if entry[4] is not None else self._estimate(entry[3])
+                    plain, exact = (0.0, found[0]) if entry[4] is not None else (found[0], 0.0)
+                    contributions.append((plain, exact, entry[1], found[1], plain*self.scale+exact))
+            rows = [(entry, position, contribution, token)
+                for entry, position, contribution, token in
+                zip(members, positions, contributions, batch['tokens'], strict=True)]
+            batch['schedule'] = held, rows
         for entry in members:
             entry[2] = held
-            self._sight -= entry[5]
-            self._free -= 1
+            if not returned:
+                self._sight -= entry[5]
+                self._free -= 1
         self.live.append(held)
         self.live = deque(sorted(self.live, key=lambda row: row['last']))
         self.engaged, self._declined = True, 0
         self.totals['batches'] += 1
         self.totals['jobs'] += len(members)
         self.totals['expected_seconds'] += cost
+        if returned:
+            self.totals['extra_batches'] = self.totals.get('extra_batches', 0)+1
         self.recent.append(dict(index=batch['index'], first=held['first'], last=held['last'],
                                 jobs=len(members), expected_seconds=round(cost, 3), timeout_seconds=timeout))
+
+    def _cuts(self, session):
+        """Keep an accepted prefix on its fit; give its unstarted rows priority without re-offering them."""
+        cuts = session.take_handbacks()
+        for held, last, rows in cuts:
+            held['last'] = last
+            self._plans.pop(held['index'], None)    # aggregate body time cannot price the suffix separately
+            self.pending.extend(rows)
+        if cuts:
+            self.pending = deque(sorted(self.pending, key=lambda row: row[1]))
+            self.live = deque(sorted(self.live, key=lambda row: row['last']))
+            self._again = None
+        while self.pending and self.pending[0][1] < self.position:
+            session.returned.discard(self.pending.popleft()[3])
+
+    def _retire_passed(self, session):
+        # This calls a resource owner: an unconfirmed stop must bypass scheduler error/retry.
+        # Peek and retire before forgetting the span, retaining it if termination fails.
+        while self.live and self.live[0]['last'] < self.position:
+            passed = self.live[0]
+            session.retire(passed['batch'])
+            self.live.popleft()
+            self._again = None
+
+    def _dispatch_pending(self, session):
+        """Normal new batch funding for the earliest owed rows, within the same running/held bounds."""
+        while self.pending:
+            if not session.check():
+                self._stop(*session.ended())
+                return False
+            if self._guard(self._cuts, session) is _FAILED:
+                return self._recover(session, 'hand-back scheduling failed', self.detail)
+            self._retire_passed(session)
+            if not self.pending:
+                break
+            if session.running() >= self.workers or len(session.batches) >= 2*self.workers:
+                return False
+            if self._gate is not None:
+                refusal = self._guard(self._gate)
+                if refusal is _FAILED:
+                    return self._recover(session, 'hand-back gate failed', self.detail)
+                if refusal is not None:
+                    return self._recover(session, *refusal)
+            chosen, shared, size = [], set(), 0
+            try:
+                for row in self.pending:
+                    if len(chosen) >= self.limit:
+                        break
+                    sizes = self._weigh(row[0][0])
+                    added = sum(amount for identity, amount in sizes if identity not in shared)
+                    if self.capacity is not None and size+added > self.capacity:
+                        break
+                    chosen.append(row)
+                    size += added
+                    shared.update(identity for identity, _ in sizes)
+            except Exception as error:
+                return self._recover(session, 'hand-back transport failed', str(error))
+            if not chosen:
+                return self._recover(session, 'hand-back transport refused', 'the owed head cannot fit one batch')
+            members = [row[0] for row in chosen]
+            contributions = [row[2] for row in chosen]
+            cost, prefix, high = (sum(row[index] for row in contributions) for index in (4, 2, 3))
+            timeout = min(self.timeout, max(120.0, self.startup+4*self.contention*high))
+            batch = session.launch([entry[0] for entry in members], timeout)
+            if batch is None:
+                if not session.active():
+                    self._stop(*session.ended())
+                    return False
+                return self._recover(session, 'hand-back dispatch refused', session.last_error or
+                                     'the existing worker or funding admission refused')
+            for _ in chosen:
+                self.pending.popleft()
+            finish = self.clock()+self.startup+self.contention*(cost+prefix)
+            if self._guard(lambda: self._launched(batch, members, cost, prefix, finish,
+                    chosen[0][1]-self.position, chosen[-1][1]-self.position, timeout,
+                    returned=True, positions=[row[1] for row in chosen],
+                    contributions=contributions)) is _FAILED:
+                return self._recover(session, 'hand-back accounting failed', self.detail)
+            self._again = None
+        return True
+
+    def _recover(self, session, reason, detail):
+        """A real refusal cannot turn an owed return into a decline: use existing whole-session recovery."""
+        self._stop(reason, detail)
+        session.cause = session.cause or reason
+        session.last_error = '' if detail is None else str(detail)[:4096]
+        session.owner.revoke()    # confirmed-stop failures propagate, with all funding retained
+        self.pending.clear()
+        return False
 
     def _fits(self, window, now, expected, prefix, sizes):
         """Whether the window may take one more request."""
@@ -553,6 +698,8 @@ class Schedule:
             body = row['body_seconds']
             # A wait is charged with its own batch: one for a batch still held is not yet set against it.
             self.totals['waited_seconds'] += row['waited_seconds']
+            if row.get('returned'):
+                continue    # all actual overhead remains; no full-old-plan plus repeated-suffix credit
             if body is None or cost+prefix <= 0:
                 self.totals['judged'] += 1
                 continue
@@ -631,6 +778,7 @@ class Schedule:
             pass
         self.ahead.clear()
         self.live.clear()
+        self.pending.clear()
         self._head = None
 
     def report(self):
@@ -649,4 +797,7 @@ class Schedule:
                     avoided_seconds=self.totals['avoided_seconds'],
                     parent_seconds=None if session is None else dict(session.seconds),
                     longest_lookahead=self.totals['longest_lookahead'], reasons=dict(self.reasons),
-                    recent=list(self.recent))
+                    recent=list(self.recent),
+                    **(dict(logical_offered=self.offered, returned=session.stats['returned'],
+                            extra_batches=self.totals.get('extra_batches', 0))
+                       if session is not None and getattr(session, 'batch_seconds', None) is not None else {}))

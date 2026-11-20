@@ -417,7 +417,9 @@ def _whole_face(cell, axis, end, omega, dt):
 
 
 def _pose_planes(cones, omega, t0, t1, level, cell, arena, inner, prior=()):
-    absolute = sum(max(abs(p[j]) for p in cell._vertices()) for j in range(3))
+    vertices = cell._vertices()
+    absolute = sum(max(abs(p[j]) for p in vertices) for j in range(3))
+    del vertices
     groups = []
     for cone in cones:
         planes = []
@@ -504,6 +506,7 @@ def _endpoint_volume(layer, cones, grid, omega, time, width, max_leaves, resourc
 class WallMeasures:
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
+    _fresh: bool = field(repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('WallMeasures is issued by measure_walls()')
@@ -562,13 +565,14 @@ class WallMeasures:
             return _issued(encoded, budget)
 
 
-def _issued(encoded, budget):
+def _issued(encoded, budget, *, fresh=False):
     lease = budget.reserve(8192+4*len(encoded), category='space-time-wall-measures-retained')
     lease.__enter__()
     try:
         result = object.__new__(WallMeasures)
         object.__setattr__(result, '_json', encoded)
         object.__setattr__(result, '_resource', budget)
+        object.__setattr__(result, '_fresh', fresh)
         weakref.finalize(result, lease.__exit__, None, None, None)
         return result
     except BaseException:
@@ -601,7 +605,7 @@ def _history(prior_trajectory, epoch, start):
 
 
 def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, end_time_s,
-                   angular_velocity_rad_s, max_volume_error_m3, max_leaves, budget, prior_trajectory=()):
+                   angular_velocity_rad_s, max_volume_error_m3, max_leaves, budget, original, prior_trajectory=()):
     """Issue source-bound wall partitions and independent endpoint/GCL bounds.
 
     The finite-volume cells are the ORIGINAL source cone/shell rotated along
@@ -610,14 +614,8 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     This first representation is coarse per-patch/layer, not spatially refined.
     """
     from . import integration_support as U
-    from .regional_collar3d import PreparedRegionalCollar3D
-    if type(funding) is not G.FullCellFunding or type(collar) is not PreparedRegionalCollar3D:
-        raise V.VolumeError('issued funding and typed prepared collar required')
-    if type(budget) is not WorkBudget or funding._resource is not budget or collar._budget is not budget:
-        raise V.VolumeError('shared explicit geometry/consumer WorkBudget required')
     if type(parent_state_id) is not str or not parent_state_id:
         raise V.VolumeError('actual parent exterior state identity required')
-    original = funding.descriptor()
     if original['source']['sphere_state_id'] != sphere.state_id or original['collar_plan_id'] != collar.plan_id:
         raise V.VolumeError('original source/funding/collar geometry binding changed')
     if type(angular_velocity_rad_s) is not tuple or len(angular_velocity_rad_s) != 3:
@@ -629,18 +627,16 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     prior, history = _history(prior_trajectory, epoch, start)
     support = U.required(sphere.material)
     cells = collar.cell_geometries()
-    if [cell.cell_id for cell in cells] != [row['cell_id'] for row in original['cell_accounts']]:
+    cell_ids = [cell.cell_id for cell in cells]
+    if cell_ids != [row['cell_id'] for row in original['cell_accounts']]:
         raise V.VolumeError('actual fixed full-grid cell identity changed')
     base = cells[0]
-    lower = tuple(min(c.lower_m[j] for c in cells) for j in range(3))
-    upper = tuple(max(c.upper_m[j] for c in cells) for j in range(3))
-    if any(c.origin_m != base.origin_m or c.basis != base.basis for c in cells):
-        raise V.VolumeError('one exact affine full-grid embedding required')
+    lower, upper = base.lower_m, cells[-1].upper_m
     grid = V.CartesianCell(lower, upper, base.origin_m, base.basis, budget=budget)
-    if grid.volume_m3 != sum((c.volume_m3 for c in cells), Q(0)):
-        raise V.VolumeError('issued regular full cells do not tile their enclosing box')
     keys = tuple((r['patch_id'], r['sublayer']) for r in original['exterior_remainder'])
-    patches = {p.patch_id: p for p in support.patches if p.patch_id in {k[0] for k in keys}}
+    patch_ids = {k[0] for k in keys}
+    patches = {p.patch_id: p for p in support.patches if p.patch_id in patch_ids}
+    del patch_ids
     geometry, cones = {}, {}
     for row in original['exterior_remainder']:
         key, record = (row['patch_id'], row['sublayer']), row['radial_layer']
@@ -685,7 +681,7 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     completed = history+[segment]
     trajectory = dict(rule='chronological composition of exact constant-skew matrix exponentials',
         epoch_s=V._encoded(epoch), segments=completed)
-    support_base = dict(grid_cell_ids=[c.cell_id for c in cells])     # A-1 root: no funding_id; the record keeps it
+    support_base = dict(grid_cell_ids=cell_ids)     # A-1 root: no funding_id; the record keeps it
     def support_id(t):
         prefix = history if t == start else completed
         return _hash(dict(**support_base, time_s=V._encoded(t), trajectory_prefix=prefix))
@@ -718,7 +714,7 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
                         face_results.append(result)
                     allocations = tuple(G._partition(tuple(r[name] for r in face_results), total)
                                         for name, total in zip(('inward', 'outward'), exact))
-                    faces.append(dict(side=side, face_index=face_index, cell_id=cell.cell_id,
+                    faces.append(dict(side=side, face_index=face_index, cell_id=cell_ids[flat],
                         inward_exact_volume_m3=V._encoded(exact[0]), outward_exact_volume_m3=V._encoded(exact[1]),
                         normal_has_constant_sign=constant_sign))
                     for n, (key, result) in enumerate(zip(keys, face_results)):
@@ -731,7 +727,7 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
                             deviations.append(max(values[sign]-lo, hi-values[sign]))
                         selected_error[key] += sum(deviations)
                         if any(values) or any(deviations):
-                            rows.append(dict(side=side, face_index=face_index, cell_id=cell.cell_id,
+                            rows.append(dict(side=side, face_index=face_index, cell_id=cell_ids[flat],
                                 exterior_cell_key=list(key), inward_volume_m3=V._encoded(values[0]),
                                 outward_volume_m3=V._encoded(values[1]),
                                 inward_bounds_m3=list(map(V._encoded, result['inward'])),
@@ -739,10 +735,14 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
                                 inward_max_deviation_m3=V._encoded(deviations[0]),
                                 outward_max_deviation_m3=V._encoded(deviations[1])))
     endpoints = []
+    start_support_id = end_support_id = None
+    previous_patch = None
     for key in keys:
         layer = geometry[key]
-        with U.geometry_workspace(budget):
-            area = U.area_interval_sr(patches[key[0]].cells)
+        if key[0] != previous_patch:
+            with U.geometry_workspace(budget):
+                area = U.area_interval_sr(patches[key[0]].cells)
+            previous_patch = key[0]
         source_volume = tuple(q*Q(sphere.network.sphere.radius_m)**2*layer.volume_per_area_m for q in area)
         inside = tuple(_endpoint_volume(layer, cones[key[0]], grid, omega, t-start, width, max_leaves, budget, prior)
                        for t in (start, end))
@@ -759,9 +759,14 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
         admissible = common[0]-selected_error[key], common[1]+selected_error[key]
         if not admissible[0] <= chosen <= admissible[1]:
             raise V.VolumeError('chosen FV volume change exceeds its derived geometry integration bound')
+        if start_support_id is None:
+            start_support_id = support_id(start)
+        start_child_id = _hash(dict(support_id=start_support_id, key=list(key)))
+        if end_support_id is None:
+            end_support_id = support_id(end)
+        end_child_id = _hash(dict(support_id=end_support_id, key=list(key)))
         endpoints.append(dict(exterior_cell_key=list(key),
-            start_support_id=_hash(dict(support_id=support_id(start), key=list(key))),
-            end_support_id=_hash(dict(support_id=support_id(end), key=list(key))),
+            start_support_id=start_child_id, end_support_id=end_child_id,
             start_volume_bounds_m3=list(map(V._encoded, outside[0])), end_volume_bounds_m3=list(map(V._encoded, outside[1])),
             geometry_volume_change_bounds_m3=list(map(V._encoded, change)),
             flux_volume_change_bounds_m3=list(map(V._encoded, flux)),
@@ -769,17 +774,19 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
             chosen_volume_change_m3=V._encoded(chosen),
             chosen_volume_change_error_m3=V._encoded(selected_error[key]),
             chosen_change_admissible_bounds_m3=list(map(V._encoded, admissible))))
+    if start_support_id is None:
+        start_support_id, end_support_id = support_id(start), support_id(end)
     record = dict(schema='atlas.rigid-space-time-wall-measures.v1', method=METHOD,
         funding_id=funding.funding_id, collar_plan_id=collar.plan_id, parent_state_id=parent_state_id,
         source=original['source'], start_time_s=V._encoded(start), end_time_s=V._encoded(end),
-        trajectory=trajectory, start_support_id=support_id(start), end_support_id=support_id(end),
+        trajectory=trajectory, start_support_id=start_support_id, end_support_id=end_support_id,
         prior_trajectory_id=_hash(history), trajectory_id=_hash(completed),
         grid_cell_ids=support_base['grid_cell_ids'], rows=rows, faces=faces, exterior_cells=endpoints,
         max_volume_error_m3=V._encoded(width), max_leaves=max_leaves,
         support_rule='rotated original actual cone/radial-layer minus fixed full-grid box; no endpoint stock resampling',
         scope='coarse per-source patch/layer FV geometry; rigorous integration bounds; no field/time-discretisation accuracy bound')
     encoded = json.dumps(record, sort_keys=True, separators=(',', ':')).encode()
-    return _issued(encoded, budget)
+    return _issued(encoded, budget, fresh=True)
 
 
 def measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, end_time_s,
@@ -812,10 +819,11 @@ def measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, end
         if text_size > budget.max_bytes:
             raise V.VolumeError('trajectory encoding exceeds caller resource budget')
     with budget.reserve(65536+2*funding._snapshot.nbytes, category='space-time-wall-source'):
-        count = len(funding.exterior_remainder())
+        original = funding.descriptor()
+        count = len(original['exterior_remainder'])
         faces = 2*sum(collar.cells[i]*collar.cells[j] for i, j in ((0, 1), (1, 2), (0, 2)))
         with budget.reserve(131072+8192*(faces*count+math.prod(collar.cells))+256*text_size, category='space-time-wall-tables'):
             return _measure_walls(funding, sphere, collar, parent_state_id=parent_state_id,
                 start_time_s=start_time_s, end_time_s=end_time_s, angular_velocity_rad_s=angular_velocity_rad_s,
                 max_volume_error_m3=max_volume_error_m3, max_leaves=max_leaves, budget=budget,
-                prior_trajectory=prior_trajectory)
+                original=original, prior_trajectory=prior_trajectory)

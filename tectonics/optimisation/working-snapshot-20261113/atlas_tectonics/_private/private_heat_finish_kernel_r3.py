@@ -381,9 +381,13 @@ def _closed_guard(old, cap, low, candidate, low_faces, candidate_faces, bounds, 
                 low_endpoint_certificate=low_check, full_endpoint_certificate=full_check)
 
 
+def _encoder():
+    return json.JSONEncoder(sort_keys=True, separators=(',', ':'), allow_nan=False,
+                            default=_encode_rational)
+
+
 def _encoded(record, check):
-    encoder = json.JSONEncoder(sort_keys=True, separators=(',', ':'), allow_nan=False,
-        default=_encode_rational)
+    encoder = _encoder()
     data = bytearray()
     for chunk in _walk(encoder.iterencode(record), check):
         data.extend(chunk.encode('utf-8'))

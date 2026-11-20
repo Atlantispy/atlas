@@ -49,7 +49,7 @@ def compact_view(partition):
 def _size(view, ref, ceiling):
     from atlas_tectonics._private.record_views import RecordRef
     if isinstance(ref, RecordRef):
-        total = ref.identity().canonical_bytes
+        total = ref._logical_length() if type(ref) is RecordRef else ref.identity().canonical_bytes
         if total > ceiling:
             raise _native().V.VolumeError('selected native partition operand exceeds explicit byte bound')
         return total

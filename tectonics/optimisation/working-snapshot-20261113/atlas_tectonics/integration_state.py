@@ -1720,8 +1720,8 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
     counters = tuple((name, record['counters'][name]) for name in COUNTERS)
     if any(type(value) is not int or value < 0 for _, value in counters):
         raise TectonicsError('restored counters are nonnegative integers')
-    stages = dict(counters)['stages']
-    if stages != 1+2*accepted or dict(counters)['restress_mismatches'] > stages:
+    stages = record['counters']['stages']
+    if stages != 1+2*accepted or record['counters']['restress_mismatches'] > stages:
         raise TectonicsError('restored stage count is not the reference balance plus two stages per accepted step')
     extrema = tuple((name, _number(record['extrema'][name], 'restored extreme')) for name in EXTREMA)
     worst = dict(extrema)

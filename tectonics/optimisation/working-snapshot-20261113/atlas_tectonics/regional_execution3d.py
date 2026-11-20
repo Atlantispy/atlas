@@ -463,7 +463,7 @@ class PreparedRegionalStokes3D:
         deviation_faces = np.zeros_like(all_faces)
         natural = np.zeros_like(all_faces)
         for index, side in enumerate(SIDES):
-            cells, _, _, xyz = self._mesh._face(side)
+            cells, _, _ = self._faces[side]
             axis, high = index//2, index%2
             points = np.polynomial.legendre.leggauss(3)[0]
             pairs = np.indices((3, 3)).reshape(2, -1).T
@@ -472,15 +472,21 @@ class PreparedRegionalStokes3D:
             shape, _ = _shape(ref, 1)
             delta = np.einsum('qa,ea->eq', shape, deviation_d[self._mesh.pressure_cells[cells]])
             value = pressure_d[0]+delta
-            traction = np.zeros_like(xyz)
+            traction = np.zeros((len(cells), 9, 3))
             traction[..., axis] = delta*(1 if high == 0 else -1)
-            deviation_faces += self._mesh.integrate_boundary_traction(side, traction)
+            deviation_faces += self._integrate_traction(side, traction)
             traction[..., axis] = value*(1 if high == 0 else -1)
-            all_faces += self._mesh.integrate_boundary_traction(side, traction)
+            full = self._integrate_traction(side, traction)
+            all_faces += full
             for component, kind in enumerate(self._pattern[side]):
                 if kind == 'velocity':
                     traction[..., component] = 0
-            natural += self._mesh.integrate_boundary_traction(side, traction)
+            if all(kind == 'traction' for kind in self._pattern[side]):
+                natural += full
+            elif all(kind == 'velocity' for kind in self._pattern[side]):
+                natural += np.zeros_like(full)
+            else:
+                natural += self._integrate_traction(side, traction)
         body = self._B[:self._mesh.np].T@deviation_d-deviation_faces
         reaction = all_faces-natural
         # Reference traction belongs to prescribed velocity components only;
@@ -660,6 +666,32 @@ class PreparedRegionalStokes3D:
             total.append(float(np.sum(np.abs(normal@shape.T)*weights)))
         return math.fsum(total)
 
+    def _integrate_traction(self, side, traction):
+        cells, shape, weights = self._faces[side]
+        traction = elements3d._field(traction, (len(cells), 9, 3), 'traction')
+        rhs = np.zeros((self._mesh.nv, 3))
+        for face, cell in enumerate(cells):
+            rhs[self._mesh.velocity_cells[cell]] += shape.T @ (traction[face]*weights[:, None])
+        if not np.all(np.isfinite(rhs)):
+            raise ValueError('traction produces a non-finite integral')
+        return rhs.ravel()
+
+    def _body_and_stress_load(self, force, stress):
+        mesh = self._mesh
+        force = elements3d._field(force, (mesh.nc, 27, 3), 'force')
+        stress = elements3d._field(stress, (mesh.nc, 27, 3, 3), 'extra_stress')
+        body = np.zeros((mesh.nv, 3))
+        combined = np.zeros_like(body)
+        for cell in range(mesh.nc):
+            local = mesh._shape_v.T @ (force[cell]*mesh.quadrature_weights[:, None])
+            body[mesh.velocity_cells[cell]] += local
+            symmetric = .5*stress[cell]+.5*stress[cell].swapaxes(-1, -2)
+            local -= np.einsum('q,qaj,qij->ai', mesh.quadrature_weights, mesh._grad_v, symmetric)
+            combined[mesh.velocity_cells[cell]] += local
+        if not np.all(np.isfinite(body)) or not np.all(np.isfinite(combined)):
+            raise ValueError('load produces a non-finite integral')
+        return body.ravel(), combined.ravel()
+
     def _net_flux_free(self, field):
         """Zero net boundary flux of a nodal field, at any scale.
 
@@ -683,7 +715,7 @@ class PreparedRegionalStokes3D:
         field = _array(field_m, (self._mesh.nv, 3), 'boundary field')
         return self._net_flux_free(field.ravel())
 
-    def _linear(self, load, prescribed, mean, cancel, requested=False):
+    def _linear(self, load, prescribed, mean, cancel, requested=False, matrix_state=None):
         d = prescribed.ravel()[self._fixed]
         lift = np.zeros(3*self._mesh.nv)
         lift[self._fixed] = d
@@ -715,7 +747,12 @@ class PreparedRegionalStokes3D:
             stiffness = float(np.max(self._mg.row_magnitudes()[self._free], initial=0.))
         else:
             magnitude_a, magnitude_b = _magnitude(self._A), _magnitude(self._B)
-            stiffness = float(np.max((magnitude_a@np.ones(3*self._mesh.nv))[self._free], initial=0.))
+            if matrix_state is not None and 'stiffness' in matrix_state:
+                stiffness = matrix_state['stiffness']
+            else:
+                stiffness = float(np.max((magnitude_a@np.ones(3*self._mesh.nv))[self._free], initial=0.))
+                if matrix_state is not None:
+                    matrix_state['stiffness'] = stiffness
         latest = {}
 
         def products(u):
@@ -728,20 +765,24 @@ class PreparedRegionalStokes3D:
             """Momentum operand scale and the velocity magnitude it implies."""
             if 'x' in latest and np.array_equal(latest['x'], x):
                 return latest['value']
+            latest.clear()
             u = lift.copy(); u[self._free] = x[:nf]
             au, viscous = products(u)
-            scale = float(np.max((viscous+magnitude_b.T@np.abs(x[nf:nf+npr])
+            pressure_product = magnitude_b.T@np.abs(x[nf:nf+npr])
+            scale = float(np.max((viscous+pressure_product
                                   +np.abs(load))[self._free], initial=0.))
             latest['x'] = x.copy()
             latest['value'] = (u, scale, (scale/stiffness if stiffness > 0. else 0.), au, viscous)
+            if forced:
+                latest['pressure_product'] = pressure_product
             return latest['value']
 
-        def solve(vector, candidate=False):
+        def solve(vector, candidate=False, known_norm=None):
             """Solve K y = vector. A refinement correction (candidate=True) that
             GMRES does not converge is still returned, flagged, for the gates to
             judge; a first solve that does not converge is refused."""
             nonlocal count
-            size = float(np.linalg.norm(vector, np.inf))
+            size = float(np.linalg.norm(vector, np.inf)) if known_norm is None else known_norm
             if size == 0.:
                 return (np.zeros_like(vector), True) if candidate else np.zeros_like(vector)
             # Unit right-hand side: SciPy's internal 2-norms can neither underflow
@@ -796,12 +837,14 @@ class PreparedRegionalStokes3D:
                 return 0. if not np.any(r) else math.inf
             return float(np.max(np.abs(r)/np.maximum(scale, 1e-8*top)))
 
-        def assess(x):
+        def assess(x, finite_checked=False):
             """Combined and blockwise residuals of a zero-mean solution."""
-            if not np.all(np.isfinite(x)):
+            if not finite_checked and not np.all(np.isfinite(x)):
                 raise TectonicsError('nonfinite 3D solve')
+            correction_residual = None
             if not multigrid:
-                error = float(np.linalg.norm(self._K@x-rhs, np.inf)/rhs_norm) if forced else 0.
+                correction_residual = rhs-self._K@x if forced else None
+                error = float(np.linalg.norm(correction_residual, np.inf)/rhs_norm) if forced else 0.
             u, _, implied, au, viscous = implied_velocity(x)
             p = x[nf:nf+npr]
             balance = au+self._B.T@p-load
@@ -816,7 +859,11 @@ class PreparedRegionalStokes3D:
                 # round-off (256 eps) of the pressure and load terms: in a
                 # load-dominated state those terms cancel, and at full weight they
                 # would admit velocity errors far above 2e-9 of the velocity scale.
-                balanced = magnitude_b.T@np.abs(p)+np.abs(load)
+                pressure_product = latest.pop('pressure_product', None)
+                if pressure_product is None:
+                    pressure_product = magnitude_b.T@np.abs(p)
+                balanced = pressure_product+np.abs(load)
+                del pressure_product
                 momentum_error = block(balance[self._free], (viscous+(256*_EPS/2e-9)*balanced)[self._free])
                 # Continuity against |B||u| plus the round-off (64 eps) of the
                 # velocity magnitude the momentum block implies (momentum scale /
@@ -836,7 +883,8 @@ class PreparedRegionalStokes3D:
             if multigrid:
                 error = float(np.linalg.norm(residual, np.inf)/rhs_norm) if forced else 0.
             return dict(error=error, momentum=momentum_error, continuity=continuity_error,
-                        u=u, p=p, balance=balance, magnitude=viscous, residual=residual)
+                        u=u, p=p, balance=balance, magnitude=viscous, residual=residual,
+                        correction_residual=correction_residual)
 
         passes = lambda a: a['error'] <= 2e-9 and a['momentum'] <= 2e-9 and a['continuity'] <= 2e-9
         badness = lambda a: max(a['error'], a['momentum'], a['continuity'])
@@ -846,24 +894,25 @@ class PreparedRegionalStokes3D:
             unconverged GMRES correction is kept only if it lowers the worst gate
             ratio. Either way the published solution faces every gate."""
             try:
-                correction, converged = solve(-state['residual'] if multigrid else rhs-self._K@x,
+                correction, converged = solve(-state['residual'] if multigrid else state['correction_residual'],
                                               candidate=True)
             except TectonicsError:
                 return None
             trial = gauged(x+correction)
             if not np.all(np.isfinite(trial)):
                 return None
-            trial_state = assess(trial)
+            trial_state = assess(trial, finite_checked=True)
             if not converged and not badness(trial_state) < badness(state):
                 return None
             return trial, trial_state
 
         refinements = 0
+        state = None
         if not forced:
             # Exactly unforced: the exact solution is zero, whatever the method.
             x = np.zeros_like(rhs)
         else:
-            x = gauged(solve(rhs))
+            x = gauged(solve(rhs, known_norm=rhs_norm))
             # Load-dominated states (e.g. full rho*g balanced by pressure): the
             # velocity is a small part of a large solution, so a relative stop on
             # the whole right-hand side leaves it inaccurate while every backward
@@ -873,17 +922,20 @@ class PreparedRegionalStokes3D:
                 u_now, _, implied_now, _, _ = implied_velocity(x)
                 if not (np.all(np.isfinite(x)) and float(np.max(np.abs(u_now))) < 1e-2*implied_now):
                     break
-                step = refine(x, assess(x))
+                if state is None:
+                    state = assess(x)
+                step = refine(x, state)
                 _cancel(cancel)
                 if step is None:
                     break
-                x = step[0]
+                x, state = step
                 refinements += 1
         _cancel(cancel)
         # Every gate and the work identity use the zero-mean solution; a declared
         # datum (which cannot change velocity) is added only for publication, so a
         # large datum cannot loosen any operand scale.
-        state = assess(x)
+        if state is None:
+            state = assess(x)
         for _ in range(2):
             # Up to two working-precision refinement steps before refusing: they
             # restore componentwise backward stability to an otherwise accurate
@@ -985,7 +1037,7 @@ class PreparedRegionalStokes3D:
             raise TectonicsError('all six traction sample fields are required; use explicit zeros')
         fields = {}
         for side in SIDES:
-            a = _array(tractions[side],self._mesh.boundary_quadrature(side).shape,
+            a = _array(tractions[side],(len(self._faces[side][0]), 9, 3),
                        'traction '+side,scalar_ok=True)
             for c,kind in enumerate(self._pattern[side]):
                 if kind == 'velocity' and np.any(a[...,c] != 0):
@@ -1058,7 +1110,8 @@ class PreparedRegionalStokes3D:
             # A pressure datum projects to exactly zero on the (necessarily
             # net-flux-free) coupling modes; keep it out of the coupling solve so
             # a large datum adds no round-off to the rates. It is published below.
-            _,_,base_r,_,_,_,_ = self._linear(load,d,0.,cancel,requested)
+            matrix_state = {}
+            _,_,base_r,_,_,_,_ = self._linear(load,d,0.,cancel,requested, matrix_state)
             force_conversion = lambda r: _factored_scale(r,(self._eta0,V,L),(),'reaction force')
             if hydro is not None:
                 base_r = base_r+hydro['reaction'].reshape(-1, 3)
@@ -1072,12 +1125,12 @@ class PreparedRegionalStokes3D:
                 zero_load = np.zeros(3*self._mesh.nv)
                 for j in range(n):
                     _cancel(cancel)
-                    _,_,r,_,_,_,_ = self._linear(zero_load,modes_d[j],0.,cancel)
+                    _,_,r,_,_,_,_ = self._linear(zero_load,modes_d[j],0.,cancel, matrix_state=matrix_state)
                     response[:,j] = np.einsum('mij,ij->m',modes,force_conversion(r))
                 response = frozen(response)
-            scale = max(np.max(np.abs(response)),np.finfo(float).tiny)
-            if np.max(np.abs(response-response.T)) > 2e-8*scale:
-                raise TectonicsError('regional coupling violates reciprocal mechanical work')
+                scale = max(np.max(np.abs(response)),np.finfo(float).tiny)
+                if np.max(np.abs(response-response.T)) > 2e-8*scale:
+                    raise TectonicsError('regional coupling violates reciprocal mechanical work')
             drag_matrix = _factored_scale(drag,(V,),(L,),'scaled exterior resistance')
             matrix = response+drag_matrix
             eig = np.linalg.eigvalsh((matrix+matrix.T)/2)
@@ -1085,7 +1138,7 @@ class PreparedRegionalStokes3D:
                 raise TectonicsError('coupled motion lacks independent resisting constraints')
             amplitudes = np.linalg.solve(matrix,drive-q0)
             prescribed = d+np.einsum('m,mij->ij',amplitudes,modes_d)
-            u,p,r,error,count,momentum,datum = self._linear(load,prescribed,mean,cancel,requested)
+            u,p,r,error,count,momentum,datum = self._linear(load,prescribed,mean,cancel,requested, matrix_state)
             rates = _factored_scale(amplitudes,(V,),(L,),'generalized rates')
             force_r = r if hydro is None else r+hydro['reaction'].reshape(-1, 3)
             # A nonzero datum is restored only in the published full reaction.
@@ -1111,12 +1164,11 @@ class PreparedRegionalStokes3D:
                 meta['coupling']['pressure_reference_id'] = pressure_reference_id
             if natural_traction_binding is not None:
                 meta['coupling']['natural_traction_binding'] = natural_traction_binding
-            base = self._result(u,p,r,s,body,natural,load,momentum,meta,error,count,datum,hydro)
-            arrays = {name:base.array(name) for name in base.array_names}
-            arrays.update(generalized_rates_s_inv=rates,generalized_regional_force_j=regional_force,
+            coupling_arrays = dict(generalized_rates_s_inv=rates,generalized_regional_force_j=regional_force,
                           generalized_external_force_j=drive,generalized_drag_force_j=exterior_force,
                           generalized_force_residual_j=residual)
-            result = RegionalMechanicalSnapshot(base.descriptor(),arrays)
+            result = self._result(u,p,r,s,body,natural,load,momentum,meta,error,count,datum,hydro,
+                                  coupling_arrays=coupling_arrays)
             _cancel(cancel)
             self._verify()
             self._mode_cache = (mode_key,response)
@@ -1150,13 +1202,19 @@ class PreparedRegionalStokes3D:
         traces = {}
         for side in SIDES:
             trace = scale(lift.array('traction:'+side))
-            all_faces += self._mesh.integrate_boundary_traction(side, trace)
+            full = self._integrate_traction(side, trace)
+            all_faces += full
             trace = trace.copy()
             for c, kind in enumerate(self._pattern[side]):
                 if kind == 'velocity':
                     trace[..., c] = 0.
             traces[side] = trace
-            natural += self._mesh.integrate_boundary_traction(side, trace)
+            if all(kind == 'traction' for kind in self._pattern[side]):
+                natural += full
+            elif all(kind == 'velocity' for kind in self._pattern[side]):
+                natural += np.zeros_like(full)
+            else:
+                natural += self._integrate_traction(side, trace)
         weak_pressure = -self._mesh.load(np.zeros_like(force),
             extra_stress=-pressure[..., None, None]*np.eye(3))
         weak_body = weak_pressure-all_faces
@@ -1183,10 +1241,10 @@ class PreparedRegionalStokes3D:
         t = {side:_factored_scale(a,(L,),(self._eta0,V),'traction') for side,a in tractions.items()}
         if hydro is not None:
             t = {side: a-hydro['traces'][side] for side, a in t.items()}
-        body = self._mesh.load(f)
-        natural = sum((self._mesh.integrate_boundary_traction(side,a) for side,a in t.items()),
+        body, combined = self._body_and_stress_load(f, s)
+        natural = sum((self._integrate_traction(side,a) for side,a in t.items()),
                       start=np.zeros(3*self._mesh.nv))
-        load = self._mesh.load(f,extra_stress=s)+natural
+        load = combined+natural
         if self._pressure_reference is not None and self._pressure_reference['partition'] == 'full':
             reference = self._pressure_reference
             body = body-reference['body']
@@ -1212,7 +1270,8 @@ class PreparedRegionalStokes3D:
                                                            +3*np.abs(pressure_q))*self._mesh.quadrature_weights))
         return 64*_EPS*(operands+quadrature)
 
-    def _result(self,u,p,r,extra,body,natural,load,momentum,metadata,error,count,datum,hydro=None):
+    def _result(self,u,p,r,extra,body,natural,load,momentum,metadata,error,count,datum,hydro=None,
+                coupling_arrays=None):
         mesh = self._mesh
         if self._pressure_space == 'q1-p0':
             from .regional_conservative3d import evaluate
@@ -1292,14 +1351,18 @@ class PreparedRegionalStokes3D:
                     qp += np.einsum('qa,ea->eq', mesh._shape_p,
                         self._pressure_reference['pressure'][mesh.pressure_cells])
                 arrays['physical_pressure_q_pa'] = qp
-                arrays['full_cauchy_stress_q_pa'] = arrays['extra_plus_viscous_stress_pa']-qp[..., None, None]*np.eye(3)
+                if hydro is None:
+                    arrays['full_cauchy_stress_q_pa'] = arrays['extra_plus_viscous_stress_pa']-qp[..., None, None]*np.eye(3)
         if hydro is not None:
             arrays['analytic_hydrostatic_pressure_pa'] = hydro['lift'].array('pressure_pa')
             arrays['analytic_hydrostatic_pressure_q_pa'] = hydro['lift'].array('pressure_q_pa')
-            qpressure = convert(values['pressure_q']+datum['mean'], stress_scale, 'pressure quadrature')
-            if self._pressure_reference is not None:
-                qpressure += np.einsum('qa,ea->eq', mesh._shape_p,
-                    self._pressure_reference['pressure'][mesh.pressure_cells])
+            if self._pressure_space == 'q1-p0':
+                qpressure = arrays['physical_pressure_q_pa']
+            else:
+                qpressure = convert(values['pressure_q']+datum['mean'], stress_scale, 'pressure quadrature')
+                if self._pressure_reference is not None:
+                    qpressure += np.einsum('qa,ea->eq', mesh._shape_p,
+                        self._pressure_reference['pressure'][mesh.pressure_cells])
             arrays['physical_pressure_q_pa'] = qpressure+arrays['analytic_hydrostatic_pressure_q_pa']
             if self._pressure_space == 'q1':
                 arrays['physical_pressure_pa'] = arrays['physical_pressure_pa']+arrays['analytic_hydrostatic_pressure_pa']
@@ -1364,6 +1427,9 @@ class PreparedRegionalStokes3D:
             data['analytic_augmented_power_w'] = {k: v+hydro_work.get(k, 0.) for k, v in powers.items()}
             data['analytic_hydrostatic_rule'] = ('known continuum gradient removed before discretisation; '
                 'full pressure, trace and weak body restored; sampled/weak body quadrature difference explicit')
+        if coupling_arrays is not None:
+            arrays.update(coupling_arrays)
+            data = json.loads(_json(data))
         return RegionalMechanicalSnapshot(data,arrays)
 
     def close(self):

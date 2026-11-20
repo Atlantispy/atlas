@@ -26,21 +26,23 @@ PRECISIONS = K.PRECISIONS
 
 
 
-def _round_bounds(bounds, cancelled):
+def _round_bounds(bounds, cancelled, *, _return_exact=False):
     lo, hi = bounds
     if lo > hi or not G.is_finite(lo) or not G.is_finite(hi):
         raise ValueError('Finite ordered enclosure required')
     with localcontext() as context:
         context.prec = 80
         context.rounding = ROUND_HALF_EVEN
-        a = DECIMAL.dec(G.mpq(lo), context=context, cancelled=cancelled)
+        exact_lo = G.mpq(lo)
+        a = DECIMAL.dec(exact_lo, context=context, cancelled=cancelled)
     with localcontext() as context:
         context.prec = 80
         context.rounding = ROUND_HALF_EVEN
-        b = DECIMAL.dec(G.mpq(hi), context=context, cancelled=cancelled)
+        exact_hi = G.mpq(hi)
+        b = DECIMAL.dec(exact_hi, context=context, cancelled=cancelled)
     if a != b or (a.is_zero() and a.is_signed() != b.is_signed()):
         raise Unresolved('Enclosure crosses a Decimal80 rounding boundary')
-    return a
+    return (a, (exact_lo, exact_hi)) if _return_exact else a
 
 
 def _export_plan(bounds, dual, proof, R, cancelled):
@@ -59,8 +61,9 @@ def _export_plan(bounds, dual, proof, R, cancelled):
         for value in pair:
             INVENTORY.check(cancelled)
             shape = INVENTORY.endpoint_shape(value, G, ar)
-            retained += ar.slot(shape)
-            scratch += 8*ar.slot(shape)
+            slot = ar.slot(shape)
+            retained += slot
+            scratch += 8*slot
             largest_bits = max(largest_bits, shape.numerator, shape.denominator)
             count += 1
     for value in proof.values():
@@ -81,26 +84,33 @@ def _export_plan(bounds, dual, proof, R, cancelled):
          ('converter_scalar_bits', converter_bits)))
 
 def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
-             precision, largest_owned_bytes, budget, cancelled, audit, resource_evidence):
+             precision, largest_owned_bytes, budget, cancelled, audit, resource_evidence, keys_unique=False,
+             private_output=False):
     """One isolated frame; normal refusal cannot retain prior numerical locals."""
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
     plan = INVENTORY.interval_plan(len(matrix), len(rhs), precision, largest_owned_bytes, R)
     work = R.OwnedWorkspace(budget, plan.total, category='heat-functional-interval-'+str(precision),
                             cancelled=cancelled)
     work.__enter__()
-    dual = ar = proof = bounds = rounded = result = export = None
+    dual = ar = proof = bounds = rounded = result = export = exact_bounds = None
     reason = None
     try:
         try:
             dual, ar, proof = K.solve_enclosure(matrix, rhs, precision=precision,
                                                 cancelled=cancelled, evidence=audit)
-            bounds = K.physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar)
+            bounds = K.physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar,
+                                       _keys_unique=keys_unique)
             for key, value in physical.items():
                 ar.check('exact-singleton-moment-refinement')
                 if not bounds[key][0] <= value <= bounds[key][1]:
                     raise ArithmeticError('Proved singleton moment conflicts with the certified enclosure')
                 bounds[key] = value, value
-            export = _export_plan(bounds, dual, proof, R, cancelled)
+            export = _export_plan(bounds, () if private_output else dual, proof, R, cancelled)
+            if private_output and cancelled is not None:
+                # The private fit exports no dual endpoints. Preserve their
+                # existing cancellation opportunities without sizing copies.
+                for _ in range(2*len(dual)):
+                    INVENTORY.check(cancelled)
             # All prior MPFR values remain live. Exact export, int/Decimal
             # scratch and retained values are an ADDITION, not a replacement.
             work.resize_before_allocation_or_after_drop(plan.total+export.total)
@@ -110,19 +120,36 @@ def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
             def exact_pair(value):
                 INVENTORY.check(cancelled)
                 return tuple(map(G.mpq, value))
-            rounded = {key: checked_round(value) for key, value in bounds.items()}
+            if private_output:
+                rounded, exact_bounds = {}, {}
+                for key, value in bounds.items():
+                    INVENTORY.check(cancelled)
+                    rounded[key], exact_bounds[key] = _round_bounds(value, cancelled, _return_exact=True)
+            else:
+                rounded = {key: checked_round(value) for key, value in bounds.items()}
             proof['exact_singleton_observation_coefficients'] = len(physical)
-            result = dict(keys=list(bounds), bounds={key: exact_pair(bound)
-                                                     for key, bound in bounds.items()},
-                          decimal80=rounded, precision_bits=precision, proof=proof,
-                          dual_bounds=[exact_pair(bound) for bound in dual])
+            if private_output:
+                for _ in range(len(bounds)):
+                    INVENTORY.check(cancelled)
+                for _ in range(len(dual)):
+                    INVENTORY.check(cancelled)
+                result = dict(keys=list(bounds), bounds=exact_bounds, decimal80=rounded,
+                              precision_bits=precision, proof=proof)
+            else:
+                result = dict(keys=list(bounds), bounds={key: exact_pair(bound)
+                                                         for key, bound in bounds.items()},
+                              decimal80=rounded, precision_bits=precision, proof=proof,
+                              dual_bounds=[exact_pair(bound) for bound in dual])
         except Unresolved as error:
             reason = str(error)
+        # The loop target otherwise keeps the last MPFR enclosure through
+        # an ordinary precision retry or the successful reservation shrink.
+        value = None
         if reason is not None:
             # Expected refusal is NOT exposed as an exception object. The except
             # suite has cleared error/traceback, and all surviving return locals
             # are dropped before a successful close releases their reservation.
-            dual = ar = proof = bounds = rounded = result = export = None
+            dual = ar = proof = bounds = rounded = result = export = exact_bounds = None
             work.__exit__(None, None, None)
             resource_evidence.append(dict(precision_bits=precision, admitted_bytes=plan.total,
                 status='REFUSED_AND_DROPPED_BEFORE_NEXT_ATTEMPT'))
@@ -130,7 +157,7 @@ def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
         # Result retains only exact endpoints, Decimal values, proof scalars and
         # small containers. Drop MPFR dual/physical arrays and Arithmetic contexts
         # before shrinking. result still owns proof/rounded and is funded below.
-        dual = ar = proof = bounds = rounded = None
+        dual = ar = proof = bounds = rounded = exact_bounds = None
         retained = dict(export.components)['retained_values_and_output_containers']
         work.resize_before_allocation_or_after_drop(retained)
         resource_evidence.append(dict(precision_bits=precision, admitted_bytes=plan.total+export.total,
@@ -143,7 +170,8 @@ def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
 
 
 def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budget,
-                      precisions=PRECISIONS, cancelled=None, evidence=None, resource_evidence=None):
+                      precisions=PRECISIONS, cancelled=None, evidence=None, resource_evidence=None,
+                      _sizing=None, _keys_unique=False, _private_output=False):
     """Owned same-weight interval certificate; borrow result only while live.
 
     Inputs must be immutable during the call and already owned exact GMP/int
@@ -156,7 +184,8 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
     if type(precisions) not in (list, tuple) or not precisions:
         raise ValueError('Finite explicit nonempty precision ladder required')
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
-    metadata, largest = INVENTORY.metadata_bytes(matrix, rhs, conversion, signed_tau, G, cancelled)
+    metadata, largest = (_sizing if _sizing is not None else
+        INVENTORY.metadata_bytes(matrix, rhs, conversion, signed_tau, G, cancelled))
     work = R.OwnedWorkspace(budget, metadata, category='heat-functional-screen-and-metadata', cancelled=cancelled)
     work.__enter__()
     try:
@@ -164,7 +193,8 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
         if sha256(Path(DECIMAL.__file__).read_bytes()).hexdigest() != '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f':
             raise ValueError('Reviewed exact Decimal converter changed')
         # No copied key set, source audit or exact coefficient until admitted.
-        screen = INVENTORY.screen_plan(matrix, rhs, conversion, signed_tau, G, R, cancelled)
+        screen, support = INVENTORY.screen_plan(matrix, rhs, conversion, signed_tau, G, R, cancelled,
+                                                _with_support=True)
         # Explicit caller ladders may contain more entries than the default;
         # audit storage is proportional to that declared finite count.
         work.resize_before_allocation_or_after_drop(metadata+screen.total+INVENTORY.D.CONTAINER_UNIT*8*len(precisions))
@@ -179,7 +209,8 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
         incompatibility = None
         forced = {}
         try:
-            forced = K.forced_coefficients(matrix, rhs, cancelled=cancelled, evidence=audit['singleton_moments'])
+            forced = K.forced_coefficients(matrix, rhs, cancelled=cancelled, evidence=audit['singleton_moments'],
+                                           _support=support)
         except K.InconsistentConstraints as error:
             incompatibility = str(error)
         finally:
@@ -189,7 +220,7 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
             audit['singleton_moments']['scalar_encoding'] = 'canonical signed-hex rational pairs'
         if incompatibility is not None:
             return P.OwnedSolve(dict(status='EXACT_INCOMPATIBLE', reason=incompatibility, result=None), work)
-        if len(keys) != len(matrix) or len(conversion) != len(keys) or len(set(keys)) != len(keys):
+        if len(keys) != len(matrix) or len(conversion) != len(keys) or (not _keys_unique and len(set(keys)) != len(keys)):
             raise ValueError('Unique matching observation identities and conversions required')
         if len(base_keys) != 2 or base_keys[0] == base_keys[1]:
             raise ValueError('Distinct owner/base keys required')
@@ -210,7 +241,8 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
             audit['attempts'].append(attempt)
             owner, reason = _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical,
                 precision=precision, largest_owned_bytes=largest, budget=budget,
-                cancelled=cancelled, audit=audit, resource_evidence=resources['attempts'])
+                cancelled=cancelled, audit=audit, resource_evidence=resources['attempts'], keys_unique=True,
+                private_output=_private_output)
             if owner is not None:
                 work.stack.enter_context(owner)
                 attempt.update(status='CERTIFIED', seconds=perf_counter()-began)

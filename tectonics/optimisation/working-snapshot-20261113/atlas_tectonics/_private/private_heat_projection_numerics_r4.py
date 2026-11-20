@@ -32,7 +32,7 @@ owner_projection_bytes = BASE.owner_projection_bytes
 projection_output_plan = BASE.projection_output_plan
 _OWNER_SHA = 'e8d935d703d942323cc6ccc62b45da48bb4149e3a17b5e82b7e3db6aaeb9ca38'
 _SOURCES = dict(O._SOURCES, **{_atlas_identity.relkey(BASE.__file__):
-    'df1ea5b2a80716373207bd457a9373992891dad6341c734edf72031c16ce183a'})
+    '73481b93d365654e5cfbcbfbdd8146b731a2669f55cbb3fafab3090327009df2'})
 _SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
@@ -61,11 +61,11 @@ class _ProjectionArithmetic(O._Arithmetic):
         # mpq operands come only from this fixed route's admitted decoder or
         # arithmetic. First renew their EXISTING envelope before getter copies.
         self.reserve(max((self.peak_bits, *(v.bit_length() for v in (left, right) if type(v) is int))))
-        a, b = self.shape(left), self.shape(right)
-        parts = (a.numerator_bits, a.denominator_bits, b.numerator_bits, b.denominator_bits)
+        ln, ld = (left, 1) if type(left) is int else (left.numerator, left.denominator)
+        rn, rd = (right, 1) if type(right) is int else (right.numerator, right.denominator)
+        parts = (max(1, ln.bit_length()), ld.bit_length(), max(1, rn.bit_length()), rd.bit_length())
         evidence = dict(part_bits=parts, required_part_bits=max(parts),
-            unused_cross_product_bits=max(a.numerator_bits+b.denominator_bits,
-                                          b.numerator_bits+a.denominator_bits))
+            unused_cross_product_bits=max(parts[0]+parts[3], parts[2]+parts[1]))
         # Export one actual peak canonical-part witness, rather than whichever
         # cell happened to be visited last. Physical row permutations must not
         # change sealed resource evidence. Rank by required width first, then
@@ -75,8 +75,6 @@ class _ProjectionArithmetic(O._Arithmetic):
         if previous is None or _equality_rank(evidence) > _equality_rank(previous):
             self.equality_evidence = evidence
         self.reserve(max(parts))
-        ln, ld = (left, 1) if type(left) is int else (left.numerator, left.denominator)
-        rn, rd = (right, 1) if type(right) is int else (right.numerator, right.denominator)
         self.operations += 1
         return ln == rn and ld == rd
 
@@ -191,8 +189,10 @@ def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt,
     retained, projection, public = ar.array(n), ar.array(n), ar.array(n)
     for i in range(n):
         ar.put(retained, i, ar.op('subtract', ar.op('add', ar.op('subtract', new[i], old[i]), out[1][i]), source[i]))
-        ar.put(projection, i, ar.op('subtract', ar.decode(float(stored[i])), new[i]))
-        ar.put(public, i, ar.op('subtract', ar.op('add', ar.op('subtract', ar.decode(float(stored[i])), old[i]), out[1][i]), source[i]))
+        represented = ar.decode(float(stored[i]))
+        ar.put(projection, i, ar.op('subtract', represented, new[i]))
+        ar.put(public, i, ar.op('subtract', ar.op('add', ar.op('subtract', represented, old[i]), out[1][i]), source[i]))
+        del represented
         absolute = ar.neg(retained[1][i]) if ar.less(retained[1][i], 0) else retained[1][i]
         if ar.less(target, absolute):
             raise ValueError('Original retained solver residual target failed')

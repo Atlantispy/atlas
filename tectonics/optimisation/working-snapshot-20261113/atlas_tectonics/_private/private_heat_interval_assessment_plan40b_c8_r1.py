@@ -31,7 +31,7 @@ CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
 HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = 'f4062e0f3059ced995c6f60f6e418eac7444a58b9725dd2f047d0dca81b902e9'
+INVENTORY_SHA = '19c1967d14ad9d91e5a42abb87b0ce87d242cb01a2c87b49baba8c92c4ccc0e7'
 SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
                 *(str(path) for path in I.source_paths().values()))
 
@@ -95,6 +95,19 @@ class OwnedAssessment(A.OwnedAssessment):
 
 def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
            retained=(), cancel=None):
+    return _assess(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
+                   budget=budget, retained=retained, cancel=cancel, owned=False)
+
+
+def _assess_owned(rows, cell_count, boundary, *, witness, source_bindings, budget,
+                  retained=(), cancel=None):
+    """Fixed forward owner: borrowed rows remain stable through callbacks."""
+    return _assess(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
+                   budget=budget, retained=retained, cancel=cancel, owned=True)
+
+
+def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
+            retained, cancel, owned):
     """Return OwnedAssessment; no guessed refinement/inventory byte inputs.
 
     `retained` must be a tuple of earlier live owners from this exact wrapper
@@ -113,7 +126,8 @@ def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
         if type(owner) is not OwnedAssessment or owner._budget is not budget:
             raise TypeError('Earlier assessment owner must use this exact route and same budget')
         retained_bytes = I._size(retained_bytes+owner.accounted_bytes)
-    plan = I.derive(rows, cell_count, boundary, witness=witness,
+    derive = I._derive_owned if owned else I.derive
+    plan = derive(rows, cell_count, boundary, witness=witness,
                     source_bindings=source_bindings, budget=budget, cancel=cancel)
     # Snapshot record/tuple/reference overhead is distinct from the retained
     # earlier generation's already counted entire live inventory.
@@ -127,7 +141,7 @@ def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
         generations = tuple(owner._snapshot() for owner in retained)
         inputs = (rows, boundary, witness, source_bindings)
         result = A._assemble(rows, cell_count, boundary, witness=witness,
-            source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=True)
+            source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=True, owned=owned)
         _verify_sources(cancel)
         return OwnedAssessment(result, workspace, inputs, generations, plan, amount, budget)
     except BaseException:

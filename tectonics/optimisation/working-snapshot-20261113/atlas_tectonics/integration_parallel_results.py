@@ -486,7 +486,7 @@ def _validated_volume(record, request, fit):
     return True
 
 
-def _validated(encoded, digest, request, digests, fit, owner):
+def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interface=False):
     """Structural admission of one worker record; no decoded object escapes.
 
     `owner` is retained by an escaping traceback and owns the whole slot, as
@@ -498,7 +498,7 @@ def _validated(encoded, digest, request, digests, fit, owner):
         if type(digest) is not str or hashlib.sha256(encoded).hexdigest() != digest:
             return False
         record = json.loads(encoded)
-        if type(record) is not dict or canonical(record) != encoded:
+        if type(record) is not dict or (not _owned_interface and canonical(record) != encoded):
             return False
         if record.get('schema') == VOLUME_SCHEMA and 'relative_error' in record:
             # initpar r1 (T/ck/transforms/initpar_r1.py)
@@ -515,7 +515,7 @@ def _validated(encoded, digest, request, digests, fit, owner):
         if record.keys() != REQUEST_FIELDS | RESULT_FIELDS | ({extra} if extra else frozenset()):
             return False
         # Byte comparison keeps 1, 1.0 and true distinct.
-        if canonical({key: record[key] for key in REQUEST_FIELDS}) != request:
+        if not _owned_interface and canonical({key: record[key] for key in REQUEST_FIELDS}) != request:
             return False
         work, leaves, met = record['work_units'], record['leaves'], record['met']
         if (type(work) is not int or work < 0 or not fit.admits_work(work)
@@ -564,6 +564,10 @@ class MeasureHint(Hint):
             return self.receive(payload, digest)
 
     def claim_measure(self, room, *, cls, budget, request, binding, fit, digests):
+        return self._claim_measure(room, cls=cls, budget=budget, request=request, binding=binding,
+                                   fit=fit, digests=digests)
+
+    def _claim_measure(self, room, *, cls, budget, request, binding, fit, digests, receipt_request=None):
         fields = _complete_request(request)
         digest_keys = (frozenset() if fields in (VOLUME_REQUEST_FIELDS, INITIAL_VOLUME_REQUEST_FIELDS) else
                        WALL_DIGEST_KEYS if fields == WALL_REQUEST_FIELDS else DIGEST_KEYS)
@@ -583,7 +587,8 @@ class MeasureHint(Hint):
                     return None
                 token = FundedMeasure._mint(cls, budget, self.payload, self.slot)
                 try:
-                    if not _validated(self.payload, self.digest, self.request, digests, fit, token):
+                    if not _validated(self.payload, self.digest, self.request, digests, fit, token,
+                                      _owned_interface=receipt_request == self.request):
                         token._finalizer.detach()  # the hint keeps the whole slot
                         return None
                 except BaseException:

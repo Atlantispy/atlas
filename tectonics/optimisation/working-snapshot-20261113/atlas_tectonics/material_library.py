@@ -188,10 +188,14 @@ class PropertyDatum:
             return float(Decimal(str(self.reported_value))*Decimal(str(_unit_info(self.reported_unit)[1])))
     @property
     def bounds_si(self):
-        a,b=self.reported_bounds or (self.reported_value,self.reported_value)
+        if self.reported_bounds is None:
+            value=self.value_si
+            return value,value
+        a,b=self.reported_bounds
         scale=_unit_info(self.reported_unit)[1]
         with localcontext(Context(prec=40, rounding=ROUND_HALF_EVEN)):
-            return tuple(float(Decimal(str(v))*Decimal(str(scale))) for v in (a,b))
+            decimal_scale=Decimal(str(scale))
+            return tuple(float(Decimal(str(v))*decimal_scale) for v in (a,b))
     @property
     def is_secant(self): return self.temperature_span_k is not None
 
@@ -486,9 +490,13 @@ def mix_materials(library: EarthMaterialLibrary, components: tuple[tuple[str,flo
         selected=[(library[n],w) for n,w in zip(names,weights) if w>0]
         if any(p.basis=='fluid' for p,w in selected):raise MaterialLibraryError('matrix components must be solid; fluid is a pore component')
         if phi and any(p.basis!='grain' for p,w in selected):raise MaterialLibraryError('cannot add porosity to already bulk-reference rock data')
+        values={}
         def value(p,key):
-            d=p.datum(key)
-            return None if d is None or d.is_secant or d.reference_temperature_k!=t else d.value_si
+            cache_key=(p.material_id,key)
+            if cache_key not in values:
+                d=p.datum(key)
+                values[cache_key]=None if d is None or d.is_secant or d.reference_temperature_k!=t else d.value_si
+            return values[cache_key]
         if any(value(p,'density') is None for p,w in selected):raise MaterialLibraryError('mixture densities unavailable at the stated reference')
         if fraction_basis=='mass':
             reciprocal=[w/value(p,'density') for p,w in selected]; total=math.fsum(reciprocal)

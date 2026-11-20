@@ -9,7 +9,7 @@ from contextlib import ExitStack
 from . import integration_differential_geometry as D
 from . import integration_volume as V
 from .integration_routing_views import (
-    RoutingArena, _FailureOwner, _decoded_json_capacity, _decode_workspace,
+    RoutingArena, _FailureOwner, _decode_workspace,
 )
 
 
@@ -88,19 +88,19 @@ class ComponentVolumeQueries:
         return False
 
     def measure(self, logical_cell_id, *, endpoint, max_width_m3, max_leaves,
-                positive_witness=False, relative_error=None, _funded=None, _checkpoint=None):
+                positive_witness=False, relative_error=None, _funded=None, _checkpoint=None, _component_index=None):
         if not self._active:
             raise RuntimeError('component volume query requires its active owner')
         try:
             return self._measure(logical_cell_id, endpoint=endpoint,
                 max_width_m3=max_width_m3, max_leaves=max_leaves,
-                positive_witness=positive_witness, relative_error=relative_error, _funded=_funded, _checkpoint=_checkpoint)
+                positive_witness=positive_witness, relative_error=relative_error, _funded=_funded, _checkpoint=_checkpoint, _component_index=_component_index)
         except BaseException:
             self._active = False
             raise
 
     def _measure(self, logical_cell_id, *, endpoint, max_width_m3, max_leaves,
-                 positive_witness, relative_error, _funded, _checkpoint):
+                 positive_witness, relative_error, _funded, _checkpoint, _component_index):
         support, budget = self._support, self._budget
         # Match the public wrapper's validation before any decode/admission.
         if (type(support) is not D.DifferentialSupport or support._resource is not budget
@@ -115,7 +115,7 @@ class ComponentVolumeQueries:
             arena._failure_owner._component_volume_input_owner = self._owner
             if self._record is None:
                 stack.enter_context(budget.reserve(
-                    4096 + _decoded_json_capacity(support._json),
+                    4096 + support.decoded_capacity,
                     category='component-volume-decoded-input'))
                 decoder = ExitStack()
                 try:
@@ -130,7 +130,7 @@ class ComponentVolumeQueries:
             result = D._component_volume_bounds_decoded(support, logical_cell_id,
                 self._record, arena, endpoint=endpoint, max_width_m3=max_width_m3,
                 max_leaves=max_leaves, positive_witness=positive_witness,
-                budget=budget, relative_error=relative_error, _funded=_funded, _checkpoint=_checkpoint)
+                budget=budget, relative_error=relative_error, _funded=_funded, _checkpoint=_checkpoint, _component_index=_component_index)
             if _checkpoint is not None and positive_witness is True and relative_error is None:
                 _checkpoint.after(result, budget)
             return result

@@ -267,7 +267,7 @@ def _beside(solve, stop):
     return thread, box, events
 
 
-def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe):
+def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe, issued=False):
     """Own all producer frames until success; return before final union transfer.
 
 The outer ``advance`` frame never borrows producer temporaries. On an escaping
@@ -310,14 +310,14 @@ frame disappears before the returned result graph replaces its entire stack.
     try:
         stage('prepare-issued-metric-low')
         startup = complete(GEOMETRY.prepare(geometry, k, boundary, budget=budget, cancel=check))
-        order_owner = retain(ORDER.prepare(geometry, startup, old, capacity, source,
-            budget=budget, cancel=check))
+        normalized = startup.value['prepared']['boundary']
+        temperatures = {fid for fid, (kind, _) in normalized.items() if kind == 'temperature'}
+        powers = set(normalized)-temperatures
+        order_owner = retain(ORDER._prepare(geometry, startup, old, capacity, source,
+            budget, check, len(powers)))
         ordered = order_owner.value
         prepared, payload = ordered['prepared'], ordered['payload']
         old, capacity, source = ordered['old'], ordered['capacity'], ordered['source']
-        normalized = prepared['boundary']
-        temperatures = {fid for fid, (kind, _) in normalized.items() if kind == 'temperature'}
-        powers = set(normalized)-temperatures
         small = SMALL.shares(prepared, capacity, dt, cancel=check)
         refinements = []
         with threadpool_limits(1):
@@ -380,6 +380,7 @@ frame disappears before the returned result graph replaces its entire stack.
                     or any(a >= b for a, b in zip(ladder, ladder[1:], strict=False))):
                 raise AssertionError('Strictly increasing finite precision ladder required')
             used, first = {}, {}
+            assess = ASSEMBLY._assess_owned if issued else ASSEMBLY.assess
             for attempt in range(len(ladder)):
                 if attempt:
                     if assessment is None or not isinstance(assessment.value, ASSEMBLY.RefinementRequired):
@@ -388,6 +389,9 @@ frame disappears before the returned result graph replaces its entire stack.
                     # needed now; retire the obsolete contributor census before
                     # reconstruction. Its aggregate decision has already failed
                     # closed, and the next assessment is a new complete one.
+                    original_maximum = None
+                    if issued and assessment.inventory.base.refinement_original_eligible:
+                        original_maximum = assessment.inventory.base.refinement_original_maximum
                     selection = retain(LIFE.compact(assessment, budget=budget,
                         path=('selected_face_ids',), cancelled=check,
                         category='heat-completed-refinement-selection'))
@@ -408,8 +412,10 @@ frame disappears before the returned result graph replaces its entire stack.
                             conductivity=k, budget=budget, cancelled=check,
                             selected_faces=faces, certification_precisions=offered))
                         refined_rows, refined_proof = refined.value
-                        merged = complete(REFINEMENT.intersect(rows, refined_rows,
-                            faces, budget=budget, cancel=check))
+                        merged = complete(REFINEMENT._intersect(rows, refined_rows,
+                            faces, budget, check, original_maximum))
+                        # A second group sees the merged generation.
+                        original_maximum = None
                         # Complete merged custody includes every shared endpoint.
                         # Rebind/drop the two omitted row borrows BEFORE projecting
                         # their owners. All proof aliases remain separately owned.
@@ -428,7 +434,7 @@ frame disappears before the returned result graph replaces its entire stack.
                     selection.close()  # each merge proof independently owns its tuple
                     selection = None
                 stage('assemble-certified-high')
-                assessment = retain(ASSEMBLY.assess(rows, len(capacity), normalized,
+                assessment = retain(assess(rows, len(capacity), normalized,
                     witness=witness, source_bindings=_SOURCES, budget=budget, cancel=check))
                 if isinstance(assessment.value, ASSEMBLY.CertifiedAssembly):
                     # Construct/cache the rounded view while its original
@@ -454,7 +460,8 @@ frame disappears before the returned result graph replaces its entire stack.
             small = None
             stage('solve-certified-high')
             old64, capacity64, source64 = (tuple(map(float, values)) for values in (old, capacity, source))
-            high = complete(SPARSE.solve_rounded(system, old64, capacity64, float(dt),
+            solve = SPARSE._solve_issued if issued else SPARSE.solve_rounded
+            high = complete(solve(system, old64, capacity64, float(dt),
                 source64, normalized, target, budget=budget, cancel=check, observe=observe))
             # solve_rounded AND complete have returned. Any result witness
             # alias is included in complete HIGH custody before assembly retires.
@@ -463,7 +470,7 @@ frame disappears before the returned result graph replaces its entire stack.
             assessment = None
             stage('finish-conservative-ledger')
             finish_inputs = retain(ORDER.finish_inputs(order_owner, low, high,
-                budget=budget, cancel=check))
+                budget=budget, cancel=check, include_high_energy=False))
             original_old, original_capacity, original_source = ordered['original_inputs']
             DOOR.offer(original_old, original_capacity, dt, original_source, normalized, prepared['face_ids'],
                 finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target, budget=budget)
@@ -491,8 +498,13 @@ frame disappears before the returned result graph replaces its entire stack.
         raise
 
 
+class _IssuedInputs(tuple):
+    """References borrowed from one verified native issue for the duration of advance."""
+    __slots__ = ()
+
+
 def advance(geometry, old, capacity, dt, source, boundary, *, conductivity,
-            absolute_residual_target, budget, cancelled=None, observe=None):
+            absolute_residual_target, budget, cancelled=None, observe=None, _issued_inputs=None):
     """Return a compact owner of (sealed result, diagnostics), with fixed physics.
 
 Caller inputs/native metric stay caller-owned and immutable. Precision-only
@@ -500,6 +512,12 @@ refinement retains the same support, Decimal80 operator and absolute target.
 Drop borrowed outputs before closing. Failure tracebacks retain all still-live
 work; no old-generation credit precedes independent output admission.
 """
+    issued = False
+    if type(_issued_inputs) is _IssuedInputs and observe is None:
+        actual = (geometry, old, capacity, dt, source, boundary, conductivity, absolute_residual_target, budget)
+        issued = len(_issued_inputs) == len(actual) and all(x is y for x, y in zip(_issued_inputs, actual, strict=True))
+        del actual
+    del _issued_inputs
     def check():
         if cancelled is not None and cancelled():
             raise CancelledError('Private composed heat cancelled')
@@ -539,7 +557,7 @@ work; no old-generation credit precedes independent output admission.
                 observe(name)
     try:
         raw = _run(geometry, old, capacity, dt, source, boundary, Q(value),
-                   absolute_residual_target, budget, check, stage, observe)
+                   absolute_residual_target, budget, check, stage, observe, issued)
         try:
             # _run has gone: no omitted LOW/HIGH/prepared/proof temporaries survive
             # in a producer frame when its entire old stack closes atomically.

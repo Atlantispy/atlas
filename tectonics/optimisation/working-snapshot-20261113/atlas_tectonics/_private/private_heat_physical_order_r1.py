@@ -149,7 +149,7 @@ def _indices(value, count):
 
 
 def _interior_point(row):
-    """The row's stored interior point, exact, x then y then z (ruling 34: a numerical order is set by
+    """The row's stored interior point, exact, x then y then z (a numerical order is set by
     geometry, never by a hash, an id or a set). Equal points are refused by _permutation."""
     point = row.get("centroid_m")
     if type(point) is not list or len(point) != 3:
@@ -318,6 +318,10 @@ def prepare(geometry, startup_owner, old, capacity, source, *, budget, cancel=No
     close. The forward transform does so on its existing work stack. Borrowed
     input arrays are also caller-owned for the complete forward invocation.
     """
+    return _prepare(geometry, startup_owner, old, capacity, source, budget, cancel, None)
+
+
+def _prepare(geometry, startup_owner, old, capacity, source, budget, cancel, issued_power_count):
     _admission_ready()
     from atlas_tectonics.integration_mimetic_heat import MimeticGeometry
     from atlas_tectonics._private.mesh_tables import CompactMesh
@@ -331,7 +335,10 @@ def prepare(geometry, startup_owner, old, capacity, source, *, budget, cancel=No
     if not (len(old) == len(capacity) == len(source) == n == view.cell_count
             and nf == view.face_count):
         raise ValueError("Complete original input coverage required")
-    weights = sum(len(row["weights"]) for row in prepared["rows"])
+    # The fixed LOW issuer gives each power face one weight and every other
+    # face two. Independently supplied prepared rows report their actual sizes.
+    weights = (sum(len(row["weights"]) for row in prepared["rows"])
+               if issued_power_count is None else 2*nf-issued_power_count)
     work = R.OwnedWorkspace(budget, _inventory(n, nf, weights),
                            category="heat-physical-scratch-order", cancelled=cancel)
     work.__enter__()
@@ -372,14 +379,17 @@ def prepare(geometry, startup_owner, old, capacity, source, *, budget, cancel=No
         raise
 
 
-def _finish_view(predictor, order, incidence, cancel):
+def _finish_view(predictor, order, incidence, cancel, *, include_energy=True):
     """Only the fields FINISH actually consumes; restore every consumed axis."""
     n = len(order)
     if len(predictor["energy"]) != n:
         raise ValueError("Predictor energy coverage changed")
-    energy = [None] * n
-    for new, old in enumerate(order):
-        energy[old] = predictor["energy"][new]
+    result = {}
+    if include_energy:
+        energy = [None] * n
+        for new, old in enumerate(order):
+            energy[old] = predictor["energy"][new]
+        result["energy"] = energy
     original = predictor["evidence"]["raw_outward_energy_decimal"]
     if len(original) != len(incidence):
         raise ValueError("Predictor face coverage changed")
@@ -388,23 +398,32 @@ def _finish_view(predictor, order, incidence, cancel):
         _check(cancel)
         if len(face) != len(expected):
             raise ValueError("Predictor incidence count changed")
-        mapped = {}
+        # The issued metric has one or two owners. Place each amount in its
+        # original slot, keeping all independent predictor alignment checks.
+        restored = [None] * len(expected)
         for at, sign, amount in face:
             if type(at) is not int or not 0 <= at < n or sign not in (-1, 1):
                 raise ValueError("Predictor incidence lies outside original cells")
             key = (order[at], sign)
-            if key in mapped:
+            if key == expected[0]:
+                slot = 0
+            elif len(expected) == 2 and key == expected[1]:
+                slot = 1
+            else:
+                raise ValueError("Predictor incidence differs from original metric")
+            if restored[slot] is not None:
                 raise ValueError("Duplicate predictor owner")
-            mapped[key] = amount
-        if set(mapped) != set(expected):
-            raise ValueError("Predictor incidence differs from original metric")
-        raw.append([(at, sign, mapped[at, sign]) for at, sign in expected])
-    return dict(energy=energy, evidence=dict(
+            old, original_sign = expected[slot]
+            restored[slot] = (old, original_sign, amount)
+        raw.append(restored)
+    result["evidence"] = dict(
         absolute_target_decimal=predictor["evidence"]["absolute_target_decimal"],
-        raw_outward_energy_decimal=raw))
+        raw_outward_energy_decimal=raw)
+    return result
 
 
-def finish_inputs(order_owner, low_owner, high_owner, *, budget, cancel=None):
+def finish_inputs(order_owner, low_owner, high_owner, *, budget, cancel=None,
+                  include_high_energy=True):
     """Fund inverse-map containers while retaining both complete predictors."""
     _admission_ready()
     value = order_owner.value
@@ -416,7 +435,7 @@ def finish_inputs(order_owner, low_owner, high_owner, *, budget, cancel=None):
     try:
         custody.dependencies = (order_owner, low_owner, high_owner)
         low = _finish_view(low_owner.value, order, incidence, cancel)
-        high = _finish_view(high_owner.value, order, incidence, cancel)
+        high = _finish_view(high_owner.value, order, incidence, cancel, include_energy=include_high_energy)
         _check(cancel)
         return custody.complete(dict(low=low, high=high,
                                      dependencies=(order_owner, low_owner, high_owner)))

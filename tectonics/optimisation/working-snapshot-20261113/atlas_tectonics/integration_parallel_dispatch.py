@@ -46,10 +46,11 @@ from .integration_worker_bootstrap import launch as _worker_launch
 from .integration_parallel_binding import (BATCH_LIMIT, WALL_KIND, BatchBinding, JobBinding,
     OwnedBatchDispatch, OwnedDispatch, batch_worker_complete, canonical, capture_runtime,
     is_batch, worker_complete, VOLUME_SCHEMA)
+from .integration_parallel_binding import (_BATCH_SCHEMA as BATCH_SCHEMA,
+    _batch_worker_complete as _bound_batch_complete)
 from .integration_parallel_owner import RevocableOwner, nodes_for
 from .integration_parallel_results import (FitWitness, MeasureHint, SlotLease,
     raw_capacity)
-from .integration_routing_views import _decoded_json_capacity
 from .integration_volume_bounds import _Arena
 
 MAX_INPUT = 2 << 20
@@ -133,6 +134,25 @@ def _support(raw, identity, budget):
     return value
 
 
+def _screen_support(support, budget):
+    # A separately funded handle over the already issued immutable bytes.
+    raw = support._json
+    if not 0 < len(raw) <= MAX_INPUT:
+        raise ValueError('complete issued support bytes differ')
+    lease = budget.reserve(8192+len(raw), category='differential-geometry-retained')
+    lease.__enter__()
+    try:
+        result = object.__new__(G.DifferentialSupport)
+        object.__setattr__(result, '_json', raw)
+        object.__setattr__(result, '_resource', budget)
+        object.__setattr__(result, '_support_id', support.support_id)
+        weakref.finalize(result, lease.__exit__, None, None, None)
+        return result
+    except BaseException:
+        lease.__exit__(None, None, None)
+        raise
+
+
 def transport(support):
     """(support id, encoded bytes) of an issued support that fits the optional transport, else None.
 
@@ -141,7 +161,7 @@ def transport(support):
     if type(support) is CompactSupport:
         return compact_transport(support, MAX_INPUT, PARENT_STORAGE)
     raw = support._json
-    if len(raw) <= MAX_INPUT and _decoded_json_capacity(raw)+65536+4*len(raw) <= PARENT_STORAGE//4:
+    if len(raw) <= MAX_INPUT and support.decoded_capacity+65536+4*len(raw) <= PARENT_STORAGE//4:
         return support.support_id, len(raw)
     return None
 
@@ -204,8 +224,13 @@ def worker_main(directory):
     if (directory/'kept').is_file():           # written by the parent before the launch
         return _kept_worker(directory, process)
     binding_bytes = _mapped_read(directory/'binding.json', MAX_RECEIPT)
-    if is_batch(binding_bytes):
-        return _batch_worker(directory, process, binding_bytes)
+    record = json.loads(binding_bytes)
+    if type(record) is dict and record.get('schema') == BATCH_SCHEMA:
+        # This entry is the private owned file/launch relationship. Raw byte APIs
+        # do not obtain it by presenting a schema or a seconds field.
+        if 'batch_seconds' in record:
+            return _owned_batch_worker(directory, process, binding_bytes, record)
+        return _batch_worker(directory, process, binding_bytes, _record=record)
     binding = JobBinding(binding_bytes)
     record = binding.record()
     request = record['request']
@@ -246,7 +271,7 @@ def worker_main(directory):
         pass
 
 
-def _batch_worker(directory, process, binding_bytes):
+def _batch_worker(directory, process, binding_bytes, *, _record=None):
     """worker_main for a batch binding: every member through the unchanged issuer call.
 
     Members that share their supports run on one ledger of exactly the bound
@@ -257,8 +282,27 @@ def _batch_worker(directory, process, binding_bytes):
     and the parent's serial body runs for it; any other failure ends the
     worker without a completion.
     """
+    binding, record = BatchBinding._read(binding_bytes, _record)
+    return _batch_body(directory, process, binding, record)
+
+
+def _owned_requests(record):
+    # The mapped-file allocation boundary still bounds count before indexing/input opens.
+    # Field/kind/token facts come from the concrete producer, not another sweep here.
+    requests = record['requests']
+    if type(requests) is not list or not 1 <= len(requests) <= BATCH_LIMIT:
+        raise ValueError('bounded nonempty owned batch required')
+    return requests
+
+
+def _owned_batch_worker(directory, process, binding_bytes, record):
+    _owned_requests(record)
+    return _batch_body(directory, process, BatchBinding._owned_bytes(binding_bytes), record)
+
+
+def _batch_body(directory, process, binding, record):
     from .reuse import ExecutionContext
-    requests = BatchBinding(binding_bytes).record()['requests']
+    requests, binding_bytes = record['requests'], binding.encoded
     if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
         # Pressure P1: pressure walls load and answer their own digest-checked inputs.
         from .integration_pressure_walls import batch_worker
@@ -266,7 +310,8 @@ def _batch_worker(directory, process, binding_bytes):
     inputs = _read_inputs(directory, requests)
     observed = dict(body=0.0, peak=0)
     with ExecutionContext('reference') as context:
-        _complete(directory, binding_bytes, requests, inputs, context, observed)
+        _complete(directory, binding_bytes, requests, inputs, context, observed,
+                  batch_seconds=record.get('batch_seconds'), _binding=binding, _record=record)
     try:
         _resource_report(directory, process, observed['body'], observed['peak'])
     except Exception:
@@ -290,7 +335,8 @@ def _read_inputs(directory, requests):
     return inputs
 
 
-def _complete(directory, binding_bytes, requests, inputs, context, observed):
+def _complete(directory, binding_bytes, requests, inputs, context, observed, *, batch_seconds=None,
+              _binding=None, _record=None):
     """Every member through the unchanged issuer call between the two binding checks; result.json written."""
     wall = requests[0].get('kind') == WALL_KIND
 
@@ -303,7 +349,11 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed):
         if requests[0].get('schema') == VOLUME_SCHEMA:
             from .integration_component_volume_parallel import component_answers
             return component_answers(requests, inputs, new_ledger, room, observed)
-        for request in requests:
+        for index, request in enumerate(requests):
+            if not wall and index and batch_seconds is not None and observed['body'] >= batch_seconds:
+                # Nothing of this suffix has started, including support/ledger preparation.
+                answers.extend(['returned']*(len(requests)-index))
+                break
             pair = request['support_id'], request.get('other_support_id')
             try:
                 if held is not None and held[0] == pair and held[1].reserved_bytes != held[4]:
@@ -319,7 +369,12 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed):
                     other = None if pair[1] is None else _support(inputs[pair[1]], pair[1], ledger)
                     held = pair, ledger, support, other, ledger.reserved_bytes
                 begun = time.perf_counter()
-                raw = _call(held[2], held[3], request, held[1])._json
+                try:
+                    raw = _call(held[2], held[3], request, held[1])._json
+                except ValueError:
+                    if not wall and batch_seconds is not None:
+                        observed['body'] += time.perf_counter()-begun
+                    raise
                 observed['body'] += time.perf_counter()-begun
                 if wall and json.loads(raw).keys() & {'exact_zero_normal_flux', 'exact_zero_wall_measure'}:
                     answers.append('decided')
@@ -335,8 +390,12 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed):
             observed['peak'] = max(observed['peak'], held[1].statistics()['peak_reserved_bytes'])
         return answers
 
-    receipt = batch_worker_complete(binding_bytes, context=context,
-        read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
+    if _binding is None:
+        receipt = batch_worker_complete(binding_bytes, context=context,
+            read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
+    else:
+        receipt = _bound_batch_complete(_binding, _record, context=context,
+            read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
     if len(receipt) > MAX_RECEIPT:
         raise ValueError('receipt exceeds optional wire envelope')
     with (directory/'result.json').open('xb') as stream:
@@ -358,14 +417,21 @@ def _kept_worker(home, process):
             directory = Path(line.rstrip(b'\r\n').decode('utf8')).resolve()
             gc.collect()
             binding_bytes = _mapped_read(directory/'binding.json', MAX_RECEIPT)
-            requests = BatchBinding(binding_bytes).record()['requests']
+            record = json.loads(binding_bytes)
+            if type(record) is dict and 'batch_seconds' in record:
+                requests = _owned_requests(record)
+                binding = BatchBinding._owned_bytes(binding_bytes)
+            else:
+                binding, record = BatchBinding._read(binding_bytes, record)
+                requests = record['requests']
             if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
                 raise ValueError('a kept worker does not answer pressure walls')
             inputs = _read_inputs(directory, requests)
             observed = dict(body=0.0, peak=0)
-            _complete(directory, binding_bytes, requests, inputs, context, observed)
+            _complete(directory, binding_bytes, requests, inputs, context, observed,
+                      batch_seconds=record.get('batch_seconds'), _binding=binding, _record=record)
             # V-1: the figure the recycle rule reads is taken after the batch is dropped and collected.
-            del binding_bytes, requests, inputs
+            del binding_bytes, requests, inputs, record, binding
             gc.collect()
             try:
                 _resource_report(home, process, observed['body'], observed['peak'], batch=directory.name)
@@ -953,8 +1019,8 @@ class InterfaceParallelSession:
         scratch = R.WorkBudget(scratch_bytes, max_predicate_work_units=scratch_units)
         try:
             support, other = as_native(support), as_native(other)
-            local = _support(support._json, support.support_id, scratch)
-            neighbour = None if other is None else _support(other._json, other.support_id, scratch)
+            local = _screen_support(support, scratch)
+            neighbour = None if other is None else _screen_support(other, scratch)
             if _call(local, neighbour, request, scratch, screen_only=True) is None:
                 return 'integrator'
             return 'decided'
@@ -1273,7 +1339,8 @@ class BatchParallelSession(InterfaceParallelSession):
     do not make the lower-level funding operations interruption-atomic.
     """
     def __init__(self, *, budget, max_width_m3, max_leaves, wall, workers=2, child_bytes=128 << 20,
-                 predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0, keep_workers=False):
+                 predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0, keep_workers=False,
+                 batch_seconds=None):
         if type(keep_workers) is not bool:
             raise ValueError('keep_workers must be a boolean')
         if (type(workers) is not int or workers < 1 or type(wall) is not bool
@@ -1285,10 +1352,14 @@ class BatchParallelSession(InterfaceParallelSession):
         self.wall, self.workers, self.fraction = wall, workers, budget_fraction
         self._width_text = G._qtext(G.W._q(max_width_m3))
         self.batches, self.members, self._facts = [], {}, {}
+        # Only the rolling interface owner supplies this private execution limit.
+        self.batch_seconds, self.handbacks, self.returned = batch_seconds, deque(), set()
         self.log = deque(maxlen=BATCH_LOG)
         self.on_wait = None
         self.cause = None       # why the session revoked itself, if it did
         self.stats.update(jobs=0, results=0, decided=0, refused=0, retired=0, peak_child_ledger=0)
+        if batch_seconds is not None:
+            self.stats['returned'] = 0
         # Parent seconds spent on the optional route, for the scheduler's own accounting.
         self.seconds = dict(launch=0.0, receive=0.0, adopt=0.0, waited=0.0)
         # Kept workers (decision 143): each holds its own baseline for its life; off is the one-shot path.
@@ -1393,18 +1464,35 @@ class BatchParallelSession(InterfaceParallelSession):
         failed = False
         with owner.condition:
             for batch in self.batches:
+                if batch['failed']:
+                    failed = True
+                    break
+                if batch['answers'] is not None:
+                    continue
                 future = batch['dispatch']._future
-                if batch['answers'] is None and not batch['failed'] and future is not None and future.done():
+                if future is not None and future.done():
                     error = future.exception()
                     if error is not None:
                         # As _claim_ready: the Future's exception must not pin frames.
                         error.__traceback__ = None
                         self.last_error = str(error)[:4096]
                         batch['failed'] = failed = True
+                    elif self.batch_seconds is not None:
+                        # A completed hand-back frees its worker before any fresh selection.
+                        self._receive(batch)
+                        failed = failed or batch['failed']
+                    if failed:
+                        break
         if failed:
             self.cause = self.cause or 'worker failure'
             owner.revoke()
         return self.active()
+
+    def take_handbacks(self):
+        """Verified cuts for the scheduler, consumed on the parent thread outside the owner lock."""
+        cuts = list(self.handbacks)
+        self.handbacks.clear()
+        return cuts
 
     def launch(self, jobs, timeout):
         """Fund and start one worker for (support, key, name, pair) jobs; the batch, or None.
@@ -1446,14 +1534,17 @@ class BatchParallelSession(InterfaceParallelSession):
                 raise ValueError('a batch support exceeds the optional transport envelope')
             requests.append(self.member_request(support, key, name, pair))
             for item in (support, other):
-                if item is not None and self._support_facts(item)[0] not in inputs:
-                    identity = self._support_facts(item)[0]
-                    if type(item) is CompactSupport and size+item.encoded_size > MAX_BATCH_INPUT:
-                        # Refused before its exact copy is made or charged.
-                        raise ValueError('batch exceeds the optional transport envelope')
-                    inputs.add(identity, item)
-                    size += len(inputs[identity])
-        if size > MAX_BATCH_INPUT or len(requests) > BATCH_LIMIT:
+                if item is None:
+                    continue
+                identity = self._support_facts(item)[0]
+                if identity in inputs:
+                    continue
+                if type(item) is CompactSupport and size+item.encoded_size > MAX_BATCH_INPUT:
+                    # Refused before its exact copy is made or charged.
+                    raise ValueError('batch exceeds the optional transport envelope')
+                inputs.add(identity, item)
+                size += len(inputs[identity])
+        if size > MAX_BATCH_INPUT or not 1 <= len(requests) <= BATCH_LIMIT:
             raise ValueError('batch exceeds the optional transport envelope')
         tokens = [canonical(request) for request in requests]
         if len(set(tokens)) != len(tokens) or any(token in self.members for token in tokens):
@@ -1467,6 +1558,17 @@ class BatchParallelSession(InterfaceParallelSession):
         timeout = min(self.timeout, timeout)    # never beyond the ceiling this session was built with
         worker = None
         if self.keep:
+            if self.batch_seconds is not None:
+                for idle in tuple(self.kept):
+                    if idle.batch is None and idle.process is not None and idle.process.poll() is not None:
+                        # A redirector's exit alone proves nothing about its worker tree.
+                        with idle.lock:
+                            idle._surveyed = None
+                            live, whole = idle._measure(idle.process)
+                            dead = whole and not live and idle._worker_known()
+                        if dead:
+                            self.stats['recycled'] += 1
+                            self._end_worker(idle)
             # One baseline for each live kept worker, one envelope for each batch.
             worker = next((kept for kept in self.kept if kept.batch is None), None)
             if worker is None and len(self.kept) >= self.workers:
@@ -1494,8 +1596,13 @@ class BatchParallelSession(InterfaceParallelSession):
                     fit.release()
                     self.stats['refused'] += 1
                     return None
-            binding = BatchBinding.create(requests=requests, source_bindings=_inventory(inputs),
-                context=self.context, child_bytes=self.child_bytes, predicate_units=self.units)
+            # Only this concrete producer establishes the fixed moving-interface shape.
+            # Volume/initial/pressure subclasses and walls retain the raw validating factory.
+            factory = (BatchBinding._create_owned if type(self) is BatchParallelSession and
+                       not self.wall and self.batch_seconds is not None else BatchBinding.create)
+            binding = factory(requests=requests, source_bindings=_inventory(inputs),
+                context=self.context, child_bytes=self.child_bytes, predicate_units=self.units,
+                batch_seconds=self.batch_seconds)
             path = Path(self.directory.name)/('batch-%d' % self.stats['started'])
             (path/'inputs').mkdir(parents=True)
             # The batch's own encoded inputs; each child still verifies every digest.
@@ -1552,26 +1659,51 @@ class BatchParallelSession(InterfaceParallelSession):
         owner = self.owner
         result, failed, clock = None, False, None
         while True:
+            retry = False
             with owner.condition:
                 if owner.state != 'ACTIVE':
                     return None
                 member = self.members.get(key)
                 if member is None:
-                    return None
-                batch, index = member
-                future = batch['dispatch']._future
-                if future is None or future.done():
-                    del self.members[key]
-                    result, failed = self._member(batch, index, request, budget)
-                    event = None
+                    if key not in self.returned:
+                        return None
+                    retry, event = True, None
                 else:
-                    # Waiting retains only the small event and counter, not the batch graph
-                    # that a revocation may free meanwhile.
-                    event, clock = batch['child'].done, batch['clock']
+                    batch, index = member
+                    future = batch['dispatch']._future
+                    if batch['failed'] or future is None or future.done():
+                        if self.batch_seconds is None:
+                            # Preserve the shared disabled route: the current decided member
+                            # belongs to _member, not _receive's discount of other decisions.
+                            del self.members[key]
+                            result, failed = self._member(batch, index, request, budget)
+                        else:
+                            if batch['answers'] is None and not batch['failed']:
+                                self._receive(batch)
+                            if batch['failed']:
+                                result, failed = self._member(batch, index, request, budget)
+                            elif key in self.members:
+                                del self.members[key]
+                                result, failed = self._member(batch, index, request, budget)
+                                self.returned.discard(key)
+                            else:
+                                retry = key in self.returned
+                        event = None
+                    else:
+                        # Waiting retains only the small event and counter, not the batch graph
+                        # that a revocation may free meanwhile.
+                        event, clock = batch['child'].done, batch['clock']
                 batch = future = member = None
+            if failed:
+                # Failed custody wins over any returned marker from an earlier dispatch.
+                owner.revoke()
+                return result
+            if retry:
+                # Enabled sessions belong to the rolling scheduler. It gives this pinned
+                # serial head the freed prefix slot, or uses existing whole-session recovery.
+                self.on_wait()
+                continue
             if event is None:
-                if failed:
-                    owner.revoke()
                 return result
             begun = time.perf_counter()
             event.wait(1)
@@ -1596,7 +1728,10 @@ class BatchParallelSession(InterfaceParallelSession):
         batch['left'] -= 1
         result, failed = None, False
         if type(answer) is bytes:
-            result = self._adopt(batch, index, request, budget, answer)
+            if type(self) is BatchParallelSession and not self.wall and self.batch_seconds is not None:
+                result = self._adopt(batch, index, request, budget, answer, receipt_request=batch['tokens'][index])
+            else:
+                result = self._adopt(batch, index, request, budget, answer)
             failed = result is None
         elif answer == 'declined':
             self.stats['declined'] += 1
@@ -1612,9 +1747,12 @@ class BatchParallelSession(InterfaceParallelSession):
             child = batch['child']
             answers = batch['dispatch'].result(timeout=batch['timeout']+15, requests=batch['requests'],
                 source_bindings=_inventory(batch['inputs']), context=self.context,
-                child_bytes=self.child_bytes, predicate_units=self.units)
+                child_bytes=self.child_bytes, predicate_units=self.units, batch_seconds=self.batch_seconds)
             if not (child.exited or child.served):
                 raise RuntimeError('worker exit not confirmed before adoption')
+            if self.keep:
+                # Stop/recycle must succeed before accepting answers or exposing a suffix.
+                self._release(child.worker)
             self.stats['peak_child_rss'] = max(self.stats['peak_child_rss'], child.peak_rss)
             batch['fit'].complete()
             # The child process is gone, or a kept worker has finished with this batch and keeps
@@ -1622,6 +1760,7 @@ class BatchParallelSession(InterfaceParallelSession):
             if batch['baseline'] is not None:
                 batch['baseline'].close()
             batch['answers'] = answers
+            cut = None
             for index, answer in enumerate(answers):
                 if type(answer) is bytes:
                     batch['results'] += 1
@@ -1632,10 +1771,25 @@ class BatchParallelSession(InterfaceParallelSession):
                         # The member being claimed right now is counted off by its claim instead.
                         del self.members[batch['tokens'][index]]
                         batch['left'] -= 1
+                elif answer == 'returned':
+                    if cut is None:
+                        cut = index
+                    token = batch['tokens'][index]
+                    if self.members.get(token, (None,))[0] is batch:
+                        del self.members[token]
+                        batch['left'] -= 1
+                        self.returned.add(token)
+            if cut is not None:
+                batch['returned'] = len(answers)-cut
+                self.stats['returned'] += batch['returned']
+            snapshot = batch.pop('schedule', None)
+            if cut is not None:
+                held, rows = snapshot
+                self.handbacks.append((held, rows[cut-1][1], rows[cut:]))
             self.stats['results'] += batch['results']
             self.stats['decided'] += batch['decided']
-            if self.keep:
-                self._release(child.worker)
+            # result() consumed this Future once. Its raw receipt need not outlive acceptance.
+            batch['dispatch']._future = None
         except Exception as error:
             # As _claim_ready: the Future's exception must not pin these frames.
             error.__traceback__ = None
@@ -1646,7 +1800,7 @@ class BatchParallelSession(InterfaceParallelSession):
             batch['receive_seconds'] = time.perf_counter()-begun    # Part B parent mark
             self.seconds['receive'] += batch['receive_seconds']
 
-    def _adopt(self, batch, index, request, budget, answer):
+    def _adopt(self, batch, index, request, budget, answer, *, receipt_request=None):
         begun = time.perf_counter()
         hint = None
         try:
@@ -1671,8 +1825,13 @@ class BatchParallelSession(InterfaceParallelSession):
                 raise
             if not hint.receive_under(self.owner, answer, hashlib.sha256(answer).hexdigest()):
                 raise ValueError('optional result slot declined')
-            result = hint.claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
-                request=request, binding=member, fit=batch['fit'], digests=digests)
+            if receipt_request is None:
+                result = hint.claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
+                    request=request, binding=member, fit=batch['fit'], digests=digests)
+            else:
+                result = hint._claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
+                    request=request, binding=member, fit=batch['fit'], digests=digests,
+                    receipt_request=receipt_request)
             if result is None:
                 raise ValueError('optional result verification declined')
             self.stats['adopted'] += 1
@@ -1713,8 +1872,19 @@ class BatchParallelSession(InterfaceParallelSession):
             failed=batch['failed'], total_seconds=child.elapsed, body_seconds=child.body_seconds,
             peak_rss=child.peak_rss, ledger_peak=child.ledger_peak, waited_seconds=batch['clock'][0],
             start_seconds=batch.get('start_seconds'),
-            receive_seconds=batch.get('receive_seconds'), stop_seconds=child.stop_seconds))
-        batch['answers'] = batch['inputs'] = None
+            receive_seconds=batch.get('receive_seconds'), stop_seconds=child.stop_seconds,
+            **({'returned': batch['returned']} if 'returned' in batch else {})))
+        # A queued cut already owns its one-way suffix snapshot. An unreceived batch
+        # instead discards its still-owned snapshot only after confirmed termination.
+        batch.pop('schedule', None)
+        worker = getattr(child, 'worker', None)
+        if worker is not None and worker.batch is batch:
+            worker.batch = None
+        dispatch = batch['dispatch']
+        if dispatch is not None:
+            dispatch._future = None
+        batch['dispatch'] = batch['binding'] = None
+        batch['answers'] = batch['inputs'] = batch['requests'] = batch['tokens'] = None
         shutil.rmtree(batch['path'], ignore_errors=True)
 
     def retire(self, batch):
@@ -1722,15 +1892,21 @@ class BatchParallelSession(InterfaceParallelSession):
         owner = self.owner
         if owner is None or self.closed:
             return
+        failed = False
         with owner.condition:
             if owner.state == 'ACTIVE' and any(held is batch for held in self.batches):
-                if not self.keep:
-                    batch['child'].stop()
-                elif batch['answers'] is None:
-                    # Its worker is still on it: stopped, as a one-shot worker is.
-                    batch['child'].stop()
-                    self._end_worker(batch['child'].worker)
-                self._finish(batch)
+                if batch['failed']:
+                    failed = True
+                else:
+                    if not self.keep:
+                        batch['child'].stop()
+                    elif batch['answers'] is None:
+                        # Its worker is still on it: stopped, as a one-shot worker is.
+                        batch['child'].stop()
+                        self._end_worker(batch['child'].worker)
+                    self._finish(batch)
+        if failed:
+            owner.revoke()
 
     def _release(self, worker):
         """After a received batch: the worker is idle again, or ended above its baseline (design 4.4).
@@ -1745,7 +1921,10 @@ class BatchParallelSession(InterfaceParallelSession):
             worker.batch = None
 
     def _end_worker(self, worker):
+        batch = worker.batch
         worker.stop()
+        if worker.batch is batch:
+            worker.batch = None
         # Its stop is confirmed: only now is its baseline returned.
         self.kept = [kept for kept in self.kept if kept is not worker]
         worker.baseline.close()
@@ -1789,6 +1968,8 @@ class BatchParallelSession(InterfaceParallelSession):
             self._ended(worker)
         self.kept = []
         self.members.clear()
+        self.returned.clear()
+        self.handbacks.clear()
         if self.storage is not None:
             self.storage.close()
             self.storage = None

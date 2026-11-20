@@ -358,7 +358,7 @@ def _physical_plane_key(constraint,arena):
             return None
         with V._work(tuple(q for vector in path for q in vector),arena.resource,pairs=16):
             arena.work(64)
-            key=D._plane_identity(constraint)[0]
+            key=D._plane_path_identity(path)[0]
             arena.keep(tuple(q for vector in key for q in vector),4)
             return key
 
@@ -704,7 +704,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
             if not any(sign == s and constraints[name] == item for _, s, item in cuts):
                 cuts.append((name, sign, constraints[name]))
         # Loops over active edges visit them in the order of their constraints' numbers, never of their names
-        # (ruling 34). A cut is a name, a sign and a record, and no two cuts share both, so no two keys tie.
+        # (a geometric order). A cut is a name, a sign and a record, and no two cuts share both, so no two keys tie.
         edge_keys = {}
         for name, sign, item in cuts:
             edge_keys.setdefault(name, (0, _constraint_key(item), sign))

@@ -78,7 +78,17 @@ def _power(a, n):
 def _normalised_queries(bounds):
     u, v = ({(0, 0): -a/(b-a), (int(j == 0), int(j == 1)): 1/(b-a)}
             for j, (a, b) in enumerate(bounds))
-    return tuple(tuple((i, j, q) for (i, j), q in sorted(_mul(_power(u, p), _power(v, r)).items()))
+    return _queries(u, v)
+
+
+def _queries(u, v):
+    powers = []
+    for coordinate in (u, v):
+        ladder = [{(0, 0): Q(1)}]
+        for _ in range(3):
+            ladder.append(_mul(ladder[-1], coordinate))
+        powers.append(ladder)
+    return tuple(tuple((i, j, q) for (i, j), q in sorted(_mul(powers[0][p], powers[1][r]).items()))
                  for p, r in POWERS)
 
 
@@ -106,9 +116,7 @@ def _contact_queries(native_face, exterior_face):
                 raise TectonicsError('component contact extends outside the actual native face')
         coordinates.append({power: value/(high-low) for power, value in
             (((0, 0), constant-low), ((1, 0), first), ((0, 1), second)) if value})
-    return tuple(tuple((i, j, q) for (i, j), q in
-                       sorted(_mul(_power(coordinates[0], p), _power(coordinates[1], r)).items()))
-                 for p, r in POWERS)
+    return _queries(*coordinates)
 
 
 def _shape():
@@ -600,6 +608,7 @@ class PreparedDifferentialTrace:
             exact_constraints, exact_flux, constraint_bounds = [], [], []
             face_records = []
             cells = [V.CartesianCell.from_record(r['cell'], budget=budget) for r in mapped['cell_sources']]
+            reference_single = reference_mass = None
             for side in SIDES:
                 if side == open_side:
                     continue
@@ -613,6 +622,11 @@ class PreparedDifferentialTrace:
                         raise TectonicsError('trace cell is not wholly within declared physical radial support')
                     face = W._face(cell, axis, end); bounds = face[4]
                     area = math.prod(b-a for a, b in bounds)
+                    if reference_mass is None:
+                        reference_single = tuple(_integral(shape, Q(1), Q(1)) for shape in SHAPE)
+                        reference_mass = {(a, b): _integral(_mul(SHAPE[a], SHAPE[b]), Q(1), Q(1))
+                                          for a in range(9) for b in range(a, 9)}
+                    face_measure = area*duration
                     queries = _normalised_queries(bounds); modes = _point_modes(cell, axis, end)
                     nodes = []
                     for i in range(3):
@@ -621,13 +635,13 @@ class PreparedDifferentialTrace:
                             nodes.append(int(np.ravel_multi_index(tuple(at), shape)))
                     normal = np.zeros(nd); exact_normal = {}
                     for a, node in enumerate(nodes):
-                        entry = (2*end-1)*_integral(SHAPE[a], area, duration)
+                        entry = (2*end-1)*face_measure*reference_single[a]
                         normal[index[3*node+axis]] = float(entry)
                         exact_normal[index[3*node+axis]] = entry
                         for component in range(3):
-                            incident[index[3*node+component]] += area*duration
+                            incident[index[3*node+component]] += face_measure
                         for b, second in enumerate(nodes):
-                            m = _integral(_mul(SHAPE[a], SHAPE[b]), area, duration)
+                            m = face_measure*reference_mass[min(a, b), max(a, b)]
                             for component in range(3):
                                 key = index[3*node+component], index[3*second+component]
                                 exact_mass[key] = exact_mass.get(key, Q(0))+m
@@ -849,8 +863,19 @@ class PreparedDifferentialTrace:
             self._full, self._mass, self._constraints = frozen(full), frozen(mass), frozen(c)
             self._projected, self._flux = frozen(projected), frozen(flux)
             self._exact_mass, self._exact_load, self._exact_energy = exact_mass, exact_load, exact_energy
-            retain(tuple(exact_mass.values())+tuple(q for table in (exact_load, exact_energy)
-                for pair in table.values() for q in pair), len(exact_mass)+len(exact_load)+len(exact_energy))
+            values = tuple(exact_mass.values())+tuple(q for table in (exact_load, exact_energy)
+                for pair in table.values() for q in pair)
+            bits_total = rounded_total = 0
+            for value in values:
+                bits = V._bits(value)
+                bits_total += bits
+                rounded_total += (bits+7)//8
+            self._exact_value_count, self._exact_value_bits = len(values), bits_total
+            objects = len(exact_mass)+len(exact_load)+len(exact_energy)
+            self._retained.enter_context(budget.reserve(
+                4096+256*objects+128*len(values)+8*rounded_total,
+                category='differential-trace-exact-assembly'))
+            del values
             self._exact_constraints, self._exact_flux = exact_constraints, exact_flux
             self._constraint_bounds = constraint_bounds
             self._lower_eigenvalue = min(incident)/900
@@ -925,11 +950,9 @@ class PreparedDifferentialTrace:
         or J respectively. All physical moment intervals remain exact here.
         """
         self.descriptor()
-        values = tuple(self._exact_mass.values())+tuple(q for table in (self._exact_load, self._exact_energy)
-            for pair in table.values() for q in pair)
         # The exact residual/energy sums need new numerators and denominators;
         # admission includes the binary64 inputs before their conversion.
-        amount = 65536+512*len(values)+16*(sum(V._bits(v) for v in values)+2150*(2*len(self._fixed)+6))
+        amount = 65536+512*self._exact_value_count+16*(self._exact_value_bits+2150*(2*len(self._fixed)+6))
         with self._budget.reserve(amount, category='differential-trace-error-work'):
             return self._error_and_work(rates, reaction, max_l2_error_squared, max_work_error,
                                        actual_velocity_m_s)
@@ -1044,7 +1067,8 @@ class DifferentialPlateBoundaryLift(D.PlateBoundaryLift):
             orientation = np.asarray([[float(Q(*map(int, v))) for v in row] for row in embedding['basis']])
             origin = np.asarray([float(Q(*map(int, v))) for v in embedding['origin_global_m']])
             points = origin+native.coordinates('velocity')@orientation.T
-            if _digest_array(points) != physical['physical_points_sha256']:
+            points_digest = _digest_array(points)
+            if points_digest != physical['physical_points_sha256']:
                 raise TectonicsError('differential lift does not reproduce the actual physical node coordinates')
             self._budget, self._trace = budget, trace
             self._trace_limits = limits
@@ -1061,7 +1085,7 @@ class DifferentialPlateBoundaryLift(D.PlateBoundaryLift):
                 network_id=network.network_id, sphere_frame=network.sphere.descriptor(),
                 boundary_id=boundary_id, plate_ids=list(self.plate_ids), geometry=self._geometry,
                 physical_volume_binding=physical, trace=record, angular_rate_basis=basis.tolist(),
-                physical_points_sha256=_digest_array(points), modes_sha256=_digest_array(self._modes),
+                physical_points_sha256=points_digest, modes_sha256=_digest_array(self._modes),
                 map_source=map_source, constraint_source=constraint_source,
                 max_l2_error_squared=V._encoded(limits[0]), max_work_error=V._encoded(limits[1]),
                 pressure_reference=self._pressure_reference,

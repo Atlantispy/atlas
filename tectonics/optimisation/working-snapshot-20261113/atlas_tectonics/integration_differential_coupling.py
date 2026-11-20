@@ -310,10 +310,9 @@ class PreparedDifferentialIteration:
                 trace.descriptor().get('component_partition', {}).get('partition_id') != self._parent_partition.partition_id):
             raise TectonicsError('first attempt requires the actual accepted current geometry')
         self._attempts += 1
-        prototype = trace._native
-        tractions = {side: np.zeros_like(prototype.coordinates(side)) for side in SIDES}
         side = self._pressure.descriptor()['reservoir_native_side']
-        tractions[side] = self._pressure.array('reservoir_native_traction_pa')
+        tractions = {s: (self._pressure.array('reservoir_native_traction_pa') if s == side else 0.)
+                     for s in SIDES}
         stage = self._collar.source_flow_stage(self._state, self._duration, velocity_m_s=0.,
             dynamic_traction_pa=tractions, gravity_m_s2=self._gravity,
             additional_body_force_n_m3=self._body, driving_source=driver.driving_id,

@@ -348,8 +348,9 @@ class SphericalAtlas:
         if type(reverse) is not bool: raise GeometryError('reverse must be bool')
         i = int(self._indices([index])[0]); a, b = self.vertex_directions[self.edge_vertices[i]]
         l, r = (self.patches[j] for j in self.side_patches[i])
+        role = 'patch-seam' if l.plate_id == r.plate_id else 'interplate'
         out = SharedBoundary(self.edge_ids[i], tuple(a), tuple(b), l.region_id, r.region_id,
-                             l.plate_id, r.plate_id, self.role(i))
+                             l.plate_id, r.plate_id, role)
         return out.reversed() if reverse else out
 
     def adjacency(self, *, by_plate=True):
@@ -402,19 +403,23 @@ class SphericalAtlas:
                 tuple(int(e) for e, _ in rows), tuple(int(s) for _, s in rows), tuple(sectors), contacts)
 
     def frames(self, indices=None, *, reverse=False, fraction=0.5, limits=None, budget=None, cancel=None):
+        return self._frames(indices, reverse, fraction, limits, budget, cancel)
+
+    def _frames(self, indices, reverse, fraction, limits, budget, cancel, *, captured=False, emit=True):
         _check_cancel(cancel); limits = _limits(limits)
         f = scalar(fraction, 'fraction', nonnegative=True)
         if f > 1 or type(reverse) is not bool:
             raise GeometryError('fraction in [0,1] and boolean reverse required')
-        if indices is not None and type(indices) not in (tuple, list, np.ndarray):
-            raise GeometryError('explicit edge selection required')
-        if isinstance(indices, np.ndarray) and indices.ndim != 1:
-            raise GeometryError('one-dimensional edge selection required')
+        if not captured:
+            if indices is not None and type(indices) not in (tuple, list, np.ndarray):
+                raise GeometryError('explicit edge selection required')
+            if isinstance(indices, np.ndarray) and indices.ndim != 1:
+                raise GeometryError('one-dimensional edge selection required')
         n = self.edge_count if indices is None else len(indices)
         if n > limits.max_hits: raise GeometryError('frame output exceeds limit')
         with select_budget(budget).reserve(256*n + 1024*min(n, limits.batch_points)+8192,
                                            category='atlas-frames'):
-            ids = self._indices(indices)
+            ids = indices if captured else self._indices(indices)
             p = np.empty((n, 3)); t = np.empty_like(p); normal = np.empty_like(p); length = np.empty(n)
             for start in range(0, n, limits.batch_points):
                 _check_cancel(cancel); end = min(n, start+limits.batch_points)
@@ -431,7 +436,8 @@ class SphericalAtlas:
             if not all(np.isfinite(x).all() for x in (p, t, normal, length)):
                 raise GeometryError('spherical metric outside binary64 range')
             _check_cancel(cancel)
-            return BoundaryFrames((n, 3), p.tobytes(), t.tobytes(), normal.tobytes(), length.tobytes())
+            if emit:
+                return BoundaryFrames((n, 3), p.tobytes(), t.tobytes(), normal.tobytes(), length.tobytes())
 
     def motion(self, velocities_by_plate, boundary_velocity_m_s, *, indices=None,
                reverse=False, budget=None, cancel=None):
@@ -460,7 +466,7 @@ class SphericalAtlas:
                 for col, target in enumerate((left, right)):
                     sub = np.asarray(rows[col], dtype='i8'); target[sub] = v[sub]
             boundary = velocity(boundary_velocity_m_s)
-            f = self.frames(ids, reverse=reverse, budget=budget, cancel=cancel)
+            f = self._frames(ids, reverse, 0.5, None, budget, cancel, captured=True)
             with np.errstate(over='ignore', invalid='ignore'):
                 relative = right-left
                 result = np.column_stack((np.sum(relative*f.right_normal, axis=1),
@@ -596,13 +602,23 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
         total_metric = (area_sum*sphere.radius_m)*sphere.radius_m
         if not math.isfinite(total_metric) or total_metric <= 0:
             raise GeometryError('planet area outside positive binary64 range')
-        intrinsic = {'schema': _SCHEMA, 'method': _METHOD, 'sphere': sphere.descriptor(), 'vertices': list(names),
-                     'patches': [{k: v for k, v in p.descriptor().items() if k != 'chart'} for p in ordered]}
-        geometry_id = hashlib.sha256(_json(intrinsic)+b'\0'+points.tobytes()).hexdigest()
-        context = {'geometry_id': geometry_id, 'charts': [p.chart.descriptor() for p in ordered],
+        sphere_record = sphere.descriptor()
+        patch_records, charts = [], []
+        for patch in ordered:
+            description = patch.descriptor()
+            charts.append(description.pop('chart'))
+            patch_records.append(description)
+        intrinsic = {'schema': _SCHEMA, 'method': _METHOD, 'sphere': sphere_record, 'vertices': list(names),
+                     'patches': patch_records}
+        point_bytes = points.tobytes()
+        digest = hashlib.sha256(_json(intrinsic))
+        digest.update(b'\0')
+        digest.update(point_bytes)
+        geometry_id = digest.hexdigest()
+        context = {'geometry_id': geometry_id, 'charts': charts,
                    'resolution': resolution, 'bindings': bindings}
         identifier = _digest(context)
-        edge_ids = tuple(_digest({'schema': 'atlas.global-edge.v1', 'sphere': sphere.descriptor(),
+        edge_ids = tuple(_digest({'schema': 'atlas.global-edge.v1', 'sphere': sphere_record,
                                  'ends': [points[a].tolist(), points[b].tolist()],
                                  'regions': [ordered[l].region_id, ordered[r].region_id],
                                  'plates': [ordered[l].plate_id, ordered[r].plate_id]})
@@ -610,7 +626,7 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
         obj = object.__new__(SphericalAtlas)
         values = {'sphere': sphere, 'patches': ordered, 'vertex_ids': names, 'edge_ids': edge_ids,
                   'regions': tuple(geometry), 'atlas_id': identifier, 'geometry_id': geometry_id,
-                  '_points': points.tobytes(), '_edges': edges.tobytes(), '_sides': sides.tobytes(),
+                  '_points': point_bytes, '_edges': edges.tobytes(), '_sides': sides.tobytes(),
                   '_areas': np.asarray(areas, dtype='f8').tobytes(), '_offsets': offsets.tobytes(),
                   '_incidence': incidence.tobytes(), '_provenance': provenance, '_resolution': resolution,
                   '_stats': _json({'patches': len(ordered), 'vertices': len(names), 'edges': len(edges),
@@ -618,7 +634,7 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
                                   'area_residual_sr': area_sum-4*math.pi, 'unpaired_edges': 0,
                                   'topology_halfedges': count, 'global_dense_pair_matrix': False})}
         for key, value in values.items(): object.__setattr__(obj, key, value)
-        obj.frames(limits=limits, budget=policy, cancel=cancel)
+        obj._frames(None, False, 0.5, limits, policy, cancel, emit=False)
         _check_cancel(cancel)
         return obj
 

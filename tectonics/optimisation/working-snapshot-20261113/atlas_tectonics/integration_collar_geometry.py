@@ -199,9 +199,11 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
         cells = collar.cell_geometries()
         if type(cells) is not tuple or len(cells) != count or any(type(c) is not V.CartesianCell for c in cells):
             raise V.VolumeError('collar must issue one actual row-major Cartesian cell per full-grid node')
-        patches = {p.patch_id: p for p in support.patches if p.patch_id in {k[0] for k in keys}}
-        if len(patches) != len({k[0] for k in keys}):
+        patch_ids = {k[0] for k in keys}
+        patches = {p.patch_id: p for p in support.patches if p.patch_id in patch_ids}
+        if len(patches) != len(patch_ids):
             raise V.VolumeError('funding component lost its actual material patch')
+        del patch_ids
         physical, heat = dict(moving._physical_columns), dict(moving._patch_heat)
         reference = Q(moving.enthalpy_reference_k)
         native = collar._native

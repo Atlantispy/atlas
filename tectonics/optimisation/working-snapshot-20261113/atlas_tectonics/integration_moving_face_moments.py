@@ -370,7 +370,7 @@ def _line(normal, offset, face, sign, J):
 
 
 def _constraint_key(record):
-    """The exact numbers of a constraint, in a fixed order of fields. No name enters (ruling 34)."""
+    """The exact numbers of a constraint, in a fixed order of fields. No name enters."""
     from . import integration_differential_geometry as D
     from . import integration_wall_measures as W
     kind = record['kind']
@@ -391,7 +391,7 @@ _EDGE_CLASS = {'cone': 0, 'flow': 1, 'interface': 2, 'rectangle': 3, 'voxel': 4,
 
 
 def _edge_order(constraints, literals):
-    """A-16 (ruling 34, decision 878): the key of every sort over active edges, made once a call. A string name sorts by
+    """A-16 (geometric order): the key of every sort over active edges, made once a call. A string name sorts by
     its constraint's numbers and sign, then by its place in ``literals`` (only names of one record and one sign get that
     far: they are one line, so the place decides only which name fills a cache first); a tuple label by its class. No
     name text and no set order enters."""

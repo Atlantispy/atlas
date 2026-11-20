@@ -141,7 +141,7 @@ def _normalised_face(ring):
     signed = sum(a[0]*b[1]-a[1]*b[0] for a, b in zip(poly, poly[1:]+poly[:1]))
     if signed < 0:
         poly = tuple(reversed(poly))
-    # Ruling 34: start at the least rotation, so a hole's cut follows its geometry, not the names upstream.
+    # Geometric order: start at the least rotation, so a hole's cut follows its geometry, not the names upstream.
     poly = min(poly[k:]+poly[:k] for k in range(len(poly)))
     return plane, orientation, poly
 
@@ -339,7 +339,7 @@ def _assemble(candidates, arena):
         key = _hash(dict(plane=list(map(_enc, plane)), vertices=[_point(p) for p in ring]))
         if len(owners) == 2 and owners[0][1] == owners[1][1]:
             raise V.VolumeError('matched thermal face has equal rather than opposite incidence')
-        owners = sorted(owners, key=lambda owner: -owner[1])  # Ruling 34: owners by sign, +1 first
+        owners = sorted(owners, key=lambda owner: -owner[1])  # owners by sign, +1 first
         kinds = {cells[c]['kind'] for c, _ in owners}
         kind = 'collar-exterior' if kinds == {'collar', 'exterior'} else 'interior' if len(owners) == 2 else 'boundary'
         face_keys[key] = centre, normal
@@ -397,7 +397,7 @@ def _assemble(candidates, arena):
             terms.append(term)
         if _admitted_closure_fails(terms, volume, arena.resource):
             raise V.VolumeError('exact thermal metric closure or first-moment identity failed')
-    # Ruling 34: a numerical order is set by geometry, never by a hash, an id or a set.
+    # A numerical order is set by geometry, never by a hash, an id or a set.
     faces.sort(key=lambda f: face_keys[f['face_id']])
     for a, b in zip(faces, faces[1:]):
         if face_keys[a['face_id']] == face_keys[b['face_id']]:

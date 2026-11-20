@@ -607,6 +607,7 @@ def _moved(network, motion, cancel, limits=None, budget=None):
     used = set(names)
     for name in sorted(uses, key=lambda name: _sphere._vector_key(points[lookup[name]])):
         _check_cancel(cancel)
+        ends = None
         index = lookup[name]
         records = sorted(uses[name], key=lambda boundary: boundary.boundary_id)
         # Decisions and every plate's copy use the moved start position; a ridge record's own vertex is then placed
@@ -723,7 +724,8 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                     pulled.add((name, plate))
                     sunk.add((name, plate))
                     continue
-                ends = dict(at_junction[name].boundary_ends)
+                if ends is None:
+                    ends = dict(at_junction[name].boundary_ends)
                 rr, tr = ends[ridge.boundary_id], ends[trench.boundary_id]
                 rn = ridge.vertex_ids[1] if rr == 'start' else ridge.vertex_ids[-2]
                 tn = trench.vertex_ids[1] if tr == 'start' else trench.vertex_ids[-2]
@@ -1225,6 +1227,7 @@ def _transform_material_seams(network, rule, carried, lookup, uses, cancel):
                 if name in incident:
                     incident[name].append((face, ring[k-1], ring[(k+1) % len(ring)]))
     result = {}
+    poles = None
     for name, records in sorted(uses.items()):
         _check_cancel(cancel)
         if len(records) != 1 or rule[records[0].boundary_id][0] != TRANSFORM:
@@ -1240,7 +1243,9 @@ def _transform_material_seams(network, rule, carried, lookup, uses, cancel):
             continue
         if len(set(away[0][1:]) & set(away[1][1:])) != 1:
             continue
-        if (boundary.boundary_id, 'trace') not in dict(network._layout.poles):
+        if poles is None:
+            poles = dict(network._layout.poles)
+        if (boundary.boundary_id, 'trace') not in poles:
             raise TransferRefused('D1-c material seams require one great-circle transform trace')
         result[name] = (carried[far][lookup[name]], carrier)
     return result
@@ -1638,7 +1643,7 @@ def _primitive(point):
     return tuple(value//divisor for value in point)
 
 
-def _exact_triangle_sr(a, b, c):
+def _exact_triangle_sr(a, b, c, *, norms=None):
     """Signed spherical triangle area without cancelling unit-scale binary64 products.
 
     The determinant and dot products are exact integers. Only square roots and the denominator use Decimal;
@@ -1647,9 +1652,17 @@ def _exact_triangle_sr(a, b, c):
     """
     numerator = _dot(a, _cross(b, c))
     if not numerator:
+        if norms is not None:
+            norms[1] = None
         return 0.
     with localcontext(Context(prec=80, rounding=ROUND_HALF_EVEN)):
-        na, nb, nc = (Decimal(_dot(v, v)).sqrt() for v in (a, b, c))
+        if norms is None:
+            na, nb, nc = (Decimal(_dot(v, v)).sqrt() for v in (a, b, c))
+        else:
+            na = norms[0] if norms[0] is not None else Decimal(_dot(a, a)).sqrt()
+            nb = norms[1] if norms[1] is not None else Decimal(_dot(b, b)).sqrt()
+            nc = Decimal(_dot(c, c)).sqrt()
+            norms[:] = (na, nc)
         denominator = na*nb*nc+Decimal(_dot(a, b))*nc+Decimal(_dot(b, c))*na+Decimal(_dot(c, a))*nb
         numerator = Decimal(numerator)
         scale = max(abs(numerator), abs(denominator))
@@ -1659,7 +1672,8 @@ def _exact_triangle_sr(a, b, c):
 def _exact_ring_sr(ring):
     """Measure the directions actually stored, retaining exact predicates through the triangle determinant."""
     vertices = [_primitive(v) for v in _integers(ring)]
-    return abs(math.fsum(_exact_triangle_sr(vertices[0], vertices[i], vertices[i+1])
+    norms = [None, None]
+    return abs(math.fsum(_exact_triangle_sr(vertices[0], vertices[i], vertices[i+1], norms=norms)
                          for i in range(1, len(vertices)-1)))
 
 
@@ -1881,6 +1895,15 @@ def _ring_m2(ring, sphere):
     return _metres(_exact_ring_sr(ring), sphere)
 
 
+def _sweep_sr(ring, areas):
+    if areas is None:
+        return _exact_ring_sr(ring)
+    key = id(ring)
+    if key not in areas:
+        areas[key] = _exact_ring_sr(ring)
+    return areas[key]
+
+
 @dataclass(frozen=True, slots=True)
 class _Rows:
     """Sparse overlap rows: donor and receiver face indices (-1 for a named party) and measured areas in m2."""
@@ -1903,7 +1926,7 @@ class _Rows:
         return arrays
 
 
-def _motion_rows(network, endpoint, moved, cancel, budget=None):
+def _motion_rows(network, endpoint, moved, cancel, budget=None, *, sweep_areas=None, transient_cache=None):
     """Measure the rows of one motion: births, consumption and the subducting faces' own overlaps.
 
     A face that only rode with its plate has no row: it maps to itself. Each subducting face that ends at a moved
@@ -1955,7 +1978,7 @@ def _motion_rows(network, endpoint, moved, cancel, budget=None):
                 area.append(math.fsum(values))
             if len(area) > MAX_ROWS:
                 raise TransferRefused('the overlap map exceeds its row limit; move a shorter interval')
-    transient_measures = _transient_measures(moved, sphere)
+    transient_measures = _transient_measures(moved, sphere, transient_cache)
     transient = tuple((parties.setdefault(birth, len(parties)), parties.setdefault(sink, len(parties)), value)
                       for (birth, sink), value in sorted(transient_measures.items()))
     # Only a sweep whose ordinary projected intersections miss the original swept-relative criterion needs M3.
@@ -1963,12 +1986,13 @@ def _motion_rows(network, endpoint, moved, cancel, budget=None):
     for boundary_id in sorted({boundary for boundary, _, _ in moved.swept}):
         label = 'trench|'+boundary_id
         quads = [(plate, ring) for boundary, plate, ring in moved.swept if boundary == boundary_id]
-        swept = math.fsum(_ring_m2(ring, sphere) for _, ring in quads)
-        booked = math.fsum(value for p, value in zip(party, area) if p >= 0 and tuple(parties)[p] == label)
+        swept = math.fsum(_metres(_sweep_sr(ring, sweep_areas), sphere) for _, ring in quads)
+        label_index = parties.get(label)
+        booked = math.fsum(value for p, value in zip(party, area) if p >= 0 and p == label_index)
         booked += math.fsum(value for (_, sink), value in transient_measures.items() if sink == label)
         if abs(booked-swept) <= RELATIVE_TOLERANCE*swept:
             continue
-        retained = [i for i, p in enumerate(party) if p < 0 or tuple(parties)[p] != label]
+        retained = [i for i, p in enumerate(party) if p < 0 or p != label_index]
         donor, receiver, party, area = ([values[i] for i in retained] for values in (donor, receiver, party, area))
         party_index = parties.setdefault(label, len(parties))
         for plate, ids in sorted(by_plate.items()):
@@ -1991,23 +2015,30 @@ def _motion_rows(network, endpoint, moved, cancel, budget=None):
     return _Rows(tuple(donor), tuple(receiver), tuple(party), tuple(area), tuple(parties), transient)
 
 
-def _transient_measures(moved, sphere):
+def _transient_measures(moved, sphere, cache=None):
     """Exact measured temporary surface grouped by its ridge-side birth and consuming trench."""
+    if cache is not None and cache[0] is not None:
+        return cache[0]
     grouped = {}
     for junction, ridge, side, trench, plate, ring in getattr(moved, 'transient', ()):
         if side not in SIDES:
             raise TransferRefused('a transient birth has no declared ridge side')
         grouped.setdefault(('ridge|'+ridge+'|'+side, 'trench|'+trench), []).append(_ring_m2(ring, sphere))
-    return {key: math.fsum(values) for key, values in grouped.items()}
+    result = {key: math.fsum(values) for key, values in grouped.items()}
+    if cache is not None:
+        cache[0] = result
+    return result
 
 
-def _consumption_accuracy(network, material, moved, rows, supplies):
+def _consumption_accuracy(network, material, moved, rows, supplies, *, sweep_areas=None, audited_totals=None):
     """Public step diagnostic: actual sweep C7 bounds, propagated to amounts by donor areal density.
 
     These are cross-representation round-off diagnostics, never an allowance for rows missing their sweep. The
     latter still close at rho*swept. Undefined C7 is reported as unknown (None), not a zero error. Existing S1's
     approved fresh-control rule compares totals within rho*abs(total) plus the larger cumulative bound.
     """
+    if not moved.swept and not rows.donor:
+        return {}
     scale, width = network.sphere.radius_m**2, len(material.columns)
     by_trench = {}
     for boundary, _, ring in moved.swept:
@@ -2015,14 +2046,17 @@ def _consumption_accuracy(network, material, moved, rows, supplies):
     row_totals = {}
     for source, area in zip(rows.donor, rows.area_m2):
         if source >= 0:
-            row_totals.setdefault(source, []).append(area)
+            if audited_totals is not None and source in audited_totals:
+                row_totals[source] = None
+            else:
+                row_totals.setdefault(source, []).append(area)
     held = {source: [] for source in row_totals}
     for source, stock in zip(material.piece_face, material.stock):
         if source in held:
             held[source].append(stock)
     amounts = {}
     for source in row_totals:
-        total = math.fsum(row_totals[source])
+        total = (audited_totals[source] if row_totals[source] is None else math.fsum(row_totals[source]))
         amounts[source] = [math.fsum(abs(float(stock[k])) for stock in held[source])/total for k in range(width)]
     # A scalar sweep-area error does not supply a weighted material-error
     # envelope across an internal contact. Never substitute its face mean.
@@ -2035,10 +2069,10 @@ def _consumption_accuracy(network, material, moved, rows, supplies):
         mixed = {i for i in row_totals if len(by_face.get(network.face_ids[i], ())) > 1}
     result = {}
     for boundary, rings in sorted(by_trench.items()):
-        measured = math.fsum(_ring_m2(ring, network.sphere) for ring in rings)
+        areas_sr = [_sweep_sr(ring, sweep_areas) for ring in rings]
+        measured = math.fsum(_metres(area, network.sphere) for area in areas_sr)
         terms = []
-        for ring in rings:
-            area_sr = _exact_ring_sr(ring)
+        for ring, area_sr in zip(rings, areas_sr, strict=True):
             ceiling = _c7_range_limit([ring], area_sr, area_sr=area_sr)
             value = _sphere._measure_bound([ring])
             terms.append(0. if ceiling == 0. else None if value is None else min(value, ceiling))
@@ -2155,7 +2189,7 @@ def _well_formed(rows, donors, receivers):
         raise TransferRefused('the transient source-to-sink rows are not well formed')
 
 
-def _audited(network, endpoint, moved, rows):
+def _audited(network, endpoint, moved, rows, *, sweep_areas=None, transient_cache=None):
     """Check motion rows against the geometry they claim to measure, whether just measured or read from a store.
 
     Births go exactly into the faces born in the interval, with exactly their measured areas; every other row leaves
@@ -2174,7 +2208,7 @@ def _audited(network, endpoint, moved, rows):
     eats = {}
     for boundary_id, plate, ring in moved.swept:
         name = 'trench|'+boundary_id
-        eats.setdefault(name, (plate, []))[1].append(_ring_m2(ring, sphere))
+        eats.setdefault(name, (plate, []))[1].append(_metres(_sweep_sr(ring, sweep_areas), sphere))
     before, after, reach = _Shapes(network), _Shapes(endpoint), {}
 
     def cap(index, parent):
@@ -2185,7 +2219,7 @@ def _audited(network, endpoint, moved, rows):
 
     given, received, consumed, seen = {}, {}, {}, set()
     actual_transient = {(rows.parties[b], rows.parties[s]): value for b, s, value in rows.transient}
-    if actual_transient != _transient_measures(moved, sphere):
+    if actual_transient != _transient_measures(moved, sphere, transient_cache):
         raise TransferRefused('the transient source-to-sink rows do not match their swept birth polygons')
     for (_, sink), value in actual_transient.items():
         if sink not in eats:
@@ -2216,8 +2250,10 @@ def _audited(network, endpoint, moved, rows):
             received.setdefault(target, []).append(area)
     if seen != set(born):
         raise TransferRefused('a face born in this interval has no birth row')
+    donor_totals = {}
     for source in plate_of:
-        _closed(math.fsum(given.get(source, [0.])), float(network.face_area_m2[source]),
+        donor_totals[source] = math.fsum(given.get(source, [0.]))
+        _closed(donor_totals[source], float(network.face_area_m2[source]),
                 'face %r' % network.face_ids[source])
     for target in target_plate:
         _closed(math.fsum(received.get(target, [0.])), float(endpoint.face_area_m2[target]),
@@ -2228,6 +2264,7 @@ def _audited(network, endpoint, moved, rows):
             raise TransferRefused('%s sweeps %r m2 but its subducting plate holds only %r m2 there: the finite stock '
                                   'of its boundary cells is exhausted; refused, never clipped'
                                   % (name.replace('|', ' '), total, taken))
+    return donor_totals
 
 
 def _same_face(first, i, second, j):
@@ -2242,13 +2279,22 @@ def _changed(parent, endpoint):
     """(parent shapes, endpoint shapes, changed parent face indices, changed endpoint face indices)."""
     before, after = _Shapes(parent), _Shapes(endpoint)
     new = {name: i for i, name in enumerate(endpoint.face_ids)}
-    same = {i for i, name in enumerate(parent.face_ids) if name in new and _same_face(before, i, after, new[name])}
-    kept = {new[parent.face_ids[i]] for i in same}
-    return (before, after, [i for i in range(len(parent.face_ids)) if i not in same],
-            [j for j in range(len(endpoint.face_ids)) if j not in kept])
+    same = {i: new[name] for i, name in enumerate(parent.face_ids)
+            if name in new and _same_face(before, i, after, new[name])}
+    kept = set(same.values())
+    return (before, after, [i for i in range(len(parent.faces)) if i not in same],
+            [j for j in range(len(endpoint.faces)) if j not in kept])
 
 
-def _mesh_rows(parent, endpoint, cancel, *, budget=None):
+def _mesh_change(parent, endpoint, change):
+    if change is None:
+        return _changed(parent, endpoint)
+    if change[0] is None:
+        change[0] = _changed(parent, endpoint)
+    return change[0]
+
+
+def _mesh_rows(parent, endpoint, cancel, *, budget=None, change=None):
     """Measure the rows of a mesh change: every changed parent face against the new faces of its plate.
 
     Where one face lies wholly within the other, decided exactly (_nested), the row is the inner face's own measured
@@ -2258,7 +2304,7 @@ def _mesh_rows(parent, endpoint, cancel, *, budget=None):
     (_whole_face_bounds). Every other pair is clipped (_overlap_sr).
     """
     sphere = parent.sphere
-    before, after, donors, receivers = _changed(parent, endpoint)
+    before, after, donors, receivers = _mesh_change(parent, endpoint, change)
     rings = {j: after.rings(j) for j in receivers}
     caps = {j: _cap(value) for j, value in rings.items()}
     pairs, mine = [], {}
@@ -2341,10 +2387,14 @@ def _whole_face_bounds(parent, endpoint, before, after, triples):
         given.setdefault(source, []).append(k)
         received.setdefault(target, []).append(k)
 
+    caps = {}
+
     def cap(own):
-        rings = before.rings(own[1]) if own[0] == 'parent' else after.rings(own[1])
-        area = float((parent if own[0] == 'parent' else endpoint).face_area_m2[own[1]])
-        return _c7_range_limit(rings, area)
+        if own not in caps:
+            rings = before.rings(own[1]) if own[0] == 'parent' else after.rings(own[1])
+            area = float((parent if own[0] == 'parent' else endpoint).face_area_m2[own[1]])
+            caps[own] = _c7_range_limit(rings, area)
+        return caps[own]
 
     def closure(own, members):
         if any(inner[k] is None for k in members):
@@ -2356,7 +2406,7 @@ def _whole_face_bounds(parent, endpoint, before, after, triples):
             {target: cap(('endpoint', target)) for target in received})
 
 
-def _audited_mesh(parent, endpoint, rows, ceilings=False):
+def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None):
     """Check mesh rows: the same physical network on other faces, and rows that close on both meshes.
 
     Returns the thin-face bounds of the closures (donor, receiver; _whole_face_bounds) and, with ``ceilings``, the
@@ -2370,7 +2420,7 @@ def _audited_mesh(parent, endpoint, rows, ceilings=False):
                 parent.boundaries, parent.lineage)):
         raise TransferRefused('a mesh change keeps the plates, boundary records, time and lineage of its network')
     _well_formed(rows, len(parent.face_ids), len(endpoint.face_ids))
-    before, after, donors, receivers = _changed(parent, endpoint)
+    before, after, donors, receivers = _mesh_change(parent, endpoint, change)
     given, received, reach = {i: [] for i in donors}, {j: [] for j in receivers}, {}
     for source, target, party, area in zip(rows.donor, rows.receiver, rows.party, rows.area_m2):
         if (party != -1 or source not in given or target not in received
@@ -2534,7 +2584,7 @@ def _birth_totals(material, supply, area):
 
 def _transferred(network, material, endpoint, rows, supplies, sinks, interval, stored_births=None, *, budget=None,
                  bounds=None, sweeps=(), routes=None, patch_routes=None, cancel=None, geometry=None,
-                 weighted_accuracy=None):
+                 weighted_accuracy=None, change=None, audited_totals=None):
     """Apply overlap rows to the parent's material in exact arithmetic.
 
     Returns (endpoint material, I02 stock transfers, birth records, return records). Pieces of faces that are no
@@ -2559,10 +2609,11 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
     """
     width, count = len(material.columns), len(material.phases)
     from . import integration_support as _support
-    _support.required(material)
+    support = _support.required(material)
     precise = _support.motion_geometry(network, endpoint, geometry, cancel=cancel) if geometry is not None else None
+    original_rows = rows
     rows = _support.completed_rows(network, endpoint, rows, sweeps=sweeps, budget=budget, cancel=cancel,
-                                   precise=precise)
+                                   precise=precise, change=change)
     exteriors, link = dict(material.exteriors), material.stock_link
     old_ids, new_index = network.face_ids, {name: i for i, name in enumerate(endpoint.face_ids)}
     target_key = _target_keys(endpoint)
@@ -2621,7 +2672,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             kept[new_index[old_ids[source]], name] = stock[piece]
     fragments = {}
     for patch, row, cells, area in _support.row_fragments(network, material, endpoint, rows, sweeps=sweeps,
-                                                       cancel=cancel, precise=precise):
+                                                       cancel=cancel, precise=precise, support=support, groups=donors):
         fragments.setdefault(patch.patch_id, (patch, []))[1].append((row, cells, area))
     for patch, members in fragments.values():
         name = patch.cohort_id
@@ -2702,6 +2753,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             consume(moved, boundary_id)
     # Births: one new cohort per ridge side and interval, shared by every face born on that side.
     records = []
+    birth_shapes = None
     for name in sorted(born):
         side = name.rsplit('|', 1)[1]
         boundary_id = name[len('ridge|'):-len('|'+side)]
@@ -2736,9 +2788,12 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             moved = [areas[k]]+[column[k] for column in parts]
             if trench is None:
                 exact[target, cohort_id] = moved
-                cells = _support.cells_of_rings(_Shapes(endpoint).rings(target))
-                patches.append(_support.Patch(endpoint.face_ids[target], cohort_id, cells, tuple(moved),
-                                              _support.whole_face_allowance(endpoint, target),
+                if birth_shapes is None:
+                    birth_shapes = _Shapes(endpoint)
+                rings = birth_shapes.rings(target)
+                cells = _support.cells_of_rings(rings)
+                patches.append(_support.Patch(endpoint.faces[target].face_id, cohort_id, cells, tuple(moved),
+                                              _support._whole_face_allowance(endpoint, target, rings),
                                               tuple(Fraction(v) for v in ([1.]+
                                                   [v for _, v in supply.mass_per_area_kg_m2]+
                                                   [v for _, v in supply.thickness_m]+
@@ -2828,11 +2883,10 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
     into = {}
     for row, target in enumerate(rows.receiver):
         if target >= 0:
-            into.setdefault(target, []).append(row)
+            into[target] = row if target not in into else None
     renamed = {}
-    for target, members in into.items():
-        if len(members) == 1:
-            row = members[0]
+    for target, row in into.items():
+        if row is not None:
             source = rows.donor[row]
             if (source >= 0 and donors.get(source) == [row] and rows.area_m2[row] == float(network.face_area_m2[source])
                     == float(endpoint.face_area_m2[target])):
@@ -2840,11 +2894,15 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
     for source, name in enumerate(old_ids):
         if source in donors:
             share = donor_bound.get(source, 0.)
-            total = math.fsum(rows.area_m2[row] for row in donors[source])
-            for row in donors[source]:
-                target = rows.receiver[row]
-                if share and target >= 0 and target not in renamed:
-                    slack_terms[target].append(rows.area_m2[row]/total*share)
+            if share:
+                if rows is original_rows and audited_totals is not None and source in audited_totals:
+                    total = audited_totals[source]
+                else:
+                    total = math.fsum(rows.area_m2[row] for row in donors[source])
+                for row in donors[source]:
+                    target = rows.receiver[row]
+                    if target >= 0 and target not in renamed:
+                        slack_terms[target].append(rows.area_m2[row]/total*share)
         elif name in new_index:
             slack_terms[new_index[name]].append(float(previous[source]))
     for target, value in receiver_bound.items():
@@ -2857,11 +2915,12 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
     for target, value in ceiling.items():
         if target not in renamed:
             slack[target] = min(slack[target], value)
+    selected_stock = out if len(chosen) == len(keys) else out[chosen]
     try:
         # Every face, including those that only rode, is measured against its pieces after every interval. Rows that
         # each close within the tolerance can still deliver pieces that miss a face's measured area by more than it,
         # when a face is too thin for its area to be defined that well: the overlap is unresolved.
-        _sphere._occupancy(endpoint, face, out[chosen], None, slack)
+        _sphere._occupancy(endpoint, face, selected_stock, None, slack)
     except TectonicsError as exc:
         raise TransferRefused('the transferred pieces do not fill an endpoint face: %s: unresolved overlap' % exc,
                               UNRESOLVED_OVERLAP) from exc
@@ -2869,11 +2928,11 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
         result = _sphere._material(
             endpoint, material.phases, material.enthalpy_basis, tuple(cohorts[name] for name in ordered),
             material.exteriors, link, face,
-            np.array([position[keys[i][1]] for i in chosen], dtype=np.int64), out[chosen], material._initial,
+            np.array([position[keys[i][1]] for i in chosen], dtype=np.int64), selected_stock, material._initial,
             tuple((name, tuple(values)) for name, values in supplied.items()), tuple(rounding), tuple(allowance),
             budget, (), slack,
             support=_support.reconcile(patches,
-                [(endpoint.face_ids[keys[i][0]], keys[i][1]) for i in chosen], out[chosen],
+                [(endpoint.faces[keys[i][0]].face_id, keys[i][1]) for i in chosen], selected_stock,
                 signed=material.enthalpy_basis is not None))         # every face was measured just above
     except ExchangeRefused:
         raise
@@ -3025,6 +3084,7 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
     geometry = _moved(network, motion, cancel, limits, budget)
     moved = _issued(network, geometry, end, motion.end_step, limits, budget, cancel)
     births = None
+    mesh_change, sweep_areas, transient_cache = [None], {}, [None]
     if stored is not None:
         rows, mesh_rows, births = stored['rows'], stored['mesh_rows'], stored['births']
         endpoint = moved
@@ -3056,23 +3116,30 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
                                       STALE_GEOMETRY)
             rows, mesh_rows = prepared._motion, prepared._mesh
         else:
-            rows = _motion_rows(network, moved, geometry, cancel, budget)
-            mesh_rows = None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget)
-    _audited(network, moved, geometry, rows)
+            rows = _motion_rows(network, moved, geometry, cancel, budget, sweep_areas=sweep_areas,
+                                transient_cache=transient_cache)
+            mesh_rows = None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget,
+                                                                    change=mesh_change)
+    audited_totals = _audited(network, moved, geometry, rows, sweep_areas=sweep_areas,
+                              transient_cache=transient_cache)
     if (mesh_rows is None) != (motion.mesh is None):
         raise TransferRefused('mesh rows are carried exactly when the motion declares a mesh change')
-    mesh_bounds = None if mesh_rows is None else _audited_mesh(moved, endpoint, mesh_rows, ceilings=True)
+    mesh_bounds = None if mesh_rows is None else _audited_mesh(moved, endpoint, mesh_rows, ceilings=True,
+                                                               change=mesh_change)
     if prepared is not None or stored is not None:
         # Rows are numerical overlap evidence and candidate indices, not
         # material mixing weights. Authenticate supplied evidence against its
         # deterministic original producer, including its fast/exact choice.
         # This deliberately adds bounded remeasurement on replay/reuse; a
         # guessed per-row tolerance for projected micro-overlaps would not.
-        expected_rows = _motion_rows(network, moved, geometry, cancel, budget)
-        expected_mesh = None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget)
+        expected_rows = _motion_rows(network, moved, geometry, cancel, budget, sweep_areas=sweep_areas,
+                                     transient_cache=transient_cache)
+        expected_mesh = None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget,
+                                                                    change=mesh_change)
         if rows != expected_rows or mesh_rows != expected_mesh:
             raise TransferRefused('stored map rows do not reproduce their declared geometry producer: unresolved overlap',
                                   UNRESOLVED_OVERLAP)
+    transient_cache = None
     interval = (network.time_s, end, motion.start_step, motion.end_step)
     supplies = {(supply.boundary_id, supply.side): supply for supply in motion.supplies}
     sinks = {sink.boundary_id: sink for sink in motion.sinks}
@@ -3081,12 +3148,15 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
     result, transfers, born, returned = _transferred(network, material, moved, rows, supplies, sinks, interval,
                                                      births, budget=budget, sweeps=geometry.swept,
                                                      routes=motion_routes, patch_routes=patch_motion, cancel=cancel,
-                                                     geometry=geometry, weighted_accuracy=weighted_accuracy)
+                                                     geometry=geometry, weighted_accuracy=weighted_accuracy,
+                                                     audited_totals=audited_totals)
     motion_material = result
     if mesh_rows is not None:
         bounds = mesh_bounds
         result, _, _, _ = _transferred(moved, result, endpoint, mesh_rows, {}, {}, interval, budget=budget,
-                                       bounds=bounds, routes=mesh_routes, patch_routes=patch_mesh, cancel=cancel)
+                                       bounds=bounds, routes=mesh_routes, patch_routes=patch_mesh, cancel=cancel,
+                                       change=mesh_change)
+    mesh_change = None
     before_relabels = tuple(p.patch_id for p in result.support.patches)
     mapped, events = endpoint, ()
     if motion.regional_returns:
@@ -3117,7 +3187,8 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
     overlap = _map(network, moved, mapped, motion, rows, mesh_rows)
     closure = result.closure()
     from . import integration_support as _support
-    consumption_accuracy = _consumption_accuracy(network, material, geometry, rows, supplies)
+    consumption_accuracy = _consumption_accuracy(network, material, geometry, rows, supplies,
+                                                  sweep_areas=sweep_areas, audited_totals=audited_totals)
     rigid_sweeps = {boundary for boundary, _, _ in geometry.precise_trenches}
     for boundary, diagnostic in consumption_accuracy.items():
         diagnostic['retained_sweep_geometry'] = ('exact-rigid-rotation-with-bounded-reexpression-v1'

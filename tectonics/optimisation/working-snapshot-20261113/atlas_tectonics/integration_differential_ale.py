@@ -722,7 +722,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
         shape_owners = {}
         E.bind_support(_component_parallel, support, row)
         with ComponentVolumeQueries(support, budget=budget) as volumes:
-            for part in row['components']:
+            for index, part in enumerate(row['components']):
                 key = part['logical_cell_id']
                 endpoints = {}
                 witness = {}
@@ -733,7 +733,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
                     ident, measured = retain(E.measure_endpoint(volumes, _component_parallel, key, endpoint=endpoint,
                         max_width_m3=width, max_leaves=max_leaves, positive_witness=True, _funded=(None if _component_parallel is None
                             else _component_parallel.claim),
-                        _checkpoint=_endpoint_checkpoints))
+                        _checkpoint=_endpoint_checkpoints, _component_index=None if key in components else index))
                     endpoints[endpoint] = [measured['lower_m3'], measured['upper_m3']]
                     if endpoint == 'end':
                         witness = {k: measured[k] for k in ('positive_witness_m3', 'positive_witness_point_m',

@@ -81,6 +81,11 @@ class MagmaticInventory:
 
     def __init__(self, node_ids, node_kinds, component_ids, component_mass_kg,
                  enthalpy_j, *, source_id, enthalpy_source, time_s=0., budget=None, cancel=None):
+        self._initialise(node_ids, node_kinds, component_ids, component_mass_kg, enthalpy_j,
+                         source_id, enthalpy_source, time_s, budget, cancel, None)
+
+    def _initialise(self, node_ids, node_kinds, component_ids, component_mass_kg,
+                    enthalpy_j, source_id, enthalpy_source, time_s, budget, cancel, known_mass):
         _cancel(cancel)
         nodes = _names(node_ids, 'node IDs', 64)
         components = _names(component_ids, 'component IDs', 64)
@@ -95,7 +100,8 @@ class MagmaticInventory:
         with owner.reserve(64*len(nodes)*(len(components)+2)+8192, category='magma-input'):
             c = read_array(component_mass_kg, 'component mass', nonnegative=True)
             e = read_array(enthalpy_j, 'signed enthalpy')
-            mass = np.array([_sum(row) for row in c])
+            mass = (np.array([_sum(row) for row in c]) if known_mass is None
+                    else known_mass)
             if np.any((mass == 0) & (e != 0)):
                 raise TectonicsError('empty stock cannot contain enthalpy or implicit throughflow')
             record = dict(schema='atlas.magmatic-inventory.v1', nodes=nodes, kinds=node_kinds,
@@ -185,6 +191,11 @@ class PreparedMagmaticTransfer:
 
     def __init__(self, inventory, rates_kg_s, *, source_id, heat_w=None,
                  thermodynamics=None, context=None, budget=None, cancel=None):
+        self._initialise(inventory, rates_kg_s, source_id, heat_w, thermodynamics,
+                         context, budget, cancel, None)
+
+    def _initialise(self, inventory, rates_kg_s, source_id, heat_w, thermodynamics,
+                    context, budget, cancel, known_mass):
         from .reuse import ExecutionContext
         if not isinstance(inventory, MagmaticInventory): raise TectonicsError('MagmaticInventory required')
         if context is not None and (not isinstance(context,ExecutionContext) or context.backend!='scipy'):
@@ -207,7 +218,7 @@ class PreparedMagmaticTransfer:
             if len(edges) > 256: raise TectonicsError('at most256 simultaneous transfer edges')
             qout = np.array([_sum(row) for row in rates])
             qin = np.array([_sum(row) for row in rates.T])
-            mass = inventory.mass_kg
+            mass = inventory.mass_kg if known_mass is None else known_mass
             if np.any((qout > 0) & (mass == 0)):
                 raise TectonicsError('empty donor/pass-through needs an explicit separate rule')
             for i, kind in enumerate(inventory.node_kinds):

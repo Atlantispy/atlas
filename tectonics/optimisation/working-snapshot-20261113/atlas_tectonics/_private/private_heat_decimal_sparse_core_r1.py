@@ -197,6 +197,10 @@ def _validate(system, old, capacity, dt, source, boundary, target, context, canc
                 raise ValueError('Unsupported or missing prescribed observation')
             elif boundary[key][0] != ('temperature' if kind == 'wall' else 'power'):
                 raise ValueError('Prescribed observation kind changed')
+    _validate_bindings(system)
+
+
+def _validate_bindings(system):
     if (type(system.source_bindings) is not tuple or not system.source_bindings
             or type(system.witness_json) is not str or not system.witness_json.strip()):
         raise ValueError('Explicit caller source bindings and witness record required')
@@ -206,6 +210,30 @@ def _validate(system, old, capacity, dt, source, boundary, target, context, canc
                 or len(digest) != 64 or any(x not in '0123456789abcdef' for x in digest)):
             raise ValueError('Unique caller source names and SHA256 bindings required')
         names.add(name)
+
+
+def _validate_issued(system, boundary, target, context, cancel):
+    """Validate live state on the certified assembly/small-cell handoff."""
+    if system.context_signature != context_signature(context):
+        raise ValueError('Matching immutable Decimal-80 system and ordered cell arrays required')
+    if system.boundary_signature != boundary_signature(boundary):
+        raise ValueError('Numerical prescribed observations changed after assembly')
+    if any(kind not in ('temperature', 'power') or not math.isfinite(float(value))
+           for kind, value in boundary.values()):
+        raise ValueError('Finite physical boundary observations required')
+    target_decimal = D(target)
+    if not target_decimal.is_finite() or target_decimal <= 0:
+        raise ValueError('Finite original inputs and positive capacity/dt/target required')
+    for _ in system.operator:
+        _checkpoint(cancel, None, 'validate-operator-row')
+    # Assembly established distinct face IDs, signed owners and observation
+    # keys. SMALL keeps IDs/owners, and its replacement weights come from
+    # one dictionary per face. Inventory checked the post-SMALL coefficients
+    # against this private boundary. Retain the per-face guard opportunity.
+    for _ in system.rows:
+        _checkpoint(cancel, None, 'validate-face-row')
+    _validate_bindings(system)
+    return target_decimal
 
 
 def solve_rounded(system, old, capacity, dt, source, boundary, target, *,

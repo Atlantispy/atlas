@@ -252,6 +252,7 @@ class EndpointCheckpoints:
         self._owner = _QueryFailureOwner(self._memory)
         self._active = self._closed = False
         self._pending = self._runtime = None
+        self._runtime_digest = None
         self._last_completed = None
         self._used = self._entries = 0
         self.hits = self.misses = self.written = self.incomplete = 0
@@ -471,12 +472,14 @@ class EndpointCheckpoints:
                 or support._resource is not budget):
             raise TypeError('same native support and checkpoint budget required')
         request_fields(request)
-        actual_input = hashlib.sha256(support._json).hexdigest()
+        actual_input = support.support_id
         if request['support_id'] != actual_input:
             raise CheckpointRefused('request does not bind actual issued support bytes')
         limits = _ledger_limits(budget)
+        if self._runtime_digest is None:
+            self._runtime_digest = hashlib.sha256(self._runtime).hexdigest()
         binding = canonical(dict(schema=SCHEMA, request=request,
-            input_sha256=actual_input, runtime_sha256=hashlib.sha256(self._runtime).hexdigest(),
+            input_sha256=actual_input, runtime_sha256=self._runtime_digest,
             positive_witness=True, relative_error=None, ledger_ancestry=limits))
         if len(binding) > MAX_BINDING:
             raise CheckpointRefused('endpoint request exceeds checkpoint binding bound')

@@ -35,10 +35,10 @@ LABEL = 'PRIVATE uniform-k composed physical-face heat; original transported cal
 EXCHANGE_SCHEMA = 'atlas.private.spatial-composed-advance.r1'
 REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
 _PINS = {
-    'private_heat_grouped_account_r1.py': '788512e23568e4b169359186b9332fc56ada707be06003ddb097295afd4ac0b0',
-    'private_heat_native_issuer_r13.py': '341dd427a504f64d854beb5408cc3382522786c84cb99b6f6891f08b42a6d43f',
-    'private_heat_checkpoint_consumer_r10.py': '2943be8cc7d9e9646901bce7dc7186e29a1b30d2e0b06b54eb079db2c03f34b0',
-    'private_heat_forward_kernel_r13.py': '84de9ea3e597580152b88f3ffd3b143f8e4695202c09d889ed3098f482ea2917',
+    'private_heat_grouped_account_r1.py': '6bdf936e6dec7ce0630b3a9db2ec9f72f1a5bea6b2cee74af4f2c5865e25e920',
+    'private_heat_native_issuer_r13.py': '76fdf431774fbf51abb400af31c11ea2ab81f38f58a09f9a0066faa361562d9e',
+    'private_heat_checkpoint_consumer_r10.py': '567120db1beeeaef512ee8e94e4f23140ae8aa22edd08fdff09ddff2758239e0',
+    'private_heat_forward_kernel_r13.py': 'cd96faa45b113627beeff2b6dcf8a2d617f3ee9b3660c1380d18f6c924c4a065',
 }
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 _HEADER = ('schema', 'method_id', 'plan_id', 'state_id', 'duration_s', 'call_id', 'geometry_id',

@@ -532,7 +532,7 @@ def _moment_q(value):
         raise ValueError('Finite exact-rational observation/target values required') from error
 
 
-def forced_coefficients(matrix, target, *, cancelled=None, evidence=None):
+def forced_coefficients(matrix, target, *, cancelled=None, evidence=None, _support=None):
     """Return {observation row index: exact GMP rational} from singleton columns.
 
     This is a necessary-constraint screen, not a rank or feasibility proof.
@@ -555,17 +555,20 @@ def forced_coefficients(matrix, target, *, cancelled=None, evidence=None):
     for value in target:
         check()
         rhs.append(_moment_q(value))
-    support, coefficients = [None]*n, [G.mpq(0)]*n
+    support, coefficients = ([None]*n if _support is None else _support), [G.mpq(0)]*n
     for i, row in enumerate(matrix):
         check()
         for j, value in enumerate(row):
             check()
-            value = _moment_q(value)
-            if value:
-                if support[j] is None:
-                    support[j], coefficients[j] = i, value
-                else:
-                    support[j] = -1  # Two or more nonzero rows; no inference.
+            if _support is None:
+                value = _moment_q(value)
+                if value:
+                    if support[j] is None:
+                        support[j], coefficients[j] = i, value
+                    else:
+                        support[j] = -1  # Two or more nonzero rows; no inference.
+            elif support[j] == i:
+                coefficients[j] = _moment_q(value)
     audit = {} if evidence is None else evidence
     audit.update(method='exact-singleton-column-necessary-constraints', observation_rows=len(matrix),
                  polynomial_columns=n, rank_or_feasibility_certified=False,
@@ -908,8 +911,8 @@ def solve_enclosure(matrix, rhs, *, precision, cancelled=None, evidence=None):
                             inverse_defect_upper=rho, dual_radius_upper=radius)
 
 
-def physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar):
-    if len(keys) != len(matrix) or len(conversion) != len(keys) or len(set(keys)) != len(keys):
+def physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar, *, _keys_unique=False):
+    if len(keys) != len(matrix) or len(conversion) != len(keys) or (not _keys_unique and len(set(keys)) != len(keys)):
         raise ValueError('Unique matching observation identities and conversions required')
     if len(base_keys) != 2 or base_keys[0] == base_keys[1]:
         raise ValueError('Distinct owner/base keys required')

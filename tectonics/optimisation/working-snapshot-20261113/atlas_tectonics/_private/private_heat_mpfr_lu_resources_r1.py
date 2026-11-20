@@ -38,7 +38,7 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 HERE = Path(__file__).resolve().parent
 PINS = {'private_heat_mpfr_lu_r1.py': 'd1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e',
         'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
-        'private_heat_decimal_inventory_r1.py': 'b005c9b48a1fad993a1255e25a1126199f545075fa6e5d0877943d84784fcb26'}
+        'private_heat_decimal_inventory_r1.py': '8f1a73e84ce16c9544799a88f419ae17fa0b1e8a240f6dfd44f86ee5db608f43'}
 _SOURCE_PATHS = (__file__, A.__file__, P.__file__, D.POLICY_PATH,
                  *(HERE/name for name in PINS))
 _SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()
@@ -220,19 +220,30 @@ def audit_factor(factors, envelope, *, cancel=None):
     if len(factors['rows']) != n or factors['precision'] != envelope.precision or len(factors['pivots']) != n:
         raise ValueError('Factor shape/precision/pivot coverage changed')
     entries = reported = table_bytes = 0
+    table_limit = slot_limit = None
     for row in factors['rows']:
         D._check(cancel)
-        if type(row) is not dict or len(row) > n or sys.getsizeof(row) > dictionary_bytes(n):
+        if type(row) is not dict or len(row) > n:
             raise ValueError('Factor row exceeds its pre-admitted dictionary envelope')
-        table_bytes += sys.getsizeof(row)
+        if table_limit is None:
+            table_limit = dictionary_bytes(n)
+        row_bytes = sys.getsizeof(row)
+        if row_bytes > table_limit:
+            raise ValueError('Factor row exceeds its pre-admitted dictionary envelope')
+        table_bytes += row_bytes
         for j, value in row.items():
             D._check(cancel)
             if type(j) is not int or not 0 <= j < n or type(value) is not G.mpfr or not G.is_finite(value):
                 raise ValueError('Finite represented factor entries and original columns required')
-            if value.precision != envelope.precision or sys.getsizeof(value) > mpfr_slot(envelope.precision):
+            if value.precision != envelope.precision:
+                raise ValueError('Factor entry exceeds declared logical precision/slot policy')
+            if slot_limit is None or cancel is not None:
+                slot_limit = mpfr_slot(envelope.precision)
+            value_bytes = sys.getsizeof(value)
+            if value_bytes > slot_limit:
                 raise ValueError('Factor entry exceeds declared logical precision/slot policy')
             entries += 1
-            reported += sys.getsizeof(value)
+            reported += value_bytes
     if entries > envelope.factor_nnz_bound or factors['peak_factor_nnz'] > envelope.factor_nnz_bound:
         raise ValueError('Factor fill exceeds pre-admitted n*n structure')
     return dict(factor_entries=entries, structural_bound=envelope.factor_nnz_bound,

@@ -549,7 +549,7 @@ def _rebuilt(network, material, faces, plates, boundaries, lineage, frames, sour
         if b.kind == _sphere.RIDGE:
             origin = derived.get(b.boundary_id, b.boundary_id)
             ridges[b.boundary_id] = ridge_frames.get(origin, _sphere.IDENTITY)
-    # A-22 (ruling 34): a vertex keeps its home while that home still carries one of its records of the lowest rank;
+    # A-22 (geometric order): a vertex keeps its home while that home still carries one of its records of the lowest rank;
     # any other is chosen by the geometric key on the directions in the sphere's axes at the event (one frame).
     home = _sphere._rehomed(names, faces, boundaries, directions, layout.home)
     reference = np.empty_like(layout.reference)

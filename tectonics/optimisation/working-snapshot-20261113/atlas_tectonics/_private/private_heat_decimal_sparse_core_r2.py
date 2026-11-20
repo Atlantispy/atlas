@@ -38,9 +38,9 @@ RoundedSystem, RoundedFace, OwnedSolve = P.RoundedSystem, P.RoundedFace, P.Owned
 context_signature, boundary_signature = P.context_signature, P.boundary_signature
 HERE = Path(__file__).resolve().parent
 PINS = {
-    'private_heat_decimal_sparse_core_r1.py': '01bf9a05c51edcda5a7426fdda32bb49835566c36b2eb2fe397540e604bf0cd0',
-    'private_heat_decimal_inventory_r1.py': 'b005c9b48a1fad993a1255e25a1126199f545075fa6e5d0877943d84784fcb26',
-    'private_heat_mpfr_lu_resources_r1.py': '4e5bafc3c9812dbc176a16a388923a9c774dba266eded9ed5e343da43f5f466d',
+    'private_heat_decimal_sparse_core_r1.py': 'e9f1e7126908f518b225dbbe42994f18e0737d06410b65ac775248baabff905f',
+    'private_heat_decimal_inventory_r1.py': '8f1a73e84ce16c9544799a88f419ae17fa0b1e8a240f6dfd44f86ee5db608f43',
+    'private_heat_mpfr_lu_resources_r1.py': 'a6ce384da39cf3d8e2523461e902a3e99a7c1aeddd94cc83eeb36530e0d48cf8',
     'private_heat_rational_decimal_r1.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
     'private_heat_sparse_resources_r1.py': '63f677352a5d9d4a65ad2fe94a044c26957211aa225121f083f48b555d5e2294',
 }
@@ -95,13 +95,17 @@ def _conversion_shape(value, G):
     """
     if type(value) is not G.mpfr or not G.is_finite(value) or value.precision != PRECISION:
         raise ValueError('Owned finite MPFR512 solved value required')
+    return _issued_conversion_shape(value, G)
+
+
+def _issued_conversion_shape(value, G):
     if not value:
         return 1, 1
     exponent = G.get_exp(value)
     return I._count(max(PRECISION, exponent), 'conversion numerator bits'), I._count(max(0, PRECISION-exponent)+1, 'conversion denominator bits')
 
 
-def _conversion_inventory(nbits, dbits, plan, R):
+def _conversion_inventory(nbits, dbits, plan, R, result_multiplier=None):
     """One current exact conversion plus subsequent Decimal work, no global sum.
 
     Decimal log10 magnitude is bounded by nbits+dbits. Guard/sticky conversion
@@ -122,9 +126,11 @@ def _conversion_inventory(nbits, dbits, plan, R):
     # iterate additions; the input plan already covers its own full span.
     digits = I._sum(plan.scalar_work_digit_bound, 3*(2*bits+80+8))
     decimal_work = 12*I.decimal_slot(digits)+4*I.decimal_slot(bits)
-    counts = dict(plan.counts)
+    if result_multiplier is None:
+        counts = dict(plan.counts)
+        result_multiplier = 2*counts['owner_entries']+counts['cells']+32
     exponent_chars = len(str(bits+digits+1))
-    result_strings = (2*counts['owner_entries']+counts['cells']+32)*(88+exponent_chars)
+    result_strings = result_multiplier*(88+exponent_chars)
     return I._sum(scalar, qslots, integers, decimal_work, result_strings)
 
 
@@ -145,6 +151,19 @@ def solve_rounded(system, old, capacity, dt, source, boundary, target, *,
     budget increase. A staged refusal leaves already allocated inputs owned
     by their caller; failed frames preserve admitted work under native policy.
     """
+    return _solve_rounded(system, old, capacity, dt, source, boundary, target,
+                          budget=budget, cancel=cancel, observe=observe, spectrum=spectrum, issued=False)
+
+
+def _solve_issued(system, old, capacity, dt, source, boundary, target, *,
+                  budget, cancel=None, observe=None, spectrum=False):
+    """Consume the post-small-cell system held by the forward kernel."""
+    return _solve_rounded(system, old, capacity, dt, source, boundary, target,
+                          budget=budget, cancel=cancel, observe=observe, spectrum=spectrum, issued=True)
+
+
+def _solve_rounded(system, old, capacity, dt, source, boundary, target, *,
+                   budget, cancel, observe, spectrum, issued):
     P._checkpoint(cancel, observe, 'admission-start')
     if spectrum:
         raise ValueError('Spatial spectrum is not certified by this rounded core')
@@ -152,7 +171,11 @@ def solve_rounded(system, old, capacity, dt, source, boundary, target, *,
     from atlas_tectonics._private import private_heat_sparse_resources_r1 as resources
     plan = I.derive(system, old, capacity, dt, source, boundary, target,
                     budget=budget, cancel=cancel)
-    components = _ordering_inventory(system.cells, dict(plan.counts)['system_support_bound'], resources)
+    counts = dict(plan.counts)
+    support_bound = counts['system_support_bound']
+    result_multiplier = 2*counts['owner_entries']+counts['cells']+32
+    del counts
+    components = _ordering_inventory(system.cells, support_bound, resources)
     needed = I._sum(plan.inventory.total(), *(v for _, v in components))
     P._checkpoint(cancel, observe, 'decimal-inventory-ready')
     workspace = resources.R.OwnedWorkspace(budget, needed,
@@ -165,25 +188,46 @@ def solve_rounded(system, old, capacity, dt, source, boundary, target, *,
         workspace.stack.enter_context(dynamic)
         with localcontext() as context:
             context.prec, context.rounding = 80, ROUND_HALF_EVEN
-            P._validate(system, old, capacity, dt, source, boundary, target, context, cancel)
+            target_decimal = None
+            if issued:
+                target_decimal = P._validate_issued(system, boundary, target, context, cancel)
+            else:
+                P._validate(system, old, capacity, dt, source, boundary, target, context, cancel)
             value = _solve(system, old, capacity, dt, source, boundary, target,
                 budget=budget, plan=plan, components=components, workspace=workspace,
-                dynamic=dynamic, resources=resources, G=G, cancel=cancel, observe=observe)
+                dynamic=dynamic, resources=resources, G=G, cancel=cancel, observe=observe,
+                support_bound=support_bound, result_multiplier=result_multiplier, issued=issued, target_decimal=target_decimal)
         return OwnedSolve(value, workspace)
     except BaseException:
         workspace.__exit__(*sys.exc_info())
         raise
 
 
+def _with_diagonal(row, diagonal):
+    entries = iter(row)
+    for column, coefficient in entries:
+        if column >= diagonal:
+            if column > diagonal:
+                yield diagonal, D(0)
+            yield column, coefficient
+            yield from entries
+            return
+        yield column, coefficient
+    yield diagonal, D(0)
+
+
 def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
-           components, workspace, dynamic, resources, G, cancel, observe):
+           components, workspace, dynamic, resources, G, cancel, observe,
+           support_bound, result_multiplier, issued, target_decimal):
     import numpy as np
     from scipy.sparse import csr_matrix
     from scipy.sparse.csgraph import reverse_cuthill_mckee
     from atlas_tectonics._private import private_heat_rational_decimal_r1 as RD
     began, nc = perf_counter(), len(old)
     P._checkpoint(cancel, observe, 'start')
-    op = [dict(row) for row in system.operator]
+    # Callbacks can change caller-owned state between validation and assembly.
+    # Retain the original snapshot and canonicalisation on that route.
+    op = system.operator if issued else [dict(row) for row in system.operator]
     wall, rows = system.wall, system.rows
     P._checkpoint(cancel, observe, 'exact-operator-ready')
     c = [D.from_float(float(x)) for x in capacity]
@@ -191,31 +235,47 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
     rhs = [D.from_float(float(e))+delta*(D.from_float(float(s))-b)
            for e, s, b in zip(old, source, wall, strict=True)]
     dm, data, indices, indptr = [], [], [], [0]
+    use_ordered_structure = issued
+    structure_indices, structure_indptr = ([], [0]) if use_ordered_structure else (None, None)
     for i, row in enumerate(op):
         P._checkpoint(cancel, None, 'decimal-row-assembly')
         entries = []
-        for j in sorted(set(row) | {i}):
-            value = delta*row.get(j, D(0))+(c[i] if i == j else D(0))
+        if issued:
+            # The inventory established ascending unique columns on these
+            # held rows. Insert the one diagonal without a set or sort.
+            pairs = _with_diagonal(row, i)
+        else:
+            pairs = ((j, row.get(j, D(0))) for j in sorted(set(row) | {i}))
+        for j, coefficient in pairs:
+            value = delta*coefficient+(c[i] if i == j else D(0))
             if value:
                 entries.append((j, value))
+                if use_ordered_structure:
+                    structure_indices.append(j)
                 approximate = float(value)
                 if approximate:
                     indices.append(j)
                     data.append(approximate)
         dm.append(entries)
         indptr.append(len(data))
-    decimal_nnz = sum(map(len, dm))
+        if use_ordered_structure:
+            structure_indptr.append(len(structure_indices))
+    decimal_nnz = structure_indptr[-1] if use_ordered_structure else sum(map(len, dm))
     P._checkpoint(cancel, observe, 'decimal-system-ready')
     approximate = csr_matrix((np.asarray(data, dtype=float), np.asarray(indices), np.asarray(indptr)),
                              shape=(nc, nc)).tocsc()
     approximate.sort_indices()
     del data, indices, indptr, wall
-    k = dict(plan.counts)['system_support_bound']
+    k = support_bound
     if decimal_nnz > k or approximate.nnz > k:
         raise ValueError('Realised matrix exceeds its prospective support')
     P._checkpoint(cancel, observe, 'before-factorisation')
-    structure = csr_matrix((np.ones(decimal_nnz), [j for row in dm for j, _ in row],
-                             np.cumsum([0]+[len(row) for row in dm])), shape=(nc, nc))
+    if not use_ordered_structure:
+        structure_indices = [j for row in dm for j, _ in row]
+        structure_indptr = np.cumsum([0]+[len(row) for row in dm])
+    structure = csr_matrix((np.ones(decimal_nnz), structure_indices,
+                             np.asarray(structure_indptr, dtype=np.int64)), shape=(nc, nc))
+    del structure_indices, structure_indptr
     permutation = list(map(int, reverse_cuthill_mckee(structure, symmetric_mode=False)))
     inverse = {old: new for new, old in enumerate(permutation)}
     reordered = [[(inverse[j], v) for j, v in dm[i]] for i in permutation]
@@ -233,8 +293,8 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
             ordered = [None]*nc
             for i, value in zip(permutation, solved.value, strict=True):
                 P._checkpoint(cancel, None, 'before-exact-solution-conversion')
-                nbits, dbits = _conversion_shape(value, G)
-                charge = _conversion_inventory(nbits, dbits, plan, resources.R)
+                nbits, dbits = _issued_conversion_shape(value, G) if issued else _conversion_shape(value, G)
+                charge = _conversion_inventory(nbits, dbits, plan, resources.R, result_multiplier)
                 if charge > dynamic.lease.count:
                     dynamic.resize_before_allocation_or_after_drop(charge)
                 P._checkpoint(cancel, observe, 'exact-solution-conversion-admitted')
@@ -255,7 +315,7 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
             residual.append(b-sum((a*u[j] for j, a in row), D(0)))
         absolute = max(map(abs, residual))
         residual_history.append(str(absolute))
-        if absolute <= D(target):
+        if absolute <= (target_decimal if issued else D(target)):
             break
         if iteration == 8:
             error = ValueError('MPFR512 high predictor failed unchanged algebraic residual target')
@@ -276,7 +336,8 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
     P._checkpoint(cancel, observe, 'after-face-fluxes')
     P._checkpoint(cancel, observe, 'complete')
     return dict(temperature=np.asarray(list(map(float, u))), energy=[a*b for a, b in zip(c, u, strict=True)],
-        residual=str(absolute), refinements=iteration, symmetric_part_minimum_eigenvalue=None,
+        residual=(residual_history[-1] if issued else str(absolute)),
+        refinements=iteration, symmetric_part_minimum_eigenvalue=None,
         minimum_real_eigenvalue=None, raw=fluxes,
         evidence={'absolute_target_decimal': target, 'raw_outward_energy_decimal': fluxes},
         sparse_diagnostics=dict(cells=nc, exact_operator_nnz=system.exact_operator_nnz,

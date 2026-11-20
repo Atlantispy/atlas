@@ -258,7 +258,7 @@ def _radial_thermal(record, thickness, *, budget=None):
     return replace(thermal, _prepared_sha256=_heat.thermal_identity(thermal))
 
 
-def _prepared(record, thickness, dt, cache, *, budget=None):
+def _prepared(record, thickness, dt, cache, *, budget=None, fixed_step=False):
     """The exact modal conduction of one column (reused only while its support, properties and step match)."""
     key = (record.cohort_id, tuple(thickness), dt)
     if record.volume_convention != 'reference_prism':
@@ -268,7 +268,7 @@ def _prepared(record, thickness, dt, cache, *, budget=None):
         if record.volume_convention != 'reference_prism':
             try:
                 thermal = _radial_thermal(record, thickness, budget=budget)
-                cache[key] = thermal, _heat.prepare_propagator(thermal, dt)
+                cache[key] = thermal, _heat._prepare_modes(thermal, dt, fixed_step=fixed_step)
             except (ValueError, RuntimeError) as exc:
                 from .resources import MemoryLimitError
                 if isinstance(exc, MemoryLimitError):
@@ -287,7 +287,7 @@ def _prepared(record, thickness, dt, cache, *, budget=None):
             thermal = _heat.prepare_thermal(np.arange(len(thickness)), depth, np.asarray(thickness),
                                             [float(t) for t in thickness], props,
                                             [s.reference_density_kg_m3 for s in record.sublayers], boundaries)
-            cache[key] = (thermal, _heat.prepare_propagator(thermal, dt))
+            cache[key] = (thermal, _heat._prepare_modes(thermal, dt, fixed_step=fixed_step))
         except (ValueError, RuntimeError) as exc:
             raise ThermalRefused('the column of %r is not admitted by the column heat solve: %s'
                                  % (record.cohort_id, exc), 'unsupported', record.cohort_id) from exc
@@ -630,7 +630,7 @@ def _lateral_sum(terms, *, numpy=False, finite_heat=False):
 
 
 def conducted(endpoint, records, heat, reference, parent, step, conduction, budget=None, carried=Fraction(0), *,
-              mechanical_energy_j=None, physical_columns=None):
+              mechanical_energy_j=None, physical_columns=None, _issued_source=False):
     """(sublayer heat after conduction over the interval, report): per substep, in mode 'solve', an explicit
     (forward-Euler) lateral exchange over admitted contacts, then the exact modal vertical conduction of every piece;
     in mode 'omit', the vertical conduction only, with a passing MC-06 certificate on fixed contact geometry.
@@ -688,8 +688,10 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
         if physical:
             thickness = list(physical_columns[(piece.face_id, piece.cohort_id)][0])
             capacity = [float(c)*piece.area_m2 for c in PH.capacity_area(record, thickness, budget=budget)]
-        thermal, propagator = _prepared(record, thickness, dt, cache, budget=budget)
+        thermal, propagator = _prepared(record, thickness, dt, cache, budget=budget, fixed_step=physical)
         columns.append((record, piece, thickness, capacity, thermal, propagator))
+    del cache
+    reuse_source = physical and (_issued_source or mechanical_energy_j is None)
     loss_workspace_bytes, flux_workspace_bytes = (
         _lateral_workspace_sizes(columns, contacts, 'piece') if contacts else (None, None))
     worst = 0.
@@ -782,24 +784,36 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
         for k, (record, piece, thickness, capacity, thermal, propagator) in enumerate(columns):
             area = piece.area_m2
             theta = deviations[k] if departures else np.asarray(temperature[k])-thermal.steady_k
-            source = mechanical[k]/float(area)/duration       # W/m2 per column control volume, not W/m3
-            if not np.isfinite(source).all() or np.any((mechanical[k] > 0.) & (source == 0.)):
-                raise ThermalRefused('mechanical source cannot be represented in column units', 'unsupported',
-                                     'mechanical_energy_j')
-            theta_new, integral = _heat.conduct(propagator, theta, source)
+            if not reuse_source or substep == 0:
+                source = mechanical[k]/float(area)/duration       # W/m2 per column control volume
+                if not np.isfinite(source).all() or np.any((mechanical[k] > 0.) & (source == 0.)):
+                    raise ThermalRefused('mechanical source cannot be represented in column units', 'unsupported',
+                                         'mechanical_energy_j')
             if physical:
                 modal = propagator.to_modal@theta
-                delta = propagator.from_modal@(np.expm1(-propagator.lam*dt)*modal+
-                                                dt*propagator.p1*(propagator.source_modal@source))
+                if reuse_source and substep:
+                    source = np.asarray(capacity)
+                else:
+                    source[:] = propagator.source_modal@source
+                    if reuse_source and substeps > 1:
+                        # The physical route has finished using these rounded whole-piece capacities.
+                        for layer, value in enumerate(source):
+                            capacity[layer] = float(value)
+                theta_new, integral = _heat._conduct_modal(propagator, modal, source)
+                delta = propagator.from_modal@(propagator.increment_factor()*modal+dt*propagator.p1*source)
+                del modal, source
                 for l, (cap, change) in enumerate(zip(PH.capacity_area(record, thickness, budget=budget), delta)):
                     physical_energy[k][l] += cap*Fraction(float(change))
+            else:
+                theta_new, integral = _heat.conduct(propagator, theta, source)
             g_top, g_bottom = thermal.boundary_conductance
             top_out = area*g_top*(integral[0]+(thermal.steady_k[0]-record.surface_temperature_k)*dt)
             base_in = 0. if record.base_temperature_k is None else area*g_bottom*(
                 (record.base_temperature_k-thermal.steady_k[-1])*dt-integral[-1])
             totals[k]['top'] += top_out
             totals[k]['base'] += base_in
-            totals[k]['radiogenic'] += area*math.fsum(thermal.radiogenic)*dt
+            if substep == 0:
+                totals[k]['radiogenic'] = area*math.fsum(thermal.radiogenic)*dt
             if departures:
                 deviations[k] = theta_new
             temperature[k] = list(thermal.steady_k+theta_new)
@@ -833,6 +847,11 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
         else:
             change = math.fsum(new)-math.fsum(heat[k])
         terms = totals[k]
+        per_step = terms['radiogenic']
+        radiogenic = 0.
+        for _ in range(substeps):
+            radiogenic += per_step  # Preserve successive binary64 additions.
+        terms['radiogenic'] = radiogenic
         mechanical_total = math.fsum(mechanical[k])
         booked = -terms['top']+terms['base']+terms['radiogenic']+terms['lateral']+mechanical_total
         scale = (math.fsum(abs(v) for v in terms.values())+mechanical_total
@@ -982,7 +1001,7 @@ def _patch_mechanical_sources(patches, records, supplied):
 
 def conducted_patches(endpoint, records, patch_heat, reference, parent, step, conduction, budget=None,
                       carried=Fraction(0), *, mechanical_patch_energy_j=None, physical_columns=None,
-                      physical_source_areal=None):
+                       physical_source_areal=None, _issued_source=False):
     """Actual-position column conduction, returning exact patch heat and a report.
 
     Existing modal vertical physics and explicit R-2 lateral exchange are applied
@@ -1016,8 +1035,9 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
             if physical_columns is not None:
                 thickness = list(physical_columns[patch.patch_id][0])
                 capacity = [float(c)*piece.area_m2 for c in P.capacity_area(record, thickness, budget=budget)]
-            thermal, propagator = _prepared(record, thickness, dt, cache, budget=budget)
+            thermal, propagator = _prepared(record, thickness, dt, cache, budget=budget, fixed_step=True)
             columns.append((record, piece, thickness, capacity, thermal, propagator))
+        del cache
         exact = [list(patch_heat[p.patch_id]) for p in patches]
         theta = [np.array([math.fsum((float(q/Fraction(c)), reference, -float(s)))
                             for q, c, s in zip(values, col[3], col[4].steady_k)])
@@ -1031,6 +1051,10 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
         bounds = [float(t) for values in temperature for t in values]+[col[0].surface_temperature_k for col in columns]
         bounds += [col[0].base_temperature_k for col in columns if col[0].base_temperature_k is not None]
         low, high = min(bounds), max(bounds)
+        del bounds
+        # These rows have finished serving the initial temperature bounds.
+        projected_sources = temperature
+        reuse_source = physical_source_areal is None or _issued_source
         rate = max(float(q/Fraction(c)/Fraction(duration))+s.radiogenic_w_m3/(
             s.reference_density_kg_m3*s.heat_capacity_j_kg_k)
             for col, source in zip(columns, mechanical) for q, c, s in zip(source, col[3], col[0].sublayers))
@@ -1066,27 +1090,37 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
             for k, col in enumerate(columns):
                 for layer, value in enumerate(flux[k]):
                     exact[k][layer] += value
+                    if fields is not None and layer == 0:
+                        caps = P.capacity_area(col[0], col[2], budget=budget)
                     cap = (Fraction(col[3][layer]) if fields is None else
-                           patches[k].stock[0]*P.capacity_area(col[0], col[2], budget=budget)[layer])
+                           patches[k].stock[0]*caps[layer])
                     theta[k][layer] += float(value/cap)
                 if fields is not None:
+                    if flux[k]:
+                        del caps
                     key = patches[k].patch_id
                     fields[key] = P.add_energy(fields[key], patches[k].stock[0], flux[k])
                 totals[k]['lateral'] += sum(flux[k], Fraction(0))
             for k, (record, piece, thickness, capacity, thermal, prop) in enumerate(columns):
-                source = np.array([float(q/Fraction(piece.area_m2)/Fraction(duration)) for q in mechanical[k]])
-                if fields is not None:
-                    source_areal = (physical_source_areal or {}).get(patches[k].patch_id)
-                    source_areal = (tuple(q/patches[k].stock[0] for q in mechanical[k])
-                                    if source_areal is None else source_areal)
-                    source = np.array([float(q/Fraction(duration)) for q in source_areal])
-                if not np.isfinite(source).all() or any(q and value == 0 for q, value in zip(mechanical[k], source)):
-                    raise ThermalRefused('patch heat source cannot be represented in column units', 'unsupported', 'source')
+                if not reuse_source or substep == 0:
+                    source = np.array([float(q/Fraction(piece.area_m2)/Fraction(duration)) for q in mechanical[k]])
+                    if fields is not None:
+                        source_areal = (physical_source_areal or {}).get(patches[k].patch_id)
+                        source_areal = (tuple(q/patches[k].stock[0] for q in mechanical[k])
+                                        if source_areal is None else source_areal)
+                        source = np.array([float(q/Fraction(duration)) for q in source_areal])
+                    if not np.isfinite(source).all() or any(q and value == 0 for q, value in zip(mechanical[k], source)):
+                        raise ThermalRefused('patch heat source cannot be represented in column units', 'unsupported', 'source')
                 # expm1 gives the physical increment directly, not the difference
                 # between two large absolute heat/temperature values.
                 modal = prop.to_modal@theta[k]
-                source_modal = prop.source_modal@source
-                delta = prop.from_modal@(np.expm1(-prop.lam*dt)*modal+dt*prop.p1*source_modal)
+                if reuse_source and substep:
+                    source_modal = projected_sources[k]
+                else:
+                    source_modal = prop.source_modal@source
+                    if reuse_source:
+                        projected_sources[k] = source_modal
+                delta = prop.from_modal@(prop.increment_factor()*modal+dt*prop.p1*source_modal)
                 integral = prop.from_modal@(dt*prop.p1*modal+dt*dt*prop.p2*source_modal)
                 if fields is None:
                     for layer, (c, value) in enumerate(zip(capacity, delta)):
@@ -1111,7 +1145,8 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
                 if record.base_temperature_k is not None:
                     totals[k]['base'] += area*Fraction(float(base_g*((record.base_temperature_k-
                         thermal.steady_k[-1])*dt-integral[-1])))
-                totals[k]['radiogenic'] += area*Fraction(math.fsum(thermal.radiogenic))*Fraction(dt)
+                if substep == 0:
+                    totals[k]['radiogenic'] = area*Fraction(math.fsum(thermal.radiogenic))*Fraction(dt)
             upper = high+(substep+1)*dt*rate
             tolerance = BOUND_ROUNDING*EPS*max(abs(low), abs(upper))
             if any(not math.isfinite(float(t)) or t <= 0 or not low-tolerance <= t <= upper+tolerance
@@ -1122,6 +1157,11 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
         for k, patch in enumerate(patches):
             changed = sum(exact[k], Fraction(0))-sum(patch_heat[patch.patch_id], Fraction(0))
             terms = totals[k]
+            per_step = terms['radiogenic']
+            radiogenic = Fraction(0)
+            for _ in range(conduction.substeps):
+                radiogenic += per_step
+            terms['radiogenic'] = radiogenic
             source = sum(mechanical[k], Fraction(0))
             booked = -terms['top']+terms['base']+terms['radiogenic']+terms['lateral']+source
             scale = sum((abs(q) for q in terms.values()), Fraction(0))+source+sum((abs(a-b)

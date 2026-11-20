@@ -586,7 +586,8 @@ def _read_surface_key(record, face):
     return None
 
 
-def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, arena=None):
+def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, arena=None,
+                        _validated_transfers=False):
     """Call-local physical keys; None means no established unique order.
 
     IDs retrieve geometry or authenticate the finite port constructor. They
@@ -639,6 +640,7 @@ def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, aren
         if all(d is not None for d in details) and len({d[0] for d in details}) == 1:
             for key, detail in zip(members, details, strict=True):
                 physical[key] = (*base_key, detail)
+    port_candidates = {}
     for row in rows:
         if row.get('kind') != 'algebraic-port':
             continue
@@ -646,22 +648,32 @@ def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, aren
         collar = physical.get(parent)
         if arena is not None and type(parent) is str and collar is not None and collar[0] == 0:
             arena.work(12 * (128 + len(parent)))
-        matches = [] if type(parent) is not str or collar is None or collar[0] != 0 else [
-            (axis, end, inward) for axis in range(3) for end in (0, 1) for inward in (False, True)
-            if E._hash(dict(collar=parent, axis=axis, end=end, inward=inward)) == row['cell_id']]
+        matches = []
+        if type(parent) is str and collar is not None and collar[0] == 0:
+            if parent not in port_candidates:
+                candidates = {}
+                for axis in range(3):
+                    for end in (0, 1):
+                        for inward in (False, True):
+                            digest = E._hash(dict(collar=parent, axis=axis, end=end, inward=inward))
+                            candidates.setdefault(digest, []).append((axis, end, inward))
+                port_candidates[parent] = candidates
+            matches = port_candidates[parent].get(row['cell_id'], [])
         if len(matches) != 1:
             if type(parent) is str and collar is not None and collar[0] == 0:
                 ports[row['cell_id']] = None
             continue
         ports[row['cell_id']] = (2, collar[1], *matches[0])
         physical[row['cell_id']] = ports[row['cell_id']]
-    base = dict(physical)
     classes = {}
     for row in rows:
         key = row['cell_id']
-        if row.get('kind') in ('inventory', 'finite-inventory') and base[key] is not None:
-            classes.setdefault(base[key], []).append(key)
+        if row.get('kind') in ('inventory', 'finite-inventory') and physical[key] is not None:
+            classes.setdefault(physical[key], []).append(key)
     tied = {key for members in classes.values() if len(members) > 1 for key in members}
+    if not tied and _validated_transfers:
+        return physical, ports
+    base = dict(physical)
     incidence = {key: [] for key in tied}
     for face in record.get('face_intervals', record.get('transfers', ())):
         for role, own, other in ((0, face['donor'], face['receiver']), (1, face['receiver'], face['donor'])):
@@ -856,13 +868,12 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                     return _circulation([reservoir]+ids, edges, arena)
             surface_cache = dict(physical_surfaces or {})
             physical, resolved_ports = _physical_cell_keys(record, stock_keys=stock_keys,
-                physical_surfaces=surface_cache, arena=order_arena)
+                physical_surfaces=surface_cache, arena=order_arena, _validated_transfers=True)
             ordered = _physical_order(record, physical, surface_cache, order_arena, edges)
             if ordered is not None:
                 # Preserve original input integrity on the established route.
                 # The selected physical key supersedes source/chart ranking.
-                ids = [r['cell_id'] for r in rows]
-                if len(set(ids)) != len(ids) or any(type(k) is not str for k in ids):
+                if len(keys) != len(rows) or any(type(r['cell_id']) is not str for r in rows):
                     raise V.VolumeError('unique physical row identities required')
                 for row in rows:
                     kind = row['kind']
@@ -1087,7 +1098,7 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
     original, motion = funding.descriptor(), wall_measures.descriptor()
     flow = source_flow_stage.flow
     if (original['source']['sphere_state_id'] != sphere.state_id or original['collar_plan_id'] != collar.plan_id or
-            motion['funding_id'] != funding.funding_id or flow.descriptor().get('wall_measure_id') != wall_measures.measure_id):
+            motion['funding_id'] != funding.funding_id or flow.descriptor().get('wall_measure_id') != motion['measure_id']):
         raise V.VolumeError('physical source/funding/native wall-flow binding differs')
     start, end = (W._decode(motion[k]) for k in ('start_time_s', 'end_time_s'))
     if Q(source_flow_stage.duration_s) != end-start or Q(source_flow_stage.record()['start_time_s']) != start:
@@ -1174,6 +1185,17 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
             if bounds[1] > 0:
                 faces.append(dict(face_id=E._hash(identity), donor=donor, receiver=receiver,
                     volume_bounds_m3=list(map(E._enc, bounds)), **metadata))
+        def whole_face(flat, axis, end_):
+            if not wall_measures._fresh:
+                return W._whole_face(collar_boxes[flat], axis, end_, omega, dt)[0]
+            shape = collar.cells
+            index = (flat//(shape[1]*shape[2]), flat//shape[2] % shape[1], flat % shape[2])
+            transverse = tuple(j for j in range(3) if j != axis)
+            offset = sum(2*shape[(a+1)%3]*shape[(a+2)%3] for a in range(axis))
+            offset += end_*shape[transverse[0]]*shape[transverse[1]]
+            offset += index[transverse[0]]*shape[transverse[1]] + index[transverse[1]]
+            face = motion['faces'][offset]
+            return tuple(W._decode(face[k]) for k in ('inward_exact_volume_m3', 'outward_exact_volume_m3'))
         ports = {}
         def port(flat, axis, end_, inward):
             identity = (flat, axis, end_, inward)
@@ -1182,7 +1204,7 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
                 ports[identity] = key
                 cells[key] = dict(cell_id=key, kind='algebraic-port', collar_cell_id=native_keys[flat],
                     start_volume_bounds_m3=[E._enc(0)]*2, end_volume_bounds_m3=[E._enc(0)]*2)
-                pair, _ = W._whole_face(collar_boxes[flat], axis, end_, omega, dt)
+                pair = whole_face(flat, axis, end_)
                 value = pair[0 if inward else 1]
                 a, b = (key, native_keys[flat]) if inward else (native_keys[flat], key)
                 add_face(a, b, (value, value), dict(port=key, total=True), partition_total=True,
@@ -1245,7 +1267,7 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
             for axis in range(3):
                 for end_ in (0, 1):
                     if index[axis] == (native_shape[axis]-1 if end_ else 0):
-                        pair, _ = W._whole_face(box, axis, end_, omega, dt)
+                        pair = whole_face(flat, axis, end_)
                         boundary_outflow[native_keys[flat]] += pair[1]-pair[0]
                         at = list(index); at[axis] += end_; at = tuple(at); label = 'xyz'[axis]
                         normals = tuple(Q(float(v)) for v in flow.array('normal_'+label+'_m_s')[at])
@@ -1299,7 +1321,7 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
         result = dict(schema='atlas.source-bound-spatial-ale-bounds.v1', funding_id=funding.funding_id,
             source=original['source'], collar_plan_id=collar.plan_id, parent_state_id=source_flow_stage.parent_state_id,
             source_flow_stage_id=source_flow_stage.result_id, flow_id=flow.flow_id,
-            component_keys=original['component_keys'], wall_measure_id=wall_measures.measure_id,
+            component_keys=original['component_keys'], wall_measure_id=motion['measure_id'],
             start_time_s=motion['start_time_s'], end_time_s=motion['end_time_s'],
             start_support_id=motion['start_support_id'], end_support_id=motion['end_support_id'],
             trajectory_id=motion['trajectory_id'], prior_trajectory_id=motion['prior_trajectory_id'],

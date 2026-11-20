@@ -104,8 +104,6 @@ def check_initial_pressure_force(test, case, current, partition, spatial_state, 
                 differential_pressure=force, pressure_native=prototype,
                 global_angular_rate_basis=global_basis,
                 global_constraint_source=force_control.constraint_source) as driver:
-            tractions = {side: np.zeros_like(prototype.coordinates(side)) for side in SIDES}
-            tractions['z0'] = force.array('reservoir_native_traction_pa')
             if prepared_control is not None:
                 extra = {}
                 if force_control.interval_predictor_proposals:
@@ -115,6 +113,8 @@ def check_initial_pressure_force(test, case, current, partition, spatial_state, 
                         plates=plates, boundary=boundary, basis=basis, global_basis=global_basis,
                         force_control=force_control)
                 return prepared_control(driver=driver, pressure=force, datum=datum, **extra)
+            tractions = {side: (force.array('reservoir_native_traction_pa') if side == 'z0'
+                                else np.zeros_like(prototype.coordinates(side))) for side in SIDES}
             stage = collar.source_flow_stage(state, duration, velocity_m_s=0., dynamic_traction_pa=tractions,
                 gravity_m_s2=radial_gravity_field(collar, datum, budget=budget), additional_body_force_n_m3=0.,
                 driving_source=driver.driving_id, heat_source_w_m3=0., heat_source='no extra heat',

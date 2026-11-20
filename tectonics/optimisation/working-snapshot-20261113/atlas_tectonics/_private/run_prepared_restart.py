@@ -154,7 +154,7 @@ SUCCESSOR_CHECKS = ('live_head_identity', 'live_head_advanced_exactly_one_interv
 H3_NAME = 'private_heat_compiled_dot_r1'
 H3_SHA256 = '3a4e1da27afd6188b5a6cde97b56e7b96f89b0bb2a8063c32c97942da030b901'
 H3_KERNEL = 'private_heat_certification_kernel_r1'
-H3_KERNEL_SHA256 = '5bd0d0df45734aece34ec4a167ea022ee364d2fdb2e585940bab35198e2b306c'
+H3_KERNEL_SHA256 = 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d'
 
 
 class RestartRefused(ValueError):

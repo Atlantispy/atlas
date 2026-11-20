@@ -10,6 +10,7 @@ from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
 import hashlib
+from itertools import chain
 import math
 from pathlib import Path
 import sys
@@ -54,9 +55,23 @@ class InventoryPlan:
     prospective_accounted_policy: bool = True
     allocator_or_rss_bound: bool = False
     whole_method_admission: bool = False
+    contribution_count: int = 0
+    shallow_maximum: int = 2048
+    refinement_original_maximum: int = 1
+    refinement_original_eligible: bool = True
 
 
 def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+                   budget=budget, cancel=cancel, owned=False)
+
+
+def _derive_owned(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+                   budget=budget, cancel=cancel, owned=True)
+
+
+def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, owned):
     """Inspect typed owned rows; return inventory for unchanged A.assemble.
 
     No rows/coefficients/Decimal digit arrays are copied. Temporary shape maps
@@ -80,16 +95,19 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
 
     def owned_bytes(value):
         if type(value) is Fraction:
-            return sys.getsizeof(value)+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator)
+            shallow = sys.getsizeof(value)
+            return shallow+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator), shallow
         if type(value) not in (int, float, gmp.mpq):
             raise ValueError('Only owned integer, binary64, Fraction or GMP rational endpoints supported')
         if type(value) is float and not math.isfinite(value):
             raise ValueError('Finite endpoint required')
-        return sys.getsizeof(value)
+        size = sys.getsizeof(value)
+        return size, size
 
     # Counts and scalar sizes only before any per-coefficient map is created.
     weights = owners = input_bytes = 0
     largest = 2048
+    refinement_original_maximum, refinement_original_eligible = 1, True
     for row in rows:
         check()
         if type(row) is not dict or type(row.get('bounds')) is not dict:
@@ -106,13 +124,17 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
                 raise ValueError('Typed observation and endpoint pairs required')
             input_bytes += 512+sum(sys.getsizeof(item) for item in key)
             for value in pair:
-                size = owned_bytes(value)
+                size, shallow = owned_bytes(value)
+                refinement_original_maximum = max(refinement_original_maximum, shallow)
+                refinement_original_eligible = refinement_original_eligible and type(value) in (gmp.mpq, int)
                 input_bytes += size
                 largest = max(largest, size)
+    shallow_maximum = max(2048, refinement_original_maximum)
     for key, entry in boundary.items():
         if type(key) is not str or type(entry) not in (tuple, list) or len(entry) != 2:
             raise ValueError('Typed physical boundary declarations required')
-        size = owned_bytes(entry[1])
+        size, shallow = owned_bytes(entry[1])
+        shallow_maximum = max(shallow_maximum, shallow)
         input_bytes += 1024+4*len(key)+size
         largest = max(largest, size)
     scan_bytes = (1 << 20)+2048*(owners+cells+len(boundary))+16*largest
@@ -141,27 +163,38 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
         retained_endpoint_bytes = 0
         bshape = {key: shape(entry[1]) for key, entry in boundary.items()}
         for row in rows:
+            owners_validated = False
             for key, pair in row['bounds'].items():
                 check()
                 kind, index = key
                 bounds = tuple(map(shape, pair))
                 endpoint_zero = tuple(value == 0 for value in pair)
+                source_bounds = bounds
+                unequal = pair[0] != pair[1]
                 for s in bounds:
                     conversion_bits = max(conversion_bits, s.numerator+s.denominator)
                     conversion_part = max(conversion_part, s.numerator, s.denominator)
-                    if pair[0] != pair[1]:
+                    if unequal:
                         tie_bits = max(tie_bits, s.numerator+s.denominator)
                         tie_part = max(tie_part, s.numerator, s.denominator)
                 for owner, sign in row['owners']:
-                    if type(owner) is not int or not 0 <= owner < cells or type(sign) is not int or sign not in (-1, 1):
+                    if (not owned or not owners_validated) and (type(owner) is not int or not 0 <= owner < cells or type(sign) is not int or sign not in (-1, 1)):
                         raise ValueError('Original bounded integer owner and sign required')
                     if kind == 'cell':
                         if type(index) is not int or not 0 <= index < cells:
                             raise ValueError('Bounded cell observation required')
-                        target = op.setdefault((owner, index), [zero, zero])
+                        op_key = (owner, index)
+                        target = op.get(op_key)
+                        if target is None:
+                            target = op[op_key] = [zero, zero]
                         zero_incoming = endpoint_zero
                     elif kind in ('wall', 'power') and index in bshape:
-                        source_bounds = tuple(map(shape, pair))
+                        if owned:
+                            # Keep both original cancellation opportunities.
+                            check()
+                            check()
+                        else:
+                            source_bounds = tuple(map(shape, pair))
                         factor = bshape[index]
                         products = tuple(multiply_shape(s, factor) for s in source_bounds)
                         factor_zero = boundary[index][1] == 0
@@ -195,7 +228,8 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
                         conversion_bits = max(conversion_bits, result.numerator+result.denominator)
                         conversion_part = max(conversion_part, result.numerator, result.denominator)
                         target[j] = result
-        for pair in list(op.values())+wall:
+                owners_validated = True
+        for pair in chain(op.values(), wall):
             for s in pair:
                 retained_endpoint_bytes += R.native_slot_allowance(R.RationalShape(s.numerator, s.denominator))
                 # Aggregate equality/cancellation is unknown to the shape pass.
@@ -220,4 +254,7 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
         check()
         return InventoryPlan(inventory, (('exact_accumulators', retained_endpoint_bytes),
             ('native_scalar_work', scalar), ('decimal_conversion', decimal), ('containers', containers),
-            ('metadata_scan', scan_bytes), ('codec', codec)), len(op)+cells, conversion_bits, growth)
+            ('metadata_scan', scan_bytes), ('codec', codec)), len(op)+cells, conversion_bits, growth,
+            contribution_count=owners, shallow_maximum=shallow_maximum,
+            refinement_original_maximum=refinement_original_maximum,
+            refinement_original_eligible=refinement_original_eligible)

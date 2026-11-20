@@ -232,7 +232,7 @@ def _fsum0(terms):
 
 
 def plate_order_key(network):
-    """A-36 (ruling 34): the plates' indices in order of a geometric key made without arithmetic. A face's key is the
+    """A-36 (geometric order): the plates' indices in order of a geometric key made without arithmetic. A face's key is the
     sorted tuple of its vertices' stored directions (outer ring and holes), each as stored; a plate's key is the least
     of its faces' keys. Only physical coordinates enter the key."""
     index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
@@ -983,7 +983,9 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             pressure[order[left]].append(contribution)
             pressure[order[right]].append(-contribution)
             name = support.boundary_ids[int(support.edge_boundary[e])]
-            jump.setdefault(name, [np.zeros(3)]).append(-radius*radius*delta_k[e]*chord)
+            if name not in jump:
+                jump[name] = [np.zeros(3)]
+            jump[name].append(-radius*radius*delta_k[e]*chord)
         terms['radial_pressure'] = np.array([_fsum0(values) for values in pressure])
         jumps = [(name, tuple(float(x) for x in _fsum0(value))) for name, value in sorted(jump.items())]
         radial_record = dict(port_id=radial_pressure_port.port_id, moving_id=radial_pressure_port.moving_id,
@@ -1043,7 +1045,9 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             gpe[order[left]].append(contribution)
             gpe[order[right]].append(-contribution)
             name = support.boundary_ids[int(support.edge_boundary[e])]
-            jump.setdefault(name, [np.zeros(3)]).append(scale*(u[e, 1]-u[e, 0])*chord[e])
+            if name not in jump:
+                jump[name] = [np.zeros(3)]
+            jump[name].append(scale*(u[e, 1]-u[e, 0])*chord[e])
         terms['gpe'] = np.array([_fsum0(values) for values in gpe])
         jumps = [(name, tuple(float(x) for x in _fsum0(value))) for name, value in sorted(jump.items())]
     if forcing.slabs or forcing.slab_omitted:

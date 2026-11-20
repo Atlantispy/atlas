@@ -864,14 +864,19 @@ def _provinces(sphere, draws, fraction, rng):
 def _clip(points, normal):
     """The part of a convex minor-arc polygon on the side normal.x >= 0 (one great-circle Sutherland-Hodgman pass)."""
     out = []
+    if len(points) == 0:
+        return out
+    first = dp = float(_dot3(points[0], normal))
     for k, here in enumerate(points):
-        after = points[(k+1) % len(points)]
-        dp, dq = float(_dot3(here, normal)), float(_dot3(after, normal))
+        following = (k+1) % len(points)
+        after = points[following]
+        dq = float(_dot3(after, normal)) if following else first
         if dp >= 0:
             out.append(here)
         if dp*dq < 0:
             cut = (dp*after-dq*here)*(1. if dp > dq else -1.)        # a positive combination: on the minor arc
             out.append(cut/np.linalg.norm(cut))
+        dp = dq
     return [x for k, x in enumerate(out) if not np.array_equal(x, out[k-1])] if len(out) > 1 else out
 
 
@@ -1761,8 +1766,12 @@ def _starting_family(request, budget):
     sphere = SphericalFrame(request.radius_m, FRAME_ID)
     radius = sphere.radius_m
     draws = _Draws(request.seed)
-    materials, _ = earth_material_library().definitions(ROCKS)
-    densities = {m.material_id: float(m.density_kg_m3) for m in materials}
+    library = earth_material_library()
+    densities = {}
+    for material_id in sorted(ROCKS):
+        datum = library[material_id].datum('density')
+        density = None if datum is None or datum.is_secant or datum.reference_temperature_k != 293.15 else datum.value_si
+        densities[material_id] = float(density)
     densities['rock.peridotite'] = MANTLE_REFERENCE_KG_M3
     fraction, now = request.continental_fraction, request.time_s
     background = OCEANIC if fraction <= .5 else CONTINENTAL

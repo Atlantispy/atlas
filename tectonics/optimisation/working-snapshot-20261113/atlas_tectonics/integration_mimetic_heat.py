@@ -272,12 +272,15 @@ def _metric_profile_capacity(cell_count, face_count, cells, faces, budget,
             face_work = face_ids = largest_parse = largest_claim = 0
             for key, id_width, centre, normal, claimed_count in faces:
                 face_ids += id_width
-                for bits in (*centre, *normal):
+                normal_storage = 0
+                for at, bits in enumerate((*centre, *normal)):
                     storage = _rational_storage(bits)
                     face_work += storage
                     largest_parse = max(largest_parse, 8*storage+sum(bits))
+                    if at >= 3:
+                        normal_storage += storage
                 if key is not None:
-                    profiles[key] = centre, normal
+                    profiles[key] = centre, normal, normal_storage
                 largest_claim = max(largest_claim, 256*claimed_count)
             retained = 8192+256*(cell_count+face_count)+face_ids
             scratch = 65536+1024*face_count+512*cell_count+face_work+largest_claim
@@ -290,7 +293,12 @@ def _metric_profile_capacity(cell_count, face_count, cells, faces, budget,
                     largest_parse = max(largest_parse, 8*storage+sum(bits))
                 sums = [[0, 0, 0] for _ in range(12)]
                 for key in linked:
-                    face_centre, normal = profiles.get(key, (((1, 1),)*3, ((1, 1),)*3))
+                    profile = profiles.get(key)
+                    if profile is None:
+                        face_centre = normal = ((1, 1),)*3
+                        normal_storage = 3*_rational_storage((1, 1))
+                    else:
+                        face_centre, normal, normal_storage = profile
                     offset = tuple(_difference_bits(a, b) for a, b in zip(face_centre, centre))
                     distance_profile = [0, 0, 0]
                     for i in range(3):
@@ -301,7 +309,7 @@ def _metric_profile_capacity(cell_count, face_count, cells, faces, budget,
                             if i == j:
                                 _add_profile(distance_profile, product)
                     distance = _sum_profile_bits(distance_profile)
-                    retained += (512+sum(map(_rational_storage, normal))+
+                    retained += (512+normal_storage+
                         sum(map(_rational_storage, offset))+_rational_storage(distance))
                     arithmetic = max(arithmetic, 32*_rational_storage(
                         (2*distance[0]+2, 2*distance[1]+2)))
@@ -365,7 +373,7 @@ def _compact_metric_allocation_capacity(view, budget):
 
 def _append_compact_face(view, index, faces, centres, normals):
     """Consume one owned metric row; no row borrow escapes on success."""
-    owned = view.face_metrics(index, include_owners=False)
+    owned = view._face_metrics(index, False, view._admitted_metric_rationals)
     row = owned.value
     key = row['face_id']
     if type(key) is not str or not key or key in faces:
@@ -380,7 +388,7 @@ def _append_compact_face(view, index, faces, centres, normals):
 
 def _append_compact_cell(view, ci, centres, normals, incidence, keys, decoded, budget):
     """Validate one typed row after the complete scan checked incidence bounds."""
-    owned = view.cell_metrics(ci)
+    owned = view._cell_metrics(ci, view._admitted_metric_rationals)
     row = owned.value
     key = row['cell_id']
     if type(key) is not str or not key or key in keys:

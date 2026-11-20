@@ -302,25 +302,28 @@ def area_interval_sr(cells, *, cancel=None):
                     root = Decimal(T._dot(p, p)).sqrt()
                     roots.append((root.next_minus(), root.next_plus()))
                 products = (T._dot(b, c), T._dot(c, a), T._dot(a, b))
+                decimal_products = tuple(Decimal(dot) for dot in products)
+                decimal_numerator = Decimal(numerator)
                 denominator = []
                 for side, rounding in ((0, ROUND_FLOOR), (1, ROUND_CEILING)):
                     context.rounding = rounding
                     value = roots[0][side]*roots[1][side]*roots[2][side]
-                    for dot, root in zip(products, roots):
-                        value += Decimal(dot)*root[side if dot >= 0 else 1-side]
+                    for dot, decimal_dot, root in zip(products, decimal_products, roots):
+                        value += decimal_dot*root[side if dot >= 0 else 1-side]
                     denominator.append(value)
-                scale = max(Decimal(numerator), *(abs(v) for v in denominator))
+                scale = max(decimal_numerator, *(abs(v) for v in denominator))
                 context.rounding = ROUND_FLOOR
-                nlo = float_bounds(Decimal(numerator)/scale)[0]
+                nlo = float_bounds(decimal_numerator/scale)[0]
                 dlo = float_bounds(denominator[0]/scale)[0]
                 context.rounding = ROUND_CEILING
-                nhi = float_bounds(Decimal(numerator)/scale)[1]
+                nhi = float_bounds(decimal_numerator/scale)[1]
                 dhi = float_bounds(denominator[1]/scale)[1]
                 angles = [math.atan2(n, d) for n in (nlo, nhi) for d in (dlo, dhi)]
                 # One ulp, rather than just one neighbouring float: at a power
                 # of two the lower neighbouring spacing can be half an ulp.
-                lower += 2*max(Fraction(0), min(Fraction(v)-Fraction(math.ulp(v)) for v in angles))
-                upper_bound += 2*max(Fraction(v)+Fraction(math.ulp(v)) for v in angles)
+                angle_bounds = [(Fraction(v), Fraction(math.ulp(v))) for v in angles]
+                lower += 2*max(Fraction(0), min(v-ulp for v, ulp in angle_bounds))
+                upper_bound += 2*max(v+ulp for v, ulp in angle_bounds)
     return lower, upper_bound
 
 
@@ -391,15 +394,18 @@ def _placement_map(source, target):
     old = tuple(_near_unit(p) for p in source)
     new = tuple(tuple(Fraction(float(v)) for v in p) for p in target)
     prepared = []
+    normal = normal_squared = None
     for triangle in triangles:
         selected = [indices[p] for p in triangle]
         a, b = tuple(old[i] for i in selected), tuple(new[i] for i in selected)
-        normal = tuple(Fraction(v) for v in centre)
+        if normal is None:
+            normal = tuple(Fraction(v) for v in centre)
+            normal_squared = T._dot(normal, normal)
         c = min(T._dot(normal, p) for p in a)
         d2 = max(sum(((x-y)**2 for x, y in zip(p, q)), Fraction(0)) for p, q in zip(a, b))
         if c <= 0:
             raise SupportError('precise motion has no conditioned re-expression hemisphere')
-        eta2 = d2*T._dot(normal, normal)/(c*c)
+        eta2 = d2*normal_squared/(c*c)
         eta = math.sqrt(float(eta2))
         while Fraction(eta)**2 < eta2:
             eta = math.nextafter(eta, math.inf)
@@ -458,7 +464,7 @@ def motion_geometry(network, endpoint, geometry, *, cancel=None):
         if not any(name in points for name in face.vertex_ids):
             continue
         target = endpoint._local[new_plates[face.plate_id]][[new_indices[v] for v in face.vertex_ids]]
-        source = tuple(points.get(name, T._primitive(p))
+        source = tuple(points[name] if name in points and any(p) else T._primitive(p)
                        for name, p in zip(face.vertex_ids, T._integers(target)))
         receivers[i] = _placement_map(source, target)
     return receivers, {key: tuple(value) for key, value in sweep_cells.items()}
@@ -520,6 +526,11 @@ def whole_face_allowance(network, index):
     """
     T = _tools()
     rings = T._Shapes(network).rings(index)
+    return _whole_face_allowance(network, index, rings)
+
+
+def _whole_face_allowance(network, index, rings):
+    T = _tools()
     measured = float(network.face_area_m2[index])
     bound = T._sphere._measure_bound(rings)
     if bound is None:
@@ -596,37 +607,48 @@ def declared(network, face, cohort, stock, cohorts, footprints=None, *, areal_de
     """
     T = _tools()
     shapes = T._Shapes(network)
-    counts = {int(f): int(np.count_nonzero(face == f)) for f in face}
+    counts = {}
+    for f in face:
+        f = int(f)
+        counts[f] = counts.get(f, 0)+1
+    face_ids = network.face_ids
+    face_indices = {}
     supplied = {} if footprints is None else dict(footprints)
     explicit_faces = set()
     patches = []
     for f, c, values in zip(face, cohort, stock):
-        key = network.face_ids[int(f)], cohorts[int(c)].cohort_id
+        f = int(f)
+        key = face_ids[f], cohorts[int(c)].cohort_id
+        rings = None
         if key in supplied:
             declared_ = supplied.pop(key)
             cells = (declared_.cells if type(declared_) is ExactFootprint else
                      tuple(cell for rings in declared_ for cell in cells_of_rings(rings)))
             explicit_faces.add(key[0])
-        elif counts[int(f)] == 1:
-            cells = cells_of_rings(shapes.rings(int(f)))
+            face_indices[key[0]] = f
+        elif counts[f] == 1:
+            rings = shapes.rings(f)
+            cells = cells_of_rings(rings)
         else:
             raise SupportError('mixed declaration %r needs explicit material footprints' % (key,))
         allowance = 0.
-        if counts[int(f)] == 1:
-            measured = float(network.face_area_m2[int(f)])
+        if counts[f] == 1:
+            measured = float(network.face_area_m2[f])
             exact_measure = area_sr(cells)*network.sphere.radius_m**2
             # _material still enforces the original authored occupancy gate.
             # Carry the two explicit discrepancies for this same whole polygon,
             # never a new allowance on arbitrary clipped geometry.
             declared_difference = abs(Fraction(float(values[0]))-Fraction(measured))
             evaluation_difference = abs(Fraction(measured)-Fraction(exact_measure))
-            allowance = upper(declared_difference+max(Fraction(whole_face_allowance(network, int(f))),
+            if rings is None:
+                rings = shapes.rings(f)
+            allowance = upper(declared_difference+max(Fraction(_whole_face_allowance(network, f, rings)),
                                                        evaluation_difference))
         patches.append(Patch(*key, cells, tuple(Fraction(float(v)) for v in values), allowance, areal_density))
     if supplied:
         raise SupportError('a footprint names no declared piece')
     for face_id in explicit_faces:
-        own = cells_of_rings(shapes.rings(network.face_ids.index(face_id)))
+        own = cells_of_rings(shapes.rings(face_indices[face_id]))
         declared_cells = tuple(cell for p in patches if p.face_id == face_id for cell in p.cells)
         if difference(declared_cells, own) or difference(own, declared_cells):
             raise SupportError('explicit footprints must partition the exact declared face; rounded off-edge '
@@ -639,8 +661,14 @@ def checked(network, face, cohort, stock, cohorts, support, *, signed=False):
     if type(support) is not Support or any(type(p) is not Patch for p in support.patches):
         raise SupportError('typed material support is required')
     T = _tools()
-    keys = {(network.face_ids[int(f)], cohorts[int(c)].cohort_id): tuple(Fraction(float(v)) for v in row)
-            for f, c, row in zip(face, cohort, stock)}
+    face_ids = network.face_ids
+    keys = {}
+    face_indices = {}
+    for f, c, row in zip(face, cohort, stock):
+        f = int(f)
+        face_id = face_ids[f]
+        face_indices[face_id] = f
+        keys[face_id, cohorts[int(c)].cohort_id] = tuple(Fraction(float(v)) for v in row)
     found = {}
     radius2 = network.sphere.radius_m**2
     shapes = T._Shapes(network)
@@ -679,7 +707,7 @@ def checked(network, face, cohort, stock, cohorts, support, *, signed=False):
                 T.RELATIVE_TOLERANCE*max(measured, float(patch.stock[0])), patch.area_allowance_m2):
             raise SupportError('patch area and its retained geometry do not close within the existing tolerance')
         if patch.face_id not in cells_by_face:
-            cells_by_face[patch.face_id] = cells_of_rings(shapes.rings(network.face_ids.index(patch.face_id)))
+            cells_by_face[patch.face_id] = cells_of_rings(shapes.rings(face_indices[patch.face_id]))
         own = cells_by_face[patch.face_id]
         held = measured if patch.cells == own else area_sr(intersection(patch.cells, own))*radius2
         if abs(held-measured) > T.RELATIVE_TOLERANCE*measured:
@@ -782,15 +810,18 @@ def reconcile(patches, keys, stock, *, signed=False):
         adjusted = tuple(a+d for a, d in zip(pieces[k].stock, delta))
         if adjusted[0] <= 0 or any(v < 0 for v in adjusted[1:-1 if signed else None]):
             raise SupportError('piece rounding would erase a positive material patch')
-        pieces[k] = replace(pieces[k], stock=adjusted,
-                            area_allowance_m2=upper(Fraction(pieces[k].area_allowance_m2)+abs(delta[0])))
+        allowance = pieces[k].area_allowance_m2
+        if (any(delta) or any(type(value) is not Fraction for value in pieces[k].stock)
+                or type(allowance) is not float or (allowance == 0. and math.copysign(1., allowance) < 0.)):
+            pieces[k] = replace(pieces[k], stock=adjusted,
+                                area_allowance_m2=upper(Fraction(allowance)+abs(delta[0])))
         out.extend(pieces)
     if by_key:
         raise SupportError('a material footprint has no endpoint piece')
     return Support(tuple(sorted(out, key=lambda p: (p.face_id, p.cohort_id, p.patch_id))))
 
 
-def completed_rows(network, endpoint, rows, *, sweeps=(), budget=None, cancel=None, precise=None):
+def completed_rows(network, endpoint, rows, *, sweeps=(), budget=None, cancel=None, precise=None, change=None):
     """Complete exact positive candidates omitted by the projected evidence map.
 
     This transient map is recomputed on replay; it does not replace the stored
@@ -799,7 +830,7 @@ def completed_rows(network, endpoint, rows, *, sweeps=(), budget=None, cancel=No
     """
     from scipy.spatial import cKDTree
     T = _tools()
-    before, after, donors, receivers = T._changed(network, endpoint)
+    before, after, donors, receivers = T._mesh_change(network, endpoint, change)
     # A ridge can rename a riding corner without changing any local direction.
     # The original motion producer correctly issues no material row there.
     # Candidate completion must not turn that identity into a newly measured
@@ -901,10 +932,12 @@ def completed_rows(network, endpoint, rows, *, sweeps=(), budget=None, cancel=No
         return T._Rows(tuple(donor), tuple(receiver), tuple(party), tuple(area), tuple(parties), rows.transient)
 
 
-def row_fragments(network, material, endpoint, rows, *, sweeps=(), cancel=None, precise=None):
+def row_fragments(network, material, endpoint, rows, *, sweeps=(), cancel=None, precise=None,
+                  support=None, groups=None):
     """Sparse patch/row intersections; a row is only a candidate, never a cohort weight."""
     T = _tools()
-    support = required(material)
+    if support is None:
+        support = required(material)
     shapes = T._Shapes(endpoint)
     receiver_cells = {}
     sweep_cells = {}
@@ -912,10 +945,12 @@ def row_fragments(network, material, endpoint, rows, *, sweeps=(), cancel=None, 
         sweep_cells.setdefault((boundary, plate), []).extend(cells_of_rings((ring,)))
     if precise is not None:
         sweep_cells.update(precise[1])
-    donors = {}
-    for row, source in enumerate(rows.donor):
-        if source >= 0:
-            donors.setdefault(network.face_ids[source], []).append(row)
+    if groups is None:
+        groups = {}
+        for row, source in enumerate(rows.donor):
+            if source >= 0:
+                groups.setdefault(source, []).append(row)
+    donors = {network.faces[source].face_id: members for source, members in groups.items()}
     out = []
     for patch in support.patches:
         T._check_cancel(cancel)
@@ -1137,13 +1172,14 @@ def material_trace_segments(sphere):
     network, support = sphere.network, required(sphere.material)
     vertex = dict(zip(network.vertex_ids, network.vertex_direction))
     local_index = {name: i for i, name in enumerate(network._layout.names)}
+    plate_index = {plate: i for i, plate in enumerate(network.plate_ids)}
     owners, patches_of = {}, {}
     for face in network.faces:
         for ring in (face.vertex_ids, *face.holes):
             for a, b in zip(ring, ring[1:]+ring[:1]):
                 if (a, b) in owners:
                     raise SupportError('a directed material trace edge has multiple face owners')
-                owners[a, b] = face.face_id
+                owners[a, b] = face
     for patch in support.patches:
         patches_of.setdefault(patch.face_id, []).append(patch)
     out = []
@@ -1155,13 +1191,13 @@ def material_trace_segments(sphere):
             contacts, cuts = [], {Fraction(0), Fraction(1)}
             for side_index, plate in enumerate((boundary.left_plate_id, boundary.right_plate_id)):
                 face = owners.get((start, end) if side_index == 0 else (end, start))
-                if face is None or network.face_plate(face) != plate:
+                if face is None or face.plate_id != plate:
                     raise SupportError('boundary material candidates do not match the directed face owner')
-                local = network._local[network.plate_ids.index(plate)][[local_index[start], local_index[end]]]
+                local = network._local[plate_index[plate]][[local_index[start], local_index[end]]]
                 u, v = T._integers(local)
                 trace_normal = T._cross(u, v)
                 side = []
-                for patch in patches_of.get(face, ()):
+                for patch in patches_of.get(face.face_id, ()):
                     for cell in patch.cells:
                         low, high = Fraction(0), Fraction(1)
                         coincident = False

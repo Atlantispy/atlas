@@ -67,6 +67,10 @@ Several patches can form one large or disconnected plate. A complete spherical
 atlas checks opposite edge pairing, junction order, connectivity, Euler's relation
 and an area sum of `4π` steradians. No area rescaling repairs a failed closure.
 
+Construction checks edge-frame geometry once and discards the temporary frame
+vectors. A public frame request returns detached arrays. Atlas and planet
+identifiers use the same ordered coordinate bytes held by the issued object.
+
 In the nondefault working snapshot, the [atlas area producer](../../optimisation/working-snapshot-20261113/atlas_tectonics/spherical_atlas.py)
 chooses the numerically lexicographically smallest original Cartesian vertex
 as each spherical ring's fan anchor. Shells and holes choose separately. This

@@ -85,10 +85,11 @@ class OwnedAssessment(B.OwnedAssembly):
 def _rounded(bounds, label, gmp, cancel=None):
     lo, hi = bounds
     lower = dec(lo, cancelled=cancel)
-    upper = lower if lo == hi else dec(hi, cancelled=cancel)    # decision 569: one value is decoded once
+    equal = lo == hi
+    upper = lower if equal else dec(hi, cancelled=cancel)    # decision 569: one value is decoded once
     if not lower.is_finite() or not upper.is_finite() or lower != upper:
         raise UnresolvedRounding(label+': endpoint Decimal-80 rounding differs or is nonfinite')
-    if lo == hi:
+    if equal:
         return lower
     if not lower:
         raise UnresolvedRounding(label+': non-singleton zero is not an exact-zero proof')
@@ -152,7 +153,7 @@ def _run(rows, cell_count, boundary, *, witness, source_bindings, budget,
         raise
 
 
-def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, gmp, collect):
+def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, gmp, collect, owned=False):
     if not isinstance(witness, dict) or not witness or not isinstance(source_bindings, dict) or not source_bindings:
         raise ValueError('Explicit nonempty witness and source-binding metadata required')
     for name, digest in source_bindings.items():
@@ -183,7 +184,9 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                     or owner[1] not in (-1, 1) for owner in owners)
                     or len(owners) == 2 and (owners[0][0] == owners[1][0] or owners[0][1] != -owners[1][1])):
                 raise ValueError('Valid one/two opposite physical face owners required')
-            if len(set(keys)) != len(keys) or set(keys) != set(row['bounds']):
+            key_set = set(keys)
+            if (len(key_set) != len(keys) or key_set !=
+                    (row['bounds'].keys() if type(row['bounds']) is dict else set(row['bounds']))):
                 raise ValueError('Ordered unique observation keys and complete matching bounds required')
             weights = []
             for key in keys:
@@ -210,7 +213,10 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                         # Owners were validated as exact integer +/-1 above;
                         # _q has already made both endpoints immutable GMP rationals.
                         contribution = bounds if sign == 1 else (-bounds[1], -bounds[0])
-                        op[owner][index] = B._add(op[owner].get(index, zero), contribution)
+                        if not owned or index in op[owner]:
+                            op[owner][index] = B._add(op[owner].get(index, zero), contribution)
+                        else:
+                            op[owner][index] = contribution
                         label_key = ('operator', owner, index)
                     else:
                         contribution = B._scale(bounds, sign*B._q(boundary[index][1], gmp))

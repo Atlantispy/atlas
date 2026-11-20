@@ -26,13 +26,18 @@ class PatchContact:
 
 def _plane(p, q):
     n = T._primitive(T._cross(p, q))
-    return n if next(v for v in n if v) > 0 else tuple(-v for v in n)
+    sign = 1 if next(v for v in n if v) > 0 else -1
+    return (n if sign > 0 else tuple(-v for v in n)), sign
 
 
 def _parameter(u, v, point):
     """Exact projective minor-arc coordinate, or None outside the positive cone."""
     if T._dot(T._cross(u, v), point) != 0:
         return None
+    return _parameter_on_plane(u, v, point)
+
+
+def _parameter_on_plane(u, v, point):
     for i, j in ((0, 1), (0, 2), (1, 2)):
         det = u[i]*v[j]-u[j]*v[i]
         if det:
@@ -64,9 +69,13 @@ def _side_intervals(patches, u, v, positive):
                     lo = max(lo, Fraction(-x, y-x))
                 elif y < 0 <= x:
                     hi = min(hi, Fraction(x, x-y))
-            inward = sum(T._sign(T._dot(normal, p)) for p in cell)
-            if hi > lo and (not coincident or (inward > 0 if positive else inward < 0)):
-                out.append((lo, hi, patch.patch_id))
+            if hi <= lo:
+                continue
+            if coincident:
+                inward = sum(T._sign(T._dot(normal, p)) for p in cell)
+                if not (inward > 0 if positive else inward < 0):
+                    continue
+            out.append((lo, hi, patch.patch_id))
     return out
 
 
@@ -89,19 +98,22 @@ def _partition_plane(edges):
     bases = {tuple(sorted((p, q))) for p, q, _, _ in edges}
     emitted = set()
     for u, v in sorted(bases):
-        cuts = sorted({t for p in vertices if (t := _parameter(u, v, p)) is not None})
+        cuts = sorted({t for p in vertices if (t := _parameter_on_plane(u, v, p)) is not None})
+        p = _point(u, v, cuts[0]) if len(cuts) > 1 else None
         for lo, hi in zip(cuts, cuts[1:]):
-            p, q = _point(u, v, lo), _point(u, v, hi)
+            q = _point(u, v, hi)
             identity = tuple(sorted((p, q)))
             if identity in emitted:
+                p = q
                 continue
             emitted.add(identity)
             mid = _point(u, v, (lo+hi)/2)
             sides = defaultdict(int)
             for a, b, patch_id, sign in edges:
-                if _parameter(a, b, mid) is not None:
+                if _parameter_on_plane(a, b, mid) is not None:
                     sides[patch_id] += sign
             yield p, q, mid, {key: value for key, value in sides.items() if value}
+            p = q
 
 
 def _named_edge_points(start, end, cuts):
@@ -135,8 +147,7 @@ def contacts(sphere, *, budget=None):
             by_face[patch.face_id].append(patch)
             for cell in patch.cells:
                 for p, q in zip(cell, cell[1:]+cell[:1]):
-                    plane = _plane(p, q)
-                    sign = T._sign(T._dot(plane, T._cross(p, q)))
+                    plane, sign = _plane(p, q)
                     groups[patch.face_id, plane].append((p, q, patch.patch_id, sign))
         # Charge the worst local interval-partition candidate work before looping;
         # this is an engineering admission bound, not a physical error allowance.

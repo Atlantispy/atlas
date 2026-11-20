@@ -18,6 +18,7 @@ from concurrent.futures import Future
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 import os
 import secrets
 import sys
@@ -158,15 +159,28 @@ def _validate(record):
 
 
 def _validate_batch(record):
-    if record.keys() != _BATCH_FIELDS or record['schema'] != _BATCH_SCHEMA:
+    if (record.keys() not in (_BATCH_FIELDS, _BATCH_FIELDS | {'batch_seconds'})
+            or record['schema'] != _BATCH_SCHEMA):
         raise ValueError('complete batch-binding schema required')
     requests = record['requests']
     if type(requests) is not list or not 1 <= len(requests) <= BATCH_LIMIT:
         raise ValueError('a batch holds one to %d requests' % BATCH_LIMIT)
-    if (len({request_fields(request) for request in requests}) != 1
+    shapes = {request_fields(request) for request in requests}
+    if (len(shapes) != 1
             or len({canonical(request) for request in requests}) != len(requests)):
         raise ValueError('a batch holds distinct requests of one kind')
+    if 'batch_seconds' in record:
+        _batch_seconds(record['batch_seconds'])
+        if (shapes != {REQUEST_FIELDS}
+                or any(request['kind'] != 'component-moving-radial-interface' for request in requests)):
+            raise ValueError('a finite nonnegative body limit binds moving interfaces only')
     _validate_envelope(record)
+
+
+def _batch_seconds(seconds):
+    if not (type(seconds) is int and seconds >= 0 or
+            type(seconds) is float and math.isfinite(seconds) and seconds >= 0):
+        raise ValueError('a finite nonnegative non-boolean batch body limit is required')
 
 
 def is_batch(encoded):
@@ -186,12 +200,9 @@ def _validate_envelope(record):
             or not any(k.startswith('input:') for k in sources)
             or not any(k.startswith('src/atlas_tectonics/') for k in sources)):
         raise ValueError('full source/input digest inventory required')
-    if (type(limits) is not dict or limits.keys() != {'max_bytes', 'max_predicate_work_units'}
-            or type(limits['max_bytes']) is not int or limits['max_bytes'] <= 0
-            or (limits['max_predicate_work_units'] is not None
-                and (type(limits['max_predicate_work_units']) is not int
-                     or limits['max_predicate_work_units'] <= 0))):
+    if type(limits) is not dict or limits.keys() != {'max_bytes', 'max_predicate_work_units'}:
         raise ValueError('exact positive child budget and explicit predicate mode required')
+    _child_limits(limits['max_bytes'], limits['max_predicate_work_units'])
     runtime = record['execution_runtime']
     if (not _digest(record['execution_identity']) or type(runtime) is not dict
             or runtime.keys() != {'versions', 'binaries'}
@@ -201,6 +212,12 @@ def _validate_envelope(record):
         raise ValueError('explicit deterministic interpreter seed required')
     if not _digest(record['dispatch_token']):
         raise ValueError('one-shot 256-bit dispatch token required')
+
+
+def _child_limits(child_bytes, predicate_units):
+    if (type(child_bytes) is not int or child_bytes <= 0 or
+            predicate_units is not None and (type(predicate_units) is not int or predicate_units <= 0)):
+        raise ValueError('exact positive child budget and explicit predicate mode required')
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,9 +247,9 @@ class JobBinding:
             raise ValueError('live request/source/runtime/limits differ from dispatched job')
 
 
-def _carries(raw, request):
+def _carries(raw, request, *, _fields=None):
     record = _decode(raw)
-    fields = request_fields(request)
+    fields = request_fields(request) if _fields is None else _fields
     if (not fields <= record.keys()
             or canonical({key: record[key] for key in fields}) != canonical(request)):
         raise ValueError('result does not carry the exact dispatched request')
@@ -322,24 +339,77 @@ class BatchBinding:
         _validate_batch(_decode(self.encoded))
 
     @classmethod
+    def _owned_bytes(cls, encoded):
+        """Freeze an owned encoder's bytes, or this private worker's already mapped binding.
+
+        No decoded cache: raw outsiders use the normal validating constructor.
+        The dispatcher alone supplies this relationship, never a field in caller bytes.
+        """
+        result = object.__new__(cls)
+        object.__setattr__(result, 'encoded', encoded)
+        return result
+
+    @classmethod
+    def _read(cls, encoded, record=None):
+        """One validated raw operation, optionally reusing its own routing decode."""
+        if record is None:
+            record = _decode(encoded)
+        elif type(encoded) is not bytes or type(record) is not dict or canonical(record) != encoded:
+            raise ValueError('immutable canonical batch bytes required')
+        _validate_batch(record)
+        return cls._owned_bytes(encoded), record
+
+    @classmethod
+    def _create_owned(cls, *, requests, source_bindings, context, child_bytes, predicate_units,
+                      dispatch_token=None, batch_seconds=None):
+        """Concrete interface producer only: member_request and _bind_jobs establish its requests.
+
+        Reuse their ordered tokens/collision, count and transport decisions.
+        Runtime/source/input/limits/seed/token still enter the normal canonical envelope.
+        """
+        if batch_seconds is not None:
+            _batch_seconds(batch_seconds)
+        _child_limits(child_bytes, predicate_units)
+        return cls._owned_bytes(canonical(_batch_record(requests=requests, source_bindings=source_bindings,
+            context=context, child_bytes=child_bytes, predicate_units=predicate_units,
+            dispatch_token=dispatch_token, batch_seconds=batch_seconds)))
+
+    @classmethod
     def create(cls, *, requests, source_bindings, context, child_bytes, predicate_units,
-               dispatch_token=None):
+               dispatch_token=None, batch_seconds=None):
         if type(requests) is not list:
             raise ValueError('batch requests must be a list')
-        return cls(canonical(dict(schema=_BATCH_SCHEMA, requests=requests, source_bindings=source_bindings,
-            **capture_runtime(context), child_budget={'max_bytes': child_bytes,
-            'max_predicate_work_units': predicate_units},
-            dispatch_token=secrets.token_hex(32) if dispatch_token is None else dispatch_token)))
+        return cls(canonical(_batch_record(requests=requests, source_bindings=source_bindings,
+            context=context, child_bytes=child_bytes, predicate_units=predicate_units,
+            dispatch_token=dispatch_token, batch_seconds=batch_seconds)))
 
     def record(self):
         return _decode(self.encoded)
 
-    def verify(self, *, requests, source_bindings, context, child_bytes, predicate_units):
-        wanted = BatchBinding.create(requests=requests, source_bindings=source_bindings, context=context,
+    def verify(self, *, requests, source_bindings, context, child_bytes, predicate_units, batch_seconds=None):
+        if type(requests) is not list:
+            raise ValueError('batch requests must be a list')
+        self._verify_record(self.record(), requests=requests, source_bindings=source_bindings, context=context,
+            child_bytes=child_bytes, predicate_units=predicate_units, batch_seconds=batch_seconds)
+
+    def _verify_record(self, record, *, requests, source_bindings, context, child_bytes, predicate_units,
+                       batch_seconds=None):
+        wanted = _batch_record(requests=requests, source_bindings=source_bindings, context=context,
             child_bytes=child_bytes, predicate_units=predicate_units,
-            dispatch_token=self.record()['dispatch_token'])
-        if wanted.encoded != self.encoded:
+            dispatch_token=record['dispatch_token'], batch_seconds=batch_seconds)
+        if canonical(wanted) != self.encoded:
             raise ValueError('live requests/source/runtime/limits differ from dispatched batch')
+
+
+def _batch_record(*, requests, source_bindings, context, child_bytes, predicate_units,
+                  dispatch_token=None, batch_seconds=None):
+    record = dict(schema=_BATCH_SCHEMA, requests=requests, source_bindings=source_bindings,
+        **capture_runtime(context), child_budget={'max_bytes': child_bytes,
+        'max_predicate_work_units': predicate_units},
+        dispatch_token=secrets.token_hex(32) if dispatch_token is None else dispatch_token)
+    if batch_seconds is not None:
+        record['batch_seconds'] = batch_seconds
+    return record
 
 
 def batch_worker_complete(binding_bytes, *, context, read_bindings, requests, run):
@@ -351,30 +421,44 @@ def batch_worker_complete(binding_bytes, *, context, read_bindings, requests, ru
     integers; each body must run under one of them. One member's result can
     never stand for another: each must carry its own request.
     """
-    binding = BatchBinding(binding_bytes)
-    limits = binding.record()['child_budget']
+    if type(requests) is not list:
+        raise ValueError('batch requests must be a list')
+    binding, record = BatchBinding._read(binding_bytes)
+    return _batch_worker_complete(binding, record, context=context, read_bindings=read_bindings,
+                                  requests=requests, run=run)
+
+
+def _batch_worker_complete(binding, record, *, context, read_bindings, requests, run):
+    """Invocation-local binding/record, already validated or issued by the owned private route."""
+    limits, seconds = record['child_budget'], record.get('batch_seconds')
     def verify():
-        binding.verify(requests=requests, source_bindings=read_bindings(), context=context,
+        binding._verify_record(record, requests=requests, source_bindings=read_bindings(), context=context,
                        child_bytes=limits['max_bytes'],
-                       predicate_units=limits['max_predicate_work_units'])
+                       predicate_units=limits['max_predicate_work_units'], batch_seconds=seconds)
     def new_ledger():
         return WorkBudget(limits['max_bytes'], max_predicate_work_units=limits['max_predicate_work_units'])
     verify()
     answers = run(new_ledger)
     if type(answers) is not list or len(answers) != len(requests):
         raise ValueError('one answer per batch request required')
-    results = []
+    results, returning = [], False
     for answer, request in zip(answers, requests, strict=True):
+        if returning and answer != 'returned':
+            raise ValueError('returned members form an unstarted suffix')
         if type(answer) is bytes:
-            raw = _carries(answer, request)
+            raw = _carries(answer, request, _fields=request.keys())
             results.append({'outcome': 'result', 'canonical_json': raw.decode('utf8'),
                             'record_sha256': hashlib.sha256(raw).hexdigest()})
-        elif type(answer) is str and answer in UNANSWERED:
+        elif type(answer) is str and (answer in UNANSWERED or answer == 'returned' and seconds is not None):
+            if answer == 'returned':
+                if not results:
+                    raise ValueError('a batch starts its first member before returning a suffix')
+                returning = True
             results.append({'outcome': answer})
         else:
             raise ValueError('a batch answer is measure bytes, decided or declined')
     verify()
-    return canonical({'schema': _BATCH_RECEIPT, 'binding': binding.record(), 'results': results})
+    return canonical({'schema': _BATCH_RECEIPT, 'binding': record, 'results': results})
 
 
 class OwnedBatchDispatch:
@@ -407,18 +491,27 @@ class OwnedBatchDispatch:
                 raise RuntimeError('one result attempt from the dispatched Future required')
             self._consumed = True
             future = self._future
-        self.binding.verify(**live)
+        if type(live.get('requests')) is not list:
+            raise ValueError('batch requests must be a list')
+        record = self.binding.record()
+        self.binding._verify_record(record, **live)
         receipt = _decode(future.result(timeout=timeout))
-        requests = self.binding.record()['requests']
+        requests, returned = record['requests'], record.get('batch_seconds') is not None
         if (receipt.keys() != {'schema', 'binding', 'results'} or receipt['schema'] != _BATCH_RECEIPT
                 or canonical(receipt['binding']) != self.binding.encoded
                 or type(receipt['results']) is not list or len(receipt['results']) != len(requests)):
             raise ValueError('completion is not for this exact dispatched batch/token')
-        answers = []
+        answers, returning = [], False
         for row, request in zip(receipt['results'], requests, strict=True):
             if type(row) is not dict or type(row.get('outcome')) is not str:
                 raise ValueError('complete batch member outcome required')
-            if row['outcome'] in UNANSWERED and row.keys() == {'outcome'}:
+            if returning and row['outcome'] != 'returned':
+                raise ValueError('returned members form an unstarted suffix')
+            if (row['outcome'] in UNANSWERED or returned and row['outcome'] == 'returned') and row.keys() == {'outcome'}:
+                if row['outcome'] == 'returned':
+                    if not answers:
+                        raise ValueError('a batch starts its first member before returning a suffix')
+                    returning = True
                 answers.append(row['outcome'])
                 continue
             if (row['outcome'] != 'result' or row.keys() != {'outcome', 'canonical_json', 'record_sha256'}
@@ -427,6 +520,6 @@ class OwnedBatchDispatch:
             raw = row['canonical_json'].encode('utf8')
             if not _digest(row['record_sha256']) or hashlib.sha256(raw).hexdigest() != row['record_sha256']:
                 raise ValueError('complete worker-result digest differs')
-            answers.append(_carries(raw, request))
-        self.binding.verify(**live)
+            answers.append(_carries(raw, request, _fields=request.keys()))
+        self.binding._verify_record(record, **live)
         return answers

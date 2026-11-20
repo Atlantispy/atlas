@@ -370,12 +370,14 @@ def prepare_planetary_partition(sphere, sites, *, limits=None, budget=None, canc
         vertex_ids = tuple(sorted(vertices))
         vertex_data = _capture_directions(np.array([vertices[v] for v in vertex_ids]))
         payload = _json(ordered)
-        identity = hashlib.sha256(_json({'schema': _SCHEMA, 'method': _METHOD,
-            'sphere': sphere.descriptor(), 'plates': names, 'vertices': vertex_ids,
-            'faces': ordered})+b'\0'+points.tobytes()+b'\0'+vertex_data.tobytes()).hexdigest()
+        site_bytes, vertex_bytes = points.tobytes(), vertex_data.tobytes()
+        digest = hashlib.sha256(_json({'schema': _SCHEMA, 'method': _METHOD,
+            'sphere': sphere.descriptor(), 'plates': names, 'vertices': vertex_ids, 'faces': ordered}))
+        for part in (b'\0', site_bytes, b'\0', vertex_bytes):
+            digest.update(part)
         obj = object.__new__(PlanetaryPartitionPlan)
         for k, value in {'sphere': sphere, 'plate_ids': names, 'vertex_ids': vertex_ids,
-            'partition_id': identity, '_sites': points.tobytes(), '_vertices': vertex_data.tobytes(),
+            'partition_id': digest.hexdigest(), '_sites': site_bytes, '_vertices': vertex_bytes,
             '_faces': payload}.items(): object.__setattr__(obj, k, value)
         _check_cancel(cancel)
         return obj

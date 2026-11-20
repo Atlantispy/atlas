@@ -101,7 +101,7 @@ def retain_support(support):
     del exported
     result = object.__new__(CompactSupport)
     for key, value in dict(_ref=ref, _resource=support._resource, support_id=support.support_id,
-            encoded_size=len(support._json), decoded_capacity=_routing()._decoded_json_capacity(support._json),
+            encoded_size=len(support._json), decoded_capacity=support.decoded_capacity,
             _header=header, _owner=owner).items():
         object.__setattr__(result, key, value)
     return result
@@ -354,6 +354,7 @@ def as_native_with_record(support):
     if result.support_id != support.support_id:
         raise ValueError('materialised native support identity differs')
     object.__setattr__(result, '_compact_ref', ref)
+    object.__setattr__(result, '_decoded_capacity', support.decoded_capacity)
     return result, owned
 
 

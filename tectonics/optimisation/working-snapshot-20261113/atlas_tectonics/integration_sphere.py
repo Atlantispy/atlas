@@ -645,7 +645,7 @@ def _homes(names, faces, boundaries, positions):
 
 
 def _rehomed(names, faces, boundaries, positions, kept):
-    """The home of each vertex at a declaration or an event (ruling 34, A-22 rule (a) as changed on 15 Nov 2026).
+    """The home of each vertex at a declaration or an event (A-22 rule (a) as changed on 15 Nov 2026).
 
     A vertex keeps its home ``kept`` while that home still carries one of its records of the lowest rank (``kept`` is
     None at a declaration). Otherwise, where those records name one carrier, that carrier is the home; where they name
@@ -764,7 +764,7 @@ def _trace_keys(boundaries):
             if boundary.kind == TRANSFORM and boundary.carrier_side is not None}
 
 
-def _end_poles(names, points, boundaries, junctions):
+def _end_poles(names, points, boundaries, junctions, *, lookup=None):
     """The pole of every record end at a junction, at declaration (I03a-2 M6 and C3, approved 3 October 2026).
 
     Each end gets the pole of its end segment's great circle, formed stably, never from a short pair later. Two
@@ -777,7 +777,8 @@ def _end_poles(names, points, boundaries, junctions):
     a line is rigid in its carrier's frame, so it is never tested again. Every frame is the sphere's axes at a
     declaration.
     """
-    lookup = {name: i for i, name in enumerate(names)}
+    if lookup is None:
+        lookup = {name: i for i, name in enumerate(names)}
     record = {boundary.boundary_id: boundary for boundary in boundaries}
     poles = {}
     # A transform that declares its carrier keeps its trace's circle, formed here once, so that C6 is judged against
@@ -841,7 +842,7 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
     if type(layout) is not _Layout:
         raise SphereError('a vertex layout is required')
     names, declared = layout.names, tuple(plate.plate_id for plate in plates)
-    ridges = _ridge_ids(boundaries)
+    ridges = tuple(key for key, _ in layout.ridges) if declared_here else _ridge_ids(boundaries)
     homes = set(declared) | {(RIDGE, boundary_id) for boundary_id in ridges}
     reference = np.asarray(layout.reference, dtype=np.float64)
     if (len(names) < 4 or tuple(sorted(set(names))) != tuple(names) or reference.shape != (len(names), 3)
@@ -850,7 +851,7 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
     for name in names:
         _name(name, 'vertex ID')
     if not declared_here:
-        # A stored home is state (A-22, ruling 34): chosen at a declaration or an event and kept. Here it is only
+        # A stored home is state (A-22): chosen at a declaration or an event and kept. Here it is only
         # confirmed to be a carrier of one of the vertex's records of the lowest rank (or the one plate a vertex no record
         # carries lies inside); which of two such carriers is first is not asked again.
         for name, home, records in zip(names, layout.home, _carriers(names, faces, boundaries)):
@@ -875,14 +876,15 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
     checked = _Layout(names, tuple(layout.home), _frozen(reference, np.float64),
                       tuple((key, tuple(float(x) for x in value)) for (key, _), value in zip(layout.views, copies)),
                       tuple(layout.frames), tuple(layout.ridges), layout.poles)
-    _copies_placed(checked)
-    return checked
+    directions = _directions(checked)
+    _copies_placed(checked, directions)
+    return checked, directions
 
 
 COPY_ROUNDING = 4*float(np.finfo(float).eps)
 
 
-def _copies_placed(layout):
+def _copies_placed(layout, where):
     """Refuse a plate's copy of a vertex kept elsewhere that lies off the vertex's placement (I03a-2 C10, form a).
 
     Approved by the coordinator on 3 October 2026. A copy is re-placed whenever it would drift from its vertex by more
@@ -892,7 +894,6 @@ def _copies_placed(layout):
     """
     if not layout.views:
         return
-    where = _directions(layout)
     index = {name: i for i, name in enumerate(layout.names)}
     frames = dict(layout.frames)
     for (name, plate), value in layout.views:
@@ -922,16 +923,14 @@ def _directions(layout):
     return out
 
 
-def _local(layout, plates):
+def _local(layout, plates, index, order):
     """Per plate, every vertex its faces can use, in that plate's reference frame; NaN where it has no copy."""
-    index = {name: i for i, name in enumerate(layout.names)}
     tables = []
     for plate in plates:
         table = np.full_like(layout.reference, np.nan)
         rows = _home_rows(layout, plate.plate_id)
         table[rows] = layout.reference[rows]
         tables.append(table)
-    order = {plate.plate_id: i for i, plate in enumerate(plates)}
     for (name, plate), value in layout.views:
         tables[order[plate]][index[name]] = value
     return tuple(_frozen(table, np.float64) for table in tables)
@@ -1025,13 +1024,12 @@ def _collapsed(values):
     return tuple(out)
 
 
-def _owned(atlas, boundaries, plates):
+def _owned(atlas, boundaries, plates, lookup):
     """(edge -> its one boundary record, vertex -> record uses, plates around each vertex) of the declared records.
 
     Every edge between two plates lies on exactly one record whose sides match the faces beside it, and a record
     follows no seam inside a plate.
     """
-    lookup = {name: i for i, name in enumerate(atlas.vertex_ids)}
     lookup_keys = lookup.keys()
     edges = {(int(a), int(b)): i for i, (a, b) in enumerate(atlas.edge_vertices)}
     sides, patches = atlas.side_patches, atlas.patches
@@ -1086,8 +1084,8 @@ def _joined(atlas, boundaries, plates, limits=None, budget=None, cancel=None):
     Beyond _owned's checks, no chain runs through a vertex where another record ends or a third plate touches. The
     junction pass works within the caller's limits and budget.
     """
-    owners, uses, around = _owned(atlas, boundaries, plates)
     lookup = {name: i for i, name in enumerate(atlas.vertex_ids)}
+    owners, uses, around = _owned(atlas, boundaries, plates, lookup)
     junctions = []
     block_plate = {patch.region_id: patch.plate_id for patch in atlas.patches}
     for name in sorted(uses):
@@ -1142,17 +1140,20 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
         faces = tuple(sorted(faces, key=lambda face: face.face_id))
         plates = tuple(sorted(plates, key=lambda plate: plate.plate_id))
         boundaries = tuple(sorted(boundaries, key=lambda boundary: boundary.boundary_id))
-        for values, attribute, label in ((faces, 'face_id', 'face'), (plates, 'plate_id', 'plate'),
-                                         (boundaries, 'boundary_id', 'boundary')):
-            ids = [getattr(value, attribute) for value in values]
-            if len(set(ids)) != len(ids):
+        retired_kind = None
+        for values, attribute, label, retired in ((faces, 'face_id', 'face', lineage.retired_face_ids),
+                                                 (plates, 'plate_id', 'plate', lineage.retired_plate_ids),
+                                                 (boundaries, 'boundary_id', 'boundary', lineage.retired_boundary_ids)):
+            ids = {getattr(value, attribute) for value in values}
+            if len(ids) != len(values):
                 raise SphereError('duplicate %s ID' % label)
-        for ids, retired, label in (((f.face_id for f in faces), lineage.retired_face_ids, 'face'),
-                                    ((p.plate_id for p in plates), lineage.retired_plate_ids, 'plate'),
-                                    ((b.boundary_id for b in boundaries), lineage.retired_boundary_ids, 'boundary')):
-            if set(ids) & set(retired):
-                raise SphereError('a retired %s identity stays reserved and cannot be reused' % label)
-        declared = {plate.plate_id for plate in plates}
+            if retired_kind is None and not ids.isdisjoint(retired):
+                retired_kind = label
+            if label == 'plate':
+                declared = ids
+            del ids
+        if retired_kind is not None:
+            raise SphereError('a retired %s identity stays reserved and cannot be reused' % retired_kind)
         owning = {face.plate_id for face in faces}
         if not owning <= declared:
             raise SphereError('a face names an undeclared plate: %r' % min(owning-declared))
@@ -1160,15 +1161,15 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
             raise SphereError('plate %r owns no face; retire it explicitly' % min(declared-owning))
         _acyclic(plates, lineage.retired_plate_ids)
         if type(vertices) is _Layout:
-            layout = _checked_layout(vertices, faces, plates, boundaries)
+            layout, points = _checked_layout(vertices, faces, plates, boundaries)
         else:
             if rotated_vertex_ids is None:
                 names, points = _captured(vertices, restored)
             else:
                 # Only rotate_frame supplies finite frozen rows in the issued registry's sorted ID order.
                 names, points = rotated_vertex_ids, _capture_directions(vertices)+0.
-            layout = _checked_layout(names, faces, plates, boundaries, declaration_points=points)
-        names, points = layout.names, _directions(layout)
+            layout, points = _checked_layout(names, faces, plates, boundaries, declaration_points=points)
+        names = layout.names
         lookup = {name: i for i, name in enumerate(names)}
         lookup_keys = lookup.keys()
         patches = []
@@ -1187,7 +1188,7 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
         ends = sorted(end for junction in junctions for end in junction.boundary_ends)
         if layout.poles is None:                       # a declaration: the poles are formed here, once
             layout = _Layout(layout.names, layout.home, layout.reference, layout.views, layout.frames, layout.ridges,
-                             _end_poles(names, points, boundaries, junctions))
+                             _end_poles(names, points, boundaries, junctions, lookup=lookup))
         poles = np.asarray([value for _, value in layout.poles], dtype=np.float64).reshape(-1, 3)
         if ([key for key, _ in layout.poles if key[1] != 'trace'] != ends
                 or not {key for key, _ in layout.poles if key[1] == 'trace'} <= _trace_keys(boundaries)):
@@ -1199,8 +1200,8 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
                       for patch in atlas.patches)
         # Every face is measured in its own plate's reference frame, from coordinates that do not change while it
         # rides: the atlas, built in the sphere's axes, validates coverage and topology only.
-        local = _local(layout, plates)
         order = {plate.plate_id: i for i, plate in enumerate(plates)}
+        local = _local(layout, plates, lookup, order)
         homes = _home_index(layout)
         radius, measured = sphere.radius_m, []
         for face in faces:
@@ -1575,8 +1576,10 @@ def _occupancy(network, face, stock, checked=None, allowance=None):
     face, D7) is the round-off a face carries from rows closed under the thin-face bound; the existing relative
     tolerance applies wherever it is larger.
     """
-    areas = network.face_area_m2
     wanted = None if checked is None else {int(index) for index in checked}
+    if wanted is not None and not wanted:
+        return
+    areas = network.face_area_m2
     starts = np.flatnonzero(np.r_[True, np.diff(face) != 0])
     for index, start, end in zip(face[starts], starts, np.r_[starts[1:], len(face)]):
         if wanted is not None and int(index) not in wanted:
@@ -1613,7 +1616,9 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
     """
     if type(network) is not SphereNetwork:
         raise SphereError('a SphereNetwork is required')
-    phases = _sorted_unique(_names(phases, 'phase'), 'phases')
+    # A fresh declaration checked phase names before building its piece rows.
+    if initial is not None:
+        phases = _sorted_unique(_names(phases, 'phase'), 'phases')
     if len(phases) > 64:
         raise SphereError('at most 64 phases')
     if basis is not None:
@@ -1634,7 +1639,7 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
         stock = _frozen(stock, np.float64)
         if face.shape != (count,) or cohort.shape != (count,) or stock.shape != (count, width) or not count:
             raise SphereError('one face, one cohort and one value per account are required for every piece')
-        faces = len(network.face_ids)
+        faces = len(network.faces)
         if face.min() < 0 or face.max() >= faces or cohort.min() < 0 or cohort.max() >= len(cohorts):
             raise SphereError('a piece names an unknown face or cohort')
         keys = face*len(cohorts)+cohort
@@ -1646,7 +1651,6 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
         if np.any(stock[:, :signed] < 0) or np.any(stock[:, 0] <= 0):
             raise SphereError('occupied area is positive and reference mass and phase volume are nonnegative')
         # One owner per point: the pieces of a face occupy exactly its measured area, within the existing tolerance.
-        areas = network.face_area_m2
         occupied = np.zeros(faces)
         np.add.at(occupied, face, 1.)
         if np.any(occupied == 0):
@@ -1661,17 +1665,21 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
         if abs(covered-network.area_m2) > (AREA_CLOSURE_SR*radius)*radius:
             raise SphereError('the pieces do not cover the sphere once: they occupy %r m2 of its %r m2'
                               % (covered, network.area_m2))
-        if (len(initial) != width or len(rounding) != width or len(allowance) != width
+        if ((initial is not None and len(initial) != width) or len(rounding) != width or len(allowance) != width
                 or any(len(values) != width for _, values in supplied)):
             raise SphereError('one exact account per carried column is required')
         supplied = tuple(sorted(supplied))
         if len({name for name, _ in supplied}) != len(supplied):
             raise SphereError('one exact account per named party')
-        for column in range(width):
-            total = _exact_sum(stock[:, column])
-            booked = initial[column]+sum((values[column] for _, values in supplied), Fraction(0))+rounding[column]
-            if total != booked or abs(rounding[column]) > allowance[column]:
-                raise SphereError('the exact accounts do not close on the stored pieces: nothing is issued')
+        if initial is None:
+            # Fresh declarations start with the issued stock and zero transfers and rounding.
+            initial = tuple(_exact_sum(stock[:, column]) for column in range(width))
+        else:
+            for column in range(width):
+                total = _exact_sum(stock[:, column])
+                booked = initial[column]+sum((values[column] for _, values in supplied), Fraction(0))+rounding[column]
+                if total != booked or abs(rounding[column]) > allowance[column]:
+                    raise SphereError('the exact accounts do not close on the stored pieces: nothing is issued')
         exact = dict(initial=[_account(v, 'a declared total') for v in initial],
                      supplied={name: [_account(v, 'a supplied account') for v in values] for name, values in supplied},
                      rounding=[_account(v, 'a rounding account') for v in rounding],
@@ -1751,7 +1759,6 @@ def build_material(network, *, phases, cohorts, pieces, enthalpy_basis=None, ext
     rows.sort(key=lambda row: row[0])
     stock = np.array([values for _, values in rows], dtype=np.float64).reshape(len(rows), -1)
     width = stock.shape[1]
-    initial = tuple(_exact_sum(stock[:, column]) for column in range(width))
     face = np.array([key[0] for key, _ in rows], dtype=np.int64)
     cohort = np.array([key[1] for key, _ in rows], dtype=np.int64)
     from . import integration_support as _support
@@ -1759,7 +1766,7 @@ def build_material(network, *, phases, cohorts, pieces, enthalpy_basis=None, ext
         Fraction(scalar(v, 'declared areal density')) for v in declared_areal_density)
     support = _support.declared(network, face, cohort, stock, cohorts, footprints, areal_density=density)
     return _material(network, phases, enthalpy_basis, cohorts, exteriors, stock_link,
-                     face, cohort, stock, initial, (), _zero(width), _zero(width), budget, support=support)
+                     face, cohort, stock, None, (), _zero(width), _zero(width), budget, support=support)
 
 
 def areal_material(network, *, phases, cohorts, face_cohort, mass_per_area_kg_m2, thickness_m,
@@ -2020,7 +2027,7 @@ def _network_joined(network):
                        None if patch.region_id == patch.plate_id else patch.region_id) for patch in atlas.patches)
     order = {plate.plate_id: i for i, plate in enumerate(network.plates)}
     lookup = {name: i for i, name in enumerate(layout.names)}
-    local = _local(layout, network.plates)
+    local = _local(layout, network.plates, lookup, order)
     measured = np.asarray([(_measure([local[order[face.plate_id]][[lookup[name] for name in ring]]
                                       for ring in (face.vertex_ids, *face.holes)])*radius)*radius
                            for face in faces], dtype=np.float64)
@@ -2052,7 +2059,7 @@ def _network_joined(network):
             and _unpack(packed['faces'], 'faces') == [_face_record(face) for face in faces]
             and _unpack(packed['boundaries'], 'boundaries') == [_boundary_record(b) for b in network.boundaries]
             and _same(network._areas, measured)
-            and network._owners == tuple(sorted(_owned(atlas, network.boundaries, network.plates)[0].items())))
+            and network._owners == tuple(sorted(_owned(atlas, network.boundaries, network.plates, lookup)[0].items())))
 
 
 def _material_joined(material):

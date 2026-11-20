@@ -240,6 +240,7 @@ class DifferentialSupport:
     _resource: object = field(repr=False, compare=False)
     _compact_ref: object = field(repr=False, compare=False)
     _support_id: str = field(repr=False, compare=False)
+    _decoded_capacity: int = field(repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('DifferentialSupport is issued by partition_physical_support')
@@ -247,6 +248,16 @@ class DifferentialSupport:
     @property
     def support_id(self):
         return _memo_id(self, '_support_id')
+
+    @property
+    def decoded_capacity(self):
+        try:
+            return self._decoded_capacity
+        except AttributeError:
+            from .integration_routing_views import _decoded_json_capacity
+            value = _decoded_json_capacity(self._json)
+            object.__setattr__(self, '_decoded_capacity', value)
+            return value
 
     def record(self):
         return json.loads(self._json)
@@ -1698,23 +1709,25 @@ def _quadratic_radial_planes(face, bounds, layer, inner, padding=Q(0)):
     centre = W._point(face, tuple((a+b)/2 for a, b in bounds))
     deltas = (O._minus(p, centre) for p in vertices)
     residual = max(O._dot(delta, delta) for delta in deltas)
-    u, v = face[1:3]
-    aa, ab, bb = O._dot(u, u), O._dot(u, v), O._dot(v, v)
-    candidates = []
-    for fixed in bounds[1]:
-        candidates.append((max(bounds[0][0], min(bounds[0][1], -ab*fixed/aa)), fixed))
-    for fixed in bounds[0]:
-        candidates.append((fixed, max(bounds[1][0], min(bounds[1][1], -ab*fixed/bb))))
-    if all(a <= 0 <= b for a, b in bounds):
-        candidates.append((Q(0), Q(0)))
     corner_norms = (O._dot(p, p) for p in vertices)
     minimum = maximum = next(corner_norms)
     for squared_norm in corner_norms:
         minimum = min(minimum, squared_norm)
         maximum = max(maximum, squared_norm)
-    for parameter in candidates:
-        point = W._point(face, parameter)
-        minimum = min(minimum, O._dot(point, point))
+    if minimum:
+        u, v = face[1:3]
+        aa, ab, bb = O._dot(u, u), O._dot(u, v), O._dot(v, v)
+        candidates = [(max(bounds[0][0], min(bounds[0][1], -ab*fixed/aa)), fixed)
+                      for fixed in bounds[1]]
+        candidates.extend((fixed, max(bounds[1][0], min(bounds[1][1], -ab*fixed/bb)))
+                          for fixed in bounds[0])
+        if all(a <= 0 <= b for a, b in bounds):
+            candidates.append((Q(0), Q(0)))
+        for parameter in candidates:
+            point = W._point(face, parameter)
+            minimum = min(minimum, O._dot(point, point))
+            if not minimum:
+                break
     lo2, hi2 = layer.bottom_radius_m**2, layer.top_radius_m**2
     if minimum-padding >= hi2 or maximum+padding <= lo2:
         return ((Q(0), Q(0), Q(-1)),)
@@ -2077,6 +2090,10 @@ def _plane_identity(constraint):
     path = _rigid_plane_path(constraint)
     if path is None:
         return None
+    return _plane_path_identity(path)
+
+
+def _plane_path_identity(path):
     normal, theta, omega = path
     first = next(q for q in normal if q)
     return (tuple(q/first for q in normal), theta, omega), (1 if first > 0 else -1)
@@ -2639,36 +2656,64 @@ def _initial_partition_sources(funding, sphere, *, budget):
     if r['source']['sphere_state_id'] != sphere.state_id:
         raise V.VolumeError('initial partition must bind the actual funded sphere')
     network = sphere.network
-    plates = tuple(r.get('initial_source_plate_ids', network.plate_ids))
+    network_plates = network.plate_ids
+    plates = tuple(r.get('initial_source_plate_ids', network_plates))
     # A partial owner domain needs real external boundary conditions. This
     # closed initial family never invents them or fills an omitted plate.
-    if tuple(sorted(plates)) != tuple(network.plate_ids):
+    if tuple(sorted(plates)) != network_plates:
         raise V.VolumeError('closed differential partition requires the complete declared owner domain')
-    if any(tuple(network.frames[p].quaternion) not in ((1., 0., 0., 0.), (-1., 0., 0., 0.)) for p in plates):
+    frames = network.frames
+    if any(tuple(frames[p].quaternion) not in ((1., 0., 0., 0.), (-1., 0., 0., 0.)) for p in plates):
         raise V.VolumeError('initial material cone declaration needs the exact source frame; nonidentity frame not inferred')
+    del frames
     material = U.required(sphere.material)
     patches = {p.patch_id: p for p in material.patches}
-    face_plate = {face.face_id: face.plate_id for face in network.faces}
+    face_plate = {face.face_id: None for face in network.faces}
     rows = {(row['patch_id'], row['sublayer']): row for row in r['exterior_remainder']}
     keys = tuple(tuple(k) for k in r['component_keys'])
-    if len(set(keys)) != len(keys) or not set(keys).issubset(rows):
+    unique_keys = set(keys)
+    if len(unique_keys) != len(keys) or not unique_keys.issubset(rows):
         raise V.VolumeError('funded source component keys are duplicated or have no actual remainder')
+    del unique_keys
     selected = {key[0] for key in keys}
-    if selected != set(patches):
+    if selected != patches.keys():
         raise V.VolumeError('funded source omits actual owner patch components')
+    enough_nodes = len(material.patches) <= len(keys)
+    del keys
+
+    def items(head):
+        while head is not None:
+            item, head = head
+            yield item
+
+    # Each temporary chain node replaces one validated two-slot key tuple.
+    # Preserve the original ordered scan for duplicate-ID inputs over that bound.
+    if enough_nodes:
+        for patch in reversed(material.patches):
+            if patch.face_id in face_plate:
+                face_plate[patch.face_id] = (patch, face_plate[patch.face_id])
     with U.geometry_workspace(budget):
         shapes = T._Shapes(network)
-        for face in network.faces:
-            held = tuple(cell for p in material.patches if p.face_id == face.face_id for cell in p.cells)
-            full = U.cells_of_rings(shapes.rings(network.face_ids.index(face.face_id)))
+        for index, face in enumerate(network.faces):
+            face_patches = (items(face_plate[face.face_id]) if enough_nodes else
+                            (p for p in material.patches if p.face_id == face.face_id))
+            held = tuple(cell for patch in face_patches for cell in patch.cells)
+            face_plate[face.face_id] = face.plate_id
+            full = U.cells_of_rings(shapes.rings(index))
             if U.difference(full, held) or U.difference(held, full):
                 raise V.VolumeError('funded material footprints do not exactly cover the declared owner face')
+        # Coverage consumed the face chains. Reuse the existing patch slots for raw component rows.
+        for patch_id in patches:
+            patches[patch_id] = None
+        for key in reversed(r['component_keys']):
+            patches[key[0]] = (key, patches[key[0]])
         spans, layers, sources = {}, {}, []
         for patch_id in sorted(selected):
-            declared = sorted((k for k in keys if k[0] == patch_id), key=lambda k: k[1])
+            declared = sorted(items(patches[patch_id]), key=lambda k: k[1])
+            patches[patch_id] = None
             physical = []
             for key in declared:
-                g = rows[key]['radial_layer']
+                g = rows[tuple(key)]['radial_layer']
                 layer = V.RadialLayer(*(W._decode(g[name]) for name in
                     ('radius_m', 'top_depth_m', 'bottom_depth_m')), budget=budget)
                 if layer.radius_m != Q(network.sphere.radius_m):
@@ -2683,6 +2728,8 @@ def _initial_partition_sources(funding, sphere, *, budget):
             raise V.VolumeError('closed owner partition requires one explicitly common radial domain')
         cuts = sorted({depth for physical in layers.values() for _, g in physical
                        for depth in (g.top_depth_m, g.bottom_depth_m)})
+        for patch in material.patches:
+            patches[patch.patch_id] = patch
         for patch_id, physical in sorted(layers.items()):
             patch = patches[patch_id]
             try:
@@ -3958,10 +4005,14 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
             raise V.VolumeError('paired moving faces must share actual interval, plate, layer and voxel')
         other_id = other_support.support_id
         matched = False
+        left_set = False
         for name, s in other_component['constraints']:
             item = other['constraints'][name]
             # Same/reversed ray paths name the identical physical moving plane.
-            left, right = _interface_identity(constraint), _interface_identity(item)
+            if not left_set:
+                left = _interface_identity(constraint)
+                left_set = True
+            right = _interface_identity(item)
             equivalent = left is not None and right is not None and left[0] == right[0]
             same = item == constraint or equivalent and left[1] == right[1]
             reverse = equivalent and left[1] != right[1]
@@ -3997,10 +4048,11 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
             _load_vec(ray['angular_velocity_rad_s']) == omega for ray in constraint['rays'])
         # The voxel clips this face as well; only its walls through the sphere
         # centre are homogeneous halfspaces of the same positive ray cone.
-        walls = tuple(('fixed-voxel-wall:%d:%d' % (index//2, 1-index % 2), tuple(Q(-q) for q in plane[:3]))
-                      for index, plane in enumerate(O._box_planes(cell)) if not plane[3])
-        exclusion = None if material_plane or rigid_fan else IE.zero_area(
-            constraint, constraints, literals, duration, arena, fixed=walls)
+        exclusion = None
+        if not material_plane and not rigid_fan:
+            walls = tuple(('fixed-voxel-wall:%d:%d' % (index//2, 1-index % 2), tuple(Q(-q) for q in plane[:3]))
+                          for index, plane in enumerate(O._box_planes(cell)) if not plane[3])
+            exclusion = IE.zero_area(constraint, constraints, literals, duration, arena, fixed=walls)
         if exclusion is None and not material_plane and not rigid_fan:
             exclusion = IE.radial_cap_zero_area(constraint, layer, cell, duration, arena)
         if exclusion is not None:
@@ -4015,7 +4067,7 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
             rule = 'exact-zero-relative-flux-on-material-transported-plane'
         elif constraint['kind'] == 'moving-ray-edge':
             first, second = constraint['rays']
-            if all(_load_vec(ray['angular_velocity_rad_s']) == omega for ray in (first, second)):
+            if rigid_fan:
                 values, leaves, met = ((Q(0), Q(0)), (Q(0), Q(0))), 1, True
                 rule = 'exact-zero-relative-flux-on-rigid-material-fan-edge'
             else:
@@ -5409,11 +5461,11 @@ def component_volume_bounds(support, logical_cell_id, *, endpoint, max_width_m3,
     """
     if type(support) is not DifferentialSupport or support._resource is not budget or endpoint not in ('start', 'end'):
         raise V.VolumeError('issued support, same budget and explicit endpoint required')
-    from .integration_routing_views import RoutingArena, _decoded_json_capacity, _decode_workspace
+    from .integration_routing_views import RoutingArena, _decode_workspace
     with RoutingArena(budget) as arena:
         # Encoded ownership is separate from this actual decoded query input.
         # Reserve it BEFORE decode, including the record() identity field.
-        arena.stack.enter_context(budget.reserve(4096+_decoded_json_capacity(support._json),
+        arena.stack.enter_context(budget.reserve(4096+support.decoded_capacity,
                                                category='component-volume-decoded-input'))
         decoder = ExitStack()
         try:
@@ -5715,8 +5767,9 @@ _GEOMETRY_PROGRESS = None
 
 
 def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
-        endpoint, max_width_m3, max_leaves, positive_witness, budget, relative_error, _funded=None, _checkpoint=None):
-    component = next((c for c in record['components'] if c['logical_cell_id'] == logical_cell_id), None)
+        endpoint, max_width_m3, max_leaves, positive_witness, budget, relative_error, _funded=None, _checkpoint=None, _component_index=None):
+    component = (next((c for c in record['components'] if c['logical_cell_id'] == logical_cell_id), None)
+                 if _component_index is None else record['components'][_component_index])
     if component is None:
         raise V.VolumeError('unknown physical support component')
     width = W._q(max_width_m3)
@@ -5733,6 +5786,7 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
     time = Q(0) if endpoint == 'start' else W._decode(record['duration_s'])
     quantum = W._quantum(width, max_leaves)
     # Durable completed-query reuse has distinct provenance from a live worker.
+    request = None
     if _checkpoint is not None and positive_witness is True and relative_error is None:
         from .integration_endpoint_checkpoints import EndpointCheckpoints
         from .integration_component_volume_parallel import request_for
@@ -5747,8 +5801,9 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
     # component/query/layer/cell/time/quantum prefix. Other modes stay serial.
     if _funded is not None and positive_witness is True and relative_error is None:
         from .integration_component_volume_parallel import request_for
-        request = request_for(support, logical_cell_id, endpoint,
-                              record[endpoint+'_time_s'], width, max_leaves)
+        if request is None:
+            request = request_for(support, logical_cell_id, endpoint,
+                                  record[endpoint+'_time_s'], width, max_leaves)
         funded = _funded(request, budget)
         if funded is not None:
             from .integration_parallel_results import adopt

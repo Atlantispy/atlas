@@ -45,6 +45,7 @@ def _build(matrix, target, keys, base_keys, signed_tau, conversion, *, gradient,
     K._require_gmp()
     I.check(cancelled)
     metadata, largest = I.metadata_bytes(matrix, target, conversion, signed_tau, G, cancelled)
+    original_sizing = (metadata, largest)
     m, n = len(matrix), len(target)
     if (len(keys) != m or len(set(keys)) != m or len(base_keys) != 2
             or base_keys[0] == base_keys[1] or len(gradient) != n
@@ -84,7 +85,9 @@ def _build(matrix, target, keys, base_keys, signed_tau, conversion, *, gradient,
             resources['interval'].append(detail)
             owner = work.stack.enter_context(CERT.assess_weights(observations, action, keys,
                 base_keys, signed_tau, conversion, budget=budget, cancelled=cancelled,
-                precisions=certification_precisions, evidence=audit[name], resource_evidence=detail))
+                precisions=certification_precisions, evidence=audit[name], resource_evidence=detail,
+                _sizing=original_sizing if name == 'interval' else None, _keys_unique=True,
+                _private_output=True))
             result = owner.value
             if result['status'] != 'CERTIFIED':
                 audit[name+'_refusal'] = dict(type='ExactIncompatibility' if result['status'] == 'EXACT_INCOMPATIBLE' else 'Unresolved', reason=result['reason'])

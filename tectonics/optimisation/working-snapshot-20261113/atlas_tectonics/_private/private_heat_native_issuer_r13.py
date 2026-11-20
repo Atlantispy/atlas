@@ -597,11 +597,15 @@ def _advance_verified(call, meta, plan, cancel):
     if (len(conductivity) != len(values['enthalpy_j']) or not conductivity
             or any(k != conductivity[0] for k in conductivity)):
         raise ValueError('Only the original uniform conductivity is supported')
+    issued_inputs = F._IssuedInputs((call._geometry, values['enthalpy_j'], values['capacity_j_k'],
+        meta['duration_s'], values['source_w'], plan['boundary'], conductivity[0],
+        plan['absolute_residual_target_decimal'], call._budget))
     with F.advance(call._geometry, values['enthalpy_j'], values['capacity_j_k'],
             meta['duration_s'], values['source_w'], plan['boundary'],
             conductivity=conductivity[0],
             absolute_residual_target=plan['absolute_residual_target_decimal'],
-            budget=call._budget, cancelled=cancel) as numerical_owner:
+            budget=call._budget, cancelled=cancel, _issued_inputs=issued_inputs) as numerical_owner:
+        del issued_inputs
         produced, diagnostics = numerical_owner.value
         _verify_call(call, cancel)
         projection_owner = N.project(produced, call._geometry, cell_ids=meta['cell_ids'],

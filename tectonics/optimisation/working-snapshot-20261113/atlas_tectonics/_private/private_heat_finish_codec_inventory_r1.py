@@ -63,8 +63,12 @@ def rational_json_chars(numerator_bits, denominator_bits):
     if _count(denominator_bits, 'denominator_bits') == 0:
         raise ValueError('A positive denominator requires at least one bit')
     # Two brackets, four quotes, one comma, at most one numerator minus sign.
-    return _count(decimal_digit_bound(numerator_bits)
-                  + decimal_digit_bound(denominator_bits)+8, 'rational JSON chars')
+    return _rational_chars_from_digits(decimal_digit_bound(numerator_bits),
+                                       decimal_digit_bound(denominator_bits))
+
+
+def _rational_chars_from_digits(numerator_digits, denominator_digits):
+    return _count(numerator_digits+denominator_digits+8, 'rational JSON chars')
 
 
 def json_text_chars(character_count):

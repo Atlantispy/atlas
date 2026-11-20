@@ -13,7 +13,7 @@ from shapely.strtree import STRtree
 
 from ._validation import TectonicsError, input_shape, read_array, scalar, _replay_fsum
 from .geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS, _validate_shape
-from .magmatic_emplacement import (_allocate, _budget, _cancel, _identity,
+from .magmatic_emplacement import (_allocate, _budget, _cancel, _identity_bytes,
     _ids, _json, _quotient, _sum, _text, _text_allowance)
 from .planar_projection import _disjoint
 
@@ -33,14 +33,11 @@ def _footprints(polygons, *, count=None, frame_id=None):
     frame = polygons[0].frame_id if frame_id is None else frame_id
     if any(g.frame_id != frame for g in polygons):
         raise TectonicsError('regional parcel frame mismatch')
-    if sum(g.vertex_count for g in polygons) > DEFAULT_GEOMETRY_LIMITS.max_vertices:
+    vertices = sum(g.vertex_count for g in polygons)
+    if vertices > DEFAULT_GEOMETRY_LIMITS.max_vertices:
         raise TectonicsError('regional polygon vertex budget exceeded')
-    return polygons
+    return 512*vertices + 4096*len(polygons) + sum(g.retained_bytes for g in polygons)
 
-
-def _geometry_bytes(polygons):
-    return (512*sum(g.vertex_count for g in polygons) + 4096*len(polygons)
-            + sum(g.retained_bytes for g in polygons))
 
 
 def _validate_footprints(polygons, budget, cancel):
@@ -73,11 +70,12 @@ class W08Region:
     _density: bytes = field(repr=False)
     _weights: bytes = field(repr=False)
     _record: bytes = field(repr=False)
+    _geometry_size: int = field(repr=False)
 
     def __init__(self, polygons, parcel_ids, node_ids, density_kg_m3,
                  mass_weights, placement_modes, *, source_id, epoch_id,
                  datum_id, gravity_m_s2, budget=None):
-        _footprints(polygons)
+        geometry_size = _footprints(polygons)
         _ids(parcel_ids, 'parcel IDs', 4096)
         _ids(node_ids, 'regional owner node IDs', 64)
         n, p = len(node_ids), len(polygons)
@@ -93,7 +91,7 @@ class W08Region:
             raise TectonicsError('one density per node and one mass weight per node/parcel required')
         resource = _budget(budget)
         # Includes detached arrays, JSON parameters, geometry/index and hash work.
-        size = 192*n*p + 256*n + _geometry_bytes(polygons) + 65536
+        size = 192*n*p + 256*n + geometry_size + 65536
         size += _text_allowance(parcel_ids+node_ids+(source_id,epoch_id,datum_id))
         with resource.reserve(size, category='w08-region-definition'):
             _validate_footprints(polygons, resource, None)
@@ -112,11 +110,12 @@ class W08Region:
                 inventory_owner='unified-current-node-stocks',
                 structural_owner='diagnostic-mass-per-area-reference-difference',
                 thermal_owner='advected-isobaric-enthalpy-only', heat_source_j=0.)
+            encoded = _json(record)
             values = dict(polygons=polygons, parcel_ids=parcel_ids, node_ids=node_ids,
                 placement_modes=placement_modes, source_id=source_id, epoch_id=epoch_id,
                 datum_id=datum_id, frame_id=polygons[0].frame_id, gravity_m_s2=g,
-                region_id=_identity(record,density,weight_bytes), _density=density,
-                _weights=weight_bytes, _record=_json(record))
+                region_id=_identity_bytes(encoded,density,weight_bytes), _density=density,
+                _weights=weight_bytes, _record=encoded, _geometry_size=geometry_size)
             for name, value in values.items():
                 object.__setattr__(self,name,value)
 
@@ -134,7 +133,7 @@ class W08Region:
 
     @property
     def nbytes(self):
-        return _geometry_bytes(self.polygons)+len(self._density)+len(self._weights)+len(self._record)
+        return self._geometry_size+len(self._density)+len(self._weights)+len(self._record)
 
     def descriptor(self):
         import json
@@ -201,13 +200,14 @@ def _check_inventories(region, inventory, reference):
     from .w08_inventory import W08Inventory
     if type(inventory) is not W08Inventory or type(reference) is not W08Inventory:
         raise TectonicsError('typed current and reference W08 inventories required')
-    for name in ('component_ids','node_ids','node_kinds','origin_ids','enthalpy_source'):
-        if getattr(inventory,name) != getattr(reference,name):
-            raise TectonicsError('regional reference inventory '+name+' mismatch')
-    if not np.array_equal(inventory.formation_time_s,reference.formation_time_s):
-        raise TectonicsError('regional reference formation source mismatch')
-    if reference.time_s > inventory.time_s:
-        raise TectonicsError('regional reference cannot be later than current inventory')
+    if inventory is not reference:
+        for name in ('component_ids','node_ids','node_kinds','origin_ids','enthalpy_source'):
+            if getattr(inventory,name) != getattr(reference,name):
+                raise TectonicsError('regional reference inventory '+name+' mismatch')
+        if not np.array_equal(inventory.formation_time_s,reference.formation_time_s):
+            raise TectonicsError('regional reference formation source mismatch')
+        if reference.time_s > inventory.time_s:
+            raise TectonicsError('regional reference cannot be later than current inventory')
     lookup = {name:i for i,name in enumerate(inventory.node_ids)}
     if any(name not in lookup for name in region.node_ids):
         raise TectonicsError('regional node is absent from unified inventory')
@@ -227,13 +227,19 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
     receiving density and current area. Existing column thickening is in the
     full thickness field and is not counted again as new emplacement.
     """
+    return _regional_view(region, inventory, polygons, reference_inventory, reference_polygons, budget, cancel)
+
+
+def _regional_view(region, inventory, polygons, reference_inventory, reference_polygons, budget, cancel, *, emit=True):
     _cancel(cancel)
     if type(region) is not W08Region:
         raise TectonicsError('typed W08 regional placement required')
     n,p = len(region.node_ids),len(region.parcel_ids)
-    _footprints(polygons,count=p,frame_id=region.frame_id)
+    def footprint_size(group):
+        return region._geometry_size if group is region.polygons else _footprints(group,count=p,frame_id=region.frame_id)
+    current_size = footprint_size(polygons)
     reference = region.polygons if reference_polygons is None else reference_polygons
-    _footprints(reference,count=p,frame_id=region.frame_id)
+    reference_size = current_size if reference is polygons else footprint_size(reference)
     indices = _check_inventories(region,inventory,reference_inventory)
     k = len(inventory.component_ids)
     resource = _budget(budget)
@@ -242,7 +248,7 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
     # The fixed 64 KiB pool includes 8 KiB scalar scratch: at most 64 terms and
     # 2104-bit quantum sums, with no retained integer state between parcels.
     size = 32*n*p*k + 160*n*p + 256*p + region.nbytes + 65536
-    size += _geometry_bytes(polygons)+_geometry_bytes(reference)
+    size += current_size + reference_size
     size += _text_allowance(inventory.component_ids+inventory.node_ids+
         (inventory.inventory_id,reference_inventory.inventory_id,region.source_id))
     with resource.reserve(size,category='w08-region-view'):
@@ -251,9 +257,11 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
         if reference != region.polygons and reference != polygons:
             _validate_footprints(reference,resource,cancel)
         area = np.array([g.area_m2 for g in polygons])
-        ref_area = np.array([g.area_m2 for g in reference])
+        ref_area = area if reference is polygons else np.array([g.area_m2 for g in reference])
         stocks = np.empty((4,n,p)); components = np.empty((n,p,k))
-        base_mass = np.empty((n,p)); changes = np.zeros((3,p))
+        same_inventory = inventory is reference_inventory
+        base_mass = stocks[0] if same_inventory else np.empty((n,p))
+        changes = np.zeros((3,p))
         additions = np.zeros((n,p))
         mass,heat,volume,thickness = stocks
         weights,rho = region.mass_weights,region.density_kg_m3
@@ -261,11 +269,14 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
             with np.errstate(over='raise',invalid='raise',divide='raise',under='ignore'):
                 for row,i in enumerate(indices):
                     _cancel(cancel)
-                    mass[row] = _allocate(inventory.mass_kg[i],weights[row])
-                    base_mass[row] = _allocate(reference_inventory.mass_kg[i],weights[row])
-                    heat[row] = _allocate(inventory.enthalpy_j[i],weights[row])
+                    row_weights = weights[row]
+                    anchor = int(np.argmax(row_weights))
+                    mass[row] = _allocate(inventory.mass_kg[i],row_weights,anchor)
+                    if not same_inventory:
+                        base_mass[row] = _allocate(reference_inventory.mass_kg[i],row_weights,anchor)
+                    heat[row] = _allocate(inventory.enthalpy_j[i],row_weights,anchor)
                     for c in range(k):
-                        components[row,:,c] = _allocate(inventory.component_mass_kg[i,c],weights[row])
+                        components[row,:,c] = _allocate(inventory.component_mass_kg[i,c],row_weights,anchor)
                     for parcel in range(p):
                         total = _sum(components[row,parcel])
                         if abs(total-mass[row,parcel]) > 128*_EPS*max(total,mass[row,parcel]):
@@ -284,13 +295,18 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
                             float(additions[row,parcel])
                             for row,placement in enumerate(region.placement_modes) if placement == mode))
                 current = np.array([_sum(mass[:,j]) for j in range(p)])
-                initial = np.array([_sum(base_mass[:,j]) for j in range(p)])
-                changes[0] = (_quotient(current,area,'current mass per area')-
-                    _quotient(initial,ref_area,'reference mass per area'))*region.gravity_m_s2
+                initial = current if same_inventory else np.array([_sum(base_mass[:,j]) for j in range(p)])
+                current_load = _quotient(current,area,'current mass per area')
+                reference_load = (current_load if initial is current and ref_area is area else
+                                  _quotient(initial,ref_area,'reference mass per area'))
+                changes[0] = (current_load-reference_load)*region.gravity_m_s2
         except (FloatingPointError,OverflowError) as exc:
             raise TectonicsError('regional diagnostic arithmetic outside numerical range') from exc
         if not all(np.isfinite(a).all() for a in (stocks,components,changes)):
             raise TectonicsError('nonfinite regional diagnostic result')
+        if not emit:
+            _cancel(cancel)
+            return
         record = dict(method=_METHOD, region_id=region.region_id, source_id=region.source_id,
             epoch_id=region.epoch_id, datum_id=region.datum_id, frame_id=region.frame_id,
             node_ids=region.node_ids, parcel_ids=region.parcel_ids,
@@ -311,5 +327,6 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
             additions='mass-delta-only-at-fixed-receiving-density-and-current-area')
         buffers = stocks.tobytes(),components.tobytes(),changes.tobytes()
         _cancel(cancel)
-        return W08RegionalView(region.region_id,_identity(record,*buffers),region.node_ids,
-            region.parcel_ids,inventory.component_ids,inventory.time_s,*buffers,_json(record))
+        encoded = _json(record)
+        return W08RegionalView(region.region_id,_identity_bytes(encoded,*buffers),region.node_ids,
+            region.parcel_ids,inventory.component_ids,inventory.time_s,*buffers,encoded)

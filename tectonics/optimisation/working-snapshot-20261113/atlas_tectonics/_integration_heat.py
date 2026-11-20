@@ -270,7 +270,35 @@ class Propagator:
     p3: np.ndarray
 
 
+@dataclass(slots=True, eq=False)
+class _FixedStepModes:
+    """Call-local modes for a constant-source interval. The spectrum has one consumer."""
+    dt: float
+    spectrum: np.ndarray
+    to_modal: np.ndarray
+    source_modal: np.ndarray
+    from_modal: np.ndarray
+    e: np.ndarray
+    p1: np.ndarray
+    p2: np.ndarray
+    p3: np.ndarray
+    factor_ready: bool = False
+
+    def increment_factor(self):
+        if not self.factor_ready:
+            values = self.spectrum
+            np.negative(values, out=values)
+            np.multiply(values, self.dt, out=values)
+            np.expm1(values, out=values)
+            self.factor_ready = True
+        return self.spectrum
+
+
 def prepare_propagator(thermal, dt):
+    return _prepare_modes(thermal, dt, fixed_step=False)
+
+
+def _prepare_modes(thermal, dt, *, fixed_step):
     if not valid_thermal(thermal):
         raise ValueError("thermal preparation content differs from its prepared identity")
     dt = positive(dt, "time step")
@@ -281,10 +309,12 @@ def prepare_propagator(thermal, dt):
     lam = np.maximum(lam, 0.)
     e, p1, p2, p3 = phi_functions(-lam*dt)
     frozen = weakening.frozen
-    return Propagator(fingerprint=thermal.fingerprint, dt=dt, lam=frozen(lam),
-                      to_modal=frozen(q.T*np.sqrt(thermal.capacity)[None, :]),
-                      source_modal=frozen(q.T*s[None, :]), from_modal=frozen(s[:, None]*q),
-                      e=frozen(e), p1=frozen(p1), p2=frozen(p2), p3=frozen(p3))
+    spectrum = lam if fixed_step else frozen(lam)
+    matrices = (frozen(q.T*np.sqrt(thermal.capacity)[None, :]), frozen(q.T*s[None, :]),
+                frozen(s[:, None]*q), frozen(e), frozen(p1), frozen(p2), frozen(p3))
+    if fixed_step:
+        return _FixedStepModes(dt, spectrum, *matrices)
+    return Propagator(thermal.fingerprint, dt, spectrum, *matrices)
 
 
 def conduct(prop, theta, source_n, source_a=None):
@@ -293,9 +323,13 @@ def conduct(prop, theta, source_n, source_a=None):
     Returns (theta_new, integral of theta over the step). With source_a omitted this is
     the predictor with a constant source. Departures from the steady reference only.
     """
-    h = prop.dt
     v = prop.to_modal@theta
     g_n = prop.source_modal@source_n
+    return _conduct_modal(prop, v, g_n, source_a)
+
+
+def _conduct_modal(prop, v, g_n, source_a=None):
+    h = prop.dt
     delta = 0. if source_a is None else prop.source_modal@source_a-g_n
     v_new = prop.e*v+h*prop.p1*g_n+h*prop.p2*delta
     integral = h*prop.p1*v+h*h*prop.p2*g_n+h*h*prop.p3*delta

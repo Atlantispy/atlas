@@ -297,7 +297,10 @@ class PartitionBodyRef(RecordRef):
         return LogicalIdentity(P.PARTITION, digest.hexdigest(), count)
 
     def export(self, *, max_logical_bytes, max_owned_bytes):
-        length = self.identity().canonical_bytes
+        self._live()
+        length = getattr(self, '_sealed_body_length', None)
+        if length is None:
+            length = self.identity().canonical_bytes
         charge = 65536+192*length
         _require(type(max_logical_bytes) is int and type(max_owned_bytes) is int and
                  0 <= length <= max_logical_bytes and charge+OWNER_BYTES <= max_owned_bytes,
@@ -314,7 +317,7 @@ class PartitionBodyRef(RecordRef):
 
 class PartitionV2:
     """Sealed descriptor with a separately verified body and support inventory."""
-    __slots__ = ('_record', '_index', '_body_fields', '_partition_id', '_segment_ref', '_sealed',
+    __slots__ = ('_record', '_index', '_body_fields', '_body_length', '_partition_id', '_segment_ref', '_sealed',
                  '_carrier_pool')
 
     def __setattr__(self, name, value):
@@ -348,7 +351,9 @@ class PartitionV2:
             _require(self._partition_id == expected_partition_id, 'partition original identity differs')
             body = self.root()
             try:
-                _require(body.identity().sha256 == expected_partition_id, 'partition body hash differs')
+                body_identity = body.identity()
+                _require(body_identity.sha256 == expected_partition_id, 'partition body hash differs')
+                self._body_length = body_identity.canonical_bytes
                 ids, supports = root.field('support_ids'), root.field('supports')
                 try:
                     _require(ids.kind == supports.kind == 'array' and ids.size == supports.size,
@@ -412,7 +417,10 @@ class PartitionV2:
         object.__setattr__(self, '_segment_ref', ref)
 
     def root(self):
-        return PartitionBodyRef(self._record, self._record._root, fields=self._body_fields)
+        result = PartitionBodyRef(self._record, self._record._root, fields=self._body_fields)
+        if self._sealed:
+            result._sealed_body_length = self._body_length
+        return result
 
     def support_id(self, index):
         _require(type(index) is int and 0 <= index < self.support_count, 'support index outside inventory')

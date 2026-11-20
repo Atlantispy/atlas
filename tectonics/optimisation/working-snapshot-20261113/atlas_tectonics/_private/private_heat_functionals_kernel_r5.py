@@ -124,8 +124,7 @@ def _prepare(payload, boundary_point_faces, boundary_power_faces, conductivity, 
             if owners_of[fid] != {i for i, _ in owners}:
                 raise ValueError('Face and cell ownership disagree')
             centre, normal = vector(face['centroid_m']), vector(face['area_vector_m2'])
-            squared = total(arena.rational('multiply', a, a) for a in normal)
-            if not squared:
+            if not any(normal):
                 raise ValueError('Nondegenerate three-dimensional face vectors required')
             geometry[fid] = dict(centre=centre, normal=normal, owners=owners)
             face_data[fid] = face
@@ -134,6 +133,7 @@ def _prepare(payload, boundary_point_faces, boundary_power_faces, conductivity, 
             elif fid in neumann:
                 points['power', fid] = centre
                 i, sign = owners[0]
+                squared = total(arena.rational('multiply', a, a) for a in normal)
                 distance = arena.rational('multiply', sign, total(
                     arena.rational('multiply', a, arena.rational('subtract', b, c))
                     for a, b, c in zip(normal, centre, points['cell', i], strict=True)))
@@ -221,6 +221,11 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
         def observation(key):
             I.check(cancelled)
             if key[0] != 'power':
+                if cancelled is None:
+                    if key == ki:
+                        return pi
+                    if key == kj:
+                        return pj
                 return basis.point(points[key])
             observed = geometry[key[1]]
             oriented = basis.flux(observed['centre'], observed['normal'], moment(key[1]), k)
@@ -331,14 +336,19 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
         rows, census = [], []
         # Zero is the unchanged loop. An observer is promised its faces in order, one at a time.
         # A face with a prescribed power needs no reconstruction and is not counted.
-        shared = PARALLEL.workers(budget, len(selected-prepared['neumann']-set(prepared['two_point']))) if observe is None else 0
+        wanted = None
+        if observe is None and len(selected) >= PARALLEL.MIN_FACES and PARALLEL.configure() >= 2:
+            wanted = len(selected-prepared['neumann']-set(prepared['two_point']))
+            shared = PARALLEL.workers(budget, wanted)
+        else:
+            shared = 0
         pooled, taken = shared >= 2, 0
         if pooled:                  # the pool never sees a two-point face; this loop makes them
             pool_rows, pool_census, validated = PARALLEL.reconstruct_faces(sys.modules[__name__], prepared,
-                [face['face_id'] for face in payload['faces'] if face['face_id'] in selected
-                 and face['face_id'] not in prepared['two_point']],
+                (face['face_id'] for face in payload['faces'] if face['face_id'] in selected
+                 and face['face_id'] not in prepared['two_point']),
                 budget=budget, cancelled=cancelled, certification_precisions=certification_precisions,
-                work=work, retain=RETAIN)
+                work=work, retain=RETAIN, _wanted=wanted)
         else:
             validated = moments
         for face in payload['faces']:

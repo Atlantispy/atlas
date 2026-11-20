@@ -61,8 +61,8 @@ from atlas_tectonics._private import private_heat_issuer_resources_r1 as BASE
 
 HERE = Path(__file__).resolve().parent
 _PINS = {
-    'private_heat_issuer_resources_r3.py': '16618053ea2c0f9b160b50febc100b7343d4bb941b55e4a844ca8ee4e237116a',
-    'private_heat_issuer_resources_r1.py': 'df1ea5b2a80716373207bd457a9373992891dad6341c734edf72031c16ce183a',
+    'private_heat_issuer_resources_r3.py': '56115006530d96c9734bee38ee46dc84ae185acbd7d3054511e1ec4bb3eea1e5',
+    'private_heat_issuer_resources_r1.py': '73481b93d365654e5cfbcbfbdd8146b731a2669f55cbb3fafab3090327009df2',
 }
 for _name, _pin in _PINS.items():
     if sha256((HERE/_name).read_bytes()).hexdigest() != _pin:

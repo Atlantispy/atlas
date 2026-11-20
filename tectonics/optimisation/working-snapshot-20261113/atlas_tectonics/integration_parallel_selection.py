@@ -1409,7 +1409,8 @@ class _Rolling:
             max_leaves=parent.leaves, wall=self.family == 'wall', workers=self.workers,
             child_bytes=policy.child_bytes, predicate_units=policy.predicate_units,
             timeout_seconds=policy.timeout_seconds, budget_fraction=policy.budget_fraction,
-            keep_workers=policy.keep_workers)
+            keep_workers=policy.keep_workers,
+            batch_seconds=policy.batch_seconds if self.family == 'interface' else None)
         self.schedule.workers = self.workers
         # Known to this pass before it funds anything: whatever interrupts its opening, the
         # pass's close reaches it.
@@ -1496,6 +1497,8 @@ class _Rolling:
                 refused=stats['refused'], waits=session.waits, peak_child_rss=stats['peak_child_rss'],
                 last_error=None if session.last_error is None else _public(session.last_error),
                 batches=list(session.log)[-PF.MAX_DECISIONS:], peak_child_ledger=stats['peak_child_ledger'])
+            if session.batch_seconds is not None:
+                report.update(returned=stats['returned'], extra_batches=schedule.totals.get('extra_batches', 0))
             if session.plan.get('cleanup'):
                 report['notes'].append('session directory not removed: %s' % _public(session.plan['cleanup']))
         return report
@@ -1772,13 +1775,17 @@ class _RollingInterfaces(_Rolling):
     def claim(self, request, budget):
         """The issuer's seam for every contact: where the parent is, then its funded result if any."""
         schedule = self.schedule
+        pinned = False
         if schedule is not None and not self.closed:
             begun = perf_counter()
             order = self.order
             if order and order[0] == (request['logical_cell_id'], request['constraint_name'],
                                       request['other_logical_cell_id']):
-                order.popleft()
-                schedule.reached()
+                # IF-1 must be able to reassign this exact frontier row while claim waits.
+                pinned = self.family == 'interface' and self.policy.batch_seconds is not None
+                if not pinned:
+                    order.popleft()
+                    schedule.reached()
             else:
                 schedule.unlisted()
             self._fill()
@@ -1787,7 +1794,15 @@ class _RollingInterfaces(_Rolling):
             # session made here is the schedule's work, not the contact's.
             self._spent = perf_counter()-begun
         self._begin()
-        return super().claim(request, budget)
+        result = super().claim(request, budget)
+        if pinned:
+            begun = perf_counter()
+            self.order.popleft()
+            schedule.reached()
+            self._fill()
+            schedule.advance()
+            self._spent += perf_counter()-begun
+        return result
 
     def observed(self, key, other, integrator, seconds):
         """From the enclosure's observer, after each contact: what the parent itself just paid.

@@ -1502,7 +1502,7 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
         patch_heat, report = _thermal.conducted_patches(endpoint, records, patch_heat,
             parent.enthalpy_reference_k, sphere, step, advance.conduction, budget,
             carried=lateral_error, mechanical_patch_energy_j=patch_mechanical, physical_columns=physical,
-            physical_source_areal=physical_sources)
+            physical_source_areal=physical_sources, _issued_source=True)
         physical = _patch_heat.field_restore(report.pop('physical_columns'), budget=budget)
         after = sum((value for column in patch_heat.values() for value in column), Fraction(0))
         supplied[CONDUCTION_PARTY] = supplied.get(CONDUCTION_PARTY, Fraction(0))+(after-before)-mechanical_total
@@ -1531,7 +1531,8 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
         before = sum((Fraction(x) for column in heat for x in column), Fraction(0))
         heat, report = _thermal.conducted(endpoint, records, heat, parent.enthalpy_reference_k, sphere, step,
                                           advance.conduction, budget, carried=lateral_error,
-                                          mechanical_energy_j=mechanical, physical_columns=physical_pieces)
+                                          mechanical_energy_j=mechanical, physical_columns=physical_pieces,
+                                          _issued_source=True)
         physical_out = {tuple(key): tuple(_patch_heat._rational(q) for q in values)
                         for key, values in report.pop('physical_energy_areal')}
         after = sum((Fraction(x) for column in heat for x in column), Fraction(0))

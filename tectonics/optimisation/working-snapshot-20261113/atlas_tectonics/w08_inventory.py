@@ -15,7 +15,7 @@ import weakref
 
 import numpy as np
 
-from ._validation import TectonicsError, frozen, input_shape, read_array, scalar
+from ._validation import TectonicsError, input_shape, read_array, scalar
 from .constitutive import _cancel
 from .magmatic_transfer import MagmaticInventory, PreparedMagmaticTransfer
 from .materials import MaterialCohort, _json, _name
@@ -60,19 +60,18 @@ def _names(values, label):
     return values
 
 
-def _identity(record, *arrays):
-    digest = hashlib.sha256(_json(record))
+def _identity(encoded, *arrays):
+    digest = hashlib.sha256(encoded)
     for array in arrays:
         digest.update(_json((array.shape, array.dtype.str)))
-        digest.update(array.tobytes())
+        digest.update(memoryview(array).cast('B'))
     return digest.hexdigest()
 
 
 def _keep(array, owner):
     # Each small retained payload owns its lease. Borrowing an earlier state's
     # bytes would pin this state's reservation until that earlier state dies.
-    checked = frozen(array)
-    value = np.frombuffer(checked.tobytes(), dtype=np.float64).reshape(checked.shape)
+    value = np.frombuffer(array.tobytes(order='C'), dtype=np.float64).reshape(array.shape)
     lease = owner.reserve(value.nbytes+256, category='w08-inventory-retained')
     lease.__enter__()
     root = value
@@ -109,6 +108,13 @@ class W08Inventory:
     def __init__(self, node_ids, node_kinds, component_ids, component_mass_kg,
                  enthalpy_j, *, source_id, enthalpy_source, time_s=0.,
                  formation_time_s, origin_ids, budget=None, cancel=None):
+        self._initialise(node_ids, node_kinds, component_ids, component_mass_kg,
+                         enthalpy_j, source_id, enthalpy_source, time_s,
+                         formation_time_s, origin_ids, budget, cancel, None)
+
+    def _initialise(self, node_ids, node_kinds, component_ids, component_mass_kg,
+                    enthalpy_j, source_id, enthalpy_source, time_s,
+                    formation_time_s, origin_ids, budget, cancel, known_mass):
         _cancel(cancel)
         nodes = _names(node_ids, 'node IDs')
         components = _names(component_ids, 'component IDs')
@@ -123,23 +129,27 @@ class W08Inventory:
         _name(source_id, 'inventory source')
         _name(enthalpy_source, 'enthalpy convention')
         now = scalar(time_s, 'inventory time')
-        if (input_shape(component_mass_kg) != (count, len(components))
+        if known_mass is None and (input_shape(component_mass_kg) != (count, len(components))
                 or input_shape(enthalpy_j) != (count,)
                 or input_shape(formation_time_s) != (count,)):
             raise TectonicsError('component(N,K), enthalpy(N), formation-time(N) shapes required')
         owner = _owner(budget)
         with owner.reserve(96*count*(len(components)+4)+8192,
                            category='w08-inventory-input'):
-            c = read_array(component_mass_kg, 'component mass', nonnegative=True)
-            e = read_array(enthalpy_j, 'signed enthalpy')
-            formation = read_array(formation_time_s, 'source formation times')
-            if c.shape != (count, len(components)) or e.shape != (count,) or formation.shape != (count,):
-                raise TectonicsError('W08 input shape changed during capture')
-            if np.any(formation > now):
-                raise TectonicsError('source formation time cannot lie after inventory time')
-            mass = np.array([_sum(row) for row in c])
-            if np.any((mass == 0) & (e != 0)):
-                raise TectonicsError('empty stock cannot contain enthalpy or implicit throughflow')
+            if known_mass is None:
+                c = read_array(component_mass_kg, 'component mass', nonnegative=True)
+                e = read_array(enthalpy_j, 'signed enthalpy')
+                formation = read_array(formation_time_s, 'source formation times')
+                if c.shape != (count, len(components)) or e.shape != (count,) or formation.shape != (count,):
+                    raise TectonicsError('W08 input shape changed during capture')
+                if np.any(formation > now):
+                    raise TectonicsError('source formation time cannot lie after inventory time')
+                mass = np.array([_sum(row) for row in c])
+                if np.any((mass == 0) & (e != 0)):
+                    raise TectonicsError('empty stock cannot contain enthalpy or implicit throughflow')
+            else:
+                # retime carries issued immutable stocks forward and obtains independent retained leases.
+                c, e, formation, mass = component_mass_kg, enthalpy_j, formation_time_s, known_mass
             record = dict(schema='atlas.w08-inventory.v1', node_ids=nodes,
                 node_kinds=kinds, component_ids=components, origin_ids=origin_ids,
                 formation_time_s=formation.tolist(), source_id=source_id,
@@ -149,7 +159,7 @@ class W08Inventory:
                 raise TectonicsError('W08 inventory metadata exceeds bounded descriptor')
             values = dict(node_ids=nodes, node_kinds=kinds, component_ids=components,
                 origin_ids=origin_ids, source_id=source_id, enthalpy_source=enthalpy_source,
-                time_s=now, inventory_id=_identity(record, c, e), _record=encoded,
+                time_s=now, inventory_id=_identity(encoded, c, e), _record=encoded,
                 _components=_keep(c, owner), _enthalpy=_keep(e, owner),
                 _formation=_keep(formation, owner), _mass=_keep(mass, owner))
             lease = owner.reserve(len(encoded)+1024, category='w08-inventory-metadata')
@@ -180,8 +190,11 @@ class W08Inventory:
         now = scalar(time_s, 'inventory time')
         if now < self.time_s:
             raise TectonicsError('W08 inventory time cannot run backwards')
-        return self._replace(self._components, self._enthalpy, now,
-            self.source_id if source_id is None else source_id, budget, cancel)
+        result = object.__new__(W08Inventory)
+        result._initialise(self.node_ids, self.node_kinds, self.component_ids,
+            self._components, self._enthalpy, self.source_id if source_id is None else source_id,
+            self.enthalpy_source, now, self._formation, self.origin_ids, budget, cancel, self._mass)
+        return result
 
     def _replace(self, c, e, time_s, source_id, budget, cancel):
         return W08Inventory(self.node_ids, self.node_kinds, self.component_ids, c, e,
@@ -224,12 +237,14 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
     owner = _owner(budget)
     with owner.reserve(256*len(inventory.node_ids)*(len(inventory.component_ids)+4)+65536,
                        category='w08-magmatic-adapter'):
-        local = MagmaticInventory(selected_node_ids, tuple(inventory.node_kinds[i] for i in indices),
+        mass = inventory._mass[indices]
+        local = object.__new__(MagmaticInventory)
+        local._initialise(selected_node_ids, tuple(inventory.node_kinds[i] for i in indices),
             inventory.component_ids, inventory._components[indices], inventory._enthalpy[indices],
-            source_id=inventory.inventory_id, enthalpy_source=inventory.enthalpy_source,
-            time_s=inventory.time_s, budget=owner, cancel=cancel)
-        with PreparedMagmaticTransfer(local, rates_kg_s, source_id=source_id, heat_w=heat_w,
-                thermodynamics=thermodynamics, context=context, budget=owner, cancel=cancel) as plan:
+            inventory.inventory_id, inventory.enthalpy_source, inventory.time_s, owner, cancel, mass)
+        plan = object.__new__(PreparedMagmaticTransfer)
+        plan._initialise(local, rates_kg_s, source_id, heat_w, thermodynamics, context, owner, cancel, mass)
+        with plan:
             result = plan.evaluate(duration_s, end_time_s=end_time_s, cancel=cancel)
             c, e = inventory._components.copy(), inventory._enthalpy.copy()
             c[indices], e[indices] = result.remaining.component_mass_kg, result.remaining.enthalpy_j
@@ -237,6 +252,7 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
                 result.transferred_enthalpy_j, result.external_heat_j)
             account = _closure(inventory, c, e, heat, moved_c, moved_e)
             updated = inventory._replace(c, e, result.remaining.time_s, plan.plan_id, owner, cancel)
+            kernel = result.descriptor()
             record = dict(operation='atlas.w08-inventory-magmatic.v1', source_id=source_id,
                 initial_inventory_id=inventory.inventory_id, inventory_id=updated.inventory_id,
                 selected_node_ids=selected_node_ids, duration_s=result.duration_s,
@@ -245,8 +261,8 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
                 transferred_component_mass_kg=moved_c.tolist(), transferred_enthalpy_j=moved_e.tolist(),
                 external_heat_j=heat.tolist(), external_heat_total_j=_sum(heat),
                 exhaustion_duration_s=plan.exhaustion_duration_s,
-                exhausted_node_ids=result.descriptor()['exhausted_nodes'], account=account,
-                kernel=result.descriptor(),
+                exhausted_node_ids=kernel['exhausted_nodes'], account=account,
+                kernel=kernel,
                 ownership='shared inventory owns terminal stocks; edge transfers are receipts only')
             _cancel(cancel)
             return updated, json.loads(_json(record))
@@ -300,6 +316,7 @@ def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s
                 e[target] = _sum((e[target], *moved_e[row]))
             account = _closure(inventory, c, e, (), moved_c, moved_e)
             updated = inventory._replace(c, e, result.remaining.time_s, plan.plan_id, owner, cancel)
+            kernel = result.descriptor()
             record = dict(operation='atlas.w08-inventory-retirement.v1', source_id=source_id,
                 initial_inventory_id=inventory.inventory_id, inventory_id=updated.inventory_id,
                 selected_node_ids=selected_node_ids, destination_ids=destination_ids,
@@ -311,8 +328,8 @@ def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s
                 transferred_component_mass_kg=moved_c.tolist(), transferred_enthalpy_j=moved_e.tolist(),
                 external_heat_j=[], external_heat_total_j=0.,
                 exhaustion_duration_s=plan.exhaustion_duration_s,
-                exhausted_node_ids=result.descriptor()['exhausted_cohort_ids'], account=account,
-                source_cohorts=local.descriptor()['cohorts'], kernel=result.descriptor(),
+                exhausted_node_ids=kernel['exhausted_cohort_ids'], account=account,
+                source_cohorts=local.descriptor()['cohorts'], kernel=kernel,
                 ownership='all retirement destinations are physical shared inventory rows')
             _cancel(cancel)
             return updated, json.loads(_json(record))

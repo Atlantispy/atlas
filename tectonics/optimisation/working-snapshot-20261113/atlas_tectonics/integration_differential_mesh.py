@@ -181,7 +181,7 @@ def _aggregate_cells(cells, faces, groups, boxes, arena):
         if E._admitted_closure_fails([term for _, term in rows], volume, arena.resource):
             raise V.VolumeError('aggregated thermal metric closure or first-moment identity failed')
         points[key] = centre
-    # Ruling 34: merged cells by their stored point; kept is in _assemble's geometric face order.
+    # Geometric order: merged cells by their stored point; kept is in _assemble's geometric face order.
     arena.keep(tuple(q for p in points.values() for q in p), len(points))
     order = sorted(merged, key=points.__getitem__)
     for a, b in zip(order, order[1:]):
@@ -437,7 +437,7 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
                 category='thermal-certified-volume-cache'))
             items.append(((*physical, layer.top_radius_m, layer.bottom_radius_m, *local), values, box, layer,
                           local, square))
-    # Ruling 34: the greedy insertion below depends on the order of the points, so they are taken in a geometric
+    # Geometric order: the greedy insertion below depends on the order of the points, so they are taken in a geometric
     # order (the full key: physical point, the layer's radii, the chart point), never the given order, which
     # follows a hash of names upstream.
     items.sort(key=lambda item: item[0])

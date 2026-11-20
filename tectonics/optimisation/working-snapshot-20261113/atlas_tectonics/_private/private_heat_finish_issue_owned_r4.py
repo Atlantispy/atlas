@@ -7,21 +7,15 @@ The caller supplies and keeps its original exact GMP inputs owned. This owner
 also charges its retained copies, all audit arrays and the complete record.
 Every native arithmetic operation is admitted before execution. The final
 codec envelope is derived from actual final entry widths before formatting;
-the two sequential encodings use the unchanged frozen encoder.
+one canonical encoding supplies the identity preimage and the sealed result.
 
 The result graph and sealed bytes remain owned until normal close. Current
 scalar/codec workspace settles only after the producer frame has gone.
 Failed frames preserve their workspace and arrays. No static
 symbolic issue-growth inventory, solver, geometry or FINISH route runs here.
 
-R4 is R3 with one addition. The record is encoded twice, each time into one
-growing buffer and then one whole copy, and the copy has no safe point inside
-it. Where the caller's forward call is metered (process meter r1) the two
-encodings keep the codec inventory's own figure reserved across them as a
-declared single step: one buffer at its largest capacity and one whole copy,
-which also covers the two blocks a buffer holds while it is moved to a larger
-one. Without a meter the statement does nothing. Every check, field, figure
-and byte of the record is R3's.
+The process meter covers the growing buffer and final immutable copy. The
+identity hashes the canonical record with the result_id field omitted.
 """
 from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
@@ -42,8 +36,8 @@ HERE = Path(__file__).resolve().parent
 METHOD = 'private:standalone-conservative-physical-face-finish-r7'
 PINS = {
     'private_heat_correction_owned_r1.py': 'e8d935d703d942323cc6ccc62b45da48bb4149e3a17b5e82b7e3db6aaeb9ca38',
-    'private_heat_finish_codec_inventory_r1.py': '6ecc5c68266db6a29dd98518ba16705705a1c7a167ac43bf673caa63fb52d793',
-    'private_heat_finish_kernel_r3.py': 'f678d8326761c2d13423fcfed1563e9d11faacccf5e47598144dd1e5fe2f6748',
+    'private_heat_finish_codec_inventory_r1.py': '6e8d7b56f9283a2b1e9d94673459e8a62ad707ad94d226d1cd2eb1c4bcc5e295',
+    'private_heat_finish_kernel_r3.py': '178d58b891df29ded2a3d46cbd62236d3e87f499f9159e3aa951d3481e781cb3',
 }
 _SOURCES = dict(E._SOURCES, **{_atlas_identity.relkey(HERE/name): pin for name, pin in PINS.items()})
 _SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
@@ -119,9 +113,10 @@ def _codec_plan(record, ar):
             return C.json_text_chars(len(value))
         if type(value) is ar.G.mpq:
             shape = ar.shape(value)
-            component = max(component, C.decimal_digit_bound(shape.numerator_bits)+1,
-                            C.decimal_digit_bound(shape.denominator_bits))
-            return C.rational_json_chars(shape.numerator_bits, shape.denominator_bits)
+            numerator_digits = C.decimal_digit_bound(shape.numerator_bits)
+            denominator_digits = C.decimal_digit_bound(shape.denominator_bits)
+            component = max(component, numerator_digits+1, denominator_digits)
+            return C._rational_chars_from_digits(numerator_digits, denominator_digits)
         if type(value) is bool:
             return 5
         if value is None:
@@ -183,8 +178,8 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     exact_bounds = all(not ar.less(e, ar.op('multiply', c, bounds[0]))
                        and not ar.less(ar.op('multiply', c, bounds[1]), e)
                        for c, e in zip(cap, new, strict=True))
-    public_bounds = all(not ar.less(ar.represented(t), bounds[0])
-                        and not ar.less(bounds[1], ar.represented(t)) for t in temperatures)
+    public_bounds = all(not ar.less(t, bounds[0]) and not ar.less(bounds[1], t)
+                        for t in map(ar.represented, temperatures))
     if not exact_bounds or not public_bounds:
         raise ValueError('Corrected state leaves its declared loaded/prescribed/Dirichlet convex hull')
     load = ar.array(len(old))
@@ -270,8 +265,38 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     ar.reserve(ar.peak_bits)
     # A declared single step of a metered call, at the codec inventory's own figure.
     with METER.burst(ar.workspace.lease.budgets[0], ar.codec.total_bytes):
-        record['result_id'] = sha256(K._encoded(record, check)).hexdigest()
-        return K.PrivateNumericalResult(K._encoded(record, check))
+        return K.PrivateNumericalResult(_seal_record(record, check))
+
+
+def _seal_record(record, check):
+    """Encode the fixed issue schema, whose result_id sorts after capacity."""
+    encoder = K._encoder()
+    record['result_id'] = '0'*64
+    data = bytearray(b'{')
+    for index, key in enumerate(sorted(record)):
+        check()
+        field_start = len(data)
+        if index:
+            data.extend(b',')
+        data.extend(encoder.encode(key).encode('ascii'))
+        data.extend(b':')
+        for chunk in encoder.iterencode(record[key]):
+            check()
+            data.extend(chunk.encode('ascii'))
+        if key == 'result_id':
+            omitted_start, omitted_end = field_start, len(data)
+    data.extend(b'}')
+    digest = sha256()
+    with memoryview(data) as view:
+        for first, last in ((0, omitted_start), (omitted_end, len(data))):
+            for offset in range(first, last, 1024*1024):
+                check()
+                digest.update(view[offset:min(last, offset+1024*1024)])
+    check()
+    result_id = digest.hexdigest()
+    data[omitted_end-65:omitted_end-1] = result_id.encode('ascii')
+    record['result_id'] = result_id
+    return bytes(data)
 
 
 def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powers,

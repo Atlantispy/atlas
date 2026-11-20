@@ -236,7 +236,7 @@ class ScreenedSupport:
 
     `shell` has precisely the full oracle's first complete minimum-th shell.
     Every row is (Fraction squared distance, original key, original point tuple).
-    Equal distances order by the exact point, then by position (ruling 34: geometry, never a label).
+    Equal distances order by the exact point, then by position (geometry, never a label).
     `full_ranking()` must be requested before the first rank-driven expansion;
     it includes every original observation and retains original stable tie order.
     Diagnostics count the actual distance evaluations, including reused seeds.
@@ -305,8 +305,16 @@ class ScreenedSupport:
     def _ordered(self, indices):
         # Ties order by the point, x then y then z, each an exact Fraction (floats and encoded rationals
         # decoded by _parts, so every coordinate compares exactly); equal points fall to their position.
-        ordered = sorted(indices, key=lambda i: (
-            self._distance(i), tuple(Q(*_parts(a)) for a in self._points[i][1]), i))
+        ordered = sorted(indices, key=self._distance)
+        start = 0
+        while start < len(ordered):
+            end, distance = start + 1, self._distances[ordered[start]]
+            while end < len(ordered) and self._distances[ordered[end]] == distance:
+                end += 1
+            if end - start > 1:         # only a tied run decodes its points: (point, position), as one key would
+                ordered[start:end] = sorted(ordered[start:end], key=lambda i: (
+                    tuple(Q(*_parts(a)) for a in self._points[i][1]), i))
+            start = end
         return tuple((self._distances[i], *self._points[i]) for i in ordered)
 
     def full_ranking(self):

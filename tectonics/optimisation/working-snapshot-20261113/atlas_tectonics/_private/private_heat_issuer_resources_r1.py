@@ -281,10 +281,14 @@ def projection_output_plan(groups, *, budget, cancel=None):
         for group in groups:
             for value in group:
                 check(cancel)
-                shape = ar.q(value)
-                chars += R.hex_pair_char_bound(R.RationalShape(shape.numerator, shape.denominator))+4
+                if type(value) is ar.gmp.mpq:
+                    shape = R.RationalShape(max(1, value.numerator.bit_length()), value.denominator.bit_length())
+                else:
+                    bound = ar.q(value)
+                    shape = R.RationalShape(bound.numerator, bound.denominator)
+                chars += R.hex_pair_char_bound(shape)+4
                 count += 1
-                ar.expression_bits = max(ar.expression_bits, 4*(shape.numerator+shape.denominator))
+                ar.expression_bits = max(ar.expression_bits, 4*(shape.numerator_bits+shape.denominator_bits))
         components = dict(output_hex_strings_and_pairs=L._size(chars+UNIT*(count+8)),
             output_stream_codec=L._size(3*chars+UNIT*(count+32)),
             actual_output_conversion_work=ar.scalar_work(rational_slots=8))

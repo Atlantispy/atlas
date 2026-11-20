@@ -292,9 +292,13 @@ class SupportRoutingRows:
         arena.stack.enter_context(budget.reserve(65536+256*len(supports),
             category='routing-diagnostic-metadata'))
         largest = second = workspace = 0
+        self._compact_capacities = {}
         for support in supports:
             # record() also inserts its issued identity outside the encoded body.
-            size = 4096+_decoded_json_capacity(support._json)
+            size = 4096+support.decoded_capacity
+            ref = getattr(support, '_compact_ref', None)
+            if ref is not None:
+                self._compact_capacities[(id(ref._view), support.support_id)] = size-4096
             if size > largest:
                 largest, second = size, largest
             elif size > second:
@@ -315,6 +319,10 @@ class SupportRoutingRows:
         if getattr(support, '_compact_ref', None) is not None:
             # Issued from a compact partition: retain DAG references and a handle.
             from atlas_tectonics._private.partition_routing_patch import project_compact
+            ref = support._compact_ref
+            capacity = self._compact_capacities.get((id(ref._view), support.support_id))
+            if capacity is not None:
+                object.__setattr__(support, '_decoded_capacity', capacity)
             return project_compact(self, support)
         view = self._views.project(support.record())
         self._handles[support.support_id] = support

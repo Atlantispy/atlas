@@ -1216,22 +1216,48 @@ class CompactMesh:
             require(0 <= ci < self.cell_count, 'cell index outside table')
             yield ci
 
+    def _metric_rationals(self, indices, extra):
+        owner = self._row_owner(indices, extra)
+        return owner, tuple(self.rational(int(q)) for q in indices)
+
+    def _admitted_metric_rationals(self, indices, extra):
+        """The geometry constructor owns scratch for one four- or six-rational row."""
+        a = self._arrays
+        size = 65536+extra
+        parts = []
+        for q in indices:
+            for idx in a['q.pair'][int(q)]:
+                i = int(idx)
+                start, stop = map(int, a['int.offset'][i:i+2])
+                parts.append((i, start, stop))
+                size += 32*(stop-start+64)
+        owner = _view_allocation(self, size)
+        def integer(part):
+            i, start, stop = part
+            return int(a['int.sign'][i])*int.from_bytes(a['int.bytes'][start:stop], 'little')
+        values = tuple(Fraction(integer(parts[k]), integer(parts[k+1])) for k in range(0, len(parts), 2))
+        return owner, values
+
     def cell_metrics(self, index):
+        return self._cell_metrics(index, self._metric_rationals)
+
+    def _cell_metrics(self, index, read_rationals):
         ident = self.cell_id(index)
         a = self._arrays
         linked = self._range('c.face_offset', index)
-        owner = self._row_owner(a['c.q'][index, :4], 64*(linked.stop-linked.start))
-        return OwnedRow(dict(cell_id=ident, volume=self.rational(int(a['c.q'][index, 0])),
-            centre=tuple(self.rational(int(q)) for q in a['c.q'][index, 1:4]),
+        owner, values = read_rationals(a['c.q'][index, :4], 64*(linked.stop-linked.start))
+        return OwnedRow(dict(cell_id=ident, volume=values[0], centre=values[1:],
             face_indices=tuple(map(int, a['c.face'][linked])), signs=tuple(map(int, a['c.sign'][linked]))), owner)
 
     def face_metrics(self, index, *, include_owners=True):
+        return self._face_metrics(index, include_owners, self._metric_rationals)
+
+    def _face_metrics(self, index, include_owners, read_rationals):
         ident = self.face_id(index)
         a = self._arrays
-        owner = self._row_owner(a['f.q'][index])
+        owner, values = read_rationals(a['f.q'][index], 0)
         claimed = tuple(map(int, a['f.owner'][self._range('f.owner_offset', index)])) if include_owners else None
-        return OwnedRow(dict(face_id=ident, centre=tuple(self.rational(int(q)) for q in a['f.q'][index, :3]),
-            normal=tuple(self.rational(int(q)) for q in a['f.q'][index, 3:]),
+        return OwnedRow(dict(face_id=ident, centre=values[:3], normal=values[3:],
             owners=claimed), owner)
 
     def _support_position(self, table, ident):

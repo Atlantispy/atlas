@@ -27,7 +27,7 @@ from atlas_tectonics._private import private_heat_decimal_inventory_r1 as D
 
 HERE = Path(__file__).resolve().parent
 PUBLIC_BINDING = 'plan40b.c3.public-receiving.r2'
-PINS = {'private_heat_certification_kernel_r1.py': '5bd0d0df45734aece34ec4a167ea022ee364d2fdb2e585940bab35198e2b306c', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'private_heat_low_ledger_inventory_r1.py': '55ecce26c2dffba1f113c463f1fbe6558e33ca6fa6cb4508a7b2a3a0cf8705e6', 'private_heat_interval_inventory_r1.py': 'e83a13052c413672f17f84f145ca4bdb1f273735e041a9d20c3d773735895bb9', 'private_heat_decimal_inventory_r1.py': 'b005c9b48a1fad993a1255e25a1126199f545075fa6e5d0877943d84784fcb26'}
+PINS = {'private_heat_certification_kernel_r1.py': 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'private_heat_low_ledger_inventory_r1.py': '55ecce26c2dffba1f113c463f1fbe6558e33ca6fa6cb4508a7b2a3a0cf8705e6', 'private_heat_interval_inventory_r1.py': 'e83a13052c413672f17f84f145ca4bdb1f273735e041a9d20c3d773735895bb9', 'private_heat_decimal_inventory_r1.py': '8f1a73e84ce16c9544799a88f419ae17fa0b1e8a240f6dfd44f86ee5db608f43'}
 
 
 def check(cancel):
@@ -104,7 +104,7 @@ def verify_sources(cancel):
             raise ValueError('Reviewed certificate dependency changed: '+name)
 
 
-def screen_plan(matrix, rhs, conversion, tau, G, R, cancel):
+def screen_plan(matrix, rhs, conversion, tau, G, R, cancel, *, _with_support=False):
     """Bound singleton constraint division, base jump and encoded witnesses."""
     ar = L.RationalGrowth(G, R, cancel)
     m, n = len(matrix), len(rhs)
@@ -113,14 +113,19 @@ def screen_plan(matrix, rhs, conversion, tau, G, R, cancel):
     shapes = [[ar.q(v) for v in row] for row in matrix]
     exact_slots = codec = 0
     forced_shapes = []
+    support = [] if _with_support else None
     for j in range(n):
         # Screen every possible singleton without selecting a tolerance rank.
         possible = []
+        supported = None
         for i, row in enumerate(matrix):
             if row[j]:
+                supported = i if supported is None else -1
                 value = ar.op('divide', target[j], shapes[i][j])
                 output = ar.op('multiply', ar.op('add', value, jump), factors[i])
                 possible.append((value, output))
+        if support is not None:
+            support.append(supported)
         if possible:
             value, output = (ar.choice([pair[k] for pair in possible]) for k in (0, 1))
             forced_shapes.append(output)
@@ -133,7 +138,7 @@ def screen_plan(matrix, rhs, conversion, tau, G, R, cancel):
         ('exact_values_and_generations', exact_slots), ('encoded_witnesses', codec),
         ('containers_and_all_attempt_audits', D.CONTAINER_UNIT*(12*m+40*n+256)),
         ('scalar_workspace', ar.scalar_work(rational_slots=32))), (('observations', m), ('columns', n)))
-    return plan
+    return (plan, support) if _with_support else plan
 
 
 def interval_plan(m, n, precision, largest_owned_bytes, R):
@@ -177,12 +182,13 @@ def export_plan(bounds, dual, proof, G, R, cancel):
             check(cancel)
             shape = endpoint_shape(value, G, ar)
             count += 1
-            retained += ar.slot(shape)
+            slot = ar.slot(shape)
+            retained += slot
             bits = shape.numerator+shape.denominator
             largest_bits = max(largest_bits, bits)
             # Exact GMP export, mpz getter, Python-int/Decimal conversion used
             # by the ORIGINAL round_bounds; repeated copies explicitly funded.
-            scratch += 6*ar.slot(shape)+4*D.decimal_slot(max(shape.numerator, shape.denominator))
+            scratch += 6*slot+4*D.decimal_slot(max(shape.numerator, shape.denominator))
     for value in proof.values():
         if type(value) is G.mpfr:
             shape = endpoint_shape(value, G, ar)

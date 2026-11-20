@@ -66,7 +66,11 @@ def _json(value):
 
 
 def _identity(record, *buffers):
-    h = hashlib.sha256(_json(record))
+    return _identity_bytes(_json(record), *buffers)
+
+
+def _identity_bytes(encoded, *buffers):
+    h = hashlib.sha256(encoded)
     for b in buffers:
         h.update(b)
     return h.hexdigest()
@@ -87,20 +91,21 @@ def _quotient(numerator, denominator, name):
     return result
 
 
-def _allocate(total, weights):
+def _allocate(total, weights, anchor=None):
     """Conservative binary64 partition; do not renormalise user-supplied weights."""
     out = total * weights
     if np.any((weights != 0) & (total != 0) & (out == 0)):
         raise TectonicsError('nonzero deposited account underflows binary64')
-    anchor = int(np.argmax(weights))
+    if anchor is None:
+        anchor = int(np.argmax(weights))
     # Largest bin safely absorbs the small rounding remainder. No physical
     # correction or weight normalisation is hidden in this representation step.
     out[anchor] = total - _sum(out[j] for j in range(len(out)) if j != anchor)
     residual = total - _sum(out)
     if residual:
         out[anchor] += residual
-    if _sum(out) != total:
-        raise TectonicsError('cannot represent exact deposited extensive sum')
+        if _sum(out) != total:
+            raise TectonicsError('cannot represent exact deposited extensive sum')
     if total >= 0 and np.any(out < 0):
         raise TectonicsError('negative deposited mass from numerical partition')
     return out
@@ -386,11 +391,12 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
         try:
             with np.errstate(over='raise',invalid='raise',divide='raise',under='ignore'):
                 w = target.mass_weights
-                mass, enthalpy = _allocate(payload.mass_kg,w), _allocate(payload.enthalpy_j,w)
+                anchor = int(np.argmax(w))
+                mass, enthalpy = _allocate(payload.mass_kg,w,anchor), _allocate(payload.enthalpy_j,w,anchor)
                 components = np.empty((n,k))
                 for j in range(k):
                     _cancel(cancel)
-                    components[:,j] = _allocate(payload.component_mass_kg[j],w)
+                    components[:,j] = _allocate(payload.component_mass_kg[j],w,anchor)
                 volume = _quotient(mass,target.receiving_density_kg_m3,'receiving volume')
                 dz = _quotient(volume,target.area_m2,'receiving thickness')
                 incoming = np.column_stack((mass,enthalpy,volume))

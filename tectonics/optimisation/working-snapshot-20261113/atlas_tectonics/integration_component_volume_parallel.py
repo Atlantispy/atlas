@@ -11,7 +11,6 @@ from . import integration_differential_geometry as G
 from . import integration_parallel_dispatch as P
 from .integration_component_volume_batch import ComponentVolumeQueries
 from .integration_parallel_binding import VOLUME_SCHEMA
-from .integration_routing_views import _decoded_json_capacity
 
 
 def request_for(support, logical_cell_id, endpoint, time_s, width, leaves):
@@ -49,11 +48,11 @@ def component_answers(requests, inputs, new_ledger, room, observed):
                     # do all remaining members serially after this child exits.
                     answers.extend(['declined'] * (len(requests)-len(answers)))
                     return answers
-                if identity != request['support_id'] or ledger.reserved_bytes != baseline:
+                if identity != request['support_id']:
                     finish()
                     ledger = new_ledger()
                     support = P._support(inputs[request['support_id']], request['support_id'], ledger)
-                    baseline = ledger.reserved_bytes + 4096 + _decoded_json_capacity(support._json)
+                    baseline = ledger.reserved_bytes + 4096 + support.decoded_capacity
                     queries = ComponentVolumeQueries(support, budget=ledger)
                     queries.__enter__()
                     identity = support.support_id

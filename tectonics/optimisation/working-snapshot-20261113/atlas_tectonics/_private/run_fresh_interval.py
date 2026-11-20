@@ -1535,8 +1535,7 @@ def _heat_faces(folder, sources, production_release):
     os.environ.pop(variable, None)
     if production_release:
         return None
-    manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
-    if manifest['installed_binding']['qualification_status'] != 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION':
+    if not diagnostic_tree(sources):
         return None
     os.environ[variable] = str(folder)
     return folder

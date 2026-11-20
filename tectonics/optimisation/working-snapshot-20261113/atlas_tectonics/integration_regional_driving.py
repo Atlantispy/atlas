@@ -242,17 +242,21 @@ class PlateBoundaryLift:
                 raise TectonicsError('one explicit face owner or None per native velocity node required')
             cells = {f: U.cells_of_rings(r) for f, r in rings.items()}
             owners = np.full(nv, -1, dtype=np.int64)
+            face_sides = {}
             for i, face in enumerate(node_face_ids):
                 if not held[i]:
                     if face is not None:
                         raise TectonicsError('unconstrained native node must not claim a plate boundary owner')
                     continue
-                if face not in cells or network.face_plate(face) not in self.plate_ids:
-                    raise TectonicsError('boundary owner is outside the footprint or replaced plate pair')
+                if face not in face_sides:
+                    plate = network.face_plate(face) if face in cells else None
+                    if plate not in self.plate_ids:
+                        raise TectonicsError('boundary owner is outside the footprint or replaced plate pair')
+                    face_sides[face] = self.plate_ids.index(plate)
                 if not (_contains(cells[face], points[i]) if current_pose is None else
                         current_pose.contains(cells[face], points[i])):
                     raise TectonicsError('physical boundary point lies outside its declared source face')
-                owners[i] = self.plate_ids.index(network.face_plate(face))
+                owners[i] = face_sides[face]
             if set(owners[held]) != {0, 1}:
                 raise TectonicsError('both source plates must own prescribed boundary nodes')
             full = np.zeros((6, nv, 3))
@@ -393,13 +397,15 @@ class PreparedRegionalDriving:
         if (physical is not None and differential_pressure is None and
                 exterior.parent_state_id != physical['source']['sphere_state_id']):
             raise TectonicsError('the exterior balance and physical material map name different parent states')
-        n, nv = 3*len(network.plate_ids), len(lift._points)
+        plate_ids = network.plate_ids
+        n, nv = 3*len(plate_ids), len(lift._points)
         self._guard = budget.reserve(65536+8*(12*n*n+128*nv+64*n), category='plate-regional-driving')
         self._guard.__enter__()
         try:
             self._solve_rows = prepared.solve_rows
             self._matrix = prepared.matrix.copy()
-            b = np.zeros((len(network.plate_ids), 3))
+            b = np.zeros((len(plate_ids), 3))
+            lift_rows = None
             for term in exterior.terms.values():       # same D.balance assembly order
                 b += term
             if current_background is not None:
@@ -445,7 +451,7 @@ class PreparedRegionalDriving:
                     raise TectonicsError('differential pressure has stale source, physical support, clock or reference')
                 for key in ('native_state_id', 'spatial_state_id', 'reservoir_closure_id'):
                     _name(current[key])
-                shape = (len(network.plate_ids), 3)
+                shape = (len(plate_ids), 3)
                 wall = _array(differential_pressure.array('hydrostatic_wall_torque_n_m'), shape, 'current wall torque')
                 owned = _array(differential_pressure.array('native_owned_wall_torque_n_m'), shape, 'owned wall torque')
                 cut = _array(differential_pressure.array('reservoir_cut_torque_n_m'), shape, 'prescribed cut torque')
@@ -454,8 +460,9 @@ class PreparedRegionalDriving:
                     raise TectonicsError('pressure integration error must be explicitly nonnegative')
                 reference = reference_torque(pressure_native, lift)
                 reference_full = np.zeros(shape)
-                for plate, torque in zip(lift.plate_ids, reference):
-                    reference_full[network.plate_ids.index(plate)] = torque
+                lift_rows = tuple(plate_ids.index(plate) for plate in lift.plate_ids)
+                for row, torque in zip(lift_rows, reference):
+                    reference_full[row] = torque
                 b = np.asarray([math.fsum(values) for values in
                     zip(b.ravel(), wall.ravel(), -owned.ravel(), cut.ravel(), -reference_full.ravel())]).reshape(shape)
                 side = current['reservoir_native_side']
@@ -495,16 +502,20 @@ class PreparedRegionalDriving:
                     raise TectonicsError('owned wall pressure requires the same actual physical volume map')
                 b += pressure_correction.array('physical_exterior_correction_n_m')
                 reference = reference_torque(pressure_native, lift)
-                for plate, torque in zip(lift.plate_ids, reference):
-                    b[network.plate_ids.index(plate)] -= torque
+                lift_rows = tuple(plate_ids.index(plate) for plate in lift.plate_ids)
+                for row, torque in zip(lift_rows, reference):
+                    b[row] -= torque
                 self._owned_pressure = dict(correction=correction,
                     reference_resisting_torque_n_m=reference.tolist(),
                     equation='M omega + (r_full-r_ref) = b_D1 + density_update - owned_wall - r_ref')
             elif pressure_native is not None:
                 raise TectonicsError('pressure native operator requires an issued owned pressure correction')
             self._b = b.ravel()
-            a = np.array([3*network.plate_ids.index(p)+j for p in lift.plate_ids for j in range(3)])
-            other = np.array([j for j in range(n) if j not in set(a)], dtype=np.int64)
+            if lift_rows is None:
+                lift_rows = tuple(plate_ids.index(plate) for plate in lift.plate_ids)
+            a = np.array([3*row+j for row in lift_rows for j in range(3)])
+            active = set(a)
+            other = np.array([j for j in range(n) if j not in active], dtype=np.int64)
             self._a, self._other = a, other
             positions = {int(row): i for i, row in enumerate(other)}
             self._other_order = np.array([positions[int(row)] for row in self._solve_rows if int(row) in positions],

@@ -28,7 +28,7 @@ from atlas_tectonics._private import private_heat_endpoint_inventory_r3 as BASE
 from atlas_tectonics._private import private_heat_interval_assembly_kernel_plan40b_c8_r1 as A
 
 HERE = Path(__file__).resolve().parent
-_PINS = {'private_heat_endpoint_inventory_r3.py': '8ed534cd1b2e6411b57b4079cf208c05511df1846f22508fa78ef2ccfa2f0268', 'private_heat_rounding_inventory_r1.py': '5db9dd5616c20907d627a915a457be5267dbda0baab0c4c1dcf2d5348bc3d500', 'private_heat_interval_assembly_kernel_r1.py': '2d0bd98b4d296a6c90a7f7b7c11ed2f74388d8e307872a631d47e1aadbfc7c6f', 'private_heat_rational_decimal_kernel_r1.py': '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'integration_exact_gmp.py': '70d290b48ad78813dcb1585d1bce3f02347491cd150af68fb5cbededb288d1a0', 'private_heat_interval_assembly_kernel_plan40b_c8_r1.py': '18d05cc6672689f2ca4081520ed7c75e6f07be66cf5ccc3f177547f72a28aeb4'}
+_PINS = {'private_heat_endpoint_inventory_r3.py': '07346c8d36a802d5bfd4dbd2f7c61c891098543f861b47eb2879e2963c23d1e4', 'private_heat_rounding_inventory_r1.py': '5db9dd5616c20907d627a915a457be5267dbda0baab0c4c1dcf2d5348bc3d500', 'private_heat_interval_assembly_kernel_r1.py': '2d0bd98b4d296a6c90a7f7b7c11ed2f74388d8e307872a631d47e1aadbfc7c6f', 'private_heat_rational_decimal_kernel_r1.py': '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f', 'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca', 'integration_exact_gmp.py': '70d290b48ad78813dcb1585d1bce3f02347491cd150af68fb5cbededb288d1a0', 'private_heat_interval_assembly_kernel_plan40b_c8_r1.py': 'eac5eca7c92d68d99f2a7d8b55bb9e0942e9ee9d6418dc5105faf06c724b2bf8'}
 
 
 def _check(cancel):
@@ -87,6 +87,16 @@ class AssessmentInventory:
 
 
 def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+                   budget=budget, cancel=cancel, owned=False)
+
+
+def _derive_owned(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+                   budget=budget, cancel=cancel, owned=True)
+
+
+def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, owned):
     """Derived current-generation plan, never a caller-supplied byte guess.
 
     The base plan is reused verbatim. The metadata scan is funded before GMP
@@ -99,22 +109,30 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
     """
     _check(cancel)
     verify_sources(cancel)
-    base = BASE.derive(rows, cells, boundary, witness=witness,
+    base_derive = BASE._derive_owned if owned else BASE.derive
+    base = base_derive(rows, cells, boundary, witness=witness,
                        source_bindings=source_bindings, budget=budget, cancel=cancel)
     if sys.implementation.name != 'cpython' or sys.version_info[:2] != (3, 12) or struct.calcsize('P') != 8:
         raise RuntimeError('Aggregate container accounting requires reviewed CPython3.12 x64')
     gmp = A.B._library()
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
-    contribution_count = sum(len(row['owners'])*len(row['bounds']) for row in rows)
-    # Scalar shallow-size inspection copies no rational parts and parses no text.
-    largest = 2048
-    for row in rows:
-        _check(cancel)
-        for pair in row['bounds'].values():
-            for value in pair:
-                largest = max(largest, sys.getsizeof(value))
-    for item in boundary.values():
-        largest = max(largest, sys.getsizeof(item[1]))
+    if owned or cancel is None:
+        contribution_count = base.contribution_count
+        largest = base.shallow_maximum
+        if cancel is not None:
+            for row in rows:
+                _check(cancel)
+    else:
+        # A callback can mutate inputs; preserve the original live inspection.
+        contribution_count = sum(len(row['owners'])*len(row['bounds']) for row in rows)
+        largest = 2048
+        for row in rows:
+            _check(cancel)
+            for pair in row['bounds'].values():
+                for value in pair:
+                    largest = max(largest, sys.getsizeof(value))
+        for item in boundary.values():
+            largest = max(largest, sys.getsizeof(item[1]))
     metadata = _size((1 << 20)+16*largest+1024*(len(boundary)+len(rows)+16))
     with R.OwnedWorkspace(budget, metadata, category='heat-aggregate-inventory-metadata', cancelled=cancel):
         def shape(value):

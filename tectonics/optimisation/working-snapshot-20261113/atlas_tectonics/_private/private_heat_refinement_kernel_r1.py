@@ -12,6 +12,10 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 
 
 def intersect(rows, refined, selected, *, budget, cancel=None):
+    return _intersect(rows, refined, selected, budget, cancel, None)
+
+
+def _intersect(rows, refined, selected, budget, cancel, original_maximum):
     def check():
         if cancel is not None and cancel():
             raise CancelledError('Selective functional refinement cancelled')
@@ -32,13 +36,18 @@ def intersect(rows, refined, selected, *, budget, cancel=None):
                 if type(value) not in (G.mpq, int):
                     raise TypeError('Owned exact GMP refinement endpoints required')
                 largest = max(largest, sys.getsizeof(value))
-    for row in rows:
-        check()
-        for pair in row['bounds'].values():
-            for value in pair:
-                if type(value) not in (G.mpq, int):
-                    raise TypeError('Owned exact GMP original endpoints required')
-                largest = max(largest, sys.getsizeof(value))
+    if original_maximum is None:
+        for row in rows:
+            check()
+            for pair in row['bounds'].values():
+                for value in pair:
+                    if type(value) not in (G.mpq, int):
+                        raise TypeError('Owned exact GMP original endpoints required')
+                    largest = max(largest, sys.getsizeof(value))
+    else:
+        for _ in rows:
+            check()
+        largest = max(largest, original_maximum)
     # Shallow native sizes are upper bounds for represented integer widths,
     # not allocated capacity claims. Source owners retain actual endpoint data.
     scratch = R.native_workspace_allowance(32*largest, 32)
@@ -46,22 +55,21 @@ def intersect(rows, refined, selected, *, budget, cancel=None):
     workspace = R.OwnedWorkspace(budget, amount, category='heat-selective-refinement-merge', cancelled=cancel)
     workspace.__enter__()
     try:
-        if len(set(selected)) != len(selected):
-            raise ValueError('Duplicate selected face')
         selected_set = set(selected)
-        if tuple(row['face_id'] for row in rows if row['face_id'] in selected_set) != selected:
+        if len(selected_set) != len(selected):
+            raise ValueError('Duplicate selected face')
+        originals = [row for row in rows if row['face_id'] in selected_set]
+        if tuple(row['face_id'] for row in originals) != selected:
             raise ValueError('Selection must match original face order and coverage')
         if tuple(row['face_id'] for row in refined) != selected:
             raise ValueError('Complete same-order refined face coverage required')
         replacements, bounds_checked = {}, 0
-        originals = {row['face_id']:row for row in rows if row['face_id'] in selected_set}
-        if len(originals) != len(selected):
-            raise ValueError('Distinct original selected faces required')
-        for new in refined:
+        for old, new in zip(originals, refined, strict=True):
             check()
-            old = originals[new['face_id']]
             if (new['owners'] != old['owners'] or new['ordered_keys'] != old['ordered_keys']
-                    or set(new['bounds']) != set(old['bounds'])):
+                    or (new['bounds'].keys() != old['bounds'].keys()
+                        if type(new['bounds']) is dict and type(old['bounds']) is dict
+                        else set(new['bounds']) != set(old['bounds']))):
                 raise ValueError('Refinement changed owners, observation keys or their order')
             bounds = {}
             for key in old['ordered_keys']:
