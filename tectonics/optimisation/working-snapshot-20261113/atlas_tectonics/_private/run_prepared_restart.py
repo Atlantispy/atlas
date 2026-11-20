@@ -566,7 +566,7 @@ class RestartSources:
 
     def verify(self):
         proof = getattr(self, '_proof', None)
-        if proof is None:  # decision 275: the sources are checked once for each sources object
+        if proof is None:  # the sources are checked once for each sources object
             proof = self._verify_once()
             object.__setattr__(self, '_proof', proof)
         return dict(proof)

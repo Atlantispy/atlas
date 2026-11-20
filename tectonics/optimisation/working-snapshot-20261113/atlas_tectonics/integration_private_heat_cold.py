@@ -116,7 +116,7 @@ def _restore_parent(workflow, parent, budget, work):
                 _HC.snapshot_charge(old, exterior_arrays, _snapshot_charge), category='private-cold-exterior-retained'))
             parent_spatial = workflow._exterior_owner.restore(old, exterior_arrays)
             from atlas_tectonics._private.compact_contracts import proving
-            if proving():    # decision 542
+            if proving():    # proof mode only
                 workflow._exterior_owner.validate_parent(parent_spatial, parent_collar)
         return parent_collar, parent_spatial
     finally:
@@ -196,7 +196,7 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))
             transport = RegionalMechanicalSnapshot(metadata, transport_fields)
             from atlas_tectonics._private.compact_contracts import proving
-            if proving() and transport.result_id != exchange.get('global_transport_id'):    # decision 542
+            if proving() and transport.result_id != exchange.get('global_transport_id'):    # proof mode only
                 raise ValueError('Committed transported arrays/identity differ')
             target = original_target(exchange['joined_heat_plan'])
             binding = work.stack.enter_context(B.restore(store, exchange['joined_heat']['checkpoint'],

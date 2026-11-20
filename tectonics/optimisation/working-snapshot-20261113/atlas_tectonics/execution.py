@@ -11,6 +11,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, CancelledError
 from dataclasses import dataclass, field
 import multiprocessing
+import os
 import threading
 from typing import Iterable
 
@@ -27,7 +28,11 @@ from ._validation import scalar
 from .materials import (MaterialState, advect_materials, material_work_bytes,
                         validate_material_result, _definition as _material_definition)
 from .resources import WorkBudget, MemoryLimitError, elements, select_budget
-from .machine_resources_monitor import process_cpus
+
+
+def process_cpus():
+    """The logical CPUs this process may use."""
+    return getattr(os, 'process_cpu_count', os.cpu_count)() or 1
 
 
 def _default_workers():

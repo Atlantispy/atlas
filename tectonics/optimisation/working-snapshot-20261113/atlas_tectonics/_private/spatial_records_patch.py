@@ -499,7 +499,7 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
     scope = _scope(store, budget, scope)
     require(type(arrays) is dict and not arrays, 'compact spatial operands are reference-only')
     expected = state_header['compact_mesh']
-    if proving():    # decision 542: the second open of the mesh root
+    if proving():    # proof mode: the second open of the mesh root
         Y.verify_reference(store, expected, budget=budget)
     require(expected['schema'] == 'atlas.compact-mesh-store.v3', 'segmented spatial state requires v3 mesh')
     mesh = CompactMeshStoreV3(store, scope=scope, support_source=support_source).open(

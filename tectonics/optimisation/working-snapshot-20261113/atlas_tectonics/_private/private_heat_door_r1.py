@@ -1,4 +1,4 @@
-"""The heat-finish door record (design heat-finish-save-point-r1.md 1b9cd010 part 1; decision 1162).
+"""The heat-finish door record (design heat-finish-save-point-r1.md 1b9cd010 part 1).
 
 The forward kernel calls offer() with FINISH's ten inputs just before FINISH is entered. While ``folder`` is None
 offer returns at once, so the kernel's code and ids are the same with the record on or off. The driver sets

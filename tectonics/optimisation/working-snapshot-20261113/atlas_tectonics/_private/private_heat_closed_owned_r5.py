@@ -244,7 +244,7 @@ def _guard(ar, old, cap, low, candidate, low_faces, candidate_faces, bounds):
         raise A.SupplyGuardRefused(str(error), dict(low=low_check, full=full_check,
             quadratic_evidence='sign enclosures; global exact a,b,c not materialised',
             physical_ledger_residual=residual)) from error
-    # F-1 (step5-6-twice s4 row 5, decision 662): at theta 0 the issued state is the low one, so the issue's
+    # F-1 (step5-6-twice s4 row 5): at theta 0 the issued state is the low one, so the issue's
     # test cannot see a broken correction; only here is the handed-in state's ledger tested.
     if theta == zero and not _equal_arrays(ar, _residual(ar, candidate, candidate_faces, old), residual):
         raise ValueError('The supplied high/FCT endpoint must preserve the low physical-face ledger residual')

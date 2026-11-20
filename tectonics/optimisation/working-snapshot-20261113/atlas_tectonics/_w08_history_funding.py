@@ -1,4 +1,4 @@
-"""Allocation allowances for the isolated d1337 S6 qualification route."""
+"""Allocation allowances for the isolated S6 qualification route."""
 from contextlib import contextmanager
 import weakref
 

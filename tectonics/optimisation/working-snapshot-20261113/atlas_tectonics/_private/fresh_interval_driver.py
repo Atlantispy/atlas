@@ -177,8 +177,8 @@ def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers
     initial metrics (the store's only use) and after the store has closed, with the store's own
     statistics() and the initial bounds. The producer runner records the snapshot count and the
     initial component queries the bounds carry, which give its cache hits and misses, and
-    publishes the closed store; the reader passes it to count what it measured (decisions 326,
-    344). ``before_measurements``: called once, after the fixture and the partition and before
+    publishes the closed store; the reader passes it to count what it measured.
+    ``before_measurements``: called once, after the fixture and the partition and before
     the store opens; a reader copies its producer's store there. The store's path and contents
     are this function's alone: a seeded store is the runner's copy, made before the store opens.
     """

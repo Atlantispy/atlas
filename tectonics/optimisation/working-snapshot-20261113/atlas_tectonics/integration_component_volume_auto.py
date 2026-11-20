@@ -11,6 +11,7 @@ from collections import deque
 from time import perf_counter
 
 from . import integration_parallel_selection as S
+from . import integration_differential_geometry as G
 from .integration_component_volume_parallel import ComponentParallelSession
 
 
@@ -330,7 +331,7 @@ def open_automatic_endpoints(parent, width, keep=None, endpoints=('start', 'end'
     if parent is None or parent.policy is None or parent.policy.mode == 'off':
         return None
     try:
-        width = S.G.W._q(width)
+        width = G.W._q(width)
         if width < 0:
             return None
         return AutomaticEndpoints(parent, width, keep, endpoints)

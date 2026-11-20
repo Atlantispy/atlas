@@ -1035,7 +1035,7 @@ class CollarWorkflow:
                             raise RegionalOwnerRefused('spatial admission differs from its single actual funding')
                 elif root.get('exterior_state') != exterior_owner.initial_state.record():
                     raise RegionalOwnerRefused('exterior admission differs from its single actual funding')
-            if proving():    # decision 542: the initial collar state rebuilt and compared
+            if proving():    # proof mode: the initial collar state rebuilt and compared
                 initial = collar.initial_state_from_funding(funding, owner)
                 if root.get('state') != initial.record() or root.get('native_state_id') != initial.native_state.result_id:
                     raise RegionalOwnerRefused('collar root differs from the actual one-time physical admission')
@@ -1283,7 +1283,7 @@ class CollarWorkflow:
                                                   record_arrays, self._budget, store=self._store) as (saved, exchange):
                     exterior_state = self._exterior_owner.restore(saved, exterior_arrays)
                     from atlas_tectonics._private.compact_contracts import proving
-                    if proving():    # decision 542
+                    if proving():    # proof mode only
                         self._exterior_owner.validate_parent(exterior_state, state)
                     if exchange is not None:
                         if _SV.field_equals(exchange, 'schema', 'atlas.private.spatial-composed-advance.r1'):
@@ -1311,7 +1311,7 @@ class CollarWorkflow:
                                     raise RegionalOwnerRefused('saved spatial exchange differs from actual differential geometry')
                                 partition_binding = ((graph.get('partition_id'), graph.get('parent_partition_id'),
                                     _hash(graph.get('support_ids')), _COMPACT_SPATIAL.mesh_partition(saved['thermal_mesh'], self._budget))
-                                    if proving() else None)    # decision 542: read only by the comparison below
+                                    if proving() else None)    # proof mode: read only by the comparison below
                                 # C-1: open B reuses the partition this open already holds (its descriptor decides)
                                 opened_partition = _COMPACT_PARTITION.held_partition(saved['thermal_mesh'])
                                 from .integration_differential_geometry import current_geometry_from_interval
@@ -1348,7 +1348,7 @@ class CollarWorkflow:
                     raise RegionalOwnerRefused('saved initial partition differs from admitted source fields')
             else:
                 from atlas_tectonics._private.compact_contracts import proving
-                if proving() and partition_binding != _COMPACT_PARTITION.binding(partition, _hash):    # decision 542
+                if proving() and partition_binding != _COMPACT_PARTITION.binding(partition, _hash):    # proof mode only
                     raise RegionalOwnerRefused('saved fields and exchanges belong to another material partition')
         elif partition_arrays:
             raise RegionalOwnerRefused('unowned differential partition in collar checkpoint')
@@ -1713,7 +1713,7 @@ class CollarWorkflow:
 
     def _r3_heat_checkpoint_reason(self, mark):
         """R3: why the token after this workflow's own heat checkpoint save cannot be kept, or None.
-        Compares tokens only: the save is not read back (decision 327)."""
+        Compares tokens only: the save is not read back."""
         candidate, before = mark['candidate'], mark['token']
         after = self._store.change_token()
         if self._token != before or self._store.candidate is not candidate:

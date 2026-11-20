@@ -598,7 +598,7 @@ class CompactMeshStoreV3:
                 require(held.value.dtype == descriptor['dtype'] and list(held.value.shape) == descriptor['shape'],
                         'mesh v3 typed descriptor differs')
             from atlas_tectonics._private.compact_contracts import proving
-            if proving():   # decision 542: the store checks the bytes it reads
+            if proving():   # proof mode: the store checks the bytes it reads
                 digest = sha256()
                 with segment.iter(name, block_bytes=65536, max_owned_bytes=131072) as stream:
                     for block in stream:

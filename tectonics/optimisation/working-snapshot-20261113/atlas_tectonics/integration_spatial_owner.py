@@ -994,7 +994,7 @@ class PreparedSpatialOwner:
         elif 'finite_stock_state' in body:
             raise TectonicsError('saved finite stock has no declared owner')
         from atlas_tectonics._private.compact_contracts import proving
-        proof = _validate_only or proving()    # decision 542: an open proves only in proof mode
+        proof = _validate_only or proving()    # an open proves only in proof mode
         if self._measure_policy is not None:
             if proof:
                 self._check_measures(body)
@@ -1046,7 +1046,7 @@ class PreparedSpatialOwner:
         """Verify the saved chain's actual bindings without repeating a solve."""
         from atlas_tectonics._private.compact_contracts import proving
         if not proving():
-            return    # decision 542: only the open calls this; it then neither proves nor asks proved_for
+            return    # only the open calls this; it then neither proves nor asks proved_for
         with _SV.access(exchange) as exchange:
             r = self._bound(state)
             composed = _SV.is_record(exchange) and exchange.get('schema') == 'atlas.private.spatial-composed-advance.r1'

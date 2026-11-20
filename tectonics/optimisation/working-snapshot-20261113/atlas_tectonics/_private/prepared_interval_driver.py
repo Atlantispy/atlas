@@ -43,7 +43,7 @@ class PreparedIntervalRefused(ValueError):
     pass
 
 
-# C1 (decision 416): the certification sidecar's write buffer, charged in its reservation.
+# C1: the certification sidecar's write buffer, charged in its reservation.
 _SIDECAR_BUFFER = 65536
 
 

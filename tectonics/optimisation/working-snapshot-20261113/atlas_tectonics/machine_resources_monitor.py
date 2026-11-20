@@ -28,11 +28,6 @@ def machine_cores():
     return reported_cores() or max(1, (os.cpu_count() or 1)//2)
 
 
-def process_cpus():
-    """The logical CPUs this process may use."""
-    return getattr(os, 'process_cpu_count', os.cpu_count)() or 1
-
-
 def launch_load(seconds=0.05):
     """One CPU sample of this length (percent busy); a launch takes it once and hands it to each of its pools."""
     import psutil

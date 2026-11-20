@@ -410,7 +410,7 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
 
 
 def _kept_worker(home, process):
-    """One context for the worker's life; one batch folder per line on standard input (decision 143).
+    """One context for the worker's life; one batch folder per line on standard input.
 
     Each batch starts after garbage collection and checks its binding at both
     ends. Consecutive wall or interface members can reuse a settled ledger for
@@ -454,7 +454,7 @@ class _Child:
 
     def __init__(self, directory, deadline, rss_limit, interval=None, kept=False):
         self.directory, self.deadline, self.rss_limit = directory, deadline, rss_limit
-        # A kept worker (decision 143) serves one batch at a time: the session sets batch and baseline.
+        # A kept worker serves one batch at a time: the session sets batch and baseline.
         self.kept, self.batch, self.baseline, self.rss, self.bad_end = kept, None, None, None, None
         self._served_batch = None
         self.stop_seconds = 0.0
@@ -700,7 +700,7 @@ class _Child:
             return errors.read(4096).decode('utf8', errors='replace')
 
     def serve(self, path, binding_bytes):
-        """A kept worker's next batch (decision 143): its result once its done file is seen.
+        """A kept worker's next batch: its result once its done file is seen.
 
         The launch, if this is the worker's first batch; the folder's line;
         then the one-shot loop's memory and deadline guards, counted for this
@@ -1295,7 +1295,7 @@ class WallParallelSession(InterfaceParallelSession):
 
 
 class _Served:
-    """One batch's child when its worker is kept (decision 143): the session's per-batch handle.
+    """One batch's child when its worker is kept: the session's per-batch handle.
 
     run() serves the batch through the worker; served is set once the worker
     has closed the result and created the done file. stop() stops the worker.
@@ -1375,7 +1375,7 @@ class BatchParallelSession(InterfaceParallelSession):
             self.stats['returned'] = 0
         # Parent seconds spent on the optional route, for the scheduler's own accounting.
         self.seconds = dict(launch=0.0, receive=0.0, adopt=0.0, waited=0.0)
-        # Kept workers (decision 143): each holds its own baseline for its life; off is the one-shot path.
+        # Kept workers: each holds its own baseline for its life; off is the one-shot path.
         self.keep, self.kept, self._homes = keep_workers, [], 0
         if keep_workers:
             self.stats['recycled'] = 0

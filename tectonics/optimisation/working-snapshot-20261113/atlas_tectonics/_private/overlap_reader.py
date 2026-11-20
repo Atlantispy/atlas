@@ -2,7 +2,7 @@
 
 Before the gate the admission uses one producer value, its closed measurement store's
 published record, at the point of use; the caller tests it against the authenticated
-receipt after the gate (decision 344). Producer preflight
+receipt after the gate. Producer preflight
 is deliberately a deferred callable. Neither this module nor the gate module
 opens the catalog, pending view or sealed member. The actual reader continues
 through its unchanged independent comparisons after this context yields.
@@ -221,7 +221,7 @@ def admitted_before_gate(*, admission, spec, record, save, guard, verify_sources
                          waiter=None, clock=time.monotonic, source_check_seconds=10.0):
     """Enter independent admission, wait, authenticate, re-admit memory.
 
-    admission is the caller's FRESH.admission(... initial_workers=0 (decision 326)) context,
+    admission is the caller's FRESH.admission(... initial_workers=0) context,
     created from its own budget and fresh output. producer_inputs is the original
     store-free validator with only the receipt SHA supplied later. producer_pins
     obtains the actual referenced immutable bytes after that preflight; it must

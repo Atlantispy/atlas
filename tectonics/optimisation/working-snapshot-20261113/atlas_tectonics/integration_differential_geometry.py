@@ -3881,7 +3881,7 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
 
 def _moving_interface_leaf(layer, voxel, first, second, outward_sign, omega, constraints,
                             literals, bounds, t0, t1, level, arena):
-    # One clip chain per leaf, chosen at its entry (opt-prep-gmp-chain s3-s4; decision 603).
+    # One clip chain per leaf, chosen at its entry (opt-prep-gmp-chain s3-s4).
     with W._chain(arena) as chain:
         return _moving_interface_chain_leaf(layer, voxel, first, second, outward_sign, omega, constraints,
                                             literals, bounds, t0, t1, level, arena, chain)

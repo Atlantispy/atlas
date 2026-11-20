@@ -1512,7 +1512,7 @@ def mesh_from_segment(segment, metadata, arrays, reader, *, check=lambda: None):
     # closing freshness check. Scalars keep cancellation checks within this
     # single bounded, paid internal read operation.
     from atlas_tectonics._private.compact_contracts import proving
-    if proving() or WG.active(segment.resolver) is not None:    # decision 542; unit A's width scan
+    if proving() or WG.active(segment.resolver) is not None:    # proof mode, or unit A's width scan
         with arrays['id.bytes'].columns.read_batch(), reader.source._partition.record._read_batch():
             view._validate()
             found, length = sha256(), 0

@@ -193,7 +193,7 @@ def cold_transport(record, arrays, budget, *, expected_id, check):
             stack.callback(fields.close)
             snapshot = CompactTransportSnapshot(projection, fields, expected_id)
             from atlas_tectonics._private.compact_contracts import proving
-            if proving():    # decision 542; LTR.identity itself is never gated (F-3)
+            if proving():    # proof mode only; LTR.identity itself is never gated (F-3)
                 actual = identity(snapshot, budget, cancel=lambda: (check(), False)[1])
                 if actual != expected_id:
                     raise ContractError('independent compact transport identity differs')

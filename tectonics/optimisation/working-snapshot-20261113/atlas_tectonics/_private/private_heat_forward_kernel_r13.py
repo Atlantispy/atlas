@@ -78,7 +78,7 @@ HERE = Path(__file__).resolve().parent
 # cache (about 0.5 MB) and modules a process imports on its first call (0.7 MB).
 RESIDUE = 8388608
 # The predictor's working set while it runs beside the reconstruction, reserved on the run's ledger first
-# (design s4 ruling 2, dec 111): twice b0's 35,975,168 B growth across LOW.solve, rounded up to 64 MiB.
+# (design s4 ruling 2): twice b0's 35,975,168 B growth across LOW.solve, rounded up to 64 MiB.
 PREDICTOR_PIN = 128 << 20
 
 

@@ -353,7 +353,7 @@ class _Res(tuple):
 
 
 class _Chain2:
-    """GMP twin of integration_wall_measures._Chain for one wall leaf (opt-prep-gmp-chain-r1 s3, decision 534).
+    """GMP twin of integration_wall_measures._Chain for one wall leaf (opt-prep-gmp-chain-r1 s3).
 
     Each clip and integral takes the reference lease (the bits and count integration_volume._work computes)
     before any native value is built, then follows the reference body statement for statement. Converted-in

@@ -1,4 +1,4 @@
-"""Worker ceilings chosen at launch (coordinator, 16 Oct 2026; decisions 1505-1507, 20 Nov 2026).
+"""Worker ceilings chosen at launch (coordinator, 16 Oct 2026; revised 20 Nov 2026).
 
 The ceiling is the run's cores less one for the parent, as resources_gate counts them: the set or
 ceiling cores of ATLAS_RESOURCES, else the queue ticket's booking, else the measured physical cores.
@@ -72,7 +72,7 @@ def select(*, policy_type, child_baseline_bytes, parent_storage_bytes, raw_resul
                'machine': machine, 'logical_budget_bytes': logical_budget_bytes}
     from atlas_tectonics.resources_gate import step_down
     ceiling = max(1, machine['physical_cores']-1 if ceiling is None else ceiling)
-    chosen = max(1, step_down(ceiling, lambda n: all(_fits(n, **options)[0].values())))    # decision 1507
+    chosen = max(1, step_down(ceiling, lambda n: all(_fits(n, **options)[0].values())))
     checks, free = _fits(chosen, **options)
     if all(checks.values()):
         reason = f'{chosen} of a ceiling of {ceiling} fit the measured parent footprint by the policy formula'
@@ -125,7 +125,7 @@ def policy_from_selection(selection):
             decision.get('inputs', {}).get('parent') != parent):
         raise ValueError('measured parent and a positive worker count required')
     fits = {'cores': True, 'memory': True, 'budget': True}
-    if 'ceiling' in decision:    # decisions 1505-1507: a count above one fits every gate, within its ceiling
+    if 'ceiling' in decision:    # a count above one fits every gate, within its ceiling
         if (type(decision['ceiling']) is not int or decision['chosen'] > decision['ceiling'] or
                 decision['chosen'] > 1 and decision.get('checks', {}).get(str(decision['chosen'])) != fits):
             raise ValueError('the chosen workers must fit every measured-parent gate within the ceiling')

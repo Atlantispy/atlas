@@ -32,8 +32,8 @@ from . import machine_resources_monitor as MON
 from . import resources_gate as RG
 from .integration_component_volume_parallel import ComponentParallelSession, request_for
 
-# Worker bound for this family: the host's cores less one (decisions 1505-1506; was eight, one per core on the
-# eight-core PC, decision 384, R1). The session bypasses ComponentParallelSession's own bound of two.
+# Worker bound for this family: the host's cores less one (was eight, one per core on the
+# eight-core PC, R1). The session bypasses ComponentParallelSession's own bound of two.
 CHILD_BYTES = 128 << 20     # a worker's booking beside CHILD_BASELINE
 BATCH_JOBS = 16
 _ACTIVE: contextvars.ContextVar = contextvars.ContextVar('atlas_initial_parallel', default=None)

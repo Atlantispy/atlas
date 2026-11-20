@@ -106,7 +106,7 @@ class InterfaceParallelPolicy:
     requests a pass may read ahead of its parent. The rolling schedule applies
     minimum_seconds to the eligible work it expects in the whole pass, and
     rates the parent's own stretches beside its workers. keep_workers keeps each batch worker for the session's
-    life, one batch at a time (decision 143); False is the one-shot worker.
+    life, one batch at a time; False is the one-shot worker.
     """
     mode: str = 'auto'
     minimum_seconds: float = 120.0

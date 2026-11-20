@@ -1,4 +1,4 @@
-"""The heat's small-cell rule with its guard (option B, decision 1192; design heat-small-cell-rule-build-r1).
+"""The heat's small-cell rule with its guard (option B; design heat-small-cell-rule-build-r1).
 
 A cell that holds too little heat for its faces has its faces' high rows replaced by the low stage's own two-point
 rows; every other face keeps its certified fitted row, cut back where an owner's capacity cannot hold it. All

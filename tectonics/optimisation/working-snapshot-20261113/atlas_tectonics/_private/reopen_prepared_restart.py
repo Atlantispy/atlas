@@ -164,7 +164,7 @@ def require(condition, message):
 
 
 def prior(ok, message, recorded):
-    """A test of how an earlier step ended (decision 285). recorded is None unless the run records: refuse, as before."""
+    """A test of how an earlier step ended. recorded is None unless the run records: refuse, as before."""
     if not ok:
         require(recorded is not None, message)
         recorded.append(message)

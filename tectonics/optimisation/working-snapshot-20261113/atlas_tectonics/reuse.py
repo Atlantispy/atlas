@@ -386,6 +386,19 @@ def _identity_modules(backend):
     return tuple(out)
 
 
+# Modules that only measure the machine or decide when and where work runs: no answer passes through them, and
+# bound code puts every value that could alter one into the request itself. Their bytes, loaded code and constants
+# are left out of the identity's digest; verify still refuses any edit to them during a run, as for every file.
+_EXECUTION_ONLY = frozenset(('machine_resources_monitor', 'resources_gate', 'integration_parallel_rolling',
+                             'integration_parallel_selection'))
+
+
+def _execution_only(key):
+    """True for a loaded-code or constant key ('atlas_tectonics.<module>.<name>') of an execution-only module."""
+    head, dot, rest = key.partition('.')
+    return head == __package__ and rest.partition('.')[0] in _EXECUTION_ONLY
+
+
 _SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
 _SOURCE_CONTEXT_BYTES = 2*1024**2
 _SOURCE_FILES = 512
@@ -1449,11 +1462,13 @@ class ExecutionContext:
         # of cross-Python-version code compatibility, nor untrusted unmarshalling.
         loaded = {k: {"code": _digest(marshal.dumps(_normal_code(code), 2)),
                       "defaults": _digest(_json(defaults))}
-                  for k, (code, defaults) in signatures.items()}
-        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v4", "code_marshal_format": 2,
+                  for k, (code, defaults) in signatures.items() if not _execution_only(k)}
+        constants = {k: v for k, v in json.loads(self._constants).items() if not _execution_only(k)}
+        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v5", "code_marshal_format": 2,
             "source_inventory_schema": _SOURCE_INVENTORY_SCHEMA,
-            "backend": backend, "sources": {k:_digest(v) for k,v in self._sources.items()},
-            "loaded_code": loaded, "constants": _digest(self._constants),
+            "backend": backend, "sources": {k:_digest(v) for k,v in self._sources.items()
+                                            if k.removesuffix('.py') not in _EXECUTION_ONLY},
+            "loaded_code": loaded, "constants": _digest(_json(constants)),
             "executable_fixtures": self._fixture_binding,
             "runtime": self._runtime}))
         self._closed = False
@@ -1481,7 +1496,7 @@ class ExecutionContext:
                 self._verify_selection()
             else:
                 self.verify_boundary()
-                self._proved.add('boundary')  # decisions 265, 275: sources and loaded functions, once
+                self._proved.add('boundary')  # sources and loaded functions, once
 
     def _verify_selection(self):
         """What ordinary running can change: closed, and the thread's fixture selection (review G-1)."""

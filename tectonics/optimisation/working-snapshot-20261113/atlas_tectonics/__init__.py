@@ -20,7 +20,7 @@ from .compaction_columns import (GrainComponent, CompactionParcel, DrainedCompac
 from .flexure import PeriodicFlexure
 from .column_loads import LoadSupport, LoadPhase, ColumnLoadState, column_load_change
 
-__version__ = "0.1.0.dev42"
+__version__ = "0.1.0.dev43"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]

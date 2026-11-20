@@ -6,8 +6,7 @@ original call, exact sources and runtime. It returns a detached data view, not
 I12/native heat and not a new endpoint. No LOW/HIGH/FCT solve, native dispatch,
 fixture promotion, source repinning or storage schema/limit change occurs.
 
-With proofs on (compact_contracts.proving(), decision 542; F-3, decisions 668,
-669, 672), independent checks repeat exact input, physical face,
+With proofs on (compact_contracts.proving(); F-3), independent checks repeat exact input, physical face,
 per-cell/projection, loaded-bound and stock/source/exterior equations from
 stored bytes; in ordinary runs the projection step's audit of the private record
 stands for them and the stored arrays' form and inputs are still tested. They do not
@@ -32,7 +31,7 @@ _PINS = {
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
     'private_heat_issuer_resources_r4.py': '0915d54deb9476215140dbc625d40929628b5a4a6c09550bcb72e45d035e4171',
     'private_heat_native_projection_r5.py': 'fbb940aa89846274cfbf4c9d5c185f69b0958a4fa4884a6b2b67fb84e0bb95a6',
-    'private_heat_forward_kernel_r13.py': '28fc119227fe11a30a6f86be660ecb63918f5ddf8b98920aec48111a2ae6e83d',
+    'private_heat_forward_kernel_r13.py': 'b56ad1d244eee93a9f817acc451a5c375b4f7bb3b8d5715175670a42a8d3878a',
     'private_heat_native_issuer_r13.py': _ISSUER_SHA,
 }
 HERE = Path(__file__).resolve().parent
@@ -199,7 +198,7 @@ def _validate(snapshot, call, *, expected_result_id, cancel=None):
                                            call._snapshot.array(incoming).view(I.np.uint8)):
                         raise ValueError('Stored actual input arrays differ from original call')
                 from atlas_tectonics._private.compact_contracts import proving
-                if proving():    # F-3 (step5-6-twice s4, decisions 668, 669): proofs on only
+                if proving():    # F-3 (step5-6-twice s4): proofs on only
                     _equations(ar, meta, call._geometry, arrays, plan_owner.value, origin['duration_s'])
                 # No arithmetic result escapes this fixed validation frame.
                 ar.settle(())

@@ -132,7 +132,7 @@ MEASUREMENT_SIDECARS = ('-wal', '-journal', '-shm')
 MEASUREMENT_COUNTS = ('unique_chunks', 'snapshots', 'encoded_payload_bytes', 'database_bytes', 'operations')
 SEED_SCHEMA = 'atlas.fresh-interval-reused-initial-cache.v1'
 SEED_FIELDS = frozenset(('receipt_sha256', 'store_sha256'))
-SEED_ACROSS = 'across_change'          # D-3 (decision 726): the earlier profile, by path and SHA-256
+SEED_ACROSS = 'across_change'          # D-3: the earlier profile, by path and SHA-256
 COMPOSITION = frozenset(('profile_sha256', 'source_proof', 'advance_driver_sha256', 'helper_sha256',
                          'interpreter_seed'))
 DIAGNOSTIC = 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION'
@@ -552,7 +552,7 @@ def _prior(ok, message, recorded, found):
 
 
 def _recording(sources, asked):
-    """The list recorded tests go to, or None. Only a diagnostic tree records (RFR's _recording, decision 285)."""
+    """The list recorded tests go to, or None. Only a diagnostic tree records (RFR's _recording)."""
     if not asked:
         return None
     manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
@@ -894,7 +894,7 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
 
 
 def _across_change(theirs, binding, earlier_sha256):
-    """D-3 (decision 726): run A's composition against this run's across a recorded change, member by member."""
+    """D-3: run A's composition against this run's across a recorded change, member by member."""
     unknown = sorted((set(theirs) ^ COMPOSITION) | (set(binding) ^ COMPOSITION))
     require(not unknown, 'run A measurement composition has members this run does not know: '+', '.join(unknown))
     require(theirs['interpreter_seed'] == binding['interpreter_seed'],
@@ -1193,7 +1193,7 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     observed = {}
     _publish = bound['private_heat_continuation_guard_r3']._write   # the package's atomic JSON write (temporary, os.replace)
 
-    def publish_store():    # decision 344: once, when the admission has closed its store (N6)
+    def publish_store():    # once, when the admission has closed its store (N6)
         record['initial_measurement_store'] = measurement_record(output, binding=binding, observed=observed,
                                                                  check=check)
         save()
@@ -1408,7 +1408,7 @@ def final_status(errors, mode, record=None):
 
 def _seed(seed, mode):
     """An explicit measurement seed: run B only, exactly its two SHA-256 pins; across a recorded change also the
-    earlier profile by path and SHA-256 (D-3, decision 726)."""
+    earlier profile by path and SHA-256 (D-3)."""
     if seed is None:
         return None
     require(mode == 'interval' and type(seed) is dict and set(seed) - {SEED_ACROSS} == SEED_FIELDS,
@@ -1594,7 +1594,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     dev_timing = RUN._dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     require(type(open_proofs) is bool, 'open proofs flag must be boolean')
-    if open_proofs:    # decision 542: proof mode, on before anything is opened, never off
+    if open_proofs:    # proof mode, on before anything is opened, never off
         from atlas_tectonics._private import compact_contracts
         compact_contracts.open_proofs = True
     seed = _seed(seed, mode)

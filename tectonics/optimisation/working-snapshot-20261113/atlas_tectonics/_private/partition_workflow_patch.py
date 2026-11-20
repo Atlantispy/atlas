@@ -425,7 +425,7 @@ def restore(cls, header, arrays, funding, collar, budget, *, interval, store, op
     else:
         view = PS.CompactPartitionStore(store, budget=budget).open(ref, expected_partition_id=header['partition_id'])
     from atlas_tectonics._private.compact_contracts import proving
-    if proving():    # decision 542
+    if proving():    # proof mode only
         require(compact_header(view, {}, ref) == header, 'saved compact partition lineage differs from its stored DAG')
     elif compact_resolver:
         require(view.partition_id == header['partition_id'],

@@ -193,9 +193,9 @@ def seed_from_producer(stored, source, output, check, *, binding, previous):
     """Decision 326: the reader admits from its producer's closed measurement store, copied by the receipt's pin.
 
     The reader measures nothing the producer measured. Its PASS does not attest the initial metrics a second time.
-    ``stored`` is the store's record: the receipt's, or the one an overlap reader's producer published (decision 344).
+    ``stored`` is the store's record: the receipt's, or the one an overlap reader's producer published.
     ``binding`` is this reader's F.measurement_composition; the store's must equal it field by field, as the
-    producer's own seed requires. ``previous``: the producer is a previous run's (decision 278, diagnostic trees
+    producer's own seed requires. ``previous``: the producer is a previous run's (diagnostic trees
     only); the fields that differ are then recorded and the store is used (rulings 4a, 6)."""
     require(type(stored) is dict and stored.get('filename') == F.MEASUREMENT_STORE and RO._digest(stored.get('sha256'))
             and type(stored.get('statistics')) is dict and type(stored['statistics'].get('snapshots')) is int
@@ -280,7 +280,7 @@ def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False, int
         state = receipt.get('review_only') if type(receipt) is dict else None
         settled = (type(errors) is list and [e.get('type') for e in errors] == ['PresealSealedForReview'] and
                    type(state) is dict and state.get('state') == F.REVIEW_STATUS)
-    else:  # decision 285: how the producer ended is a prior test, below; its data are tested here
+    else:  # how the producer ended is a prior test, below; its data are tested here
         settled = type(receipt) is dict and type(receipt.get('errors')) is list
     require(settled and receipt.get('schema') == F.RESULT_SCHEMA and
             (not review or receipt.get('status') == F.REVIEW_STATUS and receipt.get('final_reserved_bytes') == 0) and
@@ -433,6 +433,8 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
     require(type(receipt) is dict and mode in F.MODES and receipt.get('mode') == mode,
             'producer receipt mode differs from the expected fresh route')
     require(reuse is None or 'production_release' not in receipt, 'reuse-previous-run reads a diagnostic producer only')
+    require(reuse is None or not reuse['record']['identity_override'] or receipt.get('open_proofs') is not True,
+            'the identity override is refused for a proof-mode producer (--open-proofs)')
     guard = RO._bounded_json(output/'run.guard.json')
     control = RO._bounded_json(output/'run.guard-control.json')
     require(not (output/'run.guard-abort.json').exists() and not (output/'run.cancel').exists(),
@@ -467,7 +469,7 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
         root_runner=root_runner, review=review, interval=interval, lineage=gate,
         production_policy=RUN.producer_policy(receipt, sources, expected_route='fresh-'+mode), recorded=recorded)
     # source_proof: a verify() the caller has just made (repeat fix K15); None verifies here, except for the
-    # records-only core, which checks no sources (unit A; the chain's first step did, decision 516).
+    # records-only core, which checks no sources (unit A; the chain's first step did).
     if source_proof is not None or not records_only(mode, review, runner):
         proof = sources.verify() if source_proof is None else source_proof
         require(receipt.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
@@ -730,14 +732,14 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
             def seed():     # N6 calls it at the point of use: after the fixture and partition, before the store opens
                 if overlap_spec is None:
                     stored = producer['measurement_store']
-                else:       # decision 344: the producer is still running
+                else:       # the producer is still running
                     guard.phase('wait-for-producer-measurement-store')
                     stored = _published_store(source, overlap_spec, check)
                 seeded.update(seed_from_producer(stored, source, output, check, binding=binding,
                                                  previous=reuse is not None))
                 record['initial_measurements'] = seeded
                 save()
-            requested = 0                                   # decision 326: nothing is measured, so no pool
+            requested = 0                                   # nothing is measured, so no pool
             admission = FRESH.admission(m, budget=budget, artifacts=output, phase=guard.phase, initial_workers=requested,
                 before_measurements=seed,
                 measurements=lambda statistics, bounds: seeded.update(measured=statistics['snapshots']-seeded['seed_snapshots']))
@@ -800,7 +802,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                         'independently rebuilt runtime, plans or owner differ from run A')
                 checks['source_bound_admission'] = True
                 from atlas_tectonics._private import compact_contracts
-                compact_contracts.open_proofs = True    # decision 542: the full core's open proves; never off (N-2)
+                compact_contracts.open_proofs = True    # the full core's open proves; never off (N-2)
                 guard.phase('independent-open-fresh-workflow')
                 # One store-set read batch for the whole stage: one file check before, one after.
                 with WG.collect_proofs(store) as proofs, view.read_batch(), m.Workflow.open(
@@ -992,7 +994,7 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
                         _producer_inputs_retry(profile if reuse is None else reuse['previous'], sources=sources,
                             mode=mode, receipt_sha256=producer_receipt_sha256, consumer_pid=os.getpid(),
                             review=review, interval=interval, reuse=reuse, recorded=recorded))
-            if recorded:  # decision 285: what this reader accepted of how its producer ended
+            if recorded:  # what this reader accepted of how its producer ended
                 record['recorded'] = recorded
                 save()
             budget = reopen_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save,
@@ -1070,7 +1072,7 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
             reopen.get('remaining_children') == [] and
             (reopen.get('interval') == producer['interval'] if producer['interval'] >= 2 else 'interval' not in reopen),
             'successful independent reader result of this producer, profile and mode required')
-    # decision 285: how the reader ended; refused unless the run records
+    # how the reader ended; refused unless the run records
     RO.prior(reopen.get('status') == WORKLOAD_STATUS[mode], f"reader status {reopen.get('status')!r}", recorded)
     RO.prior(reopen['errors'] == [], 'reader errors: '+_said(reopen['errors']), recorded)
     RO.prior(reopen.get('final_reserved_bytes') == 0,
@@ -1158,7 +1160,7 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
 
 
 def _recording(sources, asked):
-    """The list that recorded tests go to, or None. Only a diagnostic tree records (decision 285)."""
+    """The list that recorded tests go to, or None. Only a diagnostic tree records."""
     if not asked:
         return None
     manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
@@ -1171,7 +1173,7 @@ def _imported(sources, recorded):
     """The proof that every loaded module is a pinned source. recorded is None unless the run records: refuse, as before."""
     try:
         sources.check_imported()
-    except ValueError as error:     # ruling 4a (decision 315): every refusal of the proof is a ValueError
+    except ValueError as error:     # ruling 4a: every refusal of the proof is a ValueError
         if recorded is None:
             raise
         recorded.append('loaded-module proof: '+str(error))
@@ -1183,7 +1185,7 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
              record_failed_prior=False):
     """Store-free acceptance of a completed guarded reader; the exclusive verdict on PASS.
 
-    Under reuse_previous (decision 278) the records are the previous tree's and are tested against its profile
+    Under reuse_previous the records are the previous tree's and are tested against its profile
     and source proof; the sources are this tree's.
 
     A review-only verdict says so: it is evidence for the review, never an adoption by itself.
