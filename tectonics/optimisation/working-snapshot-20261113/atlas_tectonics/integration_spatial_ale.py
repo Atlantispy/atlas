@@ -78,13 +78,14 @@ class SpatialALEBounds:
     _json: object = field(repr=False)
     _resource: object = field(repr=False, compare=False)
     _physical_surfaces: object = field(default=None, repr=False, compare=False)
+    _content_id: object = field(default=None, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('spatial bounds are issued by enclose_spatial_ale()')
 
     @property
     def bounds_id(self):
-        return LIVE_SPATIAL.holder_identity(self)
+        return LIVE_SPATIAL.holder_content_identity(self)
 
     def record(self):
         return LIVE_SPATIAL.holder_record(self)
@@ -95,13 +96,14 @@ class SpatialALEGraph:
     _json: object = field(repr=False)
     _resource: object = field(repr=False, compare=False)
     _physical_surfaces: object = field(default=None, repr=False, compare=False)
+    _content_id: object = field(default=None, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('closed spatial graphs are issued by close_spatial_ale()')
 
     @property
     def geometry_id(self):
-        return LIVE_SPATIAL.holder_identity(self)
+        return LIVE_SPATIAL.holder_content_identity(self)
 
     def record(self):
         return LIVE_SPATIAL.holder_record(self)

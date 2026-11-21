@@ -13,6 +13,7 @@ from ._validation import TectonicsError, input_shape, snapshot, frozen, scalar
 from .resources import select_budget, MemoryLimitError
 from .regional import RegionalGrid1D, _cancelled, _METRICS
 from .mesh import ColumnGrid1D
+from .reuse import content_record
 from .materials import (MaterialState, MaterialBoundary, MaterialTransportResult,
     _json, _immutable_bytes, _hash_array, _account, _backend, _end_time, _state_work_bytes)
 
@@ -71,7 +72,7 @@ def _inventories(h, grid, backend='numba'):
 def _publish(parent, grid, values, time, record, *, budget=None):
     record=dict(record,parent=parent.state_id)
     return MaterialState(grid,parent.cohorts,values,time_s=time,epoch_id=parent.epoch_id,
-        parent_state_id=parent.state_id,transition_id=hashlib.sha256(_json(record)).hexdigest(),
+        parent_state_id=parent.state_id,transition_id=hashlib.sha256(_json(content_record(record))).hexdigest(),
         transition=record,budget=budget)
 
 

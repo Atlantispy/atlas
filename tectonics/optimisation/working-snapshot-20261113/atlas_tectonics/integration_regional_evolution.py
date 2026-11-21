@@ -27,6 +27,7 @@ from .regional_execution3d import SIDES, PreparedRegionalStokes3D
 from .regional_execution3d import _digest_array
 from .stokes_execution import _factored_scale
 from .resources import WorkBudget
+from .reuse import content_record
 
 
 class RegionalOwnerRefused(TectonicsError):
@@ -354,7 +355,7 @@ class RegionalOwnerState:
             exchange_id=None if exchange is None else exchange.result_id)
         if inventory is not None:
             identity['inventory_id'] = inventory.result_id
-        object.__setattr__(self, 'owner_state_id', _hash(identity))
+        object.__setattr__(self, 'owner_state_id', _hash(content_record(identity)))
 
     def __setattr__(self, name, value):
         raise RegionalOwnerRefused('regional owner states are immutable')
@@ -603,7 +604,7 @@ class PreparedRegionalOwner:
             base['source_minus_native_projection'] = projection
             self._projection = _json(projection)
             self._definition = _json(base)
-            self.owner_id = _hash(base)
+            self.owner_id = _hash(content_record(base))
             self._layout, self._reservation = _json(layout), _json(reservation)
             fields = dict(component_mass_kg=masses, enthalpy_j=enthalpy,
                 **{'tracer:damage': np.zeros(shape), 'tracer:accumulated_strain_ii': np.zeros(shape),
@@ -820,7 +821,7 @@ class PreparedRegionalOwner:
             base['boundary_scope'] = ('natural normal basal traction; admission only; complete-grid mechanics '
                                       'and actual carved finite basal inventories required for continuation')
         self._definition = _json(base)
-        object.__setattr__(self, 'owner_id', _hash(base))
+        object.__setattr__(self, 'owner_id', _hash(content_record(base)))
         self._layout, self._reservation = _json(layout), _json(reservation)
         self._projection, self._physical, self._remainder = _json(residuals), _json(binding), _json(remainders)
         fields = dict(component_mass_kg=masses, enthalpy_j=enthalpy,
@@ -850,7 +851,7 @@ class PreparedRegionalOwner:
             accounting='source = native + finite halo reservoirs + physical remainder + separately booked projection',
             boundary_scope='finite initially homogeneous physical halo reservoirs; no refill or global reinsertion')
         self._definition = _json(base)
-        object.__setattr__(self, 'owner_id', _hash(base))
+        object.__setattr__(self, 'owner_id', _hash(content_record(base)))
         self._remainder = _json(funding['physical_remainder'])
         previous = self.initial_state.native_state
         native = self._native._state({k: previous.array(k) for k in previous.array_names},

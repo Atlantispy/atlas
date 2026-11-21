@@ -34,7 +34,7 @@ from .precursor import PrecursorState, InitialConditionState, SeededSpatialPrior
 from .parameters import ThermalParameters
 from .thermal import half_space_temperature
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 _METHOD = 'atlas.precursor-sampling.v3'
 
@@ -487,9 +487,9 @@ class PreparedPrecursor:
             self._material_ids = tuple(m.material_id for m in state.case.materials)
             self._material_codes = {k: i for i, k in enumerate(self._material_ids)}
             self._context = ExecutionContext('scipy')
-            self.identity = _digest({'method': _METHOD, 'state': state.state_id,
+            self.identity = _digest(content_record({'method': _METHOD, 'state': state.state_id,
                 'execution': self._context.identity, 'limits': asdict(self.limits),
-                'geometry_limits': asdict(self.geometry_limits)})
+                'geometry_limits': asdict(self.geometry_limits)}))
             _check_cancel(cancel)
         except BaseException:
             try:

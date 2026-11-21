@@ -616,7 +616,7 @@ class PreparedSubduction:
         if coupling_trace not in COUPLING_TRACES: raise TectonicsError('explicit supported coupling trace required')
         if transport_lifetime not in ('retained','phase-local'):
             raise TectonicsError('explicit supported transport lifetime required')
-        from .reuse import ExecutionContext
+        from .reuse import ExecutionContext, content_record
         self.budget = WorkBudget(WORK_BYTES, parent=select_budget(budget))
         self.context = context; self.own_context = context is None
         self._guard = self.budget.reserve(2*1024**2, category='subduction-source-context')
@@ -654,7 +654,7 @@ class PreparedSubduction:
                 coupling_trace=coupling_trace, slab_first_edge_length_m=self.slab_first_edge_length_m,
                 outflow_operator=outflow_operator, stabilisation=stabilisation, execution_id=self.execution_id,
                 coordinates='x-right-y-down-km; outputs SI; positive-y velocity is downward')
-            self.plan_id = hashlib.sha256(json.dumps(record, sort_keys=True, allow_nan=False).encode()).hexdigest()
+            self.plan_id = hashlib.sha256(json.dumps(content_record(record), sort_keys=True, allow_nan=False).encode()).hexdigest()
             self.context.verify()
         except BaseException:
             self.close(); raise

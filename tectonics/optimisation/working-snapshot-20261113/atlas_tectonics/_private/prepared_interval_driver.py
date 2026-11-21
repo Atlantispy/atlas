@@ -85,8 +85,8 @@ class P26ReceivingCapture:
             cls._require(type(name) is str and name not in arrays and isinstance(raw, bytes), 'snapshot field storage differs')
             cls._require(all(type(n) is int and n >= 0 for n in shape) and len(raw) == math.prod(shape)*8, 'snapshot binary64 size differs')
             arrays[name] = dict(shape=list(shape), sha256=hashlib.sha256(raw).hexdigest())
-        from atlas_tectonics.regional_execution import identity_metadata
-        identity = cls._hash(dict(metadata=identity_metadata(metadata), arrays=arrays))
+        from atlas_tectonics.regional_execution import content_metadata
+        identity = cls._hash(dict(metadata=content_metadata(metadata), arrays=arrays))
         cls._require(identity == snapshot.result_id, 'snapshot original identity differs')
         return dict(recipe='regional-snapshot-v1', identity=identity,
                     metadata=metadata, arrays=arrays)
@@ -207,6 +207,7 @@ class P26ReceivingCapture:
         import hashlib
         import os
         from pathlib import Path
+        from atlas_tectonics._private.live_spatial_patch import holder_identity
         proposal = solution.proposal
         faces = proposal.native_faces
         cls._require(faces._stage is proposal.source_flow_stage and
@@ -244,7 +245,7 @@ class P26ReceivingCapture:
             captured={}
             for role,chunks,expected in (
                     ('native_measure',(memoryview(native_raw),),native_id),
-                    ('bounds',bounds_chunks,solution_record['bounds_id'])):
+                    ('bounds',bounds_chunks,holder_identity(solution.bounds))):
                 path=paths[role];digest=hashlib.sha256();size=0
                 with path.open('xb', buffering=_SIDECAR_BUFFER) as stream:
                     for chunk in chunks:
@@ -266,7 +267,7 @@ class P26ReceivingCapture:
                 cls._require(identity==expected,'original '+role+' preimage differs')
                 captured[role]=dict(identity=identity,preimage_file=dict(
                     file=path.relative_to(output).as_posix(),sha256=identity,nbytes=size))
-            cls._require(captured['bounds']['identity']==solution.bounds.bounds_id,'original bounds preimage differs')
+            cls._require(captured['bounds']['identity']==holder_identity(solution.bounds),'original bounds preimage differs')
         return dict(schema='atlas.plan26.live-certification-preimages.r2', **captured)
 
 def _require(condition, message):
@@ -491,12 +492,12 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
                 geometry_scope='original coarse construction contract; not arbitrary-mesh accuracy')
             TIMING.checkpoint('geometry-and-pre-advance-coverage-complete')
             guard.phase('current-physical-coverage-confirmed-before-advance')
-            from atlas_tectonics._private.live_spatial_patch import record_access as _p26_record_access, reference as _p26_record_reference
+            from atlas_tectonics._private.live_spatial_patch import record_access as _p26_record_access, reference as _p26_record_reference, holder_identity as _p26_holder_identity
             from atlas_tectonics._private.spatial_indexed_patch import iter_logical_json as _p26_bounds_chunks
             from contextlib import nullcontext as _p26_nullcontext
             # D-1 (design step5-6-twice 7fa21d3f s2): the capture hashed end_bounds' own bytes; when that is the solution's
             # bounds_id they are the sidecar's bytes, already held: no render, no record open. The sidecar's hash decides.
-            _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == solution.bounds.bounds_id
+            _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == _p26_holder_identity(solution.bounds)
             with (_p26_nullcontext() if _p26_held else _p26_record_access(solution.bounds)) as _p26_bounds_record:
                 record['receiving_certification'] = P26ReceivingCapture.certification(solution,
                     output_directory=artifacts, limits=asdict(workflow._store.limits),

@@ -17,6 +17,7 @@ from .constitutive import BoussinesqMaterial
 from .thermal_support import ThermalSupportParameters
 from .regional import _cancelled
 from .resources import select_budget
+from .reuse import content_record
 from .storage import ArrayStore
 from .spreading import _within_budget, MAX_SPREADING_INTERVALS
 from .spreading_cooling import PreparedSpreadingCooling
@@ -186,7 +187,7 @@ class PreparedW06Workflow:
             descriptor = dict(method='atlas.w06-workflow.v1', route=type(prepared).__name__,
                 prepared=prepared.plan_id, times_s=times, execution=self.execution_id,
                 margin_policy=None if margin_policy is None else asdict(margin_policy))
-            self.plan_id = hashlib.sha256(_json(descriptor)).hexdigest()
+            self.plan_id = hashlib.sha256(_json(content_record(descriptor))).hexdigest()
             self._sealed = True
         except BaseException:
             self._lease.__exit__(None, None, None)

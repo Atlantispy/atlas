@@ -19,6 +19,7 @@ from .regional import (RegionalGrid1D, TransportBoundary, _reference, _cancelled
                        unpack_regional_result, _METRICS)
 from .resources import select_budget, MemoryLimitError
 from .mesh import ColumnGrid1D
+from .reuse import content_record
 
 
 _SCHEMA = 'atlas.material-state.v1'
@@ -127,7 +128,7 @@ class MaterialState:
             _sha(parent_state_id,'parent');_sha(transition_id,'transition')
             if type(transition) is not dict or transition.get('parent')!=parent_state_id:
                 raise TectonicsError('transition receipt must name its parent state')
-            if hashlib.sha256(_json(transition)).hexdigest()!=transition_id:
+            if hashlib.sha256(_json(content_record(transition))).hexdigest()!=transition_id:
                 raise TectonicsError('transition receipt identity mismatch')
         elif transition is not None:
             raise TectonicsError('root state cannot attach an unparented transition')
@@ -146,7 +147,7 @@ class MaterialState:
             for key,val in (('grid',grid),('cohorts',cohorts),('time_s',now),('epoch_id',epoch_id),
                             ('parent_state_id',parent_state_id),('transition_id',transition_id),('_payload',owner),('_transition_payload',transition_bytes)):
                 object.__setattr__(self,key,val)
-            h=hashlib.sha256(_json(self.descriptor()))
+            h=hashlib.sha256(_json(content_record(self.descriptor())))
             h.update(b'\0');h.update(owner)
             object.__setattr__(self,'state_id',h.hexdigest())
 

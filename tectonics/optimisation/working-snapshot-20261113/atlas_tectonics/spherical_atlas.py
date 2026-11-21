@@ -31,6 +31,7 @@ from ._validation import read_array, scalar, input_shape
 from .geometry import (GeometryError, _limits, _label, _json, _point_shape,
                        _check_cancel, GeometryLimits)
 from .resources import select_budget, reserve_budgets, elements
+from .reuse import content_record
 from .spherical_geometry import SphericalChart, SphericalGeometry, _directions, _ring_area
 from .geometry_index import GeometryFeature, GeometryIndex
 from .boundaries import (BoundaryRegion, BoundaryNetwork, SharedBoundary,
@@ -617,7 +618,7 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
         geometry_id = digest.hexdigest()
         context = {'geometry_id': geometry_id, 'charts': charts,
                    'resolution': resolution, 'bindings': bindings}
-        identifier = _digest(context)
+        identifier = _digest(content_record(context))
         edge_ids = tuple(_digest({'schema': 'atlas.global-edge.v1', 'sphere': sphere_record,
                                  'ends': [points[a].tolist(), points[b].tolist()],
                                  'regions': [ordered[l].region_id, ordered[r].region_id],

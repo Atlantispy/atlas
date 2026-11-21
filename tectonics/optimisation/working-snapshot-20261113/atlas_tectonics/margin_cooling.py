@@ -22,7 +22,7 @@ from .parameters import PlateCoolingParameters, identity
 from .precursor import PrecursorState, InitialConditionState
 from .regional import _cancelled
 from .resources import select_budget, reserve_budgets
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .spreading import _within_budget
 from .thermal_support import ThermalSupportParameters, _owner, _temperature
 
@@ -279,7 +279,7 @@ class PreparedMarginCooling:
             captured = dict(initial_state=initial_state, source_column=column, source_profile=profile,
                 material_definitions=tuple(materials), cooling_history=initial_state._maps['cooling'][profile.profile_id],
                 plate=plate, thinning_source_id=thinning_source_id, geometry_reference_id=geometry_reference_id,
-                execution_id=execution_id, plan_id=hashlib.sha256(_json(descriptor)).hexdigest(),
+                execution_id=execution_id, plan_id=hashlib.sha256(_json(content_record(descriptor))).hexdigest(),
                 _knots=frozen(knots), _temperatures=frozen(values), _jumps=frozen(jumps),
                 _coefficients=frozen(coefficients), _moments=_moments(knots, perturbation),
                 _slopes=(float(slopes[0]), float(slopes[-1])), _amplitude=amplitude,

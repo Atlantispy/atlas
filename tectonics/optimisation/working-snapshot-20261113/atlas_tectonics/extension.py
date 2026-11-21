@@ -17,7 +17,7 @@ from .mesh import ColumnGrid1D
 from .regional import _cancelled
 from .remapping import _inventories, _publish, ale_timestep_limit
 from .resources import select_budget, reserve_budgets
-from .reuse import ExecutionContext, cached_ale_transport
+from .reuse import ExecutionContext, cached_ale_transport, content_record
 from .storage import ArrayStore
 
 
@@ -244,8 +244,8 @@ class PreparedListricExtension:
                                 grid=grid.grid_id, initial_material=material.state_id,
                                 velocity_m_s=u, density_kg_m3=rho, width_m=width,
                                 datum_id=datum_id, source_id=source_id, execution=execution_id,
-                                scheme=transport, max_intervals=MAX_EXTENSION_INTERVALS)
-                plan_id = hashlib.sha256(_json(identity)).hexdigest()
+                                backend=backend, scheme=transport, max_intervals=MAX_EXTENSION_INTERVALS)
+                plan_id = hashlib.sha256(_json(content_record(identity))).hexdigest()
                 object.__setattr__(self, 'plan_id', plan_id)
                 object.__setattr__(self, 'initial', _state(plan_id, material, 0, 0., np.zeros((len(cohorts), 2))))
             ctx.verify(); _cancelled(cancel)

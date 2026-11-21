@@ -18,6 +18,7 @@ from .parameters import FlexureParameters
 from .finite_flexure import FiniteRegionFlexure, FlexureBoundary1D
 from .column_loads import LoadSupport, LoadPhase, ColumnLoadState, column_load_change
 from .resources import select_budget
+from .reuse import content_record
 
 
 def _cell_mean_weights(cells, spacing_m, alpha_m, restoring):
@@ -208,10 +209,10 @@ class PreparedExtensionSupport:
                 self._initial_h_volume = initial_volume.tobytes()
                 self._footwall_volume = footwall_volume.tobytes()
                 self._reference_load = self._load(motion.initial, initial_h, cancel)
-                self.plan_id = hashlib.sha256(_json(dict(method='w05-dry-support-v1',
+                self.plan_id = hashlib.sha256(_json(content_record(dict(method='w05-dry-support-v1',
                     motion=motion.plan_id, policy=asdict(policy), reference_load=self._reference_load.state_id,
                     operator=self.operator.operator_id, mean_operator=self.mean_operator.operator_id,
-                    execution=motion.execution_id))).hexdigest()
+                    execution=motion.execution_id)))).hexdigest()
             _cancelled(cancel); motion._context.verify()
             self._sealed = True
         except BaseException:
@@ -306,7 +307,7 @@ class PreparedExtensionSupport:
             metadata, payload, point_payload = _json(record), values.tobytes(), points.tobytes()
             result = object.__new__(ExtensionSupportResult)
             for name, value in (('_metadata', metadata), ('_fields', payload), ('_points', point_payload),
-                    ('result_id', hashlib.sha256(metadata+payload+point_payload).hexdigest())):
+                    ('result_id', hashlib.sha256(_json(content_record(record))+payload+point_payload).hexdigest())):
                 object.__setattr__(result, name, value)
             _cancelled(cancel); self.motion._context.verify()
             return result

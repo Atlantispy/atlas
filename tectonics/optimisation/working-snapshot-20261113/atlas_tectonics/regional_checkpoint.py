@@ -12,7 +12,7 @@ import numpy as np
 
 from ._validation import TectonicsError
 from .constitutive import _cancel
-from .regional_execution import RegionalMechanicalSnapshot, identity_metadata
+from .regional_execution import RegionalMechanicalSnapshot, content_metadata
 from .resources import WorkBudget, select_budget
 
 
@@ -206,7 +206,7 @@ def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
                     unique[array_name] = raw
                     catalogue[array_name] = dict(name=array_name, dtype=_DTYPE.str,
                         shape=list(shape), nbytes=len(raw), sha256=digest)
-            result_id = _hash(_json({'metadata': identity_metadata(metadata), 'arrays': identity}))
+            result_id = _hash(_json({'metadata': content_metadata(metadata), 'arrays': identity}))
             if result_id != _sha(snapshot.result_id):
                 _fail('snapshot result identity mismatch')
             records.append(dict(name=name, metadata=metadata, metadata_sha256=_hash(raw_meta),
@@ -284,7 +284,7 @@ def restore_regional_snapshots(arrays, metadata, *, budget=None, cancel=None):
         raw_meta = _json(record['metadata'])
         if (type(record['metadata']) is not dict or len(raw_meta) > _MAX_SNAPSHOT_METADATA_BYTES
                 or _hash(raw_meta) != _sha(record['metadata_sha256'])
-                or _hash(_json({'metadata': identity_metadata(record['metadata']), 'arrays': identity}))
+                or _hash(_json({'metadata': content_metadata(record['metadata']), 'arrays': identity}))
                 != _sha(record['result_id'])):
             _fail('snapshot metadata/result identity mismatch')
         metadata_bytes += len(raw_meta)

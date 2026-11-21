@@ -33,7 +33,7 @@ from .precursor_sampling import _profile_mean, _temperature, PrecursorSamplingLi
 from .regional_workflow import (RegionalWorkflowState, save_regional_workflow,
                                 load_regional_workflow)
 from .resources import select_budget
-from .reuse import (ExecutionContext, ReuseController, cached_plate_temperature,
+from .reuse import (ExecutionContext, ReuseController, cached_plate_temperature, content_record,
                     cached_plate_thermal_response)
 
 
@@ -335,7 +335,7 @@ def _state(material, compaction, pore, width, reservoir, total_fluid, heights, b
             initial_bulk_thickness_m=heights, binding=binding, execution_id=execution_id,
             parent_state_id=parent, source_workflow=source_workflow, _transition=_json(transition)).items():
         object.__setattr__(result, k, v)
-    object.__setattr__(result, 'state_id', _id(result.descriptor()))
+    object.__setattr__(result, 'state_id', _id(content_record(result.descriptor())))
     _cancel(cancel)
     return result
 

@@ -494,7 +494,7 @@ class CollarWorkflow:
                         p['proposal_id'] != s['proposal_id'] or p['iteration_id'] != s['iteration_id'] or
                         i['iteration_id'] != s['iteration_id'] or s['published'] is not False or
                         p['published'] is not False or p['accepted_heat_state_advanced'] is not False or
-                        _SV.identity(graph, _hash) != s['graph_id'] or graph['bounds_id'] != s['bounds_id'] or
+                        _SV.content_identity(graph, _hash) != s['graph_id'] or graph['bounds_id'] != s['bounds_id'] or
                         force.result_id != s['force_exchange_id'] or records['force'] != f):
                     raise RegionalOwnerRefused('saved differential certification links changed')
                 for key in ('parent_state_id', 'spatial_state_id', 'source_flow_stage_id', 'source_audit_id',

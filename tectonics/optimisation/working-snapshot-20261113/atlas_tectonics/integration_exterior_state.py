@@ -23,6 +23,7 @@ from .regional_collar3d import (PreparedRegionalCollar3D, RegionalCollarAdvance,
 from .regional_execution import RegionalMechanicalSnapshot
 from .regional_execution3d import SIDES, _hash, _json
 from .resources import WorkBudget
+from .reuse import content_record
 
 
 
@@ -184,7 +185,7 @@ class PreparedExteriorOwner:
                 discretisation='first-order well-mixed moving source patch/layer CSG cells; no source-field resampling',
                 geometry='rotated source cone/shell minus fixed complete collar exclusion union',
                 refinement='explicit source-cell lineage; no automatic spatial refinement or subcell accuracy claim')
-            self.owner_id = _hash(self._definition)
+            self.owner_id = _hash(content_record(self._definition))
             cells = []
             for row in funding.exterior_remainder():
                 key = row['patch_id'], row['sublayer']

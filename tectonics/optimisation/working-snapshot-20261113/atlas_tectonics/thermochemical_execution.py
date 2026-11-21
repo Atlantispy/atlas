@@ -20,7 +20,7 @@ import numpy as np
 from ._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
 from .resources import select_budget, MemoryLimitError
 from .constitutive import _cancel, _json
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .stokes import face_force_from_density, StokesSolvePolicy
 from .stokes_execution import PreparedStokes2D, _native_lease, _factored_scale, _hex
 from .thermochemical import (ThermochemicalProblem, ThermochemicalPolicy, _Diffusion2D,
@@ -179,7 +179,7 @@ class ThermochemicalState:
     """
     __slots__=('problem','_metadata','_temperature','_composition','_next_initial_guess','state_id')
     def __init__(self,problem,temperature_k,composition,*,time_s,source,parent_id=None,
-                 step_index=0,execution_id=None,step_record=None,next_initial_guess=None,budget=None):
+                 step_index=0,evolution_id=None,execution=None,step_record=None,next_initial_guess=None,budget=None):
         if type(problem) is not ThermochemicalProblem: raise TectonicsError('typed thermochemical problem required')
         n=problem.box.nx*problem.box.nz
         if n>ThermochemicalPolicy().max_cells:
@@ -193,10 +193,10 @@ class ThermochemicalState:
         if type(step_index) is not int or not 0<=step_index<=2**53:
             raise TectonicsError('invalid time-step index')
         if step_index==0:
-            if parent_id is not None or execution_id is not None or step_record is not None:
+            if parent_id is not None or evolution_id is not None or execution is not None or step_record is not None:
                 raise TectonicsError('initial state may not forge a completed evolution step')
         else:
-            _hex(parent_id,'parent state');_hex(execution_id,'evolution execution')
+            _hex(parent_id,'parent state');_hex(evolution_id,'evolution plan');_hex(execution,'evolution code')
             stored_policy=_check_step_record(step_record,time_s,source)
             mode=step_record['velocity_mode']
             if mode=='buoyancy-coupled-variable-viscosity':
@@ -238,9 +238,10 @@ class ThermochemicalState:
             _,excursion=_check_fields(problem,T,C)
             meta=dict(schema='atlas.thermochemical-state.v1',problem=problem.descriptor(),
                 problem_id=problem.problem_id,time_s=time_s,source=source,parent_id=parent_id,
-                step_index=step_index,execution_id=execution_id,step_record=step_record,
+                step_index=step_index,evolution_id=evolution_id,step_record=step_record,
                 composition_bound_excursion=excursion,units='SI cell averages; x-right z-up; budgets per 1 m thickness',
                 R4_complete=False,physical_validation=False)
+            if execution is not None: meta['execution']=execution  # W-1: kept for the continuation check, not in state_id
             if cross:
                 meta['schema']='atlas.thermochemical-state.v2'
                 meta['next_initial_guess']=dict(guess_id=next_initial_guess.guess_id,
@@ -250,7 +251,7 @@ class ThermochemicalState:
             self.problem=problem;self._metadata=raw
             self._temperature=T.tobytes();self._composition=C.tobytes()
             self._next_initial_guess=next_initial_guess
-            h=hashlib.sha256(raw+self._temperature+self._composition)
+            h=hashlib.sha256(_json(content_record(meta))+self._temperature+self._composition)
             if cross:
                 for key in ('u_m_s','w_m_s','pressure_pa'):
                     h.update(next_initial_guess.array(key).tobytes())
@@ -304,7 +305,7 @@ class ThermochemicalState:
                     entry['guess_id'],budget=budget)
             p=ThermochemicalProblem.from_descriptor(meta['problem'])
             out=cls(p,arrays['temperature_k'],arrays['composition'],time_s=meta['time_s'],source=meta['source'],
-                parent_id=meta['parent_id'],step_index=meta['step_index'],execution_id=meta['execution_id'],
+                parent_id=meta['parent_id'],step_index=meta['step_index'],evolution_id=meta['evolution_id'],execution=meta.get('execution'),
                 step_record=meta['step_record'],next_initial_guess=guess,budget=budget)
             if _json(out.descriptor())!=_json(meta): raise TectonicsError('state metadata/array mismatch')
             return out
@@ -495,7 +496,7 @@ class PreparedThermochemical2D:
             if anderson_policy is not None:binding['anderson_policy']=asdict(anderson_policy)
             if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
             if adaptive_inner_policy is not None:binding['adaptive_inner_policy']=asdict(adaptive_inner_policy)
-            self.identity=_digest(binding)
+            self.identity=_digest(content_record(binding))
             _cancel(cancel)
         except BaseException:
             self._context=None;self._diffusion=None;self._closed=True
@@ -618,7 +619,8 @@ class PreparedThermochemical2D:
         dt=scalar(dt_s,'evolution interval',positive=True);time=state.time_s
         end_time=_endpoint_time(time,dt,self.policy)
         if state.step_index>=self.policy.max_steps: raise TectonicsError('explicit accepted-step envelope exhausted')
-        if state.step_index and state.descriptor()['execution_id']!=self.identity:
+        if state.step_index and (state.descriptor()['evolution_id']!=self.identity or
+                                 state.descriptor().get('execution')!=self._context.identity):
             raise TectonicsError('continued state source/policy changed; no automatic rebind')
         text(source,'step provenance')
         if len(source)>2048: raise TectonicsError('step source too long')
@@ -769,7 +771,7 @@ class PreparedThermochemical2D:
                 del flow1
             _cancel(cancel)
             final=ThermochemicalState(self.problem,tf,cf,time_s=end_time,source=source,
-                parent_id=state.state_id,step_index=state.step_index+1,execution_id=self.identity,
+                parent_id=state.state_id,step_index=state.step_index+1,evolution_id=self.identity,execution=self._context.identity,
                 step_record=record,next_initial_guess=next_guess,budget=self.budget)
             meta=dict(schema='atlas.thermochemical-step.v1',method=_METHOD,record=record,
                 before_id=state.state_id,after_id=final.state_id,

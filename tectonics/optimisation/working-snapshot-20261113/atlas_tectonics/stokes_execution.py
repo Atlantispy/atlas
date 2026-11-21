@@ -29,7 +29,7 @@ except ImportError:
 
 from ._validation import TectonicsError, text, scalar, input_shape, read_array, frozen
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .execution import _acquire_native_limit, _release_native_limit
 from .constitutive import DiffusiveScales, RheologyProfile, _json, _cancel
 from .stokes import (StokesBox2D, StokesSolvePolicy, _scaling, _MACOperator,
@@ -237,7 +237,7 @@ class StokesSolution:
             data.append((key,shape,a.tobytes()))
         self._metadata = _json(metadata)
         self._arrays = tuple(data)
-        h=hashlib.sha256(self._metadata)
+        h=hashlib.sha256(_json(content_record(metadata)))
         for name,shape,raw in data:
             h.update(_json([name,shape,'binary64'])); h.update(raw)
         self.result_id=h.hexdigest()
@@ -313,9 +313,9 @@ class PreparedStokes2D:
                     del matrix
             _cancel(cancel)
             self._context.verify()
-            self.identity=_digest({'method':_METHOD,'box':asdict(box),'profile':profile.descriptor(),
+            self.identity=_digest(content_record({'method':_METHOD,'box':asdict(box),'profile':profile.descriptor(),
                                    'scales':asdict(scales),'policy':asdict(policy),
-                                   'boundary':_BOUNDARY,'gauge':_GAUGE,'context':self._context_id})
+                                   'boundary':_BOUNDARY,'gauge':_GAUGE,'context':self._context_id}))
         except BaseException:
             self._factor=None; self._inverse=None; self._context=None; self._closed=True
             self._guard.__exit__(None,None,None)

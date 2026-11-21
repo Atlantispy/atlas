@@ -898,6 +898,30 @@ def identity(value, ordinary_hash):
     return ref.identity().sha256 if isinstance(ref, RecordRef) else ordinary_hash(value)
 
 
+_CONTENT_IDS = {}  # byte identity -> content identity of a packed record; the content form is a function of the bytes
+
+
+def content_identity(value, ordinary_hash):
+    """E-22: a quoted spatial identifier from the record's content form (reuse.content_record). A packed record is
+    streamed (record_views.feed_without), same bytes and refusals, once per byte identity; ordinary_hash hashes a
+    plain content record."""
+    from hashlib import sha256
+    from atlas_tectonics.reuse import _CODE_FIELDS, content_record
+    ref = _reference(value)
+    if not isinstance(ref, RecordRef):
+        return ordinary_hash(content_record(value))
+    key = ref.identity().sha256
+    known = _CONTENT_IDS.get(key)
+    if known is None:
+        digest = sha256()
+        with ref.borrow() as root:
+            _RV.feed_without((digest,), root, {}, code=_CODE_FIELDS)
+        if len(_CONTENT_IDS) >= 256:  # bounded: a few graphs per interval are live at once
+            _CONTENT_IDS.pop(next(iter(_CONTENT_IDS)))
+        known = _CONTENT_IDS[key] = digest.hexdigest()
+    return known
+
+
 def excluded_identity(value, excluded, ordinary_hash):
     ref = _reference(value)
     if not isinstance(ref, RecordRef):
@@ -1286,7 +1310,7 @@ def owner_source(source):
     source = _function(source, 'validate_exchange', (
         ('type(exchange) is dict', '_SV.is_record(exchange)'),
         ('type(exchange) is not dict', 'not _SV.is_record(exchange)'),
-        ("_hash(exchange['spatial_graph'])", "_SV.identity(exchange['spatial_graph'], _hash)"),
+        ("_hash(exchange['spatial_graph'])", "_SV.content_identity(exchange['spatial_graph'], _hash)"),
         ("body = {k: v for k, v in exchange.items() if k not in ('state_id', 'result_id')}",
          'body = _SV.exchange_identity(exchange, state.state_id, _hash, audit_arrays)'),
         ('_hash(dict(state_id=state.state_id, exchange=body))', 'body'),
@@ -1325,7 +1349,7 @@ def measures_source(source):
     ), scope='with _SV.transport_access(graph, result) as (graph, result):')
     source = _function(source, '_transport_audit', (
         ("hashlib.sha256(json.dumps(graph, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()",
-         "_SV.identity(graph, lambda value: hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest())"),
+         "_SV.content_identity(graph, lambda value: hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest())"),
     ), scope='with _SV.transport_access(graph, result) as (graph, result):')
     source = _function(source, '_dual_audit_capacity', (),
                        scope='with _SV.transport_access(graph, result) as (graph, result):')
@@ -1334,7 +1358,7 @@ def measures_source(source):
 
 def workflow_source(source):
     source = _function(source, '_check_certification_records', (
-        ("_hash(graph) != s['graph_id']", "_SV.identity(graph, _hash) != s['graph_id']"),
+        ("_hash(graph) != s['graph_id']", "_SV.content_identity(graph, _hash) != s['graph_id']"),
     ), scope='with _SV.access(graph) as graph:')
     # This exact scope retains graph fields through certification and releases
     # them before _refresh returns, including all refusal paths.
@@ -1386,9 +1410,9 @@ def context_source(source):
         ('type(finite) is not dict or type(finite.get(\'graph\')) is not dict',
          "not _SV.is_record(finite) or not _SV.is_record(finite.get('graph'))"),
         ("R.stream_hash(finite['graph'], cancel)",
-         "_SV.identity(finite['graph'], lambda value: R.stream_hash(value, cancel))"),
+         "_SV.content_identity(finite['graph'], lambda value: R.stream_hash(value, cancel))"),
         ('R.stream_hash(dict(state_id=state.state_id, exchange=body), cancel)', 'body'),
-        ('R.stream_hash(graph, cancel)', '_SV.identity(graph, lambda value: R.stream_hash(value, cancel))'),
+        ('R.stream_hash(graph, cancel)', '_SV.content_identity(graph, lambda value: R.stream_hash(value, cancel))'),
     ))
     # Returned plan/ref are native owned exports. Their lifetime must be the
     # caller's existing work stack, because _context's result escapes.

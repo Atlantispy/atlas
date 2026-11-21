@@ -16,7 +16,7 @@ from ._validation import TectonicsError, scalar
 from .constitutive import _cancel
 from .materials import _json
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
 from .w03_workflow import (W03ColumnState, W03ExecutionContext,
     advance_w03_columns, save_w03_columns, load_w03_columns)
@@ -179,7 +179,7 @@ def publish_workflow_output(output, store, *, context, scope, budget=None, cance
                 dependencies=description['dependencies'],
                 fields={k: _field_record(v, description['field_specs'][k]) for k,v in arrays.items()},
                 restart_semantics='consumer export only; use native owner and its complete restart dependencies')
-            product = json.loads(_json(dict(record, product_id=_hash(record))))
+            product = json.loads(_json(dict(record, product_id=_hash(content_record(record)))))
             verifier.verify()
             store.put(product['product_id'], arrays, product, budget=resource, cancel=cancel)
             verifier.verify()
@@ -198,7 +198,7 @@ def read_product(store, product, *, budget=None, expected_context=None):
         if expected_context is not None and product['context'] != _context(expected_context):
             raise TectonicsError('product context differs')
         record = {k:v for k,v in product.items() if k != 'product_id'}
-        pid = _hash(record)
+        pid = _hash(content_record(record))
         if product.get('product_id') != pid or store.metadata(pid) != product:
             raise TectonicsError('missing or altered product metadata')
         arrays = store.get(pid, budget=resource)
@@ -297,7 +297,7 @@ class PreparedColumnAssembly:
                 allocation='prescribed fixed fractions of current finite reservoir',
                 pressure='prescribed fixed additional pressure; not effective compaction traction',
                 execution_id=self._verifier.identity))
-            self.plan_id = hashlib.sha256(self._definition).hexdigest()
+            self.plan_id = _hash(content_record(json.loads(self._definition)))
             self._sealed = True
         except BaseException:
             self.close()
@@ -366,7 +366,7 @@ class PreparedColumnAssembly:
                 plan_id=self.plan_id, store_dependency='complete ArrayStore including native W01/W02/W03 closure',
                 current_source_required=True, output_index=index),
             restart_semantics='reconstruct this exact prepared definition and reopen its complete native store')
-        complete = json.loads(_json(dict(base, product_id=_hash(base))))
+        complete = json.loads(_json(dict(base, product_id=_hash(content_record(base)))))
         self.store.put(complete['product_id'], arrays, complete, budget=self._budget, cancel=cancel)
         self.store.put(self._key(index), {'commit':np.empty(0, dtype='u1')},
             dict(schema='atlas.w12-column-checkpoint.v1', plan_id=self.plan_id,

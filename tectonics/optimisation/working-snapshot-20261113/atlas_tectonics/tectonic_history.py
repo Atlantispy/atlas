@@ -23,7 +23,7 @@ from .evolving_mechanics import (PreparedEvolvingRegionalMechanics,
                                 RegionalMechanicalRequest, EvolvingMechanicalResult, _sum_forces)
 from .materials import _name
 from .resources import WorkBudget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .spreading import _within_budget
 from .storage import ArrayStore
 from .tectonic_history_codec import (pack_history_result, restore_history_result,
@@ -181,7 +181,7 @@ class PreparedTectonicHistory:
             self._binding = _json(binding)
             if len(self._binding) > MAX_METADATA:
                 raise TectonicsError('history input/source metadata exceeds 512 KiB')
-            self.plan_id = _hash(binding)
+            self.plan_id = _hash(content_record(binding))
             self._check(cancel)
             self._sealed = True
         except BaseException:
@@ -300,7 +300,7 @@ class PreparedTectonicHistory:
             checkpoint_id=self.checkpoint_id(index),result_id=history_result_id(result),
             parent_output_id=None if parent is None else parent.output_id,phase='complete')
         return TectonicHistoryOutput(result,index,self.times[index],self.checkpoint_id(index),
-                                     _hash(record),_json(record))
+                                     _hash(content_record(record)),_json(record))
 
     def _pack(self,out,cancel):
         arrays,payload = pack_history_result(out.result,budget=self._resource,cancel=cancel)
@@ -321,7 +321,7 @@ class PreparedTectonicHistory:
             route=self.route,execution=self.execution_id,index=index,time_s=self.times[index],
             checkpoint_id=self.checkpoint_id(index),parent_output_id=parent,phase='complete')
         if (meta['schema'] != 'atlas.tectonic-history-checkpoint.v1' or
-                any(r.get(k)!=v for k,v in expected.items()) or meta['output_id'] != _hash(r) or
+                any(r.get(k)!=v for k,v in expected.items()) or meta['output_id'] != _hash(content_record(r)) or
                 meta['content_id'] != _hash({k:v for k,v in meta.items() if k!='content_id'}) or
                 type(meta['retained_bytes']) is not int or not 0 < meta['retained_bytes'] <= CAP):
             raise TectonicsError('stale, partial or misbound tectonic history checkpoint')

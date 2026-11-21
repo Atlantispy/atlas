@@ -17,7 +17,7 @@ from ._validation import TectonicsError, scalar, frozen, input_shape, snapshot
 from .constitutive import _cancel
 from .materials import _name, _json
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
 from .spreading import _within_budget
 from .w09_drainage import prepare_drainage, DrainageGeometry
@@ -92,7 +92,7 @@ class WaterState:
 
     @property
     def state_id(self):
-        return hashlib.sha256(self._record + self.water_m3.tobytes()).hexdigest()
+        return hashlib.sha256(_json(content_record(self.descriptor())) + self.water_m3.tobytes()).hexdigest()
 
 
 class PreparedWater:
@@ -131,9 +131,9 @@ class PreparedWater:
                 source_id=source_id, budget=self._resource)
             self._context = ExecutionContext('reference')
             self.execution_id = self._context.identity
-            self.plan_id = _hash(dict(schema='atlas.w09-water.v1', geometry=self.geometry.signature,
+            self.plan_id = _hash(content_record(dict(schema='atlas.w09-water.v1', geometry=self.geometry.signature,
                 execution=self.execution_id, shoreline='one-sided-wet-contact',
-                spill_ties='lowest-level-then-stable-basin', intervals=LIMIT))
+                spill_ties='lowest-level-then-stable-basin', intervals=LIMIT)))
             self._n = len(self.geometry.bed_m)
             self._cells = tuple(np.asarray(c, dtype=int) for c in self.geometry.basin_cells)
         except BaseException:

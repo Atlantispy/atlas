@@ -238,15 +238,13 @@ def call_identity(origin, arrays, resources, cancel):
     descriptors = {name: dict(shape=list(value.shape),
         sha256=sha256(memoryview(value).cast('B')).hexdigest()) for name, value in arrays.items()}
     if not isinstance(origin, _LedgerObject):
-        return resources.stream_hash(dict(metadata=origin, arrays=descriptors), cancel)
+        from atlas_tectonics.regional_execution import content_metadata
+        return resources.stream_hash(dict(metadata=content_metadata(origin), arrays=descriptors), cancel)
     # The wrapper descriptors are tiny but nevertheless paid before encoding.
     with resources.codec_for_value(descriptors, budget=origin.ref.scope.run_budget, cancel=cancel):
+        from atlas_tectonics._private.record_views import feed_result_metadata
         digest = sha256(b'{"arrays":'+canonical(descriptors)+b',"metadata":')
-        with origin.ref.iter_json() as stream:
-            for block in stream:
-                with block:
-                    resources.check(cancel)
-                    digest.update(block.value)
+        feed_result_metadata((digest,), origin.ref, lambda: resources.check(cancel))
         digest.update(b'}')
         return digest.hexdigest()
 

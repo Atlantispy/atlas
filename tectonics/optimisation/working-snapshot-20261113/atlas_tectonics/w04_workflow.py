@@ -25,7 +25,7 @@ from .regional import RegionalGrid1D
 from .parameters import FlexureParameters, PeriodicGrid1D
 from .plate_integrals import plate_cooling_deficit_change
 from .resources import select_budget
-from .reuse import (ReuseController, cached_column_load_change, cached_flexure,
+from .reuse import (ReuseController, content_record, cached_column_load_change, cached_flexure,
                     cached_finite_flexure, cached_variable_flexure)
 from .storage import ArrayStore
 from .stokes_execution import _factored_scale
@@ -351,10 +351,10 @@ class PreparedW04Support:
             self._reference_load = self._load_snapshot(reference,reference_surface,cancel)
             self._reference_bulk = np.array([
                 math.fsum(values) for values in reference.material.thickness_m.T]).tobytes()
-            self.plan_id = _id(dict(schema='atlas.w04-projection.v1',reference=reference.state_id,
+            self.plan_id = _id(content_record(dict(schema='atlas.w04-projection.v1',reference=reference.state_id,
                 surface=reference_surface.input_id,policy=asdict(policy),geometry=geometry,
                 exterior=None if exterior is None else exterior.input_id,
-                operator=self.operator.operator_id,execution=self._context.identity))
+                operator=self.operator.operator_id,execution=self._context.identity)))
             self._context.verify(); _cancel(cancel)
             self._sealed = True
         except BaseException:
@@ -483,7 +483,7 @@ class PreparedW04Support:
             payload,mask = values.tobytes(),wet.tobytes()
             result = object.__new__(W04SupportResult)
             for key,value in dict(_metadata=_json(metadata),_payload=payload,_wet=mask,
-                                  result_id=_id(metadata,payload+mask)).items():
+                                  result_id=_id(content_record(metadata),payload+mask)).items():
                 object.__setattr__(result,key,value)
             return result
 

@@ -23,6 +23,7 @@ from .resources import WorkBudget, MemoryLimitError, select_budget
 from .regional_stokes import boundary_coordinates
 from .underthrust import UnderthrustState, UnderthrustInterface, MAX_PARCELS, MAX_RECEIVERS, _id as _under_id
 from .w04_workflow import _id as _w04_id
+from .reuse import content_record
 
 
 CAP = 128 << 20
@@ -183,7 +184,7 @@ def _w04_arrays(out, d):
         # The fixed-operator branch intentionally uses compensated load deltas.
         if not fixed and not np.array_equal(v[:,5],a[:,3]-a[:,2]):
             _fail('W04 two-equilibrium displacement mismatch')
-    if _w04_id(d,out._payload+out._wet+out._absolute) != history_result_id(out):
+    if _w04_id(content_record(d),out._payload+out._wet+out._absolute) != history_result_id(out):
         _fail('W04 intrinsic identity mismatch')
     return arrays
 
@@ -229,7 +230,7 @@ def _regional_validate(out, d):
             mr['time_s'] != c.time_s or mr['epoch_id'] != c.epoch_id or
             mr['force_source'] != _hash(_json(r)) or mr['boundary_source'] != _hash(_json(r)) or
             m['request_id'] != _hash(_json(mr)) or definition['material_source'] != r['material'] or
-            mr['plan_id'] != _hash(_json(dict(definition=definition,context=m['context_id'])))):
+            mr['plan_id'] != _hash(_json(content_record(dict(definition=definition,context=m['context_id']))))):
         _fail('regional input/result binding mismatch')
     blocks = d['input_blocks']
     if (type(blocks) is not list or not 3 <= len(blocks) <= 18 or

@@ -29,7 +29,7 @@ from .spherical_atlas import SphericalAtlas, save_spherical_atlas, load_spherica
 from .geometry_index import GeometryFeature, GeometryIndex
 from .regional import RegionalGrid1D, TransportBoundary, _boundaries
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .timebase import advance_time
 
 _SCHEMA = 'atlas.regional-motion-forcing.v1'
@@ -68,8 +68,8 @@ def _digest(record):
     return hashlib.sha256(_json(record)).hexdigest()
 
 
-def _array_digest(arrays, descriptor):
-    h = hashlib.sha256(_json(descriptor))
+def _array_digest(arrays, descriptor):  # callers: samples identity, forcing_id issue and re-make
+    h = hashlib.sha256(_json(content_record(descriptor)))
     for name, a in sorted(arrays.items()):
         h.update(_json((name, a.dtype.str, a.shape))); h.update(a.tobytes())
     return h.hexdigest()
@@ -498,9 +498,9 @@ class PreparedRegionalForcing:
             self._region_ids = tuple(names)
             pindex = {m.plate_id: i for i, m in enumerate(definition.motions)}
             self._region_plate = np.asarray([pindex[mapping[n]] for n in names], dtype='i8').tobytes()
-            self.identity = _digest({'method': _METHOD, 'execution_id': self._execution_id,
+            self.identity = _digest(content_record({'method': _METHOD, 'execution_id': self._execution_id,
                                      'definition': definition.descriptor(), 'section': section.descriptor(),
-                                     'reduction': reduction.descriptor()})
+                                     'reduction': reduction.descriptor()}))
             _check_cancel(cancel); self._context.verify()
         except BaseException:
             self._stack.close(); self._closed = True

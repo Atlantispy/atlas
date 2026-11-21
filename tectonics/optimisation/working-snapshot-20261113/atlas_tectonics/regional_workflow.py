@@ -26,7 +26,7 @@ from .regional_workflow_geometry import RegionalColumnSupport, build_workflow_ce
 from .materials import (MaterialCohort, MaterialState, MaterialBoundary,
     material_timestep_limit, save_material_state, load_material_state, _end_time,
     _hash_array, _transition_record, _positive_total, _account, _METRICS)
-from .reuse import ExecutionContext, PreparedInput, ReuseController, cached_material_transport
+from .reuse import ExecutionContext, PreparedInput, ReuseController, cached_material_transport, content_record
 from .resources import select_budget
 from .storage import ArrayStore
 
@@ -41,8 +41,8 @@ def _json(value):
                       ensure_ascii=True, allow_nan=False).encode('utf8')
 
 
-def _digest(value):
-    return hashlib.sha256(_json(value)).hexdigest()
+def _digest(value):  # every caller issues or re-makes workflow_id
+    return hashlib.sha256(_json(content_record(value))).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)

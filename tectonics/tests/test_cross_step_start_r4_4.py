@@ -303,7 +303,7 @@ class CrossStepTests(unittest.TestCase):
             with self.assertRaises(at.TectonicsError):
                 at.ThermochemicalState(self.p,a.array('temperature_k'),a.array('composition'),
                     time_s=a.time_s,source=m['source'],parent_id=m['parent_id'],step_index=a.step_index,
-                    execution_id=m['execution_id'],step_record=rec,next_initial_guess=guess)
+                    evolution_id=m['evolution_id'],execution=m['execution'],step_record=rec,next_initial_guess=guess)
     def test_no_zero_filling_for_missing_pressure(self):
         m,arr=meta_arrays(self.first());del arr['next_guess_pressure_pa']
         with self.assertRaises(at.TectonicsError):at.ThermochemicalState.restore(m,arr)

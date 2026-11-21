@@ -30,7 +30,7 @@ from .regional_transport3d import PreparedRegionalTransport3D
 from .regional_heat3d import PreparedRegionalHeat3D
 from . import regional_i01_creep
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 _LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
@@ -302,7 +302,7 @@ class PreparedRegionalEvolution3D:
                                        1., self._mechanics_selection_bytes)
                 self._definition['mechanics_selection_admission'] = {
                     method: item['admitted'] for method, item in selection['admission'].items()}
-            self.plan_id = _hash(self._definition)
+            self.plan_id = _hash(content_record(self._definition))
             self._verify()
         except BaseException:
             self.close()

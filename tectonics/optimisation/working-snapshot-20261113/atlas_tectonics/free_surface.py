@@ -12,7 +12,7 @@ import numpy as np
 from ._validation import TectonicsError, scalar, input_shape, read_array
 from .constitutive import _cancel, _json
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .regional_execution import RegionalMechanicalSnapshot, RegionalMechanicsScales, _name, _hash
 from .stokes_execution import _native_lease
 from .surface_geometry import graph_mesh, cell_volume_and_flux, SurfaceProjection
@@ -109,7 +109,7 @@ class PreparedFreeSurface2D:
         try:
             _cancel(cancel)
             self._context=ExecutionContext('scipy');self._context_id=self._context.identity
-            self._plan_id=_hash({'definition':self._d,'context':self._context_id})
+            self._plan_id=_hash(content_record({'definition':self._d,'context':self._context_id}))
             with _native_lease():
                 self._projection=SurfaceProjection(np.linspace(0.,width_m,2*nx+1))
                 self._core=PreparedSurfaceStokes2D(nx,nz,method=method,budget=self._resource,

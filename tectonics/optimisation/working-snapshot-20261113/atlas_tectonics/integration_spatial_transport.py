@@ -514,7 +514,7 @@ class PreparedSpatialTransport:
             self._guard_finalizer = weakref.finalize(self, self._guard.close)
             with _workspace(budget, encoding_scratch, 'spatial-transport-encoding'):
                 self._encoded = LIVE_SPATIAL.graph_encoded(geometry, _json)
-            self.geometry_id = LIVE_SPATIAL.graph_identity(geometry, lambda value: hashlib.sha256(self._encoded).hexdigest())
+            self.geometry_id = LIVE_SPATIAL.graph_content_identity(geometry, lambda value: hashlib.sha256(self._encoded if value is geometry else _json(value)).hexdigest())
             with _workspace(budget, plan_scratch, 'spatial-transport-construction'):
                 keys, start, end = {}, [], []
                 for row in rows:

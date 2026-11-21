@@ -200,8 +200,8 @@ def _legacy_snapshot_identity(snapshot, budget, cancel=None):
     with RESOURCES.decoded(snapshot._metadata, budget=budget, cancel=cancel) as owner:
         with RESOURCES.workspace(budget, 65536+1024*(len(snapshot._fields)+1), cancel=cancel), \
                 RESOURCES.codec(owner, budget=budget, cancel=cancel):
-            from atlas_tectonics.regional_execution import identity_metadata
-            return RESOURCES.stream_hash(dict(metadata=identity_metadata(owner.value), arrays={
+            from atlas_tectonics.regional_execution import content_metadata
+            return RESOURCES.stream_hash(dict(metadata=content_metadata(owner.value), arrays={
                 name: dict(shape=shape, sha256=hashlib.sha256(raw).hexdigest())
                 for name, shape, raw in snapshot._fields}), cancel)
 

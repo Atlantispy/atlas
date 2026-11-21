@@ -1543,7 +1543,10 @@ def _heat_faces(folder, sources, production_release):
 
 
 def _profile_sampler(folder, mode):
-    """PROFILING ARM ONLY. Every 0.2 s count the stacks of all other threads; a finished minute keeps its top 50."""
+    """PROFILING ARM ONLY. Every 0.2 s count the stacks of all other threads; a finished minute keeps its top 50.
+    Off unless ATLAS_PROFILE_SAMPLER=1; this one switch covers both callers (here and reopen_fresh_restart)."""
+    if os.environ.get('ATLAS_PROFILE_SAMPLER') != '1':
+        return
     import collections, threading
 
     def top(pair):

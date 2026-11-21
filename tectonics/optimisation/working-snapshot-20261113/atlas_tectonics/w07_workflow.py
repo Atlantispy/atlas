@@ -20,7 +20,7 @@ from .free_surface import PreparedFreeSurface2D
 from .surface_geometry import SurfaceProjection
 from .timebase import interval_partition
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
 from .spreading import _within_budget
 from .stokes_execution import _native_lease
@@ -212,7 +212,7 @@ class PreparedW07Workflow:
                 reference_pressure=None if reference_pressure is None else asdict(reference_pressure),
                 strength=None if strength_profile is None else strength_profile.descriptor(),
                 thermal=thermal_record,surface_perturbation=perturbation_record)
-            self.plan_id=_hash(self._definition);self._check(cancel)
+            self.plan_id=_hash(content_record(self._definition));self._check(cancel)
         except BaseException:
             self.close();raise
 
@@ -253,7 +253,7 @@ class PreparedW07Workflow:
     def _check(self,cancel=None):
         if self._closed or threading.get_ident()!=self._owner:raise TectonicsError('closed or wrong-thread W07 workflow')
         _cancel(cancel);self._context.verify();self.geology.verify(cancel=cancel,context=self._geology_context)
-        if _hash(self._definition)!=self.plan_id:raise TectonicsError('W07 source/policy changed; prepare a new workflow')
+        if _hash(content_record(self._definition))!=self.plan_id:raise TectonicsError('W07 source/policy changed; prepare a new workflow')
 
     @contextmanager
     def _operation(self,cancel):
@@ -600,7 +600,7 @@ class PreparedW07Workflow:
             request.get('boundary_source')!=_hash(self._boundary_motion.descriptor()) or
             request.get('forces')!={'u':_array_hash(fx),'w':_array_hash(fz)} or
             d.get('request_id')!=_hash(request) or
-            request.get('plan_id')!=_hash(dict(definition=definition,context=self.execution_id))):
+            request.get('plan_id')!=_hash(content_record(dict(definition=definition,context=self.execution_id)))):
             raise TectonicsError('restored mechanical force/plan binding mismatch')
         if any(not np.array_equal(mechanics.array(k),a) for k,a in
                 (('force_u_n_m3',fx),('force_w_n_m3',fz))):

@@ -29,6 +29,7 @@ from .integration_spatial_reservoir import PreparedFiniteStocks
 from .regional_collar3d import PreparedRegionalCollar3D, RegionalCollarSourceFlowStage
 from .regional_execution import RegionalMechanicalSnapshot
 from .resources import WorkBudget
+from .reuse import content_record
 from .integration_dual_measures import B_NAME, policy_record, check_state_cells, transport_audit
 
 
@@ -300,7 +301,7 @@ class PreparedSpatialOwner:
         self._guard.__enter__()
         try:
             self._definition = self._make_definition(f, b['grid_id'], initial_mesh.geometry_id, method)
-            self.owner_id = _hash(self._definition)
+            self.owner_id = _hash(content_record(self._definition))
             exterior = [r for r in b['cells'] if r['kind'] == 'exterior']
             if self._measure_policy is not None:
                 width = sum((_q(r['volume_bounds_m3'][1])-_q(r['volume_bounds_m3'][0]) for r in exterior), Q(0))
@@ -500,7 +501,7 @@ class PreparedSpatialOwner:
                     self._initial_geometry = json.loads(_json(initial))
                 self._definition = self._make_definition(f, definition['grid_id'],
                                                          definition['initial_mesh_id'], definition['method'])
-                self.owner_id = _hash(self._definition)
+                self.owner_id = _hash(content_record(self._definition))
                 if definition != dict(owner_id=self.owner_id, **self._definition):
                     raise TectonicsError('saved owner differs from the actual material/source/plan')
                 if (initial_record.get('intervals') != 0 or initial_record.get('time_s') != f['time_s'] or
@@ -1055,7 +1056,7 @@ class PreparedSpatialOwner:
                     exchange.get('state_id') != state.state_id or exchange.get('owner_id') != self.owner_id or
                     exchange.get('parent_state_id') != r['parent_state_id'] or
                     exchange.get('collar_state_id') != r['collar_state_id'] or
-                    not proved and _SV.identity(exchange['spatial_graph'], _hash) != exchange['spatial_graph_id'] or
+                    not proved and _SV.content_identity(exchange['spatial_graph'], _hash) != exchange['spatial_graph_id'] or
                     exchange['transport']['result_id'] != exchange['global_transport_id'] or
                     exchange['joined_heat']['state_id'] != exchange['global_transport_id'] or
                     exchange['joined_heat']['geometry_id'] != r['thermal_mesh_id']):

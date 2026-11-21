@@ -49,6 +49,46 @@ def _json(value):
                       allow_nan=False).encode('utf-8')
 
 
+# Fields that name code, not content: exact names only (a data digest under another name is content).
+_CODE_FIELDS = frozenset(('execution', 'execution_id', 'source_execution_id', 'source_sha256', 'context', 'context_id',
+                          'generator_source_sha256', 'pressure_source_sha256', 'helper_source_sha256'))
+
+
+def content_record(value):
+    """``value`` without the fields that name code, at any depth: what a content identifier hashes.
+
+    A dropped field must hold a 64-character lower-case hex digest or None; a record (dict) under such a name is kept and
+    read through (E-15); anything else that shares the name is refused, never dropped silently. The input is not altered; the record keeps its fields for the compares.
+    """
+    # Copies only the containers on a path to a dropped field; every untouched subtree is the input's own object.
+    if type(value) is dict:
+        out = None
+        for i, (key, item) in enumerate(value.items()):
+            if key in _CODE_FIELDS and type(item) is not dict:
+                if item is not None and not (type(item) is str and len(item) == 64
+                                             and all(c in '0123456789abcdef' for c in item)):
+                    raise TectonicsError(f'{key} does not hold a code digest; content identity refused')
+                if out is None:
+                    out = {k: value[k] for k in list(value)[:i]}
+                continue
+            new = content_record(item)
+            if out is None and new is not item:
+                out = {k: value[k] for k in list(value)[:i]}
+            if out is not None:
+                out[key] = new
+        return value if out is None else out
+    if type(value) in (list, tuple):
+        out = None
+        for i, item in enumerate(value):
+            new = content_record(item)
+            if out is None and new is not item:
+                out = list(value[:i])
+            if out is not None:
+                out.append(new)
+        return value if out is None else type(value)(out)
+    return value
+
+
 def _file_hash(path):
     p = Path(path)
     if p.is_symlink() or not p.is_file():

@@ -11,11 +11,11 @@ from ._validation import TectonicsError, scalar
 from .constitutive import _cancel
 from .geological_records import GeologySource
 from .precursor_sampling import _temperature, _profile_mean, PrecursorSamplingLimits
-from .regional_execution import RegionalMechanicalSnapshot, _name, _hash
+from .regional_execution import RegionalMechanicalSnapshot, _name, _hash, content_metadata
 from .regional_forcing import PlanarRegionalSection
 from .regional_workflow import RegionalWorkflowState
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,7 +110,7 @@ class RegionalGeologicalInputs(RegionalMechanicalSnapshot):
         """
         _cancel(cancel)
         d = self.descriptor()
-        identity = _hash({'metadata': d, 'arrays': {
+        identity = _hash({'metadata': content_metadata(d), 'arrays': {
             key: {'shape': shape, 'sha256': hashlib.sha256(raw).hexdigest()}
             for key, shape, raw in self._fields}})
         if identity != self.binding_id:
@@ -261,7 +261,7 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
                  +4*initial.retained_bytes_estimate+8*1024**2)
     with resource.reserve(allowance, category='regional-geological-binding'), ExecutionContext(workflow.backend) as context:
         context.verify()
-        if context.identity != workflow.execution_id or _hash(workflow.descriptor()) != workflow.workflow_id:
+        if context.identity != workflow.execution_id or _hash(content_record(workflow.descriptor())) != workflow.workflow_id:
             raise TectonicsError('upstream workflow source/runtime/identity changed; no automatic rebind')
         layers = _layers(workflow, laws)
         if pressure is None:

@@ -19,7 +19,7 @@ from ._validation import TectonicsError, scalar, snapshot, frozen, input_shape
 from .constitutive import _cancel
 from .materials import _name, _json
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
 from .spreading import _within_budget
 
@@ -254,9 +254,9 @@ class PreparedErosion:
             self.store = store
             self._context = ExecutionContext('reference')
             self.execution_id = self._context.identity
-            self.plan_id = _hash(dict(schema='atlas.w09-erosion.v1', execution=self.execution_id,
+            self.plan_id = _hash(content_record(dict(schema='atlas.w09-erosion.v1', execution=self.execution_id,
                 frame=frame_id, datum=datum_id, source=source_id, receivers=r,
-                tags=[asdict(t) for t in tags], scheme='implicit-cover-and-slope-n1'),
+                tags=[asdict(t) for t in tags], scheme='implicit-cover-and-slope-n1')),
                 self.areas_m2, self.basal_m, self.receiver_lengths_m, self.rock_erodibility,
                 self.rock_threshold_m_s, self.sediment_erodibility,
                 self.sediment_threshold_m_s, self.roughness_m, self.porosity)
@@ -502,7 +502,7 @@ class PreparedErosion:
             if self.store is None: raise TectonicsError('checkpoint requires ArrayStore')
             key = _hash(dict(plan=self.plan_id,state=state.state_id))
             self.store.put(key,state.arrays(),dict(schema='atlas.w09-erosion-checkpoint.v1',
-                plan=self.plan_id,state_id=state.state_id,state=state.descriptor()),
+                plan=self.plan_id,execution=self.execution_id,state_id=state.state_id,state=state.descriptor()),
                 publication_check=lambda:self._check(cancel))
             return key
 
@@ -510,7 +510,7 @@ class PreparedErosion:
         with self._operation(cancel):
             if self.store is None: raise TectonicsError('restore requires ArrayStore')
             meta = self.store.metadata(key)
-            if not isinstance(meta,dict) or meta.get('schema') != 'atlas.w09-erosion-checkpoint.v1' or meta.get('plan') != self.plan_id:
+            if not isinstance(meta,dict) or meta.get('schema') != 'atlas.w09-erosion-checkpoint.v1' or meta.get('plan') != self.plan_id or meta.get('execution') != self.execution_id:
                 raise TectonicsError('missing or incompatible erosion checkpoint')
             arrays = self.store.get(key,budget=self._resource)
             if arrays is None: raise TectonicsError('missing erosion arrays')

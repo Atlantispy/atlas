@@ -16,7 +16,7 @@ from .materials import _name, _json, _immutable_bytes, _account, _ROUNDOFF
 from .mesh import ColumnGrid1D
 from .regional import _cancelled
 from .resources import select_budget, reserve_budgets
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 
 MAX_SPREADING_INTERVALS = 256
@@ -297,7 +297,7 @@ class PreparedRidgeSpreading:
                               max_intervals=MAX_SPREADING_INTERVALS)
             values = dict(grid=grid, motion=motion, phases=phases, time_s=origin,
                           epoch_id=epoch_id, width_m=width, source_id=source_id,
-                          execution_id=execution_id, plan_id=hashlib.sha256(_json(descriptor)).hexdigest(),
+                          execution_id=execution_id, plan_id=hashlib.sha256(_json(content_record(descriptor))).hexdigest(),
                           _context=ctx, _owns_context=owned, _budget=resource,
                           _lease=lease, _closed=False)
             for key, value in values.items():

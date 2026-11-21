@@ -17,7 +17,7 @@ import numpy as np
 
 from ._validation import TectonicsError, input_shape, read_array, snapshot, scalar
 from .resources import elements, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .execution import KernelExecutor, ExecutionPolicy, _AdmittedCall
 from .constitutive import (RheologyProfile, ConstitutiveLimits, DiffusiveScales,
                            evaluate_rheology, advance_memory, _inputs, _json, _cancel, _METHOD)
@@ -89,7 +89,7 @@ class LawResult:
             data.append((name,view.shape,owner))
         md=_json(metadata)
         if len(md)>65536: raise TectonicsError('constitutive metadata too large')
-        h=hashlib.sha256(md)
+        h=hashlib.sha256(_json(content_record(metadata)))
         for name,shape,raw in data:
             h.update(_json([name,list(shape),'float64'])); h.update(raw)
         object.__setattr__(self,'_metadata',md); object.__setattr__(self,'_data',tuple(data))
@@ -149,8 +149,8 @@ class PreparedRheology:
         self._guard.__enter__()
         try:
             self._context=ExecutionContext('scipy')
-            self.identity=hashlib.sha256(_json({'method':_METHOD,'profile':profile.descriptor(),
-                'scales':None if scales is None else asdict(scales),'context':self._context.identity})).hexdigest()
+            self.identity=hashlib.sha256(_json(content_record({'method':_METHOD,'profile':profile.descriptor(),
+                'scales':None if scales is None else asdict(scales),'context':self._context.identity}))).hexdigest()
         except BaseException:
             self._guard.__exit__(None,None,None)
             raise

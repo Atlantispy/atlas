@@ -22,6 +22,7 @@ from .integration_regional_inventory import _width
 from .integration_spatial_transport import (SpatialTransportResult, _json_encoding_capacity,
     _workspace, _preserve_workspace)
 from .resources import WorkBudget, _ResizableLease
+from .reuse import content_record
 from .integration_routing_views import _decoded_json_capacity, _decode_workspace
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -204,7 +205,7 @@ class PreparedFiniteStocks:
             self._definition = dict(schema='atlas.finite-spatial-stocks.v1', registry_id=_name(registry_id),
                 field_names=list(self._names), nonnegative_fields=list(self._positive),
                 initial_stocks=json.loads(_json(sorted(rows, key=lambda r: r['stock_id']))))
-            self.owner_id = _hash(self._definition)
+            self.owner_id = _hash(content_record(self._definition))
             self._initial = self._state(dict(schema='atlas.finite-spatial-stock-state.v1', owner_id=self.owner_id,
                 intervals=0, parent_state_id=None, transport_id=None, stocks=self._definition['initial_stocks'],
                 projection_accounts={r['stock_id']: {k: _enc(0) for k in self._names} for r in rows}))
@@ -376,7 +377,7 @@ class PreparedFiniteStocks:
                 return self._state(self._finished_record(p, r))
 
     def _finished_record(self, p, r):
-        if (r['geometry_id'] != _hash(p['graph']) or r['state_id'] != p['transport_parent_id'] or
+        if (r['geometry_id'] != LIVE_SPATIAL.graph_content_identity(p['graph'], _legacy_hash) or r['state_id'] != p['transport_parent_id'] or
                     r['source_stage_id'] != p['source_stage_id'] or r['exact_input_stocks'] != p['stocks'] or
                     tuple(r['nonnegative_fields']) != tuple(sorted(self._positive))):
             raise TectonicsError('joined transport differs from actual finite proposal/input')

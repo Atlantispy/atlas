@@ -16,7 +16,7 @@ import numpy as np
 
 from ._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .constitutive import _cancel, _json
 from .stokes_execution import _native_lease, _factored_scale
 from ._validation import effort_paths as _paths, without_effort as _without
@@ -43,6 +43,23 @@ RESULT_EFFORT = {
 def identity_metadata(metadata):
     """Snapshot metadata as result_id hashes it."""
     return _without(metadata, RESULT_EFFORT.get(metadata.get('schema'), ())) if type(metadata) is dict else metadata
+
+
+# E-17: code identity kept in snapshot metadata under other names, by schema; only content_metadata reads this
+# (admission re-makes old identifiers through identity_metadata, which stays as it is).
+CONTENT_DROPPED = {
+    'atlas.private.composed-owner-call.r1': _paths('execution.execution_identity', 'private_sources',
+                                                   'loaded_dependencies.identity'),
+    'atlas.private.composed-heat-advance.r12': _paths(
+        'caller_snapshot.execution.execution_identity', 'caller_snapshot.private_sources',
+        'caller_snapshot.loaded_dependencies.identity', 'loaded_dependencies.identity'),
+}
+
+
+def content_metadata(metadata):
+    """E-16: snapshot metadata as today's result_id hashes it: identity_metadata without code identity."""
+    d = identity_metadata(metadata)
+    return content_record(_without(d, CONTENT_DROPPED.get(d.get('schema'), ())) if type(d) is dict else d)
 
 
 def _name(value, name):
@@ -110,7 +127,7 @@ class RegionalMechanicalSnapshot:
                            for key, shape, raw in fields)
         object.__setattr__(self, '_metadata', encoded)
         object.__setattr__(self, '_fields', fields)
-        object.__setattr__(self, 'result_id', _hash({'metadata': identity_metadata(metadata),
+        object.__setattr__(self, 'result_id', _hash({'metadata': content_metadata(metadata),
             'arrays': {key: {'shape': shape, 'sha256': hashlib.sha256(raw).hexdigest()}
                        for key, shape, raw in fields}}))
 
@@ -210,7 +227,7 @@ class PreparedRegionalStokes2D:
                 'sampling':sampling,'units':'Pa s'}
             self._context = ExecutionContext('scipy')
             self._context_id = self._context.identity
-            self._plan_id = _hash({'definition': self._definition, 'context': self._context_id})
+            self._plan_id = _hash(content_record({'definition': self._definition, 'context': self._context_id}))
             zero_boundary = {side: {c: (kind, 0.) for c, kind in components.items()}
                              for side, components in pattern.items()}
             dimension = _factored_scale(np.array([width_m, height_m]), (), (scales.length_m,), 'scaled dimensions')
@@ -283,7 +300,7 @@ class PreparedRegionalStokes2D:
                 'sampling':sampling,'units':'Pa s'})
             unchanged = same and updated == d
             self._definition=updated;self._viscosity=(ec,ev)
-            self._plan_id=_hash({'definition':updated,'context':self._context_id})
+            self._plan_id=_hash(content_record({'definition':updated,'context':self._context_id}))
             if not unchanged:
                 self._latest_key=self._latest=None
             self._invalid=False

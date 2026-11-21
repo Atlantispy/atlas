@@ -18,7 +18,7 @@ from .mesh import ColumnGrid1D
 from .regional import _cancelled
 from .remapping import _publish
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 
 MAX_SHORTENING_INTERVALS = 256
@@ -240,10 +240,10 @@ class PreparedShortening:
                 maps.append(_segment(*maps[-1], e, e.end_time_s-times[-1], origin))
                 times.append(e.end_time_s)
             self._maps = tuple(maps); self._times = tuple(times)
-            self.plan_id = _id(dict(method='atlas.w08-shortening.v1', initial=initial.state_id,
+            self.plan_id = _id(content_record(dict(method='atlas.w08-shortening.v1', initial=initial.state_id,
                 history=[asdict(e) for e in histories], width_m=width, datum=datum_id,
                 source=source_id, enthalpy_source=enthalpy_source, execution=self.execution_id,
-                representation='retained-piecewise-constant-material-parcels'), self._rho, self._inventory)
+                representation='retained-piecewise-constant-material-parcels')), self._rho, self._inventory)
             self.initial = _state(self.plan_id, initial, 1., 0., 0)
             self._cache = None; self._cache_lease = None
             ctx.verify(); _cancelled(cancel)

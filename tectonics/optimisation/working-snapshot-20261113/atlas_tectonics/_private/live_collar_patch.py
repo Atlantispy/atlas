@@ -156,6 +156,11 @@ def graph_identity(value, ordinary):
     return ref.identity().sha256 if isinstance(ref, RecordRef) else ordinary(value)
 
 
+def graph_content_identity(value, ordinary):
+    """E-22: the finite graph's id in the content form, as the transport's geometry_id is made."""
+    return V.content_identity(_reference(value), ordinary)
+
+
 class _Cell:
     def __init__(self, owned):
         self.owned = owned
@@ -255,7 +260,7 @@ def collar_source(source):
                             extended['finite_inventory']['registry_id'] != self._registry.registry_id or
                             not LIVE_COLLAR.equal_records(proposal['stocks'], data['exact_input_stocks'])):
                         raise TectonicsError('finite extension changed actual physical graph, parent, source or input stocks')
-                    solved_geometry, geometry_id = extended, LIVE_COLLAR.graph_identity(extended, _hash)
+                    solved_geometry, geometry_id = extended, LIVE_COLLAR.graph_content_identity(extended, _hash)
 """
     source = L._once(source, old, new)
     source = L._tail(source, 'transport_from_spatial', '        data = result.record()\n',

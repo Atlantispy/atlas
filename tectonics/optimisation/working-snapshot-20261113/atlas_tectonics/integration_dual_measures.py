@@ -134,7 +134,7 @@ def _transport_audit(graph, result, prior_geometry, policy, *, _encoding_scope=N
         rows = graph['cells']
         keys = [r['cell_id'] for r in rows]
         with nullcontext() if _encoding_scope is None else _encoding_scope:
-            geometry_id = _SV.identity(graph, lambda value: hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest())
+            geometry_id = _SV.content_identity(graph, lambda value: hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest())
         if keys != result['cell_ids'] or set(prior_geometry) != set(keys) or result['geometry_id'] != geometry_id:
             raise TectonicsError('dual-measure audit requires the actual complete ordered graph')
         starts = {r['cell_id']: _q(r['start_volume_m3']) for r in rows}

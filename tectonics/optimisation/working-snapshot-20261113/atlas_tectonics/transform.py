@@ -20,7 +20,7 @@ from .geometry import PlanarGeometry, GeometryLimits, geometry_runtime
 from .materials import MaterialCohort, _catalogue, _name, _json, _immutable_bytes
 from .regional import _cancelled
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 
 MAX_INTERVALS = 256
@@ -30,7 +30,7 @@ MAP_ERROR = 1e-10
 
 
 def _identity(record, *payloads):
-    h = hashlib.sha256(_json(record))
+    h = hashlib.sha256(_json(content_record(record)))
     for payload in payloads:
         h.update(b'\0'); h.update(payload)
     return h.hexdigest()

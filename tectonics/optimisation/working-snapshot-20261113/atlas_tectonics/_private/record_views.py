@@ -19,6 +19,7 @@ from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics._private.compact_contracts import ContractError, LogicalIdentity
 from atlas_tectonics._private.content_cache import ChargeSpec, OwnedStream, VerifiedCacheKey, get_content_cache
 from atlas_tectonics._private import record_tables as T
+from atlas_tectonics._validation import TectonicsError
 
 _NAMES = frozenset(('node.kind', 'node.payload', 'node.shape', 'node.length',
     'node.charge', 'node.offset', 'edge.child', 'shape.offset', 'shape.key',
@@ -2665,9 +2666,10 @@ def effort_tree(paths):
     return tree
 
 
-def feed_without(digests, ref, drop, check=lambda: None):
-    """Feed ref's canonical bytes less the drop tree (effort_tree) into every digest."""
-    kind = ref.kind if drop else None
+def feed_without(digests, ref, drop, check=lambda: None, code=frozenset()):
+    """Feed ref's canonical bytes less the drop tree (effort_tree) into every digest; with code, also less the
+    code fields (reuse._CODE_FIELDS), at any depth and with its refusals: the bytes equal content_record's."""
+    kind = ref.kind if drop or code else None
     if kind == 'object':
         with ref.keys(max_owned_bytes=T.MAX_ROW_WORK_BYTES) as names:
             for digest in digests:
@@ -2678,21 +2680,26 @@ def feed_without(digests, ref, drop, check=lambda: None):
                 rule = drop[name] if name in drop else drop.get('*', {})
                 if rule is None:
                     continue
-                for digest in digests:
-                    if kept:
-                        digest.update(b',')
-                    for part in T.string_parts(name):
-                        digest.update(part)
-                    digest.update(b':')
-                kept += 1
                 with ref.field(name) as child:
-                    feed_without(digests, child, rule, check)
+                    if name in code and child.kind != 'object':
+                        _code_digest(name, child)
+                        continue
+                    for digest in digests:
+                        if kept:
+                            digest.update(b',')
+                        for part in T.string_parts(name):
+                            digest.update(part)
+                        digest.update(b':')
+                    kept += 1
+                    feed_without(digests, child, rule, check, code)
             for digest in digests:
                 digest.update(b'}')
         return
+    listed = kind == 'array' and type(ref) is RecordRef and ref._view._v('node.kind', ref.index) == T.ARRAY
     if kind == 'array' and '*' in drop:
-        T.require(type(ref) is RecordRef and ref._view._v('node.kind', ref.index) == T.ARRAY,
-                  'effort wildcard over a non-list array')
+        T.require(listed, 'effort wildcard over a non-list array')
+    T.require(not code or kind != 'array' or type(ref) is RecordRef, 'content feed over an unknown array')
+    if listed and ('*' in drop or code):
         for digest in digests:
             digest.update(b'[')
         for at in range(ref.size):
@@ -2701,7 +2708,7 @@ def feed_without(digests, ref, drop, check=lambda: None):
                 for digest in digests:
                     digest.update(b',')
             with ref.at(at) as item:
-                feed_without(digests, item, drop['*'], check)
+                feed_without(digests, item, drop.get('*', {}), check, code)
         for digest in digests:
             digest.update(b']')
         return
@@ -2713,9 +2720,21 @@ def feed_without(digests, ref, drop, check=lambda: None):
                     digest.update(block.value)
 
 
+def _code_digest(name, ref):
+    """A code field leaves a content feed only if it holds a digest or None, as reuse.content_record requires."""
+    value = None
+    if ref.kind == 'scalar':
+        with ref.scalar(max_owned_bytes=1 << 16) as owned:
+            value = owned.value
+    if (ref.kind != 'scalar' or value is not None and not (type(value) is str and len(value) == 64
+                                                           and all(c in '0123456789abcdef' for c in value))):
+        raise TectonicsError(f'{name} does not hold a code digest; content identity refused')
+
+
 def feed_result_metadata(digests, record, check=lambda: None):
-    """A-15: a snapshot's metadata as result_id hashes it (regional_execution.identity_metadata), streamed."""
-    from atlas_tectonics.regional_execution import RESULT_EFFORT
+    """A snapshot's metadata as result_id hashes it (regional_execution.content_metadata), streamed."""
+    from atlas_tectonics.regional_execution import RESULT_EFFORT, CONTENT_DROPPED
+    from atlas_tectonics.reuse import _CODE_FIELDS
     with (record.borrow() if isinstance(record, RecordRef) else record.root()) as root:
         schema = None
         if root.kind == 'object':
@@ -2728,4 +2747,5 @@ def feed_result_metadata(digests, record, check=lambda: None):
                     if child.kind == 'scalar':
                         with child.scalar(max_owned_bytes=1 << 16) as owned:
                             schema = owned.value
-        feed_without(digests, root, effort_tree(RESULT_EFFORT.get(schema, ())), check)
+        feed_without(digests, root, effort_tree(RESULT_EFFORT.get(schema, ())+CONTENT_DROPPED.get(schema, ())), check,
+                     _CODE_FIELDS)

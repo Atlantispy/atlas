@@ -20,7 +20,7 @@ from .materials import _json, _name
 from .constitutive import _cancel
 from .geometry import PlanarGeometry
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
 from .spreading import _within_budget
 from .stokes_execution import _native_lease
@@ -124,10 +124,10 @@ class W08Output:
         return self._output_id(_array_id(self.deformation_gradient))
 
     def _output_id(self, deformation_digest):
-        return _hash(dict(receipt=self.descriptor(),inventory=self.inventory.inventory_id,
+        return _hash(content_record(dict(receipt=self.descriptor(),inventory=self.inventory.inventory_id,
                           geometry=[g.geometry_id for g in self.polygons],
                           reference=[g.geometry_id for g in self.reference_polygons],
-                          deformation=deformation_digest))
+                          deformation=deformation_digest)))
 
 
 class W08ExhaustionError(TectonicsError):
@@ -219,7 +219,7 @@ class PreparedW08Workflow:
                 intervals=schedule,execution=self.execution_id,
                 thermodynamics=None if thermodynamics is None else thermodynamics.thermodynamics_id,
                 owners=OWNERS,limits=dict(work_bytes=CAP,intervals=256,native_threads=1))
-            self.plan_id = _hash(self._binding)
+            self.plan_id = _hash(content_record(self._binding))
             self._check(cancel)
         except BaseException:
             # Drop the staged graph before close releases the ordinary preparation lease.

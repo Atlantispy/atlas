@@ -19,7 +19,7 @@ from ._validation import TectonicsError, input_shape, snapshot, text
 from .compaction_columns import _cancel, _divide
 from .execution import _acquire_native_limit, _release_native_limit
 from .resources import WorkBudget, select_budget
-from .reuse import cached_variable_flexure
+from .reuse import cached_variable_flexure, content_record
 from .stokes_execution import _factored_scale
 from .variable_flexure import RigidityProfile1D, VariableFlexureAccuracy, VariableRigidityFlexure
 from .w03_workflow import W03ColumnState
@@ -340,7 +340,7 @@ class PreparedEvolvingW04Support:
                 payload,mask,absolute_raw = values.tobytes(),wet.tobytes(),absolute_values.tobytes()
                 result = object.__new__(EvolvingW04SupportResult)
                 for key,value in dict(_metadata=_json(metadata),_payload=payload,_wet=mask,
-                        _absolute=absolute_raw,result_id=_id(metadata,payload+mask+absolute_raw)).items():
+                        _absolute=absolute_raw,result_id=_id(content_record(metadata),payload+mask+absolute_raw)).items():
                     object.__setattr__(result,key,value)
                 return result
 

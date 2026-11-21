@@ -25,7 +25,7 @@ from ._validation import input_shape, read_array, scalar
 from .geometry import (GeometryError, PlanarGeometry, _check_cancel, _json,
                        _label, _limits, geometry_runtime)
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 
 MAX_NETWORK_INTERVALS = 256
@@ -317,7 +317,7 @@ class PreparedDeformationNetwork:
                     execution=self.execution_id,
                     physical_scale_tolerance=_PHYSICAL_TOLERANCE,
                     determinant_guard_epsilon_units=128)
-                self.plan_id = _identity(record, vertices.tobytes(), self._triangles)
+                self.plan_id = _identity(content_record(record), vertices.tobytes(), self._triangles)
                 self._record = _json(record)
                 _check_cancel(cancel); self._sealed = True
         except FloatingPointError as exc:

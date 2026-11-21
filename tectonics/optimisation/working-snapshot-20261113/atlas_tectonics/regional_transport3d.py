@@ -29,7 +29,7 @@ from scipy.sparse.linalg import splu
 from ._validation import TectonicsError, frozen, input_shape, scalar
 from .regional_execution3d import _local_tokens
 from .resources import select_budget, MemoryLimitError
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .stokes_execution import _native_lease
 
 SIDES = ('x0', 'x1', 'y0', 'y1', 'z0', 'z1')
@@ -242,7 +242,7 @@ class PreparedRegionalTransport3D:
                 maximum_outgoing_courant=.5 if transport_method == 'muscl-ssprk2' else 1.,
                 execution=self._context.identity, field_order='x,y,z; z fastest',
                 stress_evolution=False, moving_mesh=False)
-            self.plan_id = hashlib.sha256(_json(self._definition)).hexdigest()
+            self.plan_id = hashlib.sha256(_json(content_record(self._definition))).hexdigest()
             self._verify()
         except BaseException:
             self.close(); raise

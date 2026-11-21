@@ -69,7 +69,7 @@ class Contracts(unittest.TestCase):
         with self.assertRaises(TectonicsError):ThermochemicalState(p,np.full((4,4),305),np.full((4,4),.5),time_s=0,source='x',parent_id='0'*64)
     def test_stored_invalid_method_refused(self):
         p=problem(4)
-        with self.assertRaises(TectonicsError):ThermochemicalState(p,np.full((4,4),305),np.full((4,4),.5),time_s=1,source='x',step_index=1,parent_id='0'*64,execution_id='0'*64,step_record={'method':'fake'})
+        with self.assertRaises(TectonicsError):ThermochemicalState(p,np.full((4,4),305),np.full((4,4),.5),time_s=1,source='x',step_index=1,parent_id='0'*64,evolution_id='0'*64,execution='0'*64,step_record={'method':'fake'})
     def test_velocity_walls_and_shape(self):
         p=problem(4);v=rest(p);u=v.array('u_m_s').copy();u[0,0]=.1
         with self.assertRaises(TectonicsError):PrescribedMACVelocity(p.box,u,v.array('w_m_s'),source='invalid')

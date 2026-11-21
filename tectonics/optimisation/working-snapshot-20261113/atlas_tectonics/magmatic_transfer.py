@@ -196,7 +196,7 @@ class PreparedMagmaticTransfer:
 
     def _initialise(self, inventory, rates_kg_s, source_id, heat_w, thermodynamics,
                     context, budget, cancel, known_mass):
-        from .reuse import ExecutionContext
+        from .reuse import ExecutionContext, content_record
         if not isinstance(inventory, MagmaticInventory): raise TectonicsError('MagmaticInventory required')
         if context is not None and (not isinstance(context,ExecutionContext) or context.backend!='scipy'):
             raise TectonicsError('magmatic transfer requires a scipy execution context')
@@ -248,7 +248,7 @@ class PreparedMagmaticTransfer:
                 source=source_id, execution=self.context.identity, law='supplied-congruent-bulk-transfer',
                 method='augmented-expm' if self.exact else 'nonnegative-admission-DOP853',
                 thermodynamics=None if thermodynamics is None else thermodynamics.thermodynamics_id)
-            self.plan_id = _identity(record, self.rates, self.heat)
+            self.plan_id = _identity(content_record(record), self.rates, self.heat)
             self._sealed = True
         except BaseException:
             self.close(); raise

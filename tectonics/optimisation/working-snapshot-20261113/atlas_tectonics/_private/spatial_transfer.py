@@ -17,6 +17,7 @@ import json
 import numpy as np
 
 from atlas_tectonics._private import native_transfer as N
+from atlas_tectonics.reuse import content_record
 
 
 _OWNER_MARKER = '    @classmethod\n    def from_saved(cls, funding, collar, definition, initial_record, initial_arrays, *, budget):\n'
@@ -512,7 +513,7 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     original, spatial = historical_owner_definition, historical_spatial_record
     if (original['schema'] != 'atlas.spatial-exterior-owner.v1' or
             spatial['schema'] != 'atlas.spatial-exterior-state.v1' or
-            N._hash({k: v for k, v in original.items() if k != 'owner_id'}) != original['owner_id'] or
+            N._hash(content_record({k: v for k, v in original.items() if k != 'owner_id'})) != original['owner_id'] or
             spatial['owner_id'] != original['owner_id'] or original['funding_id'] != funding_record['funding_id'] or
             spatial['funding_id'] != funding_record['funding_id'] or
             original['collar_plan_id'] != comparison['plan_id_correspondence']['collar']['historical'] or
@@ -524,7 +525,7 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     spatial_body, spatial_fields = _record_identity(spatial, spatial_arrays, 'state_id')
     _funding_equations(funding_record, funding_arrays, collar, comparison)
     expected_definition = dict(original, collar_plan_id=collar.plan_id)
-    expected_definition['owner_id'] = N._hash({k: v for k, v in expected_definition.items() if k != 'owner_id'})
+    expected_definition['owner_id'] = N._hash(content_record({k: v for k, v in expected_definition.items() if k != 'owner_id'}))
     new_body = dict(spatial_body, owner_id=expected_definition['owner_id'],
                     collar_state_id=native_transfer.state.result_id, parent_state_id=spatial['state_id'])
     new_state_id = _snapshot_id(new_body, spatial_fields)
@@ -595,7 +596,7 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
                 raise N.TransferRefused('unknown original geometry family')
             owner._initial_geometry = json.loads(N._json(initial))
         owner._definition = owner._make_definition(funding_record, original['grid_id'], original['initial_mesh_id'], original['method'])
-        owner.owner_id = N._hash(owner._definition)
+        owner.owner_id = N._hash(content_record(owner._definition))
         if owner.descriptor() != expected_definition:
             raise N.TransferRefused('non-runtime spatial owner scientific contract changed')
         state = object.__new__(SpatialExteriorState)

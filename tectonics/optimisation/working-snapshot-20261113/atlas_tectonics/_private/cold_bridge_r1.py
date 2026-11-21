@@ -22,10 +22,10 @@ NAME = 'integration_private_heat_cold'
 PUBLIC_SHA = 'c83c090380f299ca8711983b84961cff080d6c1e1ddf7a8717d73b0b63883ca9'
 # The derived text: the public file above with the _EDITS replacements below (the binding pin and diag21's
 # lazy-transport branch); made in memory by _derive, never written to disk, checked against this hash.
-DERIVED_SHA = '8ce6923cb34ade765da0b845829114b40a57468731aa8020929f566b3de515af'
+DERIVED_SHA = 'dfe93080071feef20291723af0056b5e92740cb0a544b602c665cf197bc67739'
 _EDITS = (
     ("_BINDING_SHA = '29ad6024cfe0125f5424b38648cf212e60bbf6a958a8a6e89ddd327fb3de5ae2'",
-     "_BINDING_SHA = '3f738798c24e221c882b41e6a2b20aedc05fea0855bddfb623274d13034e9537'"),
+     "_BINDING_SHA = 'f3fcd079f475eab1990fe383c824a4d8d09fbf1b338f0ec15b7cb2cb472485c0'"),
     ("""            metadata = {k: v for k, v in exchange['transport'].items() if k != 'result_id'}
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))

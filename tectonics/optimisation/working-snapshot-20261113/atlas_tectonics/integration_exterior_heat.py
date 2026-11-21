@@ -22,6 +22,7 @@ from .regional_heat3d import PreparedRegionalHeat3D, SIDES, _field, _cancel, _su
 from .regional_execution import RegionalMechanicalSnapshot
 from . import regional_execution3d as X
 from .resources import MemoryLimitError
+from .reuse import content_record
 from .stokes_execution import _native_lease
 
 _LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -145,7 +146,7 @@ class PreparedFiniteExteriorHeat3D:
                 exterior_other_faces='insulated', geometry='full orthogonal adjacent prisms; no curved cells',
                 linear_relative_tolerance=1e-11, energy_relative_tolerance=1e-11,
                 scope='conduction only; caller carries actual material state and its finite exterior enthalpy')
-            self.plan_id = X._hash(self._definition)
+            self.plan_id = X._hash(content_record(self._definition))
             self._stats = dict(advances=0, factorizations=0, factor_reuses=0)
         except BaseException:
             self.close()

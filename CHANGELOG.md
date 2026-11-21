@@ -14,6 +14,35 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
 - Added the repository layout rules: the target folders, the module skeleton, how files move and how old
   code is retired. The public-path check scans the planned `shared/` folder once it exists.
 
+## [0.1.0.dev44](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev44) - 2026-11-21
+
+### Changed
+- Made the graph, partition, owner, funding, bounds and geometry identifiers digests of each record's content,
+  so a code change that moves no value no longer moves them. The byte checks stay where bytes are meant: a
+  stored record's digest is still checked against its bytes on load.
+- Bound a continued state and a solver's starting guess to the code that made them, outside the identifiers,
+  so a resumed or warm-started run under changed code is still refused.
+- Switched the profiling stack sampler off unless `ATLAS_PROFILE_SAMPLER=1`.
+- Issued the end pins again for the new identity.
+
+### Added
+- Added tests of the content identifiers, the content record, the identity rules for the moved records and the
+  sampler switch; two repository tests now pass the continued state's code identity.
+
+### Notes
+- The identifiers above move once, at this version: the graph identifier and the partition identifier change
+  value, and so does every identifier hashed from them (14,582 of 42,126 identifier values in the reference
+  chain). Each maps one to one, except the graph's old identifier, which was also its stored bytes' digest
+  and now splits into the content identifier and that byte digest. Decoded results equal
+  dev43's apart from these identifiers and digests; no floating-point value differs.
+- A build differing only by a comment gives the same identifiers.
+- Two reference chains took 1,536 s and, resumed after a stop, 1,263 s plus a reused first step; dev43 took
+  1,445 s. The second chain was not slower than dev43; most of the first chain's extra time was in one root build.
+- A resumed run reuses its stored first step under the same code, and a changed build is refused before it
+  starts. A changed build with its own valid pins and layout was not resumed against a stopped run, so the
+  identity check itself was not reached by a run; the guard tests cover it.
+- Old-store admission is not proven by a run.
+
 ## [0.1.0.dev43](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev43) - 2026-11-20
 
 ### Changed

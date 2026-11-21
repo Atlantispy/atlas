@@ -23,6 +23,7 @@ from .integration_regional_inventory import _width
 from .integration_spatial_ale import _circulation
 from .resources import WorkBudget
 from ._validation import effort_paths as _paths, without_effort as _without
+from .reuse import content_record
 
 # A-15: quadrature leaves leave directed_id; the record keeps them.
 DIRECTED_EFFORT = _paths('faces.*.leaves')
@@ -373,7 +374,7 @@ def choose_native_directed_volumes(measures, projection, *, max_width_m3, max_le
             try:
                 result = object.__new__(NativeDirectedVolumes)
                 for key, value in dict(_json=encoded, _resource=budget, _measures=measures, _projection=projection,
-                        _directed_id=hashlib.sha256(_json(_without(output, DIRECTED_EFFORT))).hexdigest()).items():
+                        _directed_id=hashlib.sha256(_json(content_record(_without(output, DIRECTED_EFFORT)))).hexdigest()).items():
                     object.__setattr__(result, key, value)
                 weakref.finalize(result, lease.__exit__, None, None, None)
             except BaseException:

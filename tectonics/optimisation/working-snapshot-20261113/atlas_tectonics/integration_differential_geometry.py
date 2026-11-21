@@ -40,6 +40,7 @@ from . import integration_wall_measures as W
 from .geometry import _limits
 from .resources import WorkBudget, MemoryLimitError
 from ._validation import effort_paths as _paths, without_effort as _without
+from .reuse import content_record
 
 
 SCHEMA = 'atlas.differential-physical-geometry.v1'
@@ -106,7 +107,7 @@ def _issue(cls, record, budget, endpoint=None):
         object.__setattr__(result, '_resource', budget)
         effort = getattr(cls, '_EFFORT', None)
         if effort is not None:
-            object.__setattr__(result, effort[0], _record_hash(_without(record, effort[1])))
+            object.__setattr__(result, effort[0], _record_hash(content_record(_without(record, effort[1]))))
         if cls is DifferentialInterval:
             object.__setattr__(result, '_endpoint', endpoint)
         weakref.finalize(result, lease.__exit__, None, None, None)
@@ -124,7 +125,7 @@ def _effort_id(obj):
     except AttributeError:
         # Bytes adopted without their record (a worker's result): decoded once under a scratch lease.
         with obj._resource.reserve(65536+4*len(obj._json), category='differential-effort-id'):
-            value = _record_hash(_without(json.loads(obj._json), listed))
+            value = _record_hash(content_record(_without(json.loads(obj._json), listed)))
         object.__setattr__(obj, slot, value)
         return value
 
@@ -181,7 +182,7 @@ class DifferentialInterval:
             body = {k: v for k, v in record.items() if k != 'interval_id'}
             if (body.get('schema') != SCHEMA or body.get('method') != 'coaxial-physical-ownership-fan-v1' or
                     body.get('geometry_only') is not True or type(identity) is not str or
-                    _record_hash(_without(body, DifferentialInterval._EFFORT[1])) != identity):
+                    _record_hash(content_record(_without(body, DifferentialInterval._EFFORT[1]))) != identity):
                 raise V.VolumeError('stored differential geometry identity/method differs')
             segments = body.get('trajectory', {}).get('segments')
             if (type(segments) is not list or not segments or W._hash(segments) != body.get('trajectory_id') or

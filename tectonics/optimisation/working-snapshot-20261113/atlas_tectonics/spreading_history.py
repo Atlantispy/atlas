@@ -17,7 +17,7 @@ from .materials import _account, _immutable_bytes, _json, _name, _ROUNDOFF
 from .mesh import ColumnGrid1D
 from .regional import _cancelled
 from .resources import select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .spreading import (MAX_SPREADING_CELLS, MAX_SPREADING_INTERVALS,
                         MAX_SPREADING_PHASES, SpreadingPhase, _product, _within_budget)
 
@@ -379,7 +379,7 @@ class PreparedSpreadingHistory:
                 max_events=MAX_HISTORY_EVENTS)
             for key, value in dict(grid=grid, events=events, phases=phases, time_s=origin,
                     epoch_id=epoch_id, width_m=width, source_id=source_id, execution_id=execution_id,
-                    plan_id=hashlib.sha256(_json(descriptor)).hexdigest(), _context=ctx,
+                    plan_id=hashlib.sha256(_json(content_record(descriptor))).hexdigest(), _context=ctx,
                     _owns_context=owned, _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(origin, 0., 0, None, resource, cancel))

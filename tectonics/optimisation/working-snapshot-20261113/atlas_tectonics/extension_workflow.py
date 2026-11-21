@@ -20,6 +20,7 @@ from .column_loads import column_load_change
 from .regional import _cancelled
 from .resources import select_budget
 from .storage import ArrayStore
+from .reuse import content_record
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,9 +75,9 @@ class PreparedExtensionWorkflow:
         self._lease.__enter__()
         try:
             self._support = PreparedExtensionSupport(motion, policy, budget=resource, cancel=cancel)
-            self.plan_id = hashlib.sha256(_json(dict(method='w05-output-workflow-v1',
+            self.plan_id = hashlib.sha256(_json(content_record(dict(method='w05-output-workflow-v1',
                 motion=motion.plan_id, support=self._support.plan_id, times_s=times,
-                initial=motion.initial.state_id, execution=motion.execution_id))).hexdigest()
+                initial=motion.initial.state_id, execution=motion.execution_id)))).hexdigest()
             self._sealed = True
         except BaseException:
             if self._support is not None:
@@ -206,7 +207,7 @@ class PreparedExtensionWorkflow:
             mantle='hydrostatic reservoir; -A*w, not transported crust',
             reference='total change from initial; never accumulated onto earlier output')
         metadata, payload, point_payload = _json(record), values.tobytes(), points.tobytes()
-        digest = hashlib.sha256(metadata+payload+point_payload).hexdigest()
+        digest = hashlib.sha256(_json(content_record(record))+payload+point_payload).hexdigest()
         if _json(meta['support']) != metadata or meta['support_id'] != digest:
             raise TectonicsError('W05 checkpoint support identity/semantics mismatch')
         result = object.__new__(ExtensionSupportResult)

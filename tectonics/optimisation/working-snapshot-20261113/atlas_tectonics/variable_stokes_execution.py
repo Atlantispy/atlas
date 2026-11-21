@@ -27,7 +27,7 @@ from .resources import select_budget, MemoryLimitError
 from . import anderson as _aa
 from . import preconditioner_reuse as _pr
 from . import adaptive_inner as _ai
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .constitutive import (DiffusiveScales, RheologyProfile, ConstitutiveLimits,
                            _native_law, _check_fields, _json, _cancel)
 from .stokes import StokesBox2D, _BOUNDARY, _GAUGE
@@ -184,7 +184,7 @@ class VariableStokesSolution:
                     guess_record['guess_id'])
             except (KeyError,TypeError,ValueError) as exc:
                 raise TectonicsError('invalid recorded initial-guess fields') from exc
-            _check_guess_binding(guess,metadata['plan_id'],rp,metadata['epoch_id'],metadata['time_s'],box=b,scales=sc)
+            _check_guess_binding(guess,metadata['plan_id'],metadata['context_id'],rp,metadata['epoch_id'],metadata['time_s'],box=b,scales=sc)
         shape=(b.nz,b.nx);vertex=(b.nz-1,b.nx-1)
         shapes={'force_x_n_m3':(b.nz,b.nx-1),'force_z_n_m3':(b.nz-1,b.nx),
                 'u_m_s':(b.nz,b.nx+1),'w_m_s':(b.nz+1,b.nx),'pressure_pa':shape,
@@ -211,7 +211,7 @@ class VariableStokesSolution:
         raw=_json(metadata)
         if len(raw)>4*1024**2:raise TectonicsError('mechanical metadata exceeds envelope')
         self._metadata=raw;self._arrays=tuple(data)
-        h=hashlib.sha256(raw)
+        h=hashlib.sha256(_json(content_record(metadata)))
         for k,s,v in data:h.update(_json([k,s,'binary64']));h.update(v)
         self.result_id=h.hexdigest()
     def __setattr__(self,k,v):
@@ -245,13 +245,13 @@ class NonlinearStokesGuess:
         if m['mode']!='rheology' or m['rheology']['family']=='bf23-memory':
             raise TectonicsError('initial guesses support constant/Tosi rheology only')
         meta=dict(schema='atlas.nonlinear-stokes-guess.v1',box=m['box'],scales=m['scales'],
-                  rheology=m['rheology'],plan_id=m['plan_id'],epoch_id=m['epoch_id'],
+                  rheology=m['rheology'],plan_id=m['plan_id'],context_id=m['context_id'],epoch_id=m['epoch_id'],
                   time_s=m['time_s'],source_result_id=solution.result_id)
         self._capture(meta,{k:solution.array(k) for k in ('u_m_s','w_m_s','pressure_pa')},budget)
 
     def _capture(self,meta,arrays,budget):
         try:
-            keys={'schema','box','scales','rheology','plan_id','epoch_id','time_s','source_result_id'}
+            keys={'schema','box','scales','rheology','plan_id','context_id','epoch_id','time_s','source_result_id'}
             if type(meta) is not dict or set(meta)!=keys or meta['schema']!='atlas.nonlinear-stokes-guess.v1':
                 raise TectonicsError('invalid initial-guess descriptor')
             b=StokesBox2D(**meta['box']);sc=DiffusiveScales(**meta['scales'])
@@ -259,7 +259,7 @@ class NonlinearStokesGuess:
             rp=_profile_restore(meta['rheology'])
             if rp is None or rp.family=='bf23-memory':
                 raise TectonicsError('initial guesses support constant/Tosi rheology only')
-            for k in ('plan_id','source_result_id'):_hex(meta[k],k)
+            for k in ('plan_id','context_id','source_result_id'):_hex(meta[k],k)
             text(meta['epoch_id'],'initial-guess epoch');scalar(meta['time_s'],'initial-guess time')
             if (len(meta['epoch_id'])>4096 or _json(asdict(b))!=_json(meta['box']) or
                     _json(asdict(sc))!=_json(meta['scales'])):
@@ -279,7 +279,7 @@ class NonlinearStokesGuess:
                     data.append((k,shape,a.tobytes()))
                 raw=_json(meta)
                 if len(raw)>65536:raise TectonicsError('oversized initial-guess metadata')
-                h=hashlib.sha256(raw)
+                h=hashlib.sha256(_json(content_record(meta)))  # code (context_id) is compared at binding, not hashed
                 for k,shape,v in data:h.update(_json([k,shape,'binary64']));h.update(v)
                 self._metadata=raw;self._arrays=tuple(data);self.guess_id=h.hexdigest()
         except MemoryLimitError:
@@ -309,11 +309,11 @@ class NonlinearStokesGuess:
         return out
 
 
-def _check_guess_binding(guess,plan_id,profile,epoch,time,*,box,scales):
+def _check_guess_binding(guess,plan_id,context_id,profile,epoch,time,*,box,scales):
     if type(guess) is not NonlinearStokesGuess:
         raise TectonicsError('typed explicit nonlinear initial guess required')
     m=guess.descriptor()
-    if m['plan_id']!=plan_id or _json(m['box'])!=_json(asdict(box)) or _json(m['scales'])!=_json(asdict(scales)):
+    if m['plan_id']!=plan_id or m['context_id']!=context_id or _json(m['box'])!=_json(asdict(box)) or _json(m['scales'])!=_json(asdict(scales)):
         raise TectonicsError('initial-guess source/plan/geometry/scales/policy differs')
     if _json(m['rheology'])!=_json(profile.descriptor()):
         raise TectonicsError('initial-guess rheology differs')
@@ -387,11 +387,11 @@ class PreparedVariableStokes2D:
             else:self._op=_StressMACOperator(box,hx,hz,compiled=False)
             self._context=ExecutionContext('numba' if compiled else 'scipy');self._context_id=self._context.identity
             binding=dict(method=_METHOD,box=asdict(box),scales=asdict(scales),
-                         policy=asdict(policy),context=self._context_id)
+                         policy=asdict(policy),context=self._context_id,backend=self._context.backend)
             if anderson_policy is not None:binding['anderson_policy']=asdict(anderson_policy)
             if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
             if adaptive_inner_policy is not None:binding['adaptive_inner_policy']=asdict(adaptive_inner_policy)
-            self.identity=_digest(binding)
+            self.identity=_digest(content_record(binding))
             _cancel(cancel)
         except BaseException:
             self._op=None;self._context=None;self._closed=True;self._guard.__exit__(None,None,None)
@@ -704,7 +704,7 @@ class PreparedVariableStokes2D:
         if frozen_damage is not None and input_shape(frozen_damage)!=shape:raise TectonicsError('frozen damage shape differs')
         if initial_guess is not None:
             if profile.family=='bf23-memory':raise TectonicsError('BF warm starts are outside this increment')
-            _check_guess_binding(initial_guess,self.identity,profile,epoch_id,time_s,box=self.box,scales=self.scales)
+            _check_guess_binding(initial_guess,self.identity,self._context_id,profile,epoch_id,time_s,box=self.box,scales=self.scales)
         extra=0 if initial_guess is None else 8*initial_guess.nbytes+131072
         with self._operation(cancel),self.budget.reserve(self._scratch_bytes()+extra,category='variable-stokes-solve'),self._preconditioner_request(profile),self._adaptive_operation(profile):
             fx,fz,F,rhs=self._inputs(force_x_n_m3,force_z_n_m3,frame_id,epoch_id,time_s,source)
@@ -904,7 +904,7 @@ class PreparedVariableStokes2D:
         metadata=dict(schema='atlas.variable-stokes-result.v1',method=_METHOD,box=asdict(self.box),scales=asdict(self.scales),
             rheology=None if profile is None else profile.descriptor(),policy=asdict(self.policy),
             mode='prescribed-viscosity' if profile is None else 'rheology',boundary=_BOUNDARY,gauge=_GAUGE,
-            context_id=self._context_id,plan_id=self.identity,source=source,epoch_id=epoch,time_s=time,
+            context_id=self._context_id,backend=self._context.backend,plan_id=self.identity,source=source,epoch_id=epoch,time_s=time,
             units='SI: m, s, Pa, Pa s, N/m^3; x-right z-up',force_amplitude_n_m3=F,viscosity_reference_pa_s=eta,
             nonlinear_history=history,diagnostics=diagnostics,publication_contract='true-rheology-returned-si-v1',
             strain_collocation='normal centre and shear vertex; symmetric arithmetic reconstruction of missing tensor components',

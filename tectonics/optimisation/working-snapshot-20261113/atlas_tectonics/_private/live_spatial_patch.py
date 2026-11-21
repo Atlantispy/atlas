@@ -311,6 +311,32 @@ def holder_identity(holder):
     return payload.identity().sha256 if _compact(payload) else sha256(payload).hexdigest()
 
 
+def holder_content_identity(holder):
+    """E-22: bounds_id / geometry_id, the digest of the record's content form, made once per holder. A packed record
+    is streamed; stored bytes are decoded once (json.loads gives plain dicts, so content_record sees every field).
+    holder_identity stays the byte guard of the stored bytes."""
+    known = getattr(holder, '_content_id', None)
+    if known is None:
+        payload = holder._json
+        if _compact(payload):
+            with payload.root() as root:
+                known = VALIDATION.content_identity(root, None)
+        else:
+            from atlas_tectonics.reuse import content_record
+            with holder._resource.reserve(65536+4*len(payload), category='spatial-content-id'):
+                record = json.loads(payload)
+                content = content_record(record)
+                known = sha256(payload if content is record else json.dumps(
+                    content, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+        object.__setattr__(holder, '_content_id', known)
+    return known
+
+
+def graph_content_identity(value, ordinary):
+    """E-22: a spatial graph identifier from its content form; graph_identity is the byte form."""
+    return VALIDATION.content_identity(reference(value), ordinary)
+
+
 def holder_record(holder):
     payload = holder._json
     return payload.root() if _compact(payload) else json.loads(payload)
@@ -724,7 +750,7 @@ def ale_source(source):
     if source.count('return hashlib.sha256(self._json).hexdigest()') != 2:
         raise ValueError('native spatial holder identity inventory differs')
     source = source.replace('return hashlib.sha256(self._json).hexdigest()',
-                            'return LIVE_SPATIAL.holder_identity(self)')
+                            'return LIVE_SPATIAL.holder_content_identity(self)')
     if source.count('return json.loads(self._json)') != 2:
         raise ValueError('native spatial holder record inventory differs')
     source = source.replace('return json.loads(self._json)',
@@ -780,7 +806,7 @@ def transport_source(source):
     source = _once(source, 'self._encoded = _json(geometry)',
                    'self._encoded = LIVE_SPATIAL.graph_encoded(geometry, _json)')
     source = _once(source, 'self.geometry_id = hashlib.sha256(self._encoded).hexdigest()',
-                   'self.geometry_id = LIVE_SPATIAL.graph_identity(geometry, lambda value: hashlib.sha256(self._encoded).hexdigest())')
+                   'self.geometry_id = LIVE_SPATIAL.graph_content_identity(geometry, lambda value: hashlib.sha256(self._encoded if value is geometry else _json(value)).hexdigest())')
     compile(source, '<live-spatial-transport>', 'exec')
     return source
 

@@ -20,6 +20,7 @@ from .regional_execution import RegionalMechanicalSnapshot
 from .regional_execution3d import SIDES
 from .regional_transport3d import FiniteBoundaryStock3D
 from .resources import WorkBudget, select_budget
+from .reuse import content_record
 
 
 TRACERS = ('accumulated_strain_ii', 'damage', 'source_kappa')
@@ -237,7 +238,7 @@ def birth_source_id(supply, column):
     from .integration_transfer import Supply
     if type(supply) is not Supply or type(column) is not M.BirthColumn:
         raise InventoryRefused('typed actual Supply and BirthColumn required')
-    return hashlib.sha256(_json(dict(supply=supply.record(), birth_column=column.record()))).hexdigest()
+    return hashlib.sha256(_json(content_record(dict(supply=supply.record(), birth_column=column.record())))).hexdigest()
 
 
 def finite_birth_stocks(registry, supply, column, *, native, sphere, finite_area_m2,
@@ -361,13 +362,13 @@ def _finite_birth_stocks(registry, supply, column, *, native, source_context, fi
 
 
 def _finite_export_rows(sink, context, names):
-    source_id = hashlib.sha256(_json(dict(sink=sink.record(), source_context=context))).hexdigest()
+    source_id = hashlib.sha256(_json(content_record(dict(sink=sink.record(), source_context=context)))).hexdigest()
     result = []
     for destination, fraction, stock in sink.destinations:
         lineage = dict(kind='declared-finite-trench-export', source_id=source_id,
             source_context=context, sink=sink.record(), destination=destination,
             destination_fraction=_encoded(Q(fraction)), declared_stock_node=stock)
-        identity = hashlib.sha256(_json(dict(source_id=source_id, destination=destination, stock=stock))).hexdigest()
+        identity = hashlib.sha256(_json(content_record(dict(source_id=source_id, destination=destination, stock=stock)))).hexdigest()
         result.append(dict(stock_id=identity, kind='sink', lineage=lineage,
             volume_m3=_encoded(Q(0)), exact={k: _encoded(Q(0)) for k in names}))
     return result
@@ -679,7 +680,8 @@ class RegionalBoundaryFunding:
             geometry_scope='initial physical halo support; depleted reservoirs are FV inventories, not certified moving swept-tube remainders',
             global_scope='frozen reference source; no active global exterior draw, no reinsertion, no shared kinematic clock')
         self._record = _json(record)
-        self.funding_id = hashlib.sha256(self._record).hexdigest()
+        content = content_record(record)  # the stored record keeps every field; the identifier is content-only
+        self.funding_id = hashlib.sha256(self._record if content is record else _json(content)).hexdigest()
         self._keys = tuple(f'{side}:{key}' for side in SIDES for key in self._fields)
         self._array_shapes = {f'{side}:{key}': a.shape for side, values in arrays.items() for key, a in values.items()}
         initial_arrays = {f'remaining:{side}:{key}': a for side, values in arrays.items() for key, a in values.items()}

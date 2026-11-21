@@ -32,7 +32,7 @@ from . import regional_solver_selection3d as selection3d
 from ._validation import TectonicsError, scalar, frozen
 from .regional_execution import RegionalMechanicsScales, RegionalMechanicalSnapshot
 from .resources import select_budget, MemoryLimitError
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .stokes_execution import _native_lease, _factored_scale
 
 SIDES = ('x0', 'x1', 'y0', 'y1', 'z0', 'z1')
@@ -432,7 +432,7 @@ class PreparedRegionalStokes3D:
             if method == 'multigrid':
                 self._definition['solver'] = dict(multigrid3d.SETTINGS, max_iterations=1200,
                                                   levels=self._mg.levels())
-            self.plan_id = _hash(self._definition)
+            self.plan_id = _hash(content_record(self._definition))
             self._verify()
             self._stats['prepare_seconds'] = perf_counter()-start
         except BaseException:

@@ -23,6 +23,7 @@ from .mesh import ColumnGrid1D
 from .parameters import FlexureParameters
 from .regional import RegionalGrid1D, _cancelled
 from .resources import select_budget
+from .reuse import content_record
 from .shortening import PreparedShortening, _overlaps
 from .stokes_execution import _factored_scale
 
@@ -169,10 +170,10 @@ class PreparedShorteningSupport:
             self.operator = FiniteRegionFlexure(regional, policy.elastic,
                 FlexureBoundary1D('continuous', 'continuous', policy.source_id), budget=self._budget)
             self.mean_operator = ContinuousCellMeanFlexure(self.operator, budget=self._budget)
-            self.plan_id = hashlib.sha256(_json(dict(method='w08-dry-fixed-base-support-v1',
+            self.plan_id = hashlib.sha256(_json(content_record(dict(method='w08-dry-fixed-base-support-v1',
                 motion=motion.plan_id, policy=asdict(policy), reference=self._reference_load.state_id,
                 projection=self._reference_projection.projection_id, operator=self.operator.operator_id,
-                mean_operator=self.mean_operator.operator_id, execution=motion.execution_id))).hexdigest()
+                mean_operator=self.mean_operator.operator_id, execution=motion.execution_id)))).hexdigest()
             _cancelled(cancel)
             motion._context.verify()
             self._sealed = True
@@ -266,7 +267,7 @@ class PreparedShorteningSupport:
                 reference='total change from initial fixed base; never accumulated onto earlier output')
             metadata = _json(record)
             payload, point_payload, phase_payload = values.tobytes(), points.tobytes(), phase_loads.tobytes()
-            identity = hashlib.sha256(metadata)
+            identity = hashlib.sha256(_json(content_record(record)))
             for data in (payload, point_payload, phase_payload):
                 identity.update(data)
             result = object.__new__(ShorteningSupportResult)

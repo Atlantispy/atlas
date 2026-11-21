@@ -25,6 +25,7 @@ from .regional_execution3d import SIDES, _array, _hash, _json, _name, _cancel
 from .regional_heat3d import PreparedRegionalHeat3D
 from .regional_transport3d import PreparedRegionalTransport3D, ConservativeFaceFlow3D
 from .resources import WorkBudget
+from .reuse import content_record
 
 
 
@@ -301,7 +302,7 @@ class PreparedRegionalCollar3D:
                     source_rule='actual native donor sources on every cell, booked once',
                     flow_rule='actual native face samples and conservative streams; no rigid exterior substitution',
                     scope='complete mechanical and FV grid; physical exterior funding remains separately required')
-            self.plan_id = _hash(self._definition)
+            self.plan_id = _hash(content_record(self._definition))
         except BaseException:
             self.close()
             raise
@@ -783,7 +784,7 @@ class PreparedRegionalCollar3D:
                                 extended['finite_inventory']['registry_id'] != self._registry.registry_id or
                                 not LIVE_COLLAR.equal_records(proposal['stocks'], data['exact_input_stocks'])):
                             raise TectonicsError('finite extension changed actual physical graph, parent, source or input stocks')
-                        solved_geometry, geometry_id = extended, LIVE_COLLAR.graph_identity(extended, _hash)
+                        solved_geometry, geometry_id = extended, LIVE_COLLAR.graph_content_identity(extended, _hash)
                     if (data['geometry_id'] != geometry_id or data['source_stage_id'] != source.result_id or
                             not LIVE_COLLAR.equal_records(data['cell_ids'], [r['cell_id'] for r in solved_geometry['cells']]) or
                             data['method'] != 'first-order backward-Euler upwind on exact-GCL integrated directed face measures'):

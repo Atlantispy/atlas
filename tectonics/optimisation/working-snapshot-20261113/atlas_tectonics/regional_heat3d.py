@@ -25,7 +25,7 @@ from ._validation import TectonicsError, scalar, input_shape, snapshot
 from .regional_execution import RegionalMechanicalSnapshot
 from . import regional_execution3d as mechanics3d
 from .resources import select_budget, MemoryLimitError
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 from .stokes_execution import _native_lease, _factored_scale
 
 SIDES = ('x0', 'x1', 'y0', 'y1', 'z0', 'z1')
@@ -145,7 +145,7 @@ class PreparedRegionalHeat3D:
                 enthalpy_convention='constant volumetric capacity times cell volume times kelvin',
                 linear_relative_tolerance=1e-11, energy_relative_tolerance=1e-11,
                 automatic_substeps=False)
-            self.plan_id = mechanics3d._hash(self._definition)
+            self.plan_id = mechanics3d._hash(content_record(self._definition))
             self._verify()
         except BaseException:
             self.close()

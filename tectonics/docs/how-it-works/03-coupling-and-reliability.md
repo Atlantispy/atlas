@@ -565,6 +565,25 @@ amplified by the accurate heat scheme in cells with almost no heat capacity)
 and the difference is recorded as explained, not equal. None of this is
 scientific acceptance.
 
+Version 0.1.0.dev44 of that snapshot names records by what they contain. The
+graph, partition, owner, funding, bounds and geometry identifiers are each the
+digest of the record's content form, no longer of its bytes or of the code that
+wrote it, so a code change that moves no value moves no identifier. Two things
+still tie a result to its code. A stored record's byte digest is checked against
+its bytes on load, so a changed file is refused. A continued state and a solver's
+starting guess carry the code that made them, outside their identifiers, so a
+run resumed or warm-started under changed code is refused. The identifiers move
+once, at this version: the graph and partition identifiers and every identifier
+hashed from them, while the stored graph keeps its byte digest. The reference
+chain's decoded results equal the previous version's apart from those
+identifiers and digests, and a build differing only by a comment gave the same
+identifiers. A chain stopped after its first step and resumed under the same
+code reused that step; a changed build was refused before it started, at its
+pins and layout. A changed build with its own valid pins and layout was not
+resumed against a stopped run, so the identity check itself was not reached by
+a run; its guard tests cover it. Admission of a store written by an older
+version is not proven by a run. None of this is scientific acceptance.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell

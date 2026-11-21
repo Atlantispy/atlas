@@ -25,7 +25,7 @@ from .geometry import (PlanarGeometry, GeometryError, _limits, _label,
 from .materials import MaterialCohort, _json
 from .planar_exchange import _area_shape
 from .resources import WorkBudget, select_budget
-from .reuse import ExecutionContext
+from .reuse import ExecutionContext, content_record
 
 MAX_PARCELS = 4096
 MAX_INTERVALS = 256
@@ -36,7 +36,7 @@ ROUND = float(128*np.finfo(float).eps)
 
 
 def _id(record, *buffers):
-    digest = hashlib.sha256(_json(record))
+    digest = hashlib.sha256(_json(content_record(record)))
     for raw in buffers:
         digest.update(b'\0'); digest.update(raw)
     return digest.hexdigest()
