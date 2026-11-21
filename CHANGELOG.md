@@ -4,6 +4,12 @@ Versions of the Atlas tectonics package, newest first. Each version is the versi
 each heading links its tag. Tags dev0 to dev41 mark the first commit that carried that text. Passing tests,
 review and scientific acceptance are separate outcomes; no entry here claims acceptance.
 
+## Unreleased
+
+### Added
+- Added quick tests that run on every push and pull request: static checks and the optimised snapshot
+  tests must pass; the older package tier reports only.
+
 ## [0.1.0.dev43](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev43) - 2026-11-20
 
 ### Changed
