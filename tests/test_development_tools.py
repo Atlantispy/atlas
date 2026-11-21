@@ -243,7 +243,7 @@ class SerialGroupTests(unittest.TestCase):
 class TracerTests(unittest.TestCase):
     def test_a_fresh_traced_unit_records_execution_imports_and_data_reads(self):
         with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)/'tree'
+            root = Path(folder).resolve()/'tree'    # the runner resolves its root; TEMP may be an 8.3 path
             (root/'tectonics'/'src').mkdir(parents=True)
             tests = root/'tectonics'/'tests'
             write(tests/'helper_mod.py', '''
@@ -734,21 +734,22 @@ class RemainingLeaf(unittest.TestCase):
             evidence = [row for row in records if row['kind'] == 'evidence']
             numerical = [row for row in records if row['kind'] == 'numerical']
             self.assertEqual(len(evidence), 1, records)
-            export = Path(evidence[0]['cwd'])
-            combined = Path(folder)/'full'/'combined'
+            canon = lambda path: Path(os.path.realpath(path))       # TEMP may be an 8.3 path; the runner resolves its root
+            export = canon(evidence[0]['cwd'])
+            combined = canon(Path(folder)/'full'/'combined')
             self.assertNotEqual(export, combined)
-            self.assertEqual(Path(evidence[0]['source']).parent.parent, export)
+            self.assertEqual(canon(evidence[0]['source']).parent.parent, export)
             self.assertEqual(bytes.fromhex(evidence[0]['binding']), b'normalised\n')
             self.assertEqual((combined/'tectonics'/'binding.txt').read_bytes(), b'normalised\r\n')
-            self.assertEqual({row['cwd'] for row in numerical}, {str(export), str(combined)})
+            self.assertEqual({canon(row['cwd']) for row in numerical}, {export, combined})
             self.assertEqual(len(numerical), 2, records)
             for row in numerical:
                 self.assertEqual(Path(row['python']).resolve(), Path(sys.executable).resolve())
-                self.assertEqual(Path(row['imported']).parent, Path(row['cwd'])/'tectonics'/'src')
-            guard_row = next(row for row in numerical if row['cwd'] == str(export))
-            self.assertEqual(guard_row['pythonpath'], str(export/'tectonics'/'src'))
-            worker_row = next(row for row in numerical if row['cwd'] == str(combined))
-            self.assertEqual(worker_row['pythonpath'].split(os.pathsep)[0], str(combined/'tectonics'/'src'))
+                self.assertEqual(canon(row['imported']).parent, canon(row['cwd'])/'tectonics'/'src')
+            guard_row = next(row for row in numerical if canon(row['cwd']) == export)
+            self.assertEqual(canon(guard_row['pythonpath']), export/'tectonics'/'src')
+            worker_row = next(row for row in numerical if canon(row['cwd']) == combined)
+            self.assertEqual(canon(worker_row['pythonpath'].split(os.pathsep)[0]), combined/'tectonics'/'src')
 
     def test_evidence_failure_rejects_before_the_requested_tier(self):
         with tempfile.TemporaryDirectory() as folder:

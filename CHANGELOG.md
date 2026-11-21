@@ -9,6 +9,8 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
 ### Added
 - Added quick tests that run on every push and pull request: static checks and the optimised snapshot
   tests must pass; the older package tier reports only.
+- Fixed the quick tests on the hosted runner: the jobs install their pinned dependencies, and three tests no
+  longer depend on which form of the temporary path the machine reports.
 
 ## [0.1.0.dev43](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev43) - 2026-11-20
 

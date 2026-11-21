@@ -25,6 +25,9 @@ env:
   SNAPSHOT_SRC: tectonics/optimisation/working-snapshot-20261113
   SNAPSHOT_TESTS: tectonics/optimisation/working-snapshot-20261113/tests
   REQUIREMENTS: tectonics/requirements/windows-amd64-cp312-core.txt
+  # The optimised snapshot imports gmpy2; no requirements file lists it yet. Version as in the local
+  # scientific environment.
+  GMPY2: gmpy2==2.3.2
   PYTHONDONTWRITEBYTECODE: "1"
   # Writes one runner summary's counts to the run's summary page.
   COUNTS: >-
@@ -46,6 +49,11 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ${{ env.REQUIREMENTS }}
+      # Some root tests import the generator packages, which need numpy.
+      - name: Install the pinned dependencies (wheels only)
+        run: python -m pip install --disable-pip-version-check -r "$env:REQUIREMENTS" "$env:GMPY2"
       - name: Coding-safety check
         run: python -B "$env:TOOLS/check_coding_safety.py"
       - name: Public-path check
@@ -78,7 +86,7 @@ jobs:
           cache: pip
           cache-dependency-path: ${{ env.REQUIREMENTS }}
       - name: Install the pinned dependencies (wheels only)
-        run: python -m pip install --disable-pip-version-check -r "$env:REQUIREMENTS"
+        run: python -m pip install --disable-pip-version-check -r "$env:REQUIREMENTS" "$env:GMPY2"
       # All of the snapshot's tests: the slow registry names none of them, and --quick refuses a stale entry.
       - name: Snapshot tests
         run: python -I -B "$env:TOOLS/run_tests_parallel.py" --python python --workers $env:NUMBER_OF_PROCESSORS --src "$env:SNAPSHOT_SRC" --tests-dir "$env:SNAPSHOT_TESTS" --summary summary-snapshot.json
@@ -110,7 +118,7 @@ jobs:
           cache: pip
           cache-dependency-path: ${{ env.REQUIREMENTS }}
       - name: Install the pinned dependencies (wheels only)
-        run: python -m pip install --disable-pip-version-check -r "$env:REQUIREMENTS"
+        run: python -m pip install --disable-pip-version-check -r "$env:REQUIREMENTS" "$env:GMPY2"
       # Registered slow tests (tectonics/verify.py) are omitted; a skip does not fail the run.
       # A failure here leaves the job and the commit green; the counts show it.
       - name: Quick tier

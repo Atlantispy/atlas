@@ -16,7 +16,7 @@ class SyntheticPublicPathTests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.root = Path(temp.name)
+        self.root = Path(temp.name).resolve()             # check() resolves its root; TEMP may be an 8.3 path
         for relative in guard.SCAN_ROOTS:
             (self.root / relative).mkdir(parents=True)
 
