@@ -83,6 +83,12 @@ class SyntheticPublicPathTests(unittest.TestCase):
         self.assertIn('tectonics/docs:0: scan root missing or inaccessible', output.getvalue())
         self.assertNotIn(str(self.root), output.getvalue())
 
+    def test_planned_shared_root_is_scanned_once_it_exists(self):
+        self.assertEqual(guard.check(self.root), [])                  # absent: the tree passes as before
+        self.write('/home/SyntheticExample/result', 'shared/docs/machine.md')
+        self.assertEqual(guard.check(self.root), ['shared/docs/machine.md:1: personal home path; '
+                                                  'use LOCAL_USER for the username'])
+
     def test_inaccessible_root_is_visible_without_exception_path(self):
         error = PermissionError(13, 'denied', str(self.root / 'tectonics/evidence'))
         with patch.object(guard.os, 'scandir', side_effect=error):

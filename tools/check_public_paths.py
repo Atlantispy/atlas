@@ -15,6 +15,8 @@ import stat
 import sys
 
 SCAN_ROOTS = ('tectonics/evidence', 'tectonics/docs')
+# Planned by docs/REPOSITORY_LAYOUT.md: scanned once the folder exists, so today's tree passes and fails as before.
+OPTIONAL_ROOTS = ('shared',)
 TEXT_SUFFIXES = frozenset({'.json', '.md', '.log', '.txt'})
 PLACEHOLDER = 'LOCAL_USER'
 # Repeated separators cover literal and JSON-escaped Windows paths. Windows
@@ -51,11 +53,13 @@ def check(root: Path) -> list[str]:
             location = '.'
         raise ScanError(f'{location}:0: scan directory inaccessible') from None
 
-    for relative in SCAN_ROOTS:
+    for relative in SCAN_ROOTS + OPTIONAL_ROOTS:
         tree = root / relative
         try:
             mode = tree.lstat().st_mode
-        except OSError:
+        except OSError as error:
+            if isinstance(error, FileNotFoundError) and relative in OPTIONAL_ROOTS:
+                continue
             raise ScanError(f'{relative}:0: scan root missing or inaccessible') from None
         if not stat.S_ISDIR(mode):
             raise ScanError(f'{relative}:0: scan root is not a regular directory')

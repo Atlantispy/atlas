@@ -7,6 +7,7 @@
     "docs/CURRENT_STATE.md",
     "AGENTS.md",
     "docs/CODING_SAFETY.md",
+    "docs/REPOSITORY_LAYOUT.md",
     "engineering/work/generator_runtime_r12/__init__.py",
     "engineering/work/generator_runtime_r12/executor.py",
     "engineering/work/generator_runtime_r12/store.py",
