@@ -19,7 +19,7 @@ package's `Requires-Dist`, including extras requested by a parent.
 | --- | --- |
 | Interpreter | CPython 3.12.14, MSC v.1944 64-bit (AMD64), build of 25 August 2026 |
 | Platform | Windows 11 (10.0.26200), AMD64 (`win32`, `win-amd64`) |
-| Installed | 40 distributions: the 39 pinned below and the pip installer, which is not pinned |
+| Installed | 41 distributions: the 40 pinned below and the pip installer, which is not pinned |
 | Origin | pip installed every pinned package from a wheel; compiled ones use cp312 or abi3 `win_amd64` wheels |
 
 ## Pinned routes

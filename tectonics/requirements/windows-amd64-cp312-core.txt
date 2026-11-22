@@ -15,6 +15,10 @@ scipy==1.17.1
 shapely==2.1.2
 threadpoolctl==3.7.0
 
+# Declared in tectonics/pyproject.toml for the optimised snapshot; not a receipt-recorded version.
+# Version as installed (from a wheel) in the local scientific environment.
+gmpy2==2.3.2
+
 # Resolved transitive requirements. llvmlite is recorded by receipts; the others
 # are installed only (pulled in by blosc2), not independently tested by Atlas.
 annotated-types==0.8.0

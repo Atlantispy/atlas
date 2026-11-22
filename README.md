@@ -195,7 +195,24 @@ Read [AGENTS.md](AGENTS.md) and the relevant [coding-safety map](docs/CODING_SAF
 - Preserve retained predecessors and immutable history dependencies. Backup, restoration, cleanup and migration require explicit scope; a copied control alone is not a restartable delivery.
 - Report what actually ran and what remains untested. Code approval and scientific validation are separate decisions requiring their own review.
 
+To contribute a change as a newcomer:
+
+1. Set up offline from a fresh checkout and pick the profile for the component you are changing, as in [Independent Atlas development](docs/INDEPENDENT_DEVELOPMENT.md#fresh-checkout-no-network-dependencies).
+2. Make one scoped change, then run that profile's focused checks and, for guidance or tool changes, the two static checks listed in [AGENTS.md](AGENTS.md#check-and-report).
+3. Open a pull request against the review branch, not `main`, using the pull request template: say what changed, the exact commands run, their results and what was not tested.
+
 Proposed improvements and pull requests are welcome. No automatic merging, background simulation, full-world/whole-year run or synchronisation is enabled by this documentation or the public setup.
+
+## How to cite
+
+Cite Atlas as software, naming the release tag or commit you used, since results are tied to a version:
+
+```text
+Atlan. Atlas: a world generator for physically informed worldbuilding (version 0.1.0.dev44,
+WORKING NON-CANON). Source code, https://github.com/Atlantispy/atlas, 2026.
+```
+
+Atlas is experimental and not independently validated; cite it as software, not as an accepted scientific result. Cite the papers and datasets Atlas relies on directly from their own references in [how it works](tectonics/docs/how-it-works/).
 
 ## Licence
 

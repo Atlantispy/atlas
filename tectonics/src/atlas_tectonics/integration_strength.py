@@ -415,7 +415,7 @@ def oblique_stresses(prep, factors, e, c, guess=None):
             if not (np.all(np.isfinite(lo)) and np.all(np.isfinite(hi)) and lo.min() > -700 and hi.max() < 700):
                 raise ValueError("stress outside bounded representable support")
             for _ in range(64):
-                out = _weak._evaluate(prep, hi, le, c, cc, sp, inv)
+                out = _weak._evaluate(prep, hi, le, c, cc, sp, inv, slope_min=True)
                 short = out["total"] < 1.
                 if not short.any():
                     break

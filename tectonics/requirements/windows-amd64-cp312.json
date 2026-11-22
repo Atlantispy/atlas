@@ -3,7 +3,7 @@
   "status": "WORKING NON-CANON",
   "observed": "2026-09-26",
   "declared_by": "tectonics/pyproject.toml",
-  "provenance": "Read-only importlib.metadata inspection of the existing Windows scientific virtual environment (system site-packages excluded). The declared dependencies were followed through each installed package's Requires-Dist, including extras requested by a parent (blosc2 requests httpx[http2]). No package was imported, installed, upgraded, rebuilt or downloaded. 40 distributions were installed: the 39 pinned here and the pip installer. Every pinned package was installed by pip from a wheel.",
+  "provenance": "Read-only importlib.metadata inspection of the existing Windows scientific virtual environment (system site-packages excluded). The declared dependencies were followed through each installed package's Requires-Dist, including extras requested by a parent (blosc2 requests httpx[http2]). No package was imported, installed, upgraded, rebuilt or downloaded. 41 distributions were installed: the 40 pinned here and the pip installer. Every pinned package was installed by pip from a wheel.",
   "scope": {
     "implementation": "cpython",
     "python": "3.12.14",
@@ -29,6 +29,7 @@
         "anyio": {"version": "4.15.1", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpx"]},
         "blosc2": {"version": "4.13.1", "wheel": "cp311-abi3-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w12-assembly-r1.json", "tectonics/evidence/w11-module-wide-storage.json"]},
         "certifi": {"version": "2026.7.22", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpcore", "httpx"]},
+        "gmpy2": {"version": "2.3.2", "wheel": "cp312-cp312-win_amd64", "status": "installed", "direct": true, "note": "Imported by the optimised snapshot; not in the 26 September observation."},
         "h11": {"version": "0.16.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpcore"]},
         "h2": {"version": "4.4.1", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpx"]},
         "hpack": {"version": "4.2.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["h2"]},
