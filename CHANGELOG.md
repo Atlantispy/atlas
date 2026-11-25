@@ -13,6 +13,9 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
   longer depend on which form of the temporary path the machine reports.
 - Added the repository layout rules: the target folders, the module skeleton, how files move and how old
   code is retired. The public-path check scans the planned `shared/` folder once it exists.
+- Added scratch landing commands for diagnostic capture, saved-output comparison and repeatable
+  preparation. The comparator preserves strict failures and limits a historical exception to its approved pair.
+- Added an optional one-cell finite-stock adoption check for the collar identity path.
 
 ### Changed
 - Differential geometry orders supports within each voxel by the remaining support fields. The common

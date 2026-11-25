@@ -153,6 +153,9 @@ and documentation edits do not require unrelated simulations. Follow the
 [shared check-scope policy](DEVELOPMENT_TOOLS.md#when-the-full-gate-is-still-required)
 and reuse adequate unchanged evidence.
 
+Use the [scratch landing tools](LANDING_TOOLING.md) for diagnostic capture, saved-output comparison,
+repeatable preparation and the optional finite-stock collar case.
+
 ## Troubleshooting
 
 - **Windows path length.** The R12 cache refuses a record path of 260 UTF-16 units

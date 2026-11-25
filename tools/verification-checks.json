@@ -1422,6 +1422,157 @@
         "tectonics/tests/test_digest_line_endings.py",
         "shared_generator/engine/tests/test_terrain_reference_integration.py"
       ]
+    },
+    {
+      "id": "atlas.dev.landing.capture-binding",
+      "purpose": "Bind an END receipt to its own profile, package, config, graph bytes, proposal and operands.",
+      "module": "tools/atlas_land_compare.py",
+      "process": "Scratch Atlas landing preparation",
+      "entry_point": "python -I -B tools/atlas.py land capture-compare --settings ROUND.json",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "Atlas landing builders",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development and candidate preparation evidence outside the simulation runtime.",
+      "classification_refs": [
+        "docs/LANDING_TOOLING.md#capture-and-compare"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "A fresh or saved END arm crosses the comparison boundary.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit scratch command with the selected round or package inputs."
+      },
+      "on_failure": "Exit 2 on invalid evidence or historical_approval supplied to the strict END contract. A complete but differing pair returns exit 1.",
+      "affected_by": [
+        "Selected comparison settings",
+        "Selected config or package",
+        "Receipt or operands schema",
+        "Capture and parity implementations"
+      ],
+      "evidence": [
+        "docs/LANDING_TOOLING.md#capture-and-compare"
+      ],
+      "cost_note": "One decode per required graph. A fresh producer run is separately admitted."
+    },
+    {
+      "id": "atlas.dev.landing.comparison-result",
+      "purpose": "Propagate the actual comparer exit and account for all unresolved rows after any exact approved disposition.",
+      "module": "tools/atlas_land_compare.py",
+      "process": "Scratch Atlas landing preparation",
+      "entry_point": "python -I -B tools/atlas.py land capture-compare --settings ROUND.json",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "Atlas landing builders",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development and candidate preparation evidence outside the simulation runtime.",
+      "classification_refs": [
+        "docs/LANDING_TOOLING.md#capture-and-compare"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "A decoded comparison report reaches the caller or a historical disposition is explicitly selected.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit scratch command with the selected round or package inputs."
+      },
+      "on_failure": "Unresolved differences return exit 1; incomplete or unbound evidence returns exit 2.",
+      "affected_by": [
+        "Comparator",
+        "Selected exports and restart fingerprints",
+        "Strict result and approved disposition"
+      ],
+      "evidence": [
+        "docs/LANDING_TOOLING.md#capture-and-compare"
+      ],
+      "cost_note": "One walk of the two retained exports. The disposition reads the bound strict result."
+    },
+    {
+      "id": "atlas.dev.landing.receiving-preimages",
+      "purpose": "Conflicting receiving preimages and overlapping independent units cannot produce a prepared candidate.",
+      "module": "tools/atlas_land_prepare.py",
+      "process": "Scratch Atlas landing preparation",
+      "entry_point": "python -I -B tools/atlas.py land prepare --settings ROUND.json",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "Atlas landing builders",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development and candidate preparation evidence outside the simulation runtime.",
+      "classification_refs": [
+        "docs/LANDING_TOOLING.md#prepare-a-landing"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "An independent or cumulative unit composition crosses the scratch preparation boundary.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit scratch command with the selected round or package inputs."
+      },
+      "on_failure": "Exit 2, retain any previously completed composition, and report the exact conflict.",
+      "affected_by": [
+        "Receiving roster",
+        "Reviewed patches and postimages",
+        "Scratch preparation implementation"
+      ],
+      "evidence": [
+        "docs/LANDING_TOOLING.md#prepare-a-landing"
+      ],
+      "cost_note": "Read the declared members once for a fresh composition; reuse a completed composition."
+    },
+    {
+      "id": "atlas.dev.landing.finite-stock-adoption",
+      "purpose": "Exercise finite-stock adoption with a retained source fingerprint so byte and content IDs can differ.",
+      "module": "tools/e4_collar_finite_adoption.py",
+      "process": "Scratch Atlas landing preparation",
+      "entry_point": "python -I -B tools/e4_collar_finite_adoption.py PACKAGE_PARENT",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "Atlas landing builders",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development and candidate preparation evidence outside the simulation runtime.",
+      "classification_refs": [
+        "docs/LANDING_TOOLING.md#optional-finite-stock-reference-case"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Optional focused check after a change to the collar or finite transport path.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit scratch command with the selected round or package inputs."
+      },
+      "on_failure": "Nonzero exit when the issued proposal and content identity do not survive actual collar adoption.",
+      "affected_by": [
+        "Fixture",
+        "Pinned interpreter",
+        "Transport producer",
+        "Collar",
+        "Record codec"
+      ],
+      "evidence": [
+        "docs/LANDING_TOOLING.md#optional-finite-stock-reference-case"
+      ],
+      "cost_note": "One physical cell, one transport solve and one adoption; no call during ordinary simulation."
     }
   ]
 }
