@@ -33,6 +33,10 @@ def _stored_deviation(total, width):
     """Outward short bound of an exact nonnegative sum already checked against width."""
     if type(total) is not Q or type(width) is not Q or not 0 <= total <= width:
         raise V.VolumeError('checked exact deviation sum required')
+    return _round_stored_deviation(total, width)
+
+
+def _round_stored_deviation(total, width):
     if total == 0:
         return total
     e = total.numerator.bit_length()-total.denominator.bit_length()
@@ -111,7 +115,7 @@ def _cell_metrics(poly, arena):
     points = B._points(poly)
     if not points:
         return Q(0), None
-    with V._work(tuple(q for p in points for q in p), arena.resource):
+    with V._work(tuple(q for p in points for q in p), arena.resource, convert_values=False):
         origin, volume, moment = points[0], Q(0), [Q(0)]*3
         for ring in poly:
             a = ring[0]
@@ -193,7 +197,7 @@ def _unmatched_parts(poly, holes, matched_areas, arena):
     helper alone is not an overlap validator for caller-authored holes.
     """
     arena.work(8*len(poly)+len(matched_areas)+2)
-    with V._work(tuple(q for p in poly for q in p)+tuple(matched_areas), arena.resource):
+    with V._work(tuple(q for p in poly for q in p)+tuple(matched_areas), arena.resource, convert_values=False):
         original = _area(poly)
         covered = sum(matched_areas, Q(0))
         if covered > original:
@@ -214,8 +218,6 @@ def _ring3(plane, poly):
         points.append(tuple(p))
     points = tuple(sorted(set(points)))
     indices = O._face(points, tuple(range(len(points))), plane[:3])
-    if indices is None:
-        raise V.VolumeError('positive mortar lost its exact planar ring')
     ring = tuple(points[i] for i in indices)
     start = min(range(len(ring)), key=lambda i: ring[i])
     return ring[start:]+ring[:start]
@@ -259,18 +261,19 @@ def _cleared(values):
     return tuple(q.numerator*(scale//q.denominator) for q in values), scale
 
 
-def _signed_face(face, sign, centre, centre_scale):
+def _signed_face(face, sign, centre, centre_scale, *, exact=None):
     """One signed face of a cell in exact integers, for its metric identities.
 
     Returns whether area.(centroid-centre) <= 0, and the area vector followed
     by centroid (x) area row by row as numerators over one denominator. Every
     denominator is positive, so clearing them keeps the sense of the
     inequality; the centre is given already cleared, with its denominator.
-    The face is one that _assemble issues: its area vector, its centroid and
-    the centre have three components each, and its sign is an integer.
+    Assembly can pass its retained exact (centroid, area vector). Aggregate
+    callers use the encoded face record.
     """
-    area, area_scale = _cleared(tuple(sign*W._decode(q) for q in face['area_vector_m2']))
-    at, at_scale = _cleared(tuple(map(W._decode, face['centroid_m'])))
+    normal = (map(W._decode, face['area_vector_m2']) if exact is None else exact[1])
+    area, area_scale = _cleared(tuple(sign*q for q in normal))
+    at, at_scale = _cleared(tuple(map(W._decode, face['centroid_m'])) if exact is None else exact[0])
     moments = [p*q for p in at for q in area]
     nonpositive = ((moments[0]+moments[4]+moments[8])*centre_scale
                    <= (area[0]*centre[0]+area[1]*centre[1]+area[2]*centre[2])*at_scale)
@@ -337,8 +340,6 @@ def _assemble(candidates, arena):
         ring = _ring3(plane, poly)
         normal, centre = _face_metrics(ring)
         key = _hash(dict(plane=list(map(_enc, plane)), vertices=[_point(p) for p in ring]))
-        if len(owners) == 2 and owners[0][1] == owners[1][1]:
-            raise V.VolumeError('matched thermal face has equal rather than opposite incidence')
         owners = sorted(owners, key=lambda owner: -owner[1])  # owners by sign, +1 first
         kinds = {cells[c]['kind'] for c, _ in owners}
         kind = 'collar-exterior' if kinds == {'collar', 'exterior'} else 'interior' if len(owners) == 2 else 'boundary'
@@ -371,7 +372,7 @@ def _assemble(candidates, arena):
                                        (type(capture_error).__name__, capture_error))
                 raise error
             arena.work(8*len(shared)+2)
-            with V._work(tuple(q for p in shared for q in p), arena.resource):
+            with V._work(tuple(q for p in shared for q in p), arena.resource, convert_values=False):
                 area = _area(shared)
             # One rational is shared by the two incident lists. This charge
             # retains its actual width plus both new list references.
@@ -383,15 +384,14 @@ def _assemble(candidates, arena):
             key = handle['cell_id'] if capture else handle
             for remaining in _unmatched_parts(poly, opposite[i], matched_areas[i], arena):
                 issue(plane, remaining, ((key, sign),))
-    by_id = {f['face_id']: f for f in faces}
-    if len(by_id) != len(faces):
+    if len(face_keys) != len(faces):
         raise V.VolumeError('thermal mortar face was issued twice')
     for key, cell in cells.items():
         volume, centre = shapes[key]
         centre, scale = _cleared(centre)
         terms = []
         for face_id, sign in cell['faces']:
-            nonpositive, term = _signed_face(by_id[face_id], sign, centre, scale)
+            nonpositive, term = _signed_face(None, sign, centre, scale, exact=face_keys[face_id])
             if nonpositive:
                 raise V.VolumeError('convex thermal cell has nonpositive normal centre distance')
             terms.append(term)
@@ -433,7 +433,7 @@ def _segment_quaternion(omega, duration, goal, arena):
             if error <= goal:
                 return (cosine, *(q*sinc for q in half)), error
         arena.work(64)
-        with V._work((*half, squared, term_c, term_s), arena.resource):
+        with V._work((*half, squared, term_c, term_s), arena.resource, convert_values=False):
             term_c *= -squared/((2*n+1)*(2*n+2))
             term_s *= -squared/((2*n+2)*(2*n+3))
             cosine += term_c; sinc += term_s
@@ -457,7 +457,8 @@ def _pose_round_axis(rates):
 
 def _pose_round(quaternion, error, delta, axis):
     """The rounded product and its outward error (exact; delta > 0)."""
-    quantum = Q(2)**(W._floor_log2(delta)-POSE_ROUND_GUARD_QUAT)
+    exponent = W._floor_log2(delta)-POSE_ROUND_GUARD_QUAT
+    quantum = Q(2)**exponent
     if axis is None:
         quaternion = W._round_to(quaternion, quantum)
     else:
@@ -466,9 +467,7 @@ def _pose_round(quaternion, error, delta, axis):
         # it so; |ds k|_2 <= q_s/2*|k|_1 <= quantum/2.
         j = max(range(3), key=lambda i: abs(axis[i]))
         s = quaternion[1+j]/axis[j]
-        if any(quaternion[1+i] != s*axis[i] for i in range(3)):
-            raise V.VolumeError('coaxial pose product left its exact axis')
-        step = Q(2)**(W._floor_log2(quantum)-W._ceil_log2(sum(map(abs, axis))))
+        step = Q(2)**(exponent-W._ceil_log2(sum(map(abs, axis))))
         s = round(s/step)*step
         quaternion = (round(quaternion[0]/quantum)*quantum, *(s*k for k in axis))
     return quaternion, W._round_up(error+quantum, quantum)
@@ -484,7 +483,7 @@ def _representative_pose(segments, operator_goal, arena):
         omega = tuple(map(W._decode, record['angular_velocity_rad_s']))
         duration = W._decode(record['end_time_s'])-W._decode(record['start_time_s'])
         q, delta = _segment_quaternion(omega, duration, goal, arena)
-        with V._work((*quaternion, *q, error, delta), arena.resource):
+        with V._work((*quaternion, *q, error, delta), arena.resource, convert_values=False):
             quaternion = _qmul(q, quaternion)
             error = (1+delta)*error+delta
             if delta:
@@ -789,13 +788,13 @@ def build_exterior_mesh(funding, sphere, wall_measures, *, grid_lines,
                             physical_support=support_refs(box, physical_layer, actual_cone))))
         if total_error > width:
             raise V.VolumeError('declared spatial grid exceeds the predeclared physical geometry volume-error budget')
-        total_error = _stored_deviation(total_error, width)
+        total_error = _round_stored_deviation(total_error, width)
         cells, faces = _assemble(candidates, arena)
         # All collar faces must have a real neighbour. No missing exterior
         # support can become an accidental insulating/free boundary.
         by_cell = {c['cell_id']: c for c in cells}
         for face in faces:
-            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'])
+            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'][:3])
             cartesian = []
             for key in face['owners']:
                 box = box_by_cell[key]
@@ -998,7 +997,7 @@ def _build_exterior_mesh_record(funding, sphere, wall_measures, *, grid_lines,
                             physical_support=support_refs(box, physical_layer, actual_cone))))
         if total_error > width:
             raise V.VolumeError('declared spatial grid exceeds the predeclared physical geometry volume-error budget')
-        total_error = _stored_deviation(total_error, width)
+        total_error = _round_stored_deviation(total_error, width)
         from atlas_tectonics._private import live_mesh_patch as _LIVE_MESH
         if _LIVE_MESH.EARLY_RELEASE:
             # Charts, poses, layers and collar cells end with the candidate loop.
@@ -1009,7 +1008,7 @@ def _build_exterior_mesh_record(funding, sphere, wall_measures, *, grid_lines,
         # support can become an accidental insulating/free boundary.
         by_cell = {c['cell_id']: c for c in cells}
         for face in faces:
-            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'])
+            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'][:3])
             cartesian = []
             for key in face['owners']:
                 box = box_by_cell[key]

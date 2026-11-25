@@ -14,6 +14,7 @@ authentication, never physical acceptance.
 
 Top-level imports are standard library only: the ordinary route loads nothing.
 """
+from atlas_shared.errors import AtlasError
 import ast
 from dataclasses import dataclass
 from fractions import Fraction as Q
@@ -38,7 +39,7 @@ NAME_CHARGE = 256
 _ABSENT = object()
 
 
-class PressureIndexedRefused(ValueError):
+class PressureIndexedRefused(ValueError, AtlasError):
     pass
 
 

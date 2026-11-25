@@ -8,6 +8,7 @@ are the existing 1024-byte native container policy, not a heap or RSS bound.
 No source identity, public row order, precision or tolerance is replaced.
 """
 from fractions import Fraction
+from functools import partial
 import traceback
 
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
@@ -195,6 +196,33 @@ def _physical_key(row):
     raise ValueError("Unsupported physical cell family")
 
 
+def _compact_physical_key(row):
+    """Authenticate the physical support references, then key by the interior point, never by them."""
+    support = row.get("physical_support")
+    if type(support) is not dict:
+        raise ValueError("Native physical support is required")
+    if row.get("kind") == "collar":
+        if set(support) != {"voxel_id"}:
+            raise ValueError("Unsupported collar support")
+        if row.get("physical_cell_id") != support["voxel_id"]:
+            raise ValueError("Collar physical cell and support differ")
+        _indices(row.get("index"), 3)
+        return _interior_point(row)
+    if row.get("kind") == "exterior":
+        if set(support) != {"voxel_id", "radial_layer_id", "cone_id"}:
+            raise ValueError("Unsupported exterior/differential support")
+        source = row.get("source_key")
+        if type(source) is not list or len(source) != 2 or type(source[1]) is not int or source[1] < 0:
+            raise ValueError("Native source component key required")
+        band, chart = row.get("radial_band"), row.get("chart")
+        if type(band) is not int or type(chart) is not int or min(band, chart) < 0:
+            raise ValueError("Native radial band/chart required")
+        _digest(source[0])
+        _indices(row.get("voxel_index"), 3)
+        return _interior_point(row)
+    raise ValueError("Unsupported physical cell family")
+
+
 def _differential_key(row, view):
     """Scratch key for one cell of an issued differential endpoint mesh."""
     support = row.get("physical_support")
@@ -235,6 +263,45 @@ def _differential_key(row, view):
     return _interior_point(row)
 
 
+def _compact_differential_key(row, view):
+    """Scratch key for one cell of an issued differential endpoint mesh."""
+    support = row.get("physical_support")
+    if type(support) is not dict:
+        raise ValueError("Differential physical support is required")
+    if row.get("kind") == "collar":
+        if set(support) != {"voxel_id"} or row.get("physical_cell_id") != support["voxel_id"]:
+            raise ValueError("Differential collar support differs")
+        index = row.get("index")
+        if type(index) is not int or index < 0:
+            raise ValueError("Differential collar index required")
+    elif row.get("kind") == "exterior":
+        if set(support) != {"differential_support_id", "logical_cell_id"}:
+            raise ValueError("Differential exterior support differs")
+        ident, logical = support["differential_support_id"], support["logical_cell_id"]
+        if row.get("logical_cell_id") != logical:
+            raise ValueError("Differential logical support differs")
+        owner = view.support("differential_supports", ident)
+        source = owner.value
+        components = source.get("components") if type(source) is dict else None
+        if type(components) is not list or sum(
+                c.get("logical_cell_id") == logical for c in components if type(c) is dict) != 1:
+            raise ValueError("Differential support does not uniquely own logical cell")
+    else:
+        raise ValueError("Unsupported differential cell family")
+    faces = row.get("faces")
+    if type(faces) is not list or not faces:
+        raise ValueError("Differential cell requires signed incident faces")
+    pairs = []
+    for pair in faces:
+        if (type(pair) is not list or len(pair) != 2 or type(pair[1]) is not int
+                or pair[1] not in (-1, 1)):
+            raise ValueError("Invalid signed differential face incidence")
+        pairs.append((pair[0], pair[1]))
+    if len(set(pairs)) != len(pairs):
+        raise ValueError("Duplicate differential face incidence")
+    return _interior_point(row)
+
+
 def _permutation(keys, cancel):
     # Caller has admitted key tables, uniqueness set and sorting workspace.
     if not keys or len(set(keys)) != len(keys):
@@ -258,16 +325,20 @@ def _detached_differential_key(view, index, expected_cell_id):
     return _differential_key(row, view)
 
 
-def _prepared_copy(prepared, payload, order, inverse, cancel):
-    """Copy only containers; exact scalar and payload leaves retain their owner."""
-    if set(prepared) != PREPARED_FIELDS:
-        raise ValueError("Prepared LOW schema changed")
+def _prepared_copy_checked(prepared, payload, order, inverse, cancel):
+    """Check coverage of the independently supplied startup owner's tables."""
     n = len(order)
     if (prepared["cells"] != n or len(prepared["conductivity"]) != n
             or len(payload["cells"]) != n
             or len(prepared["rows"]) != len(payload["faces"])
             or len(prepared["face_ids"]) != len(payload["faces"])):
         raise ValueError("Complete prepared physical cell/face coverage required")
+    return _prepared_copy(prepared, payload, order, inverse, cancel)
+
+
+def _prepared_copy(prepared, payload, order, inverse, cancel):
+    """Copy only containers; exact scalar and payload leaves retain their owner."""
+    n = len(order)
     rows, original_incidence = [], []
     for face_index, row in enumerate(prepared["rows"]):
         _check(cancel)
@@ -301,8 +372,6 @@ def _prepared_copy(prepared, payload, order, inverse, cancel):
 
 
 def _inventory(n, nf, weights):
-    if any(type(v) is not int or v < 0 for v in (n, nf, weights)):
-        raise ValueError("Bounded scratch dimensions required")
     # Per cell: key tuple/nested index tuples, 2 permutation tables, sorting
     # workspace/set, three input lists/scalars, conductivity and payload pointers.
     # Per face: copied row, owner/order/distance containers and original incidence.
@@ -321,7 +390,45 @@ def prepare(geometry, startup_owner, old, capacity, source, *, budget, cancel=No
     return _prepare(geometry, startup_owner, old, capacity, source, budget, cancel, None)
 
 
+def _prepare_issued(geometry, startup_owner, old, capacity, source, budget, cancel, issued_power_count):
+    """Use the forward caller's startup produced from this same indexed metric."""
+    return _order(geometry, startup_owner, old, capacity, source, budget, cancel,
+                  issued_power_count, _prepared_copy, _issued_key_reader)
+
+
 def _prepare(geometry, startup_owner, old, capacity, source, budget, cancel, issued_power_count):
+    return _order(geometry, startup_owner, old, capacity, source, budget, cancel,
+                  issued_power_count, _prepared_copy_checked, _independent_key_reader)
+
+
+def _independent_key_reader(view, payload, native_rows, differential):
+    if differential:
+        def read(index):
+            return _detached_differential_key(view, index, payload["cells"][index]["cell_id"])
+    else:
+        def read(index):
+            native_rows[index] = view.cell(index)
+            row = native_rows[index].value
+            if row["cell_id"] != payload["cells"][index]["cell_id"]:
+                raise ValueError("Native physical and numerical row alignment changed")
+            return _physical_key(row)
+    return read
+
+
+def _issued_key_reader(view, _payload, native_rows, differential):
+    if differential:
+        def read(index):
+            owner = view.cell(index)
+            return _compact_differential_key(owner.value, view)
+    else:
+        def read(index):
+            native_rows[index] = view.cell(index)
+            return _compact_physical_key(native_rows[index].value)
+    return read
+
+
+def _order(geometry, startup_owner, old, capacity, source, budget, cancel, issued_power_count,
+           copy_prepared, key_reader):
     _admission_ready()
     from atlas_tectonics.integration_mimetic_heat import MimeticGeometry
     from atlas_tectonics._private.mesh_tables import CompactMesh
@@ -354,18 +461,14 @@ def _prepare(geometry, startup_owner, old, capacity, source, budget, cancel, iss
         native_rows = [] if differential else [None] * n
         custody.native_rows = native_rows
         keys = [None] * n
+        read_key = key_reader(view, payload, native_rows, differential)
         for i in range(n):
             _check(cancel)
-            if differential:
-                keys[i] = _detached_differential_key(view, i, payload["cells"][i]["cell_id"])
-            else:
-                native_rows[i] = view.cell(i)
-                row = native_rows[i].value
-                if row["cell_id"] != payload["cells"][i]["cell_id"]:
-                    raise ValueError("Native physical and numerical row alignment changed")
-                keys[i] = _physical_key(row)
+            keys[i] = read_key(i)
         order, inverse = _permutation(keys, cancel)
-        mapped, projected, incidence = _prepared_copy(prepared, payload, order, inverse, cancel)
+        if set(prepared) != PREPARED_FIELDS:
+            raise ValueError("Prepared LOW schema changed")
+        mapped, projected, incidence = copy_prepared(prepared, payload, order, inverse, cancel)
         value = dict(policy=POLICY, prepared=mapped, payload=projected,
                      old=[old[i] for i in order], capacity=[capacity[i] for i in order],
                      source=[source[i] for i in order], canonical_to_original=order,
@@ -380,16 +483,25 @@ def _prepare(geometry, startup_owner, old, capacity, source, budget, cancel, iss
 
 
 def _finish_view(predictor, order, incidence, cancel, *, include_energy=True):
+    energy = predictor["energy"]
+    if len(energy) != len(order):
+        raise ValueError("Predictor energy coverage changed")
+    return _restore_predictor(predictor, order, incidence, cancel, energy if include_energy else None)
+
+
+def _restore_high_without_energy(predictor, order, incidence, cancel):
+    return _restore_predictor(predictor, order, incidence, cancel, None)
+
+
+def _restore_predictor(predictor, order, incidence, cancel, energy):
     """Only the fields FINISH actually consumes; restore every consumed axis."""
     n = len(order)
-    if len(predictor["energy"]) != n:
-        raise ValueError("Predictor energy coverage changed")
     result = {}
-    if include_energy:
-        energy = [None] * n
+    if energy is not None:
+        original_energy = [None] * n
         for new, old in enumerate(order):
-            energy[old] = predictor["energy"][new]
-        result["energy"] = energy
+            original_energy[old] = energy[new]
+        result["energy"] = original_energy
     original = predictor["evidence"]["raw_outward_energy_decimal"]
     if len(original) != len(incidence):
         raise ValueError("Predictor face coverage changed")
@@ -425,6 +537,18 @@ def _finish_view(predictor, order, incidence, cancel, *, include_energy=True):
 def finish_inputs(order_owner, low_owner, high_owner, *, budget, cancel=None,
                   include_high_energy=True):
     """Fund inverse-map containers while retaining both complete predictors."""
+    return _finish_inputs(order_owner, low_owner, high_owner, budget, cancel,
+                          include_high_energy=include_high_energy)
+
+
+def _finish_issued_inputs(order_owner, low_owner, high_owner, *, budget, cancel=None):
+    """Restore the forward predictors, whose HIGH energy is unused by FINISH."""
+    return _finish_inputs(order_owner, low_owner, high_owner, budget, cancel,
+                          restore_high=_restore_high_without_energy)
+
+
+def _finish_inputs(order_owner, low_owner, high_owner, budget, cancel, *,
+                   include_high_energy=True, restore_high=None):
     _admission_ready()
     value = order_owner.value
     order, incidence = value["canonical_to_original"], value["original_incidence"]
@@ -435,7 +559,9 @@ def finish_inputs(order_owner, low_owner, high_owner, *, budget, cancel=None,
     try:
         custody.dependencies = (order_owner, low_owner, high_owner)
         low = _finish_view(low_owner.value, order, incidence, cancel)
-        high = _finish_view(high_owner.value, order, incidence, cancel, include_energy=include_high_energy)
+        if restore_high is None:
+            restore_high = partial(_finish_view, include_energy=include_high_energy)
+        high = restore_high(high_owner.value, order, incidence, cancel)
         _check(cancel)
         return custody.complete(dict(low=low, high=high,
                                      dependencies=(order_owner, low_owner, high_owner)))

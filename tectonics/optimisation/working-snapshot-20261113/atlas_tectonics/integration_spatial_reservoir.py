@@ -233,6 +233,10 @@ class PreparedFiniteStocks:
         self._verify()
         return dict(owner_id=self.owner_id, **json.loads(_json(self._definition)))
 
+    def _checked_registry_id(self):
+        self._verify()
+        return json.loads(_json(self._definition['registry_id']))
+
     def initial(self):
         self._verify()
         return self._initial
@@ -276,8 +280,14 @@ class PreparedFiniteStocks:
             return self._prepare_live(state, graph, physical_stocks, exchanges,
                 source_stage_id=source_stage_id, transport_parent_id=transport_parent_id)
 
+    def _prepare_joined(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,
+                        transport_parent_id):
+        with LIVE_FINITE.graph_input(physical_graph, budget=self._budget) as graph:
+            return self._prepare_live(state, graph, physical_stocks, exchanges,
+                source_stage_id=source_stage_id, transport_parent_id=transport_parent_id, borrow_exact=True)
+
     def _prepare_live(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,
-                transport_parent_id=None):
+                transport_parent_id=None, borrow_exact=False):
         """Attach certified positive physical exchange volumes before transport.
 
         Each exchange has one stock_id, physical_cell_id, direction ('supply'
@@ -301,7 +311,10 @@ class PreparedFiniteStocks:
             ids = [r['cell_id'] for r in cells]
             if len(set(ids)) != len(ids) or type(physical_stocks) is not dict or set(physical_stocks) != set(self._names):
                 raise TectonicsError('unique physical cells and complete retained fields required')
-            stocks = {k: [Q(v) for v in physical_stocks[k]] for k in self._names}
+            if borrow_exact:
+                stocks = {k: [v if type(v) is Q else Q(v) for v in physical_stocks[k]] for k in self._names}
+            else:
+                stocks = {k: [Q(v) for v in physical_stocks[k]] for k in self._names}
             if any(len(v) != len(ids) for v in stocks.values()):
                 raise TectonicsError('physical stock shape differs from graph')
             if _MATERIAL_QUADRATURE in self._names:

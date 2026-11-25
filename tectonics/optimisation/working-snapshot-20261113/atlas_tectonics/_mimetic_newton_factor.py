@@ -19,6 +19,7 @@ allocation envelope, not an RSS cap. No physical diagonal shift, drop rule,
 matrix cache, new Krylov limit or residual tolerance is introduced.
 SPDX-License-Identifier: AGPL-3.0-only
 """
+from atlas_shared.errors import AtlasError
 from contextlib import contextmanager, ExitStack
 from decimal import Decimal as D, DecimalException, ROUND_HALF_EVEN, localcontext
 import hashlib
@@ -39,7 +40,7 @@ def assert_current():
     return _LOADED
 
 
-class _Unavailable(Exception):
+class _Unavailable(AtlasError):
     """Numerical preconditioner limitation, not permission to alter J."""
 
 

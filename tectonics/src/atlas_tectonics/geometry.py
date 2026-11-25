@@ -18,6 +18,7 @@ wins: those are subsequent topology and geological-case responsibilities.
 """
 from __future__ import annotations
 
+from concurrent.futures import CancelledError as _CancelledError
 from dataclasses import dataclass, field
 from typing import Any
 import hashlib
@@ -81,12 +82,11 @@ def _typed_frozen(value, dtype):
 
 
 def _check_cancel(cancel):
-    from concurrent.futures import CancelledError
     if cancel is not None:
         if not callable(getattr(cancel, 'is_set', None)):
             raise GeometryError('cancel must provide is_set()')
         if cancel.is_set():
-            raise CancelledError('geometry operation cancelled')
+            raise _CancelledError('geometry operation cancelled')
 
 
 def _point_shape(value, dimensions):

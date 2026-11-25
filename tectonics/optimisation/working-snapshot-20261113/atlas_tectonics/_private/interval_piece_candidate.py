@@ -32,9 +32,12 @@ def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
     for j, axis in enumerate(grid):
         if any(a >= b for a,b in zip(axis,axis[1:])):
             raise ValueError('shared grid is not strictly increasing')
-        if tile.lower_m[j] not in axis or tile.upper_m[j] not in axis:
-            raise ValueError('tile boundary missing from shared grid '+logical_id)
-        if axis.index(tile.upper_m[j]) != axis.index(tile.lower_m[j])+1:
+        try:
+            lower = axis.index(tile.lower_m[j])
+            upper = axis.index(tile.upper_m[j])
+        except ValueError:
+            raise ValueError('tile boundary missing from shared grid '+logical_id) from None
+        if upper != lower+1:
             raise ValueError('tile spans multiple grid intervals '+logical_id)
     path = component['partition_path']
     fans = [r['ray_ids'] for r in interval_rays.record['ownership_fans'] if r['plate_id'] == row['plate_id']]

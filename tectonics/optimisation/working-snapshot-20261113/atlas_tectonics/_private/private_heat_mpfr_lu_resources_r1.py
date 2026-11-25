@@ -38,7 +38,7 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 HERE = Path(__file__).resolve().parent
 PINS = {'private_heat_mpfr_lu_r1.py': 'd1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e',
         'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
-        'private_heat_decimal_inventory_r1.py': 'f37914054ed0c20604e17e19d4361fdd0e79bb024ac5da63ba71bb9f40cd2cfe'}
+        'private_heat_decimal_inventory_r1.py': '0fca30fc3295c823db3e1000189cb5bc09d2eabc773a6e4fa0cf39a5461f89c7'}
 _SOURCE_PATHS = (__file__, A.__file__, P.__file__, D.POLICY_PATH,
                  *(HERE/name for name in PINS))
 _SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()
@@ -69,6 +69,10 @@ def dictionary_bytes(entries):
     """Installed combined-table bound incl. dummy slots, not heap overhead."""
     if type(entries) is not int or not 0 <= entries <= 1024:
         raise ValueError('Bounded integer dictionary dimension required')
+    return _dictionary_bytes(entries)
+
+
+def _dictionary_bytes(entries):
     if not entries:
         return 64
     # Exact Windows calculate_log2_keysize expression: (minsize|8)-1.
@@ -147,7 +151,7 @@ def _conversion_work(bits, precision, R):
 def _factor_envelope(n, precision, entries, bits, input_bytes, R):
     _dimensions(n, precision)
     fill = n*n
-    slot, table = mpfr_slot(precision), dictionary_bytes(n)
+    slot, table = mpfr_slot(precision), _dictionary_bytes(n)
     # Each dictionary entry keeps its column key. Charge a fresh 32-byte
     # one-limb int per slot even when the immutable keys are actually shared.
     components = (

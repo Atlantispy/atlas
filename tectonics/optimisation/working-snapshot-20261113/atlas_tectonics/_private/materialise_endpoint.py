@@ -13,11 +13,12 @@ import json
 import sys
 from pathlib import Path
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import native_transfer as N
 from atlas_tectonics._private import workflow_transfer as W
 
 
-class EndpointMaterialisationRefused(ValueError):
+class EndpointMaterialisationRefused(ValueError, AtlasError):
     pass
 
 

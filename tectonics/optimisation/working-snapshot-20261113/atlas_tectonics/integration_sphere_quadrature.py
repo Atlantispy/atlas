@@ -66,7 +66,7 @@ its eight world vertices to be reconstructed as B times the unreflected
 corners. Returned values become caller-owned; no cache or scratch is retained.
 """
     arena.work(128)
-    with V._work((*layer._geometry(), *cell._geometry()), arena.resource):
+    with V._work((*layer._geometry(), *cell._geometry()), arena.resource, convert_values=False):
         offset = tuple(sum(cell.basis[k][j]*cell.origin_m[k] for k in range(3))
                        for j in range(3))
         ends = tuple((a+o, b+o) for a, b, o in
@@ -101,7 +101,7 @@ corners. Returned values become caller-owned; no cache or scratch is retained.
                     continue
                 arena.work(64)
                 with V._work((*minima, *maxima,
-                              *(q for pair in ends for q in pair)), arena.resource):
+                              *(q for pair in ends for q in pair)), arena.resource, convert_values=False):
                     axis = alternate_axis
                     reflected = ends[axis][1] < 0
                     alpha, beta = ((-ends[axis][1], -ends[axis][0])
@@ -130,11 +130,11 @@ corners. Returned values become caller-owned; no cache or scratch is retained.
 
         # Derived rationals remain charged while the root and output stages run.
         with V._work((alpha, beta, ymin, ymax, area, volume, g, coefficient, m4, error,
-                      *centres, *halves), arena.resource):
+                      *centres, *halves), arena.resource, convert_values=False):
             t_low, t_high, root_bits = _root_terms(g, coefficient, error, arena)
             arena.work(96)
             with V._work((t_low, t_high, error, area, volume, alpha, beta,
-                          sphere, ymin, ymax, *cell._geometry()), arena.resource):
+                          sphere, ymin, ymax, *cell._geometry()), arena.resource, convert_values=False):
                 integral_low, integral_high = area*(t_low-error), area*t_high
                 if branch == 'upper':
                     low, high = integral_low-alpha*area, integral_high-alpha*area

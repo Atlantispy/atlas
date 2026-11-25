@@ -37,6 +37,7 @@ CompactRecord.from_segment, export_record, restore_records, restore_checkpoint o
 partition restore. Per-scalar re-decoding and the streamed identity recomputation
 belong to the mandatory independent fresh-process reader, which reads the SEALED files.
 """
+from atlas_shared.errors import AtlasError
 import json
 
 import numpy as np
@@ -61,7 +62,7 @@ CHUNK_BINDING_RECOMPUTE_FUNCTIONS = ('chunk_binding_term', 'chunk_binding_digest
 CHUNK_BINDING_ABSENT = 'unavailable: chunk id/content binding is checked only by a decoding read (G8)'
 
 
-class PresealRefused(ValueError):
+class PresealRefused(ValueError, AtlasError):
     pass
 
 

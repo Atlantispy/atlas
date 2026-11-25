@@ -7,6 +7,7 @@ Caller buffers/native allocator baselines need explicit allowances and measured
 headroom; reserving estimated bytes does not constrain the allocator itself.
 """
 from __future__ import annotations
+from atlas_shared.errors import AtlasError
 from concurrent.futures import CancelledError
 from contextlib import ExitStack, contextmanager
 import hashlib
@@ -154,7 +155,7 @@ def _difference_bits(a, b):
     return max(a[0] + b[1], b[0] + a[1]) + 1, a[1] + b[1]
 
 
-class MemoryLimitError(ValueError):
+class MemoryLimitError(ValueError, AtlasError):
     """A requested operation exceeds its explicit allocation envelope."""
 
 
@@ -165,7 +166,7 @@ class MemoryLimitError(ValueError):
 SCOPE_ADMISSION = 'scope-admission.r1'
 
 
-class PredicateWorkLimitError(ValueError):
+class PredicateWorkLimitError(ValueError, AtlasError):
     """Explicit finite predicate-work allowance, measured in units, exhausted."""
     def __init__(self, count, category):
         self.requested_units, self.category = count, category

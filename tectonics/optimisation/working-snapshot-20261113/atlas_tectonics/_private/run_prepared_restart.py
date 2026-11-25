@@ -102,6 +102,8 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
     __package__, _PACKAGED_STARTUP = _prepare_packaged_script(sys.argv[1:])
 
 
+from atlas_shared.errors import AtlasError
+from atlas_shared.execution import profiling
 from atlas_tectonics._private import start_gate as SG
 from atlas_tectonics._private import route2_gate as RG
 from atlas_shared.machine import resources_monitor as MONITOR
@@ -119,7 +121,7 @@ LAUNCH_ENV = dict(OPENBLAS_NUM_THREADS='1', OMP_NUM_THREADS='1', PYTHONHASHSEED=
 REQUIRED_MODULES = ('native_transfer', 'spatial_transfer', 'geometry_transfer',
     'workflow_transfer', 'historical_admission', 'runtime_compatibility',
     'materialise_endpoint', 'plan_preparation', 'private_heat_continuation_guard_r3',
-    'windows_workload_job', 'private_heat_resource_diagnostics_r1', 'dev_stage_timing', 'initial_workload',
+    'windows_workload_job', 'private_heat_resource_diagnostics_r1', 'initial_workload',
     'funding_transfer', 'continuation_transfer', 'compact_store', 'mesh_tables',
     'spatial_indexed_patch', 'spatial_workflow_patch', 'partition_tables', 'partition_store',
     'partition_workflow_patch', 'partition_native_patch', 'partition_routing_patch',
@@ -158,7 +160,7 @@ H3_KERNEL = 'private_heat_certification_kernel_r1'
 H3_KERNEL_SHA256 = '63f9f63610429802b48b611d2bd6e549b2a86d38a1e01c3944cf89287e0dd3e0'
 
 
-class RestartRefused(ValueError):
+class RestartRefused(ValueError, AtlasError):
     pass
 
 
@@ -366,7 +368,7 @@ class RestartProfile:
         require(row.get('storage_format', 'native-v1') in ('native-v1', 'interval-catalog-v1'),
                 'reviewed storage format required')
         required = set(REQUIRED_MODULES) | (set(COMPACT_MODULES) if compact_profile(row) else set())
-        require(type(row['modules']) is dict and set(row['modules']) == required,
+        require(type(row['modules']) is dict and set(row['modules']) in (required, required | {'dev_stage_timing'}),
                 'complete explicit helper module bindings required')
         for field in ('source_manifest', 'preparation', 'compatibility_policy', 'historical_inputs'):
             require(type(row[field]) is dict and set(row[field]) == {'path', 'sha256'},
@@ -804,30 +806,19 @@ class RestartSources:
     def selected(self):
         require(not self.selected_now, 'nested runtime selection refused')
         self.verify()
-        preloaded = {name: module for name, module in sys.modules.items()
-                     if name.partition('.')[0] in ('atlas_tectonics', 'atlas_shared')}
-        if preloaded:
-            if __package__ != 'atlas_tectonics._private':
-                records = getattr(sys.modules.get('_atlas_checked_installed_modules'), 'records', {})
-                pins = _json(self._manifest)['files']
-                for name, module in preloaded.items():
-                    row = records.get(name)
-                    require(row is not None and row[0] is module
-                            and row[1].is_relative_to(self.native_root/name.partition('.')[0])
-                            and pins.get(row[1].relative_to(self.workspace).as_posix()) == row[2],
-                            'bare runtime selection refuses a preload outside its checked startup source: '+name)
+        installed = __package__ == 'atlas_tectonics._private'
+        pins = self.files()
+        if installed:
+            from atlas_tectonics import integration_worker_bootstrap as startup
             # Importing this installed helper necessarily loads its two package
             # parents. Reuse is allowed only for this authenticated inventory,
             # including every already loaded native/private submodule.
             self.check_imported()
-        installed = __package__ == 'atlas_tectonics._private'
-        if installed:
-            from atlas_tectonics import integration_worker_bootstrap as startup
+        else:
+            startup = self._source_bootstrap(pins)
+            startup.verify_installed_modules(self.native_root, pins, self.workspace)
         before = list(sys.path)
         owner = self
-        pins = _json(self._manifest)['files']
-        if not installed:
-            startup = self._source_bootstrap(pins)
         fixtures = self.fixtures()
 
         class Loader(importlib.machinery.SourceFileLoader):
@@ -879,17 +870,16 @@ class RestartSources:
         sys.meta_path.insert(0, finder)
         object.__setattr__(self, 'selected_now', True)
         try:
-            fixture_scope = nullcontext()
-            if fixtures is not None:
-                from atlas_tectonics.reuse import fixture_identity_context
-                fixture_scope = fixture_identity_context(self.manifest_path, self.manifest_pin, self.workspace)
-            with fixture_scope:
+            with startup.public_import_scope(self.native_root, finder):
+                fixture_scope = nullcontext()
                 if fixtures is not None:
-                    # Worker startup still requires the authenticated Runner finder first.
-                    # Keep the fixture identity finder installed beneath that boundary.
-                    sys.meta_path.remove(finder)
-                    sys.meta_path.insert(0, finder)
-                with startup.public_import_scope(self.native_root, finder):
+                    from atlas_tectonics.reuse import fixture_identity_context
+                    fixture_scope = fixture_identity_context(self.manifest_path, self.manifest_pin, self.workspace)
+                with fixture_scope:
+                    if fixtures is not None:
+                        # Keep the authenticated Runner finder first for worker startup.
+                        sys.meta_path.remove(finder)
+                        sys.meta_path.insert(0, finder)
                     self.check_imported()
                     yield self
                     self.check_imported()
@@ -1159,11 +1149,15 @@ def publish_and_reopen(store, base, *, budget, check, phase, prepare_next=False,
 def _published_root(workflow, store, base, case, execution, budget):
     """Root identity a fresh reader must reproduce; recorded in both run modes."""
     from atlas_tectonics._private import workflow_transfer as W
-    scratch = W._decode_allocation(budget, workflow._root)
-    root = json.loads(workflow._root)
+    root_bytes = workflow._root
+    scratch = W._decode_allocation(budget, root_bytes)
+    root = json.loads(root_bytes)
     require(store.metadata(root['key']) == root, 'published root differs from its reopened metadata')
     collar = case['collar']
-    result = dict(workflow_id=workflow.workflow_id, root_key=root['key'], root_metadata_sha256=W.digest(root),
+    workflow_id = root['workflow_id']
+    if len(root_bytes) > W.MAX_METADATA_BYTES:
+        raise W.WorkflowTransferRefused('bounded migration metadata exceeds 8 MiB')
+    result = dict(workflow_id=workflow_id, root_key=root['key'], root_metadata_sha256=sha256(root_bytes).hexdigest(),
         sequence=root['sequence'], inspect=workflow.inspect(), producer_pid=os.getpid(),
         store_limits=asdict(store.limits), store_compression=asdict(store.compression),
         execution_provenance=execution.provenance,
@@ -1498,7 +1492,6 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
     W = sources.module('workflow_transfer')
     P = sources.module('plan_preparation')
     IW = sources.module('initial_workload')
-    timing = sources.module('dev_stage_timing')
     driver_module = sources.module(row['advance_driver']['module'])
     require('working_store' in inspect.signature(M.materialise).parameters,
             'store-aware compact endpoint materialisation is not composed')
@@ -1570,21 +1563,21 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
         with retained_run(budget, record) if compact else nullcontext(None) as scope, \
                 ExecutionContext('scipy') as execution, preparation(budget=budget, pressure_space='q1-p0',
                 material_quadrature=True) as case:
-            timing.checkpoint('current-plans-prepared')
+            profiling.checkpoint('current-plans-prepared')
             guard.phase('authenticate-historical-endpoint-readonly')
             with H.open_original_readonly(root=historical_root, historical_inputs=sources.historical_inputs, limits=limits, compression=compression,
                                           budget=budget) as original:
                 admission = H.admit_historical_endpoint(original, root=historical_root, historical_inputs=sources.historical_inputs, execution=execution,
                                                         budget=budget, guard=guard, production_release=production_release)
                 require(type(admission) is W.HistoricalEndpointAdmission, 'historical issuer returned no admission')
-                timing.checkpoint('historical-endpoint-authenticated')
+                profiling.checkpoint('historical-endpoint-authenticated')
                 guard.phase('bind-authenticated-original-for-compact-migration' if compact else
                             'copy-authenticated-checkpoint-to-fresh-output')
                 if compact:
                     original_path, original_pin = original.path, admission.binding()['database_sha256']
                 else:
                     original_path, original_pin = _copy_original(admission, destination, budget=budget, check=check)
-                timing.checkpoint('authenticated-original-bound' if compact else 'authenticated-checkpoint-copied')
+                profiling.checkpoint('authenticated-original-bound' if compact else 'authenticated-checkpoint-copied')
                 storage_point(record, 'original', checkpoint=original_path)
                 if not compact:
                     storage_point(record, 'after-copy', checkpoint=destination, query_directory=query_directory,
@@ -1607,7 +1600,7 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
                             collar=case['collar'], execution=execution, compatibility=compatibility,
                             budget=budget, check=check, working_store=store, phase=guard.phase,
                             **({'scope': scope} if compact else {})) as base:
-                        timing.checkpoint('endpoint-materialised')
+                        profiling.checkpoint('endpoint-materialised')
                         require(type(base) is W.MigratedWorkflowBase and
                                 type(base._runtime) is W.RuntimeCompatibilityAdmission,
                                 'materialiser returned no authenticated current base')
@@ -1626,13 +1619,13 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
                         record['initial_workload'] = dict(state=state.record(), duration_s=duration,
                             gate='equals the authenticated historical head advance duration_s')
                         del state
-                        timing.checkpoint('frozen-initial-workload-authenticated')
+                        profiling.checkpoint('frozen-initial-workload-authenticated')
                         publication = dict(prepare_next=not stop_before_advance,
                             producer_identity=profile.sha256,
                             runtime_identity=record['source_proof']['native_source_digest']) if compact else {}
                         with publish_and_reopen(store, base, budget=budget, check=check, phase=guard.phase,
                                                 **publication) as workflow:
-                            timing.checkpoint('root-published-and-reopened')
+                            profiling.checkpoint('root-published-and-reopened')
                             record['published_root'] = _published_root(workflow, store, base, case,
                                                                        execution, budget)
                             storage_point(record, 'after-publish-reopen', checkpoint=destination, store=store)
@@ -1702,7 +1695,7 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
         if compact:
             record['compact_storage'] = reader.storage_inventory(destination, budget=budget, check=check)
         record['original_database_unchanged'] = True
-        timing.checkpoint('sources-and-original-verified')
+        profiling.checkpoint('sources-and-original-verified')
         return budget
     finally:
         # Even a failed continuation cannot silently lose its original binding.
@@ -1724,11 +1717,12 @@ def gate_key(profile, python, *, stop_before_advance=False, dev_timing=False):
                           stop_before_advance=stop_before_advance, dev_timing=dev_timing)
 
 
-def command(profile, python, *, stop_before_advance=False, dev_timing=False, start_gate=None, production_release=False):
+def command(profile, python, *, stop_before_advance=False, dev_timing=False, start_gate=None,
+            production_release=False, run_profile=frozenset()):
     """Inspectable guarded command only; never launches or reads the database."""
     require(type(stop_before_advance) is bool, 'explicit stop-before-advance mode required')
     require(type(dev_timing) is bool, 'dev timing flag must be boolean')
-    require(type(production_release) is bool and not (production_release and dev_timing),
+    require(type(production_release) is bool and not (production_release and (dev_timing or run_profile)),
             'production Release is explicit and development diagnostics remain strict-only')
     sources = RestartSources(profile)
     sources.verify()
@@ -1745,14 +1739,15 @@ def command(profile, python, *, stop_before_advance=False, dev_timing=False, sta
         '--profile', str(profile.path), '--profile-sha256', profile.sha256,
         *(['--stop-before-advance'] if stop_before_advance else []),
         *(['--dev-timing'] if dev_timing else []),
+        *profiling.profile_words(run_profile.intersection(('stages',))),
         *(['--production-release'] if production_release else []),
         *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
-def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gate=None, production_release=False):
-    dev_timing = _dev_timing_enabled(dev_timing)
+def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gate=None,
+              production_release=False, run_profile=frozenset()):
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
-    require(type(production_release) is bool and not (production_release and dev_timing),
+    require(type(production_release) is bool and not (production_release and (dev_timing or run_profile)),
             'production Release is explicit and development diagnostics remain strict-only')
     child = None if production_release else SG.child_admit(start_gate, MONITOR.free_memory())
     sources = RestartSources(profile)
@@ -1767,8 +1762,6 @@ def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gat
         json.dump(record, stream)
     with sources.selected():
         G = sources.module('private_heat_continuation_guard_r3')
-        timing = sources.module('dev_stage_timing')
-        dev_timing = timing.enabled(dev_timing)
         query_stages = QueryStages(record)
 
         def save():
@@ -1778,7 +1771,12 @@ def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gat
             guard = G.ContinuationGuard(output, record, save,
                 **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
                    if admitted is not None else SG.guardian_limits(child)))
-            with timing.collect(guard, output.parent, enabled=dev_timing, record=record,
+            record_stages = dev_timing or 'stages' in run_profile
+            source_pin = None
+            if record_stages:
+                from atlas_tectonics.integration_worker_bootstrap import installed_source_pin
+                source_pin = installed_source_pin(profiling)
+            with profiling.collect(guard, output.parent, enabled=record_stages, record=record, source_sha256=source_pin,
                                 metadata=dict(profile_sha256=profile.sha256)):
                 budget = run_prepared_restart(profile, sources=sources, guard=guard, record=record, save=save,
                                               stop_before_advance=stop_before_advance, start_gate=start_gate,
@@ -1822,6 +1820,7 @@ def main(argv=None):
     parser.add_argument('--profile-sha256', required=True)
     parser.add_argument('--stop-before-advance', action='store_true')
     parser.add_argument('--dev-timing', action='store_true', help='opt-in development timing and memory diagnostics')
+    parser.add_argument('--run-profile', default='off')
     parser.add_argument('--production-release',action='store_true',help='explicit authenticated packaged production only')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--launch', action='store_true')
@@ -1841,12 +1840,13 @@ def main(argv=None):
     require(not args.workload or not (args.peak_records or args.booking_bytes is not None or args.booking_basis is not None),
             'measurement/booking arguments belong to --launch')
     dev_timing = _dev_timing_enabled(args.dev_timing)
-    require(not args.production_release or not (dev_timing or args.peak_records or args.booking_bytes is not None
+    run_profile = profiling.profile_selection(args.run_profile)
+    require(not args.production_release or not (dev_timing or run_profile or args.peak_records or args.booking_bytes is not None
             or args.booking_basis is not None), 'production Release never books and refuses development diagnostics')
     profile = RestartProfile.read(args.profile, args.profile_sha256)
     if args.workload:
         return _workload(profile, stop_before_advance=args.stop_before_advance, dev_timing=dev_timing,
-                         start_gate=args.start_gate, production_release=args.production_release)
+                         start_gate=args.start_gate, production_release=args.production_release, run_profile=run_profile)
     gate = None
     if args.production_release:
         gate = production_decision(RestartSources(profile),'prepared')
@@ -1855,7 +1855,7 @@ def main(argv=None):
                                  dev_timing=dev_timing), records=args.peak_records,
                          booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
     argv = command(profile, sys.executable, stop_before_advance=args.stop_before_advance, dev_timing=dev_timing,
-                   start_gate=gate, production_release=args.production_release)
+                   start_gate=gate, production_release=args.production_release, run_profile=run_profile)
     print(json.dumps(dict(status='SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', command=argv,
         production_acceptance=False)), flush=True)
     if not args.launch:

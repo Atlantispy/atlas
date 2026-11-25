@@ -40,7 +40,7 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 from atlas_tectonics import integration_mimetic_newton as _POLICY
 
 HERE = Path(__file__).resolve().parent
-CORE_SHA256 = 'a930641b2de69beac8162e65ce9e65761b3cf590bac4cdf4ec2c7850ebf9d51e'
+CORE_SHA256 = '6849f3864c16957d9413f85c9025c050ffdf39ea701f55597c9a63b96613aab6'
 POLICY_SHA256 = '767bf6dc34b01fb6c3538c0f2b7e1a9a5e8893a459109de5afcdb9d3ff202b22'
 # Existing low-solver source closures consume this public path constant too.
 POLICY_PATH = Path(_POLICY.__file__).resolve()
@@ -375,7 +375,7 @@ def _derive(system, old, capacity, dt, source, boundary, target, cancel):
     additions = max(n, max_row, max_weights)+8+4
     low, high = 3*min(scan.low, -1074), 3*max(scan.high, 308)+additions
     scratch_digits = _count(max(2*scan.digits, high-low+1, FLOAT_DIGITS+80), 'scalar arithmetic digits')
-    chars = _count(80+8+len(str(max(abs(low), abs(high)))), 'returned Decimal string chars')
+    chars = 80+8+len(str(max(abs(low), abs(high))))
     k = min(n*n, nnz+n)
     float_slot, generated_slot = decimal_slot(FLOAT_DIGITS), decimal_slot(80)
 

@@ -403,10 +403,12 @@ class PreparedRegionalCollar3D:
             expected = {(side, at) for side, values in streams.items()
                         for at in np.ndindex(values[0].shape)}
             seen = set()
+            sides = {'x-': 'x0', 'x+': 'x1', 'y-': 'y0', 'y+': 'y1', 'z-': 'z0', 'z+': 'z1'}
             for row in record['faces']:
-                if row['side'] not in ('x-', 'x+', 'y-', 'y+', 'z-', 'z+'):
+                signed_side = row['side']
+                side = sides.get(signed_side) if type(signed_side) is str else None
+                if side is None:
                     raise TectonicsError('unknown exact physical outer face')
-                side = row['side'][0]+('0' if row['side'][1] == '-' else '1')
                 at = tuple(row['face_index'])
                 if (side, at) not in expected or (side, at) in seen:
                     raise TectonicsError('each exact physical outer face must occur once')

@@ -145,7 +145,30 @@ class ProjectionNumerics(O.OwnedSolve):
             allocator_or_rss_bound=False, native_admission=False)
 
 
-def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt, target_value):
+def _checked_face_arrays(ar, record, n, nf):
+    if len(record['physical_faces']) != nf:
+        raise ValueError('Complete original physical face inventory required')
+    return ar.array(n), ar.array(nf)
+
+
+def _issued_face_arrays(ar, _record, n, nf):
+    return ar.array(n), ar.array(nf)
+
+
+def _check_temperatures(ar, temperatures, stored, cap):
+    if temperatures != [e/ar.public(c) for e, c in zip(stored, cap, strict=True)]:
+        raise ValueError('Public temperature must be actual stored energy / original capacity')
+
+
+def _reserve_issued_temperatures(ar, _temperatures, _stored, cap):
+    # The sealed producer used these exact represented binary64 capacities.
+    # Keep the original reservation and live poll for each one.
+    for _ in cap:
+        ar.reserve(1075)
+
+
+def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt, target_value, *,
+               face_arrays=_checked_face_arrays, check_temperatures=_check_temperatures):
     n, nf = len(old_values), len(incidence)
     old, cap, source = [ar.decoded_array(values, n) for values in (old_values, cap_values, source_values)]
     if any(not ar.less(0, e) or not ar.less(0, c) for e, c in zip(old, cap, strict=True)):
@@ -159,9 +182,7 @@ def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt,
         ar.encoded_equal(values, record[key], 'original stocks/capacities/sources')
     if not ar.less(0, target) or not ar.equal(target, ar.decode(record['independently_supplied_absolute_residual_target'])):
         raise ValueError('Original independently supplied residual target differs')
-    if len(record['physical_faces']) != nf:
-        raise ValueError('Complete original physical face inventory required')
-    out, canonical = ar.array(n), ar.array(nf)
+    out, canonical = face_arrays(ar, record, n, nf)
     for at in range(n):
         ar.put(out, at, ar.G.mpq(0))
     outward = ar.G.mpq(0)
@@ -184,8 +205,7 @@ def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt,
         raise ValueError('Complete returned stock and temperature arrays required')
     if stored != [ar.public(value) for value in new]:
         raise ValueError('Public energy is not the single correctly rounded exact stock projection')
-    if temperatures != [e/ar.public(c) for e, c in zip(stored, cap, strict=True)]:
-        raise ValueError('Public temperature must be actual stored energy / original capacity')
+    check_temperatures(ar, temperatures, stored, cap)
     retained, projection, public = ar.array(n), ar.array(n), ar.array(n)
     for i in range(n):
         ar.put(retained, i, ar.op('subtract', ar.op('add', ar.op('subtract', new[i], old[i]), out[1][i]), source[i]))
@@ -218,6 +238,18 @@ def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt,
 
 def calculate(record, geometry, old, cap, source, dt, target, *, budget, cancel=None):
     """Own exact projection values; only the fixed arithmetic above runs."""
+    return _calculate_owned(record, geometry, old, cap, source, dt, target, budget=budget, cancel=cancel,
+                            face_arrays=_checked_face_arrays, check_temperatures=_check_temperatures)
+
+
+def _calculate_issued(record, geometry, old, cap, source, dt, target, *, budget, cancel=None):
+    """Project the record decoded from the exact seal issued on the fixed forward route."""
+    return _calculate_owned(record, geometry, old, cap, source, dt, target, budget=budget, cancel=cancel,
+                            face_arrays=_issued_face_arrays, check_temperatures=_reserve_issued_temperatures)
+
+
+def _calculate_owned(record, geometry, old, cap, source, dt, target, *, budget, cancel,
+                     face_arrays, check_temperatures):
     check(cancel)
     if source_hash(O.__file__, cancel) != _OWNER_SHA:
         raise ValueError('Frozen exact-operation owner source changed')
@@ -237,7 +269,8 @@ def calculate(record, geometry, old, cap, source, dt, target, *, budget, cancel=
         for path, digest in _SOURCES.items():
             if source_hash(path, cancel) != digest:
                 raise ValueError('Fixed projection arithmetic source changed')
-        result = _calculate(ar, record, geometry._incidence, old, cap, source, dt, target)
+        result = _calculate(ar, record, geometry._incidence, old, cap, source, dt, target,
+                            face_arrays=face_arrays, check_temperatures=check_temperatures)
         # The operation frame and its temporary products are gone. Preserve
         # actual final values, not fictitious unreduced expression arrays.
         ar.settle(result)

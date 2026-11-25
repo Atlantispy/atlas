@@ -28,6 +28,7 @@ here seals, promotes or reads back; the runner owns the store protocol.
 import functools
 import json
 import os
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private.runtime_checks import Checks
 from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import asdict
@@ -118,7 +119,7 @@ SUCCESSOR_COMPARISON_ALE = {'mode': 'serial', 'workers': 2}    # the one explici
 LINEAGE_SCHEMA = 'atlas.fresh-interval-lineage.v1'
 
 
-class FreshIntervalRefused(ValueError):
+class FreshIntervalRefused(ValueError, AtlasError):
     pass
 
 
@@ -327,7 +328,7 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
     ``measurements``: see admission.
     """
     from atlas_tectonics._private.compact_restart_patch import require_capture_route
-    from atlas_tectonics._private import dev_stage_timing as TIMING
+    from atlas_shared.execution import profiling as TIMING
     require_capture_route(store)
     _seed_pinned()
     # Item 11 M: the schema, closures included, resolves before the record and the admission (fail closed).
@@ -568,7 +569,7 @@ def _before_advance(m, a, guard, artifacts, record, save, phase, *, store_limits
         _require(duration == m.ACTUATED_CONTROL.duration(a.case), 'Original force-selected duration changed')
         record['preheat_gate'] = {'cells': coverage['cells'], 'faces': coverage['faces'], 'duration_s': duration,
             'coverage': coverage, 'absolute_residual_target': m.D.TARGET}
-        from atlas_tectonics._private import dev_stage_timing as TIMING
+        from atlas_shared.execution import profiling as TIMING
         TIMING.checkpoint('geometry-and-pre-advance-coverage-complete')
         phase('current-physical-coverage-confirmed-before-advance')
         from atlas_tectonics._private.live_spatial_patch import record_access as _p26_record_access, reference as _p26_record_reference, holder_identity as _p26_holder_identity
@@ -576,10 +577,12 @@ def _before_advance(m, a, guard, artifacts, record, save, phase, *, store_limits
         from contextlib import nullcontext as _p26_nullcontext
         # D-1 (design step5-6-twice 7fa21d3f s2): the capture hashed end_bounds' own bytes; when that is the solution's
         # bounds_id they are the sidecar's bytes, already held: no render, no record open. The sidecar's hash decides.
-        _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == _p26_holder_identity(solution.bounds)
+        _p26_bounds_id = _p26_holder_identity(solution.bounds)
+        _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == _p26_bounds_id
         with (_p26_nullcontext() if _p26_held else _p26_record_access(solution.bounds)) as _p26_bounds_record:
             record['receiving_certification'] = m.prepared_interval_driver.P26ReceivingCapture.certification(solution,
                 output_directory=artifacts, limits=store_limits,
+                bounds_identity=_p26_bounds_id,
                 bounds_chunks=(memoryview(end_bounds._json),) if _p26_held else
                 _p26_bounds_chunks(_p26_record_reference(_p26_bounds_record)))
         save()
@@ -614,7 +617,7 @@ def _completed(m, a, workflow, record, phase, *, artifacts):
         record['heat_door'] = dict(door.last or {'written': False},
                                    heat_loaded_identity=m.J.I._LOADED_IMPLEMENTATION.identity)
         door.folder = door.context = None
-        from atlas_tectonics._private import dev_stage_timing as TIMING
+        from atlas_shared.execution import profiling as TIMING
         TIMING.checkpoint('heat-projection-and-endpoint-publication-complete')
         phase('actual-heat-endpoint-committed')
         record['receiving_preimages'] = m.prepared_interval_driver.P26ReceivingCapture.capture(result,

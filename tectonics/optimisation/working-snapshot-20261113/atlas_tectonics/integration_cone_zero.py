@@ -24,7 +24,7 @@ def _series(s, order, shift, arena):
     """Consecutive alternating partial sums for cos (0) or sinc (1)."""
     total = term = Q(1)
     for k in range(1, order+2):
-        with G.V._work((s, total, term), arena.resource):
+        with G.V._work((s, total, term), arena.resource, convert_values=False):
             arena.work(32)
             term = -term*s/((2*k-1+shift)*(2*k+shift))
             previous, total = total, total+term
@@ -50,7 +50,7 @@ def projection_bounds(u, theta, g, arena, *, order=8):
     if (kernel is not G.B and _series is _reference[0] and _dot is _reference[1]
             and _cross is _reference[2]):
         return kernel._projection_bounds(u, theta, g, arena, order)
-    with G.V._work((*u, *theta, *g), arena.resource):
+    with G.V._work((*u, *theta, *g), arena.resource, convert_values=False):
         arena.work(96)
         s, value = _dot(theta, theta), _dot(u, g)
         if not s:
@@ -59,11 +59,11 @@ def projection_bounds(u, theta, g, arena, *, order=8):
             return None
         A = _dot(u, theta)*_dot(theta, g)/s
         B, D = value-A, _dot(u, _cross(theta, g))
-    with G.V._work((s, A, B, D), arena.resource):
+    with G.V._work((s, A, B, D), arena.resource, convert_values=False):
         if B == D == 0:
             return A, A
         cosine, sinc = _series(s, order, 0, arena), _series(s, order, 1, arena)
-        with G.V._work((A, B, D, *cosine, *sinc), arena.resource):
+        with G.V._work((A, B, D, *cosine, *sinc), arena.resource, convert_values=False):
             arena.work(32)
             bc = sorted(B*x for x in cosine)
             ds = sorted(D*x for x in sinc)
@@ -105,7 +105,7 @@ def plane_certificate(cell, literals, constraints, time, arena, *, detail=None):
         return None
     values = (*cell.origin_m, *cell.lower_m, *cell.upper_m,
               *(q for row in cell.basis for q in row))
-    with G.V._work(values, arena.resource):
+    with G.V._work(values, arena.resource, convert_values=False):
         arena.work(128)
         vertices = cell._vertices()
     from .integration_moving_face_moments import _constraint_key   # A-46: the A-16 key, free of the caller's order
@@ -113,7 +113,7 @@ def plane_certificate(cell, literals, constraints, time, arena, *, detail=None):
     for name, sign in literals:
         raw = constraints[name]
         scalars = tuple(_encoded_scalars(raw))
-        with G.V._work((*scalars, time), arena.resource):
+        with G.V._work((*scalars, time), arena.resource, convert_values=False):
             arena.work(64)
             path = G._rigid_plane_path(raw)
             if path is None:
@@ -136,7 +136,7 @@ def plane_certificate(cell, literals, constraints, time, arena, *, detail=None):
             orders.append(order)
         if len(bounds) != len(vertices):
             continue
-        with G.V._work((*signed, *endpoint, *(q for pair in bounds for q in pair)), arena.resource):
+        with G.V._work((*signed, *endpoint, *(q for pair in bounds for q in pair)), arena.resource, convert_values=False):
             arena.work(64)
             result = dict(kind='exact-rigid-plane-voxel-endpoint-zero-volume',
                 literal=[name, sign], time_s=G._qtext(Q(time)),
@@ -164,7 +164,7 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
         return None
     values = (*cell.origin_m, *cell.lower_m, *cell.upper_m,
               *(q for row in cell.basis for q in row))
-    with G.V._work(values, arena.resource):
+    with G.V._work(values, arena.resource, convert_values=False):
         arena.work(128)
         vertices = cell._vertices()
         axes = []
@@ -184,7 +184,7 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
     for name, sign in literals:
         raw = constraints[name]
         scalars = tuple(_encoded_scalars(raw))
-        with G.V._work((*scalars, time), arena.resource):
+        with G.V._work((*scalars, time), arena.resource, convert_values=False):
             arena.work(64)
             path = G._rigid_plane_path(raw)
             if path is None:
@@ -202,7 +202,7 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
             if attempts > MAX_TRIPLES:
                 return None
             normals = tuple(row[2] for row in triple)
-            with G.V._work((*theta, *(x for row in normals for x in row)), arena.resource):
+            with G.V._work((*theta, *(x for row in normals for x in row)), arena.resource, convert_values=False):
                 arena.work(128)
                 delta = _dot(normals[0], _cross(normals[1], normals[2]))
                 if not delta:
@@ -210,7 +210,7 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
                 sign = 1 if delta > 0 else -1
                 generators = tuple(tuple(sign*x for x in _cross(normals[(i+1) % 3], normals[(i+2) % 3]))
                                    for i in range(3))
-            with G.V._work((delta, *(x for row in (*normals, *generators) for x in row)), arena.resource):
+            with G.V._work((delta, *(x for row in (*normals, *generators) for x in row)), arena.resource, convert_values=False):
                 arena.work(128)
                 identity = tuple(tuple(_dot(m, g) for g in generators) for m in normals)
                 expected = tuple(tuple(abs(delta) if i == j else Q(0) for j in range(3)) for i in range(3))
@@ -223,7 +223,7 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
                         break
                     if all(low >= 0 for low, high in bounds):
                         with G.V._work((delta, maximum, *u, *theta,
-                                        *(x for pair in bounds for x in pair)), arena.resource):
+                                        *(x for pair in bounds for x in pair)), arena.resource, convert_values=False):
                             arena.work(64)
                             result = dict(kind='exact-rigid-normal-cone-voxel-endpoint-zero-volume',
                                 literals=[[name, sign] for name, sign, _ in triple],

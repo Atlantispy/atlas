@@ -96,7 +96,7 @@ def _nonpositive(normal_path, ray_path, sign, duration, arena):
     ray, theta_r, omega_r, prior = ray_path
     operands = (*normal, *theta_n, *omega_n, *ray, *theta_r, *omega_r,
                 *(q for w in prior for q in w), duration)
-    with V._work(operands, arena.resource):
+    with V._work(operands, arena.resource, convert_values=False):
         arena.work(128+16*len(prior))
         form = _generator_form(normal_path, ray_path, sign, duration)
         if form is None:
@@ -108,7 +108,7 @@ def _nonpositive(normal_path, ray_path, sign, duration, arena):
             return None
         A, N, kk, angle_squared = moving
         coefficients = (d, A, N, kk, duration, angle_squared)
-        with V._work(coefficients, arena.resource):
+        with V._work(coefficients, arena.resource, convert_values=False):
             if A >= 0 and N <= 0:
                 return (d < 0 or A > 0 or N < 0, coefficients,
                         'exact-Rodrigues-same-sign-departure')
@@ -156,7 +156,7 @@ def _pair_exclusion(first, second, shared, duration, arena):
     """
     forms = first[shared], first[1-shared], second[shared], second[1-shared]
     operands = tuple(q for d, moving, _ in forms for q in (d, *(moving or ())))
-    with V._work((*operands, duration), arena.resource, pairs=16):
+    with V._work((*operands, duration), arena.resource, pairs=16, convert_values=False):
         arena.work(96)
         if first[shared][0] or second[shared][0]:
             return None
@@ -184,7 +184,7 @@ def _opposite_exclusion(halfspaces, paths, duration, arena):
             name, sign, plane, wall = row
             normal, theta, omega = plane
             operands = tuple(q for vector in plane for q in vector)
-            with V._work(operands, arena.resource, pairs=8):
+            with V._work(operands, arena.resource, pairs=8, convert_values=False):
                 arena.work(64)
                 pivot = next(q for q in normal if q)
                 key = (tuple(q/pivot for q in normal), theta, omega)
@@ -202,7 +202,7 @@ def _opposite_exclusion(halfspaces, paths, duration, arena):
                 values = (*(q for vector in first[2] for q in vector),
                           *ray, *phase, *velocity,
                           *(q for vector in prior for q in vector), duration, scale)
-                with V._work(values, arena.resource, pairs=8):
+                with V._work(values, arena.resource, pairs=8, convert_values=False):
                     arena.work(128+16*len(prior))
                     form = _generator_form(first[2], path, first[1], duration)
                     if form is None or form[1] is not None or not form[0]:
@@ -249,7 +249,7 @@ def radial_cap_zero_area(constraint, layer, cell, duration, arena):
                                 category='interface-radial-cap-paths'):
         paths = tuple(_ray_path(ray, G) for ray in rays)
         zero = (Q(0),)*3
-        with V._work(geometry, arena.resource, pairs=16):
+        with V._work(geometry, arena.resource, pairs=16, convert_values=False):
             arena.work(256)
             inner = layer.bottom_radius_m
             if inner <= 0:
@@ -265,7 +265,7 @@ def radial_cap_zero_area(constraint, layer, cell, duration, arena):
                 ray, phase, velocity, prior = path
                 values = (*normal, limit, *ray, *phase, *velocity,
                           *(q for vector in prior for q in vector), duration)
-                with V._work(values, arena.resource, pairs=8):
+                with V._work(values, arena.resource, pairs=8, convert_values=False):
                     arena.work(128+16*len(prior))
                     form = _generator_form((normal, zero, zero), path, 1, duration)
                     if form is None:
@@ -274,7 +274,7 @@ def radial_cap_zero_area(constraint, layer, cell, duration, arena):
                     if moving is None:
                         bounds = start, start
                     else:
-                        with V._work((start, *moving, duration), arena.resource, pairs=16):
+                        with V._work((start, *moving, duration), arena.resource, pairs=16, convert_values=False):
                             arena.work(96)
                             bounds, _ = _departure_bounds(start, moving, duration)
                     if bounds[0] <= 0:
@@ -287,7 +287,7 @@ def radial_cap_zero_area(constraint, layer, cell, duration, arena):
                                  for q in (start, *(moving or ()), *bounds))
             values = (*normal, limit, inner_squared, *coefficients,
                       *(q for path in paths for q in path[0]))
-            with V._work(values, arena.resource, pairs=16):
+            with V._work(values, arena.resource, pairs=16, convert_values=False):
                 arena.work(128)
                 norms_squared = tuple(O._dot(path[0], path[0]) for path in paths)
                 upper = limit*limit*max(norm/(lower*lower)
@@ -375,7 +375,7 @@ def zero_area(constraint, constraints, literals, duration, arena, *, fixed=()):
         forms = []
         for name, sign, plane, wall in halfspaces:
             operands = tuple(q for row in plane for q in row)
-            with V._work((*operands, duration), arena.resource, pairs=8):
+            with V._work((*operands, duration), arena.resource, pairs=8, convert_values=False):
                 arena.work(64)
                 found = tuple(_generator_form(plane, ray, sign, duration) for ray in paths)
             if all(form is not None for form in found):

@@ -36,9 +36,9 @@ EXCHANGE_SCHEMA = 'atlas.private.spatial-composed-advance.r1'
 REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
 _PINS = {
     'private_heat_grouped_account_r1.py': '38a450ad58d9f5daa71ea4158da178c1066865463289309bd82b8247132f6bc6',
-    'private_heat_native_issuer_r13.py': '8e70b904acd06a80b2f6181a7ccfff7d49d076b22878ea1842615d35f9394b99',
-    'private_heat_checkpoint_consumer_r10.py': 'b01db8fbd4bc05a6d43262d3b60733ffcb73d25963300c55fc1c85dbc7fb9f52',
-    'private_heat_forward_kernel_r13.py': 'b56ad1d244eee93a9f817acc451a5c375b4f7bb3b8d5715175670a42a8d3878a',
+    'private_heat_native_issuer_r13.py': '5eb441d32219b7bc4aca517a5ede162acb07bcd8b0d604b135485b91103a8252',
+    'private_heat_checkpoint_consumer_r10.py': '77c052cb7d5e882426be375fde985462d69325d44b85e39a5bbcca083ffa5ccc',
+    'private_heat_forward_kernel_r13.py': 'f0f295892cfeb6e877a2a70829e430ebe3f9a16eed142f04a72cfc20c9925eca',
 }
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 _HEADER = ('schema', 'method_id', 'plan_id', 'state_id', 'duration_s', 'call_id', 'geometry_id',

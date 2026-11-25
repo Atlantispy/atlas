@@ -38,11 +38,11 @@ RoundedSystem, RoundedFace, OwnedSolve = P.RoundedSystem, P.RoundedFace, P.Owned
 context_signature, boundary_signature = P.context_signature, P.boundary_signature
 HERE = Path(__file__).resolve().parent
 PINS = {
-    'private_heat_decimal_sparse_core_r1.py': 'a930641b2de69beac8162e65ce9e65761b3cf590bac4cdf4ec2c7850ebf9d51e',
-    'private_heat_decimal_inventory_r1.py': 'f37914054ed0c20604e17e19d4361fdd0e79bb024ac5da63ba71bb9f40cd2cfe',
-    'private_heat_mpfr_lu_resources_r1.py': '99347b4378394959002d046bb2d62f645b8766fc683a863d073b7431fd3f305a',
+    'private_heat_decimal_sparse_core_r1.py': '6849f3864c16957d9413f85c9025c050ffdf39ea701f55597c9a63b96613aab6',
+    'private_heat_decimal_inventory_r1.py': '0fca30fc3295c823db3e1000189cb5bc09d2eabc773a6e4fa0cf39a5461f89c7',
+    'private_heat_mpfr_lu_resources_r1.py': 'b3d534d593ce91c07b24a8003f644b7c148daf6e81cd1de912a960e02d3ee940',
     'private_heat_rational_decimal_r1.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
-    'private_heat_sparse_resources_r1.py': '63f677352a5d9d4a65ad2fe94a044c26957211aa225121f083f48b555d5e2294',
+    'private_heat_sparse_resources_r1.py': '7c9c1c2d2611fa1b319aa77e1664a0f1748da552ce3aeb11bc311bcab7d340e5',
 }
 _SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()
             for path in (__file__, *(HERE/name for name in PINS))}
@@ -71,8 +71,6 @@ def _ordering_inventory(n, k, resources):
     buffer covers addition/copy work. No SuperLU factor policy is used here.
     """
     M._dimensions(n, PRECISION)
-    if type(k) is not int or not 0 <= k <= n*n:
-        raise ValueError('Canonical bounded support required')
     compressed = resources.compressed_payload(n, k)
     components = (
         ('approximate_generations', 3*compressed+resources.compressed_payload(n, k, index_bytes=8)),

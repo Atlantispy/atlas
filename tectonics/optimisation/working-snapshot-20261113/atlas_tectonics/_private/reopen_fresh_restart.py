@@ -116,6 +116,7 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
 
 
 from atlas_tectonics._private import reopen_prepared_restart as RO
+from atlas_shared.execution import profiling
 from atlas_tectonics._private import run_fresh_interval as F
 from atlas_tectonics._private import run_prepared_restart as RUN
 from atlas_tectonics._private import start_gate as SG
@@ -936,7 +937,7 @@ def _protected_reader(function):
 @_protected_reader
 def command(profile, python, *, mode, producer_receipt_sha256, review=False, start_gate=None, interval=None,
             overlap_spec=None, fallback=False, fallback_claim_sha256=None, reuse_previous=None,
-            record_failed_prior=False, _previous=None):
+            record_failed_prior=False, _previous=None, run_profile=frozenset()):
     """Store-free preflight and the guarded argv; never launches. ``start_gate`` goes last."""
     sources = F.FreshSources(profile)
     recorded = _recording(sources, record_failed_prior)
@@ -970,6 +971,7 @@ def command(profile, python, *, mode, producer_receipt_sha256, review=False, sta
               ['--reuse-previous-run', str(reuse_previous[0]), '--reuse-previous-run-sha256', reuse_previous[1],
                *(['--reuse-identity-override'] if reuse_previous[2] else [])]),
             *(['--record-failed-prior'] if record_failed_prior else []),
+            *profiling.profile_words(run_profile.intersection(('stacks',))),
             *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
@@ -1626,6 +1628,7 @@ def main(argv=None):
     parser.add_argument('--profile', type=Path, required=True)
     parser.add_argument('--profile-sha256', required=True)
     parser.add_argument('--mode', choices=MODES, required=True)
+    parser.add_argument('--run-profile', default='off')
     parser.add_argument('--interval', type=int, help='item 21: interval N >= 2 of the interval mode')
     parser.add_argument('--producer-receipt-sha256')
     parser.add_argument('--reopen-receipt-sha256')
@@ -1686,12 +1689,15 @@ def main(argv=None):
                               booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
             if args.launch or gate_args else None)
     profile = F.FreshProfile.read(args.profile, args.profile_sha256)
+    run_profile = profiling.profile_selection(args.run_profile)
     with _reader_admission(profile, reuse_previous) as previous:
         if args.adopt:
             return adopt(profile, mode=args.mode, verdict_sha256=args.verdict_sha256,
                          approval_sha256=args.review_approval_sha256, interval=args.interval)
         if args.workload:
-            F._profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', 'reader-'+args.mode)
+            if profiling.stacks_enabled(run_profile):
+                profiling.start_stacks(Path(profile.record()['output_directory']).parent/'profile-stacks',
+                                       'reader-'+args.mode)
             return _workload(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
                              review=args.review, start_gate=args.start_gate, interval=args.interval,
                              overlap_spec=args.overlap_spec, fallback=args.reader_fallback,
@@ -1708,7 +1714,7 @@ def main(argv=None):
         argv = command(profile, sys.executable, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
                        review=args.review, start_gate=gate, interval=args.interval, overlap_spec=args.overlap_spec,
                        fallback=args.reader_fallback, fallback_claim_sha256=args.fallback_claim_sha256,
-                       reuse_previous=reuse_previous, _previous=previous, record_failed_prior=args.record_failed_prior)
+                       reuse_previous=reuse_previous, _previous=previous, record_failed_prior=args.record_failed_prior, run_profile=run_profile)
         print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                           'production_acceptance': False}), flush=True)
         if not args.launch:

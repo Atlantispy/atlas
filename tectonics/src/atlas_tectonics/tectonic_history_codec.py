@@ -277,9 +277,10 @@ def _regional_validate(out, d):
     if _hash(_json(d)) != history_result_id(out): _fail('regional wrapper intrinsic identity mismatch')
 
 
-def _catalogue(arrays, cancel, resource):
+def _catalogue(arrays, cancel, resource, *, regional_rows=None):
     if type(arrays) is not dict or not 1 <= len(arrays) <= MAX_PARCELS+4:
         _fail('invalid array catalogue count')
+    rows = None if regional_rows is None else iter(regional_rows)
     specs = {}; total = 0
     for name, value in sorted(arrays.items()):
         _cancel(cancel)
@@ -291,9 +292,24 @@ def _catalogue(arrays, cancel, resource):
         total += value.nbytes
         if total > CAP: _fail('arrays exceed 128 MiB')
         with resource.reserve(value.size+4096,category='tectonic-history-array-check'):
-            if not np.isfinite(value).all(): _fail('nonfinite array')
-            specs[name] = dict(dtype=value.dtype.str,shape=list(value.shape),nbytes=value.nbytes,
-                               sha256=_hash(memoryview(value).cast('B'),cancel))
+            if rows is None and not np.isfinite(value).all(): _fail('nonfinite array')
+            dtype, shape, nbytes = value.dtype.str, list(value.shape), value.nbytes
+            raw = memoryview(value).cast('B')
+            if rows is None:
+                digest = _hash(raw,cancel)
+            else:
+                row = next(rows, None)
+                if (row is None or row['name'] != name or row['dtype'] != dtype
+                        or row['shape'] != shape or row['nbytes'] != nbytes):
+                    _fail('regional array catalogue binding mismatch')
+                # Poll at the same chunk boundaries as the original payload hash.
+                for _ in range(0, len(raw), 1024 * 1024):
+                    _cancel(cancel)
+                _cancel(cancel)
+                digest = row['sha256']
+            specs[name] = dict(dtype=dtype,shape=shape,nbytes=nbytes,sha256=digest)
+    if rows is not None and next(rows, None) is not None:
+        _fail('regional array catalogue coverage mismatch')
     return specs, total
 
 
@@ -319,14 +335,17 @@ def _pack_history_result(out, *, budget=None, cancel=None):
         else:
             _regional_validate(out,d)
             arrays,regional = pack_regional_snapshots({'mechanics':out.mechanics},budget=resource,cancel=cancel)
-        specs,total = _catalogue(arrays,cancel,resource)
+        regional_rows = None if regional is None else regional['arrays']
+        specs,total = _catalogue(arrays,cancel,resource,regional_rows=regional_rows)
         costs = _costs(specs,d,regional)
         header = dict(schema=SCHEMA,kind=kind,result_id=history_result_id(out),descriptor=d,
                       regional=regional,arrays=specs,resources=costs)
         meta = dict(header,content_id=_hash(_json(header)))
         _json(meta)
         with resource.reserve(costs['work_bytes'],category='tectonic-history-pack'):
-            captured = {k:np.frombuffer(v.tobytes(),dtype=v.dtype).reshape(v.shape) for k,v in arrays.items()}
+            captured = arrays
+            if regional is None:
+                captured = {k:np.frombuffer(v.tobytes(),dtype=v.dtype).reshape(v.shape) for k,v in arrays.items()}
             _cancel(cancel)
             return captured,meta
 
@@ -346,7 +365,9 @@ def _restore_history_result(arrays, metadata, *, budget=None, cancel=None):
             _hash(_json({k:v for k,v in metadata.items() if k != 'content_id'})) != _sha(metadata['content_id'])):
         _fail('content/resource identity mismatch')
     with resource.reserve(costs['work_bytes'],category='tectonic-history-restore'):
-        raw = {k:v.tobytes() for k,v in arrays.items()}; kind = metadata['kind']
+        kind = metadata['kind']
+        if kind != 'evolving-regional':
+            raw = {k:v.tobytes() for k,v in arrays.items()}
         if kind == 'underthrust':
             if regional is not None: _fail('unexpected regional payload')
             _keys(d,_UNDER_KEYS,'underthrust descriptor')

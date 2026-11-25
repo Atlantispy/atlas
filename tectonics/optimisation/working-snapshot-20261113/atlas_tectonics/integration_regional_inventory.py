@@ -691,11 +691,31 @@ class RegionalBoundaryFunding:
         return dict(funding_id=self.funding_id, **json.loads(self._record))
 
     def _bound(self, state):
+        self._validate_snapshot(state)
+
+    def _bound_owner_fields(self, state):
+        return self._validate_snapshot(state, self._owner_fields)
+
+    @staticmethod
+    def _owner_fields(metadata):
+        fields = {key: metadata[key] for key in ('intervals', 'native_state_id', 'transport_id', 'source_audit_id')
+                  if key in metadata}
+        for key in ('native_state_id', 'transport_id', 'source_audit_id'):
+            value = fields.get(key)
+            if value is not None and (type(value) is not str or len(value) > 64):
+                # Preserve the original detached lookup for independently supplied nonstandard IDs.
+                return None
+        return fields
+
+    def _validate_snapshot(self, state, project=None):
         if type(state) is not RegionalMechanicalSnapshot:
             raise InventoryRefused('typed retained boundary inventory required')
         # Charge retained encoded width BEFORE JSON decode or integer parsing.
         with self._budget.reserve(65536+32*len(state._metadata), category='regional-halo-inventory-bound'):
-            self._bound_values(state, state.descriptor())
+            metadata = state.descriptor()
+            self._bound_values(state, metadata)
+            if project is not None:
+                return project(metadata)
 
     def _bound_values(self, state, metadata):
         if metadata.get('schema') != 'atlas.regional-boundary-inventory.v1' or metadata.get('funding_id') != self.funding_id:
@@ -731,7 +751,9 @@ class RegionalBoundaryFunding:
 
     def advance(self, state, result, parent_native):
         """Capture only the actual accepted native transfers; no second solve."""
-        stocks = self.stocks(state)
+        return self._advance_with_stocks(state, result, parent_native, self.stocks(state))
+
+    def _advance_with_stocks(self, state, result, parent_native, stocks):
         report = result.transport.descriptor()
         if report['input_boundary_stock_ids'] != {s: stocks[s].result_id for s in SIDES}:
             raise InventoryRefused('native transport did not consume this exact owned boundary inventory')

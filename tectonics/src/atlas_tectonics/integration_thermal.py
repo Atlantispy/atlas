@@ -209,7 +209,7 @@ def _prepared(record, thickness, dt, cache):
                   else {'type': 'temperature', 'value_k': record.base_temperature_k})
         boundaries = {'top': {'type': 'temperature', 'value_k': record.surface_temperature_k}, 'bottom': bottom}
         try:
-            thermal = _heat.prepare_thermal(np.arange(len(thickness)), depth, np.asarray(thickness),
+            thermal = _heat._prepare_reference_prism(np.arange(len(thickness)), depth, np.asarray(thickness),
                                             [float(t) for t in thickness], props,
                                             [s.reference_density_kg_m3 for s in record.sublayers], boundaries)
             cache[key] = (thermal, _heat.prepare_propagator(thermal, dt))

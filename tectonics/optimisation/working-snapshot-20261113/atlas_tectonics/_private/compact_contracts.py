@@ -6,6 +6,7 @@ no I/O, hashing, codec work, publication or runtime imports.
 """
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 from contextlib import contextmanager
 from dataclasses import dataclass
 import json
@@ -33,7 +34,7 @@ PAGE_CACHE_BYTES = 64 * 1024 * 1024
 UINT64_MAX = (1 << 64) - 1
 
 
-class ContractError(ValueError):
+class ContractError(ValueError, AtlasError):
     """Malformed, incompatible or over-bound contract; never a cache miss."""
 
 

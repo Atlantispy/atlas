@@ -340,7 +340,7 @@ def _fresh_relative(workspace, value):
     return path.resolve()
 
 
-def _validate_fresh_selection(selection):
+def _validate_fresh_selection(selection, *, full_installed_check=False):
     _require(type(selection) is dict
              and set(selection) == {"schema", "profile", "helper", "runner_modules"}
              and selection["schema"] == FRESH_SELECTION_SCHEMA,
@@ -354,11 +354,13 @@ def _validate_fresh_selection(selection):
     manifest = _json(_raw(_fresh_relative(workspace, manifest_binding["path"]),
                           manifest_binding["sha256"]))
     files = manifest["files"]
-    FixtureSources(manifest, workspace)
+    fixtures = FixtureSources(manifest, workspace)
     modules = selection["runner_modules"]
     _require(type(modules) is dict and set(modules) == set(FRESH_RUNNER_MODULES),
              "fresh startup orchestration closure differs")
     runner = _path(modules["run_fresh_interval"][0])
+    # The folded parent's next step authenticates all these pins before importing any runner.
+    defer_reads = full_installed_check and runner.parent.name == '_private' and runner.parent.parent.name == 'atlas_tectonics'
     for name in FRESH_RUNNER_MODULES:
         row = modules[name]
         _require(type(row) is list and len(row) == 2
@@ -368,15 +370,21 @@ def _validate_fresh_selection(selection):
         _require(path.is_relative_to(workspace)
                  and files.get(path.relative_to(workspace).as_posix()) == row[1],
                  "fresh startup orchestration is absent from source closure")
-        _raw(path, row[1])
+        if defer_reads:
+            _require(_pin(row[1]), 'worker startup requires a complete source pin')
+        else:
+            _raw(path, row[1])
     helper = selection["helper"]
     expected = _fresh_relative(workspace, profile["native_root"]) / "atlas_tectonics/integration_worker_bootstrap.py"
     _require(type(helper) is list and len(helper) == 2 and _path(helper[0]) == expected
              and _path(str(__file__)) == expected
              and files.get(expected.relative_to(workspace).as_posix()) == helper[1],
              "fresh startup helper is absent from selected source closure")
-    _raw(expected, helper[1])
-    return profile, manifest
+    if defer_reads:
+        _require(_pin(helper[1]), 'worker startup requires a complete source pin')
+    else:
+        _raw(expected, helper[1])
+    return profile, manifest, fixtures
 
 
 def _load_fresh_modules(selection, *, include_runner, source_selection, parent_proved=False):
@@ -385,16 +393,19 @@ def _load_fresh_modules(selection, *, include_runner, source_selection, parent_p
     runner_path = _path(selection['runner_modules']['run_fresh_interval'][0])
     if runner_path.parent.name == '_private' and runner_path.parent.parent.name == 'atlas_tectonics':
         binding = selection['profile']
+        if not include_runner:
+            # The direct runner imports this sibling after the checked finder closes.
+            names += ('interval_admission',)
         prepare_installed_runner(binding['path'], binding['sha256'], str(runner_path), runner_modules=names,
-                                 parent_proved=parent_proved)
+                                 parent_proved=parent_proved, source_selection=source_selection)
         return
-    profile, manifest = source_selection
+    profile, manifest, _ = source_selection
     workspace = _path(profile['workspace'])
     root = _fresh_relative(workspace, profile['native_root'])
     files = manifest['files']
     _require(not any(name in sys.modules for name in names) and _bound_importables(runner_path.parent, workspace, files),
              "fresh startup requires unloaded orchestration")
-    verify_installed_modules(root, files, workspace, manifest=manifest)
+    verify_installed_modules(root, files, workspace)
     _installed_registry()
     loader = _installed_loader(workspace, files)
 
@@ -410,7 +421,7 @@ def _load_fresh_modules(selection, *, include_runner, source_selection, parent_p
     sys.meta_path.insert(0, finder)
     try:
         with public_import_scope(root, finder):
-            for name in ('machine.resources_monitor', 'machine.resources_gate'):
+            for name in ('errors', 'execution.profiling', 'machine.resources_monitor', 'machine.resources_gate'):
                 importlib.import_module('atlas_shared.'+name)
             for name in names:
                 path, pin = selection["runner_modules"][name]
@@ -448,7 +459,7 @@ def _fresh_runner(runner_path):
 def prepare_fresh_parent(selection):
     """Direct -B -s -P Runner entry, before its ordinary sibling imports."""
     _validate_interpreter()
-    source_selection = _validate_fresh_selection(selection)
+    source_selection = _validate_fresh_selection(selection, full_installed_check=True)
     runner = _path(selection["runner_modules"]["run_fresh_interval"][0])
     if runner.parent.name == '_private' and runner.parent.parent.name == 'atlas_tectonics':
         _load_fresh_modules(selection, include_runner=False, source_selection=source_selection)
@@ -518,6 +529,14 @@ def _record_checked_installed_module(module, path, pin):
     registry.records[module.__name__] = (module, path, pin)
 
 
+def installed_source_pin(module):
+    registry = sys.modules.get(_INSTALLED_REGISTRY)
+    row = registry.records.get(module.__name__) if registry is not None else None
+    if row is not None and row[0] is module:
+        return row[2]
+    return None
+
+
 def _installed_registry():
     if _INSTALLED_REGISTRY not in sys.modules:
         registry = types.ModuleType(_INSTALLED_REGISTRY)
@@ -562,15 +581,14 @@ def read_application_source_manifest(root, *, pin_error=ValueError):
     return pin, json.loads(raw, object_pairs_hook=_pairs)
 
 
-def bind_shared_exact():
-    """Load the exact-arithmetic leaf under the active or adjacent selection."""
+def _bind_adjacent_shared(module, sources, unbound):
     root = Path(__file__).resolve().parent.parent
     registry = sys.modules.get(_INSTALLED_REGISTRY)
     active = getattr(getattr(registry, 'public_import', None), 'owner', None)
     if active is not None:
         _require(active[0] == root and active[1] in sys.meta_path,
                  'conflicting public package source selection')
-        importlib.import_module('atlas_shared.exact.exact_arithmetic')
+        importlib.import_module(module)
         return
 
     package = root / 'atlas_tectonics'
@@ -583,16 +601,28 @@ def bind_shared_exact():
              for key in ('files', 'source_hashes', 'data_only')), 'invalid installed application declaration')
     files = manifest['files']
     _require(all(name not in manifest['data_only'] and _pin(files.get(name))
-                 and files[name] == manifest['source_hashes'].get(name)
-                 for name in ('atlas_shared/__init__.py', 'atlas_shared/exact/__init__.py',
-                              'atlas_shared/exact/exact_arithmetic.py')),
-             'installed application exact-arithmetic sources are unbound')
+                 and files[name] == manifest['source_hashes'].get(name) for name in sources), unbound)
     finder = application_shared_finder(root, files)
     sys.meta_path.insert(0, finder)
     try:
-        importlib.import_module('atlas_shared.exact.exact_arithmetic')
+        importlib.import_module(module)
     finally:
         sys.meta_path.remove(finder)
+
+
+def bind_shared_exact():
+    """Load the exact-arithmetic leaf under the active or adjacent selection."""
+    _bind_adjacent_shared('atlas_shared.exact.exact_arithmetic',
+                          ('atlas_shared/__init__.py', 'atlas_shared/exact/__init__.py',
+                           'atlas_shared/exact/exact_arithmetic.py'),
+                          'installed application exact-arithmetic sources are unbound')
+
+
+def bind_public_errors():
+    """Select the canonical error leaf before public exception classes are defined."""
+    _bind_adjacent_shared('atlas_shared.errors',
+                          ('atlas_shared/__init__.py', 'atlas_shared/errors.py'),
+                          'installed application error sources are unbound')
 
 
 def _installed_loader(workspace, files):
@@ -626,11 +656,12 @@ def _installed_spec(root, fullname, path, target, loader):
     return spec
 
 
-def application_shared_finder(root, files):
-    """Reuse the installed source loader under the application declaration."""
-    verify_installed_modules(root, files, root, shared_only=True)
+def application_shared_finder(root, files, *, workspace=None):
+    """Use the installed source loader with the selected relative member table."""
+    workspace = root if workspace is None else workspace
+    verify_installed_modules(root, files, workspace, shared_only=True)
     _installed_registry()
-    loader = _installed_loader(root, files)
+    loader = _installed_loader(workspace, files)
 
     class Finder:
         def find_spec(self, fullname, path=None, target=None):
@@ -642,44 +673,55 @@ def application_shared_finder(root, files):
 
 
 def prepare_installed_runner(profile_path, profile_sha256, runner_path, *,
-                             runner_modules=('start_gate', 'route2_gate'), parent_proved=False):
+                             runner_modules=('start_gate', 'route2_gate'), parent_proved=False,
+                             source_selection=None):
     """Authenticate a folded script before its qualified orchestration imports.
 
     The existing profile and complete source/data manifest remain authority.
     Package initialisers and requested sibling modules compile checked source,
     never adjacent bytecode. This adds no admission or scientific permission.
     """
-    profile = _json(_raw(_path(str(profile_path)), profile_sha256))
-    workspace = _path(profile['workspace'])
+    if source_selection is None:
+        profile = _json(_raw(_path(str(profile_path)), profile_sha256))
+        workspace = _path(profile['workspace'])
+        binding = profile['source_manifest']
+        manifest = _json(_raw(_fresh_relative(workspace, binding['path']), binding['sha256']))
+    else:
+        profile, manifest, fixtures = source_selection
+        workspace = _path(profile['workspace'])
     root = _fresh_relative(workspace, profile['native_root'])
     runner = _path(str(runner_path))
     private = root/'atlas_tectonics/_private'
     _require(runner.parent == private and runner.name in ('run_fresh_interval.py','run_prepared_restart.py','reopen_fresh_restart.py','reopen_prepared_restart.py','private_heat_continuation_guard_r3.py'),
              'installed runner is outside the explicitly selected package')
-    binding = profile['source_manifest']
-    manifest = _json(_raw(_fresh_relative(workspace,binding['path']),binding['sha256']))
     files, data = manifest['files'], manifest['data_only']
     _require(type(files) is dict and files and type(data) is dict and not files.keys() & data.keys(),
              'installed startup requires disjoint complete source/data bindings')
     if not parent_proved:  # W-3 E-1: a fresh worker holds its parent's proof (source_proof); imports stay checked
         for name, pin in {**files, **data}.items():
             _raw(_fresh_relative(workspace,name),pin)
-        actual = {p.relative_to(root).as_posix():sha256(p.read_bytes()).hexdigest()
-                  for p in sorted((root/'atlas_tectonics').rglob('*.py'))}
+        actual = {}
+        for path in sorted((root/'atlas_tectonics').rglob('*.py')):
+            key = path.relative_to(workspace).as_posix()
+            # The complete closure loop above authenticated every declared file.
+            actual[path.relative_to(root).as_posix()] = (files[key] if key in files
+                else sha256(path.read_bytes()).hexdigest())
         _require(actual and actual == manifest['source_hashes'] and _bound_importables(root, workspace, files), 'installed package source inventory differs')
         for name, pin in actual.items():
             path = root/name
             _require(files.get(path.relative_to(workspace).as_posix()) == pin,
                      'installed native source missing from import closure')
     for path in (root/'atlas_tectonics/__init__.py',private/'__init__.py',runner,Path(__file__).resolve()):
-        _require(path.is_relative_to(workspace) and
-                 files.get(path.relative_to(workspace).as_posix()) == sha256(path.read_bytes()).hexdigest(),
+        key = path.relative_to(workspace).as_posix() if path.is_relative_to(workspace) else None
+        _require(key in files and (not parent_proved or
+                 files[key] == sha256(path.read_bytes()).hexdigest()),
                  'installed startup package/runner/helper is unbound')
     _require(type(runner_modules) is tuple and all(type(n) is str and n.isidentifier() for n in runner_modules),
              'installed startup needs explicit sibling names')
     package = 'atlas_tectonics._private'
-    fixtures = FixtureSources(manifest, workspace)
-    verify_installed_modules(root, files, workspace, manifest=manifest)
+    if source_selection is None:
+        fixtures = FixtureSources(manifest, workspace)
+    verify_installed_modules(root, files, workspace)
     _require(not any(package+'.'+n in sys.modules for n in runner_modules),
              'installed startup requires unloaded orchestration')
 
@@ -702,6 +744,7 @@ def prepare_installed_runner(profile_path, profile_sha256, runner_path, *,
     sys.meta_path.insert(0,finder)
     try:
         with public_import_scope(root, finder):
+            importlib.import_module('atlas_shared.execution.profiling')
             importlib.import_module(package)
             importlib.import_module(MODULE)
             for name in runner_modules:

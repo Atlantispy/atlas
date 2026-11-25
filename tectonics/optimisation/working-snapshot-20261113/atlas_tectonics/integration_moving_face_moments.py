@@ -9,7 +9,7 @@ it is never a guessed sign, a removed component or a new physical tolerance.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
-from math import factorial, gcd
+from math import gcd
 import sys
 import heapq
 import hashlib
@@ -29,7 +29,9 @@ def source_digest():
     from .integration_q2_directed import source_digest as interval_digest
     from .integration_circular_moments import source_digest as circular_digest
     from .integration_rigid_intersection import source_digest as intersection_digest
-    return hashlib.sha256((_LOADED+interval_digest()+circular_digest()+intersection_digest()).encode('ascii')).hexdigest()
+    from .integration_differential_geometry import _SIMPLEX_SOURCE
+    return hashlib.sha256((_LOADED+interval_digest()+circular_digest()+intersection_digest()
+                          +_SIMPLEX_SOURCE).encode('ascii')).hexdigest()
 
 
 # G-PY: jet products by per-coefficient interval classes (T/ck/transforms/gpy_q2_jets.py).
@@ -330,11 +332,15 @@ def _rotated(vector, omega, bounds, J, arena):
     return tuple(tuple(column) for column in columns)
 
 
-def _normal(constraint, bounds, J, arena):
+_undecoded_path = object()
+
+
+def _normal(constraint, bounds, J, arena, *, path=_undecoded_path):
     from . import integration_differential_geometry as G
     from . import integration_wall_measures as W
     kind = constraint['kind']
-    path = G._rigid_plane_path(constraint)
+    if path is _undecoded_path:
+        path = G._rigid_plane_path(constraint)
     if path is not None:
         normal, theta, omega = path
         vector = tuple((q, q) for q in normal)
@@ -474,7 +480,7 @@ def _endpoint_departure(coefficients, derivatives, upper_time, J):
     return bound, None
 
 
-def _fixed_corner_predicate(record, face, arena):
+def _fixed_corner_predicate(record, face, arena, *, rigid_path):
     """Signed value at an exact rectangle corner fixed by the actual pose.
 
     This is not incidence: tiny nonzero values retain their exact sign. Two
@@ -498,7 +504,7 @@ def _fixed_corner_predicate(record, face, arena):
             if constraint['kind'] == 'fixed-plane':
                 path = (G._load_vec(constraint['normal']), zero, zero, G.W._decode(constraint['offset']))
             else:
-                rigid = G._rigid_plane_path(constraint)
+                rigid = rigid_path(constraint)
                 path = None if rigid is None else (*rigid, Q(0))
             arena.keep(() if path is None else tuple(q for vector in path[:3] for q in vector)+(path[3],),
                        1 if path is None else 4)
@@ -512,7 +518,7 @@ def _fixed_corner_predicate(record, face, arena):
             values = (*normal, *theta, *omega, offset, *(q for row in face[:3] for q in row),
                       *(q for row in face[4] for q in row))
             arena.work(128)
-            with V._work(values, arena.resource):
+            with V._work(values, arena.resource, convert_values=False):
                 if ends not in corners:
                     u, v = (face[4][axis][end] for axis, end in enumerate(ends))
                     point = tuple(face[0][j]+u*face[1][j]+v*face[2][j] for j in range(3))
@@ -526,7 +532,7 @@ def _fixed_corner_predicate(record, face, arena):
     return value
 
 
-def _shared_rotation_predicate(record, face, arena, *, order):
+def _shared_rotation_predicate(record, face, arena, *, order, rigid_path):
     """Correlated value on one moving plane and one rectangle edge.
 
     For a through-origin face w.x=0, an active homogeneous plane m.x=0
@@ -542,7 +548,7 @@ def _shared_rotation_predicate(record, face, arena, *, order):
     paths, pairs = {}, {}
     def path(name):
         if name not in paths:
-            decoded = G._rigid_plane_path(record['constraints'][name])
+            decoded = rigid_path(record['constraints'][name])
             arena.keep(() if decoded is None else tuple(q for vector in decoded for q in vector),
                        1 if decoded is None else 4)
             paths[name] = decoded
@@ -553,14 +559,15 @@ def _shared_rotation_predicate(record, face, arena, *, order):
         new = path(name)
         if new is None:
             return None
-        for edge in sorted(active, key=order):
+        ordered_active = sorted(active, key=order)
+        for edge in ordered_active:
             if not (isinstance(edge, tuple) and len(edge) == 3 and
                     edge[0] == 'rectangle'):
                 continue
             _, axis, end = edge
             e = face[1+axis]
             h = O._dot(e, face[0])+face[4][axis][end]
-            for old_name in sorted(active, key=order):
+            for old_name in ordered_active:
                 if old_name not in record['constraints']:
                     continue
                 old = path(old_name)
@@ -569,7 +576,7 @@ def _shared_rotation_predicate(record, face, arena, *, order):
                 key = name, old_name
                 if key not in pairs:
                     arena.work(128)
-                    with V._work((*old[0], *new[0]), arena.resource):
+                    with V._work((*old[0], *new[0]), arena.resource, convert_values=False):
                         cross = O._cross(old[0], new[0])
                         arena.keep(cross, 1)
                         pairs[key] = cross
@@ -635,7 +642,7 @@ def _time_event_split(bounds, reference, derivative, arena):
     """
     values = tuple(Q(q) for q in (*bounds, *reference, *derivative))
     arena.work(64)
-    with V._work(values, arena.resource):
+    with V._work(values, arena.resource, convert_values=False):
         a, b, lo, hi, dlo, dhi = values
         if a >= b or dlo <= 0 <= dhi:
             return None
@@ -661,7 +668,7 @@ def _homogeneous_origin_proof(record, face, arena):
     values = tuple(q for vector in face[:4] for q in vector)
     values += tuple(q for pair in face[4] for q in pair)
     arena.work(64*(len(record['constraints'])+5))
-    with V._work(values, arena.resource):
+    with V._work(values, arena.resource, convert_values=False):
         if O._dot(face[0], face[3]) != 0:
             return None
         point = tuple(-O._dot(face[0], tangent) for tangent in face[1:3])
@@ -788,7 +795,7 @@ def _invariant_edge_plane(constraint, arena):
         if normal is None:
             return None
         omega = G._load_vec(constraint['angular_velocity_rad_s'])
-        with V._work((*normal, *omega), arena.resource):
+        with V._work((*normal, *omega), arena.resource, convert_values=False):
             return None if any(O._cross(normal, omega)) else normal
     if constraint['kind'] != 'moving-ray-edge':
         return None
@@ -798,7 +805,7 @@ def _invariant_edge_plane(constraint, arena):
         (*tuple(w for w, _ in G._history(ray.get('prior_rotations', ()))),
          G._load_vec(ray['angular_velocity_rad_s'])))
     arena.work(128)
-    with V._work(tuple(q for v in (*directions, *rotations) for q in v), arena.resource):
+    with V._work(tuple(q for v in (*directions, *rotations) for q in v), arena.resource, convert_values=False):
         normal = O._cross(*directions)
         if not any(normal) or any(any(O._cross(normal, w)) for w in rotations):
             return None
@@ -806,7 +813,7 @@ def _invariant_edge_plane(constraint, arena):
         return normal
 
 
-def _incidence_proof(record, face, arena, *, order):
+def _incidence_proof(record, face, arena, *, order, rigid_path):
     """Exact moving-plane incidence, including invariant rectangle edges.
 
     Three planes sharing one actual rigid pose retain their constant linear
@@ -818,7 +825,7 @@ def _incidence_proof(record, face, arena, *, order):
     zero = (Q(0),)*3
     paths, unoriented = {}, set()
     for name, constraint in record['constraints'].items():
-        path = G._rigid_plane_path(constraint)
+        path = rigid_path(constraint)
         if path is not None:
             paths[name] = (*path, Q(0))
         elif constraint['kind'] == 'fixed-plane':
@@ -852,7 +859,7 @@ def _incidence_proof(record, face, arena, *, order):
                 items = paths[name], paths[edge]
                 values = tuple(q for n, t, w, d in items for q in (*n, *t, *w, d))
                 proved = False
-                with V._work(values, arena.resource):
+                with V._work(values, arena.resource, convert_values=False):
                     n, a = items[0][0], items[1][0]
                     if any(n) and any(a):
                         pivot = next(i for i, q in enumerate(a) if q)
@@ -880,7 +887,7 @@ def _incidence_proof(record, face, arena, *, order):
                 items = (paths[name], paths[first], paths[second])
                 values = tuple(q for n, t, w, d in items for q in (*n, *t, *w, d))
                 proved = False
-                with V._work(values, arena.resource):
+                with V._work(values, arena.resource, convert_values=False):
                     for _, theta, omega, _ in items:
                         if not all((t == theta and w == omega) or
                             (not any(O._cross(n, t)) and not any(O._cross(n, w)) and
@@ -923,7 +930,7 @@ def _incidence_proof(record, face, arena, *, order):
 _FIXED_FACE_SECTION = ('fixed-face-ray-section',)
 
 
-def _shared_ray_paths(record, face=None, arena=None):
+def _shared_ray_paths(record, face=None, arena=None, *, rigid_path=None):
     """Exact symbolic rays retained by edges, including frozen older edges.
 
     A shared ray normally requires two independent active face lines. If the
@@ -960,7 +967,7 @@ def _shared_ray_paths(record, face=None, arena=None):
             constant = proved()
         else:
             arena.work(32*(len(history)+1))
-            with V._work(values, arena.resource):
+            with V._work(values, arena.resource, convert_values=False):
                 constant = proved()
         return (direction, (), (Q(0),)*3) if constant else path
     result = {name: frozenset(stationary(path) for path in rays(constraint))
@@ -973,7 +980,7 @@ def _shared_ray_paths(record, face=None, arena=None):
     for name, constraint in record['constraints'].items():
         if arena is not None:
             arena.work(64*(len(known)+1))
-        plane = G._rigid_plane_path(constraint)
+        plane = G._rigid_plane_path(constraint) if rigid_path is None else rigid_path(constraint)
         if plane is None:
             continue
         normal, theta, omega = plane
@@ -995,7 +1002,7 @@ def _shared_ray_paths(record, face=None, arena=None):
             if arena is None:
                 proved = common_action()
             else:
-                with V._work(values, arena.resource, pairs=4*(len(history)+1)):
+                with V._work(values, arena.resource, pairs=4*(len(history)+1), convert_values=False):
                     proved = common_action()
             if proved:
                 contained.append(ray)
@@ -1035,7 +1042,7 @@ def _shared_ray_paths(record, face=None, arena=None):
     known = known | frozenset(rectangle_axes)
     if rectangle_axes:
         for name, constraint in record['constraints'].items():
-            path = G._rigid_plane_path(constraint)
+            path = G._rigid_plane_path(constraint) if rigid_path is None else rigid_path(constraint)
             if path is None:
                 continue
             normal, theta, omega = path
@@ -1047,7 +1054,7 @@ def _shared_ray_paths(record, face=None, arena=None):
                 if arena is None:
                     proved = contains_axis()
                 else:
-                    with V._work((*normal, *theta, *omega, *ray[0]), arena.resource):
+                    with V._work((*normal, *theta, *omega, *ray[0]), arena.resource, convert_values=False):
                         proved = contains_axis()
                 if proved:
                     result[name] = result.get(name, frozenset()) | {ray}
@@ -1068,7 +1075,7 @@ def _shared_ray_paths(record, face=None, arena=None):
             if arena is None:
                 proved = includes()
             else:
-                with V._work(values, arena.resource):
+                with V._work(values, arena.resource, convert_values=False):
                     proved = includes()
             if proved:
                 contained.append(ray)
@@ -1137,7 +1144,7 @@ def _start_plane_incidence(record, face, arena, *, order):
                            (G._load_vec(ray['angular_velocity_rad_s']), time))
                 values = (*direction, *(q for w, dt in history for q in (*w, dt)))
                 arena.work(32*(len(history)+1))
-                with V._work(values, arena.resource):
+                with V._work(values, arena.resource, convert_values=False):
                     turns = tuple(tuple(q*dt for q in w) for w, dt in history if dt and any(w))
                     arena.keep((*direction, *(q for w in turns for q in w)), len(turns)+2)
                 result.append((direction, turns))
@@ -1149,7 +1156,7 @@ def _start_plane_incidence(record, face, arena, *, order):
             omega = G._load_vec(constraint['angular_velocity_rad_s'])
             if time and any(omega):
                 arena.work(32)
-                with V._work((*omega, time), arena.resource):
+                with V._work((*omega, time), arena.resource, convert_values=False):
                     turn = tuple(q*time for q in omega)
                     arena.keep(turn, 2*len(result)+1)
                 result = tuple((direction, history+(turn,)) for direction, history in result)
@@ -1173,7 +1180,7 @@ def _start_plane_incidence(record, face, arena, *, order):
             elif name in record['constraints']:
                 normal, _ = G._constraint_boxes(record['constraints'][name], Q(0), Q(0), POSE_LEVEL, arena)
                 with V._work(tuple(q for pair in normal for q in pair)+tuple(q for p in face[1:3] for q in p),
-                             arena.resource):
+                             arena.resource, convert_values=False):
                     result = tuple(G._dot_bounds(normal, tuple((q, q) for q in tangent))
                                    for tangent in face[1:3])
             else:
@@ -1197,7 +1204,7 @@ def _start_plane_incidence(record, face, arena, *, order):
                     if a is None or b is None:
                         continue
                     arena.work(64)
-                    with V._work(tuple(q for row in (*a, *b) for q in row), arena.resource):
+                    with V._work(tuple(q for row in (*a, *b) for q in row), arena.resource, convert_values=False):
                         first, second = G._product(a[0], b[1]), G._product(a[1], b[0])
                         determinant = first[0]-second[1], first[1]-second[0]
                         proved = determinant[0] > 0 or determinant[1] < 0
@@ -1211,7 +1218,7 @@ def _start_plane_incidence(record, face, arena, *, order):
     return contains
 
 
-def _exact_start_predicates(record, face, arena, *, order):
+def _exact_start_predicates(record, face, arena, *, order, rigid_path):
     """Exact endpoint values on analytic vertices, never sampled zero tests."""
     from . import integration_differential_geometry as G
     lines, cache, jet_lines, jet_cache = {}, {}, {}, {}
@@ -1239,7 +1246,8 @@ def _exact_start_predicates(record, face, arena, *, order):
             elif isinstance(name, tuple):
                 jet_lines[name] = tuple(E.constant(q) for q in plain)
             else:
-                normal, offset = _normal(record['constraints'][name], (Q(0), Q(0)), E, arena)
+                constraint = record['constraints'][name]
+                normal, offset = _normal(constraint, (Q(0), Q(0)), E, arena, path=rigid_path(constraint))
                 exact = _line(normal, offset, face, 1, E)
                 jet_lines[name] = exact if all(lo == hi for c in exact for lo, hi in c) else None
         return jet_lines[name]
@@ -1258,7 +1266,7 @@ def _exact_start_predicates(record, face, arena, *, order):
                     determinant = E.sub(E.mul(a[0], b[1]), E.mul(a[1], b[0]))
                     if determinant[0] == E.zero:
                         continue
-                    with V._work(tuple(q for c in (*a, *b, *new) for pair in c for q in pair), arena.resource):
+                    with V._work(tuple(q for c in (*a, *b, *new) for pair in c for q in pair), arena.resource, convert_values=False):
                         u = E.div(E.sub(E.mul(a[1], b[2]), E.mul(a[2], b[1])), determinant)
                         v = E.div(E.sub(E.mul(a[2], b[0]), E.mul(a[0], b[2])), determinant)
                         evaluated = E.add(E.add(E.mul(new[0], u), E.mul(new[1], v)), new[2])
@@ -1280,7 +1288,7 @@ def _exact_start_predicates(record, face, arena, *, order):
                 if a is None or b is None:
                     continue
                 arena.work(128)
-                with V._work((*a, *b, *new), arena.resource):
+                with V._work((*a, *b, *new), arena.resource, convert_values=False):
                     determinant = a[0]*b[1]-a[1]*b[0]
                     if not determinant:
                         continue
@@ -1341,6 +1349,8 @@ def _multiply(a, b, J):
 def _moment(poly, polynomial, J):
     if len(poly) < 3 or not polynomial:
         return J.z
+    from .integration_differential_geometry import _simplex_weight
+
     result, a = J.z, poly[0]
     for b, c in zip(poly[1:-1], poly[2:]):
         bu, bv = J.sub(b[0], a[0]), J.sub(b[1], a[1])
@@ -1356,7 +1366,7 @@ def _moment(poly, polynomial, J):
         value = J.z
         for (i, j), coefficient in polynomial.items():
             for (k, l), term in _multiply(powers_u[i], powers_v[j], J).items():
-                weight = coefficient*Q(factorial(k)*factorial(l), factorial(k+l+2))
+                weight = coefficient*_simplex_weight(k, l, coefficient)
                 value = J.add(value, J.scale(term, weight))
         result = J.add(result, J.mul(determinant, value))
     return result
@@ -1370,6 +1380,8 @@ def _moments(poly, polynomials, J):
     keys = set().union(*(p.keys() for p in polynomials))
     if not keys:
         return tuple(results)
+    from .integration_differential_geometry import _simplex_weight
+
     a = poly[0]
     for b, c in zip(poly[1:-1], poly[2:]):
         bu, bv = J.sub(b[0], a[0]), J.sub(b[1], a[1])
@@ -1387,7 +1399,7 @@ def _moments(poly, polynomials, J):
             value = J.z
             for key, coefficient in polynomial.items():
                 for (k, l), term in products[key].items():
-                    weight = coefficient*Q(factorial(k)*factorial(l), factorial(k+l+2))
+                    weight = coefficient*_simplex_weight(k, l, coefficient)
                     value = J.add(value, J.scale(term, weight))
             results[index] = J.add(results[index], J.mul(determinant, value))
     return tuple(results)
@@ -1419,7 +1431,7 @@ def _finite_cone_inside_inner_ball(generators, face, inner2, arena):
     arena.work(128)
     with V._work((inner2, *(q for generator in generators for pair in generator for q in pair),
                   *(q for vector in face[:3] for q in vector),
-                  *(q for pair in face[4] for q in pair)), arena.resource):
+                  *(q for pair in face[4] for q in pair)), arena.resource, convert_values=False):
         if inner2 <= 0:
             return False
         for axis in range(3):
@@ -1468,7 +1480,7 @@ def _variable_cone_inside_inner_ball(record, component, face, layer, duration, a
             continue
         normal = tuple(pair if sign > 0 else (-pair[1], -pair[0]) for pair in normal)
         with V._work(tuple(q for pair in normal for q in pair)+
-                     tuple(q for row in representatives for q in row), arena.resource):
+                     tuple(q for row in representatives for q in row), arena.resource, convert_values=False):
             middle = tuple((lo+hi)/2 for lo, hi in normal)
             independent = (any(middle) if not basis else
                 any(O._cross(representatives[0], middle)) if len(basis) == 1 else
@@ -1480,7 +1492,7 @@ def _variable_cone_inside_inner_ball(record, component, face, layer, duration, a
             break
     if len(basis) != 3:
         return False
-    with V._work((offset, inner2, *(q for row in basis for pair in row for q in pair)), arena.resource):
+    with V._work((offset, inner2, *(q for row in basis for pair in row for q in pair)), arena.resource, convert_values=False):
         determinant = G._dot_bounds(basis[0], G._cross_bounds(basis[1], basis[2]))
         if determinant[0] <= 0 <= determinant[1]:
             return False
@@ -1533,7 +1545,7 @@ def _cone_inside_inner_ball(record, component, face, layer, duration, arena, *, 
         basis = groups.setdefault((theta, omega), [])
         if len(basis) == 3:
             continue
-        with V._work((*normal, *(q for row in basis for q in row)), arena.resource):
+        with V._work((*normal, *(q for row in basis for q in row)), arena.resource, convert_values=False):
             independent = (not basis or (any(O._cross(basis[0], normal)) if len(basis) == 1
                 else O._dot(basis[0], O._cross(basis[1], normal)) != 0))
             if independent:
@@ -1544,7 +1556,7 @@ def _cone_inside_inner_ball(record, component, face, layer, duration, arena, *, 
             continue
         arena.work(256)
         with V._work((duration, offset, inner2, *theta, *omega,
-                      *(q for row in basis for q in row)), arena.resource):
+                      *(q for row in basis for q in row)), arena.resource, convert_values=False):
             determinant = O._dot(basis[0], O._cross(basis[1], basis[2]))
             orientation = 1 if determinant > 0 else -1
             generators = tuple(tuple(orientation*q for q in O._cross(basis[(j+1) % 3],
@@ -1555,7 +1567,7 @@ def _cone_inside_inner_ball(record, component, face, layer, duration, arena, *, 
             if any(theta):
                 posed = G._rotation_boxes(posed, theta, Q(1), Q(1), POSE_LEVEL, arena)
             posed = G._rotation_boxes(posed, omega, Q(0), duration, POSE_LEVEL, arena)
-            with V._work((offset, inner2, *(q for pair in posed for q in pair)), arena.resource):
+            with V._work((offset, inner2, *(q for pair in posed for q in pair)), arena.resource, convert_values=False):
                 denominator = G._dot_bounds(tuple((q, q) for q in face[3]), posed)
                 if not (denominator[0] > 0 if offset > 0 else denominator[1] < 0):
                     proved = False
@@ -1586,6 +1598,7 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
     every leaf and summed into the totals, and their widths are tested like
     the others.
     """
+    from . import integration_differential_geometry as G
     from . import integration_wall_measures as W
     if type(moments_only) is not bool or moments_only and omega is not None:
         raise V.VolumeError('moments-only integration has no velocity field')
@@ -1629,13 +1642,15 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
                     lines[name] = tuple(J.constant(q) for q in
                         (int(axis == 0), int(axis == 1), -face[4][axis][end]))
                 else:
-                    normal, offset = _normal(proof_record['constraints'][name], bounds, J, arena)
+                    constraint = proof_record['constraints'][name]
+                    normal, offset = _normal(constraint, bounds, J, arena, path=rigid_path(constraint))
                     lines[name] = _line(normal, offset, face, 1, J)
             return lines[name]
         def intersection(line, active, identity):
             from .integration_rigid_intersection import intersect
             return _active_intersection(line, active, line_for, J,
-                (lambda: intersect(proof_record['constraints'][identity], active, face, bounds, J, arena))
+                (lambda: intersect(proof_record['constraints'][identity], active, face, bounds, J, arena,
+                                   rigid_path=rigid_path))
                 if identity in proof_record['constraints'] else None, order=order)
         ray_contains = _ray_incidence_proof(shared_rays, line_for, J, bounds, order=order)
         origin_crossing = _origin_crossing(origin_proof, line_for, J, arena, bounds)
@@ -1733,7 +1748,7 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
                 from . import integration_circular_moments as C
                 centred = tuple((J.add(point[0], J.constant(shift[0])),
                                   J.add(point[1], J.constant(shift[1])), point[2]) for point in clipped)
-                with V._work((*shift,*(q for pair in face[4] for q in pair)),arena.resource,pairs=4):
+                with V._work((*shift,*(q for pair in face[4] for q in pair)),arena.resource,pairs=4, convert_values=False):
                     fixed_axes=tuple(tuple(q+shift[axis] for q in pair) for axis,pair in enumerate(face[4]))
                     outer = C.first_moments(centred, disk_radii_squared[0], J, arena,
                         fixed_axis_coordinates=fixed_axes)
@@ -1784,12 +1799,20 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
         coefficient_count += sum((n+1)*(n+2)//2 for n in range(max(j for _, j in keys)+1))
     scratch = 131072+(4096*(planes+8)+256*coefficient_count)*(ORDER+1)+128*(planes+4)**3
     with arena.resource.reserve(scratch, category='moving-face-Taylor-scratch'):
+        rigid_paths = {}
+        def rigid_path(constraint):
+            # Incidence already retains the decoded fractions in this scope.
+            key = id(constraint)
+            if key not in rigid_paths:
+                rigid_paths[key] = G._rigid_plane_path(constraint)
+            return rigid_paths[key]
+
         arena.work(128+64*(planes+4)**2)
-        incidence = _incidence_proof(proof_record, face, arena, order=order)
-        shared_rays = _shared_ray_paths(proof_record, face, arena)
-        start_predicate = _exact_start_predicates(proof_record, face, arena, order=order)
-        shared_rotation = _shared_rotation_predicate(proof_record, face, arena, order=order)
-        fixed_corner = _fixed_corner_predicate(proof_record, face, arena)
+        incidence = _incidence_proof(proof_record, face, arena, order=order, rigid_path=rigid_path)
+        shared_rays = _shared_ray_paths(proof_record, face, arena, rigid_path=rigid_path)
+        start_predicate = _exact_start_predicates(proof_record, face, arena, order=order, rigid_path=rigid_path)
+        shared_rotation = _shared_rotation_predicate(proof_record, face, arena, order=order, rigid_path=rigid_path)
+        fixed_corner = _fixed_corner_predicate(proof_record, face, arena, rigid_path=rigid_path)
         first, first_split = leaf(Q(0), duration, 0)
         totals = [list(pair) for pair in first]
         queue, serial, leaves = [], 0, 1

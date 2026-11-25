@@ -729,7 +729,7 @@ class PreparedSpatialOwner:
                 retained = self._finite.restore(r['finite_stock_state'])
                 if self._measure_policy is not None and g.get('finite_state_id') != retained.state_id:
                     raise TectonicsError('geometric closure belongs to another finite inventory state')
-                finite_proposal = self._finite.prepare(retained, g, stocks, finite_exchanges,
+                finite_proposal = self._finite._prepare_joined(retained, g, stocks, finite_exchanges,
                     source_stage_id=source.result_id, transport_parent_id=state.state_id)
                 transport_graph, stocks = finite_proposal._transport_inputs()
             elif finite_exchanges is not None:

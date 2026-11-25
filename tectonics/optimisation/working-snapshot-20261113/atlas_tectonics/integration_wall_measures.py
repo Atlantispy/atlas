@@ -84,7 +84,7 @@ def _rotated_normal(normal, omega, t0, t1, level, arena):
             tail = next_major/(1-ratio)
             break
         arena.work(64)
-        with V._work((*term, *omega, middle, major), arena.resource):
+        with V._work((*term, *omega, middle, major), arena.resource, convert_values=False):
             if exact_scale:
                 scale = None
                 try:
@@ -160,7 +160,7 @@ def _pose_vector(vector, omega, t0, t1, level, arena, prior=(), *, inverse=False
 def _clip2(poly, line, arena=None):
     """Counterclockwise convex polygon clipped by a*u+b*v+c >= 0."""
     if arena is not None:
-        with V._work((*line, *(q for p in poly for q in p)), arena.resource):
+        with V._work((*line, *(q for p in poly for q in p)), arena.resource, convert_values=False):
             return _clip2(poly, line)
     if not poly:
         return ()
@@ -183,7 +183,7 @@ def _clip2(poly, line, arena=None):
 def _integral(poly, linear, arena=None):
     """Exact integral of an affine nonnegative function over a planar polygon."""
     if arena is not None:
-        with V._work((*linear, *(q for p in poly for q in p)), arena.resource):
+        with V._work((*linear, *(q for p in poly for q in p)), arena.resource, convert_values=False):
             return _integral(poly, linear)
     if not poly:
         return Q(0)
@@ -360,7 +360,7 @@ def enclose_rotating_wall(layer, cones, cell, axis, end, *, angular_velocity_rad
         raise V.VolumeError('actual source cones required')
     face = _face(cell, axis, end)
     with B._Arena(resource) as arena:
-        with V._work((*omega, t0, t1, *cell._geometry()), resource):
+        with V._work((*omega, t0, t1, *cell._geometry()), resource, convert_values=False):
             first = _wall_leaf(layer, cones, face, face[4], omega, t0, t1, 0, arena, prior)
             first = tuple(_outward(pair, quantum) for pair in first)
         sums = [list(pair) for pair in first]
@@ -394,7 +394,7 @@ def enclose_rotating_wall(layer, cones, cell, axis, end, *, angular_velocity_rad
                     children.append((tuple(split), a, b))
             new = []
             for box, ca, cb in children:
-                with V._work((*omega, ca, cb, *(q for pair in box for q in pair)), resource):
+                with V._work((*omega, ca, cb, *(q for pair in box for q in pair)), resource, convert_values=False):
                     value = _wall_leaf(layer, cones, face, box, omega, ca, cb, level+1, arena, prior)
                     value = tuple(_outward(pair, quantum) for pair in value)
                 push(box, ca, cb, level+1, value)

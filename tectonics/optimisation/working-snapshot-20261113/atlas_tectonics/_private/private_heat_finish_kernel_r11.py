@@ -150,7 +150,7 @@ def _orchestration_bytes(face_count, source_bindings):
     return 262144+1024*(128+face_count+8*paths)+8*text
 
 
-def _run(work, budget, converted, check, observe):
+def _run(work, budget, converted, check, observe, sealed_output):
     started = converted['started']
     (target, cap, previous, source_energy, load, low_energy, low_faces, high_faces,
      low_pair_defect, high_pair_defect, face_ids, fixed, prescribed, bounds, bindings) = (
@@ -183,7 +183,8 @@ def _run(work, budget, converted, check, observe):
         stability.update(kind='loaded-bounds-and-closed-stock-quadratic-decay',
                          scalar=guard['theta'], certificate=guard['certificate'])
     issue_owner = retain(I.issue(previous, cap, corrected, faces, face_ids, source_energy,
-        residual, target, fixed, prescribed, bindings, check, budget=budget), 'issue')
+        residual, target, fixed, prescribed, bindings, check, budget=budget,
+        _sealed_output=sealed_output), 'issue')
     result = issue_owner.value
     # Comparisons here inspect only exact alpha 0..1, and prior existing face
     # equality. Their conservative cross-products are explicitly admitted.
@@ -211,7 +212,8 @@ def _run(work, budget, converted, check, observe):
 
 
 def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
-           source_bindings, absolute_residual_target, cancelled=None, *, budget, observe=None):
+           source_bindings, absolute_residual_target, cancelled=None, *, budget, observe=None,
+           _sealed_output=None):
     """Same fixed FINISH API; input and output borrows require their owners."""
     def check():
         if cancelled is not None and cancelled():
@@ -235,7 +237,7 @@ def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         # External callers keep their own input custody; drop OUR aliases.
         old = capacity = dt = source = normalized_boundary = face_ids = None
         low = high = source_bindings = absolute_residual_target = None
-        result = _run(work, budget, converted.value, check, observe)
+        result = _run(work, budget, converted.value, check, observe, _sealed_output)
         result[1].update(input_conversion_custody=converted.retention,
             input_conversion_producer_workspace_released=True,
             orchestration_accounted_bytes=amount)

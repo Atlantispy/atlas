@@ -6,6 +6,7 @@ callers remain unsupported; queue exclusivity is not an ownership proof.
 Copied arithmetic is bound to selected coupling 7c2c3b99 and overlap 96f3921c;
 full identities and build-time provenance are recorded in this candidate's README.
 """
+from atlas_shared.errors import AtlasError
 from contextlib import contextmanager
 from contextvars import ContextVar
 from fractions import Fraction as Q
@@ -28,11 +29,11 @@ _SCRATCH_BYTES = 262144
 _SCAFFOLD_BYTES = 8192
 
 
-class UnknownConstant(Exception):
+class UnknownConstant(AtlasError):
     """Private unsupported predicate; never a numerical success or refusal."""
 
 
-class _Capacity(Exception):
+class _Capacity(AtlasError):
     """Private retained-capacity miss, eligible for original fallback."""
 
 

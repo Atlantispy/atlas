@@ -75,6 +75,14 @@ def project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
     Source/identity and input ordering are checked before and after projection.
     This is not a constructor for a native or forward-issued result.
     """
+    return _project(result, geometry, cell_ids=cell_ids, enthalpy_j=enthalpy_j,
+        capacity_j_k=capacity_j_k, source_w=source_w, duration_s=duration_s, state_id=state_id,
+        absolute_residual_target=absolute_residual_target, budget=budget, cancel=cancel, record_scope=record_scope)
+
+
+def _project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
+             duration_s, state_id, absolute_residual_target, budget, cancel=None, record_scope=None,
+             sealed_output=None):
     if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
         raise TypeError('Original issued metric and same resource owner required')
     if type(result) is not A.PrivateNumericalResult:
@@ -105,11 +113,14 @@ def project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
         if not math.isfinite(dt) or dt <= 0:
             raise ValueError('Positive represented duration required')
         blob = result._sealed
-        record_owner = work.stack.enter_context(R.verified_private(result, A, budget=budget, cancel=cancel))
+        record_owner, issued_record = R._verified_private(result, A,
+            budget=budget, cancel=cancel, expected_seal=sealed_output.pop() if sealed_output else None)
+        work.stack.enter_context(record_owner)
         record = record_owner.value
         # The complete metric decode serves this one order check; it is not
         # carried through exact projection, codec and issuance.
-        if (record.get('schema') != A.SCHEMA or record.get('private_only') is not True
+        if not issued_record and (
+                record.get('schema') != A.SCHEMA or record.get('private_only') is not True
                 or record.get('production_acceptance') is not False
                 or record.get('endpoint_face_trace_status') != A.TRACE_STATUS):
             raise ValueError('Expected distinct private integrated-transfer result')
@@ -123,7 +134,8 @@ def project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
                 or any(not math.isfinite(e) or e <= 0 or not math.isfinite(t) or t <= 0
                        for e, t in zip(record['enthalpy_j'], record['temperature_k'], strict=True))):
             raise ValueError('Finite positive complete public enthalpy and temperature required')
-        numerical = work.stack.enter_context(NUMERICS.calculate(record, geometry, *arrays, dt,
+        calculate = NUMERICS._calculate_issued if issued_record else NUMERICS.calculate
+        numerical = work.stack.enter_context(calculate(record, geometry, *arrays, dt,
             absolute_residual_target, budget=budget, cancel=cancel))
         exact = numerical.value
         groups = tuple(exact[key] for key in ('new', 'retained', 'projection', 'public', 'canonical'))

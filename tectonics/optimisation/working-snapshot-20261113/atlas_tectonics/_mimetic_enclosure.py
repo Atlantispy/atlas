@@ -15,6 +15,7 @@ The original exact-work reservation must remain held through every fallback.
 Reference inspected: https://docs.python.org/3/library/decimal.html
 SPDX-License-Identifier: AGPL-3.0-only
 """
+from atlas_shared.errors import AtlasError
 from decimal import (Decimal as D, Context, DecimalException, MAX_EMAX, MIN_EMIN,
                      ROUND_FLOOR, ROUND_CEILING, ROUND_HALF_EVEN, getcontext,
                      localcontext, InvalidOperation, DivisionByZero, Overflow)
@@ -69,7 +70,7 @@ def workspace_bytes(row,denominator,tangent=None,squared=None,delta=None):
     return required
 
 
-class _Uncertain(ArithmeticError):
+class _Uncertain(ArithmeticError, AtlasError):
     pass
 
 

@@ -193,9 +193,9 @@ class PlateBoundaryLift:
             if current_pose is not None:
                 from .integration_current_force_pose import CurrentForcePose
                 if (type(current_pose) is not CurrentForcePose or current_pose._resource is not budget or
-                        current_pose.descriptor()['source']['network_id'] != network.network_id or volume_map is None):
+                        (pose := current_pose.descriptor())['source']['network_id'] != network.network_id or volume_map is None):
                     raise TectonicsError('current plate lift requires issued pose and actual physical volume map')
-                self._current_pose = current_pose.descriptor()
+                self._current_pose = pose
             if footprint.representation != '3d' or footprint.region_id != definition['frame_id']:
                 raise TectonicsError('physical lift requires the named full-3D footprint/native frame')
             boundaries = {b.boundary_id: b for b in network.boundaries}

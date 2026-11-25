@@ -23,8 +23,11 @@ mirror is [i01_closure_matrix_v1.json](../cases/i01_closure_matrix_v1.json).
   register's digests and classifications. On 3 November 2026, changed bound method
   prose made 25 controls historical. Their original receipt/source digests, results
   and numerical limits remain preserved; scientific contracts, code, cases, tests
-  and thresholds are unchanged. No recapture or scientific rerun occurred. Unchanged
-  entries, including the frozen live column chain, retain their current bindings.
+  and thresholds were unchanged in that reconciliation. The runtime cleanup later
+  changed the shared heat integration source. `i01-column-heat-r6`,
+  `i01-thermomechanical-motion-r5` and `i01-finite-strain-r6` are historical
+  controls at their original bindings. The matrix retains their observations and
+  physical limits. Use the register for the freshness of other controls.
 - **Frozen method inputs.** The original column-admission, weakening, column-heat,
   motion-coupling, thermomechanical and finite-strain specifications retain their
   captured bytes where selected upstream-receipt guards consume them. Their

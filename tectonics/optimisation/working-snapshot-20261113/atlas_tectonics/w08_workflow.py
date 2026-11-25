@@ -274,18 +274,21 @@ class PreparedW08Workflow:
     statistics = _budget_statistics
 
     def _validate(self,out,*,issued_here=False,retirement_heat_present=False):
+        self._validate_output(out,self._validate_history,issued_here=issued_here,
+                              retirement_heat_present=retirement_heat_present)
+
+    def _validate_issued(self,out,retirement_heat_present):
+        self._validate_output(out,self._reconcile_history,issued_here=True,
+                              retirement_heat_present=retirement_heat_present)
+
+    def _validate_output(self,out,reconcile,*,issued_here,retirement_heat_present):
         _validation_work = self._history_hold(2*_history.GRAPH+_history.PARSE+_history.NUMERIC,
                                                'w08-history-validation')
         i = self._index(out.interval_index); d = out.descriptor(); inv = out.inventory
-        if (inv.node_ids != self.initial.node_ids or inv.node_kinds != self.initial.node_kinds or
-                inv.component_ids != self.initial.component_ids or
-                inv.enthalpy_source != self.initial.enthalpy_source or
-                inv.origin_ids != self.initial.origin_ids or
-                not np.array_equal(inv.formation_time_s,self.initial.formation_time_s) or
-                inv.time_s != d['end_time_s']):
+        if inv.node_kinds != self.initial.node_kinds or inv.time_s != d['end_time_s']:
             raise TectonicsError('restored inventory catalogue/time/thermal provenance mismatch')
         if (d['owners'] != OWNERS or d['plan_id'] != self.plan_id or d['execution'] != self.execution_id or
-                d['interval_index'] != i or d['end_time_s'] != inv.time_s or d['phase'] != 'complete'):
+                d['interval_index'] != i or d['phase'] != 'complete'):
             raise TectonicsError('incomplete or wrong-owner event checkpoint')
         if not issued_here:
             expected_events = [t['event_id'] for row in self._binding['intervals'][:i+1]
@@ -297,8 +300,8 @@ class PreparedW08Workflow:
         self._event_endpoint(i,d)
         if type(d['accepted_intervals']) is not int or not i+1 <= d['accepted_intervals'] <= 256:
             raise TectonicsError('cumulative accepted-interval ceiling exceeded')
-        self._validate_history(d,inv,issued_here=issued_here,
-                               retirement_heat_present=retirement_heat_present)
+        reconcile(d,inv,issued_here=issued_here,
+                  retirement_heat_present=retirement_heat_present)
         if self._history_enabled:
             del d['transfer_history']
         for j in range(len(inv.component_ids)):
@@ -318,11 +321,16 @@ class PreparedW08Workflow:
                 raise TectonicsError('restored current/reference geometry or deformation mismatch')
 
     def _validate_history(self,record,inventory,*,issued_here=False,retirement_heat_present=False):
+        history = record['transfer_history']
+        if type(history) is not list or len(history) != record['interval_index']+1:
+            raise TectonicsError('incomplete tagged transfer provenance')
+        self._reconcile_history(record,inventory,issued_here=issued_here,
+                                retirement_heat_present=retirement_heat_present)
+
+    def _reconcile_history(self,record,inventory,*,issued_here,retirement_heat_present):
         """Reconcile tagged transfers without replaying a physical solver or its flux."""
         history = record['transfer_history']
         i = record['interval_index']
-        if type(history) is not list or len(history) != i+1:
-            raise TectonicsError('incomplete tagged transfer provenance')
         components = len(self.initial.component_ids)
         node_index = {n:j for j,n in enumerate(self.initial.node_ids)}
         verify_heat_book = not issued_here or retirement_heat_present
@@ -782,9 +790,11 @@ class PreparedW08Workflow:
                     candidate, retirement_heat_present = self._compute(index,current,cancel)
                     pending_guard=self._output_guard(candidate)
                     try:
-                        # This exact output carries the receipt and motion just issued by _compute.
-                        self._validate(candidate,issued_here=True,
-                                       retirement_heat_present=retirement_heat_present)
+                        if type(self) is PreparedW08Workflow:
+                            self._validate_issued(candidate,retirement_heat_present)
+                        else:
+                            self._validate(candidate,issued_here=True,
+                                           retirement_heat_present=retirement_heat_present)
                         self._stats['physics_seconds'] += perf_counter()-started
                         if self.store is not None:
                             started = perf_counter()

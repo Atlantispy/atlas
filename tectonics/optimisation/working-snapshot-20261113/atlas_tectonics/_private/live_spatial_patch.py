@@ -756,7 +756,7 @@ def ale_source(source):
     source = _tail(source, 'close_spatial_ale',
         "    with budget.reserve(65536+8*len(bounds._json), category='spatial-ale-closure'), V._work(tuple(start_volumes_m3.values()), budget):\n",
         'with LIVE_SPATIAL.record_access(bounds) as working:',
-        '    with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget):\n')
+        '    with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget, convert_values=False):\n')
     source = _once(source, '_close_record(bounds.record(), start_volumes_m3, budget)',
                    '_close_record(working, start_volumes_m3, budget)')
     source = _once(source, '            return _issue(SpatialALEGraph, record, budget)',

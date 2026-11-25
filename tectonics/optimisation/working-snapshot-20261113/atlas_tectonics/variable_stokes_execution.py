@@ -116,6 +116,9 @@ class VariableStokesSolution:
     """Immutable complete mechanical input/response; not a time-integrated state."""
     __slots__=('_metadata','_arrays','result_id')
     def __init__(self,metadata,arrays):
+        VariableStokesSolution._initialize(self,metadata,arrays,_aa._check_result_history)
+
+    def _initialize(self,metadata,arrays,check_anderson_history):
         try:
             if metadata['schema']!='atlas.variable-stokes-result.v1' or metadata['method']!=_METHOD:
                 raise TectonicsError('unsupported variable mechanical record')
@@ -165,9 +168,7 @@ class VariableStokesSolution:
             if 'nonlinear_acceleration' in metadata:
                 if rp is None or rp.family not in ('constant','tosi-linear','tosi-plastic'):
                     raise TectonicsError('Anderson supports constant/Tosi rheology only')
-                ap=_aa.check_summary(metadata['nonlinear_acceleration'],len(hist))
-                _aa.check_policy(ap,pol)
-                _aa.check_history(hist,metadata['nonlinear_acceleration'])
+                check_anderson_history(hist,metadata,pol)
             elif any('anderson' in row for row in hist):
                 raise TectonicsError('undeclared Anderson iteration history')
             if hist[-1]['momentum_linf']>pol.momentum_tolerance or hist[-1]['viscosity_log_change']>pol.viscosity_rtol:
@@ -555,12 +556,15 @@ class PreparedVariableStokes2D:
         if decision[0]=='bounded_reuse':
             if self._factor is None:raise TectonicsError('absent factor cannot be reused')
             self._approximate_reuses+=1
+        elif type(self) is PreparedVariableStokes2D:
+            self._factorise_current(cancel,key=decision[1])
         else:self._factorise_current(cancel)
         reuse.selected(self._op,self._factor_key,decision)
         check_event_or_callable(cancel, 'constitutive work cancelled')
 
-    def _factorise_current(self,cancel):
-        op=self._op;key=hashlib.sha256(op.eta_c.tobytes()+op.eta_v.tobytes()).hexdigest()
+    def _factorise_current(self,cancel,*,key=None):
+        op=self._op
+        if key is None:key=_pr.coefficient_key(op)
         kind=self._velocity_method()
         if self._factor_key==key and self._factor_kind==kind:
             self._factor_reuses+=1;return
@@ -921,7 +925,9 @@ class PreparedVariableStokes2D:
             metadata['initial_guess']=dict(guess_id=initial_guess.guess_id,descriptor=initial_guess.descriptor())
             arrays.update({'initial_guess_'+k:initial_guess.array(k) for k in ('u_m_s','w_m_s','pressure_pa')})
         check_event_or_callable(cancel, 'constitutive work cancelled')
-        return VariableStokesSolution(metadata,arrays)
+        result=object.__new__(VariableStokesSolution)
+        result._initialize(metadata,arrays,_aa._check_owned_result_history)
+        return result
 
 
 def save_variable_stokes_solution(result,store,*,budget=None,cancel=None):

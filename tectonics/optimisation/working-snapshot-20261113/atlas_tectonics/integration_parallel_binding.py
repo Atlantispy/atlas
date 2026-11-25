@@ -15,7 +15,7 @@ worker. The whole list, the sources, the runtime and the limits are bound to
 one token; every returned member result must still carry its own request.
 """
 from concurrent.futures import Future
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import math
@@ -223,9 +223,28 @@ def _child_limits(child_bytes, predicate_units):
 class JobBinding:
     """Deep immutable snapshot; record() always returns a new decoded copy."""
     encoded: bytes
+    _dispatch_token: str = field(init=False, repr=False, compare=False)
+    _execution_identity: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        _validate(_decode(self.encoded))
+        record = _decode(self.encoded)
+        _validate(record)
+        object.__setattr__(self, '_dispatch_token', record['dispatch_token'])
+        object.__setattr__(self, '_execution_identity', record['execution_identity'])
+
+    @classmethod
+    def _read(cls, encoded, record):
+        """Admit the private mapped worker's own routing decode."""
+        if type(encoded) is not bytes:
+            raise ValueError('immutable canonical bytes required')
+        if type(record) is not dict or canonical(record) != encoded:
+            raise ValueError('canonical JSON object required')
+        _validate(record)
+        binding = object.__new__(cls)
+        object.__setattr__(binding, 'encoded', encoded)
+        object.__setattr__(binding, '_dispatch_token', record['dispatch_token'])
+        object.__setattr__(binding, '_execution_identity', record['execution_identity'])
+        return binding
 
     @classmethod
     def create(cls, *, request, source_bindings, context, child_bytes, predicate_units,
@@ -241,7 +260,7 @@ class JobBinding:
     def verify(self, *, request, source_bindings, context, child_bytes, predicate_units):
         wanted = JobBinding.create(request=request, source_bindings=source_bindings, context=context,
             child_bytes=child_bytes, predicate_units=predicate_units,
-            dispatch_token=self.record()['dispatch_token'])
+            dispatch_token=self._dispatch_token)
         if wanted.encoded != self.encoded:
             raise ValueError('live request/source/runtime/limits differ from dispatched job')
 
@@ -277,19 +296,27 @@ def worker_complete(binding_bytes, *, context, read_bindings, request, child_bud
     never caller-supplied integers. The reviewed callable must use that ledger
     and return canonical measure bytes; echoed JSON cannot establish its use.
     """
+    return _worker_complete(binding_bytes, context=context, read_bindings=read_bindings,
+                            request=request, child_budget=child_budget, run=run)
+
+
+def _worker_complete(binding, *, context, read_bindings, request, child_budget, run, record=None):
+    # Only the bounded mapped worker supplies its already admitted record.
     if (type(child_budget) is not WorkBudget
             or any(name in vars(child_budget) for name in
                    ('reserve', 'reserve_predicate_work', 'try_reserve'))):
         raise TypeError('the actual plain child WorkBudget is required')
-    binding = JobBinding(binding_bytes)
+    if record is None:
+        binding = JobBinding(binding)
     def verify():
         binding.verify(request=request, source_bindings=read_bindings(), context=context,
                        child_bytes=child_budget.max_bytes,
                        predicate_units=child_budget.max_predicate_work_units)
     verify()
-    raw = _payload(run(child_budget), binding)
+    payload = run(child_budget)
+    raw = _payload(payload, binding) if record is None else _carries(payload, record['request'])
     verify()
-    return canonical({'schema': _RECEIPT, 'binding': binding.record(),
+    return canonical({'schema': _RECEIPT, 'binding': binding.record() if record is None else record,
                       'canonical_json': raw.decode('utf8'),
                       'record_sha256': hashlib.sha256(raw).hexdigest()})
 
@@ -336,7 +363,7 @@ class OwnedDispatch:
         if not _digest(receipt['record_sha256']) or hashlib.sha256(raw).hexdigest() != receipt['record_sha256']:
             raise ValueError('complete worker-result digest differs')
         self.binding.verify(**live)
-        return _payload(raw, self.binding)
+        return _carries(raw, receipt['binding']['request'])
 
 
 @dataclass(frozen=True, slots=True)

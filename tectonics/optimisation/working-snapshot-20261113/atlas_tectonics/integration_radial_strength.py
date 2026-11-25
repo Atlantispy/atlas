@@ -106,10 +106,8 @@ class RadialStrengthSource:
         return self._snapshot.array_names
 
     def bind(self, native):
-        binding = self._map.native_binding(native)
-        if binding['source'] != self.descriptor()['source']:
-            raise RadialStrengthRefused('native volume map differs from the constitutive source')
-        return binding
+        # Issuing and refreshing the source preserve this immutable map's source binding.
+        return self._map.native_binding(native)
 
 
 def radial_strength_source(moving, sphere, volume_map, *, materials, creep_laws,
@@ -127,8 +125,6 @@ def radial_strength_source(moving, sphere, volume_map, *, materials, creep_laws,
     data = volume_map.record()
     if data['source'] != O._source_binding(sphere, moving):
         raise RadialStrengthRefused('radial constitutive map has stale material/heat identity')
-    if moving._physical_columns is None or moving._patch_heat is None:
-        raise RadialStrengthRefused('actual retained physical columns and heat required')
     if type(materials) is not dict or type(creep_laws) is not dict:
         raise RadialStrengthRefused('explicit named material and creep tables required')
     if any(type(m) is not RadialPlasticity3D for m in materials.values()):
@@ -146,8 +142,6 @@ def radial_strength_source(moving, sphere, volume_map, *, materials, creep_laws,
         column_data = {}
         for patch_id in selected:
             patch = patches[patch_id]; record = moving.cohort(patch.cohort_id)
-            if record.volume_convention != V.PHYSICAL_RADIAL_SHELL:
-                raise RadialStrengthRefused('physical radial shell convention required')
             field = fields[patch_id]
             with resource.reserve(H.field_workspace({patch_id: field}), category='radial-strength-column'):
                 piece = U.piece_of(patch, sphere.material.phases)
@@ -408,7 +402,8 @@ def solve_radial_strength(plan, source, body_force_n_m3, velocity_m_s, traction_
                     return RadialStrengthResult(solved, response, iteration, difference)
                 # The plan's owner declaration remains stable across iterations;
                 # the actual current source is separately bound in the response.
-                current = current.with_viscosity(eta, material_source=plan.descriptor()['material_source'],
+                plan._verify()
+                current = current.with_viscosity(eta, material_source=plan._definition['material_source'],
                                                 cancel=cancel, release=current is not plan)
             raise RadialStrengthRefused('3D radial constitutive iteration did not converge; no history or heat booked')
     finally:

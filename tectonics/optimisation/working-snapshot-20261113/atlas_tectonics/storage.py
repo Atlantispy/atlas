@@ -8,6 +8,7 @@ invocation metadata; equal payloads may be shared across different invocations.
 """
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -31,7 +32,7 @@ from .resources import _sha256_pattern as _SHA
 from . import _w08_history_funding as _history
 
 
-class StoreError(ValueError):
+class StoreError(ValueError, AtlasError):
     """Corrupt, incompatible, unsafe or over-budget storage; never a cache miss."""
 
 
@@ -354,7 +355,9 @@ class ArrayStore:
             if existing and existing != _SCHEMA_OBJECTS:
                 raise StoreError('refusing to modify an unrelated database')
             self._db.execute(_DDL['settings'].replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', 1))
-            wanted = _json({'schema': _SCHEMA, 'chunk_bytes': limits.chunk_bytes})
+            chunk_bytes = limits.chunk_bytes
+            wanted = _json({'schema': _SCHEMA, 'chunk_bytes': chunk_bytes})
+            self._initial_settings = (_SCHEMA, chunk_bytes, wanted)
             row = self._db.execute('SELECT body FROM settings WHERE id=1').fetchone()
             if row and row[0] != wanted:
                 raise StoreError('incompatible store schema or chunk size')
@@ -504,7 +507,11 @@ class ArrayStore:
                     self._db.execute('BEGIN')
                 # Touch a table to acquire a stable read view before data_version.
                 settings = self._db.execute('SELECT body FROM settings WHERE id=1').fetchone()
-                wanted = _json({'schema': _SCHEMA, 'chunk_bytes': self.limits.chunk_bytes})
+                schema, chunk_bytes, wanted = self._initial_settings
+                current_chunk_bytes = self.limits.chunk_bytes
+                if (schema != _SCHEMA or type(chunk_bytes) is not int
+                        or type(current_chunk_bytes) is not int or chunk_bytes != current_chunk_bytes):
+                    wanted = _json({'schema': _SCHEMA, 'chunk_bytes': current_chunk_bytes})
                 if settings is None or settings[0] != wanted:
                     raise StoreError('store settings changed during use')
                 version = self._db.execute('PRAGMA data_version').fetchone()[0]
@@ -527,8 +534,8 @@ class ArrayStore:
                     if reservation is not None:
                         reservation.__exit__(None, None, None)
 
-    def _remember(self, key, desc, stored):
-        self._verified[key] = (desc, stored)
+    def _remember(self, key, dtype, count):
+        self._verified[key] = (dtype, count)
         self._verified.move_to_end(key)
         while len(self._verified) > self.limits.verified_cache_entries:
             old, _ = self._verified.popitem(last=False)
@@ -562,12 +569,18 @@ class ArrayStore:
         Legacy palette8 is retained for explicit compatibility tests. Zstd uses
         one native thread; an embedded per-frame dictionary has no external file.
         """
+        transformed = ArrayStore._encode_transformed(self, raw, dt)
+        return ('raw', raw) if transformed is None else transformed
+
+    def _encode_transformed(self, raw, dt):
+        """Return the chosen transformed payload, or None when raw wins."""
         self._stats['encodes'] += 1
         width = dt.itemsize
         words = np.frombuffer(raw, dtype=f'<u{width}')
         if np.all(words == words[0]):
             return 'uniform', raw[:width]
-        best = ('raw', raw)
+        best = None
+        best_size = len(raw)
         if self.compression.palette and dt.kind in 'biu':
             a = np.frombuffer(raw, dtype=dt)
             values, inverse = np.unique(a, return_inverse=True)
@@ -586,15 +599,17 @@ class ArrayStore:
                         packed[:part.size] |= part << (lane * bits)
                     candidate = ('palette-packed-v1', struct.pack('<HB', n, bits)
                                  + values.tobytes() + packed.tobytes())
-                if len(candidate[1]) < len(best[1]):
+                if len(candidate[1]) < best_size:
                     best = candidate
+                    best_size = len(candidate[1])
             if self.compression.categorical == 'auto':
                 starts = np.concatenate(([0], np.flatnonzero(a[1:] != a[:-1]) + 1))
-                if 4 + starts.size * (4 + width) < len(best[1]):
+                if 4 + starts.size * (4 + width) < best_size:
                     runs = np.empty(starts.size, dtype=[('count', '<u4'), ('value', dt)])
                     runs['count'] = np.diff(np.append(starts, a.size))
                     runs['value'] = a[starts]
                     best = ('rle-v1', struct.pack('<I', starts.size) + runs.tobytes())
+                    best_size = len(best[1])
         if self.compression.codec == 'zstd':
             b = self._blosc
             filters = [b.Filter.NOFILTER] * 5 + [
@@ -603,7 +618,7 @@ class ArrayStore:
             encoded = b.compress2(raw, codec=b.Codec.ZSTD, clevel=self.compression.level,
                                  typesize=width, nthreads=1, filters=filters,
                                  use_dict=self.compression.use_dict)
-            if len(encoded) < len(best[1]):
+            if len(encoded) < best_size:
                 version = b.clib_info(b.Codec.ZSTD)[1].decode()
                 dictionary = 'dict' if self.compression.use_dict else 'nodict'
                 label = (f'blosc2-zstd-{self.compression.shuffle}:{self.compression.level}:'
@@ -686,9 +701,7 @@ class ArrayStore:
         _sha(key)
         known = self._verified.get(key)
         if known is not None:
-            desc, _ = known
-            meta = _parse(desc)
-            if expected_dtype is not None and (meta['dtype'] != expected_dtype or meta['count'] != expected_count):
+            if expected_dtype is not None and known != (expected_dtype, expected_count):
                 raise StoreError('chunk does not match manifest')
             self._verified.move_to_end(key)
             if verify_only:
@@ -699,15 +712,25 @@ class ArrayStore:
                 self._cache.move_to_end(key)
                 self._stats['decoded_hits'] += 1
                 return raw
-        row = self._db.execute('SELECT length(descriptor),length(payload),length(codec),length(stored_sha),'
-                               'typeof(descriptor),typeof(payload),typeof(codec),typeof(stored_sha) FROM chunks WHERE id=?', (key,)).fetchone()
+        bounds = ("typeof(descriptor)='blob' AND typeof(payload)='blob' AND "
+                  "typeof(codec)='text' AND typeof(stored_sha)='text' AND "
+                  'length(descriptor)<=256 AND length(payload)<=:payload_limit AND '
+                  'length(codec)<=128 AND length(stored_sha)=64')
+        payload_limit = self.limits.chunk_bytes + 4096
+        row = self._db.execute(
+            'SELECT length(descriptor),length(payload),length(codec),length(stored_sha),'
+            'typeof(descriptor),typeof(payload),typeof(codec),typeof(stored_sha),'
+            f'CASE WHEN {bounds} THEN descriptor END,CASE WHEN {bounds} THEN codec END,'
+            f'CASE WHEN {bounds} THEN stored_sha END,CASE WHEN {bounds} THEN payload END '
+            'FROM chunks WHERE id=:key',
+            {'key': key, 'payload_limit': payload_limit}).fetchone()
         if row is None:
             raise StoreError('snapshot has a missing chunk')
-        if row[4:] != ('blob', 'blob', 'text', 'text'):
+        if row[4:8] != ('blob', 'blob', 'text', 'text'):
             raise StoreError('invalid chunk record types')
-        if row[0] > 256 or row[1] > self.limits.chunk_bytes + 4096 or row[2] > 128 or row[3] != 64:
+        if row[0] > 256 or row[1] > payload_limit or row[2] > 128 or row[3] != 64:
             raise StoreError('oversized chunk record')
-        desc, codec, stored, payload = self._db.execute('SELECT descriptor,codec,stored_sha,payload FROM chunks WHERE id=?', (key,)).fetchone()
+        desc, codec, stored, payload = row[8:]
         self._stats['payload_reads'] += 1
         if _hash(desc + b'\0' + codec.encode() + b'\0' + payload) != stored:
             raise StoreError('stored chunk checksum mismatch')
@@ -722,25 +745,22 @@ class ArrayStore:
         raw = self._decode(codec, payload, dt, count)
         if self._blob_id(desc, raw) != key:
             raise StoreError('logical chunk checksum mismatch')
-        self._remember(key, desc, stored)
+        self._remember(key, dt.str, count)
         self._remember_raw(key, raw)
         return None if verify_only else raw
 
-    def _manifest(self, key):
+    def _manifest(self, key, *, _return_body=False):
+        """The interval reader can retain the validated bytes inside its own workspace."""
         _sha(key)
+        funding = getattr(self, '_w08_history_read', None)
         row = self._db.execute('SELECT length(body),typeof(body),typeof(digest) FROM snapshots WHERE id=?', (key,)).fetchone()
         if row is None:
             return None
-        if row[1:] != ('blob', 'text'):
-            raise StoreError('invalid manifest record types')
-        if row[0] > self.limits.max_manifest_bytes:
-            raise StoreError('oversized manifest')
-        funding = getattr(self, '_w08_history_read', None)
+        ArrayStore._check_manifest_header(row, self.limits)
         if funding is not None:
             funding.before_fetch(row[0])
         body, digest = self._db.execute('SELECT body,digest FROM snapshots WHERE id=?', (key,)).fetchone()
-        if _hash(body) != digest:
-            raise StoreError('manifest checksum mismatch')
+        ArrayStore._check_manifest_checksum(body, digest)
         if funding is not None:
             del row, digest
             funding.before_parse(len(body))
@@ -748,6 +768,42 @@ class ArrayStore:
         if funding is not None:
             del body
             funding.parsed()
+        ArrayStore._check_manifest_fields(m, key, self.limits)
+        return (m, body) if _return_body and funding is None else m
+
+    def _candidate_manifest_body(self, key):
+        """Read a local manifest under the candidate writer's funded workspace."""
+        _sha(key)
+        body_size = "CASE WHEN typeof(body)='blob' THEN length(body) END"
+        admitted = f"({body_size})<=:limit AND typeof(digest)='text'"
+        row = self._db.execute(
+            f'SELECT {body_size},typeof(body),typeof(digest),'
+            f'CASE WHEN {admitted} THEN body END,CASE WHEN {admitted} THEN digest END '
+            'FROM snapshots WHERE id=:key',
+            {'key': key, 'limit': self.limits.max_manifest_bytes}).fetchone()
+        if row is None:
+            return None
+        ArrayStore._check_manifest_header(row, self.limits)
+        body, digest = row[3:]
+        del row
+        ArrayStore._check_manifest_checksum(body, digest)
+        ArrayStore._check_manifest_fields(_parse(body), key, self.limits)
+        return body
+
+    @staticmethod
+    def _check_manifest_header(row, limits):
+        if row[1:3] != ('blob', 'text'):
+            raise StoreError('invalid manifest record types')
+        if row[0] > limits.max_manifest_bytes:
+            raise StoreError('oversized manifest')
+
+    @staticmethod
+    def _check_manifest_checksum(body, digest):
+        if _hash(body) != digest:
+            raise StoreError('manifest checksum mismatch')
+
+    @staticmethod
+    def _check_manifest_fields(m, key, limits):
         if not isinstance(m, dict) or set(m) not in ({'schema','invocation','arrays','metadata'},
                 {'schema','invocation','arrays','metadata','execution_mode'}) or m['schema'] != _SCHEMA or m['invocation'] != key:
             raise StoreError('incompatible manifest')
@@ -764,18 +820,17 @@ class ArrayStore:
             if not isinstance(shape, list) or len(shape) > 16 or any(type(n) is not int or n < 0 for n in shape):
                 raise StoreError('invalid saved shape')
             count = math.prod(shape)
-            if count * dt.itemsize > self.limits.max_array_bytes:
+            if count * dt.itemsize > limits.max_array_bytes:
                 raise StoreError('declared array exceeds decoder limit')
-            width = self.limits.chunk_bytes // dt.itemsize
+            width = limits.chunk_bytes // dt.itemsize
             ids = a['chunks']
             if not isinstance(ids, list) or len(ids) != (count + width - 1) // width:
                 raise StoreError('invalid chunk inventory')
             chunks += len(ids)
             for chunk in ids:
                 _sha(chunk)
-        if chunks > self.limits.max_chunks:
+        if chunks > limits.max_chunks:
             raise StoreError('too many chunk references')
-        return m
 
     def reference(self, invocation: str, array_name: str) -> ArrayReference:
         """Return a checked reference; no array payload is materialised here."""
@@ -906,6 +961,7 @@ class ArrayStore:
             started = time.perf_counter()
             descriptions = {}
             staged = set()
+            staged_types = {}
             staged_bytes = 0
             dependencies = {}
             projected = 0
@@ -920,7 +976,8 @@ class ArrayStore:
                 raw = np.asarray(a, dtype=dt, order='C').tobytes()
                 if dt.kind == 'f' and not np.isfinite(np.frombuffer(raw, dtype=dt)).all():
                     raise StoreError('nonfinite values are not supported scientific state')
-                desc = _json({'dtype': dt.str, 'count': len(raw) // dt.itemsize})
+                typed = (dt.str, len(raw) // dt.itemsize)
+                desc = _json({'dtype': typed[0], 'count': typed[1]})
                 key = self._blob_id(desc, raw)
                 if key in staged:
                     return key
@@ -936,16 +993,12 @@ class ArrayStore:
                         raise _database_error(exc, 'storage preparation failed; no snapshot published') from exc
                 if exists:
                     with self._read_scope() as hit_funds:
-                        if self._chunk(key, expected_dtype=dt.str, expected_count=len(raw)//dt.itemsize) != raw:
+                        if self._chunk(key, expected_dtype=typed[0], expected_count=typed[1]) != raw:
                             raise StoreConflict('logical chunk identity conflict')
-                        dependencies[key] = desc
+                        dependencies[key] = typed
                     del hit_funds
                     return key
                 codec, payload = self._encode(raw, dt)
-                # Attest logical equality once, outside the writer transaction.
-                # Future references must not trust an unchecked encoder output.
-                if self._decode(codec, payload, dt, len(raw)//dt.itemsize) != raw:
-                    raise StoreError('encoder did not preserve typed payload')
                 stored = _hash(desc + b'\0' + codec.encode() + b'\0' + payload)
                 header = _json([key, desc.decode(), codec, stored, len(payload)])
                 addition = 4 + len(header) + len(payload)
@@ -955,6 +1008,7 @@ class ArrayStore:
                 staged_bytes += addition
                 self._stats['peak_prepared_bytes'] = max(self._stats['peak_prepared_bytes'], staged_bytes)
                 staged.add(key)
+                staged_types.setdefault(desc, typed)
                 return key
 
             for name, value in sorted(values.items()):
@@ -981,7 +1035,7 @@ class ArrayStore:
                                 continue
                             count = min(width, math.prod(shape) - i * width)
                             self._chunk(key, expected_dtype=dt.str, expected_count=count, verify_only=True)
-                            dependencies[key] = _json({'dtype': dt.str, 'count': count})
+                            dependencies[key] = (dt.str, count)
                     for i, a in changes.items():
                         count = min(width, math.prod(shape) - i * width)
                         ids[i] = capture(a, dt.str, count)
@@ -1027,9 +1081,8 @@ class ArrayStore:
                 try:
                     self._db.execute('BEGIN IMMEDIATE')
                     with self._read_scope():
-                        for key, desc in dependencies.items():
-                            meta = _parse(desc)
-                            self._chunk(key, expected_dtype=meta['dtype'], expected_count=meta['count'], verify_only=True)
+                        for key, (dtype, count) in dependencies.items():
+                            self._chunk(key, expected_dtype=dtype, expected_count=count, verify_only=True)
                     for name, value in values.items():
                         if isinstance(value, (ArrayReference, _EditedReference)):
                             self._reference_description(value.reference if isinstance(value, _EditedReference) else value)
@@ -1054,8 +1107,8 @@ class ArrayStore:
                         nonlocal batch, batch_bytes, added, rows
                         if batch:
                             self._db.executemany('INSERT INTO chunks VALUES(?,?,?,?,?)', batch)
-                            for key, desc, _, stored, payload in batch:
-                                self._remember(key, desc, stored)
+                            for key, desc, _, _, payload in batch:
+                                self._remember(key, *staged_types[desc])
                                 added += len(payload) + len(desc) + 128
                             rows += len(batch)
                             self._stats['insert_batches'] += 1
@@ -1081,9 +1134,9 @@ class ArrayStore:
                         if exists:
                             # A concurrent writer may have published a different
                             # lossless encoding of the same logical chunk.
-                            meta = _parse(desc)
-                            expected = self._decode(codec, payload, _dtype(meta['dtype']), meta['count'])
-                            if self._chunk(key, expected_dtype=meta['dtype'], expected_count=meta['count']) != expected:
+                            dtype, count_typed = staged_types[desc]
+                            expected = self._decode(codec, payload, _dtype(dtype), count_typed)
+                            if self._chunk(key, expected_dtype=dtype, expected_count=count_typed) != expected:
                                 raise StoreConflict('concurrent chunk identity conflict')
                         else:
                             if batch and batch_bytes + count > self.limits.insert_batch_bytes:

@@ -303,17 +303,20 @@ def restore_regional_snapshots(arrays, metadata, *, budget=None, cancel=None):
         for key, entry in specs.items():
             _cancel(cancel)
             raw = arrays[key].tobytes(order='C')
-            if len(raw) != entry['nbytes'] or _hash(raw, cancel) != entry['sha256']:
+            if len(raw) != entry['nbytes']:
+                _fail('array content hash mismatch')
+            digest = _hash(raw, cancel)
+            if digest != entry['sha256']:
                 _fail('array content hash mismatch')
             value = np.frombuffer(raw, dtype=_DTYPE).reshape(entry['shape'])
             if not np.isfinite(value).all():
                 _fail('nonfinite restored array')
-            captured[key] = value
+            captured[key] = (value.shape, raw, digest)
         restored = {}
         for record, raw_meta in descriptions:
             _cancel(cancel)
             fields = {entry['name']: captured[entry['array']] for entry in record['fields']}
-            result = RegionalMechanicalSnapshot(_parse(raw_meta), fields)
+            result = RegionalMechanicalSnapshot._from_captured(_parse(raw_meta), fields)
             if result.result_id != record['result_id']:
                 _fail('restored snapshot result identity mismatch')
             restored[record['name']] = result

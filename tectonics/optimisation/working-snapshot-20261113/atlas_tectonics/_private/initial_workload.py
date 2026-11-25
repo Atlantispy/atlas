@@ -12,6 +12,7 @@ historical head's advance duration_s. This replaces only the missing case
 input; it is not the old sequence-zero continuation validator and grants no
 admission, funding, runtime compatibility or scientific acceptance.
 """
+from atlas_shared.errors import AtlasError
 from hashlib import sha256
 import json
 import math
@@ -22,7 +23,7 @@ SCHEMA = 'atlas.migrated-initial-workload.v1'
 WORKLOAD_ARRAYS = ('component_mass_kg', 'enthalpy_j')
 
 
-class InitialWorkloadRefused(ValueError):
+class InitialWorkloadRefused(ValueError, AtlasError):
     pass
 
 

@@ -355,7 +355,7 @@ def transform(source):
         '    grid_lines = tuple(tuple(map(W._decode, axis)) for axis in old[\'grid_lines\'])\n'
         '    final_fields = dict(finite_state_id=finite_stock_state.state_id, finite_owner_id=finite_stock_state._owner.owner_id,\n'
         '        component_registry_id=finite_record[\'registry_id\']\n'
-        '            if \'registry_id\' in finite_record else finite_stock_state._owner.definition()[\'registry_id\'])\n'
+        '            if \'registry_id\' in finite_record else finite_stock_state._owner._checked_registry_id())\n'
         '    del step, stocks, finite_record, old, old_owner\n'
         '    result = _assemble_partition(funding, sphere, interval, collar, original,\n'
         '        [regions[k] for k in sorted(regions)], grid_lines=grid_lines,\n'

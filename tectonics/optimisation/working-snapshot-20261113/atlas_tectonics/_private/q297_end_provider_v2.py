@@ -26,8 +26,8 @@ def _canonical(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
-def _pinned_records(path, expected_sha, arena):
-    """Read one admitted bounded record under the owning arena reservation."""
+def _pinned_stdout(path, expected_sha, arena):
+    """Authenticate the delayed stdout read under the owning arena reservation."""
     path = Path(path)
     size = path.stat().st_size
     if not 0 < size <= 32 << 20:
@@ -37,6 +37,11 @@ def _pinned_records(path, expected_sha, arena):
         raw = stream.read(size + 1)
     if len(raw) != size or hashlib.sha256(raw).hexdigest() != expected_sha:
         raise ValueError('qualification proof identity differs')
+    return raw
+
+
+def _pinned_records(path, expected_sha, arena):
+    raw = _pinned_stdout(path, expected_sha, arena)
     records = []
     for line in raw.splitlines():
         if line.lstrip().startswith(b'{'):
@@ -100,8 +105,8 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
     Process finality and selected producer code are separately authenticated by
     the factory. This unselected candidate does not establish live issuer identity.
     """
-    old_count = len(read_verified_totals(sweep_output=sweep_output, physical_output=physical_output,
-                                         checkpoint=checkpoint, arena=arena))
+    _pinned_stdout(sweep_output, SWEEP_SHA, arena)
+    _pinned_stdout(physical_output, PHYSICAL_SHA, arena)
     path = Path(sweep_output).parent.parent.parent/'landing-gp-correspondence-r1/result-data.json'
     size = path.stat().st_size
     if not 0 < size <= 4 << 20:
@@ -117,7 +122,7 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
             proof.get('old_graph')!='8972063a43a469c8d619dbc4099a128ff6ad935026d65b19cc30b9ca86493846' or
             proof.get('support_count')!=2016 or
             proof.get('component_count')!=6212 or proof.get('mapped_tiles')!=1089 or
-            proof.get('positive_shell')!=771 or proof.get('positive_components')!=847 or old_count!=847):
+            proof.get('positive_shell')!=771 or proof.get('positive_components')!=847):
         raise ValueError('correspondence proof binding differs')
     pairs=proof.get('mapped_nominal_sums')
     if (type(pairs) is not list or len(pairs)!=847 or

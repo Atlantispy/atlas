@@ -19,13 +19,13 @@ import atlas_tectonics
 import atlas_tectonics.integration_private_heat_cold as PUBLIC
 
 NAME = 'integration_private_heat_cold'
-PUBLIC_SHA = 'c83c090380f299ca8711983b84961cff080d6c1e1ddf7a8717d73b0b63883ca9'
+PUBLIC_SHA = '9c6ae2f952976b8fa028c3975f1db9ff4077c817e7498bfec7aaff3f06d43b16'
 # The derived text: the public file above with the _EDITS replacements below (the binding pin and diag21's
 # lazy-transport branch); made in memory by _derive, never written to disk, checked against this hash.
-DERIVED_SHA = '8197e3e16b3cda804e2f7bb20013c82a3c85f91ee28148fe2131575d866cdc4c'
+DERIVED_SHA = '51fb4ff2cc4feedce840978256d88d70e857ab46f388ac0d8cb07e8c37006df3'
 _EDITS = (
     ("_BINDING_SHA = '29ad6024cfe0125f5424b38648cf212e60bbf6a958a8a6e89ddd327fb3de5ae2'",
-     "_BINDING_SHA = '84db846032df99477844a544dac9a83b283cfd0dd2a6541513efcd1702406262'"),
+     "_BINDING_SHA = '536ee56783eb93a48227db3cb24d5f2df8b038a0a3008b0eb71a09e05f8a5b56'"),
     ("""            metadata = {k: v for k, v in exchange['transport'].items() if k != 'result_id'}
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))

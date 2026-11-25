@@ -542,8 +542,6 @@ def _cap_face(vertices, indices, normal, poly, fresh, resource):
         row = fresh.get(point)
         if row is None:
             row = poly.info[point]
-        if type(row) is not tuple or len(row) != 3 or type(row[0]) is not int or row[0] < 1:
-            raise V.VolumeError('native precomputed cap point width required')
         widest = max(widest, row[0])
     if widest < FILTER_CAP_POINT_BITS:
         return _face(vertices, indices, normal, _coplanar_cap=True)
@@ -838,8 +836,6 @@ def _mesh_closure_allowance(terms, volume):
     references. Integer storage also allows the tested 64-limb recycled block
     and two spare limbs; the arithmetic lease separately covers GMP work space.
     """
-    if type(volume) is not Fraction or type(volume.numerator) is not int or type(volume.denominator) is not int:
-        raise V.VolumeError('plain Fraction volume required for native mesh closure')
     numerator_bits = denominator_bits = widest = 0
     for row, denominator in terms:
         if (len(row) != 12 or type(denominator) is not int or denominator <= 0 or
@@ -911,14 +907,9 @@ def _mimetic_moment_allowance(vectors, centres, indexes, volume):
     Eight product payloads and sixteen extra rational slots cover the current
     product, sum and comparison temporaries; _work admits GMP workspace too.
     """
-    if len(vectors) != len(indexes):
-        raise V.VolumeError('one face index per mimetic vector required')
     width = denominators = widest = 0
     def measure(value):
         nonlocal width, denominators, widest
-        if (type(value) is not Fraction or type(value.numerator) is not int or
-                type(value.denominator) is not int):
-            raise V.VolumeError('plain Fraction metrics required for native mimetic moments')
         numerator, denominator = max(1, value.numerator.bit_length()), value.denominator.bit_length()
         width += numerator+denominator
         denominators += denominator

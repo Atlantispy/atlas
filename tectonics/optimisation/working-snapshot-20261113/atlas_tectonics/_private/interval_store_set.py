@@ -501,12 +501,12 @@ class ReadOnlyNative:
         # Native validator performs bounded lengths/types, schema and array checks.
         with _workspace(self.scope.run_budget, 8 * LIMITS.max_manifest_bytes,
                         'interval-manifest-verify'):
-            parsed = native.ArrayStore._manifest(self, key)
-            if parsed is None:
+            validated = native.ArrayStore._manifest(self, key, _return_body=True)
+            if validated is None:
                 self._check_identity()
                 raise KeyError(key)
-            row = self._db.execute('SELECT body FROM snapshots WHERE id=?', (key,)).fetchone()
-            body = row[0]
+            parsed, body = validated
+            del validated
             if native._json(parsed) != body:
                 raise ContractError('noncanonical native manifest')
             if not batched:
@@ -519,14 +519,16 @@ class ReadOnlyNative:
     def contains_chunk(self, key, descriptor):
         self._check_identity()
         _sha(key, 'chunk identity')
-        row = self._db.execute('SELECT length(descriptor),typeof(descriptor) FROM chunks WHERE id=?', (key,)).fetchone()
+        row = self._db.execute(
+            "SELECT length(descriptor),typeof(descriptor),"
+            "CASE WHEN typeof(descriptor)='blob' AND length(descriptor)<=256 THEN descriptor END "
+            "FROM chunks WHERE id=?", (key,)).fetchone()
         if row is None:
             self._check_identity()
             return False
         if row[1] != 'blob' or row[0] > 256:
             raise ContractError('invalid chunk descriptor record')
-        actual = self._db.execute('SELECT descriptor FROM chunks WHERE id=?', (key,)).fetchone()[0]
-        if actual != descriptor:
+        if row[2] != descriptor:
             raise ContractError('typed content identity descriptor conflict')
         self._check_identity()
         return True
@@ -1639,10 +1641,14 @@ class UnlistedCandidate:
             return owner, key
         with _workspace(self.scope.run_budget, LIMITS.codec_workspace_bytes + 32 * NATIVE_CHUNK_BYTES,
                         'interval-chunk-encode'):
-            codec, payload = native.ArrayStore._encode(self, raw, dt)
-            if native.ArrayStore._decode(self, codec, payload, dt, meta['count']) != raw:
-                self._failed = True
-                raise ContractError('native encoder changed typed bytes')
+            transformed = native.ArrayStore._encode_transformed(self, raw, dt)
+            if transformed is None:
+                codec, payload = 'raw', raw
+            else:
+                codec, payload = transformed
+                if native.ArrayStore._decode(self, codec, payload, dt, meta['count']) != raw:
+                    self._failed = True
+                    raise ContractError('native encoder changed typed bytes')
             stored = digest(descriptor + b'\0' + codec.encode() + b'\0' + payload)
             addition = len(payload) + len(descriptor) + 128
             if self._stats['retained_record_bytes'] + addition > LIMITS.max_store_bytes:
@@ -1719,10 +1725,10 @@ class UnlistedCandidate:
         def load():
             with _workspace(self.scope.run_budget, 8 * LIMITS.max_manifest_bytes,
                             'candidate-manifest-verify'):
-                manifest = native.ArrayStore._manifest(self, locator.snapshot_key)
-                if manifest is None:
+                body = native.ArrayStore._candidate_manifest_body(self, locator.snapshot_key)
+                if body is None:
                     raise KeyError(locator.snapshot_key)
-                return self._db.execute('SELECT body FROM snapshots WHERE id=?', (locator.snapshot_key,)).fetchone()[0]
+                return body
         return _owned(self.scope, LIMITS.max_manifest_bytes, load, cancel=cancel, dependencies=(self._owner,))
 
     @_serial

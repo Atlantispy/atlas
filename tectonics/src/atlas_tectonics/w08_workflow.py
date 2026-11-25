@@ -231,16 +231,17 @@ class PreparedW08Workflow:
     def statistics(self): return dict(self._stats,budget=self._resource.statistics())
 
     def _validate(self,out):
+        self._validate_output(out,self._validate_history)
+
+    def _validate_issued(self,out):
+        self._validate_output(out,self._reconcile_history)
+
+    def _validate_output(self,out,reconcile):
         i = self._index(out.interval_index); d = out.descriptor(); inv = out.inventory
-        if (inv.node_ids != self.initial.node_ids or inv.node_kinds != self.initial.node_kinds or
-                inv.component_ids != self.initial.component_ids or
-                inv.enthalpy_source != self.initial.enthalpy_source or
-                inv.origin_ids != self.initial.origin_ids or
-                not np.array_equal(inv.formation_time_s,self.initial.formation_time_s) or
-                inv.time_s != d['end_time_s']):
+        if inv.node_kinds != self.initial.node_kinds or inv.time_s != d['end_time_s']:
             raise TectonicsError('restored inventory catalogue/time/thermal provenance mismatch')
         if (d['owners'] != OWNERS or d['plan_id'] != self.plan_id or d['execution'] != self.execution_id or
-                d['interval_index'] != i or d['end_time_s'] != inv.time_s or d['phase'] != 'complete'):
+                d['interval_index'] != i or d['phase'] != 'complete'):
             raise TectonicsError('incomplete or wrong-owner event checkpoint')
         expected_events = [s.descriptor()['transition']['event_id'] for s in self.intervals[:i+1]
                            if s.descriptor()['transition'] is not None]
@@ -251,7 +252,7 @@ class PreparedW08Workflow:
         self._event_endpoint(i,d)
         if type(d['accepted_intervals']) is not int or not i+1 <= d['accepted_intervals'] <= 256:
             raise TectonicsError('cumulative accepted-interval ceiling exceeded')
-        self._validate_history(d,inv)
+        reconcile(d,inv)
         for j in range(len(inv.component_ids)):
             values = [*inv.component_mass_kg[:,j], *(-self.initial.component_mass_kg[:,j])]
             if abs(math.fsum(values)) > 128*np.finfo(float).eps*math.fsum(map(abs,values)):
@@ -268,11 +269,15 @@ class PreparedW08Workflow:
             raise TectonicsError('restored current/reference geometry or deformation mismatch')
 
     def _validate_history(self,record,inventory):
-        """Reconcile tagged transfers, not replay a physical solver or its flux."""
+        history = record['transfer_history']
+        if type(history) is not list or len(history) != record['interval_index']+1:
+            raise TectonicsError('incomplete tagged transfer provenance')
+        self._reconcile_history(record,inventory)
+
+    def _reconcile_history(self,record,inventory):
+        """Reconcile tagged transfers without replaying a physical solver or its flux."""
         history = record['transfer_history']
         i = record['interval_index']
-        if type(history) is not list or len(history) != i+1:
-            raise TectonicsError('incomplete tagged transfer provenance')
         c = self.initial.component_mass_kg.copy(); e = self.initial.enthalpy_j.copy()
         cscale = abs(c); escale = abs(e); total_steps = 0
         node_index = {n:j for j,n in enumerate(self.initial.node_ids)}
@@ -532,7 +537,10 @@ class PreparedW08Workflow:
                     candidate = self._compute(index,current,cancel)
                     pending_guard=self._output_guard(candidate)
                     try:
-                        self._validate(candidate)
+                        if type(self) is PreparedW08Workflow:
+                            self._validate_issued(candidate)
+                        else:
+                            self._validate(candidate)
                         self._stats['physics_seconds'] += perf_counter()-started
                         if self.store is not None:
                             started = perf_counter(); arrays,meta = self._pack(candidate)

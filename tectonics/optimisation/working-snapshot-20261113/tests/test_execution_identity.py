@@ -270,6 +270,9 @@ class StaticBoundaryTest(unittest.TestCase):
                     for a in node.names:
                         full = f'{base}.{a.name}' if base else a.name
                         target = full if _module_path(full).is_file() else base
+                        if (name, target, a.name, a.asname) == (
+                                'atlas_shared.machine.resources_gate', 'atlas_shared.errors', 'AtlasError', None):
+                            continue  # ResourcesRefused retains its builtin base and adds the shared marker.
                         self.assertIn(target, LISTED, f'{name} imports {target}')
 
     def test_bound_modules_take_only_the_tabled_names_from_listed_modules(self):
@@ -407,7 +410,8 @@ with r.ExecutionContext('scipy') as ctx, r.ArrayStore(root/'projected.sqlite', l
                 assert winner.metadata(key) == producer
     print(json.dumps({'key': key, 'using': r._digest(r._json(using)), 'producer': producer['producer_execution'],
                       'finite_key': finite_key, 'finite_producer': finite_producer['producer_execution'],
-                      'finite_source': finite_producer['producer_shared_source_sha256']}))
+                      'finite_source': finite_producer['producer_shared_source_sha256'],
+                      'current_source': ctx._shared_source_sha256, 'current_execution': ctx.identity}))
 '''
 
 
@@ -483,12 +487,15 @@ class IdentityProbeTest(unittest.TestCase):
         with _Copy() as copy:
             first = run(copy, 'first')
             copy.edit('atlas_shared/machine/resources_gate_sibling.py', lambda data: data+b'# source edit\n')
+            copy.edit('atlas_shared/execution/profiling.py', lambda data: data+b'# diagnostic edit\n')
             after = run(copy, 'after')
         self.assertEqual(first['key'], after['key'])
         self.assertEqual(first['producer'], after['producer'])
         self.assertEqual(first['finite_key'], after['finite_key'])
         self.assertEqual(first['finite_producer'], after['finite_producer'])
         self.assertEqual(first['finite_source'], after['finite_source'])
+        self.assertNotEqual(first['current_source'], after['current_source'])
+        self.assertNotEqual(first['current_execution'], after['current_execution'])
         self.assertNotEqual(first['using'], after['using'])
 
     def test_the_interpreter_arithmetic_is_bound(self):

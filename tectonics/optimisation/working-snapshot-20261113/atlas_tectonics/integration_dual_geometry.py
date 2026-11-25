@@ -258,7 +258,7 @@ def _minimum_cost(nodes, edges, arena):
             i, ei = previous[at]; path.append((i, ei)); at = i
         amount = min(adjacency[i][ei][2] for i, ei in path)
         arena.work(4*len(path))
-        with V._work((amount, sent, *(adjacency[i][ei][2] for i, ei in path)), arena.resource):
+        with V._work((amount, sent, *(adjacency[i][ei][2] for i, ei in path)), arena.resource, convert_values=False):
             for i, ei in path:
                 j, reverse, capacity, _ = adjacency[i][ei]
                 adjacency[i][ei][2] = capacity-amount
@@ -690,11 +690,18 @@ def select_geometry(record, *, budget, preferred_starts=None, physical_surfaces=
             original = row_by_id[row['cell_id']]
             for key in ('start_volume_bounds_m3', 'end_volume_bounds_m3'):
                 row[key] = deepcopy(original[key])
-        for face in graph['selected_face_representatives']+graph['transfers']:
+        for face in graph['selected_face_representatives']:
             original = face_by_id[face['face_id']]
             face['volume_bounds_m3'] = deepcopy(original['volume_bounds_m3'])
             lo, hi = map(_pair, original['volume_bounds_m3'])
-            face['max_deviation_m3'] = _enc(max(flux[face['face_id']]-lo, hi-flux[face['face_id']]))
+            value = flux[face['face_id']]
+            deviation = _enc(max(value-lo, hi-value))
+            face['max_deviation_m3'] = deviation
+            flux[face['face_id']] = deviation
+        for face in graph['transfers']:
+            original = face_by_id[face['face_id']]
+            face['volume_bounds_m3'] = deepcopy(original['volume_bounds_m3'])
+            face['max_deviation_m3'] = list(flux[face['face_id']])
         graph.update(schema='atlas.private-geometric-only-circulation.v1',
                      original_face_intervals=deepcopy(faces), scientific_acceptance=False,
                      selection='joint GEOMETRIC start/end/face representatives in unchanged enclosures; NOT booked material')
@@ -897,6 +904,43 @@ class MeasurementGroup:
         self.calls = 0
 
 
+def _require_initial_cache_record(result, cell_id, support_id, time_s, r, width, max_leaves_per_query, decode):
+    from . import integration_volume as V
+
+    # Storage authenticates bytes; these checks establish their query and
+    # precision meaning before the normal complete-partition allocator.
+    low, high = result['bounds']
+    query, = result['queries']
+    error = (high-low)/low if low else Q(0)
+    if (result['cell_id'] != cell_id or result['support_id'] != support_id or
+            result['requested_relative_error'] != r or result['absolute_width_m3'] != width or
+            result['declared_max_leaves_per_query'] != max_leaves_per_query or
+            result['declared_max_queries'] != 1 or result['query_count'] != 1 or
+            not 0 <= low <= high or high > 0 and low == 0 or high-low > width or
+            result['relative_error_bound'] != error or error > r or
+            query['support_id'] != support_id or query['logical_cell_id'] != cell_id or
+            query['endpoint'] != 'start' or query['time_s'] != time_s or
+            decode(query['lower_m3']) != low or decode(query['upper_m3']) != high or
+            decode(query['relative_error']) != r or decode(query['max_width_m3']) != width or
+            query['met'] is not True or query['max_leaves'] != max_leaves_per_query or
+            not 1 <= query['leaves'] <= max_leaves_per_query or
+            query['leaves'] != result['cumulative_leaf_units'] or
+            query['work_units'] != result['cumulative_work_units']):
+        raise V.VolumeError('cached initial measurement does not certify the requested bounds')
+
+
+def _require_received_initial_cache_record(result, cell_id, support_id, time_s, r, width, max_leaves_per_query, decode):
+    from . import integration_volume as V
+
+    _require_initial_cache_record(result, cell_id, support_id, time_s, r, width, max_leaves_per_query, decode)
+    query, = result['queries']
+    low, high = result['bounds']
+    if high > 0 and (not 0 < decode(query['positive_witness_m3']) <= low or
+                     not query.get('positive_witness_point_m') or
+                     len(query['positive_witness_point_m']) != 3):
+        raise V.VolumeError('cached initial measurement does not certify the requested bounds')
+
+
 def cached_initial_component(support, cell_id, *, relative_error, absolute_width_m3,
                              max_leaves_per_query, budget, store, context, _volume=None, _group=None):
     """Explicit lossless reuse of successful static measurements, not material.
@@ -962,29 +1006,12 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
             result['bounds'] = tuple(map(Q, result['bounds']))
             for name in ('relative_error_bound', 'requested_relative_error', 'absolute_width_m3'):
                 result[name] = Q(result[name])
-        # Storage authenticates bytes; these checks establish their query and
-        # precision meaning before the normal complete-partition allocator.
-        low, high = result['bounds']
-        query, = result['queries']
-        error = (high-low)/low if low else Q(0)
-        if (result['cell_id'] != cell_id or result['support_id'] != support.support_id or
-                result['requested_relative_error'] != r or result['absolute_width_m3'] != width or
-                result['declared_max_leaves_per_query'] != max_leaves_per_query or
-                result['declared_max_queries'] != 1 or result['query_count'] != 1 or
-                not 0 <= low <= high or high > 0 and low == 0 or high-low > width or
-                result['relative_error_bound'] != error or error > r or
-                query['support_id'] != support.support_id or query['logical_cell_id'] != cell_id or
-                query['endpoint'] != 'start' or query['time_s'] != raw['start_time_s'] or
-                W._decode(query['lower_m3']) != low or W._decode(query['upper_m3']) != high or
-                W._decode(query['relative_error']) != r or W._decode(query['max_width_m3']) != width or
-                query['met'] is not True or query['max_leaves'] != max_leaves_per_query or
-                not 1 <= query['leaves'] <= max_leaves_per_query or
-                query['leaves'] != result['cumulative_leaf_units'] or
-                query['work_units'] != result['cumulative_work_units'] or
-                high > 0 and (not 0 < W._decode(query['positive_witness_m3']) <= low or
-                              not query.get('positive_witness_point_m') or
-                              len(query['positive_witness_point_m']) != 3)):
-            raise V.VolumeError('cached initial measurement does not certify the requested bounds')
+        if restored is None and _volume is None:
+            _require_initial_cache_record(result, cell_id, support.support_id, raw['start_time_s'],
+                                          r, width, max_leaves_per_query, W._decode)
+        else:
+            _require_received_initial_cache_record(result, cell_id, support.support_id, raw['start_time_s'],
+                                                   r, width, max_leaves_per_query, W._decode)
         if _group is None:
             context.verify()
             return result

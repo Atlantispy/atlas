@@ -323,7 +323,7 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, cancel, obser
     _checkpoint(cancel, observe, 'before-factorisation')
     factor = splu(approximate)
     factor_audit = resources.audit_factor(factor, plan, workspace=workspace)
-    factor_nnz = factor.L.nnz+factor.U.nnz
+    factor_nnz = factor_audit['factor_L_plus_U_nnz']
     _checkpoint(cancel, observe, 'after-factorisation')
     u = [D.from_float(float(v)) for v in factor.solve(np.asarray(list(map(float, rhs))))]
     _checkpoint(cancel, observe, 'after-initial-solve')

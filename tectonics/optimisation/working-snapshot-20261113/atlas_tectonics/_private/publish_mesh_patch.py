@@ -31,6 +31,7 @@ import ast
 import re
 from hashlib import sha256
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import native_transfer as N
 
 STAGE = 'publish-mesh-after-partition-b-prime'
@@ -66,7 +67,7 @@ CALL_END = 'cancel=cancel))\n'
 CHANGED = frozenset(('CollarWorkflow._publish', 'CollarWorkflow._spatial_records'))
 
 
-class PublishMeshRefused(ValueError):
+class PublishMeshRefused(ValueError, AtlasError):
     pass
 
 

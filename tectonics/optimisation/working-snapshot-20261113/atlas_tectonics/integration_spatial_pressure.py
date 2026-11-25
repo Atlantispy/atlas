@@ -183,7 +183,7 @@ def _face_on_wall(constraint, time, first, second, pose, budget):
         return False
     values = (*first, *second, time, *numbers,
               *(q for vector, dt in history for q in (*vector, dt)))
-    with V._work(values, budget):
+    with V._work(values, budget, convert_values=False):
         wall = O._cross(first, second)
         if not any(wall):
             return False
@@ -374,7 +374,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
                           if plane[3] != 0 or not _face_on_wall(constraint, time, a, b, pose, budget))
         with V._work((*pose_values, *a, *b, *cell.lower_m, *cell.upper_m, *cell.origin_m,
                       *(q for row in cell.basis for q in row), *(q for p in original['cone'] for q in p),
-                      *(q for p in declared_extra for q in p)), budget):
+                      *(q for p in declared_extra for q in p)), budget, convert_values=False):
             region = dict(original, planes=tuple(O._box_planes(cell))+extra)
             back = _back_box(cell, pose, outer, budget, axis=axis)
             poly, contact = C.wall_polygon(back, a, b)
@@ -469,7 +469,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
             return tuple(C._scale(C._mul(C._mul(C._mul(difference, membership), kernel), v), -gravity/3) for v in moment)
         # These live exact coefficients are not included in the triangle's own
         # workspace. Charge their widths before any evaluator products/GCDs.
-        with V._work((*pose_values, region['density'], *(v for row in region['planes'] for v in row)), budget):
+        with V._work((*pose_values, region['density'], *(v for row in region['planes'] for v in row)), budget, convert_values=False):
             bands = strip = None
             try:
                 exact_planes = pose._error == 0 and all(len(p) == 4 or p[4] == 0 for p in region['planes'])
@@ -565,7 +565,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
                     changed = C._add(changed, C._scale(C._mul(length, weight), gravity*(region['density']-rho)))
         return tuple(C._scale(C._mul(C._add(v, C._mul(changed, w)), membership), -1) for v, w in zip(total, moment))
     with V._work((*pose_values, *(v for row in owned['planes'] for v in row),
-                  *(v for region in active for row in region['planes'] for v in row)), budget):
+                  *(v for region in active for row in region['planes'] for v in row)), budget, convert_values=False):
         exact_rays = pose._error == 0 and all(
             all(len(plane) == 4 or plane[4] == 0 for plane in region['planes']) and
             all(weight[0] == weight[1] for _, weight in region['weights']) for region in active)
@@ -661,7 +661,7 @@ def _density(material, energy, masses, budget):
     values = (energy, *masses, material.heat_capacity_j_kg_k, material.density_kg_m3,
               material.expansion_per_k, material.reference_temperature_k,
               *material.temperature_range_k, material.max_relative_density_anomaly)
-    with V._work(values, budget):
+    with V._work(values, budget, convert_values=False):
         mass = sum(masses, Q(0))
         if mass <= 0 or any(v < 0 for v in masses):
             raise C.PressureCouplingRefused('positive finite current material mass is required')

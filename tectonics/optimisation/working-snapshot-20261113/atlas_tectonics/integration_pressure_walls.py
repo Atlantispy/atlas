@@ -46,6 +46,7 @@ a caller can observe for a successful stage changes. reports() keeps the last fe
 decisions for a caller's run report; they never enter an issued record.
 SPDX-License-Identifier: AGPL-3.0-only
 """
+from atlas_shared.errors import AtlasError
 from collections import deque
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
@@ -220,7 +221,7 @@ def _shared_inputs(walls, regions, profiles, native_box, reservoirs, args):
     return dict(zip(ids, chunks)), ids, len(raw), _decoded_bound(raw)
 
 
-class _ParentInputBudgetRefusal(ValueError):
+class _ParentInputBudgetRefusal(ValueError, AtlasError):
     """An optional reservation declined before allocating its input storage."""
     def __init__(self, stage, requested_bytes):
         self.stage, self.requested_bytes = stage, requested_bytes

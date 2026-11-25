@@ -197,6 +197,10 @@ def temperatures(record, piece, heat, reference, phases):
     thickness, capacity = column_of(record, piece, phases)
     if record.volume_convention != 'reference_prism':
         return [reference+q/c for q, c in zip(heat, capacity)]
+    return _prism_temperatures(record, piece, heat, reference, thickness)
+
+
+def _prism_temperatures(record, piece, heat, reference, thickness):
     return [s.temperature(q/(s.reference_density_kg_m3*t*piece.area_m2), reference)
             for s, t, q in zip(record.sublayers, thickness, heat)]
 
@@ -287,9 +291,9 @@ def _prepared(record, thickness, dt, cache, *, budget=None, fixed_step=False):
                   else {'type': 'temperature', 'value_k': record.base_temperature_k})
         boundaries = {'top': {'type': 'temperature', 'value_k': record.surface_temperature_k}, 'bottom': bottom}
         try:
-            thermal = _heat.prepare_thermal(np.arange(len(thickness)), depth, np.asarray(thickness),
-                                            [float(t) for t in thickness], props,
-                                            [s.reference_density_kg_m3 for s in record.sublayers], boundaries)
+            thermal = _heat._prepare_reference_prism(np.arange(len(thickness)), depth, np.asarray(thickness),
+                                                     [float(t) for t in thickness], props,
+                                                     [s.reference_density_kg_m3 for s in record.sublayers], boundaries)
             cache[key] = (thermal, _heat._prepare_modes(thermal, dt, fixed_step=fixed_step))
         except (ValueError, RuntimeError) as exc:
             raise ThermalRefused('the column of %r is not admitted by the column heat solve: %s'

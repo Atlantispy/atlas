@@ -17,7 +17,7 @@ import numpy as np
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
 from .constitutive import DiffusiveScales, RheologyProfile, _json
 from .regional_execution import PreparedRegionalStokes2D, _name, _hash, _array_hash
-from .regional_rheology import solve_regional_rheology, _validate_boundary_support
+from .regional_rheology import solve_regional_rheology, _prepare_rheology_solve, _validate_boundary_support
 from .regional_transport import (PreparedHeatTransport, translate_material_regions,
                                  HeatBoundary, _pair)
 from .resources import check_event_or_callable
@@ -196,11 +196,11 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
                 'kind':b.diffusion_kind,'diffusion':_value_hash(b.diffusion_value)} for s,b in thermal_boundary.items()},
             'thermal_body_force':None if thermal_body_force is None else asdict(thermal_body_force),
             'material_stock':None if regions is None else [asdict(r) for r in regions]}
-        def mechanical(T,time,origin):
+        def mechanical(T,time,origin,solve=solve_regional_rheology):
             centre,vertex=temperature_stress_sites(T)
             extra=(0.,0.) if thermal_body_force is None else thermal_body_force.force(centre,vertex)
             geometry_source=_hash({'origin_m':origin,'binding':binding})
-            return solve_regional_rheology(plan,profile,scales,centre,vertex,
+            return solve(plan,profile,scales,centre,vertex,
                 forces[0]+extra[0],forces[1]+extra[1],boundary,frame_id=frame_id,
                 epoch_id=epoch_id,time_s=time,thermal_source='w07-thermal:'+_hash({'source':thermal_source,'geometry':geometry_source}),
                 material_source=material_source,force_source='w07-forcing:'+_hash({'other':force_source,'binding':binding}),
@@ -218,7 +218,14 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
                 mesh_velocity_m_s=mesh,budget=plan._resource,cancel=cancel)
         evolved=heat.evolve(initial_temperature,u,w,duration_s,steps=heat_steps,boundaries=thermal_boundary,
             time_s=time_s,mesh_velocity_m_s=mesh,source_w_m3=source,cancel=cancel)
-        final=mechanical(evolved['temperature_k'],end,evolved['origin_m'])
+        def solve_with_admitted_support(*args, **kwargs):
+            _, solve = _prepare_rheology_solve(*args, **kwargs)
+            return solve()
+
+        exact_keys = all(type(side) is str and all(type(component) is str for component in parts)
+                         for side, parts in boundary.items())
+        final_solver = solve_with_admitted_support if exact_keys else solve_regional_rheology
+        final=mechanical(evolved['temperature_k'],end,evolved['origin_m'],final_solver)
         account={k:v for k,v in evolved.items() if k!='temperature_k'}
         if math.isinf(account['timestep_limit_s']):
             account['timestep_limit_s']=None

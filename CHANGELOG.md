@@ -15,6 +15,16 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
   code is retired. The public-path check scans the planned `shared/` folder once it exists.
 
 ### Changed
+- Differential geometry orders supports within each voxel by the remaining support fields. The common
+  box values no longer enter each sort key.
+- Subduction transport preparation evaluates its admitted quadrature points directly with the shared
+  basis value routine. Standalone and transport evaluation retain their existing numerical order.
+- The optimised snapshot and maintained wheel reuse detached metadata during issued-ledger history scans.
+  External commit implementations retain both independent reads.
+- Removed eight trailing scratch-holder assertions from historical snapshot transfers. The holders
+  still live through transfer or generator close, and existing source verification stays in place.
+- The q297 END correspondence path verifies both pinned historical raw files and decodes only the
+  mapped totals. The standalone totals reader retains its full decode and validation.
 - Moved exact arithmetic selection into `atlas_shared` and declared the existing
   `gmpy2==2.3.2` requirement there. Tectonics still chooses the backend at the first
   request, and issued geometry and heat workers bind it from their selected packages.
@@ -24,16 +34,109 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
   moving-face checks matched outputs and work budgets, with 20 and 32 fewer incidence calls respectively.
 - Kept full plan validation at joined heat finish entry and retained live owner and cancellation checks
   at exit. The focused finish check matched endpoint bytes and preserved four refusal cases.
+- Reused exact moving-face paths, active-edge order and thermal face values in the optimised snapshot.
+  Skipped unused rational conversions under the existing work budgets, and carried decoded material pieces
+  through pressure and strength assembly. Reused admitted native face records, belt edge endpoints and
+  lookup maps, spherical face identifiers and projective transforms, and radial Picard plan metadata.
+  Differential geometry uses the verified finite-stock registry identifier without decoding the whole definition.
+  Joined finite stocks reuse exact operand values while public preparation keeps its eager copies.
+  Legacy finite transport decodes its just-issued graph and stock inputs together.
+  Reference-prism pressure and strength ports reuse the first column thickness during temperature recovery.
+  Owner-edge identities and the angular proof borrow the support's decoded rays. End-mesh classifiers
+  read three vertices per face and issue the full rings.
+  Coarse exterior transport reuses the issued offer duration, offer ID and outbound volume array.
+  Geometric circulation reuses each selected face deviation in the positive transfers and keeps separate output lists.
+  The rigid workflow reuses the issued wall measure ID across its ordered flow, geometry and thermal checks.
+  The unindexed endpoint scan reuses its matched exact-string ID. The moving-interface reduced-line
+  caller uses its already admitted initial interval or midpoint.
+  Exterior mortar issuance drops a repeated incidence check, and coaxial pose rounding drops a repeated
+  exact-rate check. Spatial enclosure reads the same
+  immutable parent once and keeps both late owner checks.
+  The native cap reuses its producer's positive width. END piece construction uses one index lookup per
+  boundary. Fresh funded partitions reuse their immutable inventory coverage. Differential mesh
+  builders use the already checked outward width and look up each row once.
+  Native closure and mimetic moments use the exact fractions and paired rows already issued by their
+  geometry producers. Their physical identities and workspace checks stay.
+  Boxed wall lines reuse their derived affine extrema, and coaxial rounding carries the exponent used
+  to construct its quantum. Legacy routing diagnostics use the enclosure's terminal two-operand bound.
+  Transfer scratch storage keeps its reservations and drops repeated positive-size assertions.
+  Funded regional evolution reuses its admitted physical fields, inventory and native map descriptors.
+  Boundary projection reuses the caller's geometry type check, and mechanical requests share the
+  checked descriptors with their context and effect checks in both package layouts.
+  Radial strength uses the volume map's bound source, the viscosity factor path reuses the admitted
+  coefficient digest, and the first surface rate uses the validated state descriptor.
+  Radial strength also reuses the bound map's issued radius and stored patch coverage.
+  Regional workflow save uses its already capped immutable history. Regional wall and pose preparation
+  reuse the selected side and the issued pose descriptor. Thermal column assembly reuses the checked
+  physical-column view from material admission.
+  History producers reuse their own validated fields. Regional runs carry the issued layout, catalogue,
+  boundary stocks and checked W07 terminal energy. Public and restored entry points keep their checks.
+  Concrete funded owners carry the already admitted inventory bindings, and fresh W08 issue uses the
+  validated prefix and its one new receipt.
+  Both package layouts compute finite-arc invariants once per arc and preserve each point's reduction order.
+  The WP23 rational rotation and Bernstein bounds compute each scalar–endpoint product once. Static and
+  moving-face moment integrals share exact triangle weights through degree eight.
+- Moved the planar geometry cancellation exception import out of its per-check path in both layouts.
+- Removed the write-time decode of newly encoded array chunks. Reused admitted chunk metadata, bounded
+  storage reads, history checkpoint keys and raw capture digests. Cold reads, concurrent-write checks
+  and atomic publication retain their existing checks. Regional history packs keep their detached arrays
+  and borrow their same-pack catalogue digests. Late snapshot restore carries the verified shape, bytes
+  and digest into issuance. The stable history codec reuses the checkpoint ID and skips an unused regional
+  copy. The stable regional pack borrows its detached arrays and checked catalogue digests, and stable
+  W07 restore gives the private issuer the verified shape, bytes and digest. The shared read-only opener
+  initialises session verification for both historical roles. Compact
+  partition conversion and reopen reuse the canonical bytes of the checked metadata. Stable cold chunk reads
+  fetch bounded metadata and bytes in one query. Interval candidate writes reuse their checked manifest
+  body and skip decoding a raw miss only when the admitted payload is the same bytes object.
+  A dedicated bounded candidate reader uses one query for each root and index read. The raw writer builds
+  a raw chunk from its admitted bytes, while transformed candidates keep their verification.
+  The read-only history opener
+  retains its exact authenticated settings for the live session check. Historical admission caps
+  the audit rows once before owner allocation.
+  Compact record export borrows the already sized sealed subtree, and scalar rows reuse their
+  enclosing depth admission. Container and memo-subtree bounds still apply.
+- Reused normalised heat-worker receipts, dispatch input digests and diagnostic sidecar identities.
+  Reused compact mesh metric seals in both indexed heat restore routes and admitted issuer metadata at
+  heat completion. Kept caller-owned receipt copies and live source checks. Legacy heat fixture reuse
+  carries the checked selection into lookup. Compact heat saves reuse the canonical metadata bytes,
+  and worker continuation carries the checked mapped-worker binding into the call.
+  Compact column publishing drops the second block bound after minimum-size admission. Heat
+  physical-order setup drops a redundant count assertion before the existing workspace admission.
+  Issued heat ordering reuses admitted compact rows and omits unused HIGH restore energy reads. Sparse
+  heat ordering drops its repeated inventory bound. The reference prism passes its own checked boundary
+  shapes directly in both package layouts. Standalone boundary and ordering calls retain their checks.
+  Detached heat restore validates its already parsed physical columns and terminal target without
+  repeating their encodes. Sparse factor admission reuses checked dimensions and the LOW solve
+  carries its audit's factor count.
+  The forward heat issuer carries its sealed numerical input into projection. Independent projection
+  calls retain the full identity, temperature and face checks.
+  Endpoint inventory uses the exact paired rounding widths already measured for the same shapes.
+  Decimal inventory uses the returned-string width bounded by its earlier scratch admission.
+  Runtime compatibility keeps its funded scratch through the last evidence read and drops the
+  repeated positivity assertion. Heat geometry reuses its already admitted boundary dictionary and
+  conductivity type checks.
+- Reused the two verified native products in W12's direct reports. Graph reporting keeps its own copies.
+
+### Fixed
+- Persisted shared-mesh heat ledgers stream their checked cell identifiers into the canonical result hash.
+  A bounded save and reopen matched the independent result ID and rejected incorrect or missing mesh bindings.
 
 ### Evidence
+- Paired checks covered scalar and signed moving-face bounds, thermal mesh closure, pressure and strength,
+  belt line assembly, native-face contact dispatch, array round trips, history restore, capture and worker
+  receipt handling. The installed one-shot mapped worker exited cleanly and returned exactly the serial
+  endpoint bytes in its verified receipt and funded result. The isolated finite-arc kernel matched output
+  bits and reduced warmed kernel medians by 4–43% across six cases with 1–4,096 points and 4 or 96 arcs.
+  Whole-simulation performance,
+  scientific acceptance and production acceptance remain open.
 - On the Unit 4 baseline, strict graph comparison with the preceding snapshot failed on four source-fingerprint pairs, with
   1,989 substitutions accepted for this pair only. Stored identifiers, the full partition and all 2,016
   ordered supports matched. The fresh diagnostic chain passed all eight steps. Six admitted heat workers
   computed all 5,315 faces and exited cleanly without fallback. That chain covered the Unit 4 baseline.
-  The two follow-up changes have the focused evidence above. Scientific and production acceptance remain open.
-- Recorded the [bounded i02 timing rerun](tectonics/evidence/i02-workflow-timing-r13.json) and [clean Windows
-  installation](tectonics/evidence/environment-install-r2.json), including gmpy2 2.3.2. Both used the
-  preceding review revision. Earlier receipts remain available in the evidence register.
+- Retained the [bounded i02 timing rerun](tectonics/evidence/i02-workflow-timing-r13.json) and [clean Windows
+  installation](tectonics/evidence/environment-install-r2.json) as historical evidence for `dcc1fc4`. The install
+  included gmpy2 2.3.2. The runtime cleanup changed 22 i02 timing bindings and the shared heat source
+  bound by three I01 controls. The evidence register records their historical scope.
 
 ## [0.1.0.dev44](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev44) - 2026-11-21
 

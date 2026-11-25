@@ -280,7 +280,15 @@ class PreparedRegionalTransport3D:
         names = tuple(_name(k) for k in tracer_names)
         if len(names) > 64 or len(set(names)) != len(names):
             raise TectonicsError('unique bounded scalar-history names required')
-        return {s: self.boundary_stock(s, 0., np.zeros(ncomponents), 0., {k: 0. for k in names}) for s in SIDES}
+        if type(self) is not PreparedRegionalTransport3D:
+            return {s: self.boundary_stock(s, 0., np.zeros(ncomponents), 0., {k: 0. for k in names}) for s in SIDES}
+        return {s: self._empty_boundary_stock(s, 0., np.zeros(ncomponents), 0., {k: 0. for k in names}) for s in SIDES}
+
+    def _empty_boundary_stock(self, side, volume, mass, enthalpy, tracers):
+        self._verify()
+        shape = self._shape('xyz'.index(side[0]), side=True)
+        return self._capture_boundary_stock(shape, volume, mass[:, None, None], mass.shape[0],
+                                            enthalpy, tracers.items())
 
     def boundary_stock(self, side, volume_m3, component_mass_kg, enthalpy_j, material_tracers=None):
         self._verify()
@@ -296,10 +304,17 @@ class PreparedRegionalTransport3D:
         tracers = {} if material_tracers is None else material_tracers
         if type(tracers) is not dict or len(tracers) > 64:
             raise TectonicsError('bounded tracer mapping required')
-        return FiniteBoundaryStock3D(_array(volume_m3, shape, 'volume', nonnegative=True, broadcast=True),
-            _array(mass, (mshape[0], *shape), 'mass', nonnegative=True, broadcast=True),
-            _array(enthalpy_j, shape, 'enthalpy', broadcast=True),
-            {_name(k): _array(v, shape, 'tracer', broadcast=True) for k, v in tracers.items()})
+        def named_tracers():
+            for name, value in tracers.items():
+                yield _name(name), value
+
+        return self._capture_boundary_stock(shape, volume_m3, mass, mshape[0], enthalpy_j, named_tracers())
+
+    def _capture_boundary_stock(self, shape, volume, mass, count, enthalpy, tracers):
+        return FiniteBoundaryStock3D(_array(volume, shape, 'volume', nonnegative=True, broadcast=True),
+            _array(mass, (count, *shape), 'mass', nonnegative=True, broadcast=True),
+            _array(enthalpy, shape, 'enthalpy', broadcast=True),
+            {k: _array(v, shape, 'tracer', broadcast=True) for k, v in tracers})
 
     def _sample_faces(self, velocity):
         samples = []

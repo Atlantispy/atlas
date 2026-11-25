@@ -13,6 +13,7 @@ and joined finish still embeds a full thermal_mesh. Neither is bypassed here.
 """
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 from dataclasses import dataclass
 from fractions import Fraction
 import hashlib
@@ -25,7 +26,7 @@ import numpy as np
 BASE_ISSUER_SHA256 = 'e42649f848397551da18263322775441f664922538f204c1e47962f97481d3d6'
 
 
-class IndexedHeatRefused(ValueError):
+class IndexedHeatRefused(ValueError, AtlasError):
     pass
 
 

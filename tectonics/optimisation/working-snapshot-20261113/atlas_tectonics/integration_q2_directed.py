@@ -6,6 +6,7 @@ entire interval fixes its branch relative to 0 and 1. Unresolved root events use
 the exact two-dimensional Bernstein enclosure, never a guessed root/sign.
 SPDX-License-Identifier: AGPL-3.0-only
 """
+from atlas_shared.errors import AtlasError
 from decimal import Context, Decimal as D, ROUND_FLOOR, ROUND_CEILING
 from contextlib import ExitStack
 from fractions import Fraction as Q
@@ -31,7 +32,7 @@ def source_digest():
     return _LOADED
 
 
-class _Branch(Exception):
+class _Branch(AtlasError):
     pass
 
 

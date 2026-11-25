@@ -136,14 +136,23 @@ def validate_thermal_layers(props, names):
     return props
 
 
-def validate_boundaries(boundaries):
+def _check_boundary_shape(boundaries):
     if type(boundaries) is not dict or set(boundaries) != {"top", "bottom"}:
         raise ValueError("top and bottom thermal boundaries required")
+
+
+def _boundary_row(boundaries, side):
+    b = boundaries[side]
+    if type(b) is not dict or b.get("type") not in BOUNDARY_TYPES:
+        raise ValueError("thermal boundary must be a fixed temperature or insulated")
+    return b
+
+
+def validate_boundaries(boundaries):
+    _check_boundary_shape(boundaries)
     out = []
     for side in ("top", "bottom"):
-        b = boundaries[side]
-        if type(b) is not dict or b.get("type") not in BOUNDARY_TYPES:
-            raise ValueError("thermal boundary must be a fixed temperature or insulated")
+        b = _boundary_row(boundaries, side)
         if b["type"] == "temperature":
             if set(b) != {"type", "value_k"}:
                 raise ValueError("fixed-temperature boundary declares only its value")
@@ -152,6 +161,15 @@ def validate_boundaries(boundaries):
             if set(b) != {"type"}:
                 raise ValueError("insulated boundary takes no value; supplied heat flux is not admitted")
             out.append(None)
+    return tuple(out)
+
+
+def _prism_boundary_temperatures(boundaries):
+    _check_boundary_shape(boundaries)
+    out = []
+    for side in ("top", "bottom"):
+        b = _boundary_row(boundaries, side)
+        out.append(scalar(b["value_k"], "boundary temperature", positive=True) if b["type"] == "temperature" else None)
     return tuple(out)
 
 
@@ -196,13 +214,25 @@ def validate_support(layer, depth, weight, thicknesses):
 def prepare_thermal(layer, depth, weight, thicknesses, props, densities, boundaries, *,
                     reference_temperature=None, mechanical_fingerprint=None):
     """Control volumes of the mechanical quadrature, series interface resistance, steady reference."""
+    return _prepare_thermal(layer, depth, weight, thicknesses, props, densities, boundaries,
+                            validate_boundaries, reference_temperature, mechanical_fingerprint)
+
+
+def _prepare_reference_prism(layer, depth, weight, thicknesses, props, densities, boundaries):
+    """Receive the reference-prism caller's locally constructed boundary dictionaries."""
+    return _prepare_thermal(layer, depth, weight, thicknesses, props, densities, boundaries,
+                            _prism_boundary_temperatures, None, None)
+
+
+def _prepare_thermal(layer, depth, weight, thicknesses, props, densities, boundaries,
+                     boundary_temperatures, reference_temperature, mechanical_fingerprint):
     if (type(thicknesses) not in (list, tuple) or type(props) is not list
             or not len(props) == len(thicknesses) == len(densities)):
         raise ValueError("thermal properties must match the layers")
     n_layers = len(thicknesses)
     validate_thermal_layers(props, [p.get("name") if type(p) is dict else None for p in props])
     layer, depth, weight, tops = validate_support(layer, depth, weight, thicknesses)
-    bc = validate_boundaries(boundaries)
+    bc = boundary_temperatures(boundaries)
     lower, upper = np.empty(weight.size), np.empty(weight.size)
     for li in range(n_layers):
         m = np.flatnonzero(layer == li)

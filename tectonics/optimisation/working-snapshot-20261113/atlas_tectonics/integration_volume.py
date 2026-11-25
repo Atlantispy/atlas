@@ -102,17 +102,17 @@ class RadialLayer:
 
     @property
     def thickness_m(self):
-        with _work((self.top_depth_m, self.bottom_depth_m), self._resource):
+        with _work((self.top_depth_m, self.bottom_depth_m), self._resource, convert_values=False):
             return self.bottom_depth_m-self.top_depth_m
 
     @property
     def top_radius_m(self):
-        with _work((self.radius_m, self.top_depth_m), self._resource):
+        with _work((self.radius_m, self.top_depth_m), self._resource, convert_values=False):
             return self.radius_m-self.top_depth_m
 
     @property
     def bottom_radius_m(self):
-        with _work((self.radius_m, self.bottom_depth_m), self._resource):
+        with _work((self.radius_m, self.bottom_depth_m), self._resource, convert_values=False):
             return self.radius_m-self.bottom_depth_m
 
     def _geometry(self):
@@ -126,7 +126,7 @@ class RadialLayer:
     @property
     def volume_per_area_m(self):
         """Exact integral of (1-z/R)^2, using only positive radial products."""
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             return self._factor()
 
     def volume_m3(self, surface_area_m2):
@@ -151,7 +151,7 @@ class RadialLayer:
         Their sum is V/A. These positive factored polynomials avoid subtraction
         of near-equal powers at thin depth intervals.
         """
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             radius, top, bottom = self._geometry()
             h, rt, rb = bottom-top, radius-top, radius-bottom
             common = h/(12*radius*radius)
@@ -166,14 +166,14 @@ class RadialLayer:
     @property
     def volume_centroid_radius_m(self):
         """Exact volume-weighted radius; node choice remains the solver's policy."""
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             radius, top, bottom = self._geometry()
             rt, rb = radius-top, radius-bottom
             return 3*(rt+rb)*(rt*rt+rb*rb)/(4*(rt*rt+rt*rb+rb*rb))
 
     @property
     def volume_centroid_depth_m(self):
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             return self.radius_m-self.volume_centroid_radius_m
 
     def radial_resistance_per_area_m2_k_w(self, conductivity_w_m_k):
@@ -190,7 +190,7 @@ class RadialLayer:
             return radius*radius*(bottom-top)/(conductivity*(radius-top)*(radius-bottom))
 
     def record(self):
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             return dict(schema='atlas.physical-radial-layer.v1', convention=self.convention,
                         radius_m=_encoded(self.radius_m), top_depth_m=_encoded(self.top_depth_m),
                         bottom_depth_m=_encoded(self.bottom_depth_m), number_encoding='rational-hex-v1')
@@ -270,18 +270,18 @@ class CartesianCell:
 
     @property
     def volume_m3(self):
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             return math.prod(b-a for a, b in zip(self.lower_m, self.upper_m))
 
     @property
     def vertices_m(self):
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             return self._vertices()
 
     @property
     def radial_bounds_squared_m2(self):
         """True min/max over the entire box, including a closest interior point."""
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             return self._radial_bounds()
 
     def rotated(self, quaternion, *, budget=None):
@@ -309,7 +309,7 @@ class CartesianCell:
             return CartesianCell(self.lower_m, self.upper_m, origin, basis, budget=resource)
 
     def record(self):
-        with _work(self._geometry(), self._resource):
+        with _work(self._geometry(), self._resource, convert_values=False):
             legacy = all(v in (-1, 0, 1) for row in self.basis for v in row)
             return dict(schema='atlas.exact-cartesian-cell.v1' if legacy else 'atlas.exact-cartesian-cell.v2',
                         lower_m=list(map(_encoded, self.lower_m)),

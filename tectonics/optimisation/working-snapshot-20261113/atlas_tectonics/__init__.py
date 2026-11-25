@@ -3,6 +3,11 @@
 Vibe-coded with OpenAI ChatGPT/Codex under the owner's direction.
 No imports, migration or replacement of historical Atlas implementations.
 """
+from .integration_worker_bootstrap import bind_public_errors as _bind_public_errors
+
+_bind_public_errors()
+del _bind_public_errors
+
 from ._validation import TectonicsError
 from .parameters import FlexureParameters, PeriodicGrid1D, ThermalParameters, PlateCoolingParameters, identity
 from .kinematics import BoundaryMotion, Rotation, boundary_motion, rigid_velocity

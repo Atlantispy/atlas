@@ -267,7 +267,8 @@ def _beside(solve, stop):
     return thread, box, events
 
 
-def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe, issued=False, owned_guard=False, counts=None):
+def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe, issued=False,
+         owned_guard=False, counts=None, sealed_output=None):
     """Own all producer frames until success; return before final union transfer.
 
 The outer ``advance`` frame never borrows producer temporaries. On an escaping
@@ -313,7 +314,7 @@ frame disappears before the returned result graph replaces its entire stack.
         normalized = startup.value['prepared']['boundary']
         temperatures = {fid for fid, (kind, _) in normalized.items() if kind == 'temperature'}
         powers = set(normalized)-temperatures
-        order_owner = retain(ORDER._prepare(geometry, startup, old, capacity, source,
+        order_owner = retain(ORDER._prepare_issued(geometry, startup, old, capacity, source,
             budget, check, len(powers)))
         ordered = order_owner.value
         prepared, payload = ordered['prepared'], ordered['payload']
@@ -478,14 +479,14 @@ frame disappears before the returned result graph replaces its entire stack.
             assessment.close()
             assessment = None
             stage('finish-conservative-ledger')
-            finish_inputs = retain(ORDER.finish_inputs(order_owner, low, high,
-                budget=budget, cancel=check, include_high_energy=False))
+            finish_inputs = retain(ORDER._finish_issued_inputs(order_owner, low, high,
+                budget=budget, cancel=check))
             original_old, original_capacity, original_source = ordered['original_inputs']
             DOOR.offer(original_old, original_capacity, dt, original_source, normalized, prepared['face_ids'],
                 finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target, budget=budget)
             finished = retain(FINISH.finish(original_old, original_capacity, dt, original_source, normalized,
                 prepared['face_ids'], finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target,
-                cancelled=check, budget=budget, observe=observe))
+                cancelled=check, budget=budget, observe=observe, _sealed_output=sealed_output))
             result, info = finished.value
         _check_sources(check)
         info.update(physical_scratch_order=ORDER.POLICY,
@@ -536,7 +537,8 @@ A class whose module is not loaded cannot have made the hook, so nothing is impo
 
 
 def advance(geometry, old, capacity, dt, source, boundary, *, conductivity,
-            absolute_residual_target, budget, cancelled=None, observe=None, _issued_inputs=None):
+            absolute_residual_target, budget, cancelled=None, observe=None, _issued_inputs=None,
+            _sealed_output=None):
     """Return a compact owner of (sealed result, diagnostics), with fixed physics.
 
 Caller inputs/native metric stay caller-owned and immutable. Precision-only
@@ -594,7 +596,8 @@ work; no old-generation credit precedes independent output admission.
     counts = dict(face_rows_reused=0) if owned_guard else None
     try:
         raw = _run(geometry, old, capacity, dt, source, boundary, Q(value),
-                   absolute_residual_target, budget, check, stage, observe, issued, owned_guard, counts)
+                   absolute_residual_target, budget, check, stage, observe, issued, owned_guard, counts,
+                   _sealed_output)
         try:
             # _run has gone: no omitted LOW/HIGH/prepared/proof temporaries survive
             # in a producer frame when its entire old stack closes atomically.
@@ -615,6 +618,8 @@ work; no old-generation credit precedes independent output admission.
             cancelled._check.__self__.record.setdefault('f13_paths', []).append(counts)
         return OwnedAdvance(output, geometry)
     except BaseException:
+        if _sealed_output is not None:
+            _sealed_output.clear()
         if meter is not None:
             meter.fail()
         raise

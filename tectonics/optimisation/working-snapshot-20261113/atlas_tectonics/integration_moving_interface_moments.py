@@ -82,7 +82,7 @@ def _constant_ray_dot(first, second, arena):
     vectors = tuple(D._load_vec(ray['direction']) for ray in rays)
     omegas = tuple(D._load_vec(ray['angular_velocity_rad_s']) for ray in rays)
     histories = tuple(D._history(ray.get('prior_rotations', ())) for ray in rays)
-    with V._work(tuple(q for v in (*vectors, *omegas) for q in v), arena.resource):
+    with V._work(tuple(q for v in (*vectors, *omegas) for q in v), arena.resource, convert_values=False):
         arena.work(128)
         if histories[0] == histories[1] and omegas[0] == omegas[1]:
             return O._dot(*vectors)
@@ -106,7 +106,7 @@ def _rectangle_endpoint(new, face, first_ray, other, axis, coordinate, sign, E, 
         return None
     inputs=tuple(q for normal,offset in (other,new,face,first_ray)
         for q in (offset,*(q for c in normal for pair in c for q in pair)))
-    with V._work(inputs,arena.resource,pairs=16*(ORDER+1)**2):
+    with V._work(inputs,arena.resource,pairs=16*(ORDER+1)**2, convert_values=False):
         arena.work(128*(ORDER+1)**3)
         direction=T._cross(face[0],other[0],E)
         normal=first_ray[0] if axis==0 else T._cross(face[0],first_ray[0],E)
@@ -312,7 +312,7 @@ def _same_initial_plane(new, face, arena):
     """
     if new[1]!=0 or face[1]!=0 or not any(new[0]) or not any(face[0]):
         return False
-    with V._work((*new[0],*face[0]),arena.resource):
+    with V._work((*new[0],*face[0]),arena.resource, convert_values=False):
         arena.work(32)
         return not any(O._cross(new[0],face[0]))
 
@@ -326,7 +326,7 @@ def _initial_edge_contains(new, face, other, arena):
     """
     if face[1]!=0:
         return False
-    with V._work((*new[0],new[1],*face[0],*other[0],other[1]),arena.resource,pairs=8):
+    with V._work((*new[0],new[1],*face[0],*other[0],other[1]),arena.resource,pairs=8, convert_values=False):
         arena.work(64)
         direction=O._cross(other[0],face[0])
         if not any(direction) or O._dot(new[0],direction)!=0:
@@ -337,7 +337,7 @@ def _initial_edge_contains(new, face, other, arena):
 
 def _fixed_world_line(one, two, arena):
     """Actual intersection line of two independent affine voxel planes."""
-    with V._work((*one[0],one[1],*two[0],two[1]),arena.resource,pairs=16):
+    with V._work((*one[0],one[1],*two[0],two[1]),arena.resource,pairs=16, convert_values=False):
         arena.work(96)
         direction=O._cross(one[0],two[0]);square=O._dot(direction,direction)
         if not square:
@@ -356,7 +356,7 @@ def _physical_plane_key(constraint,arena):
         path=D._rigid_plane_path(constraint)
         if path is None:
             return None
-        with V._work(tuple(q for vector in path for q in vector),arena.resource,pairs=16):
+        with V._work(tuple(q for vector in path for q in vector),arena.resource,pairs=16, convert_values=False):
             arena.work(64)
             key=D._plane_path_identity(path)[0]
             arena.keep(tuple(q for vector in key for q in vector),4)
@@ -393,7 +393,7 @@ def _common_plane_factor(new, other, first, second, fixed, arena):
         wa,wb=(D._load_vec(ray['angular_velocity_rad_s']) for ray in (first,second))
         q,d=fixed if fixed is not None else ((Q(0),)*3,Q(1))
         inputs=tuple(x for vector in (n,m,a,b,wn,wm,wa,wb,q) for x in vector)+(d,)
-        with V._work(inputs,arena.resource,pairs=16):
+        with V._work(inputs,arena.resource,pairs=16, convert_values=False):
             arena.work(128)
             if wn!=wm or any(O._cross(wa,wb)) or fixed is not None and not any(q):
                 return None
@@ -446,7 +446,7 @@ def _axial_flow_ray(ray, omega, arena):
     from . import integration_differential_geometry as D
     direction=D._load_vec(ray['direction']);rate=D._load_vec(ray['angular_velocity_rad_s'])
     history=tuple(w for w,dt in D._history(ray.get('prior_rotations',())) if dt and any(w))
-    with V._work((*direction,*rate,*omega,*(q for w in history for q in w)),arena.resource):
+    with V._work((*direction,*rate,*omega,*(q for w in history for q in w)),arena.resource, convert_values=False):
         arena.work(32*(len(history)+2))
         return any(direction) and all(not any(O._cross(direction,w)) for w in (*history,rate,omega))
 
@@ -471,7 +471,7 @@ def _cone_corner_inside(first, second, u, v, arena):
         return False
     a,b=(D._load_vec(ray['direction']) for ray in (first,second))
     wa,wb=(D._load_vec(ray['angular_velocity_rad_s']) for ray in (first,second))
-    with V._work((u,v,*a,*b,*wa,*wb),arena.resource,pairs=16):
+    with V._work((u,v,*a,*b,*wa,*wb),arena.resource,pairs=16, convert_values=False):
         arena.work(128)
         aa,bb=O._dot(a,a),O._dot(b,b)
         if u<0 or v<0 or not (u or v) or not aa or not bb or any(O._cross(wa,wb)):
@@ -507,7 +507,7 @@ def _coincident_start(constraint, face, arena):
     path=D._rigid_plane_path(constraint)
     if path is None or any(path[1]) or not _same_initial_plane((path[0],Q(0)),face,arena):
         return None
-    with V._work((*path[0],*path[2],*face[0]),arena.resource):
+    with V._work((*path[0],*path[2],*face[0]),arena.resource, convert_values=False):
         arena.work(64)
         result=O._dot(path[0],face[0])/O._dot(face[0],face[0]),path[0],path[2]
     arena.keep((result[0],*result[1],*result[2]),1)
@@ -515,6 +515,12 @@ def _coincident_start(constraint, face, arena):
 
 
 def _reduced_normal(found, normal, face, rates, bounds, cache, J, arena):
+    if bounds[0]!=0 and bounds[0]!=bounds[1]:
+        raise V.VolumeError('a reduced interface line needs a leaf starting at the initial time')
+    return _reduced_normal_admitted(found, normal, face, rates, bounds, cache, J, arena)
+
+
+def _reduced_normal_admitted(found, normal, face, rates, bounds, cache, J, arena):
     """Jets of D=(n-scale*N)/t on a leaf that starts at t=0.
 
     ``normal`` (the plane's own n) and ``face`` (rays a, b and N=a cross b)
@@ -528,8 +534,6 @@ def _reduced_normal(found, normal, face, rates, bounds, cache, J, arena):
     no 0/0 line and is refused here, not approximated.
     """
     scale,start,rate=found
-    if bounds[0]!=0 and bounds[0]!=bounds[1]:
-        raise V.VolumeError('a reduced interface line needs a leaf starting at the initial time')
     with arena.resource.reserve(65536+8192*(ORDER+1),category='moving-interface-reduced-line'):
         arena.work(32*(ORDER+1)**2)
         if bounds[0]>0:
@@ -627,7 +631,7 @@ def _initial_flow_plane(first,second,omega,arena):
             return None
         posed.append(vector)
     rates=tuple(D._load_vec(ray['angular_velocity_rad_s']) for ray in (first,second))
-    with V._work(tuple(q for vector in (*posed,*rates,omega) for q in vector),arena.resource,pairs=32):
+    with V._work(tuple(q for vector in (*posed,*rates,omega) for q in vector),arena.resource,pairs=32, convert_values=False):
         arena.work(128)
         a,b=posed;normal=O._cross(a,b)
         if not any(normal):
@@ -746,7 +750,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                 continue
             normal, theta, rate = plane
             for i, (path, direction) in axial_rays.items():
-                with V._work((*normal, *theta, *rate, *direction), arena.resource):
+                with V._work((*normal, *theta, *rate, *direction), arena.resource, convert_values=False):
                     arena.work(32)
                     if any(O._cross(theta, direction)) or any(O._cross(rate, direction)):
                         continue
@@ -819,7 +823,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                         continue
                     inputs=tuple(q for normal,offset in (a,b,new,face)
                         for q in (offset,*(q for c in normal for pair in c for q in pair)))
-                    with V._work(inputs,arena.resource,pairs=16*(ORDER+1)**2):
+                    with V._work(inputs,arena.resource,pairs=16*(ORDER+1)**2, convert_values=False):
                         arena.work(128*(ORDER+1)**3)
                         bn,na=T._cross(b[0],face[0],E),T._cross(face[0],a[0],E)
                         determinant=_dot(a[0],bn,E)
@@ -856,7 +860,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                         continue
                     inputs=tuple(q for normal,offset in (a,b,new,face)
                         for q in (offset,*(q for c in normal for pair in c for q in pair)))
-                    with V._work(inputs,arena.resource,pairs=16*(ORDER+1)**2):
+                    with V._work(inputs,arena.resource,pairs=16*(ORDER+1)**2, convert_values=False):
                         arena.work(128*(ORDER+1)**3)
                         bn,na=T._cross(b[0],face[0],E),T._cross(face[0],a[0],E)
                         determinant=_dot(a[0],bn,E)
@@ -924,7 +928,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                         vector,_,interval=D._ray_box(D._load_vec(ray['direction']),
                             D._load_vec(ray['angular_velocity_rad_s']),Q(0),Q(0),T.POSE_LEVEL,arena,
                             D._history(ray.get('prior_rotations',())))
-                        with V._work((*new[0],*vector),arena.resource):
+                        with V._work((*new[0],*vector),arena.resource, convert_values=False):
                             if all(lo==hi for lo,hi in interval) and O._dot(new[0],vector)==0:
                                 result=True
                                 break
@@ -934,7 +938,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                     a,b=start_plane(one),start_plane(two)
                     if a is None or b is None:
                         continue
-                    with V._work((*a[0],a[1],*b[0],b[1],*face[0],*new[0],new[1]),arena.resource,pairs=16):
+                    with V._work((*a[0],a[1],*b[0],b[1],*face[0],*new[0],new[1]),arena.resource,pairs=16, convert_values=False):
                         arena.work(128)
                         bn,na=O._cross(b[0],face[0]),O._cross(face[0],a[0])
                         determinant=O._dot(a[0],bn)
@@ -977,7 +981,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                     # The face's own ray jets on these bounds, once per pass.
                     a,b=(_ray(ray,bounds,J,arena) for ray in (first,second))
                     face_jets.update(a=a,b=b,normal=T._cross(a,b,J))
-                vector=_reduced_normal(found,normal,face_jets,ray_rates,bounds,rate_cache,J,arena)
+                vector=_reduced_normal_admitted(found,normal,face_jets,ray_rates,bounds,rate_cache,J,arena)
                 return (*(J.scale(_dot(vector,axis,J),sign) for axis in (e1,e2)),J.z)
             for i, (normal, offset) in enumerate(fixed):
                 jets=tuple(J.constant(q) for q in normal)
@@ -1116,7 +1120,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                     return None
                 (one,two),g,det=exact
                 with arena.resource.reserve(65536+8192*(ORDER+1),category='moving-interface-numerator-jets'), \
-                        V._work((*g,*det),arena.resource,pairs=8*(ORDER+1)):
+                        V._work((*g,*det),arena.resource,pairs=8*(ORDER+1), convert_values=False):
                     arena.work(256*(ORDER+1)**2)
                     new,face,a,b=(wide_jet(n) for n in (identity,('interface',),one,two))
                     bn,na=T._cross(b[0],face[0],J),T._cross(face[0],a[0],J)
@@ -1266,7 +1270,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                     if exact is not None and exact[0][0]!=0:
                         coefficients,axis=exact
                         factor=J.constant(1) if axis is None else scales[0] if axis==0 else J.mul(*scales)
-                        with V._work(coefficients,arena.resource):
+                        with V._work(coefficients,arena.resource, convert_values=False):
                             enclosure,closed_sign=_initial_value_enclosure(coefficients,value,factor,bounds[1],J)
                         pair=max(pair[0],enclosure[0]),min(pair[1],enclosure[1])
                         if closed_sign is not None:
@@ -1304,7 +1308,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                         factor=None if exact is None else (J.constant(1) if exact[1] is None else
                             scales[0] if exact[1]==0 else J.mul(*scales))
                         if factor is not None and factor[0][0]>0:
-                            with V._work(exact[0],arena.resource,pairs=4*(ORDER+1)):
+                            with V._work(exact[0],arena.resource,pairs=4*(ORDER+1), convert_values=False):
                                 arena.work(64*(ORDER+1))
                                 found=_start_event(exact[0],J.div(value,factor),bounds[1],J)
                                 if found is not None and found[0]=='sign':
@@ -1431,7 +1435,7 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                 children.append(values)
                 push(ca, cb, level+1, values, inherited, found)
             with V._work(tuple(q for pair in old for q in pair)+tuple(
-                    q for values in children for pair in values for q in pair), arena.resource, pairs=16):
+                    q for values in children for pair in values for q in pair), arena.resource, pairs=16, convert_values=False):
                 for i in range(2):
                     for j in range(2):
                         totals[i][j] += sum(values[i][j] for values in children)-old[i][j]

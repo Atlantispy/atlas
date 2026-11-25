@@ -83,6 +83,30 @@ def field_record(values):
 
 
 def field_restore(rows, *, expected=None, budget=None):
+    return _restore_fields(rows, expected, budget, _field_roundtrip)
+
+
+def _field_restore_stored(rows, *, expected=None, budget=None):
+    """Receive the detached JSON rows from the stored moving-state loader."""
+    return _restore_fields(rows, expected, budget, _stored_field_order)
+
+
+def _field_roundtrip(values, rows):
+    return field_record(values) == rows
+
+
+def _stored_field_order(values, rows):
+    if len(values) != len(rows):
+        return False
+    previous = None
+    for key in values:
+        if previous is not None and key <= previous:
+            return False
+        previous = key
+    return True
+
+
+def _restore_fields(rows, expected, budget, admits_order):
     try:
         from .integration_material import MAX_SUBLAYERS
         if (type(rows) is not list or len(rows) > S.MAX_CELLS or
@@ -103,7 +127,7 @@ def field_restore(rows, *, expected=None, budget=None):
         with select_budget(budget).reserve(65536+32*size, category='i05-physical-field-parse'):
             values = {key: (tuple(h), tuple(_rational(q) for q in u), tuple(_rational(q) for q in b))
                       for key, h, u, b in rows}
-            if field_record(values) != rows:
+            if not admits_order(values, rows):
                 raise S.SupportError('physical column records are duplicated or noncanonical')
             return values
     except (TypeError, ValueError, ZeroDivisionError, OverflowError) as exc:

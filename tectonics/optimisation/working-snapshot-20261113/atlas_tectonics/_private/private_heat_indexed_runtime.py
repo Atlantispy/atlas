@@ -2,7 +2,8 @@
 
 This is an additive source transformer, not a running-module patch. The actual
 issuer still authenticates the owner, transport, execution and fixed numerical
-producer. A compact metric is rehashed through bounded canonical streaming;
+producer. A compact metric is hashed once through bounded canonical streaming,
+when its view is sealed, and that process-local seal is reused afterwards;
 there is no whole legacy record decode in the numerical/projection route.
 """
 from hashlib import sha256
@@ -13,7 +14,7 @@ PROJECTION_SHA = '662f94b04046e83976a763d016bdcfdc83dbf7941ea6a1a2c307e0a61fcb88
 
 
 def metric_identity(geometry, *, cancel=None):
-    """Recompute the SAME logical identity without materialising its encoding."""
+    """Return the logical identity: hashed here from an encoding, read from the seal of an indexed view."""
     from atlas_tectonics.integration_mimetic_heat import MimeticGeometry
     from atlas_tectonics._private.mesh_tables import CompactMesh
     from atlas_tectonics._private import private_heat_issuer_resources_r4 as R
@@ -26,22 +27,18 @@ def metric_identity(geometry, *, cancel=None):
     if (type(view) is not CompactMesh or not view._sealed or
             view.budget is not geometry._budget or geometry._encoded is not None):
         raise ValueError('indexed metric lost its authenticated same-budget geometry')
-    if view.scope is not None:
-        # The v3 cold opener already authenticated exactly one full logical
-        # stream. Reuse only that process-local seal, after file/cancel checks.
-        identity = view.identity()
-        R.check(cancel)
-        if identity.sha256 != view.geometry_id:
-            raise ValueError('sealed indexed geometry differs from its logical identity')
-        return identity.sha256
-    digest = sha256()
-    for raw in view.iter_legacy_json():
-        R.check(cancel)
-        digest.update(raw)
-    result = digest.hexdigest()
-    if result != view.geometry_id:
-        raise ValueError('immutable indexed geometry differs from its logical identity')
-    return result
+    if view.scope is None:
+        import numpy as np
+        # Unscoped views come only from CompactMesh.__init__, whose tables are views of immutable bytes.
+        if any(type(a) is not np.ndarray or a.flags.writeable for a in view._arrays.values()):
+            raise ValueError('unscoped indexed geometry tables are not read-only')
+    # Every seal site streamed exactly one full logical identity first (mesh_tables CompactMesh.__init__,
+    # mesh_from_segment, bind_published). Reuse only that process-local seal, after file/cancel checks.
+    identity = view.identity()
+    R.check(cancel)
+    if identity.sha256 != view.geometry_id:
+        raise ValueError('sealed indexed geometry differs from its logical identity')
+    return identity.sha256
 
 
 def ordered_cell_ids(geometry, *, cancel=None):

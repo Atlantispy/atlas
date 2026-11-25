@@ -98,6 +98,7 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
     __package__, _PACKAGED_STARTUP = _prepare_packaged_script(sys.argv[1:])
 
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import run_prepared_restart as RUN
 
 SG, RG = RUN.SG, RUN.RG
@@ -154,7 +155,7 @@ INDEPENDENT_CHECKS = {
         'original_database_unchanged'))}
 
 
-class ReopenRefused(ValueError):
+class ReopenRefused(ValueError, AtlasError):
     pass
 
 

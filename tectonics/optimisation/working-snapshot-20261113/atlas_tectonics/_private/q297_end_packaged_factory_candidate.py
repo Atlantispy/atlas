@@ -12,7 +12,7 @@ from pathlib import Path
 PINS = {
     'provider': ('q297_end_provider_integration_candidate.py', 'b7b6579b1a24537ee40a4ada7f977ccf9d2229f98098cd4c3a4ba081a73a2996'),
     'pieces': ('q297_end_pieces_candidate.py', '62f4011f84b97110880c8493342797274643c5728d96aa6cc3673395571ccb8a'),
-    'piece_builder': ('interval_piece_candidate.py', 'ad034d0405e59850ec40133d3f7bae7e816381959777fb8542b974c63e8e299c'),
+    'piece_builder': ('interval_piece_candidate.py', '8870182b116e066dab0d31a841e854ff6754da9d971dcc6c2bef8dc0c398cc8b'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),
     'family': ('material_family_context_candidate.py', '6de91cedc3e1131ba51d49df0f7110d0767a3646f42026f24e2f8dda1a32730e'),
     'start': ('material_start_candidate.py', '03c0dba5331bc4702254a3dcffcc888ad7326dc70b4e2b692956a7e207e95acf'),

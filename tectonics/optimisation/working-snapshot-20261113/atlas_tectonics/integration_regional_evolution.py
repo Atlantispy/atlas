@@ -286,12 +286,16 @@ class RegionalVolumeMap:
 
     def native_binding(self, native):
         """Require the actual scaled Q2 node path to reproduce this exact box."""
+        return self._bind_native(native)
+
+    def _bind_native(self, native, mapped=None):
         if type(native) not in (PreparedRegionalEvolution3D, PreparedRegionalStokes3D):
             raise RegionalOwnerRefused('physical map requires an actual prepared native evolution or Stokes plan')
         cells = native._cells if type(native) is PreparedRegionalStokes3D else native.cells
         count = math.prod(2*n+1 for n in cells)
         with native._resource.reserve(65536+4*len(self._record)+512*count, category='regional-physical-node-binding'):
-            data = self.record(); embedding = data['embedding']
+            data = self.record() if mapped is None else mapped
+            embedding = data['embedding']
             definition = native.descriptor()
             if (definition['cells'] != embedding['cells'] or definition['lengths_m'] != embedding['lengths_m'] or
                     definition['frame_id'] != embedding['frame']['frame_id']):
@@ -629,12 +633,10 @@ class PreparedRegionalOwner:
             if (radial_source['source'] != mapped['source'] or radial_source['volume_map_id'] != volume_map.volume_map_id or
                     definition['rheology']['source_id'] != native._radial_constitutive.source_id):
                 raise RegionalOwnerRefused('radial constitutive law belongs to a different actual source/map')
-        if moving._physical_columns is None or moving._patch_heat is None:
-            raise RegionalOwnerRefused('actual physical shell fields and positioned heat are required')
         if (type(plate_ids) is not tuple or len(plate_ids) != 2 or len(set(plate_ids)) != 2 or
                 any(type(v) is not str for v in plate_ids)):
             raise RegionalOwnerRefused('two distinct source plate owners are required')
-        binding = volume_map.native_binding(native)
+        binding = volume_map._bind_native(native, mapped)
         rows = mapped['cell_sources']
         mapped_keys = tuple(sorted({(row['patch_id'], row['sublayer']) for row in rows}))
         keys = mapped_keys if self._registry is None else self._registry.source_keys
@@ -896,8 +898,6 @@ class PreparedRegionalOwner:
             metadata.update(schema='atlas.regional-owner-state.v3',
                 physical_geometry_binding=self.physical_geometry_binding(), physical_remainder=self.physical_remainder())
         if self._funding is not None:
-            if inventory is None:
-                raise RegionalOwnerRefused('funded owner must retain its actual remaining/exported boundary inventories')
             metadata.update(schema='atlas.regional-owner-state.v4', boundary_funding_id=self._funding.funding_id)
         return RegionalOwnerState(native, exchange, metadata, inventory)
 
@@ -918,8 +918,15 @@ class PreparedRegionalOwner:
             required.add('boundary_funding_id'); schema = 'atlas.regional-owner-state.v4'
             if metadata.get('boundary_funding_id') != self._funding.funding_id:
                 raise RegionalOwnerRefused('boundary funding layout/source was changed')
-            self._funding._bound(state.inventory)
-            inventory = state.inventory.descriptor()
+            from .integration_regional_inventory import RegionalBoundaryFunding
+
+            if type(self) is PreparedRegionalOwner and type(self._funding) is RegionalBoundaryFunding:
+                inventory = self._funding._bound_owner_fields(state.inventory)
+            else:
+                self._funding._bound(state.inventory)
+                inventory = None
+            if inventory is None:
+                inventory = state.inventory.descriptor()
             if (inventory['intervals'] != metadata['intervals'] or
                     inventory['intervals'] and inventory['native_state_id'] != state.native_state.result_id):
                 raise RegionalOwnerRefused('boundary inventory does not bind this native interval')
@@ -927,7 +934,7 @@ class PreparedRegionalOwner:
             raise RegionalOwnerRefused('closed owner cannot contain an unowned boundary inventory')
         if (set(metadata) != required or metadata.get('schema') != schema or
                 metadata.get('owner_id') != self.owner_id or metadata['reservation'] != self.reservation() or
-                metadata['layout'] != self.layout() or
+                metadata['layout'] != (layout := self.layout()) or
                 metadata['source_minus_native_projection'] != self.admission_projection()):
             raise RegionalOwnerRefused('regional state belongs to a different source/layout/native plan')
         count = metadata['intervals']
@@ -948,7 +955,9 @@ class PreparedRegionalOwner:
                     inventory['source_audit_id'] != exchange.get('source_audit_id')):
                 raise RegionalOwnerRefused('boundary transfers do not belong to the saved native exchange')
             if (exchange.get('schema') != 'atlas.regional-owner-exchange.v1' or
-                    exchange.get('layout') != self.layout() or exchange.get('layout_id') != json_sha256(self.layout()) or
+                    exchange.get('layout') != (layout if type(self) is PreparedRegionalOwner else self.layout()) or
+                    exchange.get('layout_id') != json_sha256(
+                        layout if type(self) is PreparedRegionalOwner else self.layout()) or
                     exchange.get('state_id') != state.native_state.result_id or
                     exchange.get('parent_state_id') != native.get('parent_state_id') or
                     native.get('time_s') != exchange.get('start_time_s', math.nan)+exchange.get('duration_s', math.nan) or
@@ -1004,14 +1013,21 @@ class PreparedRegionalOwner:
             extra_tracers = tuple(name.removeprefix('tracer:') for name in state.native_state.array_names
                 if name.startswith('tracer:') and name not in
                 ('tracer:damage', 'tracer:accumulated_strain_ii'))
-            stocks = (self._native.empty_boundary_stocks(extra_tracers) if self._funding is None else
-                      self._funding.stocks(state.inventory))
+            funding = self._funding
+            stocks = (self._native.empty_boundary_stocks(extra_tracers) if funding is None else
+                      funding.stocks(state.inventory))
             result = self._native.advance(state.native_state, duration_s,
                 boundary_stocks=stocks, **driving)
             exchange = regional_exchange(result, layout=self.layout(), parent_state=state.native_state,
                                          budget=self._budget)
-            inventory = (None if self._funding is None else
-                         self._funding.advance(state.inventory, result, state.native_state))
+            inventory = None
+            current_funding = self._funding
+            if current_funding is not None:
+                if current_funding is funding:
+                    current_funding._bound(state.inventory)
+                    inventory = current_funding._advance_with_stocks(state.inventory, result, state.native_state, stocks)
+                else:
+                    inventory = current_funding.advance(state.inventory, result, state.native_state)
             next_state = self._issued(result.state, exchange, state.owner_state_id, count+1, inventory)
             return RegionalOwnerAdvance(next_state, result, exchange)
 

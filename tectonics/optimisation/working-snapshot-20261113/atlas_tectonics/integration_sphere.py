@@ -31,6 +31,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -462,10 +463,12 @@ class SphereNetwork(_state._Immutable):
         return self._faces[self._index(face_id)]
 
     def _index(self, face_id):
-        ids = self.face_ids
-        if type(face_id) is not str or face_id not in ids:
+        if type(face_id) is not str:
             raise SphereError('unknown face')
-        return ids.index(face_id)
+        index = bisect_left(self._faces, face_id, key=lambda face: face.face_id)
+        if index == len(self._faces) or self._faces[index].face_id != face_id:
+            raise SphereError('unknown face')
+        return index
 
     def face_plate(self, face_id):
         return self.face(face_id).plate_id

@@ -189,7 +189,7 @@ def _integrate(poly, a, b, evaluator, *, width, max_leaves, budget):
     with ExitStack() as stack:
         def add(triangle, depth):
             nonlocal serial
-            with V._work((*a, *b, *(x for p in triangle for x in p)), budget):
+            with V._work((*a, *b, *(x for p in triangle for x in p)), budget, convert_values=False):
                 points, radial, moment, area = _triangle(triangle, a, b, 72+depth)
                 bound = evaluator(points, radial, moment)
                 bound = tuple(outward(_scale(v, area)) for v in bound)
@@ -458,7 +458,7 @@ def _integrate_radial_shell(poly, a, b, bottom, top, rc, *, width, max_leaves, b
     if not 0 < rc <= bottom < top or any(min(p) < 0 for p in poly):
         raise PressureCouplingRefused('positive physical shell and minor-wall coordinates required')
     normal = O._cross(a, b)
-    with V._work((*a, *b, bottom, top, rc, *(q for p in poly for q in p)), budget):
+    with V._work((*a, *b, bottom, top, rc, *(q for p in poly for q in p)), budget, convert_values=False):
         wedges = _angular_wedges(poly)
     pieces = tuple((left, right, (entry, exit_)) for left, right, entry, exit_ in wedges)
     def evaluate(left, right, edges, bits):
@@ -482,7 +482,7 @@ def _integrate_angular(pieces, evaluate, coefficients, *, width, max_leaves, bud
         def add(left, right, data):
             nonlocal serial
             values = coefficients(data)
-            with V._work((left, right, denominator, *values), budget):
+            with V._work((left, right, denominator, *values), budget, convert_values=False):
                 jets, fixed = evaluate(left, right, data, precision)
                 whole = tuple(_scale(jet[0], right-left) for jet in jets)
                 if fixed:
@@ -826,7 +826,7 @@ def _integrate_radial_pressure(poly, a, b, profiles, donors, rc, outer, gravity,
               *(q for p in poly for q in p),
               *(q for shape, low, high, coefficient in donors for q in
                 (*(v for p in shape for v in p), low, high, coefficient)))
-    with budget.reserve(65536+2048*count, category='pressure-angular-partition'), V._work(inputs, budget):
+    with budget.reserve(65536+2048*count, category='pressure-angular-partition'), V._work(inputs, budget, convert_values=False):
         receiver = _angular_wedges(poly)
         if not receiver:
             return (_ZERO_PAIR,)*3, 0

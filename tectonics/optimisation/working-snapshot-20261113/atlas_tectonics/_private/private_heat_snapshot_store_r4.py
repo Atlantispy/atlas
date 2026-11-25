@@ -119,7 +119,9 @@ def _manifest(meta, *, compact):
         require(payload.identity == _field_identity(fields), 'heat field logical binding differs')
         require(payload.root_key.workflow_id == ledger.root_key.workflow_id,
                 'heat field/ledger workflows differ')
-    require(len(canonical(meta)) <= 65536, 'heat receipt exceeds 64 KiB')
+    encoded = canonical(meta)
+    require(len(encoded) <= 65536, 'heat receipt exceeds 64 KiB')
+    return encoded
 
 
 def _field_identity(fields):
@@ -173,9 +175,9 @@ def save(candidate, snapshot, *, bindings, budget=None, scope=None, cancel=None)
         arrays=arrays, producer=producer, representation_profile=PROFILE, scope=scope, cancel=token)
     metadata = dict(schema=SCHEMA, **logical, ledger=ledger.to_wire(), field_payload=fields.to_wire(),
                     shared_mesh=snapshot.mesh_binding)
-    _manifest(metadata, compact=True)
+    invocation = sha256(_manifest(metadata, compact=True)).hexdigest()
     cancel_check(token)
-    return dict(invocation=sha256(canonical(metadata)).hexdigest(), metadata=metadata)
+    return dict(invocation=invocation, metadata=metadata)
 
 
 def _receipt(receipt, expected_result_id, bindings):

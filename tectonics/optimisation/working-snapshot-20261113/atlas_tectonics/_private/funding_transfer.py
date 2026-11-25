@@ -5,16 +5,16 @@ actual admitted spatial owner and its original immutable funding, with the
 complete native/scientific transfer proof. It is not a workflow acceptance or
 advance capability. Historical admission remains the workflow root's duty.
 """
-from builtins import AssertionError as _release_assertion_error
 import hashlib
 import json
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import geometry_transfer as G
 from atlas_tectonics._private import native_transfer as N
 from atlas_tectonics._private import spatial_transfer as S
 
 
-class FundingTransferRefused(ValueError):
+class FundingTransferRefused(ValueError, AtlasError):
     pass
 
 
@@ -49,7 +49,7 @@ class OriginalFundingTransfer:
             return False
         if (state is None) != (spatial_state is None):
             raise FundingTransferRefused('current native/spatial states must be supplied together')
-        scratch = N._Allocation(budget, 65536+G._json_decode_bytes(self._record)
+        _scratch = N._Allocation(budget, 65536+G._json_decode_bytes(self._record)
             +G._plan_graph_scratch_bytes(collar)+4*N._width(record), category='funding-transfer-match-scratch')
         self._spatial.owner._verify()
         expected = self.record()
@@ -69,8 +69,6 @@ class OriginalFundingTransfer:
                     == expected['original_funding_metadata_sha256'])
             if valid and state is not None:
                 _validate_current_pair(self._spatial.owner, state, spatial_state)
-        if not (scratch.size > 0):
-            raise _release_assertion_error()
         return valid
 
 
@@ -87,7 +85,7 @@ def bind_original_funding(spatial_transfer, *, collar, budget):
                 spatial_transfer.funding._resource, spatial_transfer.state._budget))):
         raise FundingTransferRefused('actual transferred spatial owner/funding on one current budget required')
     owner, funding, native = spatial_transfer.owner, spatial_transfer.funding, spatial_transfer.native_transfer
-    scratch = N._Allocation(budget, 65536+sum(G._json_decode_bytes(raw) for raw in
+    _scratch = N._Allocation(budget, 65536+sum(G._json_decode_bytes(raw) for raw in
         (spatial_transfer._record, native._record))
         +G._plan_graph_scratch_bytes(collar)+4*N._width(owner._definition), category='funding-transfer-bind-scratch')
     owner._verify()
@@ -128,8 +126,6 @@ def bind_original_funding(spatial_transfer, *, collar, budget):
         result = object.__new__(OriginalFundingTransfer)
         for key, value in dict(_spatial=spatial_transfer, _record=N._RecordBytes(raw, allocation), _budget=budget).items():
             object.__setattr__(result, key, value)
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
     return result
 
 

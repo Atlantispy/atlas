@@ -65,6 +65,21 @@ def original_target(plan):
     return result
 
 
+def _exchange_target(exchange):
+    plan = exchange['joined_heat_plan']
+    if type(exchange) is dict and type(plan) is dict:
+        original = plan.get('original_target')
+        if (type(original) is dict and type(original.get('kind')) is str
+                and type(original.get('value')) is str):
+            result = B.I._validate_target_plan(plan)
+            if set(original) != {'kind', 'value'}:
+                raise ValueError('Complete original target declaration required')
+            if B.I._target_provenance(result) != original:
+                raise ValueError('Original target representation changed')
+            return result
+    return original_target(plan)
+
+
 def _links(parent, head):
     """Immediate committed links in addition to the caller's full chain walk."""
     if (type(parent) is not dict or type(head) is not dict
@@ -198,7 +213,7 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
             from atlas_tectonics._private.compact_contracts import proving
             if proving() and transport.result_id != exchange.get('global_transport_id'):    # proof mode only
                 raise ValueError('Committed transported arrays/identity differ')
-            target = original_target(exchange['joined_heat_plan'])
+            target = _exchange_target(exchange)
             binding = work.stack.enter_context(B.restore(store, exchange['joined_heat']['checkpoint'],
                 owner=workflow._exterior_owner, parent_spatial_state=parent_spatial,
                 parent_collar_state=parent_collar, spatial_state=spatial_state, collar_state=collar_state,

@@ -52,7 +52,7 @@ def _endpoint_time(start,dt,policy):
     return end
 
 
-def _check_step_record(record, time_s, source):
+def _check_step_record(record, time_s, source, check_adaptive_stage):
     """Validate decoded records; hashes are integrity, not scientific signatures."""
     keys={'method','dt_s','input_time_s','source','policy','velocity_mode','velocity_source',
           'stage_flow_ids','heating_sha256','balances'}
@@ -137,7 +137,7 @@ def _check_step_record(record, time_s, source):
                 elif 'initial_guess_id' in s or 'initial_guess_result_id' in s:
                     raise TectonicsError('unrecorded nonlinear starting policy')
                 if adapted:
-                    _ai.check_stage(s['adaptive_inner'],s['adaptive_inner_history'],
+                    check_adaptive_stage(s['adaptive_inner'],s['adaptive_inner_history'],
                         s['nonlinear_iterations'],s['linear_iterations'],np_,ip)
                 elif 'adaptive_inner' in s or 'adaptive_inner_history' in s:
                     raise TectonicsError('undeclared adaptive stage')
@@ -182,6 +182,13 @@ class ThermochemicalState:
     __slots__=('problem','_metadata','_temperature','_composition','_next_initial_guess','state_id')
     def __init__(self,problem,temperature_k,composition,*,time_s,source,parent_id=None,
                  step_index=0,evolution_id=None,execution=None,step_record=None,next_initial_guess=None,budget=None):
+        ThermochemicalState._initialize(self,problem,temperature_k,composition,time_s=time_s,source=source,
+            parent_id=parent_id,step_index=step_index,evolution_id=evolution_id,execution=execution,
+            step_record=step_record,next_initial_guess=next_initial_guess,budget=budget,
+            check_adaptive_stage=_ai.check_stage)
+
+    def _initialize(self,problem,temperature_k,composition,*,time_s,source,parent_id,
+                    step_index,evolution_id,execution,step_record,next_initial_guess,budget,check_adaptive_stage):
         if type(problem) is not ThermochemicalProblem: raise TectonicsError('typed thermochemical problem required')
         n=problem.box.nx*problem.box.nz
         if n>ThermochemicalPolicy().max_cells:
@@ -199,7 +206,7 @@ class ThermochemicalState:
                 raise TectonicsError('initial state may not forge a completed evolution step')
         else:
             _hex(parent_id,'parent state');_hex(evolution_id,'evolution plan');_hex(execution,'evolution code')
-            stored_policy=_check_step_record(step_record,time_s,source)
+            stored_policy=_check_step_record(step_record,time_s,source,check_adaptive_stage)
             mode=step_record['velocity_mode']
             if mode=='buoyancy-coupled-variable-viscosity':
                 if problem.mechanical_mode!='variable-r4.3' or step_record['nonlinear_mechanics']['profile_id']!=problem.rheology.profile_id:
@@ -770,9 +777,11 @@ class PreparedThermochemical2D:
                     mechanical_plan_id=self._mechanics.identity,output_guess_id=next_guess.guess_id)
                 del flow1
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            final=ThermochemicalState(self.problem,tf,cf,time_s=end_time,source=source,
+            final=object.__new__(ThermochemicalState)
+            final._initialize(self.problem,tf,cf,time_s=end_time,source=source,
                 parent_id=state.state_id,step_index=state.step_index+1,evolution_id=self.identity,execution=self._context.identity,
-                step_record=record,next_initial_guess=next_guess,budget=self.budget)
+                step_record=record,next_initial_guess=next_guess,budget=self.budget,
+                check_adaptive_stage=_ai._check_owned_stage)
             meta=dict(schema='atlas.thermochemical-step.v1',method=_METHOD,record=record,
                 before_id=state.state_id,after_id=final.state_id,
                 stage_velocity_semantics='operator-split RK intermediate fields, not final-time mechanical solution',

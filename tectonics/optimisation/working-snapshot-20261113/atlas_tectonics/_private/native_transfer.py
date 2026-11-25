@@ -13,6 +13,7 @@ source receipts and integrate its funding, spatial and transaction histories.
 """
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 from dataclasses import dataclass
 import hashlib
 import inspect
@@ -24,7 +25,7 @@ from atlas_tectonics.resources import canonical_json as _json
 from atlas_tectonics.resources import json_sha256 as _hash
 
 
-class TransferRefused(ValueError):
+class TransferRefused(ValueError, AtlasError):
     """Unsupported or non-identical scientific/state contract."""
 
 

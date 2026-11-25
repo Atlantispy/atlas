@@ -6,6 +6,7 @@ original geometry ID; the native header checks remain independent. Ordinary
 legacy construction, restore and record semantics are unchanged.
 """
 from __future__ import annotations
+from atlas_shared.errors import AtlasError
 from builtins import AssertionError as _release_assertion_error
 
 import hashlib
@@ -17,7 +18,7 @@ BASE_SOURCE_SHA256 = 'd1d2abefa7ae4cc5a83d64b80c036475669284002b10eef9bc591f3e2a
 _SCHEMA = 'atlas.source-bound-exterior-thermal-mesh.v1'
 
 
-class CompactExteriorRefused(ValueError):
+class CompactExteriorRefused(ValueError, AtlasError):
     pass
 
 

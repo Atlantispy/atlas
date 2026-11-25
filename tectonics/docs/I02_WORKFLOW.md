@@ -732,7 +732,8 @@ around one small column, not a whole-generator speed.
 New package modules (`integration_ledger`, `integration_clock`) and the edited
 `integration_state`, `storage` and `resources` change the package's execution identity.
 The refreshed finite-admission control binds its restoration dependencies; the
-current timing record also binds the complete package and workflow sources.
+historical [i02 timing receipt r13](../evidence/i02-workflow-timing-r13.json)
+records the complete package and workflow source bindings at `dcc1fc4`.
 
 **Paused and saved jobs of other routes.** This integration changes what earlier
 W12 and New World jobs recorded, so they refuse to continue, by design (nothing is

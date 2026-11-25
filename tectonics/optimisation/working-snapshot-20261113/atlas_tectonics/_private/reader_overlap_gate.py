@@ -3,7 +3,7 @@
 This module authenticates gate structure and expected identity bindings, not the
 producer's checks. The launcher must complete its producer/guard/receipt preflight
 before publication; the reader must verify the producer-dependent pins afterwards.
-It imports no Atlas code and never opens a producer store.
+It uses the selected shared error type and never opens a producer store.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-
+from atlas_shared.errors import AtlasError
 SCHEMA = "atlas.reader-admission-gate.v1"
 MAX_GATE_BYTES = 65536
 SHARING_ATTEMPTS = 8
@@ -43,7 +43,7 @@ _EXPECTED_REQUIRED = frozenset({
 _IDENTITY_FIELDS = frozenset({"pid", "created_ticks"})
 
 
-class GateRefused(ValueError):
+class GateRefused(ValueError, AtlasError):
     """Malformed, incomplete or mismatched protocol evidence; no fallback claim."""
 
 

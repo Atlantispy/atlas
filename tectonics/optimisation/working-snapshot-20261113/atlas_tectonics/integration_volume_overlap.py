@@ -165,7 +165,7 @@ class PolyhedralOverlap:
 
     def record(self):
         values = (self.volume_m3, *(v for p in self.vertices_m for v in p))
-        with V._work(values, self._resource):
+        with V._work(values, self._resource, convert_values=False):
             return dict(schema=SCHEMA, method=METHOD, source_cell_id=self.source_cell_id,
                 recipient_cell_id=self.recipient_cell_id, radial_layer_id=self.radial_layer_id,
                 cone_id=self.cone_id, volume_m3=_encoded(self.volume_m3), dimension=self.dimension,
@@ -204,7 +204,7 @@ def intersect_cells(source, recipient, *, radial_layer=None, cone_vertices=None,
     values = (*source._geometry(), *recipient._geometry(),
               *(() if radial_layer is None else radial_layer._geometry()),
               *(v for p in (cone or ()) for v in p))
-    with V._work(values, resource):
+    with V._work(values, resource, convert_values=False):
         if radial_layer is not None:
             minimum, maximum = recipient._radial_bounds()
             radius, top, bottom = radial_layer._geometry()
@@ -297,7 +297,7 @@ class UniformTransfer:
     def record(self):
         values = (self.source_volume_m3, self.coefficient, self.unmapped_volume_m3,
                   *self.source_stocks, *self.source_delta, *self.target_delta, *self.source_remainder)
-        with V._work(values, self._resource):
+        with V._work(values, self._resource, convert_values=False):
             return dict(schema='atlas.exact-uniform-cell-transfer.v1', method=METHOD,
                 source_id=self.source_id, target_id=self.target_id, overlap_id=self.overlap.overlap_id,
                 source_cell_id=self.overlap.source_cell_id, recipient_cell_id=self.overlap.recipient_cell_id,
@@ -341,7 +341,7 @@ def transfer_uniform(source, recipient, stocks, *, source_id, target_id,
         with V._work(stocks, resource) as exact:
             overlap = intersect_cells(source, recipient, radial_layer=radial_layer,
                                       cone_vertices=cone_vertices, budget=resource)
-            with V._work((*exact, overlap.volume_m3, *source._geometry()), resource):
+            with V._work((*exact, overlap.volume_m3, *source._geometry()), resource, convert_values=False):
                 total = source.volume_m3
                 fraction = overlap.volume_m3/total
                 target_delta = tuple(q*fraction for q in exact)

@@ -146,7 +146,7 @@ def _segment_box_outside(a,b,r2,arena):
     """
     bounds=tuple((min(Q(x[0][0]),Q(y[0][0])),max(Q(x[0][1]),Q(y[0][1])))
                  for x,y in zip(a,b))
-    with V._work((r2,*(q for pair in bounds for q in pair)),arena.resource,pairs=8):
+    with V._work((r2,*(q for pair in bounds for q in pair)),arena.resource,pairs=8, convert_values=False):
         arena.work(32)
         lower=sum((lo*lo if lo>0 else hi*hi if hi<0 else Q(0) for lo,hi in bounds),Q(0))
         return r2>0 and lower>=r2

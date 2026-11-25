@@ -194,7 +194,7 @@ def _column(record, column, patch, heat, sphere, datum, intervals, budget, lease
         # other columns' scratch is not reserved simultaneously.
         with V._work((u, reference, layer.reference_density_kg_m3, layer.heat_capacity_j_kg_k,
                       layer.alpha_per_k, datum.reference_temperature_k, pressure, gravity, total,
-                      geometric.radius_m, geometric.top_depth_m, geometric.bottom_depth_m), budget):
+                      geometric.radius_m, geometric.top_depth_m, geometric.bottom_depth_m), budget, convert_values=False):
             capacity = Q(layer.reference_density_kg_m3)*Q(layer.heat_capacity_j_kg_k)*geometric.volume_per_area_m
             # Never reconstruct temperature from rounded extensive heat or the
             # original cohort endpoints after a physical local source has acted.
@@ -215,7 +215,7 @@ def _column(record, column, patch, heat, sphere, datum, intervals, budget, lease
         geometric = V.RadialLayer(datum.reference_radius_m, last.bottom_depth_m,
                                   Q(datum.reference_radius_m)-Q(datum.support_radius_m), budget=budget)
         with V._work((datum.mantle_density_kg_m3, pressure, gravity, total, geometric.radius_m,
-                      geometric.top_depth_m, geometric.bottom_depth_m), budget):
+                      geometric.top_depth_m, geometric.bottom_depth_m), budget, convert_values=False):
             density = Q(datum.mantle_density_kg_m3)
             bottom = pressure+density*gravity*geometric.thickness_m
             moment = geometric.integrate_linear_per_area(pressure, bottom)

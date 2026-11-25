@@ -158,12 +158,12 @@ class PreparedFreeSurface2D:
             accepted_steps=steps,parent_state_id=parent,definition=self._d),
             dict(mesh_nodes_m=mesh,cell_mass_kg=mass))
 
-    def _validate(self,state,cancel=None):
+    def _validate(self,state,cancel=None,*,descriptor=None):
         if type(state) is not RegionalMechanicalSnapshot:raise TectonicsError('immutable source-bound surface state required')
         # Bound fields and metadata before decoding or any numerical copies.
         if state.nbytes>self._state_bytes or set(state.array_names)!={'mesh_nodes_m','cell_mass_kg'}:
             raise TectonicsError('surface state exceeds its bounded field/metadata support')
-        d=state.descriptor()
+        d=state.descriptor() if descriptor is None else descriptor
         if (d.get('schema')!='atlas.free-surface-state.v1' or d.get('plan_id')!=self._plan_id or
                 d.get('context_id')!=self._context_id or d.get('source_status')!='WORKING NON-CANON' or
                 _json(d.get('definition'))!=_json(self._d)):
@@ -205,8 +205,8 @@ class PreparedFreeSurface2D:
                 raise TectonicsError('initial surface mass outside finite positive SI range')
             return self._state(mesh,mass,epoch_id,time,0)
 
-    def _mechanics(self,state,cancel):
-        d=self._validate(state,cancel)
+    def _mechanics(self,state,cancel,*,descriptor=None):
+        d=self._validate(state,cancel,descriptor=descriptor)
         if self._latest_key==state.result_id:
             self._stats['latest_result_hits']+=1;return self._latest
         force=(0.,-self._d['density_kg_m3']*self._d['gravity_m_s2'])
@@ -225,8 +225,8 @@ class PreparedFreeSurface2D:
     def mechanics(self,state,*,cancel=None):
         with self._operation(cancel):return self._mechanics(state,cancel)
 
-    def _rate(self,state,cancel):
-        mechanical=self._mechanics(state,cancel)
+    def _rate(self,state,cancel,*,descriptor=None):
+        mechanical=self._mechanics(state,cancel,descriptor=descriptor)
         mesh=state.array('mesh_nodes_m');v=mechanical.array('velocity_nodes_m_s')
         rate,projection=self._projection.rate(mesh[-1,:,1],v[-1])
         wmz=self._core.laplacian_mesh_velocity(mesh,rate,cancel=cancel)
@@ -279,7 +279,7 @@ class PreparedFreeSurface2D:
                 start,stop=bounds[i],bounds[i+1];dt=stop-start
                 if dt<=0.:raise TectonicsError('unresolvable surface substep')
                 m=current.array('mesh_nodes_m');mass=current.array('cell_mass_kg')
-                wm0,dm0,a0=self._rate(current,cancel)
+                wm0,dm0,a0=self._rate(current,cancel,descriptor=d if i==0 else None)
                 trial=m+dt*wm0;trialmass=mass+dt*dm0
                 # Declared per-step bounds, not an automatic substep: the thickest
                 # column of either stage sets the fastest relaxation rate.

@@ -31,7 +31,7 @@ from ._validation import TectonicsError, input_shape, read_array
 from .constitutive import _cancel
 from .resources import WorkBudget, select_budget
 from .stokes_execution import _native_lease
-from .subduction_mesh import P2Mesh, MAX_ELEMENTS, basis, quadrature
+from .subduction_mesh import P2Mesh, MAX_ELEMENTS, basis, quadrature, _quadrature_basis_values
 
 
 _EDGES = ((0, 1), (1, 2), (2, 0))
@@ -203,7 +203,7 @@ class PreparedSubductionTransport:
         self._fixed = _frozen(sorted(fixed), np.int64)
         self._free = _frozen(np.setdiff1d(np.arange(len(points)), self._fixed), np.int64)
         self._bary, self._weights = quadrature(degree=6)
-        self._p2 = basis(self._bary)
+        self._p2 = _quadrature_basis_values(self._bary)
         self._dq = _frozen(_p3_derivatives(self._bary)); self._dn = _frozen(_p3_derivatives(_P2_BARY))
         local = np.empty((len(cells), 10, 10))
         for start in range(0, len(cells), _BATCH):

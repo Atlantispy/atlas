@@ -461,9 +461,11 @@ metadata and partial-read cost; opening a store does not migrate it.
 
 Unchanged chunks can be referenced directly; replacing one complete chunk does
 not rewrite the whole history. Manifests point to their payloads directly, avoiding
-long decode chains. Encoding and round-trip checking precede the write transaction.
-A bounded spool uses memory then temporary disk; publication rechecks dependencies
-and commits one complete manifest. [SQLite isolation](https://www.sqlite.org/isolation.html)
+long decode chains. New chunks are encoded before the write transaction. The cold
+reader verifies the stored payload, and codec tests cover the round trip. A bounded
+spool uses memory then temporary disk. Publication checks dependencies and the
+payload of any concurrently inserted chunk before committing one complete manifest.
+[SQLite isolation](https://www.sqlite.org/isolation.html)
 and [Blosc's compression API](https://blosc.org/python-blosc2/reference/autofiles/low_level/blosc2.compress2.html)
 are actual software foundations here.
 
@@ -584,6 +586,38 @@ resumed against a stopped run, so the identity check itself was not reached by
 a run; its guard tests cover it. Admission of a store written by an older
 version is not proven by a run. None of this is scientific acceptance.
 
+The runtime cleanup after dev44 moves repeated work within those existing
+checks. Moving-face and belt geometry reuse data already decoded or assembled
+for the same support. Exact circulation carries each selected face's encoded
+deviation into its positive transfer and gives each output its own list.
+Coarse exterior transport reads the offer ID and duration from the checked
+offer and uses the same immutable volume array for validation and parcel access.
+The rigid workflow reads the wall measure ID once for its ordered flow,
+geometry and thermal comparisons after the earlier wall admission. Stable cold
+chunk reads select the bounded metadata and payload together, then apply the
+existing type, length and checksum checks.
+Transfer scratch allocations retain their charges through validation and issuance. Funded radial
+evolution reuses the map's exact source binding and its admitted inventory. Flat and restore inputs
+keep their own admission checks. Mechanical request setup reads each checked input descriptor once
+for its kind, context and effects, and boundary projection uses the trace or network's geometry check.
+The compact forward heat route passes its exact sealed result to the existing projection.
+The projector checks that it received that same object before it reuses the issued temperature and
+face-count facts. Independent results still go through both checks. The detached restore paths
+verify the original scalar and rational input formats and keep column order and uniqueness.
+
+The persisted shared-mesh heat ledger streams its checked cell IDs in the
+original order as part of the canonical result hash. Its focused save and
+reopen comparison matched the independently issued result ID and refused
+incorrect order and missing or wrong mesh bindings. The paired geometry,
+transport and storage checks cover those specific routes. The finite-arc timing
+in the [changelog](../../../CHANGELOG.md#unreleased) covers only the warmed
+kernel. Whole-run timing and scientific acceptance remain open.
+
+Both frozen joined intervals completed independent reopen and adoption. The stored forward heat
+ledgers identify the actual issuers and match their heat result and call identities. The joined arms
+use their existing scoped mesh seals. The independent unscoped disk and RAM receiver comparisons
+each measured one full metric stream falling to zero.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell
@@ -640,6 +674,24 @@ the current execution identity. A reviewed shared-home assignment adds exclusive
 admission for protected moves. An interrupted move leaves a durable recovery
 reference. The driver validates that reference, finishes the move and records
 the active checkpoint before ordinary clients can enter again.
+
+The diagnostic interval launcher leaves report-only profiling off by default.
+Its `--run-profile` setting can select the existing stage checkpoints and
+thread stack sampler. Checkpoint events record wall and parent-process CPU
+durations, with memory observations at completed subsections. The stage reader
+reconciles these events from the closed stream. Thread samples summarise stacks
+in minute buckets. The external tree sampler records the guarded process and
+its descendants. The launcher takes the exit from the outer guard after cleanup.
+RAM admission, deadlines, scheduling and resource accounting
+use the clocks already owned by those operations. Diagnostic launch words travel
+alongside the compared command and leave its profile and execution identity intact.
+
+The chain parent writes one timestamped `run.log` in each admitted journal
+directory. It records launches, outcomes, reused steps, recorded conditions and
+stops, with the guarded step's status where available. A resumed invocation
+writes its own file. The journal, child streams and durable recovery records
+remain the sources for resumption and investigation. A sidecar failure leaves
+the reported journal and original exit available.
 
 [KernelExecutor](../../src/atlas_tectonics/execution.py) parallelises eligible
 independent batches, preserving returned order. Small requests stay serial;

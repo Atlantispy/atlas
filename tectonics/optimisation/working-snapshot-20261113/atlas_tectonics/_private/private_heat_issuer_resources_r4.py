@@ -620,9 +620,16 @@ def codec_for_value(value, *, budget, cancel=None):
 
 def verified_private(result, method, *, budget, cancel=None):
     """Exactly one funded parse, same sealed result hash and source checks."""
+    owner, _ = _verified_private(result, method, budget=budget, cancel=cancel)
+    return owner
+
+
+def _verified_private(result, method, *, budget, cancel, expected_seal=None):
     if type(result) is not method.PrivateNumericalResult:
         raise TypeError('The fixed current finisher result class is required')
     blob = result._sealed
+    issued_record = blob is expected_seal
+    del expected_seal
     owner = decoded(blob, budget=budget, cancel=cancel)
     try:
         record = owner.value
@@ -646,7 +653,7 @@ def verified_private(result, method, *, budget, cancel=None):
                 owner._workspace.resize_before_allocation_or_after_drop(owner.retained_bytes)
         if result._sealed is not blob:
             raise ValueError('Private corrected result changed while decoding')
-        return owner
+        return owner, issued_record
     except BaseException:
         owner.__exit__(*sys.exc_info())
         raise

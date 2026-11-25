@@ -683,7 +683,7 @@ def _crossing(m, nu, q, u, v, phi_in):
     return best
 
 
-def _walk(network, owner, directions, index, m, nu, start_edge, plate, limit):
+def _walk(network, owner, directions, index, m, nu, start_edge, plate, limit, *, faces=None):
     """Cells (face, phi_in, phi_out) along r(phi) = cos(phi) m + sin(phi) nu for phi in [0, limit], entering the face
     on the far side of ``start_edge`` (a directed ring edge of the face behind the line).
 
@@ -691,7 +691,8 @@ def _walk(network, owner, directions, index, m, nu, start_edge, plate, limit):
     offset smaller than w, or a junction neighbourhood): it refuses 'unresolved belt' (ruling B1(3))."""
     q = np.cross(m, nu)
     q /= np.linalg.norm(q)
-    faces = {face.face_id: face for face in network.faces}
+    if faces is None:
+        faces = {face.face_id: face for face in network.faces}
     cells, phi_in, entry = [], 0., start_edge
     face_id = owner.get((entry[1], entry[0]))
     for _ in range(len(faces)+1):
@@ -731,7 +732,7 @@ def edge_vertices(network, support, edge):
     return pairs[edge-first]
 
 
-def belt_cells(network, support, edge, width_m, side='both'):
+def belt_cells(network, support, edge, width_m, side='both', *, _assembly=None, _vertices=None):
     """The belt cells of trace edge ``edge`` for physical width w: left cells (y < 0), then right cells, in line order.
 
     The left plate lies toward a x b; nu_left = unit(b x a) points to the right plate. The right walk enters the face
@@ -739,19 +740,28 @@ def belt_cells(network, support, edge, width_m, side='both'):
     from .integration_properties import _faces_of_edges
     if type(support) is not P.TraceSupport or support.network_id != network.network_id:
         raise StrengthRefused('the trace support of this network is required', STALE, 'support')
-    owner = _faces_of_edges(network)
-    index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
-    directions = np.asarray(network.vertex_direction, dtype=float)
-    a_id, b_id = edge_vertices(network, support, edge)
+    if _assembly is None:
+        owner = _faces_of_edges(network)
+        index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
+        directions = np.asarray(network.vertex_direction, dtype=float)
+        a_id, b_id = edge_vertices(network, support, edge)
+        faces = None
+    else:
+        owner, index, directions = _assembly.geometry
+        a_id, b_id = _vertices
     m, nu = np.asarray(support.midpoint[edge], dtype=float), np.asarray(support.nu_left[edge], dtype=float)
     radius = float(network.sphere.radius_m)
     limit = width_m/(2*radius) if side == 'both' else width_m/radius
     if not limit < math.pi/2:
         raise StrengthRefused('a belt half-width reaches a quarter of the sphere', UNSUPPORTED, 'width')
+    if _assembly is not None:
+        if _assembly.faces is None:
+            _assembly.faces = {face.face_id: face for face in network.faces}
+        faces = _assembly.faces
     left_plate, right_plate = support.plates[edge]
-    right = _walk(network, owner, directions, index, m, nu, (a_id, b_id), right_plate, limit) \
+    right = _walk(network, owner, directions, index, m, nu, (a_id, b_id), right_plate, limit, faces=faces) \
         if side != 'left' else []
-    left = _walk(network, owner, directions, index, m, -nu, (b_id, a_id), left_plate, limit) \
+    left = _walk(network, owner, directions, index, m, -nu, (b_id, a_id), left_plate, limit, faces=faces) \
         if side != 'right' else []
     cells = [Cell(face, 'left', -radius*hi, -radius*lo) for face, lo, hi in reversed(left)]
     cells += [Cell(face, 'right', radius*lo, radius*hi) for face, lo, hi in right]
@@ -816,7 +826,8 @@ class Line:
     unresolved_bonds: tuple
 
 
-def build_line(network, support, strength, declaration, gravity_m_s2, edge, *, columns=None, bonds=None):
+def build_line(network, support, strength, declaration, gravity_m_s2, edge, *, columns=None, bonds=None,
+               _assembly=None, _vertices=None):
     """Assemble the belt line of trace edge ``edge``. ``columns`` caches prepared columns by piece index; ``bonds``
     maps cohort IDs to their BondRecord.bond ('BONDED', 'BROKEN' or 'UNRESOLVED').
 
@@ -826,8 +837,13 @@ def build_line(network, support, strength, declaration, gravity_m_s2, edge, *, c
     belt = declaration.belt(boundary_id)
     if belt is None:
         raise StrengthRefused('boundary %r declares no D2 belt' % boundary_id, MISSING, 'belts')
-    cells = belt_cells(network, support, edge, belt.width_m, belt.side)
-    by_face = face_pieces(strength)
+    cells = belt_cells(network, support, edge, belt.width_m, belt.side, _assembly=_assembly, _vertices=_vertices)
+    if _assembly is None:
+        by_face = face_pieces(strength)
+    else:
+        if _assembly.pieces is None:
+            _assembly.pieces = face_pieces(strength)
+        by_face = _assembly.pieces
     columns = {} if columns is None else columns
     bonds = {} if bonds is None else bonds
     out, unresolved = [], set()
@@ -857,10 +873,13 @@ def build_line(network, support, strength, declaration, gravity_m_s2, edge, *, c
         kappa = np.array([float(strength.kappa[row]) for row in rows])
         sigma = math.fsum(prep.weight*prep.reference_pa)
         out.append(LineCell(cell, tuple(held), prep, tuple(rows), laws, tops, bottoms, kappa, sigma))
-    a_id, b_id = edge_vertices(network, support, edge)
-    index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
-    directions = np.asarray(network.vertex_direction, dtype=float)
-    a, b = directions[index[a_id]], directions[index[b_id]]
+    if _assembly is None:
+        a_id, b_id = edge_vertices(network, support, edge)
+        index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
+        directions = np.asarray(network.vertex_direction, dtype=float)
+        a, b = directions[index[a_id]], directions[index[b_id]]
+    else:
+        a, b = support.start[edge], support.end[edge]
     radius = float(network.sphere.radius_m)
     theta = 2*math.atan2(float(np.linalg.norm(a-b)), float(np.linalg.norm(a+b)))
     m, nu = np.asarray(support.midpoint[edge], dtype=float), np.asarray(support.nu_left[edge], dtype=float)
@@ -1100,6 +1119,35 @@ def _arc_extreme(u, v, pole):
     return max(angles)
 
 
+class _BaseLineAssembly:
+    def __init__(self, network):
+        from .integration_properties import _faces_of_edges
+        self.geometry = (_faces_of_edges(network), {name: i for i, name in enumerate(network.vertex_ids)},
+                         np.asarray(network.vertex_direction, dtype=float))
+        self.faces = None
+        self.pieces = None
+
+
+def _base_lines(network, support, strength, declaration, gravity, boundaries, columns, bonds):
+    assembly = None
+    group = None
+    lines = []
+    for edge, value in enumerate(support.edge_boundary):
+        boundary = int(value)
+        if boundary != group:
+            group, first = boundary, edge
+        if support.boundary_ids[boundary] not in boundaries:
+            continue
+        if assembly is None:
+            assembly = _BaseLineAssembly(network)
+        chain = network.boundaries[boundary].vertex_ids
+        at = edge-first
+        ends = chain[at], chain[(at+1) % len(chain)]
+        lines.append(build_line(network, support, strength, declaration, gravity, edge,
+                                columns=columns, bonds=bonds, _assembly=assembly, _vertices=ends))
+    return tuple(lines)
+
+
 class BeltTerm:
     """The D2 belt term of the D1 balance at one state: every trace edge of a belted boundary, its line assembled once
     from that state's P2, and its history (kappa_bar) fixed for the state.
@@ -1147,18 +1195,22 @@ class BeltTerm:
         gravity = float(datum.gravity_m_s2)
         bonds = {c.cohort_id: c.bond.bond for c in moving.cohorts}
         columns = {}
-        self.lines = tuple(build_line(network, support, strength, declaration, gravity, e, columns=columns,
-                                      bonds=bonds)
-                           for e in range(support.edges)
-                           if support.boundary_ids[int(support.edge_boundary[e])] in self.boundaries)
+        base = type(strength) is _properties.StrengthState and support.material_id is None
+        if base:
+            self.lines = _base_lines(network, support, strength, declaration, gravity, self.boundaries, columns, bonds)
+        else:
+            self.lines = tuple(build_line(network, support, strength, declaration, gravity, e, columns=columns,
+                                          bonds=bonds)
+                               for e in range(support.edges)
+                               if support.boundary_ids[int(support.edge_boundary[e])] in self.boundaries)
         self.histories = tuple(line_history(line) for line in self.lines)
         self.sides = tuple(tuple(self.order[p] for p in support.plates[line.edge]) for line in self.lines)
         self.strength = strength
         self.piece_areas = tuple(p.area_m2 for p in sphere.material.pieces())
-        self._coverage(network, support)
+        self._coverage(network, support, _base=base)
         self.last = None
 
-    def _coverage(self, network, support):
+    def _coverage(self, network, support, *, _base=False):
         """Check physical coverage on the declared geometric side, not merely on its plate. A plate may wrap
         around a trace endpoint; its faces across the great-circle normal are not in a one-sided belt. The
         point-to-arc footprint (including endpoint caps), missed-face gate and beta tolerance are unchanged."""
@@ -1169,8 +1221,11 @@ class BeltTerm:
         covered, tolerance = {}, {}
         poles = []
         for line in self.lines:
-            a_id, b_id = edge_vertices(network, support, line.edge)
-            a, b = directions[index[a_id]], directions[index[b_id]]
+            if _base:
+                a, b = support.start[line.edge], support.end[line.edge]
+            else:
+                a_id, b_id = edge_vertices(network, support, line.edge)
+                a, b = directions[index[a_id]], directions[index[b_id]]
             pole = np.cross(a, b)
             pole /= np.linalg.norm(pole)
             h = line.belt.width_m/(2*self.radius) if line.belt.side == 'both' else line.belt.width_m/self.radius

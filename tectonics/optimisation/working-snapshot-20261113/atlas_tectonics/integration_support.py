@@ -1000,12 +1000,10 @@ def renamed(support, mapping):
                          for p in support.patches))
 
 
-def _projective_reexpression(before, after, face_id, turn):
+def _projective_reexpression(rings, next_rings, turn):
     """Exact triangle maps, admitted under the existing four-epsilon displacement bound."""
     from . import integration_events as E
     T = _tools()
-    rings = T._Shapes(before).rings(before.face_ids.index(face_id))
-    next_rings = T._Shapes(after).rings(after.face_ids.index(face_id))
     if len(rings) != 1 or len(next_rings) != 1:
         raise SupportError('internal-cut event re-expression needs a matching constrained triangulation for holes')
     old_float, new_float = rings[0], next_rings[0]
@@ -1099,7 +1097,8 @@ def reexpressed(before, after, support):
     correspondence, projective = {}, {}
     patches = []
     for patch in support.patches:
-        a, b = before.face_plate(patch.face_id), after.face_plate(patch.face_id)
+        before_face, after_face = before._index(patch.face_id), after._index(patch.face_id)
+        a, b = before.faces[before_face].plate_id, after.faces[after_face].plate_id
         key = a, b
         if key not in correspondence:
             table = {}
@@ -1116,7 +1115,9 @@ def reexpressed(before, after, support):
                                                          for cell in patch.cells for point in cell)
         if changes_coordinates and any(point not in table for cell in patch.cells for point in cell):
             if patch.face_id not in projective:
-                projective[patch.face_id] = _projective_reexpression(before, after, patch.face_id, turn)
+                projective[patch.face_id] = _projective_reexpression(
+                    T._sphere._rings_of(before, before_face, before_index, before_plate),
+                    T._sphere._rings_of(after, after_face, after_index, after_plate), turn)
             patches.append(_projectively_carried(patch, projective[patch.face_id], before.sphere.radius_m))
             continue
         cells = []

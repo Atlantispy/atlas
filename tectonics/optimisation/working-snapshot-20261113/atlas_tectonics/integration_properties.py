@@ -97,13 +97,18 @@ def _check_datum(header, datum, sphere):
                             detail='datum_id')
 
 
-def _piece_column(moving, sphere, index):
-    piece = sphere.material.pieces()[index]
+def _piece_column(moving, sphere, index, *, piece=None, issued_prism=False):
+    if piece is None:
+        piece = sphere.material.pieces()[index]
     record = moving.cohort(piece.cohort_id)
     phases = sphere.material.phases
     thickness, _ = _thermal.column_of(record, piece, phases)
-    temperature = _thermal.temperatures(record, piece, moving.heat_j(index).tolist(), moving.enthalpy_reference_k,
-                                        phases)
+    heat = moving.heat_j(index).tolist()
+    reference = moving.enthalpy_reference_k
+    if issued_prism and record.volume_convention == 'reference_prism':
+        temperature = _thermal._prism_temperatures(record, piece, heat, reference, thickness)
+    else:
+        temperature = _thermal.temperatures(record, piece, heat, reference, phases)
     return piece, record, thickness, temperature
 
 
@@ -165,8 +170,9 @@ def moving_columns(moving, sphere, support, header, datum, *, allow_cell_mean=Fa
     if header.support_id != support.support_id:
         raise P.PortRefused('the header names another support', P.INCOMPATIBLE_SUPPORT, detail='support_id')
     owner = _faces_of_edges(network)
+    pieces = sphere.material.pieces()
     pieces_of = {}
-    for index, piece in enumerate(sphere.material.pieces()):
+    for index, piece in enumerate(pieces):
         pieces_of.setdefault(piece.face_id, []).append(index)
     plate_of = {face.face_id: face.plate_id for face in network.faces}
     edges = [pair for boundary in network.boundaries for pair in _pairs(boundary)]     # original trace order
@@ -177,8 +183,9 @@ def moving_columns(moving, sphere, support, header, datum, *, allow_cell_mean=Fa
     if not resolved and len(edges) != support.edges:
         raise P.PortRefused("the trace support does not follow this network's boundaries", P.INCOMPATIBLE_SUPPORT,
                             detail='support')
-    indices = {(piece.face_id, piece.cohort_id): index
-               for index, piece in enumerate(sphere.material.pieces())}
+    indices = {(piece.face_id, piece.cohort_id): index for index, piece in enumerate(pieces)}
+    if resolved:
+        del pieces
     patch_columns = (_material._patch_columns(moving, sphere,
                      (patch for pair in support.patch_ids for patch in pair)) if resolved else {})
     offsets, values, sources, representation = [0], [[] for _ in range(5)], [], []
@@ -202,7 +209,8 @@ def moving_columns(moving, sphere, support, header, datum, *, allow_cell_mean=Fa
                     raise P.PortRefused('mixed face needs material_trace_support; a cell-mean column is an '
                                         'explicit approximation, not boundary material', P.UNRESOLVED_COLUMN,
                                         detail=face)
-                columns = [_piece_column(moving, sphere, index) for index in held]
+                columns = [_piece_column(moving, sphere, index, piece=pieces[index], issued_prism=True)
+                           for index in held]
             for piece, record, thickness, _ in columns:
                 inventory_guard(record, piece, thickness, sphere.material.phases, moving.step-moving.declared_step)
             piece, record, thickness, temperature = columns[0]
@@ -265,9 +273,13 @@ def _pairs(boundary):
 
 def piece_support_id(sphere):
     """The P2 piece support: the ordered (face, cohort) pieces of one I03 state, bound to its network."""
+    return _piece_support_id(sphere, sphere.material.pieces())
+
+
+def _piece_support_id(sphere, pieces):
     record = dict(schema=PIECE_SUPPORT, network_id=sphere.network.network_id,
                   material_id=sphere.material.material_id,
-                  pieces=[[p.face_id, p.cohort_id] for p in sphere.material.pieces()])
+                  pieces=[[p.face_id, p.cohort_id] for p in pieces])
     return hashlib.sha256(_json(record)).hexdigest()
 
 
@@ -365,12 +377,12 @@ def strength_port(moving, sphere, header, datum, *, healing_law_id):
     if healing_law_id != HEALING_NONE:
         raise P.PortRefused('only the zero-healing law %r is admitted' % HEALING_NONE, P.UNSUPPORTED,
                             detail='healing_law_id')
-    if header.support_id != piece_support_id(sphere):
+    pieces = sphere.material.pieces()
+    if header.support_id != _piece_support_id(sphere, pieces):
         raise P.PortRefused('the header names another piece support', P.INCOMPATIBLE_SUPPORT, detail='support_id')
     g, t_ref = datum.gravity_m_s2, datum.reference_temperature_k
     offsets, rows, materials, creeps = [0], [[] for _ in range(6)], [], []
     material_support = _support.required(sphere.material)
-    pieces = sphere.material.pieces()
     patches_of = { (p.face_id, p.cohort_id): material_support.patches_of_piece(p.face_id, p.cohort_id)
                   for p in pieces }
     actual_columns = _material._patch_columns(moving, sphere,
@@ -378,8 +390,8 @@ def strength_port(moving, sphere, header, datum, *, healing_law_id):
     positioned, uniform = [], []
     names = ('thickness_m', 'temperature_k', 'vertical_stress_bottom_pa',
              'vertical_stress_top_pa', 'pore_pressure_pa', 'kappa')
-    for index in range(len(pieces)):
-        piece, record, thickness, temperature = _piece_column(moving, sphere, index)
+    for index, piece in enumerate(pieces):
+        _, record, thickness, temperature = _piece_column(moving, sphere, index, piece=piece, issued_prism=True)
         key = (piece.face_id, piece.cohort_id)
         patches = patches_of[key]
         actual = [actual_columns[p.patch_id] for p in patches]

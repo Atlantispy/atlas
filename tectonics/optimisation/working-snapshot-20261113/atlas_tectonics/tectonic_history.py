@@ -296,11 +296,12 @@ class PreparedTectonicHistory:
         elif self.route == 'evolving-elastic-support':
             result = p.solve(x.state,x.surface,rigidity=x.rigidity,exterior=x.exterior,cancel=cancel)
         else: result = p.evaluate(x,cancel=cancel)
+        key = self.checkpoint_id(index)
         record = dict(schema='atlas.tectonic-history-output.v1',plan_id=self.plan_id,
             route=self.route,execution=self.execution_id,index=index,time_s=self.times[index],
-            checkpoint_id=self.checkpoint_id(index),result_id=history_result_id(result),
+            checkpoint_id=key,result_id=history_result_id(result),
             parent_output_id=None if parent is None else parent.output_id,phase='complete')
-        return TectonicHistoryOutput(result,index,self.times[index],self.checkpoint_id(index),
+        return TectonicHistoryOutput(result,index,self.times[index],key,
                                      _hash(content_record(record)),_json(record))
 
     def _pack(self,out,cancel):
@@ -354,14 +355,15 @@ class PreparedTectonicHistory:
         # _restore_bytes admits this whole envelope before a checkpoint is published; keep the two in step.
         with self._resource.reserve(3*meta['retained_bytes']+MAX_METADATA,
                                     category='tectonic-history-restore'):
-            arrays = self.store.get(self.checkpoint_id(index),budget=self._resource)
+            key = self.checkpoint_id(index)
+            arrays = self.store.get(key,budget=self._resource)
             if arrays is None: raise TectonicsError('checkpoint disappeared during restore')
             result = restore_history_result(arrays,meta['payload'],budget=self._resource,cancel=cancel)
             self._validate(result,index,cancel=cancel)
             if (history_result_id(result) != meta['record']['result_id'] or
                     history_result_nbytes(result) != meta['retained_bytes']):
                 raise TectonicsError('restored tectonic result identity/size mismatch')
-            out = TectonicHistoryOutput(result,index,self.times[index],self.checkpoint_id(index),
+            out = TectonicHistoryOutput(result,index,self.times[index],key,
                                          meta['output_id'],_json(meta['record']))
             self._check(cancel)
             self._stats['restored_outputs'] += 1

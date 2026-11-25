@@ -15,6 +15,7 @@ import weakref
 
 import numpy as np
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics._private.compact_contracts import ContractError, LogicalIdentity
 from atlas_tectonics._private.content_cache import ChargeSpec, OwnedStream, VerifiedCacheKey, get_content_cache
@@ -219,7 +220,7 @@ def _cast(buffer, dtype):
         return None
 
 
-class _Overflow(Exception):
+class _Overflow(AtlasError):
     """A node's emitted bytes exceed the bound it was rendered under."""
 
 
@@ -2626,7 +2627,6 @@ class _ArraySource:
         amount = min(T.CHUNK, max_owned_bytes-OWNER_BYTES-128)
         itemsize = np.dtype(self.info.dtype).itemsize
         amount -= amount % itemsize
-        T.require(amount > 0, 'array output bound below element width')
         record, name = self.record, self.name
         anchor = self._owner.retain()
         def generate():
@@ -2698,7 +2698,10 @@ def feed_without(digests, ref, drop, check=lambda: None, code=frozenset()):
     listed = kind == 'array' and type(ref) is RecordRef and ref._view._v('node.kind', ref.index) == T.ARRAY
     if kind == 'array' and '*' in drop:
         T.require(listed, 'effort wildcard over a non-list array')
-    T.require(not code or kind != 'array' or type(ref) is RecordRef, 'content feed over an unknown array')
+    if code and kind == 'array' and type(ref) is not RecordRef:
+        from atlas_tectonics._private.heat_ledger_tables import _MeshIds
+        # Its bounded stream contains only canonical scalar IDs, with no code fields.
+        T.require(type(ref) is _MeshIds, 'content feed over an unknown array')
     if listed and ('*' in drop or code):
         for digest in digests:
             digest.update(b'[')

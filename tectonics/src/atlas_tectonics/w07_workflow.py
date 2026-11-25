@@ -66,6 +66,10 @@ class W07WorkflowOutput:
         return _hash(dict(state=self.state.result_id,mechanics=self.mechanics.result_id,receipt=self.descriptor()))
 
 
+def _heat_close(a, b):
+    return abs(a-b) <= 1e-9*max(abs(a), abs(b), np.finfo(float).tiny)
+
+
 class PreparedW07Workflow:
     """Borrow geology/store; retain prepared mechanics and latest physical state.
 
@@ -417,7 +421,12 @@ class PreparedW07Workflow:
         return meta['payload']
 
     def _scan(self,end,cancel):
+        latest, meta, _ = self._scan_receipts(end, cancel)
+        return latest, meta
+
+    def _scan_receipts(self, end, cancel):
         latest,meta,parent,gap=-1,None,None,False
+        heat_after = None
         for i in range(end+1):
             _cancel(cancel);candidate=self.store.metadata(self.checkpoint_id(i))
             if candidate is None:gap=True;continue
@@ -427,7 +436,7 @@ class PreparedW07Workflow:
                 prior=self._heat_energy(self.geology.array('temperature_k')) if meta is None else (
                     meta['receipt']['heat']['heat_after_j'] if meta['receipt']['heat'] is not None else
                     self._heat_energy(self.geology.array('temperature_k')))
-                self._heat_receipt(i,candidate['receipt'],before=prior)
+                heat_after = self._heat_receipt(i,candidate['receipt'],before=prior)
                 if meta is not None and self.steps[i] and candidate['receipt']['heat']['coupling']['mechanical_input_id']!=next(
                         s['result_id'] for s in meta['payload']['snapshots'] if s['name']=='mechanics'):
                     raise TectonicsError('heat coupling belongs to another parent mechanics')
@@ -437,9 +446,34 @@ class PreparedW07Workflow:
                     s['result_id'] for s in meta['payload']['snapshots'] if s['name']=='state')
                 self._surface_receipt(i,candidate['receipt'],prior,snapshots['state']['result_id'])
             latest,meta,parent=i,candidate,candidate['output_id']
-        return latest,meta
+        return latest, meta, heat_after
 
-    def _restore(self,index,meta,cancel):
+    def _saved_output(self, index, cancel, *, exact):
+        heat_after = None
+        if (type(self) is PreparedW07Workflow and type(self.store) is ArrayStore
+                and type(self.route) is str and self.route == 'thermal'
+                and all(type(side) is str and type(boundary.diffusion_kind) is str
+                        for side, boundary in self._heat_boundaries.items())):
+            latest, meta, heat_after = self._scan_receipts(index, cancel)
+        else:
+            latest, meta = self._scan(index, cancel)
+        if latest < 0 or (exact and latest != index):
+            return None
+        if heat_after is None:
+            return self._restore(latest, meta, cancel)
+        return self._restore_checked_heat(latest, meta, cancel, heat_after)
+
+    def _restore(self, index, meta, cancel):
+        return self._restore_output(index, meta, cancel,
+                                    lambda result: self._validate_output(result, cancel))
+
+    def _restore_checked_heat(self, index, meta, cancel, heat_after):
+        def validate(result):
+            self._validate_output_body(result, cancel,
+                lambda output, temperature: self._validate_terminal_heat(temperature, heat_after))
+        return self._restore_output(index, meta, cancel, validate)
+
+    def _restore_output(self, index, meta, cancel, validate):
         from .regional_checkpoint import restore_regional_snapshots
         arrays=self.store.get(self.checkpoint_id(index),budget=self._resource)
         if arrays is None:raise TectonicsError('W07 checkpoint disappeared')
@@ -450,7 +484,7 @@ class PreparedW07Workflow:
                 raise TectonicsError('W07 checkpoint field-set mismatch')
             result=W07WorkflowOutput(self.checkpoint_id(index),index,snapshots['state'],snapshots['mechanics'],_json(meta['receipt']))
             if result.output_id!=meta['output_id']:raise TectonicsError('W07 checkpoint scientific output mismatch')
-            self._validate_output(result,cancel)
+            validate(result)
             if evolved:self._coupling_receipt(index,meta['receipt'],snapshots['coupling_mechanics'])
         self._stats['restored_outputs']+=1
         return result
@@ -493,7 +527,7 @@ class PreparedW07Workflow:
         g=self.geology;duration=self.times[index]-(g.time_s if index==0 else self.times[index-1])
         volume=g.width_m*g.height_m*g.strike_width_m
         expected_source=self._homogeneous['heat_production_w_m3']*volume*duration
-        close=lambda a,b:abs(a-b)<=1e-9*max(abs(a),abs(b),np.finfo(float).tiny)
+        close = _heat_close
         if (account.get('accepted_steps')!=n or account.get('time_s')!=self.times[index] or
             account.get('origin_m') not in ((0.,0.),[0.,0.])):
             raise TectonicsError('restored heat time/geometry/partition mismatch')
@@ -518,6 +552,7 @@ class PreparedW07Workflow:
         if (abs(residual)/scale>1e-9 or abs(residual-values['balance_residual_j'])/scale>1e-12 or
             not 0.<=values['balance_relative']<=1e-9 or not 0.<=values['maximum_step_balance_relative']<=1e-9):
             raise TectonicsError('restored heat storage/flux closure failed')
+        return values['heat_after_j']
 
     def _surface_receipt(self,index,receipt,parent,final):
         a=receipt['surface'];n=self.steps[index]
@@ -560,7 +595,17 @@ class PreparedW07Workflow:
         if request.get('time_s')!=time or request.get('epoch_id')!=self.geology.epoch_id:
             raise TectonicsError('restored regional epoch mismatch')
 
-    def _validate_output(self,result,cancel):
+    def _validate_output(self, result, cancel):
+        self._validate_output_body(result, cancel, self._validate_output_heat_receipt)
+
+    def _validate_output_heat_receipt(self, result, temperature):
+        self._heat_receipt(result.output_index, result.descriptor(), after=self._heat_energy(temperature))
+
+    def _validate_terminal_heat(self, temperature, heat_after):
+        if not _heat_close(heat_after, self._heat_energy(temperature)):
+            raise TectonicsError('restored heat source or stored energy mismatch')
+
+    def _validate_output_body(self, result, cancel, validate_heat):
         d=result.mechanics.descriptor();self._validate_gates(d)
         if self.route=='surface':
             with self._mechanical._operation(cancel):s=self._mechanical._validate(result.state,cancel)
@@ -587,7 +632,7 @@ class PreparedW07Workflow:
                     s.get('accepted_steps')!=sum(self.steps[:result.output_index+1]) or
                     not np.array_equal(result.state.array('reference_mass_kg'),self.geology.array('reference_mass_kg'))):
                     raise TectonicsError('restored thermal/material state mismatch')
-                self._heat_receipt(result.output_index,result.descriptor(),after=self._heat_energy(T))
+                validate_heat(result, T)
                 if not sum(self.steps[:result.output_index+1]) and not np.array_equal(T,self.geology.array('temperature_k')):
                     raise TectonicsError('restored initial temperature differs from its source')
             elif result.state.result_id!=self.geology.binding_id:raise TectonicsError('restored geological state mismatch')
@@ -637,8 +682,7 @@ class PreparedW07Workflow:
         self._index(index)
         with self._operation(cancel):
             if self.store is None:return self._current if self._current and self._current.output_index==index else None
-            latest,meta=self._scan(index,cancel)
-            return None if latest!=index else self._restore(index,meta,cancel)
+            return self._saved_output(index, cancel, exact=True)
 
     def run(self,*,through=None,cancel=None):
         end=len(self.times)-1 if through is None else self._index(through)
@@ -647,8 +691,7 @@ class PreparedW07Workflow:
             if current is not None and current.output_index==end:
                 if self.store is None:self._stats['latest_hits']+=1;return current
             if self.store is not None:
-                latest,meta=self._scan(end,cancel)
-                current=None if latest<0 else self._restore(latest,meta,cancel)
+                current = self._saved_output(end, cancel, exact=False)
                 if current is not None:self._adopt(current)
             elif current is not None and current.output_index>end:
                 raise TectonicsError('earlier output not retained; use a store')

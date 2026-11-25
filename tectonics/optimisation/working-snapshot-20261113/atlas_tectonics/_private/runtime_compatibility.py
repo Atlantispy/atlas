@@ -8,13 +8,13 @@ Historical acceptance remains historical. Numerical proof caches NEVER cross
 the runtime boundary through this policy. This is a provenance check, not a
 sandbox against arbitrary Python code in the same process.
 """
-from builtins import AssertionError as _release_assertion_error
 from hashlib import sha256
 import json
 from pathlib import Path
 import stat
 import sys
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import native_transfer as N
 from atlas_tectonics._private.workflow_transfer import HistoricalEndpointAdmission, RuntimeCompatibilityAdmission
 
@@ -32,7 +32,7 @@ CONSTRAINTS = {
 MAX_POLICY_BYTES = 8 << 20
 
 
-class RuntimeCompatibilityRefused(ValueError):
+class RuntimeCompatibilityRefused(ValueError, AtlasError):
     pass
 
 
@@ -207,6 +207,5 @@ def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
                  side+' manifest changed during admission')
     for path, pin in policy['evidence'].items():
         _require(file_hash(_path(evidence_root, path)) == pin, 'evidence changed during admission: '+path)
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
+    del scratch  # Retain the reservation through the final evidence read.
     return result

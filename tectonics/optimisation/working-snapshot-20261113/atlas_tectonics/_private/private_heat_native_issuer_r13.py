@@ -120,6 +120,7 @@ def _validate_target_plan(plan):
     if (text != plan['absolute_residual_target_decimal']
             or Fraction(text) != _q(plan['absolute_residual_target'])):
         raise ValueError('Original tagged target, decimal and exact target differ')
+    return value
 
 
 _COMPACT_MODULE_NAMES = ('atlas_tectonics._private.heat_ledger_issuer_patch', 'atlas_tectonics._private.heat_ledger_tables',
@@ -524,23 +525,42 @@ def _verify_call_record(call, meta, cancel=None):
     return meta
 
 
-def _verified_call(call, cancel=None):
+def _verify_funded_call_record(call, meta, cancel):
+    with RESOURCES.workspace(call._budget, 65536+512*len(_IMPORTED_FUNCTIONS)+
+            1024*len(_IMPORTED_SOURCES), cancel=cancel, category='private-heat-identity-work'):
+        _verify_call_record(call, meta, cancel)
+
+
+def _verified_call_with_binding(call, cancel):
     if type(call) is not OwnerHeatCall:
         raise TypeError('A forward-issued owner call is required')
-    view = RESOURCES.decoded(call._snapshot._metadata, budget=call._budget, cancel=cancel)
+    snapshot = call._snapshot
+    metadata = snapshot._metadata
+    view = RESOURCES.decoded(metadata, budget=call._budget, cancel=cancel)
     try:
-        with RESOURCES.workspace(call._budget, 65536+512*len(_IMPORTED_FUNCTIONS)+
-                1024*len(_IMPORTED_SOURCES), cancel=cancel, category='private-heat-identity-work'):
-            _verify_call_record(call, view.value, cancel)
-        return view
+        _verify_funded_call_record(call, view.value, cancel)
+        return view, (snapshot, metadata)
     except BaseException:
         view.__exit__(*sys.exc_info())
         raise
 
 
+def _verified_call(call, cancel=None):
+    view, _ = _verified_call_with_binding(call, cancel)
+    return view
+
+
 def _verify_call(call, cancel=None):
     with _verified_call(call, cancel):
         pass
+
+
+def _reverify_borrowed_call(call, meta, metadata_binding, cancel):
+    snapshot, metadata = metadata_binding
+    if call._snapshot is snapshot and snapshot._metadata is metadata:
+        _verify_funded_call_record(call, meta, cancel)
+    else:
+        _verify_call(call, cancel)
 
 
 @dataclass(frozen=True, slots=True, weakref_slot=True, init=False)
@@ -581,17 +601,18 @@ class ComposedHeatResult:
 
 def advance(call, *, cancel=None):
     """Fixed forward producer only; derived owned stages, no manual allowance."""
-    with _verified_call(call, cancel) as metadata_owner:
+    metadata_owner, metadata_binding = _verified_call_with_binding(call, cancel)
+    with metadata_owner:
         meta = metadata_owner.value
         with RESOURCES.decoded(call._plan, budget=call._budget, cancel=cancel) as plan_owner:
             plan = plan_owner.value
             n = len(call._geometry._cells)
             with RESOURCES.workspace(call._budget, 65536+1024*(8*n+32), cancel=cancel,
                                      category='private-heat-call-array-copies'):
-                return _advance_verified(call, meta, plan, cancel)
+                return _advance_verified(call, meta, plan, cancel, metadata_binding)
 
 
-def _advance_verified(call, meta, plan, cancel):
+def _advance_verified(call, meta, plan, cancel, metadata_binding):
     values = {name: call._snapshot.array(name).tolist() for name in call._snapshot.array_names}
     conductivity = plan['conductivity_w_m_k']
     if (len(conductivity) != len(values['enthalpy_j']) or not conductivity
@@ -600,19 +621,26 @@ def _advance_verified(call, meta, plan, cancel):
     issued_inputs = F._IssuedInputs((call._geometry, values['enthalpy_j'], values['capacity_j_k'],
         meta['duration_s'], values['source_w'], plan['boundary'], conductivity[0],
         plan['absolute_residual_target_decimal'], call._budget))
+    # The fixed issuer supplies the exact bytes created by the owned sealer.
+    sealed_output = []
     with F.advance(call._geometry, values['enthalpy_j'], values['capacity_j_k'],
             meta['duration_s'], values['source_w'], plan['boundary'],
             conductivity=conductivity[0],
             absolute_residual_target=plan['absolute_residual_target_decimal'],
-            budget=call._budget, cancelled=cancel, _issued_inputs=issued_inputs) as numerical_owner:
+            budget=call._budget, cancelled=cancel, _issued_inputs=issued_inputs,
+            _sealed_output=sealed_output) as numerical_owner:
         del issued_inputs
-        produced, diagnostics = numerical_owner.value
-        _verify_call(call, cancel)
-        projection_owner = N.project(produced, call._geometry, cell_ids=meta['cell_ids'],
-            enthalpy_j=values['enthalpy_j'], capacity_j_k=values['capacity_j_k'],
-            source_w=values['source_w'], duration_s=meta['duration_s'], state_id=meta['state_id'],
-            absolute_residual_target=_q(plan['absolute_residual_target']), budget=call._budget,
-            cancel=cancel, record_scope=HEAT_LEDGER.verify_scope(call))
+        try:
+            produced, diagnostics = numerical_owner.value
+            _reverify_borrowed_call(call, meta, metadata_binding, cancel)
+            projection_owner = N._project(produced, call._geometry, cell_ids=meta['cell_ids'],
+                enthalpy_j=values['enthalpy_j'], capacity_j_k=values['capacity_j_k'],
+                source_w=values['source_w'], duration_s=meta['duration_s'], state_id=meta['state_id'],
+                absolute_residual_target=_q(plan['absolute_residual_target']), budget=call._budget,
+                cancel=cancel, record_scope=HEAT_LEDGER.verify_scope(call),
+                sealed_output=sealed_output)
+        finally:
+            sealed_output.clear()
         del values
         # The solve result and its unread diagnostics end here: projection
         # verified and decoded its own independent copy (verified_private).
@@ -677,32 +705,39 @@ def issue_saved(*args, **kwargs):
 
 def advance_legacy_packaging(call, *, cancel=None):
     """Fixed forward producer only; derived owned stages, no manual allowance."""
-    with _verified_call(call, cancel) as metadata_owner:
+    metadata_owner, metadata_binding = _verified_call_with_binding(call, cancel)
+    with metadata_owner:
         meta = metadata_owner.value
         with RESOURCES.decoded(call._plan, budget=call._budget, cancel=cancel) as plan_owner:
             plan = plan_owner.value
             n = len(call._geometry._cells)
             with RESOURCES.workspace(call._budget, 65536+1024*(8*n+32), cancel=cancel,
                                      category='private-heat-call-array-copies'):
-                return _advance_legacy_packaging_verified(call, meta, plan, cancel)
+                return _advance_legacy_packaging_verified(call, meta, plan, cancel, metadata_binding)
 
-def _advance_legacy_packaging_verified(call, meta, plan, cancel):
+def _advance_legacy_packaging_verified(call, meta, plan, cancel, metadata_binding):
     values = {name: call._snapshot.array(name).tolist() for name in call._snapshot.array_names}
     conductivity = plan['conductivity_w_m_k']
     if (len(conductivity) != len(values['enthalpy_j']) or not conductivity
             or any(k != conductivity[0] for k in conductivity)):
         raise ValueError('Only the original uniform conductivity is supported')
+    # The fixed issuer supplies the exact bytes created by the owned sealer.
+    sealed_output = []
     with F.advance(call._geometry, values['enthalpy_j'], values['capacity_j_k'],
             meta['duration_s'], values['source_w'], plan['boundary'],
             conductivity=conductivity[0],
             absolute_residual_target=plan['absolute_residual_target_decimal'],
-            budget=call._budget, cancelled=cancel) as numerical_owner:
-        produced, diagnostics = numerical_owner.value
-        _verify_call(call, cancel)
-        projection_owner = N.project(produced, call._geometry, cell_ids=meta['cell_ids'],
-            enthalpy_j=values['enthalpy_j'], capacity_j_k=values['capacity_j_k'],
-            source_w=values['source_w'], duration_s=meta['duration_s'], state_id=meta['state_id'],
-            absolute_residual_target=_q(plan['absolute_residual_target']), budget=call._budget, cancel=cancel)
+            budget=call._budget, cancelled=cancel, _sealed_output=sealed_output) as numerical_owner:
+        try:
+            produced, diagnostics = numerical_owner.value
+            _reverify_borrowed_call(call, meta, metadata_binding, cancel)
+            projection_owner = N._project(produced, call._geometry, cell_ids=meta['cell_ids'],
+                enthalpy_j=values['enthalpy_j'], capacity_j_k=values['capacity_j_k'],
+                source_w=values['source_w'], duration_s=meta['duration_s'], state_id=meta['state_id'],
+                absolute_residual_target=_q(plan['absolute_residual_target']), budget=call._budget, cancel=cancel,
+                sealed_output=sealed_output)
+        finally:
+            sealed_output.clear()
         with projection_owner:
             projected, private = projection_owner.value
             fixed, powers = {}, {}

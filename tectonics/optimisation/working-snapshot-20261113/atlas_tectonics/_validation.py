@@ -1,6 +1,7 @@
 """Shared binary64 input rules; no implicit units or physical defaults."""
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 import math
 import threading
 from numbers import Real
@@ -13,7 +14,7 @@ from .resources import check_event_or_callable, elements
 FloatArray = NDArray[np.float64]
 
 
-class TectonicsError(ValueError):
+class TectonicsError(ValueError, AtlasError):
     """Unsupported input, numerical range or mathematical configuration."""
 
 

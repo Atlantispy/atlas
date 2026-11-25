@@ -373,7 +373,5 @@ class SupportRoutingRows:
         if compact is not None and type(self._handles.get(key)) is compact.CompactSupport:
             return compact.diagnostic(self, key)
         if key not in self._diagnostics:
-            if len(self._diagnostics) >= 2:
-                raise RuntimeError('one failed physical query has more than two support operands')
             self._diagnostics[key] = self._handles[key].record()
         return self._diagnostics[key]

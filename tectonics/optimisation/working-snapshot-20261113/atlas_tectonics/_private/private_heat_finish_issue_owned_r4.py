@@ -141,7 +141,7 @@ def _codec_plan(record, ar):
     return C.codec_inventory(chars, component, max(text, 64, len('result_id')))
 
 
-def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, powers, bindings):
+def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, powers, bindings, sealed_output):
     check = ar.check
     if not math.isfinite(ar.public(target)) or not ar.less(0, target):
         raise ValueError('An independently supplied positive finite absolute residual target is required')
@@ -265,7 +265,11 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     ar.reserve(ar.peak_bits)
     # A declared single step of a metered call, at the codec inventory's own figure.
     with METER.burst(ar.workspace.lease.budgets[0], ar.codec.total_bytes):
-        return K.PrivateNumericalResult(_seal_record(record, check))
+        sealed = _seal_record(record, check)
+        result = K.PrivateNumericalResult(sealed)
+        if sealed_output is not None:
+            sealed_output.append(sealed)
+        return result
 
 
 def _seal_record(record, check):
@@ -300,7 +304,7 @@ def _seal_record(record, check):
 
 
 def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powers,
-          bindings, check, *, budget):
+          bindings, check, *, budget, _sealed_output=None):
     """Own sealed native-free numerical result; borrowed values expire on close."""
     def checkpoint():
         if check is not None and check():
@@ -348,7 +352,7 @@ def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, power
         ar.copy(fixed.values())
         ar.copy(powers.values())
         result = _issue(ar, old, cap, new, faces, face_ids, source, retained,
-                        target, fixed, powers, bindings)
+                        target, fixed, powers, bindings, _sealed_output)
         # The numerical/encoder producer frame is gone. The complete exact
         # record and sealed immutable bytes stay owned, but bytearray/chunk
         # buffers no longer exist. Exceptions never take this return credit.

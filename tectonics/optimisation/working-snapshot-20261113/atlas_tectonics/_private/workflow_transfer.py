@@ -11,7 +11,7 @@ no reset, initial_state call or funding debit occurs here. The
 exact source generator keeps ordinary create/open unchanged and uses the
 existing current-runtime validators for successors after the migrated base.
 """
-from builtins import AssertionError as _release_assertion_error
+from atlas_shared.errors import AtlasError
 from copy import deepcopy
 from contextlib import contextmanager
 import hashlib
@@ -27,7 +27,7 @@ MAX_INTERVALS = 256
 MAX_METADATA_BYTES = 8 << 20
 
 
-class WorkflowTransferRefused(ValueError):
+class WorkflowTransferRefused(ValueError, AtlasError):
     pass
 
 
@@ -454,7 +454,7 @@ class MigratedWorkflowBase:
     def verify(self):
         from atlas_tectonics._private import native_transfer as N
         from atlas_tectonics._private import spatial_transfer as S
-        scratch = _decode_allocation(self._budget, self._record, self._native._record,
+        _scratch = _decode_allocation(self._budget, self._record, self._native._record,
             self._spatial._record, self._partition._json)
         collar, owner = self._spatial.owner._collar, self._spatial.owner
         collar._verify()
@@ -477,8 +477,6 @@ class MigratedWorkflowBase:
                 hashlib.sha256(self._historical._binding).hexdigest() != row['historical_admission_id'] or
                 hashlib.sha256(self._runtime._record).hexdigest() != row['runtime_admission_id']):
             raise WorkflowTransferRefused('migration admission changed')
-        if not (scratch.size > 0):
-            raise _release_assertion_error()
 
 
 def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
@@ -505,7 +503,7 @@ def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
                 spatial_transfer.state._budget, spatial_transfer.funding._resource,
                 interval._resource, partition._resource))):
         raise WorkflowTransferRefused('actual shared-budget transfers and both authenticated admissions required')
-    scratch = _decode_allocation(budget, historical_admission._record, historical_admission._binding,
+    _scratch = _decode_allocation(budget, historical_admission._record, historical_admission._binding,
         runtime_admission._record, native_transfer._record, spatial_transfer._record, partition._json)
     capsule, admission = historical_admission.record(), historical_admission.binding()
     if original_store is not None:
@@ -579,8 +577,6 @@ def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
             _budget=budget, _original_store=original_store).items():
         object.__setattr__(result, name, value)
     result.verify()
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
     return result
 
 
@@ -631,7 +627,7 @@ def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
     if type(base) is not MigratedWorkflowBase:
         raise WorkflowTransferRefused('issued migrated workflow base required')
     base.verify()
-    scratch = _decode_allocation(base._budget, base._endpoint, base._record, base._spatial._record,
+    _scratch = _decode_allocation(base._budget, base._endpoint, base._record, base._spatial._record,
         base._spatial.state._snapshot._metadata, base._spatial.funding._snapshot._metadata)
     endpoint = json.loads(base._endpoint)
     old_root, old_head = endpoint['root'], endpoint['head']
@@ -712,8 +708,6 @@ def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
             yield root, dict(CollarWorkflow._payload(native, spatial.state), **blobs)
         finally:
             base.verify()
-            if not (scratch.size > 0):
-                raise _release_assertion_error()
 
 
 def verify_migrated_workflow(workflow):
@@ -729,7 +723,7 @@ def verify_migrated_workflow(workflow):
 
 
 def _check_preserved_chain(store, base):
-    scratch = _decode_allocation(base._budget, base._endpoint, base._record)
+    _scratch = _decode_allocation(base._budget, base._endpoint, base._record)
     row, endpoint = base.record(), json.loads(base._endpoint)
     source = store
     if is_compact_restart_store(store, budget=base._budget):
@@ -745,8 +739,6 @@ def _check_preserved_chain(store, base):
     with source._read_scope():
         if source._manifest(key) != endpoint['head_manifest']:
             raise WorkflowTransferRefused('original endpoint manifest changed')
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
 
 
 def restore_migrated_root(workflow, root, token):
@@ -839,7 +831,7 @@ def publish_migrated_root(store, base, *, budget, cancel=None):
             store._budget is not budget or base._budget is not budget or
             (store.in_publication if compact else store._db.in_transaction)):
         raise WorkflowTransferRefused('exclusive actual store, issued base and shared budget required')
-    scratch = _decode_allocation(base._budget, base._endpoint)
+    _scratch = _decode_allocation(base._budget, base._endpoint)
     original_path = json.loads(base._endpoint).get('original_database_path')
     if type(original_path) is not str or not Path(original_path).is_absolute():
         raise WorkflowTransferRefused('authenticated original database path is required')
@@ -861,8 +853,6 @@ def publish_migrated_root(store, base, *, budget, cancel=None):
                 compact_references_verified(store, root, budget=budget, cancel=cancel)
         store.put(root['key'], arrays, root, publication_check=check, cancel=cancel, budget=budget)
         identity = root['workflow_id']
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
     return CollarWorkflow.open_migrated(store, identity, base, budget=budget)
 
 

@@ -82,17 +82,17 @@ def _aggregate(nodes,widths,arena):
             total=Q(0)
             for node in nodes:
                 value=node['values'][j][k]
-                with V._work((total,value),arena.resource):
+                with V._work((total,value),arena.resource, convert_values=False):
                     total+=value
             pair.append(total)
         values.append(tuple(pair))
     values=tuple(values)
     arena.keep(tuple(q for pair in values for q in pair),objects=4)
-    with V._work((*[q for pair in values for q in pair],*widths),arena.resource):
+    with V._work((*[q for pair in values for q in pair],*widths),arena.resource, convert_values=False):
         met=all(hi-lo<=width for (lo,hi),width in zip(values,widths))
     worst,index=Q(-1),0
     for i,node in enumerate(nodes):
-        with V._work((*[q for pair in node['values'] for q in pair],worst),arena.resource):
+        with V._work((*[q for pair in node['values'] for q in pair],worst),arena.resource, convert_values=False):
             error=max(hi-lo for lo,hi in node['values'])
             if error>worst:
                 worst,index=error,i
@@ -112,7 +112,7 @@ def _split_axis(normal,bounds,arena):
     """
     sides=tuple(hi-lo for lo,hi in bounds)
     smear=[]
-    with V._work((*normal.values(),*[q for pair in bounds for q in pair]),arena.resource):
+    with V._work((*normal.values(),*[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
         for axis in range(2):
             derivative={}
             for key,value in normal.items():
@@ -148,11 +148,11 @@ def _contained_cut(record,component,face,bounds,duration,arena,cache):
         normal,offset=NM._posed_box(record['constraints'][name],duration,arena,cache)
         with V._work((*[q for pair in normal for q in pair],offset,
                       *[q for vector in face[:3] for q in vector],
-                      *[q for pair in bounds for q in pair]),arena.resource):
+                      *[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
             lines.append(G._boxed_constraint_line(child,bounds,normal,offset,sign,True))
     arena.work(64+64*len(lines))
     best=None
-    with V._work((*[q for line in lines for q in line],*[q for pair in bounds for q in pair]),arena.resource):
+    with V._work((*[q for line in lines for q in line],*[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
         for axis in range(2):
             lo,hi=bounds[axis];side=hi-lo
             for keep_low in (True,False):
@@ -218,7 +218,7 @@ def _definite_cut(record,component,face,normal,bounds,duration,arena,cache):
     more leaves than bisection on every query.
     """
     from . import integration_differential_geometry as G
-    with V._work((*normal.values(),*[q for pair in bounds for q in pair]),arena.resource):
+    with V._work((*normal.values(),*[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
         low,high=NM._bernstein_range(NM._unit_polynomial(normal,bounds))
     if low>=0 or high<=0:
         return None
@@ -228,13 +228,13 @@ def _definite_cut(record,component,face,normal,bounds,duration,arena,cache):
         box,offset=NM._posed_box(record['constraints'][name],duration,arena,cache)
         with V._work((*[q for pair in box for q in pair],offset,
                       *[q for vector in face[:3] for q in vector],
-                      *[q for pair in bounds for q in pair]),arena.resource):
+                      *[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
             lines.append(tuple(G._boxed_constraint_line(child,bounds,box,offset,sign,inner)
                                for inner in (True,False)))
     arena.work(64+128*len(lines))
     best,passes=None,0
     with V._work((*normal.values(),*[q for pair in lines for line in pair for q in line],
-                  *[q for pair in bounds for q in pair]),arena.resource):
+                  *[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
         for axis in range(2):
             lo,hi=bounds[axis];side=hi-lo
             for keep_low in (True,False):
@@ -283,9 +283,12 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
     if (duration<=0 or len(widths)!=2 or min(widths)<=0 or
             type(max_leaves) is not int or max_leaves<1):
         raise V.VolumeError('positive duration/stream widths and finite partition leaves required')
-    cache=_PoseCache(arena) if _pose_cache is None else _pose_cache
-    if cache.arena is not arena:
-        raise V.VolumeError('partition requires its own query-local pose cache')
+    if _pose_cache is None:
+        cache=_PoseCache(arena)
+    else:
+        cache=_pose_cache
+        if cache.arena is not arena:
+            raise V.VolumeError('partition requires its own query-local pose cache')
     target=min(widths);local_goal=target/8
     evaluations=0
 
@@ -318,7 +321,7 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
                             values,cost,_=answer[:3];method=name
                             break
                 if answer is None:
-                    with V._work((*normal.values(),*[q for pair in bounds for q in pair],duration,local_goal),arena.resource):
+                    with V._work((*normal.values(),*[q for pair in bounds for q in pair],duration,local_goal),arena.resource, convert_values=False):
                         low,high=NM._bernstein_range(NM._unit_polynomial(normal,bounds))
                         amplitude=max(abs(low),abs(high))
                         area=(bounds[0][1]-bounds[0][0])*(bounds[1][1]-bounds[1][0])
@@ -331,7 +334,7 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
                         (local_goal,area_width),duration,
                         fallback=signed_fallback,max_leaves=1,arena=scratch,moments_only=True)
                     signed,occupied=moments
-                    with V._work((*signed,*occupied,*[q for pair in old for q in pair],area,duration,low,high),arena.resource):
+                    with V._work((*signed,*occupied,*[q for pair in old for q in pair],area,duration,low,high),arena.resource, convert_values=False):
                         occupied=NM._intersection(occupied,(Q(0),area*duration))
                         values=NM._directed_from_signed(signed,old,*NM._occupied_stream_caps(low,high,signed,occupied))
                     method='signed-time-area'
@@ -374,7 +377,7 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
     arena.keep(encoded_values,objects=16+16*len(active))
     rectangles=[]
     for n in active:
-        with V._work(tuple(q for pair in (*n['bounds'],*n['values']) for q in pair),arena.resource):
+        with V._work(tuple(q for pair in (*n['bounds'],*n['values']) for q in pair),arena.resource, convert_values=False):
             rectangles.append(dict(coordinate_bounds_m=[list(map(V._encoded,p)) for p in n['bounds']],
                 inward_bounds_m3=list(map(V._encoded,n['values'][0])),outward_bounds_m3=list(map(V._encoded,n['values'][1])),
                 method=n['method'],leaves=n['cost']))

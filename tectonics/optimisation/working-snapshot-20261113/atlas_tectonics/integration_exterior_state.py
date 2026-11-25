@@ -440,7 +440,7 @@ class PreparedExteriorOwner:
         if type(offer) is not ExteriorOffer or type(rigid_motion) is not RigidCollarMotion:
             raise ExteriorRefused('issued exterior offer and typed rigid motion required')
         record = offer.record()
-        if record['owner_id'] != self.owner_id or duration_s != offer.duration_s:
+        if record['owner_id'] != self.owner_id or duration_s != record['duration_s']:
             raise ExteriorRefused('requested drive/interval differs from the issued exterior offer')
         omega = record['wall']['trajectory']['segments'][-1]['angular_velocity_rad_s']
         if tuple(map(Q, rigid_motion.angular_velocity_rad_s)) != tuple(_q(q) for q in omega):
@@ -460,7 +460,7 @@ class PreparedExteriorOwner:
             if record['owner_id'] != self.owner_id or record['parent_state_id'] != parent.state_id:
                 raise ExteriorRefused('exterior offer has another parent')
             start = native.source_stage.inventory.descriptor()
-            if (start['start_time_s'] != parent.time_s or start['duration_s'] != offer.duration_s or
+            if (start['start_time_s'] != parent.time_s or start['duration_s'] != record['duration_s'] or
                     native.parent.native_state.descriptor()['time_s']+native.duration_s != float(_q(wall['end_time_s']))):
                 raise ExteriorRefused('actual collar and exterior interval differ')
             if old['intervals'] == 0:
@@ -486,11 +486,13 @@ class PreparedExteriorOwner:
                 left, output = native.transport.boundary_stocks[side], native.transport.exports[side]
                 if any(np.any(left.array(k) != 0) for k in self._fields):
                     raise ExteriorRefused('interval-only inlet parcel was not consumed exactly')
-                expected_volume = np.asarray([float(_q(q)) for q in record['native_outward_volume_m3'][side]]).reshape(output.array('volume_m3').shape)
-                if not np.array_equal(output.array('volume_m3'), expected_volume):
+                expected_volume = np.asarray([float(_q(q)) for q in record['native_outward_volume_m3'][side]])
+                output_volume = output.array('volume_m3')
+                expected_volume = expected_volume.reshape(output_volume.shape)
+                if not np.array_equal(output_volume, expected_volume):
                     raise ExteriorRefused('actual export stream volume differs from issued wall sampling')
                 for at in np.ndindex(expected_volume.shape):
-                    parcel = [Q(float(output.array('volume_m3')[at]))]+[Q(0)]*n+[Q(float(output.array('enthalpy_j')[at]))]
+                    parcel = [Q(float(output_volume[at]))]+[Q(0)]*n+[Q(float(output.array('enthalpy_j')[at]))]
                     for i, key in enumerate(self._native_keys):
                         parcel[1+self._keys.index(key)] = Q(float(output.array('component_mass_kg')[(i, *at)]))
                     parcel.extend(Q(float(output.array('tracer:'+k)[at])) for k in self._tracers)
@@ -548,7 +550,7 @@ class PreparedExteriorOwner:
                 geometry_accounts=wall['exterior_cells'], wall_measure_id=wall['measure_id'],
                 geometry_projection_intervals_m3=geometric, projection_accounts=projection)
             exchange = dict(schema='atlas.exterior-fv-exchange.v1', owner_id=self.owner_id,
-                parent_state_id=parent.state_id, offer_id=offer.offer_id, wall_measure_id=wall['measure_id'],
+                parent_state_id=parent.state_id, offer_id=record['offer_id'], wall_measure_id=wall['measure_id'],
                 collar_state_id=None, transport_id=native.transport.result_id,
                 wall_measures=wall,
                 donor_debits=record['donor_debits'],

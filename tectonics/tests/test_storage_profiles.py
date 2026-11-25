@@ -288,11 +288,26 @@ class StorageProfileTests(unittest.TestCase):
         with self.assertRaises(CancelledError):self.store.put(key('late'),{'x':np.arange(512.)},publication_check=reject)
         self.assertEqual(self.store.statistics()['unique_chunks'],0)
 
-    def test_broken_encoder_cannot_attest_or_publish_wrong_data(self):
-        with mock.patch.object(self.store,'_encode',return_value=('uniform',np.array([7.]).tobytes())):
-            with self.assertRaises(StoreError):self.store.put(key('bad'),{'x':np.arange(512.)})
-        self.assertFalse(self.store.contains(key('bad')))
-        self.assertEqual(self.store.statistics()['unique_chunks'],0)
+    def test_new_chunk_is_encoded_once_and_round_trips_on_read(self):
+        a = np.arange(512.)
+        with mock.patch.object(self.store, '_decode', side_effect=AssertionError('write-time decode')):
+            self.store.put(key('fresh'), {'x': a})
+        with ArrayStore(self.store.path, self.limits) as reader:
+            self.assert_bytes(a, reader.get(key('fresh'))['x'])
+
+    def test_conflicting_concurrent_winner_is_not_published_as_ours(self):
+        a = np.arange(512.)
+        with ArrayStore(self.store.path, self.limits, Compression('raw')) as winner:
+            def publish_winner(*_):
+                winner.put(key('winner'), {'x': a})
+                return 'uniform', np.array([7.]).tobytes()
+
+            with mock.patch.object(self.store, '_encode', side_effect=publish_winner):
+                with self.assertRaisesRegex(StoreConflict, 'concurrent chunk identity conflict'):
+                    self.store.put(key('loser'), {'x': a})
+        self.assertFalse(self.store.contains(key('loser')))
+        self.assert_bytes(a, self.store.get(key('winner'))['x'])
+        self.assertEqual(self.store.statistics()['unique_chunks'], 1)
 
     def test_same_key_conflict_and_concurrent_encoding(self):
         self.parent();before=self.store.statistics()['unique_chunks']

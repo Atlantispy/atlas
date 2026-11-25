@@ -6,11 +6,11 @@ reader. This seam preserves the original partition/support bytes and permits
 only their enumerated old collar-plan reference at that one restart boundary.
 New interval partitions name the actual current collar plan as usual.
 """
-from builtins import AssertionError as _release_assertion_error
 import hashlib
 import math
 from pathlib import Path
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import native_transfer as N
 
 
@@ -24,7 +24,7 @@ PARTITION_READER_MARKER = '    old, step, original = old_owner.value, interval.r
 PARTITION_READER_CALL = 'old_owner = partition_fields(parent_partition,'
 
 
-class GeometryTransferRefused(ValueError):
+class GeometryTransferRefused(ValueError, AtlasError):
     pass
 
 
@@ -111,7 +111,7 @@ def _validate_transfer_contract(native_transfer, evidence, current, budget):
     # plus canonical string/byte comparisons and individual hash encodings.
     # Reserve these named plan graphs, NOT further whole provenance copies.
     state = native_transfer.state
-    scratch = N._Allocation(budget,
+    _scratch = N._Allocation(budget,
         8192+3*(N._width(old)+N._width(current))
         +_json_decode_bytes(state.fields._metadata)+_json_decode_bytes(state.native_state._metadata),
         category='geometry-transfer-contract-scratch')
@@ -119,8 +119,6 @@ def _validate_transfer_contract(native_transfer, evidence, current, budget):
             or N.compare_scientific_contract(old, current) != evidence['input']['compatibility']
             or state.record() != evidence['current_collar']):
         raise GeometryTransferRefused('actual native transfer/current plan binding differs')
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
 
 
 def _fields_scratch_bytes(collar, state):
@@ -139,12 +137,10 @@ def _fields_scratch_bytes(collar, state):
 
 
 def _validate_fields(collar, state, budget):
-    scratch = N._Allocation(budget, _fields_scratch_bytes(collar, state),
+    _scratch = N._Allocation(budget, _fields_scratch_bytes(collar, state),
                             category='geometry-transfer-fields-scratch')
     collar._fields(state)
     # A held validator exception retains this frame/charge and its arrays.
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
 
 
 def _validate_parent_descriptor(partition_descriptor, supports, geometry, funding, old_plan_id, clock, budget):
@@ -153,7 +149,7 @@ def _validate_parent_descriptor(partition_descriptor, supports, geometry, fundin
     header_width = N._width({k: v for k, v in partition_descriptor.items()
                             if k not in ('partition_id', 'supports')})
     largest = max((N._width(row) for row in supports), default=0)
-    scratch = N._Allocation(budget,
+    _scratch = N._Allocation(budget,
         65536+4*max(header_width, largest)+256*len(supports)
         +_json_decode_bytes(funding._snapshot._metadata)+_json_decode_bytes(geometry._json),
         category='geometry-transfer-parent-scratch')
@@ -174,8 +170,6 @@ def _validate_parent_descriptor(partition_descriptor, supports, geometry, fundin
             or body.get('trajectory_id') != step['trajectory_id']
             or W._decode(body['end_time_s']) != W._q(clock)):
         raise GeometryTransferRefused('historical endpoint partition or clock differs')
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
 
 
 def _is_v2(view):
@@ -285,7 +279,7 @@ def _matches_compact_scratch_bytes(binding, collar):
 def _validate_parent_compact(view, geometry, funding, old_plan_id, clock, budget):
     from atlas_tectonics._private.partition_native_patch import _view_fields
     from atlas_tectonics import integration_wall_measures as W
-    scratch = N._Allocation(budget, _compact_parent_scratch_bytes(funding, geometry),
+    _scratch = N._Allocation(budget, _compact_parent_scratch_bytes(funding, geometry),
                             category='geometry-transfer-compact-parent-scratch')
     if _is_v2(view):
         root = view.root()
@@ -315,8 +309,6 @@ def _validate_parent_compact(view, geometry, funding, old_plan_id, clock, budget
     if _streamed_body_id(view) != view.partition_id:
         raise GeometryTransferRefused('historical compact partition body identity differs')
     _verify_ordered_supports(view)
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
     return view.partition_id
 
 
@@ -350,14 +342,12 @@ class ParentGeometryTransfer:
         if (funding is not self._funding or collar is not self._collar
                 or budget is not self._budget):
             return False
-        scratch = N._Allocation(budget, _matches_scratch_bytes(self, body, collar),
+        _scratch = N._Allocation(budget, _matches_scratch_bytes(self, body, collar),
                                 category='geometry-transfer-match-scratch')
         expected = self.record()
         with collar._operation(None):
             if N.current_plan_graph(collar._native, collar) != self._native.record()['input']['current_plan_graph']:
                 raise GeometryTransferRefused('current plan graph changed after geometry binding')
-            if not (scratch.size > 0):
-                raise _release_assertion_error()
             return (_record_hash(body) == expected['historical_partition_id']
                 and body.get('collar_plan_id') == expected['historical_collar_plan_id']
                 and body.get('funding_id') == funding.funding_id
@@ -375,7 +365,7 @@ class ParentGeometryTransfer:
         if (funding is not self._funding or collar is not self._collar
                 or budget is not self._budget or not _sealed_view(view, budget)):
             return False
-        scratch = N._Allocation(budget, _matches_compact_scratch_bytes(self, collar),
+        _scratch = N._Allocation(budget, _matches_compact_scratch_bytes(self, collar),
                                 category='geometry-transfer-match-scratch')
         expected = self.record()
         if view.partition_id != expected['historical_partition_id']:
@@ -384,8 +374,6 @@ class ParentGeometryTransfer:
             if N.current_plan_graph(collar._native, collar) != self._native.record()['input']['current_plan_graph']:
                 raise GeometryTransferRefused('current plan graph changed after geometry binding')
             header = _compact_ids(view, MATCH_COMPACT_FIELDS)
-            if not (scratch.size > 0):
-                raise _release_assertion_error()
             return (header['collar_plan_id'] == expected['historical_collar_plan_id']
                 and header['funding_id'] == funding.funding_id
                 and collar.plan_id == expected['current_collar_plan_id'])
@@ -411,7 +399,7 @@ def bind_parent_geometry(*, native_transfer, partition_descriptor, geometry,
     supports = partition_descriptor.get('supports')
     if type(supports) is not list:
         raise GeometryTransferRefused('complete retained support list required')
-    scratch, decoded = _binding_scratch(native_transfer, collar, budget)
+    _scratch, decoded = _binding_scratch(native_transfer, collar, budget)
     with collar._operation(None):
         evidence = native_transfer.record()
         current = N.current_plan_graph(collar._native, collar)
@@ -435,8 +423,6 @@ def bind_parent_geometry(*, native_transfer, partition_descriptor, geometry,
                 _collar=collar, _funding=funding, _budget=budget).items():
             object.__setattr__(result, name, value)
         # Keep scratch in the active frame until all checks/construction finish.
-        if not (scratch.size > 0):
-            raise _release_assertion_error()
         return result
 
 
@@ -459,7 +445,7 @@ def bind_parent_geometry_compact(*, native_transfer, compact_partition, geometry
             or any(value is not budget for value in
                 (geometry._resource, funding._resource, collar._budget))):
         raise GeometryTransferRefused('actual transferred state, sealed compact parent and retained physical geometry required')
-    scratch, decoded = _binding_scratch(native_transfer, collar, budget)
+    _scratch, decoded = _binding_scratch(native_transfer, collar, budget)
     with collar._operation(None):
         evidence = native_transfer.record()
         current = N.current_plan_graph(collar._native, collar)
@@ -476,8 +462,6 @@ def bind_parent_geometry_compact(*, native_transfer, compact_partition, geometry
             current_collar_plan_id=collar.plan_id, funding_id=funding.funding_id,
             supports_unchanged=True, scientific_acceptance=False), native_transfer, collar, funding, budget)
         # Keep scratch in the active frame until all checks/construction finish.
-        if not (scratch.size > 0):
-            raise _release_assertion_error()
         return result
 
 

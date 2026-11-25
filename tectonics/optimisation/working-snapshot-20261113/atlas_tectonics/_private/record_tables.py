@@ -729,10 +729,6 @@ class _Builder:
                 self.int_rows, self.float_values, self.id_bytes, self.shape_keys, self.shape_ends,
                 self.pair_rows)
 
-    def scratch(self, size):
-        require(size <= MAX_ROW_WORK_BYTES, 'record row workspace exceeds fixed 32 MiB import bound')
-        return Scratch(self.work_budget, size)
-
     def _row(self, size):
         """Transient row workspace: paid before allocation, returned by the caller."""
         require(size <= MAX_ROW_WORK_BYTES, 'record row workspace exceeds fixed 32 MiB import bound')
@@ -1149,7 +1145,6 @@ class _Builder:
                 need = max(need, 1+self._emit_node(child, depth+1))
             self.emit(b'}' if object_kind else b']')
             return need
-        require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
         payload = row[0]
         if kind == NULL:
             self.emit(b'null')
@@ -1222,20 +1217,16 @@ class _Builder:
                 value._live()
                 return self._import(value._view, value.index, depth)
             if value.kind == 'scalar':
-                require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
                 with value.scalar(max_owned_bytes=MAX_ROW_WORK_BYTES) as scalar:
                     return self.add(scalar.value, depth)
         start = self.length
         if value is None:
-            require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
             self.emit(b'null')
             return self._scalar_node(NULL, 0, 4, 4096)
         if type(value) is bool:
-            require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
             self.emit(b'true' if value else b'false')
             return self._scalar_node(BOOL, int(value), self.length-start, 4096)
         if type(value) is int:
-            require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
             count = (abs(value).bit_length()+7)//8
             # Magnitude bytes, decimal str and its bytes (legacy 4,300-digit cap).
             work = self._row(4096+8*count)
@@ -1251,7 +1242,6 @@ class _Builder:
             self.live.give(work)
             return result
         if type(value) is float:
-            require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
             require(math.isfinite(value), 'nonfinite JSON scalar')
             raw = struct.pack('<d', value)
             # Exact table: the fingerprint is the complete IEEE bit pattern.
@@ -1265,7 +1255,6 @@ class _Builder:
             self.emit(canonical(value))
             return self._scalar_node(FLOAT, payload, self.length-start, 4096)
         if type(value) is str:
-            require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
             return self._string(value)
         if is_ref or type(value) in (list, dict, StreamingRows):
             # One depth convention with the reader: a container is a level.
@@ -1478,7 +1467,6 @@ class _Builder:
             require(depth < MAX_DEPTH, 'record nesting exceeds bound')
             count = view._size(node)
             return self._array(count, start, item=lambda i: self._import(view, view._child(node, i), depth+1))
-        require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
         length = view._v('node.length', node)
         # Joined canonical bytes plus the decoded scalar (ASCII str, int or float).
         work = self._row(4096+3*length)

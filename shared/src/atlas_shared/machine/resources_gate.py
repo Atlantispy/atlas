@@ -6,11 +6,13 @@ manual from the one setting ATLAS_RESOURCES.
   adaptive,cores=6,memory_gib=12     adaptive under ceilings (either alone); a ceiling only lowers
   manual,cores=8,memory_gib=12       the set values, both needed; a stage may be named: manual,...,heat=8,ale=4
 
-A bad value stops the run at launch and never falls back. Standard library only, and nothing of the package, so the
-chain driver and the run queue can load this file by its path. Execution only: nothing here enters a result.
+A bad value stops the run at launch. The driver uses the selected shared package and its checked loader.
+Execution only: the decision here does not enter a scientific result.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 import os
+
+from atlas_shared.errors import AtlasError
 
 GIB = 1 << 30
 FLOOR_BYTES = GIB                            # the owner's free-memory floor
@@ -24,7 +26,7 @@ STAGES = ('admission', 'heat', 'ale', 'pressure')
 BOOKED = 'RUNQ_TICKET_CORES'
 
 
-class ResourcesRefused(ValueError):
+class ResourcesRefused(ValueError, AtlasError):
     pass
 
 

@@ -34,6 +34,7 @@ import sys
 import threading
 import types
 
+from atlas_shared.errors import AtlasError
 from atlas_shared.machine import resources_monitor as MONITOR
 from atlas_shared.machine import resources_gate as GATE
 from atlas_tectonics.resources import _retained_charge, _release_retained_charge
@@ -58,7 +59,7 @@ _READONLY = object()
 _SUCCESSOR_READONLY = object()
 
 
-class HistoricalAdmissionRefused(ValueError):
+class HistoricalAdmissionRefused(ValueError, AtlasError):
     pass
 
 
@@ -311,6 +312,7 @@ def _open_readonly(path, limits, compression, budget, *, marker=_READONLY):
     _require(not any(Path(str(path)+s).exists() for s in ('-wal', '-journal', '-shm')),
              'historical readonly input must have no SQLite sidecars')
     result = object.__new__(S.ArrayStore)
+    result._session_verified = False
     result.path, result.limits, result.compression = path, limits, compression
     result._blosc = None
     if compression.codec == 'zstd':
@@ -346,8 +348,10 @@ def _open_readonly(path, limits, compression, budget, *, marker=_READONLY):
         _require(set(connection.execute('SELECT type,name,tbl_name,sql FROM sqlite_master')) ==
                  S._SCHEMA_OBJECTS, 'original readonly database schema differs')
         row = connection.execute('SELECT body FROM settings WHERE id=1').fetchone()
-        _require(row == (S._json({'schema': S._SCHEMA, 'chunk_bytes': limits.chunk_bytes}),),
-                 'original readonly database settings differ')
+        chunk_bytes = limits.chunk_bytes
+        expected_settings = S._json({'schema': S._SCHEMA, 'chunk_bytes': chunk_bytes})
+        _require(row == (expected_settings,), 'original readonly database settings differ')
+        result._initial_settings = (S._SCHEMA, chunk_bytes, expected_settings)
         page = connection.execute('PRAGMA page_size').fetchone()[0]
         count = connection.execute('PRAGMA page_count').fetchone()[0]
         _require(count*page <= limits.max_store_bytes, 'readonly original exceeds store byte bound')
@@ -481,12 +485,12 @@ def read_selected_arrays(store, key, names, *, admission, budget, check):
     return arrays
 
 
-def _audit(store, head, expected, owner, budget, check):
+def _audit(store, head, expected, owner, budget, check, *, source_audit_size=None):
     from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
     rows = expected['array_records']['source_audit']
-    total_bytes = sum(math.prod(row['shape'])*8 for row in rows)
-    _require(total_bytes <= MAX_AUDIT, 'source audit exceeds retained byte bound')
-    scratch = _Allocation(budget, len(canonical(head['source_audit']))*8 + 65536)
+    if source_audit_size is None:
+        source_audit_size = len(canonical(head['source_audit']))
+    scratch = _Allocation(budget, source_audit_size*8 + 65536)
     manifest = store._manifest(head['key'])
     names = {name.removeprefix('source-audit:') for name in manifest['arrays'] if name.startswith('source-audit:')}
     _require(names == {row['name'] for row in rows}, 'complete original audit array set differs')
@@ -630,9 +634,10 @@ def _admit(store, *, root, review, budget, check, historical_inputs=None):
             binding_raw = canonical(binding)
             audit_bytes = sum(math.prod(row['shape'])*8 for row in expected['array_records']['source_audit'])
             _require(audit_bytes <= MAX_AUDIT, 'source audit exceeds retained byte bound')
+            source_audit_size = len(canonical(head['source_audit']))
             owner = _Allocation(budget, len(raw)+len(binding_raw)+audit_bytes+
-                len(canonical(head['source_audit']))+len(expected['array_records']['source_audit'])*512+8192)
-            audit = _audit(store, head, expected, owner, budget, check)
+                source_audit_size+len(expected['array_records']['source_audit'])*512+8192)
+            audit = _audit(store, head, expected, owner, budget, check, source_audit_size=source_audit_size)
             # Same pins at exit, including full DB bytes. Tokens are additional
             # race checks only, never substitutes for authenticated file hashes.
             for path, pin in bindings.items():

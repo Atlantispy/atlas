@@ -152,9 +152,11 @@ class RegionalMechanicalRequest:
         if surface_pressure is not None: expected.append((surface_pressure,'surface-pressure'))
         context = None; effects = []; gravity_owners = 0
         for item, kind in expected:
-            if type(item) is not RegionalInputBlock or item.descriptor()['kind'] != kind:
+            if type(item) is not RegionalInputBlock:
                 raise TectonicsError('typed material/force/boundary/pressure block required')
             d = item.descriptor()
+            if d['kind'] != kind:
+                raise TectonicsError('typed material/force/boundary/pressure block required')
             if context is None: context = d['context']
             if d['context'] != context:
                 raise TectonicsError('mechanical inputs must match time, epoch, frame, datum, origin and grid')

@@ -34,7 +34,7 @@ _PINS = {
     'private_heat_low_ledger_inventory_r1.py': '542b3883c1c11a5651556eda85c61edbdefc90a4c9925185df325411ee4d1046',
     'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
     'private_heat_interval_inventory_r1.py': '8288130a993c0960c2469cd9699c6fca86d3ec8ed0a2bc601ae0414201b91a3b',
-    'private_heat_decimal_inventory_r1.py': 'f37914054ed0c20604e17e19d4361fdd0e79bb024ac5da63ba71bb9f40cd2cfe',
+    'private_heat_decimal_inventory_r1.py': '0fca30fc3295c823db3e1000189cb5bc09d2eabc773a6e4fa0cf39a5461f89c7',
     _atlas_identity.relkey(HEAT.__file__): '590a8f04599b454436271af5467a8cc634ff414e3ee29ec4aee65e05e021e80f',
 }
 UNIT = L.CONTAINER_UNIT
@@ -146,15 +146,11 @@ def _verify_sources(cancel):
 def _derive(geometry, conductivity, boundary, metadata_bytes, R, G, cancel):
     ar = L.RationalGrowth(G, R, cancel)
     n, nf = len(geometry._cells), len(geometry._incidence)
-    if type(conductivity) not in (int, float, Fraction):
-        raise TypeError('Uniform represented int, float or Fraction conductivity required')
     # Same binary64 projection as the existing uniform forward kernel and LOW.
     k = float(conductivity)
     if not math.isfinite(k) or k <= 0:
         raise ValueError('Positive finite uniform conductivity required')
     ks = ar.q(k)
-    if type(boundary) is not dict:
-        raise TypeError('Owned plain boundary dictionary required')
     exposed = 0
     shapes = []
     rational_slots = n*ar.slot(ks)

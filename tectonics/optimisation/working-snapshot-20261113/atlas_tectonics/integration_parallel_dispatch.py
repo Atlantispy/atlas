@@ -45,9 +45,9 @@ from . import resources as R
 from .integration_worker_bootstrap import launch as _worker_launch
 from .integration_parallel_binding import (BATCH_LIMIT, WALL_KIND, BatchBinding, JobBinding,
     OwnedBatchDispatch, OwnedDispatch, batch_worker_complete, canonical, capture_runtime,
-    is_batch, worker_complete, VOLUME_SCHEMA)
+    is_batch, VOLUME_SCHEMA)
 from .integration_parallel_binding import (_BATCH_SCHEMA as BATCH_SCHEMA,
-    _batch_worker_complete as _bound_batch_complete)
+    _batch_worker_complete as _bound_batch_complete, _worker_complete)
 from .integration_parallel_owner import RevocableOwner, nodes_for
 from .integration_parallel_results import (FitWitness, MeasureHint, SlotLease,
     raw_capacity)
@@ -238,7 +238,7 @@ def worker_main(directory):
         if 'batch_seconds' in record:
             return _owned_batch_worker(directory, process, binding_bytes, record)
         return _batch_worker(directory, process, binding_bytes, _record=record)
-    binding = JobBinding(binding_bytes)    # validates; record (above) is the same canonical decode
+    binding = JobBinding._read(binding_bytes, record)
     request = record['request']
     inputs = {}
     for name, identity in (('support', request['support_id']), ('other', request.get('other_support_id'))):
@@ -262,9 +262,9 @@ def worker_main(directory):
             if len(result._json) > MAX_RESULT:
                 raise ValueError('result exceeds optional wire envelope')
             return result._json
-        receipt = worker_complete(binding_bytes, context=context,
+        receipt = _worker_complete(binding, context=context,
             read_bindings=lambda: _inventory(inputs, context, binding_bytes, record), request=request,
-            child_budget=child_budget, run=run)
+            child_budget=child_budget, run=run, record=record)
         if len(receipt) > MAX_RECEIPT:
             raise ValueError('receipt exceeds optional wire envelope')
         with (directory/'result.json').open('xb') as stream:
@@ -641,12 +641,14 @@ class _Child:
             self._surveyed = time.monotonic()
         return live, True
 
-    def run(self, binding_bytes):
+    def run(self, binding_bytes, *, execution_identity=None):
         # OwnedDispatch supplies exactly its bound bytes. Never attach a
         # foreign Future or accept an arbitrary completion file.
         if (self.directory/'binding.json').read_bytes() != binding_bytes:
             raise ValueError('dispatch file changed before launch')
-        command, env = _worker_launch(self.directory, json.loads(binding_bytes)['execution_identity'])
+        if execution_identity is None:
+            execution_identity = json.loads(binding_bytes)['execution_identity']
+        command, env = _worker_launch(self.directory, execution_identity)
         started = time.monotonic()
         launched = time.perf_counter()
         process = self._popen(command, env, subprocess.DEVNULL)
@@ -1076,8 +1078,8 @@ class InterfaceParallelSession:
                 # One physical encoded file per distinct input in this session.
                 # Multiple workers map the same read-only pages; each still
                 # owns its JSON decoding. No whole-world input copy is made.
-                for raw in inputs.values():
-                    input_path = Path(self.directory.name)/'inputs'/(hashlib.sha256(raw).hexdigest()+'.json')
+                for name, raw in inputs.items():
+                    input_path = Path(self.directory.name)/'inputs'/(sources['input:'+name]+'.json')
                     try:
                         with input_path.open('xb') as stream:
                             stream.write(raw)
@@ -1095,7 +1097,7 @@ class InterfaceParallelSession:
                 self.jobs[token] = job
                 if self.pool is None:
                     self.pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix='atlas-interface')
-                dispatch.submit(self.pool, child.run)
+                dispatch.submit(self.pool, child.run, execution_identity=binding._execution_identity)
                 dispatch._future.add_done_callback(lambda _future, event=child.done: event.set())
                 self.stats['started'] += 1
                 job['dispatch_seconds'] = time.perf_counter()-begun

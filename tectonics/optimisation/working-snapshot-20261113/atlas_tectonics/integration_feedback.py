@@ -42,6 +42,7 @@ from . import integration_ports as P
 from . import integration_properties as R
 from . import integration_strength as G
 from . import integration_transfer as T
+from .integration_ledger import Commit as _LedgerCommit
 from ._validation import TectonicsError
 from ._validation import _coded_refusal
 from .materials import _json
@@ -674,7 +675,10 @@ def bind_commit_interval(ledger_interval, motion):
 def find_driving(ledger, commit):
     """The driving record stored with ``commit`` (None for an interval without one), labelled RECORDED: a found
     record is never called D1 provenance until verify_driving replays it."""
-    metadata = commit.metadata()
+    return _recorded_driving(commit.metadata())
+
+
+def _recorded_driving(metadata):
     moving = metadata.get('moving') if isinstance(metadata, dict) else None
     advance = None if not isinstance(moving, dict) else moving.get('advance')
     if not isinstance(advance, dict) or advance.get('driving') is None:
@@ -690,12 +694,24 @@ def _history(ledger, chain, upto):
     last = None
     for index in range(1, upto+1):
         commit = chain[index]
-        sphere = commit.metadata().get('sphere')
+        issued = type(commit) is _LedgerCommit
+        if issued:
+            metadata = commit.metadata()
+            sphere = metadata.get('sphere')
+        else:
+            sphere = commit.metadata().get('sphere')
         motion = sphere.get('motion') if isinstance(sphere, dict) else None
         if isinstance(motion, dict) and motion.get('events'):
+            if issued:
+                del metadata
             raise FeedbackRefused('the history holds a committed I03 topology event: the coupled route has no lineage '
                                   'mapping for the cumulative belt strain in v1', UNSUPPORTED, 'events')
-        if find_driving(ledger, commit) is not None:
+        if issued:
+            has_driving = _recorded_driving(metadata) is not None
+            del metadata
+        else:
+            has_driving = find_driving(ledger, commit) is not None
+        if has_driving:
             last = index
         elif last is not None:
             raise FeedbackRefused('a non-coupled interval follows a coupled one: the cumulative strain and the labels '

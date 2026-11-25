@@ -458,13 +458,20 @@ _PROJECTED_PROVENANCE = 'producer_shared_source_sha256'
 _PROJECTED_DEPENDENCIES = types.MappingProxyType({
     # These kernels and their backends are native. Shared machine leaves
     # govern resource admission and do not implement a returned value.
-    operation: ('atlas_shared', 'atlas_shared.machine') for operation in (
+    operation: ('atlas_shared', 'atlas_shared.machine', 'atlas_shared.errors',
+                'atlas_shared.execution') for operation in (
         'half-space-temperature-v2', 'finite-plate-temperature-v1', 'plate-thermal-support-v1',
         'drained-compaction-v1', 'fixed-column-loads-v1', 'periodic-flexure-v2',
         'continuous-regional-flexure-v1', 'hermite-variable-rigidity-refined-v1',
         'regional-transport-packed-v1', 'material-transport-packed-v1', 'material-remap-v2', 'ale-packed-v2',
     )
 })
+# These three leaves implement diagnostic output for the driver and stage hosts.
+# The twelve kernel operations above do not use them to compute their result.
+_PROJECTED_DIAGNOSTIC_LEAVES = frozenset((
+    'atlas_shared.execution.profiling', 'atlas_shared.execution.profile_reports',
+    'atlas_shared.execution.run_logging',
+))
 
 # Exact geometry is part of the full identity. The built-in cached
 # operations above do not depend on the shared exact geometry implementation.
@@ -673,9 +680,14 @@ def _constant(value):
     return {"type": type(value).__module__+"."+type(value).__qualname__}
 
 
-def _callable_inventory(backend="reference", modules=None):
+def _callable_inventory(backend="reference", modules=None, *, selected=_UNSELECTED):
     signatures, tokens, constants = {}, [], {}
-    fixtures = _fixture_identity_sources(check_sources=True)
+    if selected is _UNSELECTED:
+        fixtures = _fixture_identity_sources(check_sources=True)
+    else:
+        fixtures = selected
+        if fixtures is not None:
+            fixtures.finder.verify()
     if modules is None:
         modules = _identity_modules(backend)
     for name in modules:
@@ -1574,9 +1586,10 @@ class ExecutionContext:
             'loaded_code': native_code, 'constants': native_constants,
             'executable_fixtures': self._fixture_binding, 'runtime': self._runtime,
         }))
-        self._projection_members = tuple((module, _json(row)) for module, row in sorted(shared.items()))
-        classified = set().union(*_PROJECTED_DEPENDENCIES.values())
-        self._projection_covered = shared.keys() <= classified | _PROJECTED_EXACT_LEAVES
+        dependencies = frozenset().union(*_PROJECTED_DEPENDENCIES.values())
+        self._projection_covered = shared.keys() <= dependencies | _PROJECTED_DIAGNOSTIC_LEAVES | _PROJECTED_EXACT_LEAVES
+        self._projection_members = tuple((module, _json(shared[module]))
+                                         for module in sorted(dependencies.intersection(shared)))
         self._operation_projections = {}
         self._identity = _digest(_json({"schema": "atlas.kernel-execution.v5", "code_marshal_format": 2,
             "source_inventory_schema": _SOURCE_INVENTORY_SCHEMA,
@@ -1597,14 +1610,14 @@ class ExecutionContext:
         members = getattr(self, '_projection_members', None)
         if dependencies is None or members is None or not self._projection_covered:
             return None
-        if operation not in self._operation_projections:
+        if dependencies not in self._operation_projections:
             selected = {module: raw for module, raw in members if module in dependencies}
             if len(selected) != len(dependencies):
                 return None
             record = {'schema': 'atlas.kernel-operation-execution.v1', 'base': self._projection_base,
                       'members': {module: _digest(raw) for module, raw in selected.items()}}
-            self._operation_projections[operation] = _digest(_json(record))
-        return self._operation_projections[operation]
+            self._operation_projections[dependencies] = _digest(_json(record))
+        return self._operation_projections[dependencies]
 
     @property
     def provenance(self):
@@ -1668,7 +1681,7 @@ class ExecutionContext:
                 _verify_callable_inventory(self.backend, self._expected, self._constants, self._modules,
                                            self._immutable, selected=selected)
                 return
-            _, tokens, constants = _callable_inventory(self.backend, self._modules)
+            _, tokens, constants = _callable_inventory(self.backend, self._modules, selected=selected)
             if constants != self._constants or len(tokens) != len(self._tokens):
                 raise TectonicsError("loaded implementation changed")
             for now, old in zip(tokens, self._tokens):

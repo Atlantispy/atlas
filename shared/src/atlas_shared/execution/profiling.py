@@ -13,6 +13,7 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import sys
 import time
 
 
@@ -193,7 +194,7 @@ def checkpoint(name):
 
 
 @contextmanager
-def collect(guard, directory, *, enabled, record, metadata=None):
+def collect(guard, directory, *, enabled, record, metadata=None, source_sha256=None):
     """Establish optional timing without changing any guard or scientific call.
 
     The selected runner and driver emit explicit completion checkpoints.
@@ -203,9 +204,10 @@ def collect(guard, directory, *, enabled, record, metadata=None):
         yield None
         return
     try:
+        if source_sha256 is None:
+            source_sha256 = sha256(Path(__file__).read_bytes()).hexdigest()
         metadata = dict(metadata or {}, measured_scope='run_prepared_restart',
-                        mode='completed_subsection_checkpoints_only',
-                        source_sha256=sha256(Path(__file__).read_bytes()).hexdigest())
+                        mode='completed_subsection_checkpoints_only', source_sha256=source_sha256)
         recorder = Recorder(directory, record, metadata=metadata, budget=lambda: guard.budget)
     except Exception as error:
         record['dev_stage_timing'] = dict(enabled=True, status='INCOMPLETE',
@@ -222,3 +224,90 @@ def collect(guard, directory, *, enabled, record, metadata=None):
     finally:
         _CURRENT.reset(token)
         recorder.close(status)
+
+
+def start_stacks(folder, mode):
+    """Start the workload's optional sampling thread."""
+    import collections, threading
+
+    def top(pair):
+        return {'samples': sum(pair[0].values()), 'stacks': pair[0].most_common(50), 'top3': pair[1].most_common(50)}
+
+    def run():
+        try:
+            folder.mkdir(exist_ok=True)
+            out = str(folder/('stacks-%s-%d.json' % (mode, os.getpid())))
+            me, t0 = threading.get_ident(), time.monotonic()
+            done, minute, pair, last = {}, 0, (collections.Counter(), collections.Counter()), t0
+            while True:
+                time.sleep(0.2)
+                now = time.monotonic()
+                if int((now-t0)//60) != minute:
+                    done[str(minute*60)] = top(pair)
+                    minute, pair = int((now-t0)//60), (collections.Counter(), collections.Counter())
+                for ident, frame in sys._current_frames().items():
+                    stack = []
+                    while frame is not None and ident != me and len(stack) < 40:
+                        code = frame.f_code
+                        stack.append('%s:%s:%d' % (os.path.basename(code.co_filename), code.co_name, frame.f_lineno))
+                        frame = frame.f_back
+                    if stack:
+                        pair[0][' < '.join(stack)] += 1
+                        pair[1][' < '.join(s.rsplit(':', 1)[0] for s in stack[:3])] += 1
+                frame = None
+                if now-last >= 30:
+                    last = now
+                    try:
+                        with open(out+'.tmp', 'w') as stream:
+                            json.dump({**done, str(minute*60): top(pair)}, stream)
+                        os.replace(out+'.tmp', out)
+                    except OSError:  # an open handle on the file makes the replace fail on Windows; next try in 30 s
+                        pass
+        except Exception:  # a profiler failure never stops the step (rule 18)
+            pass
+
+    try:
+        threading.Thread(target=run, name='profile-stack-sampler', daemon=True).start()
+    except Exception:  # G-3: a thread that cannot start never stops the step either
+        pass
+
+
+def profile_selection(value):
+    """Parse a launcher selection; carry only its requested instruments."""
+    if value == 'off':
+        return frozenset()
+    instruments = value.split(',')
+    if not all(name in ('stages', 'stacks', 'tree') for name in instruments):
+        raise ValueError('run profile must be off or a list of stages, stacks, tree')
+    return frozenset(instruments)
+
+
+def profile_words(selection):
+    child = sorted(selection.intersection(('stages', 'stacks')))
+    return ['--run-profile', ','.join(child)] if child else []
+
+
+def profile_command(selection, guarded_argv, *, raw_path, executable):
+    if 'tree' not in selection:
+        return guarded_argv
+    return [str(executable), 'record', '--subprocesses', '--rate', '100', '--format', 'raw',
+            '--output', str(raw_path), '--', *guarded_argv]
+
+
+def report(kind, path, *args, reader=None, **options):
+    """Read a named offline input using the selected existing report contract."""
+    if kind in ('stages', 'journal'):
+        return reader(path, *args, **options)
+    from atlas_shared.execution import profile_reports
+
+    view = {
+        'active': profile_reports.active,
+        'check-share': profile_reports.check_share,
+        'callers': profile_reports.callers,
+        'rows': profile_reports.rows,
+    }[kind]
+    return view(path, *args, **options)
+
+
+def stacks_enabled(selection):
+    return 'stacks' in selection or os.environ.get('ATLAS_PROFILE_SAMPLER') == '1'

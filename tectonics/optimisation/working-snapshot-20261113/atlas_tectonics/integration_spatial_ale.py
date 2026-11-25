@@ -164,7 +164,7 @@ def _circulation(nodes, edges, arena):
             i, ei = previous[at]; path.append((i, ei)); at = i
         arena.work(4*len(path))
         amount = min(adjacency[i][ei][2] for i, ei in path)
-        with V._work((amount, sent, *(adjacency[i][ei][2] for i, ei in path)), arena.resource):
+        with V._work((amount, sent, *(adjacency[i][ei][2] for i, ei in path)), arena.resource, convert_values=False):
             for i, ei in path:
                 j, ri, capacity = adjacency[i][ei]
                 adjacency[i][ei][2] = capacity-amount
@@ -182,7 +182,7 @@ def _audit_outer_face(row, physical_normals, physical_streams, *, speed_scale, a
     representation correction consume the original normal-change allowance.
     """
     with V._work((*row['normals'], *row['raw_normals'], *physical_normals,
-                  *row['weights'], *physical_streams, row['area_m2'], row['duration_s']), budget):
+                  *row['weights'], *physical_streams, row['area_m2'], row['duration_s']), budget, convert_values=False):
         weights = row['weights']; factor = row['area_m2']*row['duration_s']
         if factor <= 0 or len(physical_normals) != len(weights) or any(w <= 0 for w in weights):
             raise V.VolumeError('positive physical wall area/time and matching quadrature required')
@@ -228,7 +228,7 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
             a, b, normals, weights = row['donor'], row['receiver'], row['normals'], row['weights']
             if a not in residual or b not in residual or a == b or any(w <= 0 for w in weights):
                 raise V.VolumeError('valid native interior face and positive represented quadrature weights required')
-            with V._work((*normals, *row['raw_normals'], *weights, row['area_m2'], row['duration_s']), budget):
+            with V._work((*normals, *row['raw_normals'], *weights, row['area_m2'], row['duration_s']), budget, convert_values=False):
                 factor = row['area_m2']*row['duration_s']
                 positive = sum((max(v, Q(0))*w for v, w in zip(normals, weights)), Q(0))*factor
                 negative = sum((max(-v, Q(0))*w for v, w in zip(normals, weights)), Q(0))*factor
@@ -247,7 +247,7 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
         delta = [Q(0)]*len(faces)
         for at in reversed(order[1:]):
             parent, fi, sign = parents[at]
-            with V._work((residual[at], residual[parent]), budget):
+            with V._work((residual[at], residual[parent]), budget, convert_values=False):
                 delta[fi] = -sign*residual[at]
                 residual[parent] += residual[at]; residual[at] = Q(0)
         if residual[order[0]]:
@@ -255,7 +255,7 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
         arena.work(8*(len(nodes)+len(faces)))
         result, maximum = [], Q(0)
         for row, before, dv in zip(faces, original, delta):
-            with V._work((*row['normals'], *row['raw_normals'], *row['weights'], dv, row['area_m2'], row['duration_s']), budget):
+            with V._work((*row['normals'], *row['raw_normals'], *row['weights'], dv, row['area_m2'], row['duration_s']), budget, convert_values=False):
                 factor = row['area_m2']*row['duration_s']
                 du = dv/(factor*sum(row['weights'], Q(0)))
                 values = tuple(v+du for v in row['normals'])
@@ -1067,7 +1067,7 @@ def close_spatial_ale(bounds, start_volumes_m3, *, budget):
     if type(start_volumes_m3) is not dict:
         raise V.VolumeError('exact carried volume mapping required')
     with LIVE_SPATIAL.record_access(bounds) as working:
-        with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget):
+        with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget, convert_values=False):
             surfaces = getattr(bounds, '_physical_surfaces', None)
             record = _close_record(working, start_volumes_m3, budget, physical_surfaces=surfaces)
             record['bounds_id'] = bounds.bounds_id

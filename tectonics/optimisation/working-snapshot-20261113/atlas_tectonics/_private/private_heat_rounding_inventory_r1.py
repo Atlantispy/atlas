@@ -73,6 +73,14 @@ def conversion_growth(part_bits, maximum_part_bits, *, tie_part_bits=0,
             or bool(tie_part_bits) != bool(tie_maximum_part_bits)
             or tie_part_bits and not tie_maximum_part_bits <= tie_part_bits <= 2*tie_maximum_part_bits):
         raise ValueError('Compatible nonnegative tie-branch widths required')
+    return _derived_conversion_growth(part_bits, maximum_part_bits,
+        tie_part_bits=tie_part_bits, tie_maximum_part_bits=tie_maximum_part_bits,
+        precision=precision, context=context)
+
+
+def _derived_conversion_growth(part_bits, maximum_part_bits, *, tie_part_bits,
+                               tie_maximum_part_bits, precision=80, context=None):
+    """Size from paired width maxima already established by their producer."""
     context = getcontext() if context is None else context
     power = maximum_part_bits+4*(precision+3)
     expression = part_bits+2*maximum_part_bits+3*power+8*(precision+3)+4

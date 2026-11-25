@@ -142,6 +142,24 @@ def check_summary(record, iterations, expected_policy=None):
 
 def check_history(history, record):
     policy=check_summary(record,len(history))
+    _check_history(history,record,policy)
+
+
+def _check_result_history(history, metadata, nonlinear_policy):
+    policy=check_summary(metadata['nonlinear_acceleration'],len(history))
+    check_policy(policy,nonlinear_policy)
+    check_history(history,metadata['nonlinear_acceleration'])
+
+
+def _check_owned_result_history(history, metadata, nonlinear_policy):
+    """Audit the detached history and summary from the solver publication."""
+    record=metadata['nonlinear_acceleration']
+    policy=check_summary(record,len(history))
+    check_policy(policy,nonlinear_policy)
+    _check_history(history,record,policy)
+
+
+def _check_history(history, record, policy):
     accepted=rejected=0
     for i,item in enumerate(history):
         row=item.get('anderson')

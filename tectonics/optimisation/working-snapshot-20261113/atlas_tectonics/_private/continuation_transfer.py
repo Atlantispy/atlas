@@ -6,7 +6,7 @@ After a new current-plan partition exists, subsequent calls pass None and use
 the original strict geometry binding. Pressure/funding plumbing is separately
 owned by funding_transfer; this module does not substitute for that capability.
 """
-from builtins import AssertionError as _release_assertion_error
+from atlas_shared.errors import AtlasError
 from hashlib import sha256
 
 
@@ -19,7 +19,7 @@ COUPLING_COMPACT_RESULT_SHA256 = 'c5d437b123016fe5c13e1820bf1aebb551e947ed392af9
 JOINED_SOURCE_SHA256 = '4004900c2e29d2f7e27f9671486f4881f0089a4838ccaec16b338219b8691659'
 
 
-class ContinuationTransferRefused(ValueError):
+class ContinuationTransferRefused(ValueError, AtlasError):
     pass
 
 
@@ -36,14 +36,12 @@ def select_parent_transfer(parent_partition, funding, collar, budget, transfer):
         raise ContinuationTransferRefused('actual shared-budget parent and exact geometry capability required')
     if getattr(parent_partition, '_compact', None) is not None:
         return _select_compact_parent(parent_partition, funding, collar, budget, transfer)
-    scratch = W._decode_allocation(budget, parent_partition._json)
+    _scratch = W._decode_allocation(budget, parent_partition._json)
     body = parent_partition.record()
     if body.get('collar_plan_id') == collar.plan_id:
         return None                  # later current-plan partitions stay strict
     if not transfer.matches(body, funding=funding, collar=collar, budget=budget):
         raise ContinuationTransferRefused('geometry transfer does not name this exact historical parent')
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
     return transfer
 
 

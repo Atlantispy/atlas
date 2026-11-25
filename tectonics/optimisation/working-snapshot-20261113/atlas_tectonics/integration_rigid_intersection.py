@@ -49,7 +49,7 @@ def _ray_intersect(constraint, active, face, bounds, J, arena, *, _line=None):
     operands = tuple(q for vector in (*directions, *rates, *geometric, bounds) for q in vector)
     # Most regular intersections do not share an exact endpoint factor. Prove
     # eligibility before reserving or constructing the degree32 series.
-    with V._work(operands, arena.resource, pairs=32):
+    with V._work(operands, arena.resource, pairs=32, convert_values=False):
         rate = sum(abs(q) for vector in rates for q in vector)
         radius = max(map(abs, bounds))
         if not rate or radius*rate > 1:
@@ -70,7 +70,7 @@ def _ray_intersect(constraint, active, face, bounds, J, arena, *, _line=None):
                 coordinate = face[4][fixed][end]
                 point = tuple(face[0][i]+coordinate*face[fixed+1][i] for i in range(3))
                 direction = face[free+1]
-                with V._work((*normal0,*point,*direction),arena.resource):
+                with V._work((*normal0,*point,*direction),arena.resource, convert_values=False):
                     if O._dot(normal0,direction) or O._dot(normal0,point):
                         continue
                 candidates.append((fixed, coordinate, point, direction))
@@ -84,26 +84,26 @@ def _ray_intersect(constraint, active, face, bounds, J, arena, *, _line=None):
     count = 16*(N+2)
     bits = 4*(N+2)*(sum(V._bits(q) for q in operands)+(N+2).bit_length())
     with arena.resource.reserve(65536+count*(128+16*((bits+7)//8)),
-                                category='ray-quotient-scratch'), V._work(operands, arena.resource):
+                                category='ray-quotient-scratch'), V._work(operands, arena.resource, convert_values=False):
         arena.work(32*(N+2)**2)
         series = []
         for vector, omega in zip(directions, rates):
             terms = [vector]
             for k in range(1, N+2):
-                with V._work((*omega, *terms[-1], k), arena.resource):
+                with V._work((*omega, *terms[-1], k), arena.resource, convert_values=False):
                     terms.append(tuple(q/k for q in O._cross(omega, terms[-1])))
             series.append(terms)
         normal = []
         for k in range(N+2):
             with V._work(tuple(q for i in range(k+1) for vector in
-                    (series[0][i], series[1][k-i]) for q in vector), arena.resource):
+                    (series[0][i], series[1][k-i]) for q in vector), arena.resource, convert_values=False):
                 terms = tuple(O._cross(series[0][i], series[1][k-i]) for i in range(k+1))
                 normal.append(tuple(sum(vector[j] for vector in terms) for j in range(3)))
         size = sum(map(abs, directions[0]))*sum(map(abs, directions[1]))
 
         def quotient(vector):
             arena.work(16*(M.ORDER+1)*(N+1))
-            with V._work((*vector, *(q for row in normal for q in row)), arena.resource):
+            with V._work((*vector, *(q for row in normal for q in row)), arena.resource, convert_values=False):
                 coefficients = tuple(O._dot(row, vector) for row in normal)
                 if coefficients[0] != 0:
                     return None
@@ -185,7 +185,7 @@ def intersect_world_line_reduced(constraint, point, direction, bounds, J, arena)
     rates=tuple(G._load_vec(ray['angular_velocity_rad_s']) for ray in rays)
     point,direction=tuple(map(Q,point)),tuple(map(Q,direction))
     operands=tuple(q for vector in (*directions,*rates,point,direction,bounds) for q in vector)
-    with V._work(operands,arena.resource,pairs=32):
+    with V._work(operands,arena.resource,pairs=32, convert_values=False):
         rate=sum(abs(q) for vector in rates for q in vector)
         radius=max(map(abs,bounds))
         normal0=O._cross(*directions)
@@ -197,19 +197,19 @@ def intersect_world_line_reduced(constraint, point, direction, bounds, J, arena)
     count=16*(N+2)
     bits=4*(N+2)*(sum(V._bits(q) for q in operands)+(N+2).bit_length())
     with arena.resource.reserve(65536+count*(128+16*((bits+7)//8)),
-                                category='ray-quotient-scratch'), V._work(operands,arena.resource):
+                                category='ray-quotient-scratch'), V._work(operands,arena.resource, convert_values=False):
         arena.work(32*(N+2)**2+64*(M.ORDER+1)**2)
         series=[]
         for vector,omega in zip(directions,rates):
             terms=[vector]
             for k in range(1,N+2):
-                with V._work((*omega,*terms[-1],k),arena.resource):
+                with V._work((*omega,*terms[-1],k),arena.resource, convert_values=False):
                     terms.append(tuple(q/k for q in O._cross(omega,terms[-1])))
             series.append(terms)
         normal=[]
         for k in range(N+2):
             with V._work(tuple(q for i in range(k+1) for vector in
-                    (series[0][i],series[1][k-i]) for q in vector),arena.resource):
+                    (series[0][i],series[1][k-i]) for q in vector),arena.resource, convert_values=False):
                 terms=tuple(O._cross(series[0][i],series[1][k-i]) for i in range(k+1))
                 normal.append(tuple(sum(vector[j] for vector in terms) for j in range(3)))
         size=sum(map(abs,directions[0]))*sum(map(abs,directions[1]))
@@ -219,7 +219,7 @@ def intersect_world_line_reduced(constraint, point, direction, bounds, J, arena)
             # Jets of (f(t)-f(0))/t: the same coefficients f[m+1] and tail
             # majorant as the exact-zero quotient, without requiring f(0)=0.
             arena.work(16*(M.ORDER+1)*(N+1))
-            with V._work((*vector,*(q for row in normal for q in row)),arena.resource):
+            with V._work((*vector,*(q for row in normal for q in row)),arena.resource, convert_values=False):
                 coefficients=tuple(O._dot(row,vector) for row in normal)
                 C=size*sum(map(abs,vector))
                 result=[]
@@ -258,7 +258,7 @@ def intersect_world_line_reduced(constraint, point, direction, bounds, J, arena)
         return answer
 
 
-def intersect(constraint, active, face, bounds, J, arena):
+def intersect(constraint, active, face, bounds, J, arena, *, rigid_path=None):
     """Return analytic local coordinates or None; no ownership/flux authority.
 
     n(t)=a+b*cos(theta)+c*sin(theta), theta=omega*t. On the fixed
@@ -269,7 +269,8 @@ def intersect(constraint, active, face, bounds, J, arena):
     """
     from . import integration_differential_geometry as G
     from . import integration_moving_face_moments as M
-    path = G._rigid_plane_path(constraint)
+    decode = G._rigid_plane_path if rigid_path is None else rigid_path
+    path = decode(constraint)
     if path is None:
         return _ray_intersect(constraint, active, face, bounds, J, arena)
     normal, theta, omega = path
@@ -282,7 +283,7 @@ def intersect(constraint, active, face, bounds, J, arena):
     operands = (*normal, *theta, *omega, *bounds,
                 *(q for vector in face[:4] for q in vector),
                 *(q for pair in face[4] for q in pair))
-    with V._work(operands, arena.resource):
+    with V._work(operands, arena.resource, convert_values=False):
         unit = tuple(Q(i == axis) for i in range(3))
         parallel = tuple(normal[axis]*q for q in unit)
         perpendicular = tuple(normal[i]-parallel[i] for i in range(3))
@@ -303,7 +304,7 @@ def intersect(constraint, active, face, bounds, J, arena):
             if A+B != 0 or D+E != 0:
                 continue
             arena.work(128+64*(M.ORDER+1)**2)
-            with V._work((*point, *direction, A, B, C, D, E, F), arena.resource), \
+            with V._work((*point, *direction, A, B, C, D, E, F), arena.resource, convert_values=False), \
                     arena.resource.reserve(131072+4096*(M.ORDER+1), category='rigid-intersection-scratch'):
                 basis = tuple((Q(i == (axis+1) % 3),)*2 for i in range(3))
                 half = M._rotated(basis, tuple(q/2 for q in omega), bounds, J, arena)

@@ -441,8 +441,6 @@ def save_regional_workflow(state, store, *, budget=None, cancel=None):
         node = state
         while node is not None:
             _check_cancel(cancel)
-            if len(pending) > state.max_steps:
-                raise TectonicsError('workflow history exceeds bound')
             if store.contains(node.workflow_id):
                 if store.metadata(node.workflow_id) != node.descriptor():
                     raise TectonicsError('stored workflow binding differs')

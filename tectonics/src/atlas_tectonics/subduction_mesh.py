@@ -79,6 +79,22 @@ def quadrature(degree=5):
     return _frozen(bary), _frozen(weights)
 
 
+def _basis_reservation(count, budget):
+    owner = WorkBudget(_CAP, parent=select_budget(budget))
+    return owner.reserve(384*count+65536, category='subduction-basis')
+
+
+def _basis_values(b):
+    return np.column_stack([b[:, i]*(2*b[:, i]-1) for i in range(3)]+
+                           [4*b[:, i]*b[:, j] for i, j in _EDGES])
+
+
+def _quadrature_basis_values(bary):
+    """Evaluate funded basis values for immutable points from quadrature."""
+    with _basis_reservation(len(bary), None):
+        return _basis_values(bary)
+
+
 def basis(bary, grad_lambda=None, *, budget=None, cancel=None):
     """Return N[Q,6], or (N, dN[E,Q,6,2], lapN[E,6]); caller owns result storage."""
     shape = input_shape(bary)
@@ -88,13 +104,11 @@ def basis(bary, grad_lambda=None, *, budget=None, cancel=None):
     if gs is not None and (len(gs) != 3 or gs[1:] != (3, 2) or not 1 <= gs[0] <= MAX_ELEMENTS):
         raise TectonicsError('bounded E by 3 by 2 barycentric gradients required')
     count = shape[0]*(1 if gs is None else gs[0])
-    owner = WorkBudget(_CAP, parent=select_budget(budget))
-    with owner.reserve(384*count+65536, category='subduction-basis'):
+    with _basis_reservation(count, budget):
         _cancel(cancel); b = read_array(bary, 'barycentric coordinates')
         if np.max(np.abs(b.sum(axis=1)-1.)) > 2e-13 or np.min(b) < -2e-11 or np.max(b) > 1.+2e-11:
             raise TectonicsError('point lies outside its triangle')
-        n = np.column_stack([b[:, i]*(2*b[:, i]-1) for i in range(3)]+
-                            [4*b[:, i]*b[:, j] for i, j in _EDGES])
+        n = _basis_values(b)
         if gs is None:
             _cancel(cancel); return n
         g = read_array(grad_lambda, 'barycentric gradients')

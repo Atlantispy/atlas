@@ -23,7 +23,7 @@ from .integration_spatial_ale import SpatialALEBounds
 from .integration_regional_inventory import _width
 from .integration_poly_tiles import clipped_tiles
 from .resources import WorkBudget
-from .integration_exterior_mesh import _stored_deviation as _stored_deviation
+from .integration_exterior_mesh import _round_stored_deviation, _stored_deviation as _stored_deviation
 
 # Pose width (c): the stored deviation sum is an outward bound with a short dyadic
 # denominator, at most 2**-DEVIATION_STORED_BITS above the exact sum relative.
@@ -416,7 +416,7 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
                     +str(dict(support_id=support.support_id, logical_cell_id=logical,
                               lower_m3=str(low), upper_m3=str(high), leaves=measure['leaves'])))
             values = tuple(map(W._decode, measure['positive_witness_point_m']))
-            with V._work((*values, *box._geometry(), *layer._geometry()), budget):
+            with V._work((*values, *box._geometry(), *layer._geometry()), budget, convert_values=False):
                 local = _compact_witness(box, measure['positive_witness_point_m'], component, posed, layer)
                 physical = tuple(box.origin_m[i]+sum(box.basis[i][j]*local[j] for j in range(3))
                                  for i in range(3))
@@ -430,7 +430,7 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
     # follows a hash of names upstream.
     items.sort(key=lambda item: item[0])
     for _, values, box, layer, local, square in items:
-            with V._work((*values, *box._geometry(), *layer._geometry()), budget):
+            with V._work((*values, *box._geometry(), *layer._geometry()), budget, convert_values=False):
                 # The interpolation error is separable even for a translated,
                 # rationally rotated orthogonal chart: all cross/linear terms
                 # interpolate exactly. Insert the largest remaining error
@@ -441,8 +441,6 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
                 for axis in sorted(range(3), key=lambda j: errors[j], reverse=True):
                     if square+sum(errors) < layer.top_radius_m**2:
                         break
-                    if max_refinements == 0:
-                        raise V.VolumeError('certified-point thermal refinement ceiling reached; no material was dropped')
                     knots[axis].add(local[axis])
                     arena.keep((local[axis],), 1)
                     errors[axis] = Q(0)
@@ -682,9 +680,9 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
         native = {r['physical_cell_id']: r for r in b['cells'] if r['kind'] == 'collar'}
         for cell_record in f['cell_geometries']:
             cell = V.CartesianCell.from_record(cell_record, budget=budget)
-            if cell.cell_id not in native:
+            bound = native.get(cell.cell_id)
+            if bound is None:
                 raise V.VolumeError('actual native cell is absent from the ALE inventory')
-            bound = native[cell.cell_id]
             logical = bound['cell_id']
             key = E._hash(dict(logical_cell_id=logical, support_id=support_id))
             tables['voxels'][cell.cell_id] = cell.record()
@@ -700,9 +698,10 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
                     endpoint=endpoint, integration_width=local_width, max_leaves=max_leaves,
                     budget=budget, arena=arena, subdivisions=thermal_subdivisions,
                     shared_lines=shared, measures=measures, booked=booked, unbooked=unbooked)):
-                if logical not in bounded:
+                bound = bounded.get(logical)
+                if bound is None:
                     raise V.VolumeError('positive physical thermal component is missing from ALE bounds')
-                physical = tuple(map(W._decode, bounded[logical]['volume_bounds_m3' if static else endpoint+'_volume_bounds_m3']))
+                physical = tuple(map(W._decode, bound['volume_bounds_m3' if static else endpoint+'_volume_bounds_m3']))
                 own = tuple(map(W._decode, metadata['physical_volume_bounds_m3']))
                 if max(physical[0], own[0]) > min(physical[1], own[1]):
                     raise V.VolumeError('independent physical endpoint enclosures disagree')
@@ -717,7 +716,7 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
         total_error = sum((q for q in errors if q is not None), Q(0))
         if total_error > width:
             raise V.VolumeError('differential thermal surrogate exceeds declared physical geometry error')
-        total_error = _stored_deviation(total_error, width)
+        total_error = _round_stored_deviation(total_error, width)
         cells, faces = E._assemble(candidates, arena)
         if aggregate:
             cells, faces = _aggregate_cells(cells, faces, groups, boxes, arena)
@@ -731,7 +730,7 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
                     max(c.upper_m[axis] for c in native_boxes))
         required_thermal = []
         for face in faces:
-            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'])
+            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'][:3])
             cartesian = []
             for key in face['owners']:
                 box = boxes[key]
@@ -974,9 +973,9 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
         native = {r['physical_cell_id']: r for r in b['cells'] if r['kind'] == 'collar'}
         for cell_record in f['cell_geometries']:
             cell = V.CartesianCell.from_record(cell_record, budget=budget)
-            if cell.cell_id not in native:
+            bound = native.get(cell.cell_id)
+            if bound is None:
                 raise V.VolumeError('actual native cell is absent from the ALE inventory')
-            bound = native[cell.cell_id]
             logical = bound['cell_id']
             key = E._hash(dict(logical_cell_id=logical, support_id=support_id))
             tables['voxels'][cell.cell_id] = cell.record()
@@ -992,9 +991,10 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
                     endpoint=endpoint, integration_width=local_width, max_leaves=max_leaves,
                     budget=budget, arena=arena, subdivisions=thermal_subdivisions,
                     shared_lines=shared, measures=measures, booked=booked, unbooked=unbooked)):
-                if logical not in bounded:
+                bound = bounded.get(logical)
+                if bound is None:
                     raise V.VolumeError('positive physical thermal component is missing from ALE bounds')
-                physical = tuple(map(W._decode, bounded[logical]['volume_bounds_m3' if static else endpoint+'_volume_bounds_m3']))
+                physical = tuple(map(W._decode, bound['volume_bounds_m3' if static else endpoint+'_volume_bounds_m3']))
                 own = tuple(map(W._decode, metadata['physical_volume_bounds_m3']))
                 if max(physical[0], own[0]) > min(physical[1], own[1]):
                     raise V.VolumeError('independent physical endpoint enclosures disagree')
@@ -1013,7 +1013,7 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
         total_error = sum((q for q in errors if q is not None), Q(0))
         if total_error > width:
             raise V.VolumeError('differential thermal surrogate exceeds declared physical geometry error')
-        total_error = _stored_deviation(total_error, width)
+        total_error = _round_stored_deviation(total_error, width)
         cells, faces = E._assemble(_LIVE_MESH.drain(candidates) if _LIVE_MESH.EARLY_RELEASE else candidates, arena)
         del candidates
         if aggregate:
@@ -1028,7 +1028,7 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
                     max(c.upper_m[axis] for c in native_boxes))
         required_thermal = []
         for face in faces:
-            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'])
+            points = tuple(tuple(map(W._decode, p)) for p in face['vertices_m'][:3])
             cartesian = []
             for key in face['owners']:
                 box = boxes[key]

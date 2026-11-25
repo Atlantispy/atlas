@@ -28,6 +28,7 @@ import os
 from pathlib import Path
 import sys
 from types import SimpleNamespace
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private.runtime_checks import Checks
 
 
@@ -39,7 +40,7 @@ LINEAGE_SCHEMA = 'atlas.fresh-interval-lineage.v1'
 FRESH_JOINED = 'atlas_tectonics._private.private_heat_original_joined_r8'
 
 
-class PreparedIntervalRefused(ValueError):
+class PreparedIntervalRefused(ValueError, AtlasError):
     pass
 
 
@@ -203,7 +204,7 @@ class P26ReceivingCapture:
                          source_flow=dict(identity=source.result_id, preimage=source_record)))
 
     @classmethod
-    def certification(cls, solution, *, output_directory, limits, bounds_chunks):
+    def certification(cls, solution, *, output_directory, limits, bounds_chunks, bounds_identity=None):
         import hashlib
         import os
         from pathlib import Path
@@ -218,7 +219,7 @@ class P26ReceivingCapture:
         cls._require(type(native_raw) is bytes, 'native measure original immutable bytes required')
         native_id = hashlib.sha256(native_raw).hexdigest()
         solution_record = solution.record()
-        cls._require(native_id == faces.measure_id == solution_record['native_measure_id'],
+        cls._require(native_id == solution_record['native_measure_id'],
                      'native measure original identity differs')
         cls._require(type(limits) is dict and type(limits.get('max_store_bytes')) is int and limits['max_store_bytes']>0,
                      'actual selected store limit required')
@@ -243,9 +244,11 @@ class P26ReceivingCapture:
         with budget.reserve(65536+_SIDECAR_BUFFER, category='plan26-certification-sidecar'):
             folder.mkdir();cls._ordinary(folder,directory=True)
             captured={}
+            if bounds_identity is None:
+                bounds_identity = holder_identity(solution.bounds)
             for role,chunks,expected in (
                     ('native_measure',(memoryview(native_raw),),native_id),
-                    ('bounds',bounds_chunks,holder_identity(solution.bounds))):
+                    ('bounds',bounds_chunks,bounds_identity)):
                 path=paths[role];digest=hashlib.sha256();size=0
                 with path.open('xb', buffering=_SIDECAR_BUFFER) as stream:
                     for chunk in chunks:
@@ -267,7 +270,6 @@ class P26ReceivingCapture:
                 cls._require(identity==expected,'original '+role+' preimage differs')
                 captured[role]=dict(identity=identity,preimage_file=dict(
                     file=path.relative_to(output).as_posix(),sha256=identity,nbytes=size))
-            cls._require(captured['bounds']['identity']==holder_identity(solution.bounds),'original bounds preimage differs')
         return dict(schema='atlas.plan26.live-certification-preimages.r2', **captured)
 
 def _require(condition, message):
@@ -345,7 +347,7 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
     from atlas_tectonics._private import private_heat_process_meter_r1 as METER
     from atlas_tectonics._private import initial_workload as IW
     from atlas_tectonics._private import workflow_transfer as W
-    from atlas_tectonics._private import dev_stage_timing as TIMING
+    from atlas_shared.execution import profiling as TIMING
     from atlas_tectonics.integration_regional_workflow import CollarWorkflow
     from atlas_tectonics.integration_parallel_selection import InterfaceParallelPolicy
     from atlas_tectonics.integration_endpoint_checkpoints import EndpointCheckpoints
@@ -497,10 +499,12 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
             from contextlib import nullcontext as _p26_nullcontext
             # D-1 (design step5-6-twice 7fa21d3f s2): the capture hashed end_bounds' own bytes; when that is the solution's
             # bounds_id they are the sidecar's bytes, already held: no render, no record open. The sidecar's hash decides.
-            _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == _p26_holder_identity(solution.bounds)
+            _p26_bounds_id = _p26_holder_identity(solution.bounds)
+            _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == _p26_bounds_id
             with (_p26_nullcontext() if _p26_held else _p26_record_access(solution.bounds)) as _p26_bounds_record:
                 record['receiving_certification'] = P26ReceivingCapture.certification(solution,
                     output_directory=artifacts, limits=asdict(workflow._store.limits),
+                    bounds_identity=_p26_bounds_id,
                     bounds_chunks=(memoryview(end_bounds._json),) if _p26_held else
                     _p26_bounds_chunks(_p26_record_reference(_p26_bounds_record)))
 

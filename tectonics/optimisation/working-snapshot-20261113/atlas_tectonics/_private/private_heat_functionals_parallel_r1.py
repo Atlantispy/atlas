@@ -152,6 +152,7 @@ What this does NOT guarantee:
 No arithmetic, order of rows, support, precision or reservation formula of the
 kernel is changed or repeated here, and no physical value is read.
 """
+from copy import deepcopy
 from hashlib import sha256
 import json
 import os
@@ -1610,7 +1611,8 @@ def _native_accept_worker(worker, status):
                 costs['receiver_query_seconds'] += perf_counter()-started
                 costs['receiver_query_calls'] += 1
                 worker.row['native_binding_parent']['owner_record'] = _assembly_json(bound.owner_record)
-            worker.row['native_binding_parent']['receipt'] = _assembly_json(receipt)
+            normalized = _assembly_json(receipt)
+            worker.row['native_binding_parent']['receipt'] = deepcopy(normalized)
             api['validate_receipt'](receipt, expected)
             _assembly_require(receipt['pid'] == bound.pid
                 and receipt['creation_filetime'] == bound.creation_filetime,
@@ -1620,8 +1622,8 @@ def _native_accept_worker(worker, status):
             previous = registry.get(bound.pid)
             _assembly_require(previous is None or previous['receipt'] == receipt,
                 'PID reused or parent native binding changed within this report')
-            worker.native_receipt = _assembly_json(receipt)
-            registry[bound.pid] = dict(receipt=_assembly_json(receipt),
+            worker.native_receipt = normalized
+            registry[bound.pid] = dict(receipt=normalized,
                 ownership=worker.row['native_binding_parent']['owner_record'], costs=costs)
         _assembly_require(supplied == worker.native_receipt,
             'worker changed its captured native binding')
@@ -1666,7 +1668,7 @@ def parent_native_binding(process_id):
         receipt = None if record is None else record['receipt']
     _assembly_require(receipt is not None and receipt['pid'] == process_id,
         'independent parent native binding missing')
-    return _assembly_json(receipt)
+    return deepcopy(receipt)
 
 
 def native_binding_provenance(process_id):
@@ -1697,7 +1699,7 @@ def _native_capture_self(module):
     receipt = _state.get('native_self_binding')
     if receipt is not None:
         _assembly_require(_state['native_self_token'] == token, 'local MPFR binding changed')
-        return _assembly_json(receipt)
+        return deepcopy(receipt)
     expected, api = _native_expected(), _native_binding_api()
     _assembly_require(str(Path(module._MPFR_PATH).resolve()) == expected['path'],
         'loaded H3 MPFR path differs from pinned native library')
@@ -1707,13 +1709,14 @@ def _native_capture_self(module):
         api['validate_receipt'](receipt, expected)
         _assembly_require(receipt['pid'] == os.getpid() and token == _native_live_token(module),
             'local native binding changed while captured')
-        _state['native_self_binding'] = _assembly_json(receipt)
+        receipt = _assembly_json(receipt)
+        _state['native_self_binding'] = receipt
         _state['native_self_token'] = token
     finally:
         _state['native_self_costs'] = dict(capture_seconds=perf_counter()-started,
             expected_metadata_seconds=_state.get('native_expected_metadata_seconds'),
             component_times_overlap=True)
-    return _assembly_json(receipt)
+    return deepcopy(receipt)
 
 
 def configure_assembly_observer(path, expected):

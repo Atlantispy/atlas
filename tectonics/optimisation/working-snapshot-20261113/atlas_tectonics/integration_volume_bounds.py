@@ -151,7 +151,7 @@ def _clip(poly, plane, arena):
     points = _points(poly)
     arena.work(16+8*len(points))
     values = (*(v for p in points for v in p), *plane)
-    with V._work(values, arena.resource):
+    with V._work(values, arena.resource, convert_values=False):
         rows = _plane_integer_rows(points, plane)
         if max(row[0] for row in rows.values()) <= 0:
             return poly
@@ -211,7 +211,7 @@ def _volume(poly, arena, *, _consume=None):
         return Q(0) if _consume is None else _consume(Q(0))
     points = _points(poly)
     arena.work(8+4*sum(map(len, poly)))
-    with V._work(tuple(v for p in points for v in p), arena.resource):
+    with V._work(tuple(v for p in points for v in p), arena.resource, convert_values=False):
         # A vertex is in the convex body. Its face pyramids have nonnegative
         # outward determinants; no global cancellation or absolute-value repair.
         origin, six_volume = points[0], Q(0)
@@ -397,7 +397,7 @@ def _bound_leaf(layer, cone_planes, cell, holes, resource):
     with _Arena(resource) as arena:
         values = (*layer._geometry(), *cell._geometry(), *(q for p in cone_planes for q in p),
                   *(q for group in holes for p in group for q in p))
-        with V._work(values, resource):
+        with V._work(values, resource, convert_values=False):
             radius, top, bottom = layer._geometry()
             inner2, outer2 = (radius-bottom)**2, (radius-top)**2
             minimum, maximum = cell._radial_bounds()
@@ -488,12 +488,12 @@ class VolumeEnclosure:
         """
         if type(densities) is not tuple or any(type(q) not in (int, Q) for q in densities):
             raise V.VolumeError('explicit exact int/Fraction scalar-density tuple required')
-        with V._work((*densities, self.lower_m3, self.upper_m3), self._resource):
+        with V._work((*densities, self.lower_m3, self.upper_m3), self._resource, convert_values=False):
             return tuple((min(q*self.lower_m3, q*self.upper_m3),
                           max(q*self.lower_m3, q*self.upper_m3)) for q in densities)
 
     def record(self):
-        with V._work((self.lower_m3, self.upper_m3, self.max_width_m3), self._resource):
+        with V._work((self.lower_m3, self.upper_m3, self.max_width_m3), self._resource, convert_values=False):
             return dict(schema='atlas.curved-volume-enclosure.v1', method=METHOD,
                 layer_id=self.layer_id, cone_id=self.cone_id, cell_id=self.cell_id,
                 hole_ids=list(self.hole_ids), lower_m3=V._encoded(self.lower_m3),
@@ -532,7 +532,7 @@ def enclose_shell_cell(layer, cone_vertices, cell, *, holes=(), max_width_m3, ma
                             for a, b in zip(cone, cone[1:]+cone[:1]))
         by_id = {h.cell_id: h for h in holes}
         hole_ids = tuple(sorted(by_id))
-        with V._work(tuple(q for key in hole_ids for q in by_id[key]._geometry()), resource):
+        with V._work(tuple(q for key in hole_ids for q in by_id[key]._geometry()), resource, convert_values=False):
             planes = tuple(tuple(O._box_planes(by_id[key])) for key in hole_ids)
         state.keep(tuple(v for group in planes for p in group for v in p), 6*len(planes))
         low, high, work = _bound_leaf(layer, cone_planes, cell, planes, resource)
@@ -558,7 +558,7 @@ def enclose_shell_cell(layer, cone_vertices, cell, *, holes=(), max_width_m3, ma
                 children.append((lo, hi))
             # Maintain the current disjoint leaf sums. Their enclosures are
             # valid independently; no monotonicity of tangent planes is assumed.
-            with V._work((low, high, a, b, *(v for p in children for v in p)), resource):
+            with V._work((low, high, a, b, *(v for p in children for v in p)), resource, convert_values=False):
                 low += sum(p[0] for p in children)-a
                 high += sum(p[1] for p in children)-b
                 best_low, best_high = max(best_low, low), min(best_high, high)

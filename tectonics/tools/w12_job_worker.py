@@ -183,7 +183,7 @@ def execute(directory: Path, *, cells: int, resume: bool, cancelled, progress) -
                     source_id=source['source_id'], reservoir_weights=native.np.full(cells, 1./cells),
                     external_pressure_pa=native.np.zeros(cells), budget=budget, cancel=cancel) as plan:
 
-                def committed(product):
+                def committed(product, *, copy_product=True):
                     nonlocal last_report, last_product, completed_outputs, statistics
                     # The graph may restore a cached producer without calling run.
                     # All publication paths explicitly reverify its native commit.
@@ -199,7 +199,7 @@ def execute(directory: Path, *, cells: int, resume: bool, cancelled, progress) -
                         timing_scope='worker dependency loading, case construction, native execution and verification through this commit; excludes store close and report serialisation',
                         resources_at_commit=budget.statistics())
                     name = _write_report(directory, prefix)
-                    last_product = deepcopy(product)
+                    last_product = deepcopy(product) if copy_product else product
                     last_report = name
                     completed_outputs = index+1
                     notify('output_committed')
@@ -208,7 +208,7 @@ def execute(directory: Path, *, cells: int, resume: bool, cancelled, progress) -
                     for index in (0, 1):
                         cancel.check()
                         notify('running_output_'+str(index))
-                        committed(plan.run(index, cancel=cancel))
+                        committed(plan.run(index, cancel=cancel), copy_product=False)
                     cancel.check()
                     notify('publishing_graph')
                     graph_result = native.run_graph(_GraphPlan(plan, cancel, committed),

@@ -13,25 +13,8 @@
       "id": "i02-workflow-timing-r13",
       "path": "tectonics/evidence/i02-workflow-timing-r13.json",
       "sha256": "221eefcd2fcbae6fb3e49a82002a8db51067f7f763ca40fd3a0e7a89693f359d",
-      "status": "current",
-      "note": "Bounded Windows i02 workflow rerun on dcc1fc4. All seven equality, parity and source checks passed. Timed samples totalled 3.19 seconds.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [
-        {
-          "pointer": "/execution_identity",
-          "kind": "runtime",
-          "reason": "Execution identity recorded by the run. Source verification does not reproduce that runtime."
-        }
-      ],
-      "limits": [
-        "One Windows machine and interpreter. Bounded column workflow timing only.",
-        "No release-mode speed, whole-generator performance or scientific acceptance is established."
-      ]
+      "status": "historical",
+      "note": "Bounded Windows i02 workflow rerun on dcc1fc4. All seven equality, parity and source checks passed. Timed samples totalled 3.19 seconds. Historical after runtime cleanup changed 22 recorded source bindings. The opaque execution identity remains an observation of the original run. One Windows machine and interpreter. Bounded column workflow timing only. No release-mode speed, whole-generator performance or scientific acceptance is established."
     },
     {
       "id": "i01-melt-segregation-r1",
@@ -202,19 +185,8 @@
       "id": "i01-finite-strain-r6",
       "path": "tectonics/evidence/i01-finite-strain-r6.json",
       "sha256": "3460e9df890a1cd8345b85d91e734e7caa111e223b8edadbf1257d05955c7b53",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Closed laterally uniform incompressible affine strip, authored force and drag, fixed per-material properties and material-base temperature.",
-        "No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries. ASPECT references were consulted, not run as a comparison solver."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. Historical after runtime cleanup changed the shared heat integration source. The original affine-strip control and its receipt are retained. Closed laterally uniform incompressible affine strip, authored force and drag, fixed per-material properties and material-base temperature. No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries. ASPECT references were consulted, not run as a comparison solver."
     },
     {
       "id": "i01-column-admission-r4",
@@ -238,37 +210,15 @@
       "id": "i01-thermomechanical-motion-r5",
       "path": "tectonics/evidence/i01-thermomechanical-motion-r5.json",
       "sha256": "0ad3a929c41ef9a4ee38234e2dfaa20568f12786062682d1611e71326844a7fa",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Fixed geometry and width, constant thermal layer properties and authored constant external force and drag, below 0.05 axial strain.",
-        "No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. Historical after runtime cleanup changed the shared heat integration source. The original fixed-geometry thermomechanical control and its receipt are retained. Fixed geometry and width, constant thermal layer properties and authored constant external force and drag, below 0.05 axial strain. No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-column-heat-r6",
       "path": "tectonics/evidence/i01-column-heat-r6.json",
       "sha256": "74b9aba0c532a7c8d0613e861db4eee2cece796ccd223ccdb19b79663e6d16cb",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance.",
-        "Prepared thermal content is verified; arbitrary forged mechanical internals remain outside this guard. Runtime versions are recorded observations, not sealed binaries."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. Historical after runtime cleanup changed the shared heat integration source. The original supplied-rate column control and its receipt are retained. Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance. Prepared thermal content is verified; arbitrary forged mechanical internals remain outside this guard. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-column-heat-r2",

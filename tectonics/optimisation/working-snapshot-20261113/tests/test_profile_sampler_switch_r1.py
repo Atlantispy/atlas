@@ -15,7 +15,10 @@ if __name__ == '__main__' and len(sys.argv) > 3:       # child: <root> <shared> 
     sys.path[:0] = sys.argv[1:3]
     from atlas_tectonics._private import run_fresh_interval as F
     folder = Path(sys.argv[3]) / sys.argv[4]
-    F._profile_sampler(folder, 'test')
+    from atlas_tectonics._private import reopen_fresh_restart as reader
+    assert reader.profiling is F.profiling
+    if F.profiling.stacks_enabled(frozenset()):
+        F.profiling.start_stacks(folder, 'test')
     time.sleep(0.5)
     print(any(t.name == 'profile-stack-sampler' for t in threading.enumerate()), folder.is_dir())
     sys.exit()

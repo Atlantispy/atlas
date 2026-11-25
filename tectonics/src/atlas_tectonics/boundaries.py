@@ -54,9 +54,7 @@ def _shape(g):
     return g._projected._geom if type(g) is SphericalGeometry else g._geom
 
 
-def _to_chart(g, domain, limits, budget):
-    if type(g) is not type(domain):
-        raise GeometryError('boundary geometry must use one space')
+def _to_chart_in_same_space(g, domain, limits, budget):
     if type(domain) is SphericalGeometry:
         # Explicitly use the declared domain chart, not an automatically selected
         # projection. Reprojection may reveal a tiny gap; never snap it closed.
@@ -464,7 +462,7 @@ class BoundaryNetwork:
         names = self.region_ids
         if any(x is not None and x not in names for x in (left_region_id, right_region_id)):
             raise GeometryError('unknown declared boundary owner')
-        t = _to_chart(trace, self.domain, limits, budget); g = _shape(t)
+        t = _to_chart_in_same_space(trace, self.domain, limits, budget); g = _shape(t)
         if t.vertex_count > limits.max_vertices:
             raise GeometryError('trace exceeds vertex limit')
         with select_budget(budget).reserve(1024*(self.edge_count+t.vertex_count)+16384, category='boundary-trace'):
@@ -532,7 +530,12 @@ def build_boundary_network(domain, regions, *, limits=None, budget=None, cancel=
     vertex_count = domain.vertex_count + sum(r.geometry.vertex_count for r in regions)
     if vertex_count > limits.max_vertices: raise GeometryError('boundary input vertex limit exceeded')
     with policy.reserve(2048*vertex_count+16384, category='boundary-build'):
-        aligned = [_to_chart(r.geometry, domain, limits, policy) for r in regions]
+        aligned = []
+        for r in regions:
+            geometry = r.geometry
+            if type(geometry) is not type(domain):
+                raise GeometryError('boundary geometry must use one space')
+            aligned.append(_to_chart_in_same_space(geometry, domain, limits, policy))
         shapes = [_shape(g) for g in aligned]; domain_shape = _shape(domain)
         region_tree = STRtree(shapes); region_pairs = 0
         for i, g in enumerate(shapes):

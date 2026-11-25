@@ -116,9 +116,12 @@ class NativeFluxProjection:
     def record(self):
         return json.loads(self._json)
 
-    def validate_source(self, measures, funding=None):
+    def _validate_binding(self, measures, funding=None):
         if measures is not self._measures or (funding is not None and funding is not self._funding):
             raise V.VolumeError('native projection has another actual measure/funding')
+
+    def validate_source(self, measures, funding=None):
+        self._validate_binding(measures, funding)
         measures.validate_source(measures._collar, measures._stage)
 
 
@@ -246,7 +249,7 @@ def _directed_q2_bounds(polynomial, factor, *, max_width, max_leaves, budget, ca
             _cancel(cancel)
             arena.work(32+64*len(polynomial))
             values = (*polynomial.values(), *(q for pair in bounds for q in pair), factor)
-            with V._work(values, budget):
+            with V._work(values, budget, convert_values=False):
                 net = sum((value*(bounds[0][1]**(i+1)-bounds[0][0]**(i+1))/Q(i+1)*
                            (bounds[1][1]**(j+1)-bounds[1][0]**(j+1))/Q(j+1)
                            for (i, j), value in polynomial.items()), Q(0))
@@ -318,9 +321,12 @@ class NativeDirectedVolumes:
     def record(self):
         return json.loads(self._json)
 
-    def validate_source(self, measures, projection):
+    def _validate_binding(self, measures, projection):
         if measures is not self._measures or projection is not self._projection:
             raise V.VolumeError('directed volumes have another actual native measure/projection')
+
+    def validate_source(self, measures, projection):
+        self._validate_binding(measures, projection)
         projection.validate_source(measures)
 
 

@@ -49,6 +49,7 @@ import struct
 from time import monotonic
 import uuid
 
+from atlas_shared.errors import AtlasError
 from . import integration_differential_geometry as G
 from . import integration_parallel_binding as _binding
 from . import reuse as _reuse
@@ -80,7 +81,7 @@ HOLD_ENTRIES = 64
 HOLD_WORK = 64*22096
 
 
-class CheckpointRefused(ValueError):
+class CheckpointRefused(ValueError, AtlasError):
     """An existing entry cannot establish safe completed-query reuse."""
 
 
@@ -541,7 +542,7 @@ class EndpointCheckpoints:
             after = os.fstat(source.fileno())
             if (len(bound) != bound_size or len(payload) != size or source.read(1)
                     or (after.st_size, after.st_mtime_ns) != (opened.st_size, opened.st_mtime_ns)
-                    or hashlib.sha256(bound).digest() != bound_hash
+                    or bytes.fromhex(key) != bound_hash
                     or hashlib.sha256(payload).digest() != result_hash or bound != binding):
                 raise CheckpointRefused('checkpoint content/binding differs')
         return payload

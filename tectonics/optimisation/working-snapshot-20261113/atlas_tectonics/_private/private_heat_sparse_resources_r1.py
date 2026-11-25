@@ -58,6 +58,10 @@ def compressed_payload(n, nnz, *, index_bytes=4, copies=1):
     _size(copies, 'copies')
     if index_bytes not in (4, 8) or type(index_bytes) is not int:
         raise ValueError('Sparse index width must be exactly 4 or 8 bytes')
+    return _compressed_payload(n, nnz, index_bytes, copies)
+
+
+def _compressed_payload(n, nnz, index_bytes, copies):
     if n > (1 << (8*index_bytes-1))-1 or nnz > (1 << (8*index_bytes-1))-1:
         raise OverflowError('Sparse dimensions exceed the declared signed index range')
     if nnz > n*n:
@@ -113,15 +117,15 @@ def sparse_lu_envelope(n, nnz_bound, *, binary64_vectors, other_live_bytes):
     _size(other_live_bytes, 'other_live_bytes')
     if np.dtype(np.intp).itemsize != 8 or np.dtype(np.float64).itemsize != 8:
         raise RuntimeError('Sparse heat accounting requires the reviewed 64-bit host')
-    sparse = compressed_payload(n, nnz_bound)
+    sparse = _compressed_payload(n, nnz_bound, 4, 1)
     fill = n*(n+1)
     if fill > INT32_MAX:
         raise OverflowError('Worst-case L+U fill exceeds the reviewed int32 sparse route')
     native = _total(MIB, _native_factor_bytes(n, nnz_bound, fill))
     result = SparseLUEnvelope(n, nnz_bound, fill,
-        _total(3*sparse), compressed_payload(n, nnz_bound, index_bytes=8),
+        _total(3*sparse), _compressed_payload(n, nnz_bound, 8, 1),
         _total(64*n, 4096), native, _total(12*fill, 8*(n+1)),
-        _total(8*n), binary_array_payload(n, itemsize=8, copies=binary64_vectors), other_live_bytes)
+        _total(8*n), _total(8*n*binary64_vectors), other_live_bytes)
     result.total_bytes  # Reject combined overflow before any sized allocation.
     return result
 

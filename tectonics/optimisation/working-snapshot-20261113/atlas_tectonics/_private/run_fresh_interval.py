@@ -71,6 +71,7 @@ else:
     _PRESSURE_STARTUP = None        # no pressure startup selection was authenticated
 
 
+from atlas_shared.execution import profiling
 from atlas_tectonics._private import run_prepared_restart as RUN
 from atlas_tectonics._private import start_gate as SG
 from atlas_tectonics._private.interval_admission import admitted, protect_profile
@@ -106,7 +107,7 @@ FRESH_MODULES = ('prepared_interval_driver', 'heat_interval_r9_spec',
                  'runtime_radial_fixture', 'i04_differential_modes', 'initial_pressure_force',
                  'compact_restart_store', 'compact_restart_patch', 'bounded_preseal', 'reopen_prepared_restart',
                  'content_cache', 'historical_admission', 'private_heat_continuation_guard_r3',
-                 'windows_workload_job', 'private_heat_resource_diagnostics_r1', 'dev_stage_timing',
+                 'windows_workload_job', 'private_heat_resource_diagnostics_r1',
                  'publish_mesh_patch', 'interface_worker_selection')
 WORKFLOW_ENTRY_POINTS = ('create', 'open', '_identity', '_exterior_inputs')
 ROOT_REOPEN_DEFERRED = 'Step 9(a): the independent fresh-process reader reopens the sealed root before promotion'
@@ -271,7 +272,9 @@ class FreshProfile(RUN.RestartProfile):
                   'completed_query_limits', 'historical_inputs'}
         require(type(row) is dict and set(row) == fields and row['schema'] == PROFILE_SCHEMA,
                 'closed reviewed fresh-interval profile required')
-        require(type(row['modules']) is dict and set(row['modules']) == set(FRESH_MODULES),
+        required = set(FRESH_MODULES)
+        # A previous-run reader may still inspect a pinned pre-move profile.
+        require(type(row['modules']) is dict and set(row['modules']) in (required, required | {'dev_stage_timing'}),
                 'complete explicit route (1) helper bindings required')
         manifest, driver = row['source_manifest'], row['advance_driver']
         require(type(manifest) is dict and set(manifest) == {'path', 'sha256'},
@@ -1188,7 +1191,7 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     row = profile.record()
     bound = {name: sources.module(name) for name in (DRIVER, *FRESH_MODULES)}
     FRESH, CRS, PRESEAL = bound[DRIVER], bound['compact_restart_store'], bound['bounded_preseal']
-    H, timing = bound['historical_admission'], bound['dev_stage_timing']
+    H = bound['historical_admission']
     from atlas_tectonics.integration_endpoint_checkpoints import EndpointCheckpoints
     from atlas_tectonics.resources import WorkBudget
     from atlas_tectonics.reuse import require_strict_execution
@@ -1335,22 +1338,22 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                         budget=budget, output=output, catalog=catalog, query_directory=query_directory,
                         store_directory=store_directory, check=check, query_stages=query_stages,
                         number=number, lineage=lineage, query_store=(EndpointCheckpoints, declared,
-                        query_arguments, limits), measurements=measurements, timing=timing,
+                        query_arguments, limits), measurements=measurements,
                         retained_execution=retained_execution)
                     record['compact_operations'] = store.statistics()
                 if reused is not None:
                     record['reused_initial_cache'] = reuse_outcome(reused, record['initial_measurement_store'])
                 save()
-        timing.checkpoint('sealed-awaiting-reader' if not stop_before_advance else 'stopped-before-advance')
+        profiling.checkpoint('sealed-awaiting-reader' if not stop_before_advance else 'stopped-before-advance')
     record['store_directory_after_close'] = RUN._tree(store_directory)
     sources.check_imported()
-    timing.checkpoint('sources-verified')
+    profiling.checkpoint('sources-verified')
     return budget
 
 
 def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_runner, identities, budget, output,
              catalog, query_directory, store_directory, check, query_store, measurements=None, query_stages=None,
-             number=1, lineage=None, timing, retained_execution=None):
+             number=1, lineage=None, retained_execution=None):
     """Run B's interval: begin interval ``number``, advance once, then the post-advance protocol with the workflow open.
 
     Interval 1 advances from the adopted root; interval N >= 2 from the adopted interval N-1 of
@@ -1375,7 +1378,7 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             graph_id='not yet issued', scientifically_certified=False)
         save()
     store.start_next_interval(**identities)
-    timing.checkpoint('parent-store-next-interval-begun')
+    profiling.checkpoint('parent-store-next-interval-begun')
 
     def query_checkpoints(execution):
         return completed_queries(owner_type, query_directory, declared=declared, arguments=query_arguments,
@@ -1527,10 +1530,10 @@ def pressure_entry_point(argv, step, profile):
 @protect_profile
 def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
             interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
-            open_proofs=False, retained_root=None):
+            open_proofs=False, retained_root=None, run_profile=frozenset()):
     """Inspectable guarded command only; never launches or reads a store. ``start_gate`` goes last."""
     require(type(dev_timing) is bool, 'dev timing flag must be boolean')
-    require(type(production_release) is bool and not (production_release and dev_timing),
+    require(type(production_release) is bool and not (production_release and (dev_timing or run_profile)),
             'production Release is explicit and development diagnostics remain strict-only')
     require(type(stop_before_advance) is bool and (mode == 'interval' or not stop_before_advance),
             'stop-before-advance applies to run B only')
@@ -1558,6 +1561,7 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
             '--pressure-startup', canonical(pressure_startup_selection(sources)).decode(), '--workload',
             '--profile', str(profile.path), '--profile-sha256', profile.sha256, '--mode', mode,
             *(['--dev-timing'] if dev_timing else []),
+            *profiling.profile_words(run_profile),
             *(['--production-release'] if production_release else []),
             *(['--seed-receipt-sha256', seed['receipt_sha256'], '--seed-store-sha256', seed['store_sha256']]
               if seed else []),
@@ -1600,60 +1604,10 @@ def _heat_faces(folder, sources, production_release):
     return folder
 
 
-def _profile_sampler(folder, mode):
-    """PROFILING ARM ONLY. Every 0.2 s count the stacks of all other threads; a finished minute keeps its top 50.
-    Off unless ATLAS_PROFILE_SAMPLER=1; this one switch covers both callers (here and reopen_fresh_restart)."""
-    if os.environ.get('ATLAS_PROFILE_SAMPLER') != '1':
-        return
-    import collections, threading
-
-    def top(pair):
-        return {'samples': sum(pair[0].values()), 'stacks': pair[0].most_common(50), 'top3': pair[1].most_common(50)}
-
-    def run():
-        try:
-            folder.mkdir(exist_ok=True)
-            out = str(folder/('stacks-%s-%d.json' % (mode, os.getpid())))
-            me, t0 = threading.get_ident(), time.monotonic()
-            done, minute, pair, last = {}, 0, (collections.Counter(), collections.Counter()), t0
-            while True:
-                time.sleep(0.2)
-                now = time.monotonic()
-                if int((now-t0)//60) != minute:
-                    done[str(minute*60)] = top(pair)
-                    minute, pair = int((now-t0)//60), (collections.Counter(), collections.Counter())
-                for ident, frame in sys._current_frames().items():
-                    stack = []
-                    while frame is not None and ident != me and len(stack) < 40:
-                        code = frame.f_code
-                        stack.append('%s:%s:%d' % (os.path.basename(code.co_filename), code.co_name, frame.f_lineno))
-                        frame = frame.f_back
-                    if stack:
-                        pair[0][' < '.join(stack)] += 1
-                        pair[1][' < '.join(s.rsplit(':', 1)[0] for s in stack[:3])] += 1
-                frame = None
-                if now-last >= 30:
-                    last = now
-                    try:
-                        with open(out+'.tmp', 'w') as stream:
-                            json.dump({**done, str(minute*60): top(pair)}, stream)
-                        os.replace(out+'.tmp', out)
-                    except OSError:  # an open handle on the file makes the replace fail on Windows; next try in 30 s
-                        pass
-        except Exception:  # a profiler failure never stops the step (rule 18)
-            pass
-
-    try:
-        threading.Thread(target=run, name='profile-stack-sampler', daemon=True).start()
-    except Exception:  # G-3: a thread that cannot start never stops the step either
-        pass
-
-
 @protect_profile
 def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
               interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
-              open_proofs=False, retained_root=None):
-    dev_timing = RUN._dev_timing_enabled(dev_timing)
+              open_proofs=False, retained_root=None, run_profile=frozenset()):
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     require(type(open_proofs) is bool, 'open proofs flag must be boolean')
     if open_proofs:    # proof mode, on before anything is opened, never off
@@ -1663,7 +1617,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     _across_refused_in_release(seed, production_release)
     number = interval_number(mode, interval)
     parent_adopted_sha256 = parent_pin(number, parent_adopted_sha256)
-    require(type(production_release) is bool and not (production_release and dev_timing),
+    require(type(production_release) is bool and not (production_release and (dev_timing or run_profile)),
             'production Release is explicit and development diagnostics remain strict-only')
     sources = FreshSources(profile)
     if retained_root is not None:
@@ -1675,9 +1629,12 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
         require(diagnostic_tree(sources), 'a seed across a change is for diagnostic trees only: proof and real runs refuse it')
         FreshProfile.read(Path(seed[SEED_ACROSS]['path']), seed[SEED_ACROSS]['sha256'])
     admitted = RUN.production_admission(sources,'fresh-'+mode,start_gate) if production_release else None
-    output = mode_output(profile.record(), mode, interval)/'run.json'
-    _profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', mode)
-    _heat_faces(Path(profile.record()['output_directory']).parent/'completed-heat', sources, production_release)
+    row = profile.record()
+    output = mode_output(row, mode, interval)/'run.json'
+    home = Path(row['output_directory']).parent
+    if profiling.stacks_enabled(run_profile):
+        profiling.start_stacks(home/'profile-stacks', mode)
+    _heat_faces(home/'completed-heat', sources, production_release)
     record: dict = {'schema': RESULT_SCHEMA, 'status': 'STARTED', 'pid': os.getpid(), 'mode': mode,
                     'profile_sha256': profile.sha256, 'errors': [], 'production_acceptance': False,
                     'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed,
@@ -1689,8 +1646,6 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     with sources.selected():
         record['pressure_worker_startup'] = sources.configure_pressure_workers()
         G = sources.module('private_heat_continuation_guard_r3')
-        timing = sources.module('dev_stage_timing')
-        dev_timing = timing.enabled(dev_timing)
         query_stages = QueryStages(record)
 
         def save():
@@ -1700,7 +1655,12 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
             guard = G.ContinuationGuard(output, record, save,
                 **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
                    if admitted is not None else SG.child_limits(start_gate)))
-            with timing.collect(guard, output.parent, enabled=dev_timing, record=record,
+            record_stages = dev_timing or 'stages' in run_profile
+            source_pin = None
+            if record_stages:
+                from atlas_tectonics.integration_worker_bootstrap import installed_source_pin
+                source_pin = installed_source_pin(profiling)
+            with profiling.collect(guard, output.parent, enabled=record_stages, record=record, source_sha256=source_pin,
                                 metadata={'profile_sha256': profile.sha256, 'mode': mode}):
                 budget = run_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save, mode=mode,
                                             stop_before_advance=stop_before_advance, seed=seed,
@@ -1749,6 +1709,7 @@ def main(argv=None):
     parser.add_argument('--production-release',action='store_true',help='explicit authenticated packaged production only')
     parser.add_argument('--mode', choices=MODES, required=True)
     parser.add_argument('--dev-timing', action='store_true', help='opt-in development timing and memory diagnostics')
+    parser.add_argument('--run-profile', default='off')
     parser.add_argument('--stop-before-advance', action='store_true', help='run B only: the smoke, never interval 1')
     parser.add_argument('--seed-receipt-sha256', help='run B only, with --seed-store-sha256: run A receipt (item 7)')
     parser.add_argument('--seed-store-sha256', help='run B only: the measurement store SHA-256 run A recorded')
@@ -1772,6 +1733,7 @@ def main(argv=None):
                                           and _PRESSURE_STARTUP[1] == args.profile_sha256),
             'the pressure startup authenticated another profile')
     dev_timing = RUN._dev_timing_enabled(args.dev_timing)
+    run_profile = profiling.profile_selection(args.run_profile)
     require((args.seed_receipt_sha256 is None) == (args.seed_store_sha256 is None),
             'a measurement seed needs both its receipt and store SHA-256')
     seed = (None if args.seed_receipt_sha256 is None else
@@ -1802,13 +1764,13 @@ def main(argv=None):
                              seed=seed, start_gate=args.start_gate, interval=args.interval,
                              parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
                              record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs,
-                             retained_root=retained_root)
+                             retained_root=retained_root, run_profile=run_profile)
         if args.production_release:
             gate = RUN.production_decision(FreshSources(profile),'fresh-'+args.mode)
         argv = command(profile, sys.executable, mode=args.mode, dev_timing=dev_timing,
                        stop_before_advance=args.stop_before_advance, seed=seed, start_gate=gate, interval=args.interval,
                        parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
-                       record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs, retained_root=retained_root)
+                       record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs, retained_root=retained_root, run_profile=run_profile)
         print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                           'production_acceptance': False}), flush=True)
         if not args.launch:

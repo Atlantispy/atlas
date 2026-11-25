@@ -1632,9 +1632,9 @@ class CollarWorkflow:
         geometry, thermal = bounds.record(), _thermal_header.value
         if differential_interval is None:
             wall = wall_measures.descriptor()
-            if (source_flow_stage.flow.descriptor().get('wall_measure_id') != wall_measures.measure_id or
-                    geometry['wall_measure_id'] != wall_measures.measure_id or
-                    thermal['wall_measure_id'] != wall_measures.measure_id):
+            if (source_flow_stage.flow.descriptor().get('wall_measure_id') != wall['measure_id'] or
+                    geometry['wall_measure_id'] != wall['measure_id'] or
+                    thermal['wall_measure_id'] != wall['measure_id']):
                 raise RegionalOwnerRefused('spatial solve and thermal mesh have another actual wall measure')
         else:
             from .integration_differential_geometry import DifferentialPartition

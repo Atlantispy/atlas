@@ -64,15 +64,21 @@ results and numerical qualification limits are preserved. Scientific contracts,
 code, cases, tests and thresholds are unchanged, and no recapture or scientific
 suite rerun accompanied the reclassification. The register retains the original
 notes, limits and unchecked-digest qualifications for those historical controls.
-Receipt references alone do not propagate reclassification: entries whose declared
-bytes and bindings still match remain current, including the frozen live column
-chain and I02 timing.
+Receipt references alone do not propagate reclassification. Entries whose declared
+bytes and bindings still match retain their registered classification.
 
-I02 timing r12 retains five recorded repetitions, seven passing equality/parity
-comparisons and 166 checked source digests; its opaque execution identity remains
-an unchecked runtime observation. Its unchanged byte bindings measure no 3-D or
-spherical speed. Restoration checks trusted local consistency, not authorship. See
-[I02 evidence effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
+The runtime cleanup changed the shared heat integration source bound by the I01
+column heat, thermomechanical motion and finite-strain controls. The register
+carries those controls at their original source bindings as historical evidence.
+
+The [I02 timing rerun r13](../tectonics/evidence/i02-workflow-timing-r13.json)
+recorded 166 source digests, seven passing equality, parity and source checks and
+3.19 seconds of timed samples on Windows at `dcc1fc4`. It is historical after the
+runtime cleanup changed 22 of those source bindings. Its execution identity is an
+observation of that run. The [clean Windows installation r2](../tectonics/evidence/environment-install-r2.json)
+is historical evidence from the same revision, with 40 pinned packages including
+gmpy2 2.3.2. These records cover the bounded column workflow and installation as
+recorded. See [I02 evidence effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
 Whole-package identity and declared file binding are different. Adding I02.1
 changed source membership without changing existing physical laws. Step 7 r2 and

@@ -17,6 +17,7 @@ Retain each OwnedRow while borrowing its value. legacy_record() is an explicit,
 funded compatibility export, never part of row access. Import accepts an owned
 body plus a support iterator, so it need not assemble a complete descriptor.
 """
+from atlas_shared.errors import AtlasError
 from dataclasses import dataclass
 from hashlib import sha256
 import json
@@ -75,7 +76,7 @@ CONSTRAINT_FIELDS = {
     'snapshot-rotated': frozenset(('kind', 'constraint', 'snapshot_offset_s', 'angular_velocity_rad_s'))}
 
 
-class PartitionTablesRefused(ValueError):
+class PartitionTablesRefused(ValueError, AtlasError):
     pass
 
 
@@ -360,13 +361,14 @@ class CompactPartition:
                 and sum(a.nbytes for a in arrays.values()) <= M.MAX_BYTES, 'bounded contiguous numeric arrays required')
         scratch = M._Allocation(budget, 65536+12*M._width(metadata))
         metadata = json.loads(M.canonical(metadata))
-        self._arrays = MappingProxyType(M._freeze(arrays, metadata, budget))
+        frozen, metadata_bytes = M._freeze(arrays, metadata, budget, return_metadata=True)
+        self._arrays = MappingProxyType(frozen)
         for name, array in self._arrays.items():
             row = metadata['arrays'][name]
             require(type(row) is dict and set(row) == {'dtype', 'shape', 'sha256'} and
                 array.dtype.str == row['dtype'] and list(array.shape) == row['shape'] and
                 sha256(M._raw_view(array)).hexdigest() == row['sha256'], 'array content differs: '+name)
-        self._metadata, self._budget, self._check = M.canonical(metadata), budget, check
+        self._metadata, self._budget, self._check = metadata_bytes, budget, check
         self.partition_id, self._body = expected_partition_id, metadata['body_node']
         self.support_count = metadata['support_count']
         self.node_count = len(self._arrays['node.kind']) if 'node.kind' in self._arrays else 0
@@ -513,7 +515,6 @@ class CompactPartition:
         size, pieces = 0, 0
         for part in self.iter_legacy_json(NodeRef(self, node)):
             size += len(part); pieces += 1
-            require(size <= M.MAX_BYTES, 'legacy export exceeds explicit byte bound')
         owner = M._Allocation(self.budget, 65536+16*size+256*pieces)
         raw = b''.join(self.iter_legacy_json(NodeRef(self, node)))
         return M.OwnedRow(json.loads(raw), (owner, self))

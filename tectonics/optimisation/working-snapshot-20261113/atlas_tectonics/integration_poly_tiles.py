@@ -57,7 +57,7 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
             # Reserve the new coordinate rows before constructing them.
             with arena.resource.reserve(1024+3*(subdivisions+1)*256,
                                         category='curved-volume-scratch'):
-                with V._work(voxel.lower_m+voxel.upper_m, arena.resource):
+                with V._work(voxel.lower_m+voxel.upper_m, arena.resource, convert_values=False):
                     lines = tuple(tuple(a+(b-a)*Q(i, subdivisions)
                                         for i in range(subdivisions+1))
                                   for a, b in zip(voxel.lower_m, voxel.upper_m))
@@ -65,7 +65,7 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
         else:
             values = tuple(q for axis in shared_lines for q in axis)
             setup.work(6+len(values))
-            with V._work(values+voxel.lower_m+voxel.upper_m, arena.resource):
+            with V._work(values+voxel.lower_m+voxel.upper_m, arena.resource, convert_values=False):
                 if any(any(a >= b for a, b in zip(axis, axis[1:])) for axis in shared_lines):
                     raise V.VolumeError('shared tile axes must be strictly increasing')
                 lines = tuple(tuple(Q(q) for q in shared_lines[j]
@@ -80,7 +80,7 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
         coordinates = tuple(q for p in points for q in p)
         setup.work(8+24*len(points))
         with V._work(coordinates+voxel.origin_m+tuple(q for row in voxel.basis for q in row),
-                     arena.resource):
+                     arena.resource, convert_values=False):
             normals = tuple(tuple(voxel.basis[i][j] for i in range(3)) for j in range(3))
             offsets = tuple(O._dot(n, voxel.origin_m) for n in normals)
             if any(not voxel.lower_m[j] <= O._dot(normals[j], p)-offsets[j] <= voxel.upper_m[j]
@@ -109,7 +109,7 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
                 yield from visit(poly, axis+1, 0, len(lines[axis+1])-1 if axis < 2 else 0)
                 return
             middle = (first+stop)//2
-            with V._work(normals[axis]+(lines[axis][middle], offsets[axis]), arena.resource):
+            with V._work(normals[axis]+(lines[axis][middle], offsets[axis]), arena.resource, convert_values=False):
                 plane = normals[axis]+(lines[axis][middle]+offsets[axis],)
                 opposite = tuple(-q for q in plane)
             # Compute the right child only after the left child's geometry has

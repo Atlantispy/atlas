@@ -23,6 +23,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 import dataclasses
 import hashlib
 import math
@@ -76,7 +77,7 @@ DIAGNOSTICS = ("max_force_relative", "max_power_relative", "min_source_w_m2", "m
 COUNTS = frozenset(DIAGNOSTICS[4:])
 
 
-class Refused(Exception):
+class Refused(AtlasError):
     """An atomic refusal of one trial step; nothing of the trial is booked and the accepted prefix is returned."""
 
     def __init__(self, status, reason):

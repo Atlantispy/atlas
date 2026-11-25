@@ -8,6 +8,7 @@ evolution, pressure-sensitive yielding or hidden temperature transfer occurs.
 """
 from dataclasses import asdict, dataclass
 import json
+from functools import partial
 from time import perf_counter
 
 import numpy as np
@@ -168,6 +169,20 @@ def solve_regional_rheology(plan, profile, scales, thermal_center_k, thermal_ver
     Damage is captured once and held fixed. Picard starts at the analytical
     zero-rate viscosity; no artificial tiny rate is introduced.
     """
+    definition, solve = _prepare_rheology_solve(
+        plan, profile, scales, thermal_center_k, thermal_vertex_k, force_u_n_m3, force_w_n_m3,
+        boundary_values, frame_id=frame_id, epoch_id=epoch_id, time_s=time_s,
+        thermal_source=thermal_source, material_source=material_source, force_source=force_source,
+        boundary_source=boundary_source, damage_center=damage_center, damage_vertex=damage_vertex,
+        cancel=cancel, max_iterations=max_iterations)
+    _validate_boundary_support(definition, boundary_values)
+    return solve()
+
+
+def _prepare_rheology_solve(plan, profile, scales, thermal_center_k, thermal_vertex_k,
+        force_u_n_m3, force_w_n_m3, boundary_values, *, frame_id, epoch_id, time_s,
+        thermal_source, material_source, force_source, boundary_source,
+        damage_center=None, damage_vertex=None, cancel=None, max_iterations=40):
     start = perf_counter()
     if type(plan) is not PreparedRegionalStokes2D or type(profile) is not RheologyProfile or type(scales) is not DiffusiveScales:
         raise TectonicsError('typed regional plan, retained rheology profile and diffusive scales required')
@@ -190,7 +205,17 @@ def solve_regional_rheology(plan, profile, scales, thermal_center_k, thermal_ver
         raise TectonicsError('explicit temperature arrays required on both complete stress supports')
     if input_shape(force_u_n_m3) != (d['nz'], d['nx']+1) or input_shape(force_w_n_m3) != (d['nz']+1, d['nx']):
         raise TectonicsError('regional body forces require full staggered face shapes')
-    _validate_boundary_support(d,boundary_values)
+    return d, partial(
+        _solve_rheology, plan, profile, scales, thermal_center_k, thermal_vertex_k,
+        force_u_n_m3, force_w_n_m3, boundary_values, frame_id, epoch_id, time_s,
+        thermal_source, material_source, force_source, boundary_source, damage_center,
+        damage_vertex, cancel, max_iterations, d, shapes, start)
+
+
+def _solve_rheology(plan, profile, scales, thermal_center_k, thermal_vertex_k,
+        force_u_n_m3, force_w_n_m3, boundary_values, frame_id, epoch_id, time_s,
+        thermal_source, material_source, force_source, boundary_source,
+        damage_center, damage_vertex, cancel, max_iterations, d, shapes, start):
     if profile.family == 'bf23-memory':
         if input_shape(damage_center) != shapes[0] or input_shape(damage_vertex) != shapes[1]:
             raise TectonicsError('BF requires explicit frozen damage on both stress supports')

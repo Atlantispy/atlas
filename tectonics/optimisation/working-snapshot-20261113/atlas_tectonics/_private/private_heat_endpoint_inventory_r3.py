@@ -250,7 +250,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                 # Fund its complete neighbouring-Decimal branch conservatively.
                 tie_bits = max(tie_bits, s.numerator+s.denominator)
                 tie_part = max(tie_part, s.numerator, s.denominator)
-        growth = ROUND.conversion_growth(conversion_bits, conversion_part,
+        growth = ROUND._derived_conversion_growth(conversion_bits, conversion_part,
             tie_part_bits=tie_bits, tie_maximum_part_bits=tie_part)
         scalar = R.native_workspace_allowance(max(max_bits, growth.exact_scalar_expression_bits), 64)
         decimal = growth.python_conversion_bytes

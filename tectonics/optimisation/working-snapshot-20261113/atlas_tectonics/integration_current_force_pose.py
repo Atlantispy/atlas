@@ -69,7 +69,7 @@ class CurrentForcePose:
         Internal fan edges are removed when their exact convex union is proved.
         """
         point = tuple(Q(float(v)) for v in point)
-        with V._work((*point, *(q for row in self._rotation for q in row), self._error), self._resource):
+        with V._work((*point, *(q for row in self._rotation for q in row), self._error), self._resource, convert_values=False):
             inverse = tuple(sum(self._rotation[j][i]*point[j] for j in range(3)) for i in range(3))
             radius_bound = sum(map(abs, point))
             try:
@@ -77,7 +77,7 @@ class CurrentForcePose:
             except V.VolumeError:
                 pass
             for cell in cells:
-                with V._work((*(v for p in cell for v in p), *inverse, radius_bound, self._error), self._resource):
+                with V._work((*(v for p in cell for v in p), *inverse, radius_bound, self._error), self._resource, convert_values=False):
                     margins = []
                     for a, b in zip(cell, cell[1:]+cell[:1]):
                         normal = O._cross(a, b)

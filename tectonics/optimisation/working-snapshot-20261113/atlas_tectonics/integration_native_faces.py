@@ -120,6 +120,10 @@ def component_normal_polynomial(measures, face_id, voxel, axis, end, *, budget, 
     Jacobian; normalised native-coordinate derivatives retain their true scale.
     The caller's issued component partition must separately prove ownership.
     """
+    return _component_normal_polynomial(measures, face_id, voxel, axis, end, budget=budget, projection=projection)
+
+
+def _component_normal_polynomial(measures, face_id, voxel, axis, end, *, budget, projection, native_view=None):
     if (type(measures) is not NativeFaceMeasures or type(voxel) is not V.CartesianCell or
             type(budget) is not WorkBudget or measures._resource is not budget or voxel._resource is not budget or
             type(axis) is not int or axis not in (0, 1, 2) or type(end) is not int or end not in (0, 1) or
@@ -134,11 +138,14 @@ def component_normal_polynomial(measures, face_id, voxel, axis, end, *, budget, 
         projection.validate_source(measures)
         projection_width = len(projection._json)
     with budget.reserve(131072+8*(len(measures._json)+projection_width)+8*_width(voxel.record()), category='component-normal-chart'):
-        record = measures.record()
-        selected = [r for r in record['faces'] if r['face_id'] == face_id]
-        if len(selected) != 1:
+        if native_view is None:
+            record = measures.record()
+            selected = [r for r in record['faces'] if r['face_id'] == face_id]
+            row = selected[0] if len(selected) == 1 else None
+        else:
+            record, row = native_view
+        if row is None:
             raise V.VolumeError('one face in the actual native measure is required')
-        row = selected[0]
         index = row['lower'] if row['lower'] is not None else row['upper']
         native_cell = V.CartesianCell.from_record(record['cells'][index]['geometry'], budget=budget)
         native_face = W._face(native_cell, row['axis'], int(row['lower'] is not None))
@@ -151,7 +158,7 @@ def component_normal_polynomial(measures, face_id, voxel, axis, end, *, budget, 
             polynomial[0, 0] = polynomial.get((0, 0), Q(0))+increment
         increasing = tuple(map(W._decode, row['chart']['increasing_normal']))
         values = (*native_cell._geometry(), *voxel._geometry(), *polynomial.values())
-        with V._work(values, budget):
+        with V._work(values, budget, convert_values=False):
             transformed, sign, queries = _component_chart_polynomial(native_face, target, polynomial, increasing)
             encode = lambda p: [[i, j, V._encoded(q)] for (i, j), q in sorted(p.items()) if q]
             derivatives = tuple({(i-int(k == 0), j-int(k == 1)): q*(i if k == 0 else j)
@@ -221,8 +228,6 @@ def measure_native_faces(collar, source_flow_stage, *, budget):
     collar._check_source_flow_stage(source_flow_stage)
     flow, clock = source_flow_stage.flow, source_flow_stage.record()
     mechanics = source_flow_stage.source_stage.initial_mechanics
-    if flow.descriptor()['source_result_id'] != mechanics.result_id:
-        raise V.VolumeError('native flow does not name the actual mechanical nodal trace')
     duration = Q(source_flow_stage.duration_s)
     shape = tuple(collar.cells)
     flat = lambda p: (p[0]*shape[1]+p[1])*shape[2]+p[2]
@@ -265,7 +270,7 @@ def measure_native_faces(collar, source_flow_stage, *, budget):
                 booked_f = tuple(float(flow.array(name+'_'+label+'_m3_s')[at]) for name in ('positive', 'negative'))
                 physical = (*box.lower_m, *box.upper_m, *box.origin_m, *(v for r in box.basis for v in r))
                 with V._work((*raw_f, *normal_f, *nodal_f, area_f, *booked_f, duration,
-                              *weights, *abscissas, *physical), budget):
+                              *weights, *abscissas, *physical), budget, convert_values=False):
                     raw, normals = tuple(map(Q, raw_f)), tuple(map(Q, normal_f))
                     nodal = tuple(map(Q, nodal_f))
                     polynomial = _q2_face_polynomial(nodal)

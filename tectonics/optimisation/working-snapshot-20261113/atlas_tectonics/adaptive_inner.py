@@ -145,6 +145,10 @@ def check_summary(record, iterations, nonlinear_policy, expected_policy=None):
 
 def check_history(record, rows, history, nonlinear_policy):
     policy = check_summary(record, len(history), nonlinear_policy)
+    _check_history(record, rows, history, nonlinear_policy, policy)
+
+
+def _check_history(record, rows, history, nonlinear_policy, policy):
     if (type(rows) is not list or len(rows) != record['linear_calls'] or
             hashlib.sha256(_json(rows)).hexdigest() != record['history_sha256']):
         raise TectonicsError('adaptive history differs from summary')
@@ -182,16 +186,27 @@ def check_stage(record, rows, iterations, linear_iterations, nonlinear_policy, e
     Full mechanical records also check these rows against their nonlinear history.
     A coupled ledger retains the actual target/residual sequence, not only its hash.
     """
-    check_summary(record, iterations, nonlinear_policy, expected_policy)
+    _, history = _admit_stage_history(
+        record, rows, iterations, linear_iterations, nonlinear_policy, expected_policy)
+    check_history(record, rows, history, nonlinear_policy)
+
+
+def _check_owned_stage(record, rows, iterations, linear_iterations, nonlinear_policy, expected_policy):
+    """Audit one stage from the advancing plan's detached flow descriptor."""
+    policy, history = _admit_stage_history(
+        record, rows, iterations, linear_iterations, nonlinear_policy, expected_policy)
+    _check_history(record, rows, history, nonlinear_policy, policy)
+
+
+def _admit_stage_history(record, rows, iterations, linear_iterations, nonlinear_policy, expected_policy):
+    policy = check_summary(record, iterations, nonlinear_policy, expected_policy)
     if type(rows) is not list or len(rows) != record['linear_calls']:
         raise TectonicsError('missing or oversized adaptive stage history')
     if not record['active']:
-        check_history(record, rows, [{} for _ in range(iterations)], nonlinear_policy)
-        return
+        return policy, [{} for _ in range(iterations)]
     if any(type(row) is not dict or type(row.get('iterations')) is not int or
            row['iterations'] < 0 for row in rows):
         raise TectonicsError('invalid adaptive stage linear counts')
     if sum(row['iterations'] for row in rows) != linear_iterations:
         raise TectonicsError('adaptive stage linear count differs from ledger')
-    check_history(record, rows, [{'linear_iterations': row['iterations']} for row in rows],
-                  nonlinear_policy)
+    return policy, [{'linear_iterations': row['iterations']} for row in rows]

@@ -69,11 +69,25 @@ class RegionalMechanicalSnapshot:
         encoded = _json(metadata)
         fields = tuple((key, tuple(value.shape), frozen(value).tobytes())
                        for key, value in sorted(arrays.items()))
+        identity = ((key, shape, hashlib.sha256(raw).hexdigest()) for key, shape, raw in fields)
+        RegionalMechanicalSnapshot._set_fields(self, metadata, encoded, fields, identity)
+
+    @classmethod
+    def _from_captured(cls, metadata, checked_fields):
+        """Issue from immutable payloads already checked by the regional checkpoint codec."""
+        self = object.__new__(cls)
+        encoded = _json(metadata)
+        ordered = sorted(checked_fields.items())
+        fields = tuple((key, shape, raw) for key, (shape, raw, _) in ordered)
+        identity = ((key, shape, digest) for key, (shape, _, digest) in ordered)
+        RegionalMechanicalSnapshot._set_fields(self, metadata, encoded, fields, identity)
+        return self
+
+    def _set_fields(self, metadata, encoded, fields, identity):
         object.__setattr__(self, '_metadata', encoded)
         object.__setattr__(self, '_fields', fields)
         object.__setattr__(self, 'result_id', _hash({'metadata': metadata,
-            'arrays': {key: {'shape': shape, 'sha256': hashlib.sha256(raw).hexdigest()}
-                       for key, shape, raw in fields}}))
+            'arrays': {key: {'shape': shape, 'sha256': digest} for key, shape, digest in identity}}))
 
     def __setattr__(self, name, value):
         raise TectonicsError('regional mechanical snapshots are immutable')

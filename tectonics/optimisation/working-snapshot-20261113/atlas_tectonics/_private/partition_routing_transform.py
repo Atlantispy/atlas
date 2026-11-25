@@ -14,6 +14,7 @@ apply it before any runtime exists.
 Per-file order: routing first, then the endpoint-scheduler and ALE-checkpoint
 transforms (their anchors are disjoint; the pin below refuses the reverse).
 """
+from atlas_shared.errors import AtlasError
 import ast
 from hashlib import sha256
 
@@ -44,7 +45,7 @@ COMPACT_CHANGES = ('compact-partition-selected-fields-and-indexed-material-recor
                    'original-funding-transfer-forwarded-to-both-pressure-calls')
 
 
-class CompactRoutingRefused(ValueError):
+class CompactRoutingRefused(ValueError, AtlasError):
     pass
 
 

@@ -106,7 +106,7 @@ def _outer_stream_caps(record,component,face,polynomial,duration,arena,cancel,_p
         normal,offset=_posed_box(record['constraints'][name],duration,arena,_pose_cache)
         with V._work((*[q for pair in normal for q in pair],offset,
                       *[q for vector in face[:3] for q in vector],
-                      *[q for pair in face[4] for q in pair]),arena.resource):
+                      *[q for pair in face[4] for q in pair]),arena.resource, convert_values=False):
             line=G._boxed_constraint_line(face,face[4],normal,offset,sign,False)
             outer=W._clip2(outer,line,arena)
         if not outer:
@@ -117,7 +117,7 @@ def _outer_stream_caps(record,component,face,polynomial,duration,arena,cancel,_p
         raise V.VolumeError('component outer polygon has negative area')
     bounds=(tuple((min(p[j] for p in outer),max(p[j] for p in outer)) for j in range(2))
             if area else ((Q(0),Q(0)),)*2)
-    with V._work((*polynomial.values(),*[q for pair in bounds for q in pair],area,duration),arena.resource):
+    with V._work((*polynomial.values(),*[q for pair in bounds for q in pair],area,duration),arena.resource, convert_values=False):
         low,high=_bernstein_range(_unit_polynomial(polynomial,bounds)) if area else (Q(0),Q(0))
         negative,positive=max(Q(0),-low)*area*duration,max(Q(0),high)*area*duration
         arena.keep((*[q for point in outer for q in point],*[q for pair in bounds for q in pair],
@@ -156,7 +156,7 @@ def _signed_complement(record,component,face,polynomial,duration,arena,cancel,_p
             for name,sign,normal,offset in posed:
                 with V._work((*[q for pair in normal for q in pair],offset,
                               *[q for vector in face[:3] for q in vector],
-                              *[q for pair in bounds for q in pair]),arena.resource):
+                              *[q for pair in bounds for q in pair]),arena.resource, convert_values=False):
                     line=G._boxed_constraint_line(face,bounds,normal,offset,sign,True)
                     margin=min(line[0]*u+line[1]*v+line[2] for u,v in W._rectangle(bounds))
                 arena.keep((margin,),objects=1)
@@ -204,7 +204,7 @@ def integrate_signed_complement(record,component,layer,face,normal_polynomial,po
         return None
     (a,b),(c,d)=face[4]
     with V._work((*normal_polynomial.values(),*(q for p in polynomials for q in p.values()),
-                  a,b,c,d,duration,*widths),arena.resource):
+                  a,b,c,d,duration,*widths),arena.resource, convert_values=False):
         certificate=_signed_complement(record,component,face,normal_polynomial,duration,arena,cancel,_pose_cache)
         if certificate is None:
             return None
@@ -272,7 +272,7 @@ def integrate_near_signed(record,component,layer,face,normal_polynomial,polynomi
         return None
     (a,b),(c,d)=face[4]
     with V._work((*normal_polynomial.values(),*(q for p in polynomials for q in p.values()),
-                  a,b,c,d,duration,*widths),arena.resource):
+                  a,b,c,d,duration,*widths),arena.resource, convert_values=False):
         arena.work(256+128*len(normal_polynomial))
         low,high=_bernstein_range(_unit_polynomial(normal_polynomial,face[4]))
         measure=(b-a)*(d-c)*duration
@@ -381,7 +381,7 @@ def integrate(record,component,layer,face,normal_polynomial,polynomials,widths,d
     (a,b),(c,d)=face[4]
     area=(b-a)*(d-c)
     with V._work((*normal_polynomial.values(),*(q for p in polynomials for q in p.values()),
-                  a,b,c,d,duration,*widths),arena.resource):
+                  a,b,c,d,duration,*widths),arena.resource, convert_values=False):
         normal=_unit_polynomial(normal_polynomial,face[4])
         streams=NP._directed_q2_bounds(normal,area*duration,max_width=min(widths[:2]),
             max_leaves=max_leaves,budget=arena.resource,cancel=cancel,

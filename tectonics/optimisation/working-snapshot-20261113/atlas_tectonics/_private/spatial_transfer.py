@@ -6,7 +6,6 @@ snapshot/ID, and creates a new actual spatial owner. Historical exchange,
 partition and acceptance validation belong to the workflow, not this seam.
 """
 from __future__ import annotations
-from builtins import AssertionError as _release_assertion_error
 
 from dataclasses import dataclass
 from fractions import Fraction as Q
@@ -220,7 +219,7 @@ def validate_current_parent(owner, state, spatial_state):
     from atlas_tectonics.integration_spatial_owner import SpatialExteriorState
     if type(state) is not RegionalCollarState or type(spatial_state) is not SpatialExteriorState:
         raise N.TransferRefused('actual current native/spatial state pair required')
-    scratch = N._Allocation(owner._budget, 65536+G._fields_scratch_bytes(owner._collar, state)
+    _scratch = N._Allocation(owner._budget, 65536+G._fields_scratch_bytes(owner._collar, state)
         +G._json_decode_bytes(spatial_state._snapshot._metadata)
         +384*int(np.prod(owner._collar.cells)), category='spatial-transfer-parent-scratch')
     if type(spatial_state._snapshot).__module__ == 'atlas_tectonics._private.spatial_indexed_patch':
@@ -229,8 +228,6 @@ def validate_current_parent(owner, state, spatial_state):
     else:
         record = spatial_state.record()
     owner.validate_parent(spatial_state, state, _migrated_record=record)
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
 
 
 def _retained_snapshot(body, arrays, identity, metadata, allocation, budget):
@@ -246,7 +243,7 @@ def _retained_snapshot(body, arrays, identity, metadata, allocation, budget):
     from io import BytesIO
     from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
     largest_array = max((a.nbytes for a in arrays.values()), default=0)
-    scratch = N._Allocation(budget, 65536+3*metadata['nbytes']+largest_array,
+    _scratch = N._Allocation(budget, 65536+3*metadata['nbytes']+largest_array,
                             category='spatial-transfer-codec-scratch')
     buffer = BytesIO()
     for text in json.JSONEncoder(sort_keys=True, separators=(',', ':'), allow_nan=False).iterencode(body):
@@ -260,8 +257,6 @@ def _retained_snapshot(body, arrays, identity, metadata, allocation, budget):
         object.__setattr__(snapshot, name, value)
     if not snapshot_metadata_matches(snapshot, metadata) or _snapshot_id(body, _bindings(arrays)) != identity:
         raise N.TransferRefused('transferred snapshot changed during retained admission')
-    if not (scratch.size > 0):
-        raise _release_assertion_error()
     return snapshot
 
 

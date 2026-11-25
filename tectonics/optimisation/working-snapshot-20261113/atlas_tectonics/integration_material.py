@@ -710,7 +710,7 @@ def _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, refer
         packed += (('patch_heat', _sphere._pack(_patch_heat.record(dict(patch_rows)))),)
     physical_rows, physical_account = None, None
     if physical_columns is not None:
-        if legacy or patch_rows is None:
+        if legacy:
             raise TransportRefused('physical columns require positioned heat', UNSUPPORTED, 'physical_columns')
         from .resources import select_budget
         with select_budget(budget).reserve(_patch_heat.field_workspace(physical_columns),
@@ -910,7 +910,7 @@ def _restore_moving(record, arrays, sphere, *, budget):
             from . import integration_patch_heat as _patch_heat
             patch_heat = _patch_heat.restore(_sphere._unpack(arrays['moving.patch_heat'], 'patch heat'))
         sizes = {r.cohort_id: len(r.sublayers) for r in cohorts}
-        physical = None if schema not in (SCHEMA, RADIAL_SCHEMA) else _patch_heat.field_restore(
+        physical = None if schema not in (SCHEMA, RADIAL_SCHEMA) else _patch_heat._field_restore_stored(
             _sphere._unpack(arrays['moving.physical_columns'], 'physical columns'),
             expected={p.patch_id: sizes[p.cohort_id] for p in sphere.material.support.patches}, budget=budget)
         state = _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, record['enthalpy_reference_k'],

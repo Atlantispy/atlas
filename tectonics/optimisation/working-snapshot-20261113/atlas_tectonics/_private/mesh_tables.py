@@ -11,6 +11,7 @@ after support blobs are durable. Unreferenced blobs after cancellation confer no
 completion. Caller must retain OwnedRow while borrowing its .value, just as the
 native owned-view APIs require. This module changes no native source or guards.
 """
+from atlas_shared.errors import AtlasError
 from dataclasses import dataclass
 from contextlib import contextmanager, nullcontext
 from fractions import Fraction
@@ -60,7 +61,7 @@ SUPPORT_KEYS = ('voxel_id', 'radial_layer_id', 'cone_id', 'differential_support_
 digest = json_sha256
 
 
-class MeshTablesRefused(ValueError):
+class MeshTablesRefused(ValueError, AtlasError):
     pass
 
 
@@ -229,15 +230,23 @@ def _budget(budget):
     require(type(budget) is WorkBudget, 'actual shared WorkBudget required')
 
 
-def _freeze(arrays, metadata, budget, *, owner=None):
+def _freeze(arrays, metadata, budget, *, owner=None, return_metadata=False):
+    """Freeze the arrays, optionally returning the metadata sized for a new owner."""
     size = sum(a.nbytes for a in arrays.values())
     require(size <= MAX_BYTES, 'compact arrays exceed byte bound')
+    metadata_bytes = None
     if owner is None:
-        owner = _Allocation(budget, size+8*len(canonical(metadata))+512*len(arrays)+65536)
+        metadata_bytes = canonical(metadata)
+        metadata_size = len(metadata_bytes)
+        if not return_metadata:
+            metadata_bytes = None
+        owner = _Allocation(budget, size+8*metadata_size+512*len(arrays)+65536)
     result = {}
     for name, array in arrays.items():
         raw = _Bytes(_raw_view(array), owner)
         result[name] = np.frombuffer(raw, dtype=array.dtype).reshape(array.shape)
+    if metadata_bytes is not None:
+        return result, metadata_bytes
     return result
 
 
@@ -788,7 +797,7 @@ class CompactMesh:
             from atlas_tectonics._private.content_cache import ChargeSpec
             require(scope.run_budget is budget and all(owner.scope is scope for owner in dependencies),
                     'fresh mesh requires one shared retained scope')
-            size = sum(a.nbytes for a in arrays.values())+8*len(canonical(metadata))+512*len(arrays)+65536
+            size = sum(a.nbytes for a in arrays.values())+8*len(self._metadata)+512*len(arrays)+65536
             immutable_owner = scope.reserve(ChargeSpec('mesh-memory-columns', size)).commit(None)
         self._arrays = MappingProxyType(_freeze(arrays, metadata, budget, owner=immutable_owner))
         self.geometry_id = expected_geometry_id
@@ -1081,8 +1090,13 @@ class CompactMesh:
         return tuple(self._integer_hex_bits(int(v)) for v in a['q.pair'][index])
 
     def _pair(self, index):
-        q = self.rational(int(index))
-        return [hex(q.numerator), hex(q.denominator)]
+        index = int(index)
+        if self._segment is not None:
+            q = self.rational(index)
+            return [hex(q.numerator), hex(q.denominator)]
+        require(0 <= index < len(self._arrays['q.pair']), 'rational index outside pool')
+        n, d = (self.integer(int(v)) for v in self._arrays['q.pair'][index])
+        return [hex(n), hex(d)]
 
     def _tag(self, index):
         start, end = map(int, self._arrays['tag.offset'][index:index+2])

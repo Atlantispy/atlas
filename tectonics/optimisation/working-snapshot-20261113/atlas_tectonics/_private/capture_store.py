@@ -10,6 +10,7 @@ cache, background work, codec installation or original-file rewrite occurs.
 """
 from __future__ import annotations
 
+from atlas_shared.errors import AtlasError
 import hashlib
 import json
 import math
@@ -42,7 +43,7 @@ _HEADER_KEYS = frozenset(('format', 'kind', 'representation', 'metadata',
                           'codec', 'level', 'backend_sha256'))
 
 
-class CaptureError(ValueError):
+class CaptureError(ValueError, AtlasError):
     """Invalid, changed, incomplete or unsupported capture."""
 
 
@@ -315,8 +316,9 @@ def _write_frames(target, chunks, header, budget, backend, check,
             raise CaptureError('capture exceeds logical-byte limit')
         code, payload = (0, raw) if header['codec'] == 'raw' else _encode(
             raw, backend, header['level'], budget)
-        emit(FRAME.pack(b'C', count, code, len(raw), len(payload),
-                        hashlib.sha256(raw).digest(), hashlib.sha256(payload).digest()))
+        raw_digest = hashlib.sha256(raw).digest()
+        stored_digest = raw_digest if code == 0 else hashlib.sha256(payload).digest()
+        emit(FRAME.pack(b'C', count, code, len(raw), len(payload), raw_digest, stored_digest))
         emit(payload)
         raw_hash.update(raw)
         raw_bytes += len(raw)
@@ -559,14 +561,16 @@ class CaptureReader:
                 raise CaptureError('truncated capture payload/footer')
             owner = CaptureBytes(self._budget, length)
             payload = self._read(stored)
-            if hashlib.sha256(payload).digest() != expected_stored:
+            stored_digest = hashlib.sha256(payload).digest()
+            if stored_digest != expected_stored:
                 raise CaptureError('stored capture chunk hash mismatch')
             file_hash.update(frame)
             file_hash.update(payload)
             owner._value = payload if code == 0 else _decode(
                 payload, length, _backend(self._backend, self._header['backend_sha256']),
                 self._header['level'], self._budget)
-            if hashlib.sha256(owner.value).digest() != expected_raw:
+            raw_digest = stored_digest if code == 0 else hashlib.sha256(owner.value).digest()
+            if raw_digest != expected_raw:
                 raise CaptureError('raw capture chunk hash mismatch')
             raw_hash.update(owner.value)
             raw_bytes += length

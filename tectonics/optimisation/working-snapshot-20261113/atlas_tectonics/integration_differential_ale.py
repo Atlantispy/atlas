@@ -658,8 +658,11 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
               _endpoint_checkpoints=None):
     native_mask_leaves = _native_mask_leaf_limit(max_leaves, max_native_mask_leaves)
     native_measures.validate_source(collar, source_flow_stage)
-    native_projection.validate_source(native_measures, funding)
-    native_directed_volumes.validate_source(native_measures, native_projection)
+    # The first call admits the immutable parent fields for all three issued holders.
+    native_projection._validate_binding(native_measures, funding)
+    collar._verify()
+    native_directed_volumes._validate_binding(native_measures, native_projection)
+    collar._verify()
     finite_stock_state._owner._verify()
     width, stream_width = W._q(max_volume_error_m3), W._q(max_stream_error_m3)
     if min(width, stream_width) < 0 or type(max_leaves) is not int or max_leaves < 1:
@@ -771,7 +774,10 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
             raise V.VolumeError('finite basal compartments overlap')
         if found:
             excluded_at[at] = found[0]
-    originals = {r['face_id']: r for r in native['faces']}
+    originals = {}
+    for face in native['faces']:
+        face_id = face['face_id']
+        originals[face_id] = face if face_id not in originals else None
     selected = {r['face_id']: r for r in directed['faces']}
     boundary_faces = {}
     ports = {}
@@ -812,8 +818,9 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
         for contact in group['contacts']:
             key = contact['logical_cell_id']; support, row, _ = components[key]
             voxel = boxes[tuple(row['voxel_index'])]
-            polynomial = N.component_normal_polynomial(native_measures, face['face_id'], voxel,
-                contact['axis'], contact['end'], projection=native_projection, budget=budget)
+            polynomial = N._component_normal_polynomial(native_measures, face['face_id'], voxel,
+                contact['axis'], contact['end'], projection=native_projection, budget=budget,
+                native_view=(native, originals[face['face_id']]))
             ident, measured = retain(_compact_wall(support, key, axis, contact['end'],
                 normal_polynomial=polynomial.polynomial, max_width_m3=stream_width,
                 max_leaves=native_mask_leaves, budget=budget))
@@ -849,7 +856,7 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
         native_flux_projection=native_projection.record(), native_directed_volumes=D._without(native_directed_volumes.record(), P.DIRECTED_EFFORT),
         interval_id=interval.interval_id, partition_id=partition.partition_id,
         finite_state_id=finite_stock_state.state_id, finite_owner_id=finite_stock_state._owner.owner_id,
-        component_registry_id=finite_stock_state._owner.definition()['registry_id'],
+        component_registry_id=finite_stock_state._owner._checked_registry_id(),
         **{k: p[k] for k in ('parent_partition_id', 'component_keys', 'start_time_s', 'end_time_s',
             'start_support_id', 'end_support_id', 'trajectory', 'trajectory_id', 'prior_trajectory_id',
             'grid_id', 'grid_lines', 'grid_origin_m', 'grid_basis', 'support_ids', 'identity_start_cells')},

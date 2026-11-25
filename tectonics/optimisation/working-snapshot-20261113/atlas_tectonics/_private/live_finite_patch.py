@@ -105,10 +105,13 @@ def graph(proposal):
     return json.loads(proposal._encoded)['graph']
 
 
+def _decode_stocks(rows, decode):
+    return {key: tuple(map(decode, values)) for key, values in rows.items()}
+
+
 def stocks(proposal, decode):
     if not LIVE_COMPOSITE.is_compact(proposal._encoded):
-        return {key: tuple(map(decode, values))
-                for key, values in json.loads(proposal._encoded)['stocks'].items()}
+        return _decode_stocks(json.loads(proposal._encoded)['stocks'], decode)
     with proposal._encoded.root().field('stocks') as ref:
         held = ref.export(max_logical_bytes=MAX_MUTABLE_BYTES, max_owned_bytes=MAX_MUTABLE_BYTES)
     # The caller receives an owned dictionary: converted exact arithmetic and
@@ -124,6 +127,11 @@ def is_stocks(value, budget):
 
 
 def transport_inputs(proposal, decode):
+    if type(proposal._encoded) is bytes:
+        record = json.loads(proposal._encoded)
+        detached_graph, rows = record['graph'], record['stocks']
+        del record
+        return detached_graph, _decode_stocks(rows, decode)
     ref = graph(proposal)
     if not isinstance(ref, RecordRef):
         return ref, stocks(proposal, decode)
@@ -195,6 +203,28 @@ def reservoir_source(source):
         '            return self._prepare_live(state, graph, physical_stocks, exchanges,\n'
         '                source_stage_id=source_stage_id, transport_parent_id=transport_parent_id)\n\n'
         '    def _prepare_live(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,\n')
+    source = _once(source, '    def initial(self):\n',
+        '    def _checked_registry_id(self):\n'
+        '        self._verify()\n'
+        "        return json.loads(_json(self._definition['registry_id']))\n\n"
+        '    def initial(self):\n')
+    source = _once(source,
+        '    def _prepare_live(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,\n'
+        '                transport_parent_id=None):\n',
+        '    def _prepare_joined(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,\n'
+        '                        transport_parent_id):\n'
+        '        with LIVE_FINITE.graph_input(physical_graph, budget=self._budget) as graph:\n'
+        '            return self._prepare_live(state, graph, physical_stocks, exchanges,\n'
+        '                source_stage_id=source_stage_id, transport_parent_id=transport_parent_id, borrow_exact=True)\n'
+        '\n'
+        '    def _prepare_live(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,\n'
+        '                transport_parent_id=None, borrow_exact=False):\n')
+    source = _once(source,
+        '            stocks = {k: [Q(v) for v in physical_stocks[k]] for k in self._names}\n',
+        '            if borrow_exact:\n'
+        '                stocks = {k: [v if type(v) is Q else Q(v) for v in physical_stocks[k]] for k in self._names}\n'
+        '            else:\n'
+        '                stocks = {k: [Q(v) for v in physical_stocks[k]] for k in self._names}\n')
     source = _once(source, 'type(exchanges) is not list or type(physical_graph) is not dict',
                    'type(exchanges) is not list or not LIVE_SPATIAL.is_record(physical_graph)')
     source = L._tail(source, 'finish',

@@ -16,6 +16,7 @@ import time
 
 import numpy as np
 
+from atlas_shared.errors import AtlasError
 from atlas_tectonics._private import native_transfer as N
 from atlas_tectonics._private import mesh_tables as M
 from atlas_tectonics._private import partition_tables as P
@@ -32,7 +33,7 @@ DESCRIPTOR_EXTRAS = ('partition_id', 'supports')
 CHECK_INTERVAL_S = 0.25
 
 
-class CompactPartitionWorkflowRefused(ValueError):
+class CompactPartitionWorkflowRefused(ValueError, AtlasError):
     pass
 
 

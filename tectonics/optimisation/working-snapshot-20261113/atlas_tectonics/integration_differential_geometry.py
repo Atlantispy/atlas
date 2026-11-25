@@ -14,6 +14,7 @@ All curved/time measurement error is enclosed and caller-budgeted.  No stock,
 constitutive field, source reservoir or native velocity is changed here.
 SPDX-License-Identifier: AGPL-3.0-only
 """
+from atlas_shared.errors import AtlasError
 from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
@@ -26,6 +27,7 @@ from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private import live_finite_patch as LIVE_FINITE
 from itertools import product
 from contextlib import ExitStack, nullcontext
+from pathlib import Path
 
 import numpy as np
 
@@ -873,6 +875,17 @@ def _polynomials(declarations):
     return tuple(out)
 
 
+_SIMPLEX_WEIGHTS = tuple(tuple(Q(math.factorial(k)*math.factorial(l), math.factorial(k+l+2))
+                               for l in range(9-k)) for k in range(9))
+_SIMPLEX_SOURCE = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def _simplex_weight(k, l, operand):
+    if k+l <= 8 and type(operand) in (Q, int):
+        return _SIMPLEX_WEIGHTS[k][l]
+    return Q(math.factorial(k)*math.factorial(l), math.factorial(k+l+2))
+
+
 def _polynomial_integral(poly, polynomial, arena):
     """Exact monomial integration; s^i t^j on a unit triangle is i!j!/(i+j+2)!."""
     if not poly or not polynomial:
@@ -890,7 +903,7 @@ def _polynomial_integral(poly, polynomial, arena):
             powers_v.append(_multiply(powers_v[-1], vp))
         for (i, j), coefficient in polynomial.items():
             terms = _multiply(powers_u[i], powers_v[j])
-            total += determinant*coefficient*sum(value*Q(math.factorial(k)*math.factorial(l), math.factorial(k+l+2))
+            total += determinant*coefficient*sum(value*_simplex_weight(k, l, value)
                                                for (k, l), value in terms.items())
             arena.work(16+16*len(terms))
     return total
@@ -1082,13 +1095,13 @@ def _rotation_boxes_fraction(vector, omega, a, b, level, arena):
             break
         arena.work(128+32*order)
         values = (*omega, a, b, major, *(q for pair in term for q in pair))
-        with V._work(values, arena.resource):
+        with V._work(values, arena.resource, convert_values=False):
             term = tuple((lo/(order+1), hi/(order+1)) for lo, hi in _cross_bounds(fixed, term))
             terms.append(term)
             major = following
             order += 1
     arena.work(128*len(terms)**2)
-    with V._work((*omega, a, b, tail, *(q for term in terms for pair in term for q in pair)), arena.resource):
+    with V._work((*omega, a, b, tail, *(q for term in terms for pair in term for q in pair)), arena.resource, convert_values=False):
         return tuple(_bernstein_range(tuple(term[j] for term in terms)+
             (((Q(0), Q(0)) if inactive[j] else (-tail, tail)),), a, b) for j in range(3))
 
@@ -1115,16 +1128,16 @@ def _wp23_fraction(value):
     return Q(int(value.numerator), int(value.denominator))
 
 
-def _wp23_product(first, second):
-    values = (first[0]*second[0], first[0]*second[1], first[1]*second[0], first[1]*second[1])
+def _wp23_scale(interval, factor):
+    values = (interval[0]*factor, interval[1]*factor)
     return min(values), max(values)
 
 
-def _wp23_cross(a, b):
+def _wp23_cross_fixed(fixed, box):
     out = []
     for j in range(3):
-        left = _wp23_product(a[(j+1) % 3], b[(j+2) % 3])
-        right = _wp23_product(a[(j+2) % 3], b[(j+1) % 3])
+        left = _wp23_scale(box[(j+2) % 3], fixed[(j+1) % 3])
+        right = _wp23_scale(box[(j+1) % 3], fixed[(j+2) % 3])
         out.append((left[0]-right[1], left[1]-right[0]))
     return tuple(out)
 
@@ -1136,8 +1149,8 @@ def _wp23_bernstein(coefficients, a, b):
     if a == b:
         low = high = mpq(0)
         for k in range(degree+1):
-            factor = mpq(math.comb(k, 0))*a**k
-            p = _wp23_product(coefficients[k], (factor, factor))
+            factor = a**k
+            p = _wp23_scale(coefficients[k], factor)
             low += p[0]; high += p[1]
         return low, high
     width = b-a
@@ -1146,15 +1159,15 @@ def _wp23_bernstein(coefficients, a, b):
         low = high = mpq(0)
         for k in range(j, degree+1):
             factor = mpq(math.comb(k, j))*a**(k-j)*width**j
-            p = _wp23_product(coefficients[k], (factor, factor))
+            p = _wp23_scale(coefficients[k], factor)
             low += p[0]; high += p[1]
         power.append((low, high))
     lows, highs = [], []
     for j in range(degree+1):
         low = high = mpq(0)
         for k in range(j+1):
-            factor = mpq(math.comb(j, k), math.comb(degree, k))
-            p = _wp23_product(power[k], (factor, factor))
+            factor = mpq(1) if j == degree else mpq(math.comb(j, k), math.comb(degree, k))
+            p = _wp23_scale(power[k], factor)
             low += p[0]; high += p[1]
         lows.append(low); highs.append(high)
     return min(lows), max(highs)
@@ -1179,10 +1192,9 @@ def _wp23_rotation_compute(vector, omega, a, b, level, arena, charges):
     if not any(omega) or a == b == 0:
         return vector
     w = tuple(mpq(q) for q in omega)
-    fixed = tuple((q, q) for q in w)
     box = tuple((mpq(lo), mpq(hi)) for lo, hi in vector)
-    first = _wp23_cross(fixed, box)
-    second = _wp23_cross(fixed, first)
+    first = _wp23_cross_fixed(w, box)
+    second = _wp23_cross_fixed(w, first)
     inactive = tuple(first[j][0] == first[j][1] == second[j][0] == second[j][1] == 0 for j in range(3))
     if all(inactive):
         return vector
@@ -1202,7 +1214,7 @@ def _wp23_rotation_compute(vector, omega, a, b, level, arena, charges):
         arena.work(128+32*order)
         values = (*w, qa, qb, major, *(q for pair in term for q in pair))
         with _wp23_work(values, arena.resource):
-            term = tuple((lo/(order+1), hi/(order+1)) for lo, hi in _wp23_cross(fixed, term))
+            term = tuple((lo/(order+1), hi/(order+1)) for lo, hi in _wp23_cross_fixed(w, term))
             terms.append(term)
             major = following
             order += 1
@@ -1281,11 +1293,15 @@ def _constraint_boxes(constraint, a, b, level, arena):
 
 def _boxed_constraint_line(face, bounds, box, offset, sign, inner):
     """Affine lower/upper bound using the rectangle's actual coordinate signs."""
-    vertices = tuple(W._point(face, p) for p in W._rectangle(bounds))
+    origin, eu, ev = face[:3]
+    (u0, u1), (v0, v1) = bounds
     normal, uncertainty = [], Q(0)
     for j, pair in enumerate(box):
         lo, hi = pair if sign > 0 else (-pair[1], -pair[0])
-        minimum, maximum = min(p[j] for p in vertices), max(p[j] for p in vertices)
+        u_first, u_last = eu[j]*u0, eu[j]*u1
+        v_first, v_last = ev[j]*v0, ev[j]*v1
+        minimum = origin[j]+min(u_first, u_last)+min(v_first, v_last)
+        maximum = origin[j]+max(u_first, u_last)+max(v_first, v_last)
         if minimum >= 0:
             normal.append(lo if inner else hi)
         elif maximum <= 0:
@@ -1967,7 +1983,7 @@ def _constraint_pose(constraint, a, b, level, arena, *, _validate_only=False):
         axis = next((w for w in rotations if any(w)), None)
         if axis is not None:
             with V._work((*normal, error, *(x for v in (*directions, *rotations) for x in v)),
-                         arena.resource):
+                         arena.resource, convert_values=False):
                 arena.work(64+32*len(rotations))
                 if (all(not any(O._cross(axis, w)) for w in rotations) and
                         all(not O._dot(axis, direction) for direction in directions)):
@@ -2027,7 +2043,7 @@ def _literal_plane(literal, posed, cell, inner, scale=None):
     return (*( -sign*q for q in normal), -sign*offset-pad)
 
 
-def _rigid_plane_path(constraint):
+def _rigid_plane_path(constraint, *, decoded_rays=None):
     """Exact coaxial homogeneous-plane identity, never a fitted pose.
 
     Commuting rotations add their rotation vectors. An axial ray is fixed,
@@ -2056,13 +2072,17 @@ def _rigid_plane_path(constraint):
             return None
         result = normal, theta, omega
     elif kind == 'moving-ray-edge':
-        rays = constraint['rays']
-        directions = [_load_vec(ray['direction']) for ray in rays]
+        if decoded_rays is None:
+            rays = constraint['rays']
+            directions = [_load_vec(ray['direction']) for ray in rays]
+            motions = ((_history(ray.get('prior_rotations', ())), _load_vec(ray['angular_velocity_rad_s']))
+                       for ray in rays)
+        else:
+            directions = [direction for direction, _, _ in decoded_rays]
+            motions = ((history, velocity) for _, velocity, history in decoded_rays)
         paths = []
         vectors = []
-        for ray in rays:
-            history = _history(ray.get('prior_rotations', ()))
-            omega = _load_vec(ray['angular_velocity_rad_s'])
+        for history, omega in motions:
             theta = tuple(sum((w[j]*dt for w, dt in history), Q(0)) for j in range(3))
             paths.append((theta, omega))
             vectors.extend(w for w, _ in history)
@@ -2085,8 +2105,9 @@ def _rigid_plane_path(constraint):
     return normal, theta, omega
 
 
-def _plane_identity(constraint):
-    path = _rigid_plane_path(constraint)
+def _plane_identity(constraint, *, decoded_rays=None):
+    path = (_rigid_plane_path(constraint) if decoded_rays is None else
+            _rigid_plane_path(constraint, decoded_rays=decoded_rays))
     if path is None:
         return None
     return _plane_path_identity(path)
@@ -2096,6 +2117,33 @@ def _plane_path_identity(path):
     normal, theta, omega = path
     first = next(q for q in normal if q)
     return (tuple(q/first for q in normal), theta, omega), (1 if first > 0 else -1)
+
+
+def _ordered_plane_identities(constraints, owned_groups, fans, raw_rays, rays):
+    identities = {}
+    entries = iter(constraints.items())
+    for owner_index, group in owned_groups.items():
+        fan = fans[owner_index]
+        for index, name in enumerate(group):
+            if name in identities:
+                continue
+            item = next(entries, None)
+            if item is None:
+                return identities
+            actual, constraint = item
+            first, second = fan[index], fan[(index+1) % len(fan)]
+            pair = constraint.get('rays')
+            if (actual != name or constraint['kind'] != 'moving-ray-edge' or type(pair) is not list
+                    or len(pair) != 2 or pair[0] is not raw_rays[first] or pair[1] is not raw_rays[second]):
+                # The iterator owns the original order, including this fetched item.
+                identities[actual] = _plane_identity(constraint)
+                for actual, constraint in entries:
+                    identities[actual] = _plane_identity(constraint)
+                return identities
+            identities[name] = _plane_identity(constraint, decoded_rays=(rays[first], rays[second]))
+    for name, constraint in entries:
+        identities[name] = _plane_identity(constraint)
+    return identities
 
 
 def _interface_identity(constraint):
@@ -2192,7 +2240,8 @@ def _material_frame_constraint(constraint, omega):
     return None
 
 
-def _angular_possible(literals, constraints, omega, duration, arena, cache, owner_rays=()):
+def _angular_possible(literals, constraints, omega, duration, arena, cache, owner_rays=(), *,
+                      owner_ray_ids=(), decoded_rays=None):
     """Prove zero angular measure in a material-corotating frame.
 
     Independent world-frame pose errors otherwise turn a shared moving vertex
@@ -2217,7 +2266,10 @@ def _angular_possible(literals, constraints, omega, duration, arena, cache, owne
     entries, owner = cache if cache is not None else ({}, arena)
     if key in entries:
         return entries[key]
-    if any(any(O._cross(_load_vec(ray['angular_velocity_rad_s']), omega)) for ray in owner_rays):
+    if decoded_rays is None:
+        if any(any(O._cross(_load_vec(ray['angular_velocity_rad_s']), omega)) for ray in owner_rays):
+            return True
+    elif any(any(O._cross(decoded_rays[name][1], omega)) for name in owner_ray_ids):
         return True
     with B._ChildArena(owner) as scratch:
         posed = tuple((_constraint_pose(value, Q(0), duration, 0, scratch), sign) for value, sign in angular)
@@ -2226,9 +2278,14 @@ def _angular_possible(literals, constraints, omega, duration, arena, cache, owne
         # ray/plane dot products have nonpositive certified upper bounds.
         # This cheap proof precedes polyhedral clipping, retaining tangencies
         # as zero positive volume, never comparing with a numerical epsilon.
-        generators = tuple(_ray_box(_load_vec(ray['direction']),
-            tuple(a-b for a, b in zip(_load_vec(ray['angular_velocity_rad_s']), omega)),
-            Q(0), duration, 0, scratch, _history(ray.get('prior_rotations', ())))[:2] for ray in owner_rays)
+        if decoded_rays is None:
+            generators = tuple(_ray_box(_load_vec(ray['direction']),
+                tuple(a-b for a, b in zip(_load_vec(ray['angular_velocity_rad_s']), omega)),
+                Q(0), duration, 0, scratch, _history(ray.get('prior_rotations', ())))[:2] for ray in owner_rays)
+        else:
+            generators = tuple(_ray_box(direction, tuple(a-b for a, b in zip(velocity, omega)),
+                Q(0), duration, 0, scratch, history)[:2]
+                for direction, velocity, history in map(decoded_rays.__getitem__, owner_ray_ids))
         separated = False
         for (normal, error, offset), sign in posed:
             if generators and not offset and all(sign*O._dot(normal, point)+
@@ -2436,7 +2493,7 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
         subtract.append(tuple(group))
     duration = W._decode(record['duration_s'])
     with B._Arena(budget) as arena:
-        identities = {name: _plane_identity(value) for name, value in constraints.items()}
+        identities = _ordered_plane_identities(constraints, owned_groups, fans, record['rays'], rays)
         arena.keep(tuple(q for item in identities.values() if item is not None
                          for vector in item[0] for q in vector), objects=2*len(identities))
         posed = {name: _cached_constraint_pose(value, duration, arena, _pose_cache) for name, value in constraints.items()}
@@ -2467,8 +2524,10 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
                 continue
             if any(literal in impossible for literal in literals):
                 continue
+            owner_ray_ids = fans[path[1]]
             if not _angular_possible(literals, constraints, omega, duration, arena, _angular_cache,
-                                     tuple(record['rays'][name] for name in fans[path[1]])):
+                                     tuple(record['rays'][name] for name in owner_ray_ids),
+                                     owner_ray_ids=owner_ray_ids, decoded_rays=rays):
                 continue
             live = ExitStack()
             try:
@@ -2627,16 +2686,11 @@ def _layer_order_key(layer):
             ('radius_m', 'top_depth_m', 'bottom_depth_m')))
 
 
-def _box_order_key(box):
-    return (*(_load_vec(box[name]) for name in ('lower_m', 'upper_m', 'origin_m')),
-            tuple(tuple(Q(q) if type(q) is int else W._decode(q) for q in row) for row in box['basis']))
-
-
 def _support_order_key(row):
     constraints = {name: _constraint_key(value) for name, value in row['constraints'].items()}
     components = tuple(sorted(tuple(sorted((constraints[name], sign) for name, sign in part['constraints']))
                               for part in row['components']))
-    return (_box_order_key(row['voxel']), _layer_order_key(row['radial_layer']), row['kind'],
+    return (_layer_order_key(row['radial_layer']), row['kind'],
             _load_vec(row['material_angular_velocity_rad_s']), W._decode(row['duration_s']), components)
 
 
@@ -2675,6 +2729,12 @@ def _owned_order_key(row, make_key, budget):
     return OwnedRow(make_key(row), owner)
 
 
+def _require_funding_remainder_rows(keys, rows):
+    unique_keys = set(keys)
+    if len(unique_keys) != len(keys) or not unique_keys.issubset(rows):
+        raise V.VolumeError('funded source component keys are duplicated or have no actual remainder')
+
+
 def _initial_partition_sources(funding, sphere, *, budget):
     """Prove exact initial owner coverage, not merely closed stock/area sums."""
     from . import integration_support as U
@@ -2700,10 +2760,8 @@ def _initial_partition_sources(funding, sphere, *, budget):
     face_plate = {face.face_id: None for face in network.faces}
     rows = {(row['patch_id'], row['sublayer']): row for row in r['exterior_remainder']}
     keys = tuple(tuple(k) for k in r['component_keys'])
-    unique_keys = set(keys)
-    if len(unique_keys) != len(keys) or not unique_keys.issubset(rows):
-        raise V.VolumeError('funded source component keys are duplicated or have no actual remainder')
-    del unique_keys
+    if getattr(funding, '_source_volume_proven', False) is not True:
+        _require_funding_remainder_rows(keys, rows)
     selected = {key[0] for key in keys}
     if selected != patches.keys():
         raise V.VolumeError('funded source omits actual owner patch components')
@@ -3238,7 +3296,7 @@ def prepare_interval_partition(parent_partition, interval, funding, sphere, coll
     grid_lines = tuple(tuple(map(W._decode, axis)) for axis in old['grid_lines'])
     final_fields = dict(finite_state_id=finite_stock_state.state_id, finite_owner_id=finite_stock_state._owner.owner_id,
         component_registry_id=finite_record['registry_id']
-            if 'registry_id' in finite_record else finite_stock_state._owner.definition()['registry_id'])
+            if 'registry_id' in finite_record else finite_stock_state._owner._checked_registry_id())
     del step, stocks, finite_record, old, old_owner
     result = _assemble_partition(funding, sphere, interval, collar, original,
         list(regions.values()), grid_lines=grid_lines,
@@ -3501,7 +3559,7 @@ def _wall_cone_zero_measure(record, component, face, duration, arena):
     Two generators in the face are deliberately insufficient. Ordered ray
     history and current motion use the existing componentwise rotation bounds.
     """
-    with V._work((duration, *face[0], *face[3]), arena.resource):
+    with V._work((duration, *face[0], *face[3]), arena.resource, convert_values=False):
         if O._dot(face[0], face[3]) != 0:
             return None
     keys, ids, edges, adjacency = [], {}, {}, {}
@@ -3522,7 +3580,7 @@ def _wall_cone_zero_measure(record, component, face, duration, arena):
         return None
     operands = (duration, *face[3], *(q for direction, omega, prior in keys for q in
         (*direction, *omega, *(v for old, dt in prior for v in (*old, dt)))))
-    with B._ChildArena(arena) as scratch, V._work(operands, arena.resource):
+    with B._ChildArena(arena) as scratch, V._work(operands, arena.resource, convert_values=False):
         scratch.work(128+64*len(keys))
         boxes = {}
         def box(index):
@@ -3576,7 +3634,7 @@ def _wall_outer_zero_measure(record, component, layer, face, duration, arena):
     values = (duration, layer.bottom_radius_m, layer.top_radius_m,
               *(q for vector in face[:4] for q in vector),
               *(q for pair in face[4] for q in pair))
-    with B._ChildArena(arena) as scratch, V._work(values, arena.resource):
+    with B._ChildArena(arena) as scratch, V._work(values, arena.resource, convert_values=False):
         polygon = W._rectangle(face[4])
         radial = W._radial_planes(face, face[4], layer, False)
         scratch.work(128)
@@ -3588,7 +3646,7 @@ def _wall_outer_zero_measure(record, component, layer, face, duration, arena):
             if not polygon:
                 break
             box, offset = _constraint_boxes(record['constraints'][name], Q(0), duration, 0, scratch)
-            with V._work((*values, offset, *(q for pair in box for q in pair)), arena.resource):
+            with V._work((*values, offset, *(q for pair in box for q in pair)), arena.resource, convert_values=False):
                 line = _boxed_constraint_line(face, face[4], box, offset, sign, False)
                 polygon = W._clip2(polygon, line, scratch)
                 scratch.keep(tuple(q for point in polygon for q in point), len(polygon))
@@ -3924,7 +3982,7 @@ _CP_SOURCE_SHA256 = 'e18220a7fb672a6a3b8c4d6342b48fd960eadaeba8bce66ddfe0fe8e548
 _CP_GATE_CALLS = 64
 
 
-class _ComplementaryCut(Exception):
+class _ComplementaryCut(AtlasError):
     """Internal: a gated Taylor attempt found an exact complementary-cut certificate."""
 
     def __init__(self, certificate):
@@ -4177,7 +4235,7 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
                     # Charged after the except block, so the aborted attempt's frames are released.
                     exclusion = certificate
                     with V._work((duration, *(W._decode(q) for q in certificate['cut_ray_parallel_test'])),
-                                 arena.resource):
+                                 arena.resource, convert_values=False):
                         arena.work(256)
                     values, leaves, met = ((Q(0), Q(0)), (Q(0), Q(0))), 1, True
                     rule = 'exact-zero-area-from-complementary-moving-cuts'
@@ -4574,7 +4632,7 @@ def close_differential_ale(bounds, start_volumes_m3, finite_stock_state, *, budg
         # The original schema and lineage gates below still precede closure.
         if record.get('physical_geometry_family') != 'differential-plate-component-partition-v1':
             raise V.VolumeError('differential finite closure cannot reinterpret a common-rigid graph')
-        if record.get('component_registry_id') != finite_stock_state._owner.definition()['registry_id']:
+        if record.get('component_registry_id') != finite_stock_state._owner._checked_registry_id():
             raise V.VolumeError('finite inventory and physical graph component registries differ')
         if record.get('finite_owner_id') != finite_stock_state._owner.owner_id:
             raise V.VolumeError('certified finite definitions differ from the actual stock owner')
@@ -4662,7 +4720,7 @@ def _corotating_plane_pair_zero_volume(cell, literals, constraints, arena, *, _q
         for name2, sign2, second, theta2, omega2, _ in entries[i+1:]:
             if (theta, omega) != (theta2, omega2):
                 continue
-            with V._work((*first, *second, *theta, *omega, *axis), arena.resource):
+            with V._work((*first, *second, *theta, *omega, *axis), arena.resource, convert_values=False):
                 arena.work(128)
                 u, v = O._cross(axis, first), O._cross(axis, second)
                 j = next((j for j in range(3) if u[j]*v[j] < 0), None)
@@ -4730,7 +4788,7 @@ def _coaxial_edge_pair_zero_volume(cell, literals, constraints, a, b, level, are
                 continue
             operands = (*axis, a, b, *(x for path in (f, p, q) for x in path[0]),
                         *(x for w in rotations for x in w))
-            with V._work(operands, arena.resource):
+            with V._work(operands, arena.resource, convert_values=False):
                 arena.work(64+32*len(rotations))
                 if (any(any(O._cross(axis, w)) for w in rotations) or O._dot(axis, p[0])):
                     continue
@@ -4825,7 +4883,7 @@ def _common_ray_cone_zero_volume(literals, constraints, a, b, level, arena, *, c
         return None
     operands = (a, b, *(cell._geometry() if cell is not None else ()), *(q for direction, omega, prior in paths for q in
         (*direction, *omega, *(x for w, dt in prior for x in (*w, dt)))))
-    with V._work(operands, arena.resource):
+    with V._work(operands, arena.resource, convert_values=False):
         arena.work(128+64*len(paths))
         if any(any(O._cross(axis, w)) for w in rotations):
             return None
@@ -5033,7 +5091,7 @@ def _clipped_voxel_edge_zero_volume(cell, literals, constraints, time, level, ar
         box = B._owned_box(cell, scratch)
         normals = {}
         for fixed_name, fixed_sign, normal, offset in fixed:
-            with V._work((*normal, offset), arena.resource):
+            with V._work((*normal, offset), arena.resource, convert_values=False):
                 plane = (*( -fixed_sign*q for q in normal), -fixed_sign*offset)
             clipped = B._clip(box, plane, scratch)
             if not clipped:
@@ -5047,7 +5105,7 @@ def _clipped_voxel_edge_zero_volume(cell, literals, constraints, time, level, ar
                 if cache_key not in normals:
                     boxes = tuple(_ray_box(direction, omega, time, time, level, arena, prior)[2]
                                   for direction, omega, prior in paths)
-                    with V._work(tuple(q for box in boxes for pair in box for q in pair), arena.resource):
+                    with V._work(tuple(q for box in boxes for pair in box for q in pair), arena.resource, convert_values=False):
                         raw = _cross_bounds(*boxes)
                         normals[cache_key] = tuple(tuple(sorted(sign*q for q in pair)) for pair in raw)
                         scratch.keep(tuple(q for pair in normals[cache_key] for q in pair), objects=8)
@@ -5058,7 +5116,7 @@ def _clipped_voxel_edge_zero_volume(cell, literals, constraints, time, level, ar
                 if not any(lo > 0 or hi < 0 for lo, hi in bounds):
                     continue
                 with V._work((*(q for pair in bounds for q in pair),
-                              *(q for point in points for q in point)), arena.resource):
+                              *(q for point in points for q in point)), arena.resource, convert_values=False):
                     maxima = tuple(_dot_bounds(bounds, tuple((q, q) for q in point))[1] for point in points)
                     arena.work(64*len(points))
                     maximum = max(maxima)
@@ -5381,12 +5439,12 @@ def _component_volume_certificate(layer, cell, literals, constraints, time, leve
     children use quadrature; all other cases retain the original enclosure.
     """
     clipping = arena if _clip_arena is None else _clip_arena
-    if clipping.resource is not arena.resource:
-        raise V.VolumeError('component clipping must share the query budget')
     if detail is not None:
         bounds, point = _component_volume_leaf(layer, cell, literals, constraints, time, level,
             arena, witness_point=True, detail=detail, _clip_arena=clipping, _cone_query=_cone_query, _loose_witness=_loose_witness)
         return bounds, point, mask, bounds[0]
+    if clipping.resource is not arena.resource:
+        raise V.VolumeError('component clipping must share the query budget')
     radial_bounds = cell._radial_bounds()
     minimum, maximum = radial_bounds
     if minimum >= layer.top_radius_m**2 or maximum <= layer.bottom_radius_m**2:
@@ -5401,7 +5459,7 @@ def _component_volume_certificate(layer, cell, literals, constraints, time, leve
         if error:
             continue  # D1: item 15 off (no padded containment for inexact poses, as r7)
         clipping.work(64)
-        with V._work((*normal, offset, *cell._geometry()), clipping.resource):
+        with V._work((*normal, offset, *cell._geometry()), clipping.resource, convert_values=False):
             # The literal means (-sign*n).x <= -sign*offset. Maximise this
             # linear functional over the Cartesian box in its exact frame.
             n = tuple(-sign*q for q in normal)
@@ -5685,7 +5743,7 @@ def _wp20_zero_in_hull(vectors, arena):
     """Exact positive weights over <=4 rational 3-vectors summing to zero, or None."""
     from itertools import combinations
     vs = [v for v in vectors if any(v)]
-    with V._work(tuple(q for v in vs for q in v), arena.resource):
+    with V._work(tuple(q for v in vs for q in v), arena.resource, convert_values=False):
         for k in range(2, min(4, len(vs))+1):
             for subset in combinations(range(len(vs)), k):
                 arena.work(64*k)
@@ -5824,7 +5882,7 @@ def _wp20_axial_meridian_zero(literals, constraints, time, arena):
         from itertools import combinations
         for (n1, s1, u), (n2, s2, v), (n3, s3, w) in combinations(boxes, 3):
             arena.work(512)
-            with V._work(tuple(q for box in (u, v, w) for pair in box for q in pair)+axis, arena.resource):
+            with V._work(tuple(q for box in (u, v, w) for pair in box for q in pair)+axis, arena.resource, convert_values=False):
                 dets = (_dot_bounds(axis_box, _cross_bounds(v, w)), _dot_bounds(axis_box, _cross_bounds(w, u)),
                         _dot_bounds(axis_box, _cross_bounds(u, v)))
             if all(d[0] > 0 for d in dets) or all(d[1] < 0 for d in dets):
@@ -5837,12 +5895,24 @@ def _wp20_axial_meridian_zero(literals, constraints, time, arena):
 _GEOMETRY_PROGRESS = None
 
 
-def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
-        endpoint, max_width_m3, max_leaves, positive_witness, budget, relative_error, _funded=None, _checkpoint=None, _component_index=None):
-    component = (next((c for c in record['components'] if c['logical_cell_id'] == logical_cell_id), None)
-                 if _component_index is None else record['components'][_component_index])
+def _require_component_id(component, logical_cell_id):
     if component is None or component['logical_cell_id'] != logical_cell_id:
         raise V.VolumeError('unknown physical support component')
+
+
+def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
+        endpoint, max_width_m3, max_leaves, positive_witness, budget, relative_error, _funded=None, _checkpoint=None, _component_index=None):
+    if _component_index is None:
+        candidate_id = None
+        component = next((c for c in record['components']
+                          if (candidate_id := c['logical_cell_id']) == logical_cell_id), None)
+        if component is None:
+            raise V.VolumeError('unknown physical support component')
+        if type(candidate_id) is not str or type(logical_cell_id) is not str:
+            _require_component_id(component, logical_cell_id)
+    else:
+        component = record['components'][_component_index]
+        _require_component_id(component, logical_cell_id)
     width = W._q(max_width_m3)
     if width < 0 or type(max_leaves) is not int or max_leaves < 1:
         raise V.VolumeError('explicit nonnegative volume error and positive leaf limit required')
