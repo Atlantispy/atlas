@@ -40,7 +40,7 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 from atlas_tectonics import integration_mimetic_newton as _POLICY
 
 HERE = Path(__file__).resolve().parent
-CORE_SHA256 = '118d5f1830421b6456ee0c33b9dacaa0a396caa15faa05b429210a768cbd5b76'
+CORE_SHA256 = 'a930641b2de69beac8162e65ce9e65761b3cf590bac4cdf4ec2c7850ebf9d51e'
 POLICY_SHA256 = '767bf6dc34b01fb6c3538c0f2b7e1a9a5e8893a459109de5afcdb9d3ff202b22'
 # Existing low-solver source closures consume this public path constant too.
 POLICY_PATH = Path(_POLICY.__file__).resolve()

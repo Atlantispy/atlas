@@ -4,6 +4,7 @@ A fixed reader reads the previous run's sealed interval when the two trees diffe
 producer output. The record is never adoptable. NOT SCIENTIFICALLY PERMISSIBLE.
 """
 from hashlib import sha256
+from pathlib import PurePosixPath
 
 from atlas_tectonics._private import run_fresh_interval as F
 from atlas_tectonics._private import run_prepared_restart as RUN
@@ -38,9 +39,18 @@ def _paths_inside(value, root):
     return value[len(root)+1:] if type(value) is str and value.startswith(root+'/') else value
 
 
-def plan(profile, sources, path, pin, override=False):
+def _public_source(name):
+    path = PurePosixPath(name)
+    return (len(path.parts) > 1 and path.parts[0] in ('atlas_tectonics', 'atlas_shared')
+            and path.suffix == '.py' and path.as_posix() == name
+            and '\\' not in name and ':' not in name and '..' not in path.parts
+            and path.parts[1] != '_private' and name not in HEAT_PUBLIC)
+
+
+def plan(profile, sources, path, pin, override=False, *, previous=None):
     require(type(override) is bool, 'explicit identity-override flag required')
-    previous = F.FreshProfile.read(path, pin)
+    previous = F.FreshProfile.read(path, pin) if previous is None else previous
+    require(previous.sha256 == pin, 'preselected previous profile differs from its pin')
     row, old = profile.record(), previous.record()
     require(previous.sha256 != profile.sha256 and old['workspace'] == row['workspace'] and
             old['historical_inputs'] == row['historical_inputs'],
@@ -65,8 +75,7 @@ def plan(profile, sources, path, pin, override=False):
             'previous manifest is not self-consistent')
     changed = {name: {'previous': b.get(name), 'this': a.get(name)}
                for name in sorted(set(a) | set(b)) if a.get(name) != b.get(name)}
-    public = {name for name in changed if override and name.startswith('atlas_tectonics/')
-              and not name.startswith('atlas_tectonics/_private/')} - HEAT_PUBLIC
+    public = {name for name in changed if override and _public_source(name)}
     bound = sorted(set(changed) - FREE - public)
     require(not bound, 'reuse-previous-run refused, these changed files bind the producer output: '+', '.join(bound))
     proof = {'source_manifest_sha256': old['source_manifest']['sha256'],

@@ -99,19 +99,21 @@ def _prepare_packaged_guard(argv):
     helper.prepare_installed_runner(profile_path, profile_pin, __file__,
                                     runner_modules=('private_heat_resource_diagnostics_r1', 'windows_workload_job',
                                                     'private_heat_check3_recording_r1', 'start_gate'))
+    return profile
 
 
+_guard_profile = None
 if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private'
         and Path(__file__).resolve().parent.parent.name == 'atlas_tectonics'):
-    _prepare_packaged_guard(sys.argv[1:])
+    _guard_profile = _prepare_packaged_guard(sys.argv[1:])
 
 
 from atlas_tectonics._private import private_heat_resource_diagnostics_r1 as RESOURCE_DIAGNOSTICS
 from atlas_tectonics._private import private_heat_check3_recording_r1 as CHECK3
 
 from atlas_tectonics._private.windows_workload_job import WindowsJob, verify_current_membership
-from atlas_tectonics import machine_resources_monitor as MONITOR
-from atlas_tectonics import resources_gate as GATE
+from atlas_shared.machine import resources_monitor as MONITOR
+from atlas_shared.machine import resources_gate as GATE
 
 RETRIES, RETRY_SECONDS = 50, .02
 PATIENT_TRIES = 500
@@ -649,9 +651,73 @@ def supervise(output, command, *, rss_bytes=None, free_floor_bytes=GATE.FLOOR_BY
             raise check3_recording_error
 
 
+def _guarded_destination(profile, output, command):
+    """Bind the sidecars to the destination the authenticated workload will use."""
+    from atlas_tectonics._private.interval_admission import canonical_store, _ordinary
+    workspace = Path(profile['workspace']).resolve(strict=True)
+    producer = _ordinary(profile['output_directory'])
+    store = canonical_store(profile['store_directory'])
+    private = workspace/profile['native_root']/'atlas_tectonics'/'_private'
+    workload = next((Path(word) for word in command[1:] if not word.startswith('-')), None)
+    if workload is None or workload.parent != private:
+        raise ValueError('guard workload is outside the selected runner directory')
+
+    def option(flag, default=None):
+        words = [word.split('=', 1)[0] for word in command if word.startswith('--')]
+        if any(flag.startswith(word) and word != flag for word in words):
+            raise ValueError('guard workload option is abbreviated: '+flag)
+        if flag not in words:
+            return default
+        if command.count(flag) != 1 or words.count(flag) != 1 or command.index(flag)+1 == len(command):
+            raise ValueError('guard workload option must be supplied once: '+flag)
+        return command[command.index(flag)+1]
+
+    name = workload.name
+    if name == 'reopen_prepared_restart.py':
+        value = option('--output-directory')
+        if value is None or not Path(value).is_absolute():
+            raise ValueError('prepared reader guard requires the selected absolute output directory')
+        directory = _ordinary(value)
+        if (not directory.is_relative_to(workspace) or directory.is_relative_to(producer)
+                or producer.is_relative_to(directory)):
+            raise ValueError('prepared reader guard destination is outside its assigned workspace route')
+        expected = directory/'reopen.json'
+    elif name == 'run_prepared_restart.py':
+        expected = producer/'run.json'
+    elif name in ('run_fresh_interval.py', 'reopen_fresh_restart.py'):
+        mode = option('--mode')
+        number = option('--interval')
+        if mode not in ('root', 'interval') or (number is not None and
+                (mode != 'interval' or not number.isascii() or not number.isdecimal() or int(number) < 1)):
+            raise ValueError('fresh guard has no selected interval destination')
+        suffix = '' if number is None or int(number) <= 1 else f'-{int(number):04d}'
+        if name == 'reopen_fresh_restart.py':
+            if any(word.startswith('--reader-fallback=') or
+                   (word.startswith('--') and word != '--reader-fallback' and '--reader-fallback'.startswith(word))
+                   for word in command) or command.count('--reader-fallback') > 1:
+                raise ValueError('guard workload has no unambiguous reader fallback')
+            fallback = '-fallback' if '--reader-fallback' in command else ''
+            expected = producer/f'reader-{mode}{suffix}{fallback}'/'reopen.json'
+        else:
+            expected = producer/f'run-{mode}{suffix}'/'run.json'
+    else:
+        raise ValueError('guard workload has no selected destination rule')
+    control = store.parent/f'.{store.name}.atlas-home'
+    if (not output.is_absolute() or _ordinary(output) != expected or
+            any(expected.parent.is_relative_to(path) or path.is_relative_to(expected.parent)
+                for path in (store, control))):
+        raise ValueError('guard sidecar destination differs from its admitted workload')
+    return expected
+
+
 def main():
     output, command, diagnostic_reader_integrity = _arguments()
-    return supervise(output, command, diagnostic_reader_integrity=diagnostic_reader_integrity)
+    from atlas_tectonics._private.interval_admission import admitted
+    stores = () if _guard_profile is None else (_guard_profile['store_directory'],)
+    with admitted(stores):
+        if _guard_profile is not None:
+            output = _guarded_destination(_guard_profile, output, command)
+        return supervise(output, command, diagnostic_reader_integrity=diagnostic_reader_integrity)
 
 
 if __name__ == '__main__':

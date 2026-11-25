@@ -20,7 +20,7 @@ import math
 import sys
 import weakref
 
-from . import exact_arithmetic as X
+from ._exact_runtime import BACKEND
 from . import integration_volume as V
 from . import integration_volume_overlap as O
 from .resources import select_budget, WorkBudget, _GrowingLease, _GrowingPredicateLease
@@ -584,7 +584,7 @@ def enclose_shell_cell(layer, cone_vertices, cell, *, holes=(), max_width_m3, ma
 
 _python = sys.modules[__name__]
 _gmp = None
-if X.BACKEND == 'gmpy2':
+if BACKEND == 'gmpy2':
     from . import integration_exact_gmp as _gmp
 # The reference kernel as loaded. A diagnostic that wraps or replaces any of
 # these expects every complete operation to pass through its replacement.
@@ -601,7 +601,7 @@ def _resident():
     and make the same reference reservations; the twin additionally reserves
     its native surcharge (NATIVE_RETAINED), so it can refuse where the
     reference admits, never the reverse. The process backend is
-    exact_arithmetic.BACKEND. The reference route is also kept whenever a
+    BACKEND. The reference route is also kept whenever a
     reference kernel function has been wrapped or replaced, so instrumentation
     and substituted reference kernels still see every clip and volume. That
     test is object identity on this module, _Arena and the two helper

@@ -30,11 +30,11 @@ from atlas_tectonics import integration_mimetic_heat as HEAT
 
 HERE = Path(__file__).resolve().parent
 _PINS = {
-    'private_heat_low_geometry_kernel_r1.py': '4f74ffeb8a2b581d69c143ad11e67d7fa2d29d86e9ad01eec2f19452eeabffab',
-    'private_heat_low_ledger_inventory_r1.py': 'e77bb45c1636ce59b9259b7190aa222f83451e01639cc69a8ecbc1f0fbe6486a',
+    'private_heat_low_geometry_kernel_r1.py': 'a2317b553a0d4753c1aa582f8f94878988eb8c88c3d5e57b07acc8246b67009d',
+    'private_heat_low_ledger_inventory_r1.py': '542b3883c1c11a5651556eda85c61edbdefc90a4c9925185df325411ee4d1046',
     'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
-    'private_heat_interval_inventory_r1.py': 'bd747fa2f286ee93e42c54c916340e9168a0c53e3aa20621e40f3d53d31062f6',
-    'private_heat_decimal_inventory_r1.py': 'f70b7ddec86d4eebab1fd39ed2644a6c653b01da03ad661065e86dfe04724826',
+    'private_heat_interval_inventory_r1.py': '8288130a993c0960c2469cd9699c6fca86d3ec8ed0a2bc601ae0414201b91a3b',
+    'private_heat_decimal_inventory_r1.py': 'f37914054ed0c20604e17e19d4361fdd0e79bb024ac5da63ba71bb9f40cd2cfe',
     _atlas_identity.relkey(HEAT.__file__): '590a8f04599b454436271af5467a8cc634ff414e3ee29ec4aee65e05e021e80f',
 }
 UNIT = L.CONTAINER_UNIT
@@ -217,11 +217,11 @@ def admit(geometry, conductivity, boundary, *, budget, cancel=None):
     """Return an owned prospective plan; no payload decode/LOW output yet."""
     _check(cancel)
     from atlas_tectonics.integration_mimetic_heat import MimeticGeometry
-    from atlas_tectonics import exact_arithmetic
+    from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
     if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
         raise TypeError('Issued immutable geometry with identical caller budget required')
-    G = exact_arithmetic.library()
+    G = selected.library()
     if G is None:
         raise RuntimeError('Selected GMP backend required')
     # No rational getters/arrays before the metadata lease. Native metric uses

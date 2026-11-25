@@ -28,8 +28,8 @@ from fractions import Fraction as Q
 
 from . import integration_differential_geometry as G
 from . import integration_parallel_dispatch as P
-from . import machine_resources_monitor as MON
-from . import resources_gate as RG
+from atlas_shared.machine import resources_monitor as MON
+from atlas_shared.machine import resources_gate as RG
 from .integration_component_volume_parallel import ComponentParallelSession, request_for
 from .resources import canonical_json
 

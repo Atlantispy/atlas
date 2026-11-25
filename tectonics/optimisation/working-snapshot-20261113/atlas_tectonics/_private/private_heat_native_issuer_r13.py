@@ -67,7 +67,7 @@ from atlas_tectonics.integration_spatial_transport import _json_encoding_capacit
 from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
 from atlas_tectonics.resources import WorkBudget
 from atlas_tectonics.reuse import ExecutionContext
-from atlas_tectonics import exact_arithmetic
+from atlas_tectonics._exact_runtime import selected
 
 HERE = Path(INDEXED.__file__).resolve().parent  # selected native lookup root
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -280,7 +280,7 @@ def _make_call(metadata, arrays, geometry, execution, plan, origins, *, fixture=
         raise TypeError('Issued metric and actual ExecutionContext required')
     if execution.backend != 'scipy':
         raise ValueError('The actual SuperLU runtime must be bound by a scipy context')
-    if exact_arithmetic.library() is not N.A.A.exact_library():
+    if selected.library() is not N.A.A.exact_library():
         raise ValueError('The GMP library used by this private projection is not the selected bound native backend')
     execution.verify_boundary()
     budget = geometry._budget

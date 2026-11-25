@@ -40,8 +40,8 @@ from . import resources as R
 from .integration_parallel_binding import BATCH_LIMIT
 from .integration_parallel_owner import nodes_for
 from .integration_parallel_results import MOMENTS, raw_capacity
-from . import machine_resources_monitor as MON
-from . import resources_gate as RG
+from atlas_shared.machine import resources_monitor as MON
+from atlas_shared.machine import resources_gate as RG
 
 DECISION_SCHEMA = 'atlas.interface-parallel-decision.v1'
 MODES = ('auto', 'serial', 'off')

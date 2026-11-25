@@ -26,8 +26,8 @@ class ExactBackendUnavailable(RuntimeError):
 
 def exact_library():
     """Use the native selected backend, never import gmpy2 or select one here."""
-    from atlas_tectonics.exact_arithmetic import library
-    backend = library()
+    from atlas_tectonics._exact_runtime import selected
+    backend = selected.library()
     if backend is None:
         raise ExactBackendUnavailable('This exact/MPFR finisher requires the selected native GMP backend; Python-backend import is supported but execution is not')
     return backend

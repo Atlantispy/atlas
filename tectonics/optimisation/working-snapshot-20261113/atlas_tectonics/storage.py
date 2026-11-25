@@ -39,6 +39,10 @@ class StoreConflict(StoreError):
     """One immutable scientific identity was assigned conflicting results."""
 
 
+class _SnapshotConflict(StoreConflict):
+    """This invocation already has a different immutable snapshot."""
+
+
 _SCHEMA = 'atlas.array-store.v1'
 # The only schema a store may hold, as SQLite records it (IF NOT EXISTS is not kept in sqlite_master.sql). Every
 # storage.py revision created exactly these tables. A view, trigger, generated column, default, check or extra
@@ -1038,7 +1042,7 @@ class ArrayStore:
                     if previous is not None and (
                             {k: v for k, v in previous.items() if k != 'execution_mode'} !=
                             {k: v for k, v in manifest.items() if k != 'execution_mode'}):
-                        raise StoreConflict('same invocation produced different data or metadata')
+                        raise _SnapshotConflict('same invocation produced different data or metadata')
                     # The write lock is held and nothing is inserted yet: if the pin still equals the one recorded
                     # at this connection's last publication, the tables hold exactly the total recorded with it.
                     pin = self._retained_pin()
@@ -1201,6 +1205,9 @@ class ArrayStore:
 
     def get(self, invocation, *, budget: WorkBudget | None = None):
         """One stable read snapshot, one manifest parse, bounded chunk decoding."""
+        return self._restore_snapshot(invocation, budget=budget)
+
+    def _restore_snapshot(self, invocation, *, budget=None, evidence=False):
         holds = getattr(self, '_w08_history_holds', None)
         scope = (self._read_scope(budget=budget) if holds is None
                  else self._read_scope(budget=budget, _history_manifest=True))
@@ -1235,6 +1242,10 @@ class ArrayStore:
                     del buffer, raw
                     output_funds.resize(total)
                     holds.extend((output_funds, array_headers))
+                    if evidence:
+                        holds.append(funding.graph)
+                if evidence:
+                    return result, m['metadata'], m.get('execution_mode', 'strict')
                 return result
 
     def statistics(self):

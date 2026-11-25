@@ -54,7 +54,7 @@ ALE_PARALLEL = {'mode': 'auto', 'workers': 4, 'keep_workers': True}    # o3, Par
 
 def launch_samples():
     """The store's folder, its samples read once: a pool sized before it has a worker counts one at the stored peak."""
-    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_shared.machine import resources_monitor as MON
     from atlas_tectonics._private.prepared_interval_driver import profile_folder
     folder = profile_folder()
     MON.use_store(folder)
@@ -63,7 +63,7 @@ def launch_samples():
 
 def samples_saved():
     """The launch's measured samples go to the store when the launch ends, however it ends."""
-    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_shared.machine import resources_monitor as MON
     end = ExitStack()
     end.callback(MON.save_store, launch_samples())
     return end
@@ -83,8 +83,8 @@ def first_workers(policy_type, policy, load=None, stage=None):
 
 def _width(stage, allowance, load):
     # A worker is counted at the stored largest peak of its pool, at the allowance before one is stored.
-    from atlas_tectonics import machine_resources_monitor as MON
-    from atlas_tectonics import resources_gate as RG
+    from atlas_shared.machine import resources_monitor as MON
+    from atlas_shared.machine import resources_gate as RG
     launch_samples()
     machine = MON.reading(load)
     return RG.launch_width(machine, RG.setting(machine), MON.Timings().peak((stage, 'worker', 'peak')) or allowance,
@@ -107,8 +107,8 @@ def heat_workers(load=None):
 def pool_widths(load, admission):
     """This launch's record of widths: the setting as given, its mode, the cores counted and their source, and each
     stage's width (heat, pressure and ale are added from their configured pools)."""
-    from atlas_tectonics import machine_resources_monitor as MON
-    from atlas_tectonics import resources_gate as RG
+    from atlas_shared.machine import resources_monitor as MON
+    from atlas_shared.machine import resources_gate as RG
     machine = MON.reading(load)
     return RG.widths_record(machine, RG.setting(machine), {'admission': admission})
 
@@ -269,7 +269,7 @@ def create_root(m, *, open_store, budget, artifacts, phase, finish_root, measure
             return finish_root(workflow, store, published_root(workflow, store, a))
 
 
-def _root_differences(found, expected):
+def _root_differences(found, expected, retained_execution=None):
     """Identity is mode-independent; keep each separately authenticated producer's mode provenance."""
     differing = [name for name in ROOT_IDENTITY if name != 'execution_provenance' and found[name] != expected[name]]
     for row in (found.get('execution_provenance'),expected.get('execution_provenance')):
@@ -278,12 +278,15 @@ def _root_differences(found, expected):
                  and type(row['execution_identity']) is str and len(row['execution_identity']) == 64
                  and all(c in '0123456789abcdef' for c in row['execution_identity']),
                  'complete execution identity and actual producer mode required')
-    if found['execution_provenance']['execution_identity'] != expected['execution_provenance']['execution_identity']:
+    observed = (expected['execution_provenance']['execution_identity'], found['execution_provenance']['execution_identity'])
+    retained = (observed == retained_execution and
+                found['execution_provenance']['execution_mode'] == expected['execution_provenance']['execution_mode'] == 'strict')
+    if observed[0] != observed[1] and not retained:
         differing.append('execution_provenance')
     return differing
 
 
-def reopen_root(m, *, store, expected_root, budget, artifacts, phase, measurements=None):
+def reopen_root(m, *, store, expected_root, budget, artifacts, phase, measurements=None, retained_execution=None):
     """Run B up to the advance (stop-before-advance smoke): the same admission, then the adopted root.
 
     CollarWorkflow.open compares every root field with this admission; every
@@ -295,19 +298,21 @@ def reopen_root(m, *, store, expected_root, budget, artifacts, phase, measuremen
                    measurements=measurements, initial_workers=initial_admission_workers()) as a:
         phase('reopen-adopted-fresh-root')
         with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
-                             a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow:
+                             a.case['funding'], budget=budget, exterior_owner=a.owner,
+                             _retained_execution=retained_execution) as workflow:
             before = workflow.inspect()
             _require(before['intervals'] == 0 and workflow._head['kind'] == 'root',
                      'run B must open the adopted sequence-0 fresh root')
             found = published_root(workflow, store, a)
-            differing = _root_differences(found,expected_root)
+            differing = _root_differences(found, expected_root, retained_execution)
             _require(not differing, 'run B re-derived admission differs from run A sealed root: '
                      + ', '.join(differing))
             return {**{name: found[name] for name in ROOT_IDENTITY}, 'inspect': before}
 
 
 def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase, guard, record, save,
-                           query_checkpoints, finish, measurements=None, end_geometry_provider_factory=None):
+                           query_checkpoints, finish, measurements=None, end_geometry_provider_factory=None,
+                           retained_execution=None):
     """Run B: the same admission, then open the sealed root and advance interval 1 once.
 
     ``expected_root`` is run A's published root record. Run B re-derives the
@@ -329,7 +334,7 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
     stages, ticks = _stages(m), _ticks(m)
     record['observed_stages'] = [name for _, name in stages]
     record['heat_workers_strict'] = m.J.I.F.FUNCTIONS.PARALLEL.strict()     # a value other than unset, '' or 1 refuses
-    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_shared.machine import resources_monitor as MON
     load = MON.launch_load()    # this launch's one CPU sample, shared by its pools
     record['initial_admission_workers'] = width = initial_admission_workers(load)    # this launch's own width (Q-1)
     record['pool_widths'] = pool_widths(load, width)    # effective width per stage and its source
@@ -363,7 +368,8 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
             TIMING.checkpoint('pressure-and-force-selection-complete')
             phase('prepare-actual-force-selected-interval')
             with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
-                                 a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow:
+                                 a.case['funding'], budget=budget, exterior_owner=a.owner,
+                                 _retained_execution=retained_execution) as workflow:
                 # K9: one store-set read batch for the advance and its reopen controls: the sealed parents are
                 # checked once before and once after, and the second check comes before anything is sealed.
                 with store.store_set.read_batch():
@@ -371,7 +377,7 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
                     _require(before['intervals'] == 0 and workflow._head['kind'] == 'root',
                              'run B must open the sealed sequence-0 fresh root')
                     found = published_root(workflow, store, a)
-                    differing = _root_differences(found,expected_root)
+                    differing = _root_differences(found, expected_root, retained_execution)
                     _require(not differing, 'run B re-derived admission differs from run A sealed root: '
                              + ', '.join(differing))
                     record['root_reproduced'] = {name: found[name] for name in ROOT_IDENTITY}
@@ -434,7 +440,7 @@ def advance_successor_interval(m, *, store, expected_root, lineage, budget, arti
     _stages(m)
     _ticks(m)
     record['heat_workers_strict'] = m.J.I.F.FUNCTIONS.PARALLEL.strict()     # a value other than unset, '' or 1 refuses
-    from atlas_tectonics import machine_resources_monitor as MON
+    from atlas_shared.machine import resources_monitor as MON
     load = MON.launch_load()    # this launch's one CPU sample, shared by its pools
     record['initial_admission_workers'] = width = initial_admission_workers(load)    # this launch's own width (Q-1)
     record['pool_widths'] = pool_widths(load, width)    # effective width per stage and its source

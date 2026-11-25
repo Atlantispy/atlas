@@ -67,9 +67,9 @@ def exact_rows(values, scope, check):
     from atlas_tectonics._private.compact_contracts import ContractError
     from atlas_tectonics._private.content_cache import ChargeSpec
     from atlas_tectonics._private.record_tables import MAX_ROW_WORK_BYTES, StreamingRows
-    from atlas_tectonics.exact_arithmetic import library
+    from atlas_tectonics._exact_runtime import selected
     def rows():
-        backend = library()
+        backend = selected.library()
         for value in values:
             check()
             if backend is None or type(value) is not backend.mpq:

@@ -9,7 +9,7 @@ routes evaluate the same field operations on the same canonical values (lowest
 terms, positive denominator): results are equal, not merely close. This is not
 a floating-point, rounded or reduced-precision path, and no tolerance exists.
 
-The backend is chosen once, when this module is first imported, and is then a
+The backend is chosen once, at the first request by the calling package, and is then a
 constant of the process. ATLAS_EXACT_ARITHMETIC selects it:
 
   auto    (default) gmpy2 when an exactly tested build imports from a wheel
@@ -51,8 +51,6 @@ from pathlib import Path
 import re
 import sys
 
-from ._validation import TectonicsError
-
 
 ENVIRONMENT = 'ATLAS_EXACT_ARITHMETIC'
 CHOICES = ('auto', 'python', 'gmpy2')
@@ -63,7 +61,7 @@ CHOICES = ('auto', 'python', 'gmpy2')
 TESTED_GMPY2 = (('2.3.2', 'GMP 6.3.0'),)
 
 
-def _canary(native):
+def _canary(native, refusal_type):
     """Cheap exactness contract of the loaded library; not a test suite.
 
     The kernels rely on canonical rationals, exact integer division, bit
@@ -87,12 +85,12 @@ def _canary(native):
         mpq(5, 3)/6 == Fraction(5, 18) and -mpq(5, 3)*mpq(3, 5) == -1,
     )
     if not all(checks):
-        raise TectonicsError('gmpy2 exact-arithmetic canary failed: check %d' % checks.index(False))
+        raise refusal_type('gmpy2 exact-arithmetic canary failed: check %d' % checks.index(False))
     try:
         mpq(1, 0)
     except ZeroDivisionError:
         return
-    raise TectonicsError('gmpy2 exact-arithmetic canary failed: zero denominator accepted')
+    raise refusal_type('gmpy2 exact-arithmetic canary failed: zero denominator accepted')
 
 
 _VERSIONED_SO = re.compile(r'\.so(\.[0-9]+)+\Z')
@@ -103,7 +101,7 @@ def _shared_library(path):
     return name.endswith(('.dll', '.dylib', '.so')) or _VERSIONED_SO.search(name) is not None
 
 
-def _mapped_file(name):
+def _mapped_file(name, refusal_type):
     """The file the Windows loader has mapped under this library name.
 
     '' when no module of that name is mapped; None where the loader is not
@@ -126,11 +124,11 @@ def _mapped_file(name):
     buffer = ctypes.create_unicode_buffer(32768)
     length = kernel.GetModuleFileNameW(handle, buffer, len(buffer))
     if not 0 < length < len(buffer):
-        raise TectonicsError('the loader did not name the file mapped as '+name)
+        raise refusal_type('the loader did not name the file mapped as '+name)
     return buffer.value
 
 
-def _native_files(native):
+def _native_files(native, refusal_type):
     """The extension and the shared libraries bundled with it, each a regular unlinked file.
 
     reuse hashes every one into the runtime record and refuses a link, so a
@@ -153,13 +151,13 @@ def _native_files(native):
                 files['gmpy2:'+path.name] = path
     for path in files.values():
         if path.is_symlink() or not path.is_file():
-            raise TectonicsError('gmpy2 native file is linked or not a regular file: '+path.name)
+            raise refusal_type('gmpy2 native file is linked or not a regular file: '+path.name)
     sealed = False
     displaced = False
     for label, path in files.items():
         if label == 'gmpy2_extension':
             continue
-        mapped = _mapped_file(path.name)
+        mapped = _mapped_file(path.name, refusal_type)
         if mapped is None:
             here = True
         elif not mapped:
@@ -177,22 +175,22 @@ def _native_files(native):
     return {label: str(path) for label, path in files.items()}, sealed and not displaced
 
 
-def _select():
+def select(refusal_type):
     requested = os.environ.get(ENVIRONMENT, 'auto')
     if requested not in CHOICES:
-        raise TectonicsError(ENVIRONMENT+' must be one of auto, python or gmpy2')
+        raise refusal_type(ENVIRONMENT+' must be one of auto, python or gmpy2')
     if requested == 'python':
-        return requested, 'python', None, {}, False, 'Python exact arithmetic requested'
+        return _Selection(requested, 'python', None, {}, False, 'Python exact arithmetic requested')
     try:
         import gmpy2
         pair = (gmpy2.version(), gmpy2.mp_version())
         if pair not in TESTED_GMPY2:
-            raise TectonicsError('gmpy2 %s with %s has no measured parity; tested: %s' % (
+            raise refusal_type('gmpy2 %s with %s has no measured parity; tested: %s' % (
                 *pair, ', '.join('%s with %s' % row for row in TESTED_GMPY2)))
-        _canary(gmpy2)
-        files, sealed = _native_files(gmpy2)
+        _canary(gmpy2, refusal_type)
+        files, sealed = _native_files(gmpy2, refusal_type)
         if not sealed:
-            raise TectonicsError('gmpy2 has no bundled GMP library that this process maps and can bind; '
+            raise refusal_type('gmpy2 has no bundled GMP library that this process maps and can bind; '
                                  'an explicit request cannot bypass native-file binding')
     except (MemoryError, RecursionError):
         # These describe this process at this moment, not the library. The
@@ -207,36 +205,35 @@ def _select():
         except Exception:
             detail = type(exc).__name__
         if requested == 'gmpy2':
-            raise TectonicsError('requested gmpy2 exact arithmetic is unavailable: '+detail) from exc
-        return requested, 'python', None, {}, False, 'gmpy2 not used: '+detail
-    return requested, 'gmpy2', gmpy2, files, sealed, 'gmpy2 %s (%s)' % pair
+            raise refusal_type('requested gmpy2 exact arithmetic is unavailable: '+detail) from exc
+        return _Selection(requested, 'python', None, {}, False, 'gmpy2 not used: '+detail)
+    return _Selection(requested, 'gmpy2', gmpy2, files, sealed, 'gmpy2 %s (%s)' % pair)
 
 
-# Only the executing route is an upper-case (identity-bound) constant. How it
-# was requested, and why a fallback happened, are provenance held privately:
-# two processes on the same route must not receive different identities.
-_requested, BACKEND, _library, _files, _sealed, _reason = _select()
 
+class _Selection:
+    def __init__(self, requested, backend, library, files, sealed, reason):
+        self.backend = backend
+        self._requested = requested
+        self._library = library
+        self._files = files
+        self._sealed = sealed
+        self._reason = reason
 
-def selection():
-    """Requested mode, executing backend and the recorded reason."""
-    return {'requested': _requested, 'backend': BACKEND, 'reason': _reason}
+    def selection(self):
+        """Requested mode, executing backend and the recorded reason."""
+        return {'requested': self._requested, 'backend': self.backend, 'reason': self._reason}
 
+    def library(self):
+        """The loaded gmpy2 module, or None on the Python route."""
+        return self._library
 
-def library():
-    """The loaded gmpy2 module, or None on the Python route."""
-    return _library
-
-
-def runtime():
-    """Versions and native file paths of the SELECTED backend for runtime identity.
-
-    Paths, not digests: reuse hashes them under its own process-lifetime rule.
-    """
-    if _library is None:
-        return {'versions': {'exact_arithmetic': 'python-fraction'}, 'binaries': {}}
-    return {'versions': {'exact_arithmetic': 'gmpy2', 'gmpy2': _library.version(),
-                         'gmp': _library.mp_version(),
-                         'gmp_binary_scope': ('wheel-libraries' if _sealed
-                                              else 'extension-only; external GMP unsealed')},
-            'binaries': dict(_files)}
+    def runtime(self):
+        """Versions and native file paths. The execution-record owner hashes the files."""
+        if self._library is None:
+            return {'versions': {'exact_arithmetic': 'python-fraction'}, 'binaries': {}}
+        return {'versions': {'exact_arithmetic': 'gmpy2', 'gmpy2': self._library.version(),
+                             'gmp': self._library.mp_version(),
+                             'gmp_binary_scope': ('wheel-libraries' if self._sealed
+                                                  else 'extension-only; external GMP unsealed')},
+                'binaries': dict(self._files)}

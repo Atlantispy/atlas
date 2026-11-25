@@ -146,8 +146,8 @@ def _transfer(owner, *, path, boundary, assessment, budget, cancelled, category,
     _check(cancelled)
     _sources(cancelled)
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
-    from atlas_tectonics.exact_arithmetic import library
-    G = library()
+    from atlas_tectonics._exact_runtime import selected
+    G = selected.library()
     if G is None:
         raise RuntimeError('Selected GMP backend required')
     if type(owner) not in (P.OwnedSolve, GEOMETRY.OwnedPreparation, A.OwnedAssessment, OwnedValue, OwnedAssessment):

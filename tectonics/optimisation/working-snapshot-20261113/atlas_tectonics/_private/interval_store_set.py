@@ -32,10 +32,11 @@ from atlas_tectonics._private.compact_contracts import (CATALOG_BYTES, ContractE
                                SEGMENT_CHUNK_REFERENCES, SEGMENT_BYTES,
                                SegmentRef, SnapshotLocator, _sha)
 from atlas_tectonics._private.content_cache import ChargeSpec
+from atlas_tectonics._private.interval_admission import admitted
 from atlas_tectonics._private.interval_catalog import (Catalog, CatalogEntry, _checked_path, canonical, check_cancel,
                               digest, file_token, flush_file, publication_lock,
                               publish_catalog, read_catalog, relative_file, safe_path, tagged)
-from atlas_tectonics._private.interval_catalog import _durable_move
+from atlas_tectonics._private.interval_admission import durable_move
 from atlas_tectonics._private import sealed_guard_set
 
 
@@ -249,7 +250,7 @@ def _sidecars_absent(path):
 
 def _rename_no_replace(source, target):
     """Atomic same-directory rename that never replaces an existing target."""
-    _durable_move(source, target, overwrite=False)
+    durable_move(source, target)
 
 
 def _immutable(path):
@@ -678,11 +679,22 @@ class SealedCandidate:
     _owner: object
 
 
+def _admitted_open(open_store):
+    @wraps(open_store)
+    def open_with_access(cls, catalog_path, *args, **kwargs):
+        path = Path(catalog_path).absolute()
+        with admitted((path.parent,)) as held:
+            access, = held.values()
+            return open_store(cls, access.store/path.name, *args, _access=access, **kwargs)
+    return open_with_access
+
+
 class IntervalStoreSet:
     """One workflow, one shared retained scope, at most eight pinned native handles."""
 
-    def __init__(self, catalog_path, *, scope, workflow_id, catalog, catalog_digest, owner):
-        self.catalog_path = safe_path(catalog_path)
+    def __init__(self, catalog_path, *, scope, workflow_id, catalog, catalog_digest, owner, access):
+        self.catalog_path = catalog_path
+        self._home_access = access.retain()
         self.scope, self.workflow_id = scope, workflow_id
         self._catalog, self.catalog_digest, self._owner = catalog, catalog_digest, owner
         self._handles = OrderedDict()
@@ -699,7 +711,8 @@ class IntervalStoreSet:
         self._accepted_digest = None
 
     @classmethod
-    def create_migration(cls, catalog_path, *, workflow_id, scope, cancel=None):
+    @_admitted_open
+    def create_migration(cls, catalog_path, *, workflow_id, scope, _access, cancel=None):
         _open_boundary()
         _sha(workflow_id, 'workflow identity')
         path = safe_path(catalog_path)
@@ -707,13 +720,14 @@ class IntervalStoreSet:
             raise ContractError('migration requires explicit existing directory and absent catalog')
         owner = _owned(scope, catalog_retained_charge(None), lambda: None, cancel=cancel)
         return cls(path, scope=scope, workflow_id=workflow_id, catalog=None,
-                   catalog_digest=None, owner=owner)
+                   catalog_digest=None, owner=owner, access=_access)
 
     @classmethod
-    def open_catalog(cls, catalog_path, *, scope, cancel=None):
+    @_admitted_open
+    def open_catalog(cls, catalog_path, *, scope, _access, cancel=None):
         _open_boundary()
         check_cancel(cancel)
-        size = file_token(safe_path(catalog_path, existing=True))[2]
+        size = file_token(catalog_path)[2]
         if size > CATALOG_BYTES:
             raise ContractError('catalog exceeds 1 MiB bound')
         # Read/decode transient on the run budget, scaled to the actual file
@@ -724,7 +738,7 @@ class IntervalStoreSet:
                        cancel=cancel)
         catalog, identity = owner.value
         result = cls(catalog_path, scope=scope, workflow_id=catalog.workflow_id,
-                     catalog=catalog, catalog_digest=identity, owner=owner)
+                     catalog=catalog, catalog_digest=identity, owner=owner, access=_access)
         try:
             # Validate closure paths/existence, but open only head now; ancestors lazily.
             required = {catalog.entries[-1].interval,
@@ -743,6 +757,7 @@ class IntervalStoreSet:
                 handle.close()
             result._handles.clear()
             result._closed = True
+            result._home_access.close()
             raise
 
     @classmethod
@@ -808,6 +823,7 @@ class IntervalStoreSet:
                 handle.close()
             result._handles.clear()
             result._closed = True
+            result._home_access.close()
             raise
 
     @property
@@ -1490,6 +1506,7 @@ class IntervalStoreSet:
         self._verified_tokens.clear()
         self._owner.close()
         self._closed = True
+        self._home_access.close()
 
 
 class UnlistedCandidate:

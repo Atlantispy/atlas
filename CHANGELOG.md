@@ -15,6 +15,9 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
   code is retired. The public-path check scans the planned `shared/` folder once it exists.
 
 ### Changed
+- Moved exact arithmetic selection into `atlas_shared` and declared the existing
+  `gmpy2==2.3.2` requirement there. Tectonics still chooses the backend at the first
+  request, and issued geometry and heat workers bind it from their selected packages.
 - Reused shared validation, record-writing, geometry and worker helpers in the optimised snapshot. Kept the
   existing caller-specific calculations where sharing would change the route or add work.
 - Reused a clipping incidence result within each moving-face and moving-interface cut. The scalar and signed

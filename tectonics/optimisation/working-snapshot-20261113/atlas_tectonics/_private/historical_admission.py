@@ -34,8 +34,8 @@ import sys
 import threading
 import types
 
-from atlas_tectonics import machine_resources_monitor as MONITOR
-from atlas_tectonics import resources_gate as GATE
+from atlas_shared.machine import resources_monitor as MONITOR
+from atlas_shared.machine import resources_gate as GATE
 from atlas_tectonics.resources import _retained_charge, _release_retained_charge
 from atlas_tectonics.resources import json_sha256 as digest
 from atlas_tectonics.resources import canonical_json as canonical
@@ -50,7 +50,7 @@ MAX_SOURCES = 4096
 MAX_AUDIT = 128 << 20
 # The live fence binds the reviewed successor guard (resource_guard_patch output);
 # the historical r3 guard stays bound by its own pinned receipts and evidence.
-GUARD_PIN = '7c78f42d135fee7aae97652278238d1090fa052d15a932a5fe248e4b93b3c0b9'
+GUARD_PIN = '4f062002c76cc8b9099f49b3e10eeca4353f0f0122a2a9c3aac0afd3f2b5b4f8'
 HISTORICAL_GUARD_PIN = '2d23f4bbc3b31b5aad3d68ef6e9b1a9800042fc75b12475b51dff468492ad796'
 JOB_PIN = '56f66b8826b148a31b85d490c75766422eb210fdfb35c665c449d2e73788f0b4'
 DIAGNOSTICS_PIN = '02cf04bff222880c4142eff804afbb2ff52801b5b6ef6e9ded020ec0148bc83c'

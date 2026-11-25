@@ -37,9 +37,9 @@ MAX_DEPTH = 64
 
 
 def transfer(owner, *, budget, cancelled=None, category='heat-retained-functional-row', record_types=()):
-    from atlas_tectonics.exact_arithmetic import library
+    from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
-    G = library()
+    G = selected.library()
     if G is None:
         raise RuntimeError('Selected GMP backend required')
     # One recursion frame + one iterator/locals generation per level, plus

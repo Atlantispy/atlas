@@ -40,6 +40,8 @@ the historical chain sections are not whole-snapshot review records. The later s
 
 - `atlas_tectonics/`: the public package and `_private`, based on the issued first-break source plus the fixes below, with the
   source-list files `_application_sources.json` and `_application_sources.sha256`.
+- The issued layout places `atlas_shared` beside `atlas_tectonics`. Its exact selector source
+  lives under `shared/src` in this repository.
 - Left out: the compiled compression library and compiled Python files.
 - `.gitattributes` keeps git from rewriting line endings in this folder.
 

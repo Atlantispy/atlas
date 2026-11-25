@@ -101,8 +101,8 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
 from atlas_tectonics._private import run_prepared_restart as RUN
 
 SG, RG = RUN.SG, RUN.RG
-from atlas_tectonics import machine_resources_monitor as MONITOR
-from atlas_tectonics import resources_gate as GATE
+from atlas_shared.machine import resources_monitor as MONITOR
+from atlas_shared.machine import resources_gate as GATE
 
 
 READER_SCHEMA = 'atlas.prepared-restart-reopen-result.v1'

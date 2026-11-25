@@ -200,7 +200,7 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
         INVENTORY.verify_sources(cancelled)
         # read once a process
         from atlas_tectonics.reuse import helper_source_digest
-        if helper_source_digest(Path(DECIMAL.__file__), owner_file=__file__, cancel=cancelled) != '1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f':
+        if helper_source_digest(Path(DECIMAL.__file__), owner_file=__file__, cancel=cancelled) != '9fd6c758940a7719840b2f15ed10e0e2869e0ce5ef2f269b937b489d92ac891d':
             raise ValueError('Reviewed exact Decimal converter changed')
         # No copied key set, source audit or exact coefficient until admitted.
         screen, support = INVENTORY.screen_plan(matrix, rhs, conversion, signed_tau, G, R, cancelled,

@@ -160,9 +160,9 @@ def materialise(geometry, *, budget, cancel=None):
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
     from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
     from atlas_tectonics._private import private_heat_counted_blocks_r2 as COUNT
-    from atlas_tectonics.exact_arithmetic import library
+    from atlas_tectonics._exact_runtime import selected
     payload = IndexedMetricPayload(geometry, budget=budget, cancel=cancel)
-    G = library()
+    G = selected.library()
     if G is None:
         raise RuntimeError('selected exact backend required')
     # Two pointer tables, including allocator/debug growth allowance. Their

@@ -12,9 +12,9 @@ import math
 import struct
 import sys
 
-from atlas_tectonics import exact_arithmetic as _backend
+from atlas_tectonics._exact_runtime import selected
 
-_library = _backend.library()
+_library = selected.library()
 _RATIONAL_TYPES = (int, Fraction) if _library is None else (
     int, Fraction, _library.mpq, _library.mpz)
 _INTEGER_TYPES = (int,) if _library is None else (int, _library.mpz)

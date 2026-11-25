@@ -258,8 +258,8 @@ def solve_rounded(system, old, capacity, dt, source, boundary, target, *,
     if spectrum:
         raise ValueError('Exact-rational spectrum is not certified by a rounded numerical core')
     # Gate BEFORE importing resource helpers which themselves depend on GMP.
-    from atlas_tectonics import exact_arithmetic
-    if exact_arithmetic.library() is None:
+    from atlas_tectonics._exact_runtime import selected
+    if selected.library() is None:
         raise RuntimeError('This private resource route requires the selected GMP backend')
     from atlas_tectonics._private import private_heat_sparse_resources_r1 as resources
     n = system.cells

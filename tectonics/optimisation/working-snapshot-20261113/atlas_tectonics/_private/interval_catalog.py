@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-import ctypes
 import hashlib
 import json
 import os
@@ -19,6 +18,7 @@ import stat
 import uuid
 
 from atlas_tectonics._private.compact_contracts import CATALOG_BYTES, ContractError, SegmentRef, _sha, _uint
+from atlas_tectonics._private.interval_admission import durable_replace, flush_file
 from atlas_tectonics.resources import canonical_json as canonical
 
 CATALOG_SCHEMA = 'atlas.interval-catalog.v1'
@@ -215,7 +215,7 @@ class Catalog:
         return result
 
 
-def read_catalog(path, *, expected_size=None):
+def _read_catalog_image(path, *, expected_size=None):
     path = safe_path(path, existing=True)
     before = file_token(path)
     if before[2] > CATALOG_BYTES:
@@ -228,7 +228,12 @@ def read_catalog(path, *, expected_size=None):
         raw = source.read(before[2] + 1)
     if file_token(path) != before or len(raw) != before[2]:
         raise ContractError('catalog changed while reading')
-    return Catalog.from_bytes(raw), digest(raw)
+    return raw, digest(raw)
+
+
+def read_catalog(path, *, expected_size=None):
+    raw, pin = _read_catalog_image(path, expected_size=expected_size)
+    return Catalog.from_bytes(raw), pin
 
 
 @contextmanager
@@ -259,45 +264,27 @@ def publication_lock(catalog_path):
                 fcntl.flock(lock, fcntl.LOCK_UN)
 
 
-def flush_file(file):
-    file.flush()
-    if os.name == 'nt':
-        import msvcrt
-        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-        flush = kernel.FlushFileBuffers
-        flush.argtypes, flush.restype = [ctypes.c_void_p], ctypes.c_int
-        if not flush(msvcrt.get_osfhandle(file.fileno())):
-            raise ctypes.WinError(ctypes.get_last_error())
-    else:
-        os.fsync(file.fileno())
-
-
-def durable_replace(source, target):
-    safe_path(source, existing=True)
-    safe_path(target)
-    _durable_move(source, target)
-
-
-def _durable_move(source, target, *, overwrite=True):
-    if os.name == 'nt':
-        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-        move = kernel.MoveFileExW
-        move.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
-        move.restype = ctypes.c_int
-        if not move(str(source), str(target), 0x9 if overwrite else 0x8):
-            raise ctypes.WinError(ctypes.get_last_error())
-    else:
-        if overwrite:
-            os.replace(source, target)
-        else:
-            if os.path.lexists(target):
-                raise FileExistsError(target)
-            os.rename(source, target)
-        directory = os.open(Path(target).parent, os.O_RDONLY)
+def _publish_checked_image(path, raw, *, cancel=None, crash_hook=None, precondition=None):
+    """Publish a verified image while the caller holds its publication lock."""
+    temporary = safe_path(path.with_name(path.name + '.tmp-' + uuid.uuid4().hex))
+    with temporary.open('xb') as out:
+        out.write(raw)
+        flush_file(out)
+    if crash_hook:
+        crash_hook('catalog_flushed')
+    check_cancel(cancel)
+    if precondition is not None:
         try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+            precondition()
+        except BaseException:
+            try:
+                temporary.unlink()
+            except OSError:
+                pass
+            raise
+    durable_replace(temporary, path)
+    if crash_hook:
+        crash_hook('catalog_replaced')
 
 
 def publish_catalog(path, catalog, *, expected_digest, cancel=None, crash_hook=None,
@@ -315,23 +302,5 @@ def publish_catalog(path, catalog, *, expected_digest, cancel=None, crash_hook=N
         current = read_catalog(path)[1] if path.exists() else None
         if current != expected_digest:
             raise ContractError('catalog compare-and-swap conflict')
-        temporary = safe_path(path.with_name(path.name + '.tmp-' + uuid.uuid4().hex))
-        with temporary.open('xb') as out:
-            out.write(raw)
-            flush_file(out)
-        if crash_hook:
-            crash_hook('catalog_flushed')
-        check_cancel(cancel)
-        if precondition is not None:
-            try:
-                precondition()
-            except BaseException:
-                try:
-                    temporary.unlink()
-                except OSError:
-                    pass
-                raise
-        durable_replace(temporary, path)
-        if crash_hook:
-            crash_hook('catalog_replaced')
+        _publish_checked_image(path, raw, cancel=cancel, crash_hook=crash_hook, precondition=precondition)
     return digest(raw)

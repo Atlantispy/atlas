@@ -5,6 +5,7 @@ run the package in a child process on a temporary copy that leaves out the insta
 fixtures, so the package takes its own unbound route and the copy can be edited.
 """
 import ast
+from importlib.util import find_spec
 import json
 import shutil
 import subprocess
@@ -14,7 +15,8 @@ import unittest
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1] / 'atlas_tectonics'
-LISTED = ('machine_resources_monitor', 'resources_gate', 'integration_parallel_rolling',
+SHARED = Path(find_spec('atlas_shared').origin).parent
+LISTED = ('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resources_gate', 'integration_parallel_rolling',
           'integration_parallel_selection')
 ADMITTED = LISTED[:3]  # admitted by construction; selection is held by (c)
 STANDARD = set(sys.stdlib_module_names) | {'psutil'}
@@ -22,7 +24,7 @@ STANDARD = set(sys.stdlib_module_names) | {'psutil'}
 # What every other package module takes from each listed module: names, and attribute chains read through an
 # alias of the module. A new entry is a new value crossing from outside the identity into bound code.
 READERS = {
-    'machine_resources_monitor': {
+    'atlas_shared.machine.resources_monitor': {
         '_private.fresh_interval_driver': ['Timings', 'launch_load', 'reading', 'save_store', 'use_store'],
         '_private.historical_admission': ['machine_memory'],
         '_private.interface_worker_selection': ['Timings', 'reading'],
@@ -36,7 +38,7 @@ READERS = {
         'integration_initial_parallel': ['Timings', 'reading'],
         'integration_parallel_profile': ['machine_memory', 'reported_cores'],
     },
-    'resources_gate': {
+    'atlas_shared.machine.resources_gate': {
         '_private.fresh_interval_driver': ['launch_width', 'setting', 'widths_record'],
         '_private.historical_admission': ['FLOOR_BYTES', 'cap_bound'],
         '_private.interface_worker_selection': ['free_cores', 'launch_width', 'run_cores', 'setting', 'step_down'],
@@ -80,7 +82,15 @@ SELECTION_TAKES = {
 
 
 def _module_of(path):
+    if path.is_relative_to(SHARED):
+        return '.'.join(('atlas_shared', *path.relative_to(SHARED).with_suffix('').parts))
     return path.relative_to(PACKAGE).with_suffix('').as_posix().replace('/', '.')
+
+
+def _module_path(name):
+    if name.startswith('atlas_shared.'):
+        return SHARED.joinpath(*name.split('.')[1:]).with_suffix('.py')
+    return PACKAGE.joinpath(*name.split('.')).with_suffix('.py')
 
 
 def _resolve(node, me):
@@ -93,6 +103,8 @@ def _resolve(node, me):
         return ''
     if node.module and node.module.startswith('atlas_tectonics.'):
         return node.module[len('atlas_tectonics.'):]
+    if node.module and node.module.partition('.')[0] == 'atlas_shared':
+        return node.module
     return None
 
 
@@ -148,16 +160,19 @@ def _taken(path, wanted):
                     continue
                 for a in node.names:
                     full = f'{base}.{a.name}' if base else a.name
-                    if (PACKAGE / (full.replace('.', '/') + '.py')).is_file() and wanted(full):
-                        alias[a.asname or a.name] = full
+                    if _module_path(full).is_file():
+                        if wanted(full):
+                            alias[a.asname or a.name] = full
                     elif base and wanted(base):
                         taken.setdefault(base, set()).add(a.name)
             elif isinstance(node, ast.Import):
                 for a in node.names:
-                    if a.name.startswith('atlas_tectonics.') and wanted(a.name[16:]):
+                    head, _, member = a.name.partition('.')
+                    name = member if head == 'atlas_tectonics' else a.name
+                    if head in ('atlas_tectonics', 'atlas_shared') and wanted(name):
                         if a.asname is None:
                             raise AssertionError(f'{me}: plain dotted import of {a.name} is not read by this test')
-                        alias[a.asname] = a.name[16:]
+                        alias[a.asname] = name
         return alias
 
     # A function sees its own imports and those of every enclosing scope.
@@ -190,7 +205,7 @@ def _taken(path, wanted):
 
 def _readers():
     out = {}
-    for path in sorted(PACKAGE.rglob('*.py')):
+    for path in sorted((*PACKAGE.rglob('*.py'), *SHARED.rglob('*.py'))):
         if _module_of(path) in LISTED:
             continue
         for module, names in _taken(path, lambda m: m in LISTED).items():
@@ -241,7 +256,7 @@ class StaticBoundaryTest(unittest.TestCase):
 
     def test_admitted_modules_import_only_the_standard_library_psutil_and_listed_modules(self):
         for name in ADMITTED:
-            path = PACKAGE / f'{name}.py'
+            path = _module_path(name)
             me = _module_of(path)
             for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
                 if isinstance(node, ast.Import):
@@ -254,7 +269,7 @@ class StaticBoundaryTest(unittest.TestCase):
                         continue
                     for a in node.names:
                         full = f'{base}.{a.name}' if base else a.name
-                        target = full if (PACKAGE / (full.replace('.', '/') + '.py')).is_file() else base
+                        target = full if _module_path(full).is_file() else base
                         self.assertIn(target, LISTED, f'{name} imports {target}')
 
     def test_bound_modules_take_only_the_tabled_names_from_listed_modules(self):
@@ -279,9 +294,11 @@ step = sys.argv[2]
 with r.ExecutionContext('scipy') as c:
     if step == 'identity':
         print(json.dumps(c.identity))
+    elif step == 'shared':
+        print(json.dumps([c.identity, c._shared_source_sha256]))
     elif step == 'edit-then-verify':
         c.identity  # proved once, as a run does on entry
-        target = r.Path(sys.argv[1]) / 'atlas_tectonics' / 'resources_gate.py'
+        target = r.Path(sys.argv[1]) / sys.argv[3]
         try:
             with open(target, 'ab') as f:
                 f.write(b'\n')
@@ -298,6 +315,101 @@ with r.ExecutionContext('scipy') as c:
         print(json.dumps(c._runtime))
 '''
 
+PROJECTED_PROBE = r'''
+import json, sys
+from pathlib import Path
+from unittest.mock import patch
+sys.path.insert(0, sys.argv[1])
+import numpy as np
+from atlas_shared.machine import resources_gate_sibling as sibling
+from atlas_tectonics import reuse as r
+from atlas_tectonics.parameters import PlateCoolingParameters
+from atlas_tectonics.storage import StoreConflict, StoreLimits
+
+root, phase = Path(sys.argv[1]), sys.argv[2]
+r._PROJECTED_DEPENDENCIES = {
+    **r._PROJECTED_DEPENDENCIES, 'fixture-uses-shared': ('atlas_shared.machine.resources_gate_sibling',)}
+profile = r.ThermalParameters('fixture', 'identity test', 273.0, 1573.0, 1e-6)
+parameters = r.asdict(profile)
+depth = np.arange(4096, dtype=np.float64)
+age = np.array(123456789.0)
+policy = r.CachePolicy(min_result_bytes=8, min_compute_seconds=0.0, expected_reuses=1024)
+inputs = {'depth': depth, 'age': age}
+limits = StoreLimits(16384, 1<<20, 32<<20)
+with r.ExecutionContext('scipy') as ctx, r.ArrayStore(root/'projected.sqlite', limits) as store:
+    controller = r.ReuseController()
+    def cooling():
+        return r.cached_temperature(depth, age, profile, store=store, context=ctx, controller=controller,
+                                    cache_policy=policy)
+    cooling()  # the ordinary auto policy first observes a direct calculation
+    assert controller.statistics()['bypasses'] == 1
+    result = cooling()
+    plate = PlateCoolingParameters(profile, 100000., 3.)
+    plate_control = r.ReuseController()
+    def finite():
+        return r.cached_plate_temperature(depth, age, plate, store=store, context=ctx, controller=plate_control,
+                                          cache_policy=policy)
+    finite()
+    finite()
+    finite_record = r._invocation_record('finite-plate-temperature-v1', inputs, r.asdict(plate), 'scipy', context=ctx)
+    finite_key = r._digest(r._json(finite_record))
+    assert plate_control.statistics()['writes' if phase == 'first' else 'hits'] == 1
+    finite_producer = store.metadata(finite_key)
+    if phase == 'first':
+        assert finite_producer['producer_shared_source_sha256'] == ctx._shared_source_sha256
+    record = r._invocation_record('half-space-temperature-v2', inputs, parameters, 'scipy', context=ctx)
+    key = r._digest(r._json(record))
+    assert r.invocation_identity('half-space-temperature-v2', inputs, parameters, backend='scipy') == key
+    using = r._invocation_record('fixture-uses-shared', inputs, parameters, 'scipy', context=ctx)
+    r._evaluate(store, using, lambda: result + np.float64(sibling.VALUE), result.shape, store._budget,
+                context=ctx, controller=controller, cache_policy=policy)
+    producer = store.metadata(key)
+    if phase == 'first':
+        assert controller.statistics()['writes'] == 2
+        assert producer['producer_execution'] == ctx.identity
+        assert producer['producer_shared_source_sha256'] == ctx._shared_source_sha256
+        legacy = dict(record, schema='atlas.kernel-invocation.v2', execution=ctx.identity)
+        legacy_key = r._digest(r._json(legacy))
+        with r.ArrayStore(root/'legacy.sqlite', limits) as old:
+            old.put(legacy_key, {'result': result}, legacy)
+            def unexpected_compute():
+                raise AssertionError('exact current v2 winner should have been restored')
+            restored = r._evaluate(old, record, unexpected_compute, result.shape, old._budget, context=ctx,
+                                   controller=r.ReuseController(), cache_policy=policy)
+            assert restored.tobytes() == result.tobytes() and old.metadata(key) is None
+        actual = ctx.identity
+        with patch.object(ctx, '_actual_identity', actual, create=True), patch.object(ctx, '_identity', 'f'*64):
+            branded = r._invocation_record('unknown-fixture-operation', inputs, parameters, 'scipy', context=ctx)
+            assert branded['schema'] == 'atlas.kernel-invocation.v2' and branded['execution'] == actual
+    else:
+        assert controller.statistics()['hits'] == 1 and controller.statistics()['misses'] == 1
+        assert producer['producer_execution'] != ctx.identity
+        # The existing same-key rollback control now competes through _evaluate.
+        for different in (False, True):
+            db = root/f'projected-race-{different}.sqlite'
+            with r.ArrayStore(db, limits) as loser, r.ArrayStore(db, limits) as winner:
+                put = loser.put
+                observed = {}
+                def competing(invocation, result_arrays, metadata, **kwargs):
+                    winner.put(invocation, {'result': result}, producer)
+                    observed['before'] = winner.statistics()
+                    return put(invocation, result_arrays, metadata, **kwargs)
+                with patch.object(loser, 'put', side_effect=competing):
+                    candidate = result + 1000.0 if different else result
+                    try:
+                        observed['out'] = r._evaluate(loser, record, lambda: candidate, result.shape, loser._budget,
+                            context=ctx, controller=r.ReuseController(), cache_policy=policy)
+                    except StoreConflict:
+                        assert different, 'the projected winner and the losing result match'
+                    else:
+                        assert not different and observed['out'].tobytes() == result.tobytes()
+                assert winner.statistics()['unique_chunks'] == observed['before']['unique_chunks']
+                assert winner.metadata(key) == producer
+    print(json.dumps({'key': key, 'using': r._digest(r._json(using)), 'producer': producer['producer_execution'],
+                      'finite_key': finite_key, 'finite_producer': finite_producer['producer_execution'],
+                      'finite_source': finite_producer['producer_shared_source_sha256']}))
+'''
+
 
 class _Copy:
     """A temporary copy of the package on its unbound route: no installed inventory pair, no fixtures."""
@@ -306,20 +418,22 @@ class _Copy:
         self.root = Path(tempfile.mkdtemp(prefix='atlas-identity-'))
         shutil.copytree(PACKAGE, self.root / 'atlas_tectonics', ignore=shutil.ignore_patterns(
             '_application_sources.json', '_application_sources.sha256', '_fixtures', '__pycache__'))
+        shutil.copytree(SHARED, self.root / 'atlas_shared', ignore=shutil.ignore_patterns('__pycache__'))
+        (self.root/'atlas_shared/machine/resources_gate_sibling.py').write_bytes(b'VALUE = 1\n')
         return self
 
     def __exit__(self, *_):
         shutil.rmtree(self.root, ignore_errors=True)
 
-    def run(self, step):
-        done = subprocess.run([sys.executable, '-B', '-I', '-c', PROBE, str(self.root), step],
+    def run(self, step, *args):
+        done = subprocess.run([sys.executable, '-B', '-I', '-c', PROBE, str(self.root), step, *args],
                               capture_output=True, text=True, timeout=300)
         if done.returncode:
             raise AssertionError(done.stderr[-2000:])
         return json.loads(done.stdout.strip().splitlines()[-1])
 
     def edit(self, name, change):
-        path = self.root / 'atlas_tectonics' / name
+        path = self.root / name
         before = path.read_bytes()
         path.write_bytes(change(before))
         return before
@@ -332,20 +446,50 @@ class IdentityProbeTest(unittest.TestCase):
         with _Copy() as copy:
             base = copy.run('identity')
             for name, change in (
-                    ('machine_resources_monitor.py', lambda b: b + b'\n'),
-                    ('resources_gate.py', lambda b: b.replace(b'FLOOR_BYTES = GIB ', b'FLOOR_BYTES = GIB+1', 1))):
+                    ('atlas_shared/machine/resources_monitor.py', lambda b: b + b'\n'),
+                    ('atlas_shared/machine/resources_gate.py',
+                     lambda b: b.replace(b'FLOOR_BYTES = GIB ', b'FLOOR_BYTES = GIB+1', 1))):
                 before = copy.edit(name, change)
-                self.assertNotEqual((copy.root / 'atlas_tectonics' / name).read_bytes(), before)
+                self.assertNotEqual((copy.root / name).read_bytes(), before)
                 self.assertEqual(copy.run('identity'), base, name)
                 copy.edit(name, lambda _: before)
-            copy.edit('integration_parallel_dispatch.py', lambda b: b + b'\n')
+            copy.edit('atlas_tectonics/integration_parallel_dispatch.py', lambda b: b + b'\n')
             self.assertNotEqual(copy.run('identity'), base)
 
     def test_a_listed_file_edited_during_a_run_is_refused(self):
         """T-X3: the digest leaves the file out; the boundary check does not."""
         with _Copy() as copy:
-            outcome = copy.run('edit-then-verify')
+            outcome = copy.run('edit-then-verify', 'atlas_shared/machine/resources_gate.py')
         self.assertIn(outcome, ('write refused', 'source changed; create a new execution context'))
+
+    def test_bound_shared_sibling_changes_fingerprint_and_is_held(self):
+        path = 'atlas_shared/machine/resources_gate_sibling.py'
+        with _Copy() as copy:
+            before = copy.run('shared')
+            copy.edit(path, lambda b: b + b'# bound source change\n')
+            after = copy.run('shared')
+            self.assertNotEqual(before[0], after[0])
+            self.assertNotEqual(before[1], after[1])
+            outcome = copy.run('edit-then-verify', path)
+        self.assertIn(outcome, ('write refused', 'source changed; create a new execution context'))
+
+    def test_projected_auto_hit_and_same_key_rollback(self):
+        def run(copy, phase):
+            done = subprocess.run([sys.executable, '-B', '-I', '-c', PROJECTED_PROBE, str(copy.root), phase],
+                                  capture_output=True, text=True, timeout=120)
+            self.assertEqual(done.returncode, 0, done.stderr[-3000:])
+            return json.loads(done.stdout.strip().splitlines()[-1])
+
+        with _Copy() as copy:
+            first = run(copy, 'first')
+            copy.edit('atlas_shared/machine/resources_gate_sibling.py', lambda data: data+b'# source edit\n')
+            after = run(copy, 'after')
+        self.assertEqual(first['key'], after['key'])
+        self.assertEqual(first['producer'], after['producer'])
+        self.assertEqual(first['finite_key'], after['finite_key'])
+        self.assertEqual(first['finite_producer'], after['finite_producer'])
+        self.assertEqual(first['finite_source'], after['finite_source'])
+        self.assertNotEqual(first['using'], after['using'])
 
     def test_the_interpreter_arithmetic_is_bound(self):
         """Issue 51: the Python DLL, the Decimal extension with libmpdec, and the decimal and fractions sources."""

@@ -104,8 +104,8 @@ if (__name__ == '__main__' and Path(__file__).resolve().parent.name == '_private
 
 from atlas_tectonics._private import start_gate as SG
 from atlas_tectonics._private import route2_gate as RG
-from atlas_tectonics import machine_resources_monitor as MONITOR
-from atlas_tectonics import resources_gate as GATE
+from atlas_shared.machine import resources_monitor as MONITOR
+from atlas_shared.machine import resources_gate as GATE
 
 PROFILE_SCHEMA = 'atlas.prepared-restart-launch.v3'
 RESULT_SCHEMA = 'atlas.prepared-restart-result.v1'
@@ -155,7 +155,7 @@ SUCCESSOR_CHECKS = ('live_head_identity', 'live_head_advanced_exactly_one_interv
 H3_NAME = 'private_heat_compiled_dot_r1'
 H3_SHA256 = '3a4e1da27afd6188b5a6cde97b56e7b96f89b0bb2a8063c32c97942da030b901'
 H3_KERNEL = 'private_heat_certification_kernel_r1'
-H3_KERNEL_SHA256 = 'de8e7057cbb35e9044cf6c746986bf622db4af71874a1a9f711d3980dbf6909d'
+H3_KERNEL_SHA256 = '63f9f63610429802b48b611d2bd6e549b2a86d38a1e01c3944cf89287e0dd3e0'
 
 
 class RestartRefused(ValueError):
@@ -493,7 +493,7 @@ class RestartSources:
     """
     __slots__ = ('profile', 'workspace', 'native_root', 'import_roots', 'manifest_path',
                  'manifest_pin', '_manifest', 'historical_inputs', 'selected_now', '_sealed',
-                 '_fixtures', '_proof', '_bound')  # set once each by object.__setattr__ (K35, K44, K37)
+                 '_fixtures', '_proof', '_bound', '_bootstrap_helper')  # set once each by object.__setattr__ (K35, K44, K37)
 
     def __setattr__(self, name, value):
         if getattr(self, '_sealed', False):
@@ -552,17 +552,24 @@ class RestartSources:
         manifest = _json(self._manifest)
         if 'fixture_source_map' not in manifest:
             return None
+        return self._source_bootstrap(manifest['files']).FixtureSources(manifest, self.workspace)
+
+    def _source_bootstrap(self, pins):
+        adapter = getattr(self, '_bootstrap_helper', None)
+        if adapter is not None:
+            return adapter
         # Authenticate the stdlib-only adapter without importing the package.
         import types
         path = self.native_root/'atlas_tectonics/integration_worker_bootstrap.py'
         relative = path.relative_to(self.workspace).as_posix()
         raw = ordinary(path).read_bytes()
-        require(manifest['files'].get(relative) == sha256(raw).hexdigest(),
+        require(pins.get(relative) == sha256(raw).hexdigest(),
                 'fixture adapter absent from source closure')
         adapter = types.ModuleType('_selected_fixture_adapter')
         adapter.__file__ = str(path)
         exec(compile(raw, str(path), 'exec', dont_inherit=True), adapter.__dict__)
-        return adapter.FixtureSources(manifest, self.workspace)
+        object.__setattr__(self, '_bootstrap_helper', adapter)
+        return adapter
 
     def verify(self):
         proof = getattr(self, '_proof', None)
@@ -673,20 +680,23 @@ class RestartSources:
             bound[path] = pin
             return True
         if __package__ == 'atlas_tectonics._private':
-            from atlas_tectonics.integration_worker_bootstrap import _INSTALLED_REGISTRY, verify_installed_modules
+            from atlas_tectonics.integration_worker_bootstrap import (
+                _INSTALLED_REGISTRY, installed_source_package, verify_installed_modules,
+            )
             verify_installed_modules(self.native_root, pins, self.workspace)  # fixtures: self.fixtures() above (K35)
             records = getattr(sys.modules.get(_INSTALLED_REGISTRY), 'records', {})
             proved = {row[1]: row[2] for name, row in records.items()
-                      if (name == 'atlas_tectonics' or name.startswith('atlas_tectonics.'))
-                      and sys.modules.get(name) is row[0]}
+                      if installed_source_package(name) is not None and sys.modules.get(name) is row[0]}
         self.check_paths()
-        native = self.native_root/'atlas_tectonics'
         roots = (self.native_root, *self.import_roots)
         found, h3 = {}, None
         for name, module in tuple(sys.modules.items()):
             filename = getattr(module, '__file__', None)
-            if name == 'atlas_tectonics' or name.startswith('atlas_tectonics.'):
-                require(type(filename) is str and Path(filename).resolve().is_relative_to(native),
+            namespace = name.partition('.')[0]
+            if namespace in ('atlas_tectonics', 'atlas_shared'):
+                member = self.native_root.joinpath(*name.split('.'))
+                require(type(filename) is str and Path(filename).resolve() in (
+                        member/'__init__.py', member.with_suffix('.py') if name != namespace else None),
                         'native module outside the selected runtime refused: '+name)
                 native_path = ordinary(filename)
                 native_key = native_path.relative_to(self.workspace).as_posix()
@@ -794,37 +804,50 @@ class RestartSources:
     def selected(self):
         require(not self.selected_now, 'nested runtime selection refused')
         self.verify()
-        loaded = sys.modules.get('atlas_tectonics')
-        if loaded is not None:
-            require(__package__ == 'atlas_tectonics._private',
-                    'native runtime selection requires a fresh process')
+        preloaded = {name: module for name, module in sys.modules.items()
+                     if name.partition('.')[0] in ('atlas_tectonics', 'atlas_shared')}
+        if preloaded:
+            if __package__ != 'atlas_tectonics._private':
+                records = getattr(sys.modules.get('_atlas_checked_installed_modules'), 'records', {})
+                pins = _json(self._manifest)['files']
+                for name, module in preloaded.items():
+                    row = records.get(name)
+                    require(row is not None and row[0] is module
+                            and row[1].is_relative_to(self.native_root/name.partition('.')[0])
+                            and pins.get(row[1].relative_to(self.workspace).as_posix()) == row[2],
+                            'bare runtime selection refuses a preload outside its checked startup source: '+name)
             # Importing this installed helper necessarily loads its two package
             # parents. Reuse is allowed only for this authenticated inventory,
             # including every already loaded native/private submodule.
             self.check_imported()
-        if __package__ == 'atlas_tectonics._private':
-            from atlas_tectonics.integration_worker_bootstrap import record_installed_module
+        installed = __package__ == 'atlas_tectonics._private'
+        if installed:
+            from atlas_tectonics import integration_worker_bootstrap as startup
         before = list(sys.path)
         owner = self
         pins = _json(self._manifest)['files']
+        if not installed:
+            startup = self._source_bootstrap(pins)
         fixtures = self.fixtures()
 
         class Loader(importlib.machinery.SourceFileLoader):
-            def get_code(self, fullname):
+            def _checked_code(self):
                 path = ordinary(self.path)
                 name = path.relative_to(owner.workspace).as_posix()
                 raw = path.read_bytes()
-                require(name in pins and sha256(raw).hexdigest() == pins[name], 'unbound source import: '+name)
-                return compile(raw, str(path), 'exec', dont_inherit=True)
+                pin = pins.get(name)
+                require(pin is not None and sha256(raw).hexdigest() == pin, 'unbound source import: '+name)
+                return compile(raw, str(path), 'exec', dont_inherit=True), path, pin
+
+            def get_code(self, fullname):
+                return self._checked_code()[0]
 
             def exec_module(self, module):
-                super().exec_module(module)
-                if (__package__ == 'atlas_tectonics._private' and
-                        (module.__name__ == 'atlas_tectonics' or
-                         module.__name__.startswith('atlas_tectonics.'))):
-                    path = ordinary(self.path)
-                    record_installed_module(module, path,
-                        pins[path.relative_to(owner.workspace).as_posix()])
+                code, path, pin = self._checked_code()
+                exec(code, module.__dict__)
+                namespace = module.__name__.partition('.')[0]
+                if namespace == 'atlas_shared' or installed and namespace == 'atlas_tectonics':
+                    startup._record_checked_installed_module(module, path, pin)
 
         class Finder:
             def find_spec(self, fullname, path=None, target=None):
@@ -833,6 +856,12 @@ class RestartSources:
                     if declared is not None:
                         return declared
                 spec = importlib.machinery.PathFinder.find_spec(fullname, path, target)
+                namespace = fullname.partition('.')[0]
+                if namespace in ('atlas_tectonics', 'atlas_shared'):
+                    member = owner.native_root.joinpath(*fullname.split('.'))
+                    require(spec and spec.origin and Path(spec.origin).resolve() in (
+                            member/'__init__.py', member.with_suffix('.py') if fullname != namespace else None),
+                            'package import outside the selected runtime refused: '+fullname)
                 if spec and spec.origin:
                     location = Path(spec.origin).resolve()
                     if (location.is_relative_to(owner.workspace) and
@@ -860,9 +889,10 @@ class RestartSources:
                     # Keep the fixture identity finder installed beneath that boundary.
                     sys.meta_path.remove(finder)
                     sys.meta_path.insert(0, finder)
-                self.check_imported()
-                yield self
-                self.check_imported()
+                with startup.public_import_scope(self.native_root, finder):
+                    self.check_imported()
+                    yield self
+                    self.check_imported()
         finally:
             object.__setattr__(self, 'selected_now', False)
             sys.meta_path.remove(finder)

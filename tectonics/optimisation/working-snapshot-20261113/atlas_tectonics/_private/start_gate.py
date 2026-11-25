@@ -31,8 +31,8 @@ import sys
 from hashlib import sha256
 from pathlib import Path
 
-from atlas_tectonics import machine_resources_monitor as MONITOR
-from atlas_tectonics import resources_gate as GATE
+from atlas_shared.machine import resources_monitor as MONITOR
+from atlas_shared.machine import resources_gate as GATE
 
 SCHEMA = 'atlas.private.start-gate.r1'
 MEASURED, BOOKING = 'largest measured peak of a completed PASS', 'declared booking (no completed PASS record)'

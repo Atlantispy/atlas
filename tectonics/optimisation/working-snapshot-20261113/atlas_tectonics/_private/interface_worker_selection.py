@@ -27,8 +27,8 @@ def first_interval_workers(policy, load=None, stage=None):
     """Interval 1 (no measured parent): the gate's launch width for the stage, a worker counted at the stored
     largest peak of an interface pool's worker, else at the policy's booking, beside the policy's reserve."""
     from atlas_tectonics import integration_parallel_dispatch as dispatch
-    from atlas_tectonics import machine_resources_monitor as MON
-    from atlas_tectonics import resources_gate as RG
+    from atlas_shared.machine import resources_monitor as MON
+    from atlas_shared.machine import resources_gate as RG
     machine, times = MON.reading(load), MON.Timings()
     peak = max(times.peak((family, 'worker', 'peak')) or 0 for family in ('interface', 'wall'))
     return RG.launch_width(machine, RG.setting(machine), peak or policy.child_bytes+dispatch.CHILD_BASELINE,
@@ -36,7 +36,7 @@ def first_interval_workers(policy, load=None, stage=None):
 
 
 def _fits(workers, *, booking, raw, fixed, policy, parent, machine, logical_budget_bytes):
-    from atlas_tectonics.resources_gate import free_cores as cores_free
+    from atlas_shared.machine.resources_gate import free_cores as cores_free
     free_cores = cores_free(machine, machine['physical_cores'])
     free_memory = machine['available_bytes']-parent['real_peak_bytes']
     free_budget = logical_budget_bytes-parent['logical_peak_bytes']
@@ -70,7 +70,7 @@ def select(*, policy_type, child_baseline_bytes, parent_storage_bytes, raw_resul
     fixed = parent_storage_bytes+PARENT_FIXED_EXTRA
     options = {'booking': booking, 'raw': raw_result_bytes, 'fixed': fixed, 'policy': policy, 'parent': parent,
                'machine': machine, 'logical_budget_bytes': logical_budget_bytes}
-    from atlas_tectonics.resources_gate import step_down
+    from atlas_shared.machine.resources_gate import step_down
     ceiling = max(1, machine['physical_cores']-1 if ceiling is None else ceiling)
     chosen = max(1, step_down(ceiling, lambda n: all(_fits(n, **options)[0].values())))
     checks, free = _fits(chosen, **options)
@@ -91,8 +91,8 @@ def select(*, policy_type, child_baseline_bytes, parent_storage_bytes, raw_resul
 def select_composed(*, parent, logical_budget_bytes):
     """select() against the composed runtime's policy and constants, with the machine measured now."""
     from atlas_tectonics import integration_parallel_dispatch as dispatch
-    from atlas_tectonics import machine_resources_monitor as MON
-    from atlas_tectonics import resources_gate as RG
+    from atlas_shared.machine import resources_monitor as MON
+    from atlas_shared.machine import resources_gate as RG
     from atlas_tectonics.integration_parallel_results import raw_capacity
     from atlas_tectonics.integration_parallel_selection import InterfaceParallelPolicy
     machine = MON.reading()

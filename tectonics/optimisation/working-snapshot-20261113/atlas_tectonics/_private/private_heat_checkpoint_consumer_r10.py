@@ -26,10 +26,10 @@ from atlas_tectonics._private import private_heat_issuer_resources_r4 as R
 from atlas_tectonics._private import private_heat_snapshot_store_r4 as STORE
 
 SCHEMA = 'atlas.private.i12-detached-checkpoint-consumer.r10'
-_ISSUER_SHA = '338103940606b8bdf6533710a7b1b1ef56f0b1d4079a610f36cadb1506bcb50c'
+_ISSUER_SHA = '8e70b904acd06a80b2f6181a7ccfff7d49d076b22878ea1842615d35f9394b99'
 _PINS = {
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
-    'private_heat_issuer_resources_r4.py': '0915d54deb9476215140dbc625d40929628b5a4a6c09550bcb72e45d035e4171',
+    'private_heat_issuer_resources_r4.py': 'e0f64b606ffc469395e764699659ded8ef78e571398a0977a8aedd346e12a52c',
     'private_heat_native_projection_r5.py': 'fbb940aa89846274cfbf4c9d5c185f69b0958a4fa4884a6b2b67fb84e0bb95a6',
     'private_heat_forward_kernel_r13.py': 'b56ad1d244eee93a9f817acc451a5c375b4f7bb3b8d5715175670a42a8d3878a',
     'private_heat_native_issuer_r13.py': _ISSUER_SHA,

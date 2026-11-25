@@ -25,8 +25,8 @@ from decimal import Decimal, ROUND_HALF_EVEN, getcontext
 from operator import index
 
 def _library():
-    from atlas_tectonics.exact_arithmetic import library
-    result = library()
+    from atlas_tectonics._exact_runtime import selected
+    result = selected.library()
     if result is None:
         raise RuntimeError('Exact rational Decimal conversion requires the selected GMP backend')
     return result

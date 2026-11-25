@@ -37,6 +37,8 @@ the gate decides whether the NEXT interval may run (reviewer and owner).
 """
 import argparse
 from contextlib import ExitStack
+from contextlib import contextmanager
+from functools import wraps
 import gc
 import json
 import os
@@ -117,7 +119,8 @@ from atlas_tectonics._private import reopen_prepared_restart as RO
 from atlas_tectonics._private import run_fresh_interval as F
 from atlas_tectonics._private import run_prepared_restart as RUN
 from atlas_tectonics._private import start_gate as SG
-from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics._private.interval_admission import admitted, protect_profile
+from atlas_shared.machine import resources_monitor as MONITOR
 from atlas_tectonics._private import overlap_reader as OR
 from atlas_tectonics._private import reader_overlap_gate as OG
 from atlas_tectonics._private import reuse_previous_run as REUSE
@@ -246,7 +249,8 @@ def _root_record(root, *, execution_mode='strict'):
     return root
 
 
-def _completed(completed, *, root, pid, advanced, sequence=1, producer_mode='strict'):
+def _completed(completed, *, root, pid, advanced, sequence=1, producer_mode='strict',
+               retained_execution=None):
     """The driver's completed-endpoint record extends run A's root, at exactly ``sequence``."""
     require(type(completed) is dict and set(completed) == RO.COMPLETED_FIELDS,
             'complete advanced endpoint record required')
@@ -254,13 +258,15 @@ def _completed(completed, *, root, pid, advanced, sequence=1, producer_mode='str
                  'exterior_state_id', 'source_audit_id', 'joined_heat_id'):
         require(RO._identity(completed[name]), 'complete endpoint identities are required')
     metadata = completed['root_metadata']
+    execution = (root['execution_provenance']['execution_identity'] if retained_execution is None
+                 else retained_execution[1])
     require(completed['producer_pid'] == pid and completed['workflow_id'] == root['workflow_id'] and
             completed['root_key'] == root['root_key'] and type(metadata) is dict and
             metadata.get('key') == root['root_key'] and
             sha256(F.canonical(metadata)).hexdigest() == root['root_metadata_sha256'] and
             completed['head_key'] == advanced['head'] != root['root_key'] and completed['sequence'] == sequence and
             completed['preparation_ids'] == root['preparation_ids'] and
-            completed['execution_provenance'] == dict(root['execution_provenance'], execution_mode=producer_mode) and
+            completed['execution_provenance'] == {'execution_identity': execution, 'execution_mode': producer_mode} and
             completed['store_limits'] == root['store_limits'] and
             completed['store_compression'] == root['store_compression'],
             'advanced endpoint does not extend run A root of this producer')
@@ -392,10 +398,20 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
                 all(type(queries.get(k)) is int and queries[k] >= 0 for k in ('hits', 'misses', 'written',
                                                                               'incomplete', 'unflushed')),
                 'run B completed-query record is incomplete')
+        retained = receipt.get('retained_root')
+        retained_execution = None
+        if retained is not None:
+            require(interval == 1 and producer_mode == prior_mode == 'strict' and
+                    receipt.get('open_proofs') is False, 'retained root is for the first Debug diagnostic interval')
+            retained_execution = F.retained_root_provenance(
+                retained, root_runner, profile_sha256=profile.sha256, proof=receipt['source_proof'])
         expected = {'root': root, 'previous_endpoint': previous, 'advanced_endpoint': advanced,
                     'parent_key': parent_key,
                     'completed_endpoint': _completed(receipt.get('completed_endpoint'), root=root, pid=pid,
-                                                     advanced=advanced, sequence=interval, producer_mode=producer_mode)}
+                                                     advanced=advanced, sequence=interval, producer_mode=producer_mode,
+                                                     retained_execution=retained_execution)}
+        if retained_execution is not None:
+            expected['retained_root_execution'] = retained_execution
         if lineage is not None:
             expected['lineage'] = lineage['lineage']
     supervisor = receipt.get('supervisor')
@@ -459,6 +475,10 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
                 adopted['status'] == ADOPTED_STATUS and adopted['entry'] == verdict['entry'] and
                 adopted['verdict_sha256'] == sha256(F.canonical(verdict)).hexdigest(),
                 'interval 1 requires run A adopted after its own reader PASS')
+        retained = receipt.get('retained_root')
+        if retained is not None:
+            require(F.diagnostic_tree(sources) and retained['root_receipt_sha256'] == verdict['producer_receipt_sha256'],
+                    'retained root claim must name the adopted diagnostic producer')
         parent_widths = verdict['widths']
     member = RUN.ordinary(store_directory/sealed['entry']['filename'])
     require(member.parent == store_directory and not os.access(member, os.W_OK) and
@@ -797,7 +817,13 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                 record.update(view_digest=view.catalog_digest, accepted_catalog_digest=view.accepted_catalog_digest)
                 checks['pending_file_verified'] = True
                 token = store.change_token()
-                require(RO.strict_execution_matches(a.heat_execution.provenance, root['execution_provenance']) and
+                retained_execution = producer.get('retained_root_execution')
+                actual_execution = a.heat_execution.provenance
+                execution_matches = RO.strict_execution_matches(actual_execution, root['execution_provenance'])
+                if retained_execution is not None:
+                    execution_matches = actual_execution == {
+                        'execution_identity': retained_execution[1], 'execution_mode': 'strict'}
+                require(execution_matches and
                         FRESH.preparation_ids(a.case, a.owner) == root['preparation_ids'],
                         'independently rebuilt runtime, plans or owner differ from run A')
                 checks['source_bound_admission'] = True
@@ -811,7 +837,12 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                     found = FRESH.published_root(workflow, store, a)
                     differing = [name for name in FRESH.ROOT_IDENTITY if name != 'execution_provenance' and
                                  found[name] != root[name]]
-                    if not RO.strict_execution_matches(found['execution_provenance'], root['execution_provenance']):
+                    if retained_execution is None:
+                        execution_matches = RO.strict_execution_matches(found['execution_provenance'],
+                                                                         root['execution_provenance'])
+                    else:
+                        execution_matches = found['execution_provenance'] == actual_execution
+                    if not execution_matches:
                         differing.append('execution_provenance')
                     require(not differing, 'independently reopened root differs from run A: '+', '.join(differing))
                     require(found['store_limits'] == root['store_limits'] and
@@ -883,13 +914,33 @@ def _explicit(number):
     return None if number <= 1 else number
 
 
+@contextmanager
+def _reader_admission(profile, reuse_previous, previous=None):
+    stores = [profile.record()['store_directory']]
+    if reuse_previous is not None:
+        if previous is None:
+            previous = F.FreshProfile.read(reuse_previous[0], reuse_previous[1])
+        stores.append(previous.record()['store_directory'])
+    with admitted(stores):
+        yield previous
+
+
+def _protected_reader(function):
+    @wraps(function)
+    def protected(profile, *args, **kwargs):
+        with _reader_admission(profile, kwargs.get('reuse_previous'), kwargs.get('_previous')) as previous:
+            return function(profile, *args, **dict(kwargs, _previous=previous))
+    return protected
+
+
+@_protected_reader
 def command(profile, python, *, mode, producer_receipt_sha256, review=False, start_gate=None, interval=None,
             overlap_spec=None, fallback=False, fallback_claim_sha256=None, reuse_previous=None,
-            record_failed_prior=False):
+            record_failed_prior=False, _previous=None):
     """Store-free preflight and the guarded argv; never launches. ``start_gate`` goes last."""
     sources = F.FreshSources(profile)
     recorded = _recording(sources, record_failed_prior)
-    reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous)
+    reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous, previous=_previous)
     overlap_spec = _reader_options(profile, mode=mode, interval=interval,
         producer_receipt_sha256=producer_receipt_sha256, review=review, overlap_spec=overlap_spec,
         fallback=fallback, fallback_claim_sha256=fallback_claim_sha256)
@@ -950,13 +1001,14 @@ def _reader_error(error):
                 'reporting_error': type(reporting_error).__name__}
 
 
+@_protected_reader
 def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gate=None, interval=None,
               overlap_spec=None, fallback=False, fallback_claim_sha256=None, reuse_previous=None,
-              record_failed_prior=False):
+              record_failed_prior=False, _previous=None):
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     sources = F.FreshSources(profile)
     recorded = _recording(sources, record_failed_prior)
-    reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous)
+    reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous, previous=_previous)
     overlap_spec = _reader_options(profile, mode=mode, interval=interval,
         producer_receipt_sha256=producer_receipt_sha256, review=review, overlap_spec=overlap_spec,
         fallback=fallback, fallback_claim_sha256=fallback_claim_sha256)
@@ -1179,10 +1231,11 @@ def _imported(sources, recorded):
         recorded.append('loaded-module proof: '+str(error))
 
 
+@_protected_reader
 def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, guard_receipt_sha256,
              guard_control_sha256, review=False, interval=None,
              overlap_gate_sha256=None, fallback=False, fallback_claim_sha256=None, reuse_previous=None,
-             record_failed_prior=False):
+             record_failed_prior=False, _previous=None):
     """Store-free acceptance of a completed guarded reader; the exclusive verdict on PASS.
 
     Under reuse_previous the records are the previous tree's and are tested against its profile
@@ -1204,7 +1257,7 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
     errors, verdict_sha256, gate, reuse, recorded, core = [], None, None, None, None, None
     try:
         recorded = _recording(sources, record_failed_prior)
-        reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous)
+        reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous, previous=_previous)
         then = profile if reuse is None else reuse['previous']
         reopen, _ = OR.read_json(output/'reopen.json', pin=reopen_receipt_sha256, limit=RO.MAX_RECEIPT)
         core = reopen.get('reader_core', 'full') if type(reopen) is dict else None
@@ -1285,13 +1338,15 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
     return 0 if not errors else 1
 
 
-def adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256=None):
+def adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256=None, *, location=None):
     """The records adopt_and_promote may use, and nothing else; refuses any inconsistency."""
-    verdict = F.read_record(F.verdict_path(store_directory, interval), schema=F.VERDICT_SCHEMA,
+    if location is None:
+        location = lambda path: path
+    verdict = F.read_record(location(F.verdict_path(store_directory, interval)), schema=F.VERDICT_SCHEMA,
                             expected_sha256=verdict_sha256)
-    runner = F.read_record(F.runner_record_path(store_directory, interval), schema=F.RUNNER_RECORD_SCHEMA,
+    runner = F.read_record(location(F.runner_record_path(store_directory, interval)), schema=F.RUNNER_RECORD_SCHEMA,
                            expected_sha256=verdict['runner_record_sha256'])
-    sealed = F.read_record(F.sealed_record_path(store_directory, interval), schema=F.SEALED_SCHEMA)
+    sealed = F.read_record(location(F.sealed_record_path(store_directory, interval)), schema=F.SEALED_SCHEMA)
     entry = sealed['entry']
     mode = 'root' if interval == 0 else 'interval'
     require(verdict['status'] == F.READER_PASS[mode] and verdict['interval'] == interval == entry['interval'] and
@@ -1309,6 +1364,206 @@ def adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256=N
     return verdict, runner, sealed
 
 
+def park_retained_interval(store_directory, aside, interval, *, pins, parent_adopted_pin, scope,
+                           assert_exclusive, save_disposition, crash_hook=None):
+    """Park one accepted catalog tail in a home owned exclusively by the caller."""
+    from atlas_tectonics._private import interval_catalog as IC
+    from atlas_tectonics._private.interval_store_set import (_immutable, catalog_transient_charge,
+                                                            pending_view_digest)
+    directory = IC.safe_path(store_directory)
+    archive = IC.safe_path(aside)
+    require(archive.is_dir() and archive != directory and not archive.is_relative_to(directory),
+            'protected output archive must be outside the active store')
+    assert_exclusive()
+    live = IC.safe_path(directory/F.CATALOG)
+    saved_catalog = IC.safe_path(archive/F.CATALOG)
+
+    def location(path):
+        parked = archive/path.name
+        active, retained = os.path.lexists(path), os.path.lexists(parked)
+        require(active != retained, 'protected output is missing or has a conflicting owner: '+path.name)
+        return IC.safe_path(path if active else parked, existing=True)
+
+    verdict_path = F.verdict_path(directory, interval)
+    runner_path = F.runner_record_path(directory, interval)
+    seal_path = F.sealed_record_path(directory, interval)
+    adopted_record_path = F.adopted_path(directory, interval)
+    records = (verdict_path, runner_path, seal_path, adopted_record_path)
+    require(set(pins) == {path.name for path in records}, 'exact protected interval record pins required')
+    for path in records:
+        RUN._sha(pins[path.name])
+    adopted = F.read_record(location(adopted_record_path), schema=F.ADOPTED_SCHEMA,
+                            expected_sha256=pins[adopted_record_path.name])
+    verdict, _, sealed = adoption_inputs(directory, interval, pins[verdict_path.name],
+        adopted.get('review_approval_sha256'), location=location)
+    entry = sealed['entry']
+    require(adopted['status'] == ADOPTED_STATUS and adopted['interval'] == interval and adopted['entry'] == entry
+            and adopted['verdict_sha256'] == pins[verdict_path.name]
+            and adopted['runner_record_sha256'] == pins[runner_path.name] == verdict['runner_record_sha256']
+            and sha256(F.canonical(sealed)).hexdigest() == pins[seal_path.name],
+            'protected interval outputs do not bind their original adoption')
+    segment = IC.relative_file(directory, entry['filename'])
+    original_segment = location(segment)
+    segment_token = IC.file_token(original_segment, reject_sidecars=True)
+    require(_immutable(original_segment) and RUN.file_hash(original_segment) == entry['file_sha256'],
+            'protected interval seal differs from its accepted file')
+
+    with IC.publication_lock(live):
+        assert_exclusive()
+        image = saved_catalog if saved_catalog.exists() else live
+        size = IC.file_token(image)[2]
+        with scope.run_budget.reserve(catalog_transient_charge(size), category='retained-catalog-transition'):
+            raw, previous = IC._read_catalog_image(image, expected_size=size)
+            require(previous == adopted['catalog_digest'] == adopted['catalog_sha256'],
+                    'original catalog image differs from its adoption')
+            catalog = IC.Catalog.from_bytes(raw)
+            require(catalog.entries[-1].to_wire() == entry and catalog.generation == interval+1,
+                    'protected interval must be the original catalog tail')
+            prefix = None
+            prefix_raw = None
+            if interval:
+                parent = F.read_record(F.adopted_path(directory, interval-1), schema=F.ADOPTED_SCHEMA,
+                                       expected_sha256=RUN._sha(parent_adopted_pin))
+                prefix_raw = IC.Catalog(catalog.workflow_id, interval, catalog.entries[:-1]).to_bytes()
+                prefix = IC.digest(prefix_raw)
+                require(parent['entry'] == catalog.entries[-2].to_wire() and
+                        parent['catalog_digest'] == parent['catalog_sha256'] == prefix,
+                        'authenticated prefix differs from its original adoption')
+            else:
+                require(parent_adopted_pin is None, 'pre-root transition cannot name a parent adoption')
+            require(sealed['expected_catalog_digest'] == prefix and
+                    verdict['view_digest'] == pending_view_digest(prefix, catalog.entries[-1]),
+                    'protected tail was not read against the authenticated prefix')
+            active = (previous if image == live else IC._read_catalog_image(live)[1] if live.exists() else None)
+            require(active in (previous, prefix), 'active catalog is outside the pending protected transition')
+            save_disposition({'interval': interval, 'before': previous, 'after': prefix,
+                              'archive': str(archive), 'records': dict(pins), 'parent_adopted_sha256': parent_adopted_pin,
+                              'interval_sha256': entry['file_sha256'], 'filename': entry['filename']})
+            def stable_segment():
+                assert_exclusive()
+                require(IC.file_token(original_segment, reject_sidecars=True) == segment_token
+                        and _immutable(original_segment), 'protected sealed file changed before publication')
+
+            if active == previous:
+                if prefix_raw is None:
+                    require(not saved_catalog.exists(), 'conflicting archived original catalog')
+                    stable_segment()
+                    IC.durable_replace(live, saved_catalog)
+                    if crash_hook:
+                        crash_hook('catalog_replaced')
+                else:
+                    if not saved_catalog.exists():
+                        temporary = saved_catalog.with_suffix('.tmp')
+                        with temporary.open('wb') as stream:
+                            stream.write(raw)
+                            IC.flush_file(stream)
+                        IC.durable_replace(temporary, saved_catalog)
+                    IC._publish_checked_image(live, prefix_raw, crash_hook=crash_hook, precondition=stable_segment)
+            for path in (*records, segment):
+                original = location(path)
+                if original == path:
+                    IC.durable_replace(path, archive/path.name)
+    return prefix
+
+
+def restore_retained_interval(store_directory, disposition, *, scope, assert_exclusive, save_disposition,
+                              crash_hook=None, check_adoption=None):
+    """Reinstate the named tail after its original predecessor has been established."""
+    from atlas_tectonics._private import interval_catalog as IC
+    from atlas_tectonics._private import interval_store_set as IS
+    from atlas_tectonics._private.compact_contracts import SegmentRef
+    directory = IC.safe_path(store_directory)
+    archive = IC.safe_path(disposition['archive'])
+    require(archive.is_dir() and not archive.is_relative_to(directory),
+            'protected output archive must be outside the active store')
+    assert_exclusive()
+    interval, pins = disposition['interval'], disposition['records']
+    catalog = directory/F.CATALOG
+    original_catalog = archive/F.CATALOG
+    with scope.run_budget.reserve(IS.catalog_transient_charge(IC.file_token(original_catalog)[2]),
+                                  category='retained-catalog-restoration'):
+        raw, original = IC._read_catalog_image(original_catalog)
+        history = IC.Catalog.from_bytes(raw)
+        require(original == disposition['before'] and history.generation == interval+1,
+                'retained catalog does not match its protected disposition')
+        archived_entry = history.entries[-1]
+
+        def location(path):
+            parked = archive/path.name
+            active, retained = os.path.lexists(path), os.path.lexists(parked)
+            require(active or retained, 'protected output is missing: '+path.name)
+            return IC.safe_path(path if active else parked, existing=True)
+
+        adoption = F.adopted_path(directory, interval)
+        verdict_path = F.verdict_path(directory, interval)
+        runner_path = F.runner_record_path(directory, interval)
+        seal_path = F.sealed_record_path(directory, interval)
+        require(set(pins) == {path.name for path in (adoption, verdict_path, runner_path, seal_path)},
+                'exact protected interval record pins required')
+        old_adoption = F.read_record(location(adoption), schema=ADOPTED_SCHEMA, expected_sha256=pins[adoption.name])
+        if check_adoption is not None:
+            check_adoption(adoption, pins[adoption.name], old_adoption)
+        approval = old_adoption.get('review_approval_sha256')
+        verdict, runner, sealed = adoption_inputs(directory, interval, pins[verdict_path.name], approval,
+                                                  location=location)
+        entry = sealed['entry']
+        segment = IC.relative_file(directory, entry['filename'])
+        sealed_file = location(segment)
+        token = IC.file_token(sealed_file, reject_sidecars=True)
+        require(IS._immutable(sealed_file) and RUN.file_hash(sealed_file) == entry['file_sha256'],
+                'restored seal differs from its original interval')
+        before = sealed['expected_catalog_digest']
+        active = IC._read_catalog_image(catalog)[1] if catalog.exists() else None
+        if interval:
+            parent = F.read_record(F.adopted_path(directory, interval-1), schema=ADOPTED_SCHEMA,
+                                   expected_sha256=RUN._sha(disposition['parent_adopted_sha256']))
+            require(parent['catalog_digest'] == parent['catalog_sha256'] == before
+                    and parent['entry'] == history.entries[-2].to_wire(),
+                    'retained interval names a different original parent adoption')
+        require(archived_entry.to_wire() == entry and original == old_adoption['catalog_digest'] ==
+                old_adoption['catalog_sha256'] and before == disposition['after'] and
+                active in (before, original) and entry['filename'] == disposition['filename'] and
+                entry['file_sha256'] == disposition['interval_sha256'] and
+                verdict['runner_record_sha256'] == pins[runner_path.name] and
+                sha256(F.canonical(sealed)).hexdigest() == pins[seal_path.name],
+                'protected restoration has a different parent or original proof')
+        save_disposition(dict(disposition, restoring=True))
+        assert_exclusive()
+        if active == before:
+            require(not adoption.exists() and IC.file_token(sealed_file, reject_sidecars=True) == token,
+                    'protected restoration has a foreign adoption or a changed sealed file')
+            for path in (runner_path, seal_path, verdict_path, segment):
+                source = location(path)
+                if source != path:
+                    IC.durable_replace(source, path)
+            stores = (IS.IntervalStoreSet.create_migration(catalog, workflow_id=runner['workflow_id'], scope=scope)
+                      if before is None else IS.IntervalStoreSet.open_catalog(catalog, scope=scope))
+            try:
+                stores.crash_hook = crash_hook
+                adopted = stores.adopt_and_promote(entry['filename'], expected_sha256=entry['file_sha256'],
+                    expected_logical_seal=entry['logical_seal'], head=SegmentRef.from_wire(runner['head']),
+                    producer_identity=runner['producer_identity'], runtime_identity=runner['runtime_identity'],
+                    expected_catalog_digest=before, reader_view_digest=verdict['view_digest'])
+                require(adopted.to_wire() == entry and stores.catalog_digest == original,
+                        'restored catalog differs from the original adoption')
+            finally:
+                stores.close()
+        else:
+            require(all(location(path) == path for path in (runner_path, seal_path, verdict_path, segment)),
+                    'promoted catalog has no complete active interval')
+        value = {'schema': ADOPTED_SCHEMA, 'status': ADOPTED_STATUS, 'interval': interval, 'entry': entry,
+                 'catalog_digest': original, 'catalog_sha256': original, 'verdict_sha256': pins[verdict_path.name],
+                 'runner_record_sha256': pins[runner_path.name], 'adopter_pid': None,
+                 **({'review_approval_sha256': approval} if approval else {})}
+        require(dict(old_adoption, adopter_pid=None) == value, 'restored adoption differs from the original receipt')
+        source = location(adoption)
+        if source != adoption:
+            assert_exclusive()
+            IC.durable_replace(source, adoption)
+        return pins[adoption.name]
+
+
+@protect_profile
 def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None):
     """Promote the sealed interval after its reader PASS, from the durable records only."""
     sources = F.FreshSources(profile)
@@ -1431,36 +1686,37 @@ def main(argv=None):
                               booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
             if args.launch or gate_args else None)
     profile = F.FreshProfile.read(args.profile, args.profile_sha256)
-    if args.adopt:
-        return adopt(profile, mode=args.mode, verdict_sha256=args.verdict_sha256,
-                     approval_sha256=args.review_approval_sha256, interval=args.interval)
-    if args.workload:
-        F._profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', 'reader-'+args.mode)
-        return _workload(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
-                         review=args.review, start_gate=args.start_gate, interval=args.interval,
-                         overlap_spec=args.overlap_spec, fallback=args.reader_fallback,
-                         fallback_claim_sha256=args.fallback_claim_sha256, reuse_previous=reuse_previous,
-                         record_failed_prior=args.record_failed_prior)
-    if args.finalise:
-        return finalise(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
-                        reopen_receipt_sha256=args.reopen_receipt_sha256,
-                        guard_receipt_sha256=args.guard_receipt_sha256, guard_control_sha256=args.guard_control_sha256,
-                        review=args.review,
-                        interval=args.interval, overlap_gate_sha256=args.overlap_gate_sha256,
-                        fallback=args.reader_fallback, fallback_claim_sha256=args.fallback_claim_sha256,
-                        reuse_previous=reuse_previous, record_failed_prior=args.record_failed_prior)
-    argv = command(profile, sys.executable, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
-                   review=args.review, start_gate=gate, interval=args.interval, overlap_spec=args.overlap_spec,
-                   fallback=args.reader_fallback, fallback_claim_sha256=args.fallback_claim_sha256,
-                   reuse_previous=reuse_previous, record_failed_prior=args.record_failed_prior)
-    print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
-                      'production_acceptance': False}), flush=True)
-    if not args.launch:
-        return 0
-    SG.admit(gate, MONITOR.free_memory())
-    output = reader_output(profile.record(), args.mode, args.interval, fallback=args.reader_fallback)
-    output.mkdir(exist_ok=False)
-    return subprocess.call(argv, env=F.pressure_launch_environment(), cwd=output)
+    with _reader_admission(profile, reuse_previous) as previous:
+        if args.adopt:
+            return adopt(profile, mode=args.mode, verdict_sha256=args.verdict_sha256,
+                         approval_sha256=args.review_approval_sha256, interval=args.interval)
+        if args.workload:
+            F._profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', 'reader-'+args.mode)
+            return _workload(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
+                             review=args.review, start_gate=args.start_gate, interval=args.interval,
+                             overlap_spec=args.overlap_spec, fallback=args.reader_fallback,
+                             fallback_claim_sha256=args.fallback_claim_sha256, reuse_previous=reuse_previous, _previous=previous,
+                             record_failed_prior=args.record_failed_prior)
+        if args.finalise:
+            return finalise(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
+                            reopen_receipt_sha256=args.reopen_receipt_sha256,
+                            guard_receipt_sha256=args.guard_receipt_sha256, guard_control_sha256=args.guard_control_sha256,
+                            review=args.review,
+                            interval=args.interval, overlap_gate_sha256=args.overlap_gate_sha256,
+                            fallback=args.reader_fallback, fallback_claim_sha256=args.fallback_claim_sha256,
+                            reuse_previous=reuse_previous, _previous=previous, record_failed_prior=args.record_failed_prior)
+        argv = command(profile, sys.executable, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
+                       review=args.review, start_gate=gate, interval=args.interval, overlap_spec=args.overlap_spec,
+                       fallback=args.reader_fallback, fallback_claim_sha256=args.fallback_claim_sha256,
+                       reuse_previous=reuse_previous, _previous=previous, record_failed_prior=args.record_failed_prior)
+        print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
+                          'production_acceptance': False}), flush=True)
+        if not args.launch:
+            return 0
+        SG.admit(gate, MONITOR.free_memory())
+        output = reader_output(profile.record(), args.mode, args.interval, fallback=args.reader_fallback)
+        output.mkdir(exist_ok=False)
+        return subprocess.call(argv, env=F.pressure_launch_environment(), cwd=output)
 
 
 if __name__ == '__main__':

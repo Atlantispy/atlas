@@ -984,7 +984,8 @@ class CollarWorkflow:
         return self
 
     @classmethod
-    def open(cls, store, workflow_id, collar, owner, funding, *, budget, exterior_owner=None):
+    def open(cls, store, workflow_id, collar, owner, funding, *, budget, exterior_owner=None,
+             _retained_execution=None):
         """Use rebuilt plans/funding identities; never replay an accepted interval."""
         definition = cls._inputs(store, collar, owner, funding, budget)
         root = store.metadata(cls._key('root', workflow_id))
@@ -1011,9 +1012,21 @@ class CollarWorkflow:
                 del payload, blobs, fields
             exterior_definition = cls._exterior_inputs(exterior_owner, collar, funding, budget)
             identity = cls._identity(collar, funding, exterior_definition)
+            descriptor = collar.descriptor()
+            if _retained_execution is not None:
+                actual = descriptor.get('heat_plan')
+                saved = root.get('collar_plan')
+                saved = saved.get('heat_plan') if type(saved) is dict else None
+                if (root.get('sequence') != 0 or store.store_set.head.interval != 0 or
+                        type(saved) is not dict or type(actual) is not dict or
+                        saved.get('schema') != 'atlas.regional-heat3d-plan.v1' or
+                        actual.get('schema') != saved['schema'] or
+                        (saved.get('execution'), actual.get('execution')) != _retained_execution):
+                    raise RegionalOwnerRefused('retained collar heat plan differs from its root execution proof')
+                descriptor = dict(descriptor, heat_plan=dict(actual, execution=saved['execution']))
             if (workflow_id != identity or root.get('workflow_id') != identity or
                     root.get('key') != cls._key('root', identity) or root.get('funding') != definition or
-                    root.get('funding_id') != funding.funding_id or root.get('collar_plan') != collar.descriptor() or
+                    root.get('funding_id') != funding.funding_id or root.get('collar_plan') != descriptor or
                     root.get('exterior_remainder') != funding.exterior_remainder() or
                     root.get('exterior_owner') != exterior_definition or
                     root.get('geometry_family') != cls._geometry_family(exterior_owner) or

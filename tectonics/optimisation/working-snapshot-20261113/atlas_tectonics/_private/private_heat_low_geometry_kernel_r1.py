@@ -24,10 +24,10 @@ def _check(cancel):
 
 def prepare_geometry(geometry, conductivity, boundary, *, cancel=None):
     from atlas_tectonics.integration_mimetic_heat import MimeticGeometry
-    from atlas_tectonics import exact_arithmetic
+    from atlas_tectonics._exact_runtime import selected
     if type(geometry) is not MimeticGeometry:
         raise TypeError('Actual issued native metric complex required')
-    G = exact_arithmetic.library()
+    G = selected.library()
     if G is None:
         raise RuntimeError('The private LOW extraction requires the selected GMP backend')
     _check(cancel)

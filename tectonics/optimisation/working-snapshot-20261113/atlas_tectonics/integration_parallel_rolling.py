@@ -59,7 +59,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 from collections import deque
 from time import perf_counter
 
-from .machine_resources_monitor import Timings
+from atlas_shared.machine.resources_monitor import Timings
 
 SCALE = (0.25, 2.0)  # bounds of that rescaling
 PROBATION = 3        # finished batches before the realised saving may stop the schedule

@@ -15,9 +15,9 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 
 
 def transfer(owner, *, budget, cancelled=None, category='heat-retained-functional-row'):
-    from atlas_tectonics.exact_arithmetic import library
+    from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
-    G = library()
+    G = selected.library()
     if G is None:
         raise RuntimeError('Selected GMP backend required')
     work = R.OwnedWorkspace(budget, 262144, category=category, cancelled=cancelled)

@@ -35,7 +35,7 @@ from atlas_tectonics._private import private_heat_process_meter_r1 as METER
 HERE = Path(__file__).resolve().parent
 METHOD = 'private:standalone-conservative-physical-face-finish-r7'
 PINS = {
-    'private_heat_correction_owned_r1.py': 'e8d935d703d942323cc6ccc62b45da48bb4149e3a17b5e82b7e3db6aaeb9ca38',
+    'private_heat_correction_owned_r1.py': '5c959f973713af2eac347cba5ce3d50c0f30fbc65253dd1651da7195214be033',
     'private_heat_finish_codec_inventory_r1.py': '6e8d7b56f9283a2b1e9d94673459e8a62ad707ad94d226d1cd2eb1c4bcc5e295',
     'private_heat_finish_kernel_r3.py': '178d58b891df29ded2a3d46cbd62236d3e87f499f9159e3aa951d3481e781cb3',
 }

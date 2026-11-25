@@ -105,8 +105,8 @@ class OwnedAssembly(OwnedSolve):
 
 
 def _library():
-    from atlas_tectonics import exact_arithmetic
-    result = exact_arithmetic.library()
+    from atlas_tectonics._exact_runtime import selected
+    result = selected.library()
     if result is None:
         raise RuntimeError('Certified endpoint assembly requires the selected GMP backend')
     return result

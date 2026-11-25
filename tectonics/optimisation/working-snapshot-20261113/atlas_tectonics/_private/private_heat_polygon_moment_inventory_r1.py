@@ -141,9 +141,9 @@ def admit(face, *, budget, cancel=None):
     _check(cancel)
     if type(face) is not dict or type(face.get('vertices_m')) is not list or len(face['vertices_m']) < 3:
         raise ValueError('Owned face with at least three declared vertices required')
-    from atlas_tectonics import exact_arithmetic
+    from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
-    G = exact_arithmetic.library()
+    G = selected.library()
     if G is None:
         raise RuntimeError('Selected GMP backend required')
     metadata = START._size(262144+L.CONTAINER_UNIT*(100*len(face['vertices_m'])+512))

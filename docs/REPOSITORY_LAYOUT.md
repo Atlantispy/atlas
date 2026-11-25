@@ -10,7 +10,7 @@ the target, reached in steps; most of it does not exist yet. Read it with [AGENT
 atlas/
   README.md, AGENTS.md, CLAUDE.md, LICENSE*   unchanged
   docs/                programme-wide: roadmap, state, module scopes, contracts
-  shared/              planned: the atlas_shared package (standard library, numpy, psutil, numba only)
+  shared/              atlas_shared, with pinned gmpy2 and an optional psutil acceptance extra
     pyproject.toml
     src/atlas_shared/
       machine/         resource monitor and start gate
@@ -71,7 +71,26 @@ tests sit in one folder.
 
 ## Moving files
 
-- **A move changes no value.** Files move byte for byte; only their import lines change.
+An unissued development copy resolves `atlas_shared` from `shared/src`.
+Set `PYTHONPATH` to the absolute snapshot and shared source directories, with the snapshot
+first. Use `;` between the paths on Windows and `:` on POSIX. The parallel test runner supplies
+the snapshot path through `--src` and inherits the shared path. The isolated tests supply both
+paths directly or use adjacent package copies. Snapshot CI stages the declared source with
+the shared package beside it.
+
+The issued snapshot stages `atlas_tectonics` and `atlas_shared` next to each other in its
+selected native root. The application declaration lists all Python sources in both packages.
+The driver lists the shared files in its pinned workspace source map and retains its
+tectonics-only native source digest.
+
+| Working snapshot path in sealed references | Shared source path |
+| --- | --- |
+| `atlas_tectonics/machine_resources_monitor.py` | `shared/src/atlas_shared/machine/resources_monitor.py` |
+| `atlas_tectonics/resources_gate.py` | `shared/src/atlas_shared/machine/resources_gate.py` |
+| `atlas_tectonics/exact_arithmetic.py` | `shared/src/atlas_shared/exact/exact_arithmetic.py` |
+
+- **A move changes no value.** Byte-identical bodies use move records. The exact backend
+  separates shared selection from tectonics activation and is issued as a removal and additions.
 - **No re-export shims.** Every caller is repointed in the same landing.
 - **One landing per batch, one repin per landing.** Only the steps whose identity moved are rerun, and the
   rerun must give identical results.

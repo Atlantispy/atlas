@@ -50,7 +50,7 @@ from fractions import Fraction
 from itertools import product
 import sys
 
-from . import exact_arithmetic as X
+from ._exact_runtime import selected
 from . import integration_volume as V
 from . import integration_volume_overlap as O
 from .integration_volume_bounds import _BOX_RINGS, NATIVE_RETAINED, _ScalarSum
@@ -72,7 +72,7 @@ RECYCLED_LIMBS = 64
 OBJECT_BYTES = 160
 HEADER_BYTES = 72
 
-_library = X.library()
+_library = selected.library()
 if _library is not None:
     mpq, mpz = _library.mpq, _library.mpz
     _numer, _denom, _lcm, _gcd = _library.numer, _library.denom, _library.lcm, _library.gcd

@@ -20,8 +20,8 @@ def _intersect(rows, refined, selected, budget, cancel, original_maximum):
         if cancel is not None and cancel():
             raise CancelledError('Selective functional refinement cancelled')
     check()
-    from atlas_tectonics.exact_arithmetic import library
-    G = library()
+    from atlas_tectonics._exact_runtime import selected as exact_backend
+    G = exact_backend.library()
     if G is None:
         raise RuntimeError('Selected GMP backend required')
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R

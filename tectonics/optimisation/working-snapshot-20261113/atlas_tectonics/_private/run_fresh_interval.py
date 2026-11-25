@@ -73,7 +73,8 @@ else:
 
 from atlas_tectonics._private import run_prepared_restart as RUN
 from atlas_tectonics._private import start_gate as SG
-from atlas_tectonics import machine_resources_monitor as MONITOR
+from atlas_tectonics._private.interval_admission import admitted, protect_profile
+from atlas_shared.machine import resources_monitor as MONITOR
 
 PROFILE_SCHEMA = 'atlas.fresh-interval-profile.v2'
 RESULT_SCHEMA = 'atlas.fresh-interval-result.v1'
@@ -467,7 +468,7 @@ def preseal_or_review(preseal, *, seal_for_review, check):
                                      + cause['message']) from error
 
 
-def require_promoted_root(store, store_directory):
+def require_promoted_root(store, store_directory, retained=None):
     """Run B's precondition: the accepted catalog holds exactly run A's adopted root.
 
     The chain is run A's runner record -> its sealed record -> the reader's PASS
@@ -486,7 +487,40 @@ def require_promoted_root(store, store_directory):
     require(accepted is not None and accepted.interval == 0 and accepted.to_wire() == sealed['entry'] and
             accepted.head.to_wire() == runner['head'] and store.workflow_id == runner['workflow_id'],
             'run B requires the accepted catalog to hold exactly run A adopted root')
+    if retained is not None:
+        require(retained['root_receipt_sha256'] == verdict['producer_receipt_sha256'],
+                'retained root claim does not name the adopted root receipt')
     return runner
+
+
+def retained_root_provenance(claim, runner, *, profile_sha256, proof):
+    """Bind diagnostic comparison to the original root's durable identity and source proof."""
+    require(type(claim) is dict and set(claim) == {'schema', 'profile_sha256', 'source_proof', 'producer',
+            'root_runner_sha256', 'root_receipt_sha256', 'execution_identity'} and
+            claim['schema'] == 'atlas.diagnostic-retained-root.v1' and
+            claim['profile_sha256'] == profile_sha256 and claim['source_proof'] == proof,
+            'retained root claim differs from the selected diagnostic profile or proof')
+    original = claim['producer']
+    previous, current = RUN._sha(original['identity']), RUN._sha(claim['execution_identity'])
+    require(runner['root']['execution_provenance'] == {'execution_identity': previous, 'execution_mode': 'strict'} and
+            runner['producer_identity'] == original['profile']['sha256'] and
+            runner['runtime_identity'] == original['proof']['native_source_digest'] and
+            sha256(canonical(runner)).hexdigest() == claim['root_runner_sha256'],
+            'retained root claim differs from the original producer record')
+    return previous, current
+
+
+def _read_retained_root(reference, sources):
+    if reference is None:
+        return None
+    row = sources.profile.record()
+    path = RUN.ordinary(reference['path'])
+    home = Path(os.path.commonpath((row['output_directory'], row['store_directory'],
+                                   sources.workspace/row['completed_query_directory'], path.parent)))
+    brand = home/'NOT-SCIENTIFICALLY-PERMISSIBLE.txt'
+    require(home.is_relative_to(sources.workspace) and brand.is_file() and diagnostic_tree(sources),
+            'retained root requires a pinned claim in the branded diagnostic home')
+    return RUN.pinned_json(path, reference['sha256'])
 
 
 def review_approval(store_directory, interval, approval_sha256, *, entry, verdict_sha256):
@@ -1131,7 +1165,7 @@ def _store_configuration(store):
 
 def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_before_advance=False, seed=None,
                        start_gate=None, query_stages=None, interval=None, parent_adopted_sha256=None, production_release=False,
-                       recorded=None):
+                       recorded=None, retained_root=None):
     """Run A or run B under the selected pinned sources and the live external guard.
 
     ``stop_before_advance`` (run B only, the smoke): stop after the adopted root is
@@ -1205,8 +1239,14 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
             'insufficient disk headroom for the interval file, its staging and the query quota')
     with RUN.retained_run(budget, record) as scope:
         if mode == 'root':
-            require(not store_directory.exists(), 'run A requires a new store directory')
-            store_directory.mkdir()
+            if store_directory.exists():
+                # A protected pre-root restart may leave the persistent publisher lock.
+                lock = store_directory/(CATALOG+'.lock')
+                require(diagnostic_tree(sources)
+                        and set(store_directory.iterdir()) == {lock} and RUN.ordinary(lock).read_bytes() == b'\0',
+                        'run A requires a new store or a diagnostic store with only its persistent catalog lock')
+            else:
+                store_directory.mkdir()
 
             @contextmanager
             def open_store(workflow_id):
@@ -1252,8 +1292,16 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                 save()
             with CRS.CompactRestartStore.open_catalog(catalog, scope=scope) as store:
                 _store_configuration(store)
+                retained_execution = None
                 if lineage is None:
-                    root_runner = require_promoted_root(store, store_directory)
+                    root_runner = (require_promoted_root(store, store_directory) if retained_root is None
+                                   else require_promoted_root(store, store_directory, retained_root))
+                    if retained_root is not None:
+                        require(not production_release and diagnostic_tree(sources),
+                                'retained root is available only in Debug diagnostics')
+                        retained_execution = retained_root_provenance(
+                            retained_root, root_runner, profile_sha256=profile.sha256, proof=proof)
+                        record['retained_root'] = retained_root
                 else:
                     root_runner = require_lineage_head(store, lineage)
                 reused = None
@@ -1278,7 +1326,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                     with _focused_capture(output, sources.check_imported):
                         record['root_reproduced'] = FRESH.reopen_root(m, store=store,
                             expected_root=root_runner['root'], budget=budget, artifacts=output, phase=guard.phase,
-                            measurements=measurements)
+                            measurements=measurements,
+                            **({} if retained_execution is None else {'retained_execution': retained_execution}))
                     record.update(stop_before_advance=True, compact_operations=store.statistics())
                 else:
                     record['sealed'] = _advance(record=record, save=save, guard=guard, store=store, m=m, FRESH=FRESH,
@@ -1286,7 +1335,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                         budget=budget, output=output, catalog=catalog, query_directory=query_directory,
                         store_directory=store_directory, check=check, query_stages=query_stages,
                         number=number, lineage=lineage, query_store=(EndpointCheckpoints, declared,
-                        query_arguments, limits), measurements=measurements, timing=timing)
+                        query_arguments, limits), measurements=measurements, timing=timing,
+                        retained_execution=retained_execution)
                     record['compact_operations'] = store.statistics()
                 if reused is not None:
                     record['reused_initial_cache'] = reuse_outcome(reused, record['initial_measurement_store'])
@@ -1300,7 +1350,7 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
 
 def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_runner, identities, budget, output,
              catalog, query_directory, store_directory, check, query_store, measurements=None, query_stages=None,
-             number=1, lineage=None, timing):
+             number=1, lineage=None, timing, retained_execution=None):
     """Run B's interval: begin interval ``number``, advance once, then the post-advance protocol with the workflow open.
 
     Interval 1 advances from the adopted root; interval N >= 2 from the adopted interval N-1 of
@@ -1390,7 +1440,8 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             return FRESH.advance_first_interval(m, store=store, expected_root=root_runner['root'], budget=budget,
                 artifacts=output, phase=guard.phase, guard=guard, record=record, save=save,
                 query_checkpoints=query_checkpoints, finish=finish, measurements=measurements,
-                end_geometry_provider_factory=end_provider_factory)
+                end_geometry_provider_factory=end_provider_factory,
+                **({} if retained_execution is None else {'retained_execution': retained_execution}))
         return FRESH.advance_successor_interval(m, store=store, expected_root=root_runner['root'],
             lineage=lineage['lineage'], budget=budget, artifacts=output, phase=guard.phase, guard=guard, record=record,
             save=save, query_checkpoints=query_checkpoints, finish=finish, measurements=measurements,
@@ -1473,9 +1524,10 @@ def pressure_entry_point(argv, step, profile):
     return Path(argv[11])
 
 
+@protect_profile
 def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
             interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
-            open_proofs=False):
+            open_proofs=False, retained_root=None):
     """Inspectable guarded command only; never launches or reads a store. ``start_gate`` goes last."""
     require(type(dev_timing) is bool, 'dev timing flag must be boolean')
     require(type(production_release) is bool and not (production_release and dev_timing),
@@ -1489,6 +1541,10 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
     _across_refused_in_release(seed, production_release)
     sources = FreshSources(profile)
     sources.verify()
+    if retained_root is not None:
+        require(not (production_release or open_proofs) and mode == 'interval' and number == 1,
+                'retained root is for the first Debug diagnostic interval')
+        _read_retained_root(retained_root, sources)
     if production_release:
         expected = RUN.production_decision(sources,'fresh-'+mode)
         require(start_gate == expected, 'production command requires its authenticated source/table decision')
@@ -1507,6 +1563,8 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
               if seed else []),
             *(['--reuse-previous-run', seed[SEED_ACROSS]['path'], '--reuse-previous-run-sha256',
                seed[SEED_ACROSS]['sha256']] if seed and SEED_ACROSS in seed else []),
+            *(['--retained-root-claim', retained_root['path'], '--retained-root-claim-sha256', retained_root['sha256']]
+              if retained_root is not None else []),
             *(['--stop-before-advance'] if stop_before_advance else []),
             *(['--interval', str(number), '--parent-adopted-sha256', pin] if number >= 2 else []),
             *(['--record-failed-prior'] if record_failed_prior else []),
@@ -1591,9 +1649,10 @@ def _profile_sampler(folder, mode):
         pass
 
 
+@protect_profile
 def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
               interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
-              open_proofs=False):
+              open_proofs=False, retained_root=None):
     dev_timing = RUN._dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     require(type(open_proofs) is bool, 'open proofs flag must be boolean')
@@ -1607,6 +1666,10 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     require(type(production_release) is bool and not (production_release and dev_timing),
             'production Release is explicit and development diagnostics remain strict-only')
     sources = FreshSources(profile)
+    if retained_root is not None:
+        require(not (production_release or open_proofs) and mode == 'interval' and number == 1,
+                'retained root is for the first Debug diagnostic interval')
+        retained_root = _read_retained_root(retained_root, sources)
     recorded = _recording(sources, record_failed_prior)
     if seed is not None and SEED_ACROSS in seed:                # D-3: diagnostic trees only; the earlier profile by its pin
         require(diagnostic_tree(sources), 'a seed across a change is for diagnostic trees only: proof and real runs refuse it')
@@ -1643,7 +1706,8 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
                                             stop_before_advance=stop_before_advance, seed=seed,
                                             start_gate=start_gate, query_stages=query_stages,
                                             interval=interval, parent_adopted_sha256=parent_adopted_sha256,
-                                            production_release=production_release, recorded=recorded)
+                                            production_release=production_release, recorded=recorded,
+                                            retained_root=retained_root)
             record['status'] = 'VERIFYING_FINALISATION'
         except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded in run.json
             record['status'] = 'FAILED'
@@ -1692,6 +1756,8 @@ def main(argv=None):
     parser.add_argument('--reuse-previous-run-sha256', help='with --reuse-previous-run: its SHA-256')
     parser.add_argument('--interval', type=int, help='run B only, item 21: the interval N >= 2 to seal')
     parser.add_argument('--parent-adopted-sha256', help='with --interval N >= 2: the adopted(N-1) file SHA-256')
+    parser.add_argument('--retained-root-claim')
+    parser.add_argument('--retained-root-claim-sha256')
     parser.add_argument('--open-proofs', action='store_true',
                         help='proof mode: the open of an adopted head proves what it loads (decision 542)')
     parser.add_argument('--record-failed-prior', action='store_true',
@@ -1715,6 +1781,10 @@ def main(argv=None):
             'the earlier profile needs its path, its SHA-256 and a measurement seed (D-3)')
     if args.reuse_previous_run is not None:
         seed[SEED_ACROSS] = {'path': args.reuse_previous_run, 'sha256': args.reuse_previous_run_sha256}
+    require((args.retained_root_claim is None) == (args.retained_root_claim_sha256 is None),
+            'a retained root claim needs both its path and SHA-256')
+    retained_root = (None if args.retained_root_claim is None else
+                     {'path': args.retained_root_claim, 'sha256': RUN._sha(args.retained_root_claim_sha256)})
     gate_args = bool(args.peak_records) or args.booking_bytes is not None or args.booking_basis is not None
     require(not args.production_release or not (gate_args or dev_timing),
             'production Release never books and refuses development diagnostics')
@@ -1726,28 +1796,30 @@ def main(argv=None):
                               booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
             if (args.launch or gate_args) and not args.production_release else None)
     profile = FreshProfile.read(args.profile, args.profile_sha256)
-    if args.workload:
-        return _workload(profile, mode=args.mode, dev_timing=dev_timing, stop_before_advance=args.stop_before_advance,
-                         seed=seed, start_gate=args.start_gate, interval=args.interval,
-                         parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
-                         record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs)
-    if args.production_release:
-        gate = RUN.production_decision(FreshSources(profile),'fresh-'+args.mode)
-    argv = command(profile, sys.executable, mode=args.mode, dev_timing=dev_timing,
-                   stop_before_advance=args.stop_before_advance, seed=seed, start_gate=gate, interval=args.interval,
-                   parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
-                   record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs)
-    print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
-                      'production_acceptance': False}), flush=True)
-    if not args.launch:
-        return 0
-    if args.production_release:
-        RUN.production_admission(FreshSources(profile),'fresh-'+args.mode,SG.encode(gate))
-    else:
-        SG.admit(gate, MONITOR.free_memory())
-    output = mode_output(profile.record(), args.mode, args.interval)
-    output.mkdir(exist_ok=False)
-    return subprocess.call(argv, env=pressure_launch_environment(), cwd=output)
+    with admitted((profile.record()['store_directory'],)):
+        if args.workload:
+            return _workload(profile, mode=args.mode, dev_timing=dev_timing, stop_before_advance=args.stop_before_advance,
+                             seed=seed, start_gate=args.start_gate, interval=args.interval,
+                             parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
+                             record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs,
+                             retained_root=retained_root)
+        if args.production_release:
+            gate = RUN.production_decision(FreshSources(profile),'fresh-'+args.mode)
+        argv = command(profile, sys.executable, mode=args.mode, dev_timing=dev_timing,
+                       stop_before_advance=args.stop_before_advance, seed=seed, start_gate=gate, interval=args.interval,
+                       parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
+                       record_failed_prior=args.record_failed_prior, open_proofs=args.open_proofs, retained_root=retained_root)
+        print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
+                          'production_acceptance': False}), flush=True)
+        if not args.launch:
+            return 0
+        if args.production_release:
+            RUN.production_admission(FreshSources(profile),'fresh-'+args.mode,SG.encode(gate))
+        else:
+            SG.admit(gate, MONITOR.free_memory())
+        output = mode_output(profile.record(), args.mode, args.interval)
+        output.mkdir(exist_ok=False)
+        return subprocess.call(argv, env=pressure_launch_environment(), cwd=output)
 
 
 if __name__ == '__main__':

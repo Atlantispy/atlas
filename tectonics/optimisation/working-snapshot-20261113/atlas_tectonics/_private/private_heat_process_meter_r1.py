@@ -392,7 +392,7 @@ class Meter:
                     # nothing it has taken so far, kept or returned, may have been above it.
                     highest = max(size, own.peak_pagefile, own.peak_wset)
                     self.largest_child_start = max(self.largest_child_start, highest)
-                    from atlas_tectonics import machine_resources_monitor as MON
+                    from atlas_shared.machine import resources_monitor as MON
                     MON.Timings().add(('heat', 'worker', 'peak'), highest)
                     if highest > CHILD_START and not self.failed:
                         self._refuse(test='a worker process started above its allowance',

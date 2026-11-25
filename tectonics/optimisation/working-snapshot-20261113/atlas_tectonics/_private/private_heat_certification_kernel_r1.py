@@ -13,9 +13,9 @@ from decimal import Decimal, ROUND_HALF_EVEN, localcontext
 from operator import index
 from time import perf_counter
 
-from atlas_tectonics.exact_arithmetic import library
+from atlas_tectonics._exact_runtime import selected
 
-G = library()  # Process-constant selected library; never imports a new backend.
+G = selected.library()  # Process-constant selected library; never imports a new backend.
 PRIME = (1 << 61)-1
 PRECISIONS = (320, 640, 1280, 2560)
 

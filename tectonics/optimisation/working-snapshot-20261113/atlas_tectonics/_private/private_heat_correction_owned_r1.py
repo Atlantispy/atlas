@@ -22,7 +22,7 @@ from atlas_tectonics._private.private_heat_decimal_sparse_core_r1 import OwnedSo
 
 HERE = Path(__file__).resolve().parent
 PINS = {
-    'private_heat_finish_arithmetic_r1.py': '1088c87849ba4c579a978a5105a070552c2ee228ad005c34bb72102065ca7cfc',
+    'private_heat_finish_arithmetic_r1.py': '6bd007b0a165ce3770fe4ed36d6e5ede4cb3b932327165e772db9e9fc2bbd1e3',
     'private_heat_public_float_r1.py': '9ce024ccc0922034b25ea578fadf6e99c403c7132a5f91066d11f0190f1f39a1',
     'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
 }

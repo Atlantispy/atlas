@@ -113,9 +113,9 @@ def loaded_digest():
 
 def runtime_facts():
     """Interpreter and machine facts that timings depend on; no path, time or PID."""
-    from . import exact_arithmetic
+    from ._exact_runtime import selected
     from .reuse import _loaded_binary
-    exact = exact_arithmetic.runtime()
+    exact = selected.runtime()
     # Use the same native byte identities and process-lifetime binary cache as
     # execution contexts; repeatedly hashing GMP at each enclosure is needless.
     arithmetic = dict(versions=dict(exact['versions']),
@@ -123,7 +123,7 @@ def runtime_facts():
     with _state.lock:
         if _state.machine is None:
             try:
-                from . import machine_resources_monitor as MON
+                from atlas_shared.machine import resources_monitor as MON
                 cores, memory = MON.reported_cores(), MON.machine_memory() >> 30
             except Exception:
                 cores = memory = None
