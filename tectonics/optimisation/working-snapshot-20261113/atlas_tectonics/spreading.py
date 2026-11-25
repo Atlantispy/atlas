@@ -12,10 +12,12 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen
+from ._validation import within_budget
 from .materials import _name, _json, _immutable_bytes, _account, _ROUNDOFF
 from .mesh import ColumnGrid1D
-from .regional import _cancelled
 from .resources import select_budget, reserve_budgets
+from .regional import _cancelled
+from .resources import check_event
 from .reuse import ExecutionContext, content_record
 
 
@@ -129,7 +131,7 @@ def ridge_cell_geometry(grid, motion, elapsed_s, *, budget=None, cancel=None):
     distributed over the returned interval. This is not a mean-age model.
     Independent side clipping preserves cells which straddle the ridge.
     """
-    _cancelled(cancel)
+    check_event(cancel, 'regional transport cancelled; no candidate published')
     age, (left, ridge, right) = _geometry_inputs(grid, motion, elapsed_s)
     with select_budget(budget).reserve(256*grid.cells+8192, category='spreading-geometry'):
         out = np.zeros((2, grid.cells, 3))
@@ -169,7 +171,7 @@ def ridge_cell_geometry(grid, motion, elapsed_s, *, budget=None, cancel=None):
                     out[side, active, 2] = old
                 if np.any(out[:, :, 0].sum(axis=0) > grid.widths_m*(1+_ROUNDOFF)):
                     raise TectonicsError('born strips overlap a cell')
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 return frozen(out)
         except (FloatingPointError, OverflowError) as exc:
             raise TectonicsError('spreading geometry exceeds numerical range') from exc
@@ -268,7 +270,7 @@ class PreparedRidgeSpreading:
 
     def __init__(self, grid, motion, phases, *, time_s, epoch_id, width_m,
                  source_id, context=None, budget=None, cancel=None):
-        _cancelled(cancel); _geometry_inputs(grid, motion, 0.)
+        check_event(cancel, 'regional transport cancelled; no candidate published'); _geometry_inputs(grid, motion, 0.)
         if (type(phases) is not tuple or not 1 <= len(phases) <= MAX_SPREADING_PHASES
                 or any(type(p) is not SpreadingPhase for p in phases)):
             raise TectonicsError('one to sixteen typed spreading phases required')
@@ -304,7 +306,7 @@ class PreparedRidgeSpreading:
                 object.__setattr__(self, key, value)
             initial = self._evaluate(origin, 0., 0, None, resource, cancel)
             object.__setattr__(self, 'initial', initial)
-            ctx.verify(); _cancelled(cancel)
+            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -356,7 +358,7 @@ class PreparedRidgeSpreading:
                            self.motion.ridge_id, self.motion.event_id),
                 BirthStrip('right', ridge, right, elapsed, 0., self.motion.right_plate_id,
                            self.motion.ridge_id, self.motion.event_id))
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return _make_state(self.plan_id, end, elapsed, intervals, parent,
                                strips, geometry, accounts)
 
@@ -383,7 +385,7 @@ class PreparedRidgeSpreading:
         """Phase x cell mean reference thickness; full continuous histories stay separate."""
         self._check(state); self._context.verify()
         resource = self._budget if budget is None else select_budget(budget)
-        _within_budget(resource, self._budget)
+        within_budget(resource, self._budget, 'call budget must descend from the prepared run budget')
         p, n = len(self.phases), self.grid.cells
         with reserve_budgets(32*p*n+64*n+8192, resource, self._budget,
                             category='spreading-projection'):

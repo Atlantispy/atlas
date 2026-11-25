@@ -26,7 +26,10 @@ from shapely.geometry import LineString, MultiLineString
 from shapely.strtree import STRtree
 
 from ._validation import read_array, scalar, input_shape
+from ._validation import unit_rows
 from .resources import elements, select_budget
+from .resources import _immutable_deepcopy
+from .resources import require_sha256
 from .geometry import (GeometryError, GeometryLimits, PlanarGeometry, _limits,
                        _label, _json, _typed_frozen, _check_cancel, _point_shape)
 from .spherical_geometry import SphericalGeometry, SphericalChart
@@ -79,25 +82,9 @@ def _point_key(value):
     return tuple(0. if x == 0 else float(x) for x in value)
 
 
-def _unit_rows(a):
-    a = np.asarray(a, dtype=np.float64)
-    scale = np.max(np.abs(a), axis=-1, keepdims=True)
-    if not np.isfinite(scale).all() or np.any(scale == 0):
-        raise GeometryError('direction is zero or outside numerical range')
-    scaled = a / scale
-    return scaled / np.sqrt(np.sum(scaled * scaled, axis=-1, keepdims=True))
-
-
 def _direction(a, b):
     with np.errstate(over='ignore', invalid='ignore'):
-        return _unit_rows(np.asarray(b) - np.asarray(a))
-
-
-def _sha(value):
-    if (type(value) is not str or len(value) != 64 or
-            any(c not in '0123456789abcdef' for c in value)):
-        raise GeometryError('lowercase SHA256 identity required')
-    return value
+        return unit_rows(np.asarray(np.asarray(b) - np.asarray(a), dtype=np.float64), GeometryError, 'direction is zero or outside numerical range', True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -366,7 +353,7 @@ class BoundaryNetwork:
                 if self.spherical:
                     ab = self.domain.chart._unproject(xy); a, b = ab[:, 0], ab[:, 1]
                     # Stable short-arc normal: cross(a+b,b-a)=2 cross(a,b).
-                    normal_left = _unit_rows(np.cross(a+b, b-a))
+                    normal_left = unit_rows(np.asarray(np.cross(a+b, b-a), dtype=np.float64), GeometryError, 'direction is zero or outside numerical range', True)
                     theta = 2*np.arctan2(np.linalg.norm(a-b, axis=1), np.linalg.norm(a+b, axis=1))
                     if np.any(theta <= 0) or np.any(theta >= math.pi):
                         raise GeometryError('unresolvable or antipodal boundary arc')
@@ -374,8 +361,8 @@ class BoundaryNetwork:
                     elif f == 1: radial = b
                     else:
                         initial = np.cross(normal_left, a)
-                        radial = _unit_rows(np.cos(f*theta)[:, None]*a + np.sin(f*theta)[:, None]*initial)
-                    tangents[start:stop] = _unit_rows(np.cross(normal_left, radial))
+                        radial = unit_rows(np.asarray(np.cos(f*theta)[:, None]*a + np.sin(f*theta)[:, None]*initial, dtype=np.float64), GeometryError, 'direction is zero or outside numerical range', True)
+                    tangents[start:stop] = unit_rows(np.asarray(np.cross(normal_left, radial), dtype=np.float64), GeometryError, 'direction is zero or outside numerical range', True)
                     normals[start:stop] = -normal_left
                     with np.errstate(over='ignore', invalid='ignore'):
                         positions[start:stop] = radial*self.domain.chart.sphere.radius_m
@@ -384,7 +371,7 @@ class BoundaryNetwork:
                     a, b = xy[:, 0], xy[:, 1]
                     with np.errstate(over='ignore', invalid='ignore'):
                         d = b-a
-                    t = _unit_rows(d)
+                    t = unit_rows(np.asarray(d, dtype=np.float64), GeometryError, 'direction is zero or outside numerical range', True)
                     tangents[start:stop] = t
                     normals[start:stop] = np.column_stack((t[:, 1], -t[:, 0]))
                     with np.errstate(over='ignore', invalid='ignore'):
@@ -505,7 +492,7 @@ class BoundaryNetwork:
                 'network_id': self.network_id}
 
     def __reduce__(self): return (_restore_network, (self.domain, self.regions, self.network_id))
-    def __deepcopy__(self, memo): memo[id(self)] = self; return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_network(domain, regions, expected):
@@ -681,7 +668,7 @@ def save_boundary_network(network, store, *, budget=None, cancel=None):
 
 def load_boundary_network(store, network_id, *, limits=None, budget=None, cancel=None):
     """Validate stored definitions, rebuild sides/junctions, check exact identity."""
-    _sha(network_id); _check_cancel(cancel)
+    require_sha256(network_id, GeometryError, 'lowercase SHA256 identity required'); _check_cancel(cancel)
     arrays = store.get(network_id, budget=budget)
     if arrays is None: return None
     meta = store.metadata(network_id)

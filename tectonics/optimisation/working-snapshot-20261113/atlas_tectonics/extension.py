@@ -11,14 +11,16 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen, read_array, input_shape
+from ._validation import within_budget
 from .materials import (MaterialCohort, MaterialState, MaterialBoundary, _name,
                         _json, _immutable_bytes, _account)
 from .mesh import ColumnGrid1D
-from .regional import _cancelled
 from .remapping import _inventories, _publish, ale_timestep_limit
 from .resources import select_budget, reserve_budgets
+from .resources import check_event
 from .reuse import ExecutionContext, cached_ale_transport, content_record
 from .storage import ArrayStore
+from .spreading import PreparedRidgeSpreading
 
 
 MAX_EXTENSION_INTERVALS = 256
@@ -30,15 +32,6 @@ def _fractionate(fractions, thickness):
     if np.any((fractions[:, None] > 0) & (thickness[None, :] > 0) & (values == 0)):
         raise TectonicsError('positive cohort inventory underflows')
     return values
-
-
-def _within_budget(candidate, owner):
-    node = candidate
-    while node is not None:
-        if node is owner:
-            return
-        node = node._parent
-    raise TectonicsError('call/store budget must descend from the prepared run budget')
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,7 +179,7 @@ class PreparedListricExtension:
     def __init__(self, grid, geometry, *, velocity_m_s, density_kg_m3, width_m,
                  cohorts, fractions, time_s, epoch_id, datum_id, source_id,
                  backend='numba', transport='characteristic', context=None, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(grid) is not ColumnGrid1D or type(geometry) is not ListricGeometry:
             raise TectonicsError('typed ColumnGrid1D and ListricGeometry required')
         if not grid.edges_m[0] < geometry.trace_m < grid.edges_m[-1]:
@@ -248,7 +241,7 @@ class PreparedListricExtension:
                 plan_id = hashlib.sha256(_json(content_record(identity))).hexdigest()
                 object.__setattr__(self, 'plan_id', plan_id)
                 object.__setattr__(self, 'initial', _state(plan_id, material, 0, 0., np.zeros((len(cohorts), 2))))
-            ctx.verify(); _cancelled(cancel)
+            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -279,7 +272,7 @@ class PreparedListricExtension:
         substeps. It cannot accept arbitrary modified material. MUSCL is the
         general W02 comparison route; only that route has per-step result caching.
         """
-        self._check(state); _cancelled(cancel); self._context.verify()
+        self._check(state); check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
         end = scalar(time_s, 'target time')
         if end < state.material.time_s:
             raise TectonicsError('extension time cannot move backwards')
@@ -294,21 +287,21 @@ class PreparedListricExtension:
         if end == state.material.time_s:
             return state
         caller = self._budget if budget is None else select_budget(budget)
-        _within_budget(caller, self._budget)
+        within_budget(caller, self._budget, 'call/store budget must descend from the prepared run budget')
         if store is not None:
             if not isinstance(store, ArrayStore):
                 raise TectonicsError('store must be an ArrayStore')
-            _within_budget(store._budget, self._budget)
+            within_budget(store._budget, self._budget, 'call/store budget must descend from the prepared run budget')
             # One active compute envelope must also descend from the store's
             # envelope: sibling allowances cannot silently bypass each other.
-            _within_budget(caller, store._budget)
+            within_budget(caller, store._budget, 'call/store budget must descend from the prepared run budget')
         # Also include a supplied store's envelope, even on its cheap-work bypass.
         budgets = (self._budget, caller) + ((store._budget,) if store is not None else ())
         c, n = len(state.material.cohorts), self.grid.cells
         with reserve_budgets(48*c*n+256*c+32768, *budgets, category='extension-advance'):
             if self.transport == 'characteristic':
                 result = self._characteristic(state, end, budget=caller)
-                _cancelled(cancel); self._context.verify()
+                check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
                 return result
             u = np.frombuffer(self._velocity, dtype=np.float64)
             zero = np.frombuffer(self._zero, dtype=np.float64)
@@ -348,7 +341,7 @@ class PreparedListricExtension:
             for b, a, (lx, rx) in zip(before, after, exchange):
                 _account(float(b), float(a), float(lx), float(rx), maximum)
             result = _state(self.plan_id, material, state.intervals+steps, maximum, exchange)
-            _cancelled(cancel); self._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
             return result
 
     def _characteristic(self, state, end, *, budget):
@@ -398,7 +391,7 @@ class PreparedListricExtension:
         """Immutable columns: H, F, Hc and unflexed cell-mean surface change (m)."""
         self._check(state); self._context.verify()
         resource = self._budget if budget is None else select_budget(budget)
-        _within_budget(resource, self._budget)
+        within_budget(resource, self._budget, 'call/store budget must descend from the prepared run budget')
         with reserve_budgets(96*self.grid.cells+8192, self._budget, resource,
                             category='extension-output'):
             h = state.material.total_thickness(backend=self.backend, budget=resource)
@@ -408,14 +401,7 @@ class PreparedListricExtension:
         self._context.verify()
         return result
 
-    def close(self):
-        if not self._closed:
-            object.__setattr__(self, '_closed', True)
-            try:
-                if self._owns_context:
-                    self._context.close()
-            finally:
-                self._lease.__exit__(None, None, None)
+    close = PreparedRidgeSpreading.close
 
     def __enter__(self):
         self._check(self.initial)

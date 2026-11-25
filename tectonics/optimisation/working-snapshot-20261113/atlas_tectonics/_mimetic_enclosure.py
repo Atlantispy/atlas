@@ -15,7 +15,6 @@ The original exact-work reservation must remain held through every fallback.
 Reference inspected: https://docs.python.org/3/library/decimal.html
 SPDX-License-Identifier: AGPL-3.0-only
 """
-from concurrent.futures import CancelledError
 from decimal import (Decimal as D, Context, DecimalException, MAX_EMAX, MIN_EMIN,
                      ROUND_FLOOR, ROUND_CEILING, ROUND_HALF_EVEN, getcontext,
                      localcontext, InvalidOperation, DivisionByZero, Overflow)
@@ -23,6 +22,7 @@ from fractions import Fraction as Q
 import hashlib
 from pathlib import Path
 from .resources import MemoryLimitError
+from .resources import check_event_or_callable
 
 _LOADED=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
@@ -33,11 +33,6 @@ def assert_current():
 _ZERO=D(0)
 _TWO=D(2)
 _LEVELS=(96,192,384)
-
-
-def _cancel(cancel):
-    if cancel is not None and (cancel.is_set() if hasattr(cancel,'is_set') else cancel()):
-        raise CancelledError('certified gamma work cancelled')
 
 
 def _q(value):
@@ -151,7 +146,7 @@ class CertifiedGammaRow:
 
     def __init__(self,row,denominator,*,node,tangent=None,squared=None,admitted_bytes,cancel=None):
         assert_current()
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'certified gamma work cancelled')
         needed=workspace_bytes(row,denominator,tangent,squared)
         if type(admitted_bytes) is not int or admitted_bytes<needed:
             raise MemoryLimitError('certified gamma scratch exceeds existing admitted allowance')
@@ -179,11 +174,11 @@ class CertifiedGammaRow:
 
     def _level(self,precision):
         if precision not in self.levels:
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'certified gamma work cancelled')
             ops=_Intervals(precision)
             vectors=[]
             for vector in self.vectors:
-                _cancel(self.cancel)
+                check_event_or_callable(self.cancel, 'certified gamma work cancelled')
                 vectors.append(tuple(ops.rational(q) for q in vector))
             denominator=ops.rational(self.denominator)
             tangent=None if self.tangent is None else tuple(ops.rational(q) for q in self.tangent)
@@ -199,26 +194,26 @@ class CertifiedGammaRow:
             delta=tuple(ops.sub(value,ops.mul(factor,normal)) for value,normal in zip(delta,tangent))
         total=(_ZERO,_ZERO)
         for vector in vectors:
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'certified gamma work cancelled')
             total=ops.add(total,ops.absolute(ops.dot(vector,delta)))
         return ops.positive_div(ops.mul((_TWO,_TWO),total),denominator)
 
     def exact(self,delta):
         """Unchanged Fraction formula; all uncertainty eventually arrives here."""
-        _cancel(self.cancel)
+        check_event_or_callable(self.cancel, 'certified gamma work cancelled')
         if self.tangent is not None:
             factor=_dot_exact(delta,self.tangent)/self.squared
             delta=tuple(value-factor*normal for value,normal in zip(delta,self.tangent))
         total=Q(0)
         for vector in self.vectors:
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'certified gamma work cancelled')
             total+=abs(_dot_exact(vector,delta))
         mu=total/self.denominator
         with localcontext(self.target):
             return D(2*mu.numerator)/D(mu.denominator)
 
     def gamma(self,delta):
-        _cancel(self.cancel)
+        check_event_or_callable(self.cancel, 'certified gamma work cancelled')
         delta=tuple(map(_q,delta))
         if len(delta)!=3:
             raise ValueError('three-dimensional gamma delta required')
@@ -229,7 +224,7 @@ class CertifiedGammaRow:
             raise MemoryLimitError('certified gamma delta conversion exceeds existing admitted allowance')
         self.statistics['calls']+=1
         for precision in _LEVELS:
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'certified gamma work cancelled')
             low=high=low80=high80=digits=None
             try:
                 low,high=self._enclosure(delta,precision)

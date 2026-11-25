@@ -7,7 +7,6 @@ audit of the existing evolution step, never solves mechanics or books heat.
 """
 from fractions import Fraction
 import hashlib
-import json
 import math
 
 import numpy as np
@@ -16,14 +15,11 @@ from ._validation import TectonicsError, scalar
 from .regional_execution import RegionalMechanicalSnapshot
 from .regional_evolution3d import RegionalEvolutionAdvance3D
 from .resources import select_budget
+from .resources import canonical_json as _json
 
 SCHEMA = 'atlas.regional-owner-exchange.v1'
 LAYOUT_SCHEMA = 'atlas.regional-owner-layout.v1'
 AUDIT_SCHEMA = 'atlas.regional-evolution3d-source-audit.v1'
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _name(value):

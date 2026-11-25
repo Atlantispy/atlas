@@ -19,7 +19,6 @@ https://seismo.berkeley.edu/~kirchner/reprints/1999_29_Roering_nonlinear.pdf
 https://landlab.readthedocs.io/en/latest/generated/api/landlab.components.nonlinear_diffusion.Perron_nl_diffuse.html
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.spsolve.html
 """
-from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -34,13 +33,16 @@ from ._validation import TectonicsError, frozen, input_shape, scalar, snapshot, 
 from .constitutive import _cancel
 from .materials import _json
 from .resources import WorkBudget, select_budget
+from .resources import _budget_statistics
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext
-from .stokes_execution import _native_lease
+from .stokes_execution import _native_operation
 from .timebase import interval_end, interval_partition
+from .w09_erosion import PreparedErosion
+from .w09_erosion import LIMIT
 
 
 CAP = 128 * 1024**2
-LIMIT = 256
 EPS = np.finfo(float).eps
 
 
@@ -278,18 +280,8 @@ class PreparedHillslope:
         _cancel(cancel)
         self._context.verify()
 
-    @contextmanager
-    def _operation(self, cancel=None):
-        self._check(cancel)
-        if self._active:
-            raise TectonicsError('reentrant hillslope operation')
-        self._active = True
-        try:
-            with _native_lease():
-                yield
-            self._check(cancel)
-        finally:
-            self._active = False
+    _reentrant_message = 'reentrant hillslope operation'
+    _operation = _native_operation
 
     def _validate(self, state):
         if (type(state) is not SoilState or state.plan_id != self.plan_id or
@@ -366,7 +358,7 @@ class PreparedHillslope:
         step = dt
         scale = max(float(np.max(v0)), np.finfo(float).tiny)
         for _ in range(48):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             q, net, jac = self._flux(v, state, mobile, derivative=True)
             r = v-v0+step*net
             if np.max(np.abs(r)) <= 4*EPS*scale:
@@ -523,20 +515,9 @@ class PreparedHillslope:
                 self._latest = (key,result)
                 return result
 
-    def statistics(self):
-        return dict(self._stats, budget=self._resource.statistics())
+    statistics = _budget_statistics
 
-    def close(self):
-        if not self._closed:
-            self._closed = True
-            self._latest = None
-            try:
-                if self._context is not None:
-                    self._context.close()
-            finally:
-                if self._guard is not None:
-                    self._guard.__exit__(None,None,None)
-                    self._guard = None
+    close = PreparedErosion.close
 
     def __enter__(self):
         self._check()

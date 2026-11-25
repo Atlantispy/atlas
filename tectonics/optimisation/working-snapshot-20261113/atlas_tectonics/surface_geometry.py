@@ -4,14 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
-
-
-def _banded_solvers():
-    try:
-        from scipy.linalg import cholesky_banded, cho_solve_banded
-    except ImportError as exc:
-        raise TectonicsError('scipy backend unavailable for surface projection') from exc
-    return cholesky_banded, cho_solve_banded
+from ._validation import banded_solvers
 
 
 def q2(q):
@@ -78,7 +71,7 @@ def cell_volume_and_flux(mesh,velocity=None,*,order=5):
 class SurfaceProjection:
     """One fixed-x Q2 surface mass factor; O(nx) solve, geometry-independent."""
     def __init__(self,x_m,*,order=5):
-        cholesky_banded, _ = _banded_solvers()
+        cholesky_banded, _ = banded_solvers('scipy backend unavailable for surface projection')
         shape=input_shape(x_m)
         if len(shape)!=1 or shape[0]<5 or shape[0]>129 or shape[0]%2!=1:
             raise TectonicsError('odd bounded surface node count required')
@@ -99,7 +92,7 @@ class SurfaceProjection:
         self.factor=cholesky_banded(bands,lower=True,check_finite=True)
 
     def rate(self,height,velocity):
-        _, cho_solve_banded = _banded_solvers()
+        _, cho_solve_banded = banded_solvers('scipy backend unavailable for surface projection')
         if input_shape(height)!=self.x.shape or input_shape(velocity)!=(len(self.x),2):
             raise TectonicsError('surface state/velocity support mismatch')
         h=read_array(height,'surface heights');v=read_array(velocity,'surface velocity')

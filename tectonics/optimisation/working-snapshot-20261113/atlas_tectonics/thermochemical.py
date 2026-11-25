@@ -26,8 +26,9 @@ except ImportError:
     dct=idct=dst=idst=None
 from ._validation import TectonicsError, scalar, text, frozen, input_shape, read_array
 from .resources import select_budget
+from .resources import check_event_or_callable
 from .stokes import StokesBox2D
-from .constitutive import BoussinesqMaterial, DiffusiveScales, RheologyProfile, _cancel, _json
+from .constitutive import BoussinesqMaterial, DiffusiveScales, RheologyProfile, _json
 
 _METHOD='atlas.thermochemical-strang-mc-ssprk2-2d.v1'
 # Python float also participates in the existing loaded-constant identity check.
@@ -351,7 +352,7 @@ class _Diffusion2D:
         return self.transform(Q),0
 
     def advance(self,T,source_modes,dt,cancel,*,source_exponent=0):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if self._dt!=dt:
             with np.errstate(over='raise',invalid='raise'):
                 try: x=self.rates*dt
@@ -393,7 +394,7 @@ class _Diffusion2D:
             except FloatingPointError as exc: raise TectonicsError('diffusion/source response overflows') from exc
         if not np.isfinite(updated).all() or (self.fixed and not np.isfinite(average).all()):
             raise TectonicsError('diffusion/source field outside finite range')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         # Integrated heat flux, outward positive. Face temperature BCs are applied
         # at a HALF-cell separation, not a full-cell distance. Side flux is zero.
         b=self.problem.box;k=self.problem.material.conductivity_w_m_k

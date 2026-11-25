@@ -43,9 +43,11 @@ from . import integration_properties as R
 from . import integration_strength as G
 from . import integration_transfer as T
 from ._validation import TectonicsError
+from ._validation import _coded_refusal
 from .materials import _json
 from .timebase import advance_time
 from ._validation import effort_paths as _paths, without_effort as _without
+from .resources import json_sha256
 
 # A-15: the outer iteration count and history and the belt solve's end leave the driving digest; the record
 # keeps them.
@@ -112,11 +114,9 @@ EVENT_REFUSALS = dict(G.EVENT_REFUSALS, **{
 class FeedbackRefused(TectonicsError):
     """A coupled interval that cannot be formed, did not converge or does not replay; nothing was committed."""
 
-    def __init__(self, message, code, detail=None):
-        if code not in CODES:
-            raise ValueError('unknown feedback refusal code %r' % code)
-        super().__init__(message)
-        self.code, self.detail = code, detail
+    _allowed_codes = CODES
+    _unknown_code = 'unknown feedback refusal code %r'
+    __init__ = _coded_refusal
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -362,9 +362,9 @@ def _coupled_digest(value):
     for port in (value.motion_port, value.increment_port, value.dissipation_port, value.reaction_port):
         ports.append({f.name: port.header.record() if f.name == 'header' else getattr(port, f.name)
                       for f in fields(port)})
-    return _digest(_plain(dict(motion=value.motion.record(), advance=value.advance.record(),
+    return json_sha256(_plain(dict(motion=value.motion.record(), advance=value.advance.record(),
                                step=value.step.record(), moving=value.moving.descriptor(),
-                               balance=value.balance.record(), ports=ports, report=value.report)))
+                               balance=value.balance.record(), ports=ports, report=value.report)), _json)
 
 
 def _issued_coupled(value, *, detail):
@@ -404,7 +404,7 @@ def _digest(record):
 
 
 def _driving_digest(record):
-    return _digest(_without(record, DRIVING_EFFORT))
+    return json_sha256(_without(record, DRIVING_EFFORT), _json)
 
 
 def _parent_record(parent, sphere, moving):

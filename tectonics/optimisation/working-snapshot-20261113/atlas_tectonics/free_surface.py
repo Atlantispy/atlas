@@ -10,8 +10,9 @@ import threading
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array
-from .constitutive import _cancel, _json
+from .constitutive import _json
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
 from .regional_execution import RegionalMechanicalSnapshot, RegionalMechanicsScales, _name, _hash
 from .stokes_execution import _native_lease
@@ -107,7 +108,7 @@ class PreparedFreeSurface2D:
         self._guard=self._resource.reserve(self._public_bytes,category='surface-public-state')
         self._guard.__enter__();self._core=None;self._context=None
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context=ExecutionContext('scipy');self._context_id=self._context.identity
             self._plan_id=_hash(content_record({'definition':self._d,'context':self._context_id}))
             with _native_lease():
@@ -127,9 +128,9 @@ class PreparedFreeSurface2D:
             raise TectonicsError('closed, active or wrong-thread surface plan')
         self._active=True
         try:
-            _cancel(cancel);self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
             with _native_lease():yield
-            _cancel(cancel);self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
         except BaseException:
             self._latest_key=self._latest=None
             raise

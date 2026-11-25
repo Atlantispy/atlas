@@ -31,6 +31,7 @@ from .integration_spatial_reservoir import FiniteStockState
 from .integration_regional_inventory import _width
 from .integration_routing_views import RoutingArena, SupportRoutingRows
 from .resources import WorkBudget
+from .resources import canonical_json
 
 
 def _pair(record, name):
@@ -492,7 +493,7 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
                     outward = _pair(measured, 'outward_volume_bounds_m3')
                     if represented_pair and outward[1]:
                         raise second
-                    surface = (1, D._encoded(_segment_identity(plane)).decode('ascii'))
+                    surface = (1, canonical_json(_segment_identity(plane)).decode('ascii'))
                     add(primary, secondary, outward, dict(moving=token, donor=primary),
                         physical_certificate_id=ident, physical_surface=surface)
                     if not represented_pair:
@@ -557,7 +558,7 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
         if len(shared[boundary_id, key, direction]) > 1:
             identity['segment'] = _segment_identity(plane)
         exchange(stock, key, direction, bounds, ident, identity,
-                 physical_surface=(1, D._encoded(_segment_identity(plane)).decode('ascii')))
+                 physical_surface=(1, canonical_json(_segment_identity(plane)).decode('ascii')))
 
     if set(resolved) != set(owned):
         raise V.VolumeError('coincident fixed face lacks its angular physical routing certificate')

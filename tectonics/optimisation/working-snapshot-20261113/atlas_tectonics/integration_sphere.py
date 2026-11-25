@@ -43,6 +43,8 @@ import numpy as np
 
 from . import integration_state as _state
 from ._validation import TectonicsError, frozen, input_shape, read_array, scalar
+from ._validation import bounded_record
+from ._validation import frozen_contiguous as _frozen
 from .coordinates import SphericalFrame
 from .geometry import _check_cancel, _limits
 from .integration_ledger import EXACT_LIMIT, ROLES, TOKEN, LedgerError, _exact, _exact_text
@@ -52,6 +54,7 @@ from .resources import MemoryLimitError, select_budget
 from .spherical_atlas import (SphericalAtlas, SphericalPatch, _AREA_TOLERANCE_SR, _capture_directions, _cycle,
                               build_spherical_atlas)
 from .spherical_geometry import SphericalChart, _ring_area
+from .integration_state import CommonState
 
 
 SCHEMA = 'atlas.i03-sphere-state.v2'
@@ -89,16 +92,6 @@ class SphereError(TectonicsError):
     """An invalid network, material or state declaration, or a refused restoration; nothing was issued."""
 
 
-def _canonical(value, label):
-    try:
-        data = _json(value)
-    except TectonicsError as exc:
-        raise SphereError(label+': finite JSON data required') from exc
-    if len(data) > MAX_RECORD:
-        raise SphereError(label+': record exceeds the bounded envelope')
-    return data
-
-
 def _identity(record, arrays):
     """SHA-256 of canonical metadata, then each named array's descriptor and exact bytes (as integration_state)."""
     digest = hashlib.sha256(record)
@@ -106,11 +99,6 @@ def _identity(record, arrays):
         digest.update(b'\0'+_json([name, array.dtype.str, list(array.shape)]))
         digest.update(np.ascontiguousarray(array).tobytes())
     return digest.hexdigest()
-
-
-def _frozen(array, dtype):
-    raw = np.ascontiguousarray(array, dtype=dtype)
-    return np.frombuffer(raw.tobytes(), dtype=dtype).reshape(raw.shape)
 
 
 def _pack(records):
@@ -1227,7 +1215,7 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
                                                         dtype=np.float64).reshape(-1, 3), np.float64)),
                   ('faces', _pack([_face_record(face) for face in faces])),
                   ('boundaries', _pack([_boundary_record(boundary) for boundary in boundaries])))
-        record = _canonical(dict(
+        record = bounded_record(dict(
             schema=NETWORK_SCHEMA, sphere=sphere.descriptor(), epoch_id=epoch_id,
             time_unit='SI seconds forward from the named epoch', time_s=now, step=step, reference_time_s=reference,
             geometry_id=atlas.geometry_id, atlas_id=atlas.atlas_id,
@@ -1240,7 +1228,7 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
             junctions=[_junction_record(junction) for junction in junctions],
             lineage=_lineage_record(lineage),
             arrays=[dict(name=name, dtype=array.dtype.str, shape=list(array.shape)) for name, array in packed]),
-            'network record')
+            'network record', _json, SphereError, MAX_RECORD, ': record exceeds the bounded envelope')
         _check_cancel(cancel)
         return _state._issue(SphereNetwork, sphere=sphere, atlas=atlas, epoch_id=epoch_id, time_s=now, step=step,
                              reference_time_s=reference, plates=plates, boundaries=boundaries, junctions=junctions,
@@ -1701,14 +1689,14 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
                 packed += (('material_support', _pack([support.record()])),)
         units = dict({AREA: 'm2', ENTHALPY: 'J'}, **{MASS+':'+p: 'kg' for p in phases},
                      **{VOLUME+':'+p: 'm3' for p in phases})
-        record = _canonical(dict(
+        record = bounded_record(dict(
             schema=MATERIAL_SCHEMA if support is None else SUPPORTED_MATERIAL_SCHEMA,
             phases=list(phases), enthalpy_basis=basis,
             columns=[dict(name=name, units=units[name]) for name in columns],
             exteriors=[list(pair) for pair in exteriors], stock_link=link, exact=exact,
             counts=dict(pieces=count, cohorts=len(cohorts)),
             arrays=[dict(name=name, dtype=array.dtype.str, shape=list(array.shape)) for name, array in packed]),
-            'material record')
+            'material record', _json, SphereError, MAX_RECORD, ': record exceeds the bounded envelope')
         return _state._issue(SphereMaterial, phases=phases, enthalpy_basis=basis, columns=columns, cohorts=cohorts,
                              exteriors=exteriors, stock_link=None if link is None else MappingProxyType(dict(link)),
                              material_id=_identity(record, packed), support=support,
@@ -1909,9 +1897,7 @@ class SphereState(_state._Immutable):
     def issued_by(self):
         return self._issuer
 
-    @property
-    def root_state_id(self):
-        return self.state_id if self.parent_state_id is None else self.initial_state_id
+    root_state_id = CommonState.root_state_id
 
     @property
     def time_s(self):
@@ -1936,8 +1922,7 @@ class SphereState(_state._Immutable):
             out.append(dict(zip(_state.CATALOGUE_FIELDS, entry), known=known))
         return out
 
-    def unknown(self):
-        return [entry for entry in self.declaration() if not entry['known']]
+    unknown = CommonState.unknown
 
     def fields(self):
         """Names of the quantities this state can return as one array."""
@@ -1998,13 +1983,13 @@ def _sphere(network, material, parent, root, issuer, declared=False):
         raise SphereError('a cohort forms in the future of this state')
     if (parent is None) != (root is None):
         raise SphereError('parent and root state identities are recorded together')
-    record = _canonical(dict(
+    record = bounded_record(dict(
         schema=SCHEMA, unit_system=_state.UNIT_SYSTEM, catalogue_id=_state.CATALOGUE_ID,
         network_id=network.network_id, material_id=material.material_id,
         clock=dict(epoch_id=network.epoch_id, time_unit='SI seconds forward from the named epoch',
                    time_s=network.time_s, step=network.step),
         frame=dict(frame_id=network.sphere.frame_id, radius_m=network.sphere.radius_m),
-        lineage=dict(parent_state_id=parent, initial_state_id=root)), 'sphere state')
+        lineage=dict(parent_state_id=parent, initial_state_id=root)), 'sphere state', _json, SphereError, MAX_RECORD, ': record exceeds the bounded envelope')
     return _state._issue(SphereState, network=network, material=material, parent_state_id=parent,
                          initial_state_id=root, state_id=hashlib.sha256(record).hexdigest(), _record=record,
                          _issuer=issuer)

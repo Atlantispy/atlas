@@ -7,36 +7,20 @@ Factors are bounded, request-owned and reused; no physical profile changes in ti
 from __future__ import annotations
 
 from contextlib import ExitStack
-from concurrent.futures import CancelledError
 from dataclasses import dataclass, asdict
 import hashlib
-import json
 import math
 import threading
 import numpy as np
 
 from ._validation import TectonicsError, input_shape, snapshot, read_array, frozen, scalar, text
+from ._validation import banded_solvers
 from .finite_flexure import FlexureBoundary1D
 from .parameters import FlexureParameters
 from .regional import RegionalGrid1D
 from .resources import select_budget, reserve_budgets
-
-
-def _banded_solvers():
-    try:
-        from scipy.linalg import cholesky_banded, cho_solve_banded
-    except ImportError as exc:
-        raise TectonicsError('scipy backend unavailable for variable-rigidity support') from exc
-    return cholesky_banded, cho_solve_banded
-
-
-def _json(value):
-    return json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError('variable support cancelled between bounded mesh operations')
+from .resources import check_event
+from .resources import canonical_json as _json
 
 
 def _elastic(e, te, nu):
@@ -232,7 +216,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
         return sum(f.bytes for f in self._levels.values())
 
     def _factor(self,subdivisions,budget=None):
-        cholesky_banded, _ = _banded_solvers()
+        cholesky_banded, _ = banded_solvers('scipy backend unavailable for variable-rigidity support')
         with self._lock:
             if self._closed: raise TectonicsError('variable support is closed')
             if subdivisions in self._levels: return self._levels[subdivisions]
@@ -327,7 +311,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
         return 512*self.grid.cells+8192
 
     def _linear_solve(self,f,rhs,*,rhs_uncertainty=None):
-        _, cho_solve_banded = _banded_solvers()
+        _, cho_solve_banded = banded_solvers('scipy backend unavailable for variable-rigidity support')
         scale=np.frombuffer(f.scale_bytes);band=np.frombuffer(f.band_bytes).reshape(f.bandwidth+1,f.ndof)
         chol=np.frombuffer(f.cholesky_bytes).reshape(band.shape)
         rhs=rhs.copy();rhs[list(f.constrained)]=0.
@@ -466,7 +450,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
 
     def solve(self,packed_load_pa,*,budget=None,cancel=None):
         if self._closed: raise TectonicsError('variable support is closed')
-        _cancel(cancel)
+        check_event(cancel, 'variable support cancelled between bounded mesh operations')
         shape=input_shape(packed_load_pa,'variable support load')
         with reserve_budgets(self.work_bytes(shape),self._budget,
                             select_budget(budget if budget is not None else self._budget)):
@@ -478,10 +462,10 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
             atol=np.array([self.accuracy.absolute_displacement_m,self.accuracy.absolute_slope,
                            self.accuracy.absolute_curvature_per_m])
             for level in range(self.accuracy.max_refinements+1):
-                _cancel(cancel)
+                check_event(cancel, 'variable support cancelled between bounded mesh operations')
                 subdivisions=self.base_subdivisions*2**level
                 current=self._response(self._factor(subdivisions,budget),load,budget)
-                _cancel(cancel)
+                check_event(cancel, 'variable support cancelled between bounded mesh operations')
                 if old is not None:
                     error=np.maximum(np.max(np.abs(current[:,:3,:3]-old[:,:3,:3]),axis=1),
                                      np.abs(current[:,3,:3]-old[:,3,:3]))
@@ -494,9 +478,9 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                         # within this load, never across different right-hand sides.
                         for count in (subdivisions//2,subdivisions):
                             if count not in numerical:
-                                _cancel(cancel)
+                                check_event(cancel, 'variable support cancelled between bounded mesh operations')
                                 numerical[count]=self._response(self._factor(count,budget),load,budget,precision=True)[1]
-                                _cancel(cancel)
+                                check_event(cancel, 'variable support cancelled between bounded mesh operations')
                         combined=error+numerical[subdivisions//2]+numerical[subdivisions]
                         if np.all(combined<=limit):
                             out=current.copy();out[:,4,:3]=combined;out[:,4,3]=subdivisions

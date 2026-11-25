@@ -14,10 +14,12 @@ from typing import Mapping
 import numpy as np
 from ._validation import TectonicsError, scalar, input_shape, snapshot
 from .resources import select_budget
+from .resources import _immutable_deepcopy
+from .resources import check_event
 from .mesh import ColumnGrid1D
 from .materials import (MaterialState, MaterialCohort, _name, _sha, _json, _account,
                         restore_material_state)
-from .regional import _cancelled, _METRICS
+from .regional import _METRICS
 from .remapping import (_mesh_state, _inventories, RemapPlan, remap_materials, advect_ale)
 
 
@@ -117,7 +119,7 @@ class PlateTopology1D:
                 'retired_block_ids':list(self.retired_block_ids),'retired_boundary_ids':list(self.retired_boundary_ids)}
 
     def __reduce__(self):return (_restore_topology,(self.descriptor(),self.cuts.edges_m))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
     def owner_at(self,positions_m):
         """Half-open ownership [left,right); final endpoint belongs to final block."""
@@ -181,7 +183,7 @@ class TectonicState1D:
                 'topology_id':self.topology.topology_id,'event_ids':list(self.applied_event_ids),
                 'receipt':self.receipt}
     def __reduce__(self):return (_restore_model,(self.material,self.topology,self.applied_event_ids,self.receipt,self.model_id))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_model(material,topology,event_ids,receipt,expected):
@@ -191,7 +193,7 @@ def _restore_model(material,topology,event_ids,receipt,expected):
 
 
 def _begin(world,event_id,expected_parent_id,cancel):
-    _cancelled(cancel)
+    check_event(cancel, 'regional transport cancelled; no candidate published')
     if type(world) is not TectonicState1D:raise TectonicsError('TectonicState1D required')
     _name(event_id,'event ID');_sha(expected_parent_id,'expected parent')
     if expected_parent_id!=world.model_id:raise TectonicsError('event is bound to a different parent')
@@ -254,7 +256,7 @@ def _commit_change(world,target,event_id,kind,details,*,budget=None,cancel=None)
             'ownership_transfers':transfers,'details':details,
             'meaning':'prescribed ownership/structure event; material payload and formation history unchanged'}
         result=TectonicState1D(world.material,target,applied_event_ids=world.applied_event_ids+(event_id,),receipt=receipt,budget=budget)
-        _cancelled(cancel);return result
+        check_event(cancel, 'regional transport cancelled; no candidate published');return result
 
 
 def split_block(world,block_id,split_m,left_block,right_block,boundary,*,event_id,
@@ -384,7 +386,7 @@ def advance_plate_state(world,u,w,dt,*,left,right,event_id,expected_parent_id,
             'time_s':new.time_s,'duration_s':float(dt),'old_topology_id':t.topology_id,'new_topology_id':target.topology_id,
             'material_transition_id':new.transition_id,'block_accounts':accounts,'scheme':scheme,'backend':backend}
         result=TectonicState1D(new,target,applied_event_ids=world.applied_event_ids+(event_id,),receipt=receipt,budget=budget)
-        _cancelled(cancel);return result
+        check_event(cancel, 'regional transport cancelled; no candidate published');return result
 
 
 def regrid_plate_state(world,target_mesh,*,event_id,expected_parent_id,plan=None,budget=None,cancel=None):

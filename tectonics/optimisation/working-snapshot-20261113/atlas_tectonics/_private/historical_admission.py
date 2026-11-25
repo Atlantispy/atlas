@@ -36,6 +36,9 @@ import types
 
 from atlas_tectonics import machine_resources_monitor as MONITOR
 from atlas_tectonics import resources_gate as GATE
+from atlas_tectonics.resources import _retained_charge, _release_retained_charge
+from atlas_tectonics.resources import json_sha256 as digest
+from atlas_tectonics.resources import canonical_json as canonical
 
 
 HERE = Path(__file__).resolve().parent
@@ -66,14 +69,6 @@ def historical_root(explicit, *, historical_inputs=None):
         return inputs.historical_root(explicit)
     except _historical_inputs_api().HistoricalInputsRefused as error:
         raise HistoricalAdmissionRefused(str(error)) from error
-
-
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
-def digest(value):
-    return sha256(canonical(value)).hexdigest()
 
 
 def _sha(value):
@@ -281,17 +276,10 @@ def _authenticate(root, review, check, budget, *, historical_inputs=None):
 
 
 class _Allocation:
-    def __init__(self, budget, size):
-        self.guard = None
-        guard = budget.reserve(size, category='historical-admission-retained')
-        guard.__enter__()
-        self.guard = guard
+    _retained_category = 'historical-admission-retained'
+    __init__ = _retained_charge
 
-    def __del__(self):
-        guard = getattr(self, 'guard', None)
-        if guard is not None:
-            self.guard = None
-            guard.__exit__(None, None, None)
+    __del__ = _release_retained_charge
 
 
 class _OwnedBytes(bytes):

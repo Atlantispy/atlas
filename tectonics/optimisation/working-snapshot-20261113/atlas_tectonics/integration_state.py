@@ -35,9 +35,12 @@ from . import _integration_motion as _motion
 from . import _integration_weakening as _weakening
 from . import integration_evolution as _evolution
 from ._validation import TectonicsError, frozen, input_shape, scalar, snapshot
+from ._validation import bounded_record
 from .materials import MaterialState, _json, _name, _sha
 from .mesh import ColumnGrid1D
 from .resources import select_budget
+from .resources import _immutable_deepcopy
+from .resources import issue as _issue
 from .timebase import advance_time
 from ._validation import effort_paths as _paths, without_effort as _without
 
@@ -269,31 +272,11 @@ class _Immutable:
     def __copy__(self):
         return self
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
-
-
-def _issue(cls, **values):
-    item = object.__new__(cls)
-    for key, value in values.items():
-        object.__setattr__(item, key, value)
-    return item
-
-
-def _canonical(value, label):
-    """The native canonical JSON of materials._json: sorted keys, finite numbers; bounded here."""
-    try:
-        data = _json(value)
-    except TectonicsError as exc:
-        raise TectonicsError(label+': finite JSON data required') from exc
-    if len(data) > MAX_METADATA:
-        raise TectonicsError(label+': metadata exceeds the bounded envelope')
-    return data
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _digest(value, label='identity record'):
-    return hashlib.sha256(_canonical(value, label)).hexdigest()
+    return hashlib.sha256(bounded_record(value, label, _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope')).hexdigest()
 
 
 def _identity(record, arrays):
@@ -321,7 +304,7 @@ def _document(value, label):
     """Detached JSON copy of a caller mapping; later edits to the caller's nested objects cannot reach it."""
     if not isinstance(value, Mapping) or any(type(key) is not str for key in value):
         raise TectonicsError(label+' must be a mapping with text keys')
-    return json.loads(_canonical(dict(value), label))
+    return json.loads(bounded_record(dict(value), label, _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'))
 
 
 def _number(value, label, *, positive=False, nonnegative=False):
@@ -400,8 +383,8 @@ def _pinned_preparation(key):
     if type(key) not in (tuple, list) or len(key) != 4:
         raise TectonicsError('the pinned preparation key is (layers, order, closure, gravity)')
     layers, order, closure, gravity = key
-    pinned = json.loads(_canonical(dict(layers=layers, order=order, closure=closure, gravity=gravity),
-                                   'pinned preparation inputs'))
+    pinned = json.loads(bounded_record(dict(layers=layers, order=order, closure=closure, gravity=gravity),
+                                   'pinned preparation inputs', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'))
     layers, order, closure, gravity = (pinned[k] for k in ('layers', 'order', 'closure', 'gravity'))
     if closure not in (LITHOSTATIC, SUPPLIED):
         raise TectonicsError('unsupported pressure closure')
@@ -652,8 +635,8 @@ class ColumnReference(_Immutable):
                 raise TectonicsError('thermal support thickness differs from the mechanical column')
             layer_thickness = np.frombuffer(np.asarray(thicknesses, dtype=np.float64).tobytes(), dtype=np.float64)
             support_id = _identity(
-                _canonical(dict(schema='atlas.i02-column-support.v1', geometry=GEOMETRY, closure=closure, order=order,
-                                layer_names=list(names), layer_thickness_m=thicknesses), 'support record'),
+                bounded_record(dict(schema='atlas.i02-column-support.v1', geometry=GEOMETRY, closure=closure, order=order,
+                                layer_names=list(names), layer_thickness_m=thicknesses), 'support record', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'),
                 (('point_layer', layer), ('reference_depth_m', depth), ('reference_weight_m', weight)))
             arrays = (('layer_thickness_m', layer_thickness), ('point_layer', layer), ('reference_depth_m', depth),
                       ('reference_weight_m', weight), ('reference_overburden_pa', overburden),
@@ -661,7 +644,7 @@ class ColumnReference(_Immutable):
                       ('steady_temperature_k', steady), ('capacity_j_m2_k', capacity),
                       ('radiogenic_w_m2', radiogenic), ('thermal_density_kg_m3', thermal_density))
             gravity = None if closure == SUPPLIED else float(pinned['gravity'])
-            record = _canonical(dict(
+            record = bounded_record(dict(
                 schema='atlas.i02-column-reference.v1', route=ROUTE, geometry=GEOMETRY,
                 vertical_reference=VERTICAL_REFERENCE, thermal_reference=THERMAL_REFERENCE, closure=closure,
                 order=order, gravity_m_s2=gravity, layer_names=list(names), thickness_m=total,
@@ -669,13 +652,13 @@ class ColumnReference(_Immutable):
                 thermal_provider=COLUMN_THERMAL_BASIS, boundary_temperature_k=list(boundary), support_id=support_id,
                 pinned_preparation=pinned, pinned_thermal=inputs, arrays=[_spec(name, a) for name, a in arrays],
                 unknown=[] if density is not None else ['reference_density_kg_m3', 'reference_mass_kg_m']),
-                'column reference')
+                'column reference', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope')
             values = dict(closure=closure, order=order, gravity_m_s2=gravity, layer_names=names, thickness_m=total,
                           boundary_temperature_k=boundary, mechanical_fingerprint=fingerprint,
                           thermal_fingerprint=thermal_fingerprint, thermal_provider=COLUMN_THERMAL_BASIS,
                           support_id=support_id, reference_id=_identity(record, arrays),
-                          _pinned=_canonical(pinned, 'pinned preparation inputs'),
-                          _thermal_inputs=_canonical(inputs, 'pinned thermal inputs'), _record=record,
+                          _pinned=bounded_record(pinned, 'pinned preparation inputs', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'),
+                          _thermal_inputs=bounded_record(inputs, 'pinned thermal inputs', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'), _record=record,
                           _layer_thickness=layer_thickness, _layer=layer, _depth=depth, _weight=weight,
                           _overburden=overburden, _density=density, _steady=steady, _capacity=capacity,
                           _radiogenic=radiogenic, _thermal_density=thermal_density)
@@ -811,13 +794,13 @@ class ColumnSettings(_Immutable):
         numerics = dict(policy=pol, schedule=dict(duration_s=duration, steps=steps, step_s=step_s),
                         window=dict(stretch=list(window[:2]), temperature_k=list(window[2:]),
                                     max_temperature_step_k=guard), solver=SOLVER)
-        record = _canonical(dict(schema='atlas.i02-finite-strain-settings.v1', closure=closure,
-                                 parameters=parameters, numerical_policy=numerics), 'settings')
+        record = bounded_record(dict(schema='atlas.i02-finite-strain-settings.v1', closure=closure,
+                                 parameters=parameters, numerical_policy=numerics), 'settings', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope')
         values = dict(window=window, temperature_step_k=guard, law_parameters=(start, end, cohesion, friction),
                       drive_parameters=(force, drag, width), heat_fractions=fractions, duration_s=duration,
                       steps=steps, step_s=step_s, max_steps=max_steps, maximum_seconds=allowance,
                       closure_id=_digest(closure), parameter_id=_digest(parameters), policy_id=_digest(numerics),
-                      settings_id=hashlib.sha256(record).hexdigest(), _policy=_canonical(pol, 'numerical policy'),
+                      settings_id=hashlib.sha256(record).hexdigest(), _policy=bounded_record(pol, 'numerical policy', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'),
                       _record=record)
         for key, value in values.items():
             object.__setattr__(self, key, value)
@@ -907,17 +890,17 @@ _SCALARS = ('stretch', 'elapsed_s', 'accepted_steps', 'clock_s', 'displacement_m
 
 def _column_identity(record):
     """The column record's canonical bytes without COLUMN_EFFORT."""
-    return _canonical(_without(json.loads(record), COLUMN_EFFORT), 'column state')
+    return bounded_record(_without(json.loads(record), COLUMN_EFFORT), 'column state', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope')
 
 
 def _column_state(semantics, scalars, accounts, counters, extrema, theta0, theta, kappa0, kappa, yields, guess):
     """One column record: canonical metadata plus the exact bytes of its six immutable arrays."""
     arrays = (('initial_theta_k', theta0), ('theta_k', theta), ('initial_kappa', kappa0), ('kappa', kappa),
               ('yield_stage_counts', yields), ('endpoint_guess_x', guess))
-    record = _canonical(dict(
+    record = bounded_record(dict(
         schema=COLUMN_SCHEMA, route=ROUTE, semantics=semantics, **scalars,
         accounts_j_m=dict(accounts), counters=dict(counters), extrema=dict(extrema),
-        arrays=[_spec(name, a) for name, a in arrays]), 'column state')
+        arrays=[_spec(name, a) for name, a in arrays]), 'column state', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope')
     return _issue(ColumnState, **scalars, column_state_id=_identity(_column_identity(record), arrays), _accounts=accounts,
                   _counters=counters, _extrema=extrema, _theta0=theta0, _theta=theta, _kappa0=kappa0, _kappa=kappa,
                   _yield=yields, _guess=guess, _record=record)
@@ -1169,7 +1152,7 @@ def _envelope(labels, start, frame, reference, settings, column, materials, laye
               root, issuer):
     """One envelope record over already-checked parts. Native payloads keep their own dates and roles."""
     time_s = advance_time(start, column.elapsed_s)
-    record = _canonical(dict(
+    record = bounded_record(dict(
         schema=SCHEMA, route=ROUTE, unit_system=labels['unit_system'],
         identity=dict(world_id=labels['world_id'], scenario_id=labels['scenario_id'], source_id=labels['source_id'],
                       runtime_id=labels['runtime_id']),
@@ -1188,7 +1171,7 @@ def _envelope(labels, start, frame, reference, settings, column, materials, laye
             inventory_id=stocks.inventory_id, enthalpy_basis=basis, node_ids=list(stocks.node_ids),
             units='kg and J of whole stocks, not per metre of strike', dated_time_s=stocks.time_s,
             role=RESERVOIR_ROLE),
-        catalogue_id=CATALOGUE_ID, admission=NOT_CONFERRED), 'common state')
+        catalogue_id=CATALOGUE_ID, admission=NOT_CONFERRED), 'common state', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope')
     return _issue(CommonState, schema=SCHEMA, route=ROUTE, world_id=labels['world_id'],
                   scenario_id=labels['scenario_id'], epoch_id=labels['epoch_id'], source_id=labels['source_id'],
                   runtime_id=labels['runtime_id'], unit_system=labels['unit_system'], frame_id=frame,

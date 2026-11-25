@@ -8,7 +8,6 @@ copied. Parameter calibration and the drained assumption remain caller inputs.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from typing import Any
 
@@ -16,6 +15,7 @@ import numpy as np
 
 from ._validation import FloatArray, TectonicsError, frozen, input_shape, read_array, scalar, text
 from .resources import elements, select_budget
+from .resources import check_event
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,11 +46,6 @@ class CompactionParameters:
             raise TectonicsError("rebound slope must not exceed compression slope")
         if not self.min_porosity <= self.max_porosity < 1:
             raise TectonicsError("require 0 <= min_porosity <= max_porosity < 1")
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError("compaction cancelled; no candidate published")
 
 
 def compaction_work_bytes(*shapes, batch_elements=8192):
@@ -125,7 +120,7 @@ def compaction_response(void_ratio: Any, effective_stress_pa: Any,
     assumes effective stresses have already been established by a column model.
     All range failures refuse the entire result; there is no clipping.
     """
-    _cancel(cancel)
+    check_event(cancel, 'compaction cancelled; no candidate published')
     if type(parameters) is not CompactionParameters:
         raise TectonicsError("explicit CompactionParameters required")
     names = ("void_ratio", "effective_stress_pa", "maximum_effective_stress_pa", "new_effective_stress_pa")
@@ -137,7 +132,7 @@ def compaction_response(void_ratio: Any, effective_stress_pa: Any,
         captures = tuple(read_array(value, name, nonnegative=True) for value, name in zip(values, names))
         if any(value.shape != expected for value, expected in zip(captures, shapes)):
             raise TectonicsError("input shape changed during capture")
-        _cancel(cancel)
+        check_event(cancel, 'compaction cancelled; no candidate published')
         output = np.empty(shape + (2,), dtype=np.float64)
         p = parameters
         lower = p.min_porosity / (1 - p.min_porosity)
@@ -147,7 +142,7 @@ def compaction_response(void_ratio: Any, effective_stress_pa: Any,
         with np.nditer(operands, flags=["external_loop", "buffered"], op_flags=flags,
                        order="C", buffersize=min(batch_elements, elements(shape))) as iterator:
             for old_e, old_s, peak, new_s, target_e, target_peak in iterator:
-                _cancel(cancel)
+                check_event(cancel, 'compaction cancelled; no candidate published')
                 if (np.any(old_e < lower) or np.any(old_e > upper)
                         or np.any(peak < old_s) or np.any(peak > p.max_effective_stress_pa)
                         or np.any(new_s > p.max_effective_stress_pa)):
@@ -162,5 +157,5 @@ def compaction_response(void_ratio: Any, effective_stress_pa: Any,
                 if (np.any(~np.isfinite(target_e)) or np.any(target_e < lower)
                         or np.any(target_e > upper)):
                     raise TectonicsError("updated compaction porosity outside supplied range")
-        _cancel(cancel)
+        check_event(cancel, 'compaction cancelled; no candidate published')
         return frozen(output)

@@ -17,17 +17,18 @@ import weakref
 from time import perf_counter
 
 import numpy as np
-from scipy import sparse
 from scipy.sparse.linalg import splu
 from scipy.special import erf, expit
 
 from ._validation import TectonicsError, scalar
-from .constitutive import _cancel
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 from .stokes_execution import _native_lease
 from .subduction_mesh import build_mesh, basis, quadrature
 from .subduction_linear import solve_stokes
+from .subduction_linear import _VelocityFactor
 from .subduction_transport import PreparedSubductionTransport
+from .regional_surface_stokes import _csr as _csr
 
 YEAR_S = 31557600.
 SPEED_M_S = .05 / YEAR_S
@@ -97,22 +98,12 @@ def benchmark_viscosity(case, temperature_k, strain_ii_s):
     return 1e26*expit(logeta-math.log(1e26))
 
 
-def _csr(local, rows, cols, shape):
-    m, n = local.shape[-2:]
-    return sparse.coo_matrix((local.ravel(),
-        (np.broadcast_to(rows[:, :, None], (len(rows), m, n)).ravel(),
-         np.broadcast_to(cols[:, None, :], (len(cols), m, n)).ravel())), shape=shape).tocsr()
-
-
 class _HeatFactor:
     """A symmetric graph permutation changes storage, not the thermal equation."""
     def __init__(self, factor, permutation, statistics):
         self.factor, self.permutation, self.statistics = factor, permutation, statistics
 
-    def solve(self, rhs):
-        result = np.empty_like(rhs)
-        result[self.permutation] = self.factor.solve(rhs[self.permutation])
-        return result
+    solve = _VelocityFactor.solve
 
 
 def _factor(matrix, budget, category):
@@ -256,7 +247,7 @@ class _Wedge:
             self._release_gradient(); raise
 
     def solve(self, case, eta, cancel=None):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         eta = np.broadcast_to(eta, (len(self.cells),len(self.bary)))
         key = hashlib.sha256(eta.tobytes()+(case+'|'+self.coupling_trace).encode()).hexdigest()
         if self.last is not None and self.last[0] == key:
@@ -322,7 +313,7 @@ class _Wedge:
         d = (gradient+gradient.swapaxes(-1, -2))/2
         strain = np.sqrt(.5*np.sum(d*d, axis=(-1, -2)))*SPEED_M_S/1000.
         divergence_rms = float(np.sqrt(np.sum((gradient[..., 0, 0]+gradient[..., 1, 1])**2*self.mesh.area[:, None]*self.weights)/np.sum(self.mesh.area)))
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         diagnostics['divergence_rms_per_km']=divergence_rms
         diagnostics.update(coupling_trace=self.coupling_trace,
                            slab_first_edge_length_m=self.slab_first_edge_length_m)
@@ -385,7 +376,7 @@ class _Heat:
 
     def solve(self, velocity, *, stabilisation, case, cancel=None):
         mesh = self.mesh; n = len(mesh.points)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         key = hashlib.sha256(velocity.tobytes()+(stabilisation+case).encode()).hexdigest()
         if self.last is not None and self.last[0] == key:
             a, rhs, lu, free, full, raw, flux_weights = self.last[1:]
@@ -490,7 +481,7 @@ class _Heat:
         if abs(heat_error) > 1e-9*max(1.,scale,abs(advective_export)):
             raise TectonicsError('assembled boundary heat flux identity does not close')
         scale_w_m = 3300*1250*SPEED_M_S*1000
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return t+273., dict(linear_residual=error, free_heat_balance=balance,
                            factor=lu.statistics,
                            constant_temperature_residual=constant_error,
@@ -663,10 +654,10 @@ class PreparedSubduction:
     def _operation(self, cancel):
         if self._closed or self._active or threading.get_ident() != self._owner:
             raise TectonicsError('subduction plan closed, active or wrong driving thread')
-        self.context.verify(); _cancel(cancel); self._active = True
+        self.context.verify(); check_event_or_callable(cancel, 'constitutive work cancelled'); self._active = True
         try:
             with _native_lease(): yield
-            _cancel(cancel); self.context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self.context.verify()
         finally: self._active = False
 
     @property
@@ -714,7 +705,7 @@ class PreparedSubduction:
                 nonlinear_work.callback(mixing.close)
             converged = False
             for iteration in range(1, MAX_NONLINEAR_ITERATIONS+1 if nonlinear else 2):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 if case != '1a':
                     self.heat.close()
                     velocity, pressure, strain, mechanics = self.flow.solve(case, eta, cancel)

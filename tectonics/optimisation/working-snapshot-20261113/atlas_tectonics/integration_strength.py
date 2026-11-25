@@ -36,6 +36,7 @@ from . import _integration_weakening as _weak
 from . import integration_ports as P
 from . import integration_sphere as S
 from ._validation import TectonicsError
+from ._validation import _coded_refusal
 from .materials import _json
 
 SCHEMA = 'atlas.i04-strength-declaration.v1'
@@ -77,11 +78,9 @@ EVENT_REFUSALS = {
 class StrengthRefused(TectonicsError):
     """A named D2 refusal; ``code`` is one of CODES and ``detail`` names the field or the I01 reason."""
 
-    def __init__(self, message, code, detail=None):
-        if code not in CODES:
-            raise ValueError('unknown strength refusal code %r' % code)
-        super().__init__(message)
-        self.code, self.detail = code, detail
+    _allowed_codes = CODES
+    _unknown_code = 'unknown strength refusal code %r'
+    __init__ = _coded_refusal
 
 
 def _name(value, label):

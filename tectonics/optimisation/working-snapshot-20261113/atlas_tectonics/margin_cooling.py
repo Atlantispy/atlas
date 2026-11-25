@@ -16,15 +16,16 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, text, frozen, input_shape, read_array
+from ._validation import within_budget
 from .constitutive import BoussinesqMaterial
 from .materials import _json
 from .parameters import PlateCoolingParameters, identity
 from .precursor import PrecursorState, InitialConditionState
-from .regional import _cancelled
 from .resources import select_budget, reserve_budgets
+from .resources import check_event
 from .reuse import ExecutionContext, content_record
-from .spreading import _within_budget
 from .thermal_support import ThermalSupportParameters, _owner, _temperature
+from .spreading import PreparedRidgeSpreading
 
 
 _IMAGE_LIMIT = 1. / 16.
@@ -191,7 +192,7 @@ class PreparedMarginCooling:
 
     def __init__(self, initial_state, column_id, plate, *, thinning_source_id,
                  geometry_reference_id, context=None, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(initial_state) not in (PrecursorState, InitialConditionState):
             raise TectonicsError('source-bound W01 initial state required')
         if type(plate) is not PlateCoolingParameters:
@@ -286,7 +287,7 @@ class PreparedMarginCooling:
                 _context=ctx, _owns_context=owned, _budget=resource, _lease=lease, _closed=False)
             for key, value in captured.items():
                 object.__setattr__(self, key, value)
-            ctx.verify(); _cancelled(cancel)
+            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -296,9 +297,9 @@ class PreparedMarginCooling:
     def _check(self, budget, cancel):
         if self._closed:
             raise TectonicsError('margin preparation is closed')
-        _cancelled(cancel); self._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
         resource = self._budget if budget is None else select_budget(budget)
-        _within_budget(resource, self._budget)
+        within_budget(resource, self._budget, 'call budget must descend from the prepared run budget')
         return resource
 
     def _images(self, edges, tau, cancel):
@@ -323,7 +324,7 @@ class PreparedMarginCooling:
         correction = np.zeros_like(sums)
         sums[-2:] = self._slopes[0]*tau, -self._slopes[1]*tau
         for knot, jump in zip(self._knots[1:-1], self._jumps):
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             if jump == 0.:
                 continue
             for m in range(-images, images+1):
@@ -402,7 +403,7 @@ class PreparedMarginCooling:
                 t_error, scalar(h_error*heat_scale, 'heat truncation bound', nonnegative=True),
                 self.source_column, self.source_profile, self.material_definitions, self.cooling_history,
                 self.thinning_source_id, self.geometry_reference_id, self.initial_state)
-        self._context.verify(); _cancelled(cancel)
+        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         return result
 
     def support(self, *, time_s, epoch_id, materials, parameters, initial_depth_m,
@@ -474,20 +475,13 @@ class PreparedMarginCooling:
         support_id = hashlib.sha256(_json(dict(thermal=result.state_id, parameters=asdict(parameters),
             materials={key: asdict(value) for key, value in materials.items()}, depth=depth, area=area,
             water_stock=stock, water_source=water_source_id))).hexdigest()
-        self._context.verify(); _cancelled(cancel)
+        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         return MarginSupportResult(result, support_id, 'column-isostasy', scalar(sheet, 'thermal sheet'),
             scalar(sheet*parameters.gravity_m_s2, 'thermal pressure'), displacement, depth, current_depth,
             area, reference, scalar(displacement*area, 'margin water change'), water, stock-water,
             water_source_id, masses, trajectory_depths)
 
-    def close(self):
-        if not self._closed:
-            object.__setattr__(self, '_closed', True)
-            try:
-                if self._owns_context:
-                    self._context.close()
-            finally:
-                self._lease.__exit__(None, None, None)
+    close = PreparedRidgeSpreading.close
 
     def __enter__(self):
         self._check(None, None)

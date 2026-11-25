@@ -22,15 +22,12 @@ from .integration_native_faces import NativeFaceMeasures
 from .integration_regional_inventory import _width
 from .integration_spatial_ale import _circulation
 from .resources import WorkBudget
+from .resources import canonical_json as _json
 from ._validation import effort_paths as _paths, without_effort as _without
 from .reuse import content_record
 
 # A-15: quadrature leaves leave directed_id; the record keeps them.
 DIRECTED_EFFORT = _paths('faces.*.leaves')
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _close_faces(nodes, faces, *, speed_scale, absolute_limit, relative_limit, budget):

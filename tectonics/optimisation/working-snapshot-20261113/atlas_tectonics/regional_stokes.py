@@ -16,11 +16,11 @@ direction. This removes a point-only null mode, not a physical rigid mode.
 from __future__ import annotations
 
 from time import perf_counter
-from concurrent.futures import CancelledError
 
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import LinearOperator, gmres, spilu, splu
+from .resources import check_event_or_callable
 
 
 SIDES = ("left", "right", "bottom", "top")
@@ -30,11 +30,6 @@ _NORMAL = ("u", "u", "w", "w")
 
 def _normal(side):
     return _NORMAL[SIDES.index(side)]
-
-
-def _check(cancel):
-    if cancel is not None and (cancel.is_set() if hasattr(cancel, "is_set") else cancel()):
-        raise CancelledError("regional Stokes calculation cancelled")
 
 
 def _positive(value, name):
@@ -101,7 +96,7 @@ class MACPlan:
                  rigid_constraints=None, method="gmres", linear_rtol=1e-12,
                  max_iterations=1200, restart=60, cancel=None):
         start = perf_counter()
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         if isinstance(nx, bool) or isinstance(nz, bool) or int(nx) != nx or int(nz) != nz:
             raise ValueError("grid counts must be integers")
         self.nx, self.nz = int(nx), int(nz)
@@ -140,7 +135,7 @@ class MACPlan:
         if self.method == "direct" and self.unknowns > 1024:
             raise ValueError("direct oracle is limited to 1024 augmented unknowns")
         self._lift(self._values)  # reject incompatible flux before factorisation
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         topology_s = perf_counter()-start
         self._install_numeric(coefficients, self._numeric(coefficients, cancel))
         self.timings["topology_s"] = topology_s
@@ -178,7 +173,7 @@ class MACPlan:
         """
         if self._closed:
             raise RuntimeError("MAC plan is closed")
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         coefficients = self._coefficients(None, eta_center, eta_vertex)
         self._install_numeric(coefficients, self._numeric(coefficients, cancel))
         return dict(self.timings)
@@ -260,7 +255,7 @@ class MACPlan:
                         np.r_[np.full(nc, -1/dz), np.full(nc, 1/dz)], (nc, nf))
         sr, sc, sv = [], [], []
         for j in range(nz+1):
-            _check(cancel)
+            check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
             for i in range(nx+1):
                 row = j*(nx+1)+i
                 zu, zl, az = ((1, 0, 2/dz) if j == 0 else
@@ -304,7 +299,7 @@ class MACPlan:
 
     def _numeric(self, coefficients, cancel):
         start = perf_counter()
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         _, center, vertex = coefficients
         normal = sparse.diags((2*self.volume*center).ravel())
         shear = sparse.diags((self._vertex_volume*vertex).ravel())
@@ -322,7 +317,7 @@ class MACPlan:
         ], format="csr")
         if not np.all(np.isfinite(matrix.data)):
             raise ValueError("stress-site coefficients overflow the numerical operator")
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         factor_start = perf_counter()
         pressure_mass = .5*self.volume/center.ravel()
         if not np.all(np.isfinite(pressure_mass)) or np.any(pressure_mass <= 0.):
@@ -343,7 +338,7 @@ class MACPlan:
                 inverse = factor.solve(c.T.toarray())
                 result["_rigid_inverse"] = inverse
                 result["_rigid_schur"] = np.asarray(c@inverse)
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         result["timings"] = {"topology_s": 0., "assembly_s": factor_start-start,
                              "factor_s": perf_counter()-factor_start,
                              "prepare_s": perf_counter()-start}
@@ -447,23 +442,23 @@ class MACPlan:
         if self._closed:
             raise RuntimeError("MAC plan is closed")
         start = perf_counter()
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         values = self._boundary_values(boundaries)
         lift = self._lift(values)
         _, body, traction = self._loads(force_u, force_w, values)
         rhs = np.r_[self._P.T@(body+traction-self._K@lift),
                     self.volume*(self._D@lift), -self._Cfull@lift,
                     [self.pressure_mean*np.sqrt(self.pressure_unknowns)] if self.gauge_required else []]
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         iterations = 0
         def callback(_):
             nonlocal iterations
             iterations += 1
-            _check(cancel)
+            check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
             if iterations >= self.max_iterations:
                 raise RuntimeError("regional GMRES iteration ceiling reached")
         def linear_solve(load):
-            _check(cancel)
+            check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
             if self.method == "direct":
                 return self._factor.solve(load)
             if not np.any(load):
@@ -497,7 +492,7 @@ class MACPlan:
             # This defect contains the physical stress load, not the old
             # algebraic constraint forces, so its multipliers replace them.
             solution[nv+npres:] = correction[nv+npres:]
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         residual = self.matrix@solution-rhs
         linear_residual = float(np.linalg.norm(residual)/max(np.linalg.norm(rhs), np.finfo(float).tiny))
         if linear_residual > self.linear_rtol:
@@ -519,7 +514,7 @@ class MACPlan:
         """
         if self._closed:
             raise RuntimeError("MAC plan is closed")
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         v, p = np.asarray(velocity_vector, dtype=float), np.asarray(pressure, dtype=float)
         if v.shape != (self.full_velocity_unknowns,) or p.size != self.pressure_unknowns:
             raise ValueError("evaluation fields have wrong shape")
@@ -623,7 +618,7 @@ class MACPlan:
                        "gates_passed": bool(momentum <= 1e-9 and div_error <= 1e-10 and gauge_error <= 1e-12
                                             and abs(work_residual)/work_scale <= 1e-9 and bc_error <= 1e-12
                                             and corner_error <= 1e-12 and rigid_error <= 1e-10)}
-        _check(cancel)
+        check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         return {"velocity_vector": v.copy(), "u": u[1:-1].copy(), "w": w[:, 1:-1].copy(), "p": p.copy(),
                 "free_force_residual": free_residual,
                 "boundary_velocities": boundary_velocities, "boundary_tractions": boundary_tractions,

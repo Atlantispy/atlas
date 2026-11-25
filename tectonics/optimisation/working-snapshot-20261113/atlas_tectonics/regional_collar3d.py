@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction
 import math
-import weakref
 from atlas_tectonics._private import live_collar_patch as LIVE_COLLAR
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 
@@ -25,6 +24,7 @@ from .regional_execution3d import SIDES, _array, _hash, _json, _name, _cancel
 from .regional_heat3d import PreparedRegionalHeat3D
 from .regional_transport3d import PreparedRegionalTransport3D, ConservativeFaceFlow3D
 from .resources import WorkBudget
+from .resources import _retain_result
 from .reuse import content_record
 
 
@@ -96,16 +96,6 @@ def _result_bytes(result):
     if isinstance(result, RegionalMechanicalSnapshot):
         return result.nbytes
     return len(result._metadata)+sum(result.array(k).nbytes for k in result.array_names)
-
-
-def _retain_stage(result, size, budget):
-    lease = budget.reserve(size, category='regional-collar-stage-retained')
-    lease.__enter__()
-    try:
-        weakref.finalize(result, lease.__exit__, None, None, None)
-    except BaseException:
-        lease.__exit__(None, None, None)
-        raise
 
 
 @dataclass(frozen=True, slots=True, weakref_slot=True, init=False)
@@ -676,7 +666,7 @@ class PreparedRegionalCollar3D:
         size = 8192+sum(_result_bytes(getattr(stage, k)) for k in
             ('inventory', 'driving', 'initial_mechanics', 'flow', 'source_audit'))
         size += _result_bytes(flow)+inventory.nbytes
-        _retain_stage(issued, size, self._budget)
+        _retain_result(issued, size, self._budget, 'regional-collar-stage-retained')
         self._verify(); _cancel(cancel)
         return issued
 
@@ -701,7 +691,7 @@ class PreparedRegionalCollar3D:
             object.__setattr__(issued, key, value)
         size = 8192+_result_bytes(transport)
         size += sum(_result_bytes(v) for rows in (transport.boundary_stocks, transport.exports) for v in rows.values())
-        _retain_stage(issued, size, self._budget)
+        _retain_result(issued, size, self._budget, 'regional-collar-stage-retained')
         self._verify(); _cancel(cancel)
         return issued
 
@@ -826,7 +816,7 @@ class PreparedRegionalCollar3D:
                             transport=transport, heat_source_id=source.heat_source_id, _source_flow_stage=source, _owner=self,
                             spatial_result=result, spatial_graph=graph, finite_proposal=finite_proposal).items():
                         object.__setattr__(issued, key, value)
-                    _retain_stage(issued, 8192+transport.nbytes, self._budget)
+                    _retain_result(issued, 8192+transport.nbytes, self._budget, 'regional-collar-stage-retained')
                     self._verify(); _cancel(cancel)
                     return issued
 
@@ -873,7 +863,7 @@ class PreparedRegionalCollar3D:
         for key, value in dict(transport_stage_id=stage.result_id, heat=heat,
                                exterior_heat=exterior, _owner=self, joined_result=None, joined_mesh=None).items():
             object.__setattr__(issued, key, value)
-        _retain_stage(issued, 8192+heat.nbytes+(0 if exterior is None else exterior.nbytes), self._budget)
+        _retain_result(issued, 8192+heat.nbytes+(0 if exterior is None else exterior.nbytes), self._budget, 'regional-collar-stage-retained')
         self._verify(); _cancel(cancel)
         return issued
 
@@ -995,7 +985,7 @@ class PreparedRegionalCollar3D:
                         for key, value in dict(transport_stage_id=stage.result_id, heat=heat, exterior_heat=None,
                                 _owner=self, joined_result=result, joined_mesh=mesh).items():
                             object.__setattr__(issued, key, value)
-                        _retain_stage(issued, 8192+heat.nbytes, self._budget)
+                        _retain_result(issued, 8192+heat.nbytes, self._budget, 'regional-collar-stage-retained')
                         self._verify(); _cancel(cancel)
                         return issued
 

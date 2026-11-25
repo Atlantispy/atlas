@@ -11,14 +11,14 @@ import re
 import numpy as np
 
 from ._validation import TectonicsError
-from .constitutive import _cancel
 from .regional_execution import RegionalMechanicalSnapshot, content_metadata
 from .resources import WorkBudget, select_budget
+from .resources import _sha256_pattern as _SHA
+from .resources import check_event_or_callable
 
 
 _SCHEMA = 'atlas.w07-regional-checkpoint.v1'
 _NAME = re.compile(r'[A-Za-z][A-Za-z0-9_.-]{0,127}\Z')
-_SHA = re.compile(r'[0-9a-f]{64}\Z')
 _DTYPE = np.dtype('float64')
 _MAX_SNAPSHOTS = 16
 _MAX_FIELDS = 128
@@ -129,8 +129,8 @@ def _hash(raw, cancel=None):
     digest = hashlib.sha256()
     view = memoryview(raw).cast('B')
     for offset in range(0, len(view), 1024 * 1024):
-        _cancel(cancel); digest.update(view[offset:offset+1024*1024])
-    _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled'); digest.update(view[offset:offset+1024*1024])
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     return digest.hexdigest()
 
 
@@ -186,14 +186,14 @@ def _source_rows(snapshots):
 
 def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
     """Pack exact named snapshots; deduplicate before copying payloads."""
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     rows, logical, metadata_bytes, count = _source_rows(snapshots)
     resource = _resource(budget)
     overhead = _resources(logical, 0, metadata_bytes, count, len(rows))['pack_work_bytes']
     with resource.reserve(overhead, category='regional-checkpoint-metadata'):
         records, catalogue, unique = [], {}, {}
         for name, snapshot, raw_meta, fields in rows:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             metadata = _parse(raw_meta)
             refs, identity = [], {}
             for key, shape, raw in sorted(fields):
@@ -220,19 +220,19 @@ def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
         with resource.reserve(2*stored, category='regional-checkpoint-pack'):
             arrays = {}
             for key in sorted(unique):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 raw = memoryview(unique[key]).tobytes()
                 value = np.frombuffer(raw, dtype=_DTYPE).reshape(catalogue[key]['shape'])
                 if not np.isfinite(value).all():
                     _fail('nonfinite snapshot array')
                 arrays[key] = value
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return arrays, metadata
 
 
 def restore_regional_snapshots(arrays, metadata, *, budget=None, cancel=None):
     """Restore detached identities; caller must validate workflow and physics."""
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     _keys(metadata, _META_KEYS, 'bundle')
     if metadata['schema'] != _SCHEMA or type(metadata['version']) is not int or metadata['version'] != 1:
         _fail('unsupported schema/version')
@@ -302,7 +302,7 @@ def restore_regional_snapshots(arrays, metadata, *, budget=None, cancel=None):
     with _resource(budget).reserve(costs['restore_work_bytes'], category='regional-checkpoint-restore'):
         captured = {}
         for key, entry in specs.items():
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             raw = arrays[key].tobytes(order='C')
             if len(raw) != entry['nbytes'] or _hash(raw, cancel) != entry['sha256']:
                 _fail('array content hash mismatch')
@@ -312,11 +312,11 @@ def restore_regional_snapshots(arrays, metadata, *, budget=None, cancel=None):
             captured[key] = value
         restored = {}
         for record, raw_meta in descriptions:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             fields = {entry['name']: captured[entry['array']] for entry in record['fields']}
             result = RegionalMechanicalSnapshot(_parse(raw_meta), fields)
             if result.result_id != record['result_id']:
                 _fail('restored snapshot result identity mismatch')
             restored[record['name']] = result
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return restored

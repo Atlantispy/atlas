@@ -19,6 +19,7 @@ import weakref
 
 from . import integration_volume as V
 from .resources import select_budget
+from .integration_volume import _cross as _cross
 
 
 SCHEMA = 'atlas.exact-cell-overlap.v1'
@@ -31,10 +32,6 @@ class OverlapError(V.VolumeError):
 
 def _dot(a, b):
     return sum((x*y for x, y in zip(a, b)), Fraction(0))
-
-
-def _cross(a, b):
-    return a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]
 
 
 def _minus(a, b):

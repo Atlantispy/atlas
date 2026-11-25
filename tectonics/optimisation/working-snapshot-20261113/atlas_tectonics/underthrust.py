@@ -20,18 +20,20 @@ from shapely.geometry import Polygon
 from shapely.strtree import STRtree
 
 from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import _PLANAR_MAP_ERROR as MAP_ERROR
 from .geometry import (PlanarGeometry, GeometryError, _limits, _label,
                        _check_cancel, _validate_shape, geometry_runtime)
 from .materials import MaterialCohort, _json
 from .planar_exchange import _area_shape
 from .resources import WorkBudget, select_budget
+from .resources import record_id
 from .reuse import ExecutionContext, content_record
+from .deformation_network import _check_parcel_overlap
 
 MAX_PARCELS = 4096
 MAX_INTERVALS = 256
 MAX_RECEIVERS = 64
 MAX_KNOTS = 64
-MAP_ERROR = 1e-10
 ROUND = float(128*np.finfo(float).eps)
 
 
@@ -225,20 +227,6 @@ def _warp(polygon, interface, shift, flatten, budget, limits, cancel):
         return result
 
 
-def _disjoint(polygons, budget, limits, cancel):
-    tree = STRtree([p._geom for p in polygons]); pairs = 0
-    for i, p in enumerate(polygons):
-        _check_cancel(cancel)
-        for j in tree.query(p._geom):
-            j = int(j)
-            if j <= i: continue
-            pairs += 1
-            if pairs > limits.max_overlay_pairs:
-                raise GeometryError('section overlap pair limit exceeded')
-            if p.overlay(polygons[j], budget=budget, limits=limits, cancel=cancel).area_m2 > 0:
-                raise GeometryError('occupied section parcels/receivers overlap')
-
-
 def _sweep(shape, first, last, limits):
     """Exact horizontal Minkowski sweep, including nonconvex shapes and holes."""
     a, b = sorted((first, last))
@@ -376,8 +364,8 @@ class PreparedUnderthrust:
             self._roles = tuple(0 if p.role == 'footwall' else 1 if p.role == 'hangingwall' else 2 for p in parcels)
             self._receivers = tuple(receivers); self._tree = STRtree([p._geom for p in receivers])
             originals = tuple(p.polygon for p in parcels)
-            _disjoint(originals, resource, limits, cancel)
-            _disjoint(tuple(receivers), resource, limits, cancel)
+            _check_parcel_overlap(originals, resource, limits, cancel, 'section overlap pair limit exceeded', 'occupied section parcels/receivers overlap')
+            _check_parcel_overlap(tuple(receivers), resource, limits, cancel, 'section overlap pair limit exceeded', 'occupied section parcels/receivers overlap')
             flat = tuple(_warp(p, interface, 0., True, resource, limits, cancel) for p in originals)
             if sum(p.vertex_count for p in flat) > limits.max_vertices:
                 raise GeometryError('flattened section vertex limit exceeded')
@@ -404,7 +392,7 @@ class PreparedUnderthrust:
                           receivers=[(n, p.geometry_id) for n, p in receiver_regions], exterior_id=exterior_id,
                           source_id=source_id, host_space_source_id=host_space_source_id,
                           execution_id=self.execution_id, geometry_runtime=geometry_runtime())
-            self.plan_id = _id(record, self._stock)
+            self.plan_id = record_id(content_record(record), self._stock, encode=_json)
             self._record = _json(record)
             if len(self._record) > 512*1024:
                 raise TectonicsError('underthrust definition metadata exceeds 512 KiB')
@@ -530,7 +518,7 @@ class PreparedUnderthrust:
                               geometric_area_error_m2=[p.area_m2-ref.polygon.area_m2 for p, ref in zip(polygons, self.parcels)])
                 raw = (fields.tobytes(), work.tobytes(), potential.tobytes(), displacement.tobytes())
                 state = UnderthrustState(polygons, tuple(p.parcel_id for p in self.parcels), self.destination_ids,
-                                        known, float(time_s), self.plan_id, _id(record, *raw), *raw, _json(record))
+                                        known, float(time_s), self.plan_id, record_id(content_record(record), *raw, encode=_json), *raw, _json(record))
                 self._context.verify(); _check_cancel(cancel)
                 guard = self._budget.reserve(state.nbytes+2048*total_vertices+65536,
                                              category='underthrust-latest')

@@ -15,9 +15,11 @@ from typing import Any, Mapping
 import numpy as np
 from ._validation import (FloatArray, TectonicsError, input_shape, snapshot,
                           read_array, frozen, scalar)
-from .regional import (RegionalGrid1D, TransportBoundary, _reference, _cancelled,
+from .regional import (RegionalGrid1D, TransportBoundary, _reference, 
                        unpack_regional_result, _METRICS)
 from .resources import select_budget, MemoryLimitError
+from .resources import _immutable_deepcopy
+from .resources import check_event
 from .mesh import ColumnGrid1D
 from .reuse import content_record
 
@@ -212,9 +214,7 @@ class MaterialState:
             return (_restore_mesh_material,(self.descriptor(),self.thickness_m,self.state_id,self.grid.edges_m))
         return (restore_material_state,(self.descriptor(),self.thickness_m,self.state_id))
 
-    def __deepcopy__(self,memo):
-        memo[id(self)]=self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def restore_material_state(descriptor, thickness_m, expected_id, *, budget=None, edges_m=None):
@@ -403,9 +403,7 @@ class MaterialTransportResult:
     @property
     def nbytes(self):return self.state.nbytes+len(self._flux)+len(self._accounts)
 
-    def __deepcopy__(self,memo):
-        memo[id(self)]=self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _cohort_slopes_reference(h):
@@ -493,7 +491,7 @@ def advect_materials(state: MaterialState, face_velocity_m_s: Any, duration_s: f
     metadata remains fixed; time advances only in the returned candidate state.
     Existing materials are not independently reclassified or renormalised.
     """
-    _cancelled(cancel);_definition(state,left,right,scheme,backend)
+    check_event(cancel, 'regional transport cancelled; no candidate published');_definition(state,left,right,scheme,backend)
     dt=scalar(duration_s,'duration_s',nonnegative=True);end=_end_time(state,dt)
     n=state.grid.cells;c=len(state.cohorts)
     if input_shape(face_velocity_m_s,'face velocity')!=(n+1,):raise TectonicsError('N+1 face velocities required')
@@ -512,7 +510,7 @@ def advect_materials(state: MaterialState, face_velocity_m_s: Any, duration_s: f
             else:
                 h=np.empty((c,n));flux=np.empty((c,n+1));totals=np.empty((c,2));maximum=0.
                 for k in range(c):
-                    _cancelled(cancel)
+                    check_event(cancel, 'regional transport cancelled; no candidate published')
                     with np.errstate(over='raise',invalid='raise',divide='raise'):
                         hh,ff,b,a,maximum=_reference(state.thickness_m[k],u,ratio,el[k],er[k],scheme=='muscl')
                     h[k],flux[k],totals[k]=hh,ff,(b,a)
@@ -532,7 +530,7 @@ def advect_materials(state: MaterialState, face_velocity_m_s: Any, duration_s: f
         except ImportError as exc:raise TectonicsError('Numba required for selected backend; no fallback') from exc
         except MemoryLimitError:raise
         except (ValueError,OverflowError,FloatingPointError) as exc:raise TectonicsError(str(exc)) from exc
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         return result
 
 
@@ -605,7 +603,7 @@ def apply_material_event(state: MaterialState, event: MaterialEvent, thickness_m
     amount (m) is validated and hashed. Removing too much refuses without clipping;
     density changes, reactions, thermal effects and phase partitioning are absent.
     """
-    _cancelled(cancel)
+    check_event(cancel, 'regional transport cancelled; no candidate published')
     if type(state) is not MaterialState or type(event) is not MaterialEvent:
         raise TectonicsError('typed material state and event required')
     if event.parent_state_id!=state.state_id or event.time_s!=state.time_s:
@@ -640,7 +638,7 @@ def apply_material_event(state: MaterialState, event: MaterialEvent, thickness_m
                               parent_state_id=state.state_id,transition_id=tid,transition=receipt,budget=budget)
         except MemoryLimitError:raise
         except (ValueError,OverflowError,FloatingPointError) as exc:raise TectonicsError(str(exc)) from exc
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         return MaterialEventResult(new,event,transfer,before,after,residual,amount_id)
 
 

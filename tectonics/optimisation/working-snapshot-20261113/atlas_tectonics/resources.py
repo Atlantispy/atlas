@@ -7,10 +7,151 @@ Caller buffers/native allocator baselines need explicit allowances and measured
 headroom; reserving estimated bytes does not constrain the allocator itself.
 """
 from __future__ import annotations
-from contextlib import contextmanager
+from concurrent.futures import CancelledError
+from contextlib import ExitStack, contextmanager
+import hashlib
+import json
 import math
+import re
 import sys
 import threading
+import weakref
+
+
+_sha256_pattern = re.compile(r'[0-9a-f]{64}')
+
+
+def canonical_json(value, *, allow_nan=False, error=None, message=None,
+                   catch=(TypeError, ValueError, OverflowError, RecursionError)):
+    """Encode sorted compact JSON with the caller's non-finite policy."""
+    try:
+        return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=allow_nan).encode()
+    except catch as exc:
+        if error is None:
+            raise
+        raise error(message) from exc
+
+
+def json_sha256(value, encode=canonical_json):
+    return hashlib.sha256(encode(value)).hexdigest()
+
+
+def record_id(record, *buffers, encode=canonical_json):
+    digest = hashlib.sha256(encode(record))
+    for buffer in buffers:
+        digest.update(b'\0')
+        digest.update(buffer)
+    return digest.hexdigest()
+
+
+def is_sha256(value):
+    return type(value) is str and _sha256_pattern.fullmatch(value) is not None
+
+
+def require_sha256(value, error, message):
+    if type(value) is not str or _sha256_pattern.fullmatch(value) is None:
+        raise error(message)
+    return value
+
+
+def check_event(cancel, message=None):
+    if cancel is not None and cancel.is_set():
+        raise CancelledError() if message is None else CancelledError(message)
+
+
+def check_event_or_callable(cancel, message=None):
+    if cancel is not None and (cancel.is_set() if hasattr(cancel, 'is_set') else cancel()):
+        raise CancelledError() if message is None else CancelledError(message)
+
+
+@contextmanager
+def _operation(self, cancel=None):
+    self._check(cancel)
+    if self._active:
+        raise self._operation_error(self._reentrant_message)
+    self._active = True
+    try:
+        yield
+        self._check(cancel)
+    finally:
+        self._active = False
+
+
+def _immutable_copy(self):
+    return self
+
+
+def _immutable_deepcopy(self, memo):
+    memo[id(self)] = self
+    return self
+
+
+def _budget_statistics(self):
+    return dict(self._stats, budget=self._resource.statistics())
+
+
+def _arena_init(self, budget):
+    self.budget, self.owners, self.free = budget, [], 0
+
+
+def require(condition, text, error):
+    if not condition:
+        raise error(text)
+
+
+@contextmanager
+def _close_consumed_stack():
+    stack = ExitStack()
+    try:
+        yield stack
+    except BaseException:
+        raise
+    else:
+        stack.close()
+
+
+def _retain_result(obj, size, budget, category):
+    lease = budget.reserve(size, category=category)
+    lease.__enter__()
+    try:
+        weakref.finalize(obj, lease.__exit__, None, None, None)
+    except BaseException:
+        lease.__exit__(None, None, None)
+        raise
+
+
+def _retain_failure(self, stack):
+    self.release = weakref.finalize(self, stack.close)
+
+
+def _retained_charge(self, budget, size):
+    self.guard = None
+    guard = budget.reserve(size, category=self._retained_category)
+    guard.__enter__()
+    self.guard = guard
+
+
+def _release_retained_charge(self):
+    guard = getattr(self, 'guard', None)
+    if guard is not None:
+        self.guard = None
+        guard.__exit__(None, None, None)
+
+
+def issue(cls, **values):
+    item = object.__new__(cls)
+    for key, value in values.items():
+        object.__setattr__(item, key, value)
+    return item
+
+
+def _integer_storage(bits):
+    return 40 + sys.int_info.sizeof_digit * ((max(1, bits) +
+        sys.int_info.bits_per_digit - 1) // sys.int_info.bits_per_digit)
+
+
+def _difference_bits(a, b):
+    return max(a[0] + b[1], b[0] + a[1]) + 1, a[1] + b[1]
 
 
 class MemoryLimitError(ValueError):

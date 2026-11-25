@@ -7,7 +7,6 @@ No timestep loop, density/subsidence law, geological-age inference or age floor.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from concurrent.futures import CancelledError
 import math
 
 import numpy as np
@@ -15,6 +14,7 @@ import numpy as np
 from ._validation import TectonicsError, read_array, input_shape, frozen, scalar, text
 from .parameters import PlateCoolingParameters, identity
 from .resources import elements, select_budget
+from .resources import check_event as _cancel
 from .thermal import DEFAULT_COOLING_BATCH_ELEMENTS, _batch_count
 from .stokes_execution import _factored_scale
 
@@ -27,11 +27,6 @@ _GAUSS_NODES = (-.8611363115940526, -.3399810435848563,
                 .3399810435848563, .8611363115940526)
 _GAUSS_WEIGHTS = (.3478548451374539, .6521451548625461,
                   .6521451548625461, .3478548451374539)
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError()
 
 
 def _parameters(parameters):

@@ -44,6 +44,8 @@ from . import integration_ports as P
 from . import integration_sphere as S
 from . import integration_state as _state
 from ._validation import TectonicsError
+from ._validation import finite_array
+from ._validation import frozen_contiguous
 from .integration_junction_paths import exponential
 from .materials import _json, _name
 from ._validation import effort_paths as _paths, without_effort as _without
@@ -215,11 +217,8 @@ def _relative(actual, expected):
                  max(float(np.linalg.norm(expected)), np.finfo(float).tiny))
 
 
-def _finite(value, name):
-    result = np.asarray(value, dtype=float)
-    if not np.isfinite(result).all():
-        raise DrivingRefused(f"{name} must be finite", INVALID)
-    return result
+def _nonfinite_driving_input(message):
+    return DrivingRefused(message, INVALID)
 
 
 def _fsum0(terms):
@@ -257,7 +256,7 @@ def solve_torque(matrix, torque, *, rows=None, with_operator=False):
 
     ``with_operator`` also returns the physical matrix already used by the solve, for local sensitivities.
     """
-    matrix, torque = _finite(matrix, "matrix"), _finite(torque, "torque")
+    matrix, torque = finite_array(np.asarray(matrix, dtype=float), "matrix", _nonfinite_driving_input, ' must be finite'), finite_array(np.asarray(torque, dtype=float), "torque", _nonfinite_driving_input, ' must be finite')
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or torque.shape != (len(matrix),):
         raise DrivingRefused("square torque system required", INVALID)
     if rows is not None:
@@ -567,11 +566,6 @@ class Prepared(_state._Immutable):
         raise TypeError('Prepared operators are issued by prepare()')
 
 
-def _frozen(array, dtype=float):
-    raw = np.ascontiguousarray(array, dtype=dtype)
-    return np.frombuffer(raw.tobytes(), dtype=dtype).reshape(raw.shape)
-
-
 def prepare(network, forcing):
     """Assemble M (+ B) for the network's plates. Any change of geometry, drag or interface k gives a new ID."""
     if type(network) is not S.SphereNetwork:
@@ -624,7 +618,7 @@ def prepare(network, forcing):
         i, j = order[boundary.left_plate_id], order[boundary.right_plate_id]
         for key, value in (((i, i), block), ((j, j), block), ((i, j), -block), ((j, i), -block)):
             blocks.setdefault(key, []).append(value)
-        interfaces.append((name, i, j, _frozen(block)))
+        interfaces.append((name, i, j, frozen_contiguous(block, float)))
     matrix = np.zeros((3*n, 3*n))
     for (i, j), terms in blocks.items():
         matrix[3*i:3*i+3, 3*j:3*j+3] = _fsum0(terms)
@@ -635,12 +629,12 @@ def prepare(network, forcing):
         record['basal_drag_radius_m'] = forcing.basal_drag_radius_m
     solve_rows = _rows(plate_order_key(network))
     return _state._issue(Prepared, network_id=network.network_id, plate_ids=plates, radius_m=radius,
-                          solve_rows=_frozen(solve_rows, np.int64),
-                          network_rows=_frozen(np.argsort(solve_rows), np.int64),
+                          solve_rows=frozen_contiguous(solve_rows, np.int64),
+                          network_rows=frozen_contiguous(np.argsort(solve_rows), np.int64),
                          basal_drag_radius_m=drag_radius,
-                         prepared_id=hashlib.sha256(_json(record)).hexdigest(), matrix=_frozen(matrix),
-                         basal=_frozen(basal), geometry=_frozen(geometry), face_plate=_frozen(face_plate, np.int64),
-                         face_drag=_frozen(face_drag), face_tensor=_frozen(tensor), interfaces=tuple(interfaces))
+                         prepared_id=hashlib.sha256(_json(record)).hexdigest(), matrix=frozen_contiguous(matrix, float),
+                         basal=frozen_contiguous(basal, float), geometry=frozen_contiguous(geometry, float), face_plate=frozen_contiguous(face_plate, np.int64),
+                         face_drag=frozen_contiguous(face_drag, float), face_tensor=frozen_contiguous(tensor, float), interfaces=tuple(interfaces))
 
 
 def _expected_prepared_id(network, forcing):
@@ -1149,7 +1143,7 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
         delta = np.empty(3*n)
         delta[rows] = np.linalg.solve(partition_operator, rhs.reshape(-1)[rows])
         delta = delta.reshape(n, 3)
-        motion.append((name, _frozen(delta), float(np.max(np.linalg.norm(delta, axis=1)))*radius))
+        motion.append((name, frozen_contiguous(delta, float), float(np.max(np.linalg.norm(delta, axis=1)))*radius))
     geometry = _fsum0(prepared.geometry)
     net = np.linalg.solve(geometry, _fsum0(np.einsum('pij,pj->pi', prepared.geometry, omega)))
     record = dict(network_id=network.network_id, prepared_id=prepared.prepared_id, forcing_id=forcing.forcing_id,
@@ -1171,7 +1165,7 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
         record['partition_motion_evaluation'] = partition_evaluation
     if radial_record is not None:
         record['radial_pressure'] = radial_record
-    arrays = [('omega', _frozen(omega))]+[('term.'+k, _frozen(v)) for k, v in sorted(terms.items())]
+    arrays = [('omega', frozen_contiguous(omega, float))]+[('term.'+k, frozen_contiguous(v, float)) for k, v in sorted(terms.items())]
     digest = hashlib.sha256(_json(_without(dict(record, schema=SCHEMA, method=METHOD, route=ROUTE), BALANCE_EFFORT)))
     for name, array in arrays:
         digest.update(b'\0'+_json([name, array.dtype.str, list(array.shape)]))
@@ -1184,10 +1178,10 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
                          water_regime=water_regime, water_density_kg_m3=water_density_kg_m3,
                          plate_ids=plates, frame_id=network.sphere.frame_id, mantle_label=forcing.mantle_label,
                          omitted_slabs=omitted_slabs, omitted_interfaces=omitted_interfaces,
-                         unauthored_plates=unauthored, omega_rad_s=_frozen(omega),
-                         terms=MappingProxyType({k: _frozen(v) for k, v in terms.items()}),
+                         unauthored_plates=unauthored, omega_rad_s=frozen_contiguous(omega, float),
+                         terms=MappingProxyType({k: frozen_contiguous(v, float) for k, v in terms.items()}),
                          jump_sensitivity=tuple(jumps),
-                         net_rotation_rad_s=_frozen(net), residual=residual, power=MappingProxyType(power),
+                         net_rotation_rad_s=frozen_contiguous(net, float), residual=residual, power=MappingProxyType(power),
                          partition_motion=tuple(motion), evaluation=EVALUATIONS[evaluation],
                          omitted=tuple(sorted(forcing.omitted)), trace_partition=TRACE_PARTITION,
                          balance_id=digest.hexdigest(), endpoint_state_id=endpoint_state_id,
@@ -1252,7 +1246,7 @@ def _power(prepared, terms, omega, forcing, *, belt_dissipation=None, belt_colum
 def _general_solve(matrix, rhs):
     """A general (non-symmetric) solve with the retained conditioning gate (condition number at most MAX_CONDITION)
     and relative residual algebra_relative."""
-    matrix, rhs = _finite(matrix, 'tangent'), _finite(rhs, 'residual')
+    matrix, rhs = finite_array(np.asarray(matrix, dtype=float), 'tangent', _nonfinite_driving_input, ' must be finite'), finite_array(np.asarray(rhs, dtype=float), 'residual', _nonfinite_driving_input, ' must be finite')
     singular = np.linalg.svd(matrix, compute_uv=False)
     if singular[-1] <= 0 or singular[0]/singular[-1] > MAX_CONDITION:
         raise DrivingRefused('the belt tangent is singular or ill-conditioned', NULLSPACE)

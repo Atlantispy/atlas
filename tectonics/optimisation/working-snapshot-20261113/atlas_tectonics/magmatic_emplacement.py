@@ -9,7 +9,6 @@ against a shared WorkBudget no larger than 128 MiB; this is not an RSS limit.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
 from dataclasses import dataclass
 import hashlib
 import json
@@ -19,6 +18,8 @@ import numpy as np
 
 from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar, text
 from atlas_tectonics.resources import WorkBudget, select_budget
+from .resources import canonical_json as _json
+from .resources import check_event
 
 _METHOD = 'atlas.w08-magmatic-emplacement.v1'
 _MAX_BYTES = 128 * 1024 * 1024
@@ -33,11 +34,6 @@ def _budget(value):
     if result.max_bytes > _MAX_BYTES:
         raise TectonicsError('magmatic emplacement work budget must not exceed 128 MiB')
     return result
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError('magmatic emplacement cancelled')
 
 
 def _text(value, name):
@@ -59,10 +55,6 @@ def _ids(values, name, maximum):
 def _text_allowance(values):
     # JSON escaping, temporary Unicode serialization, bytes and hash input.
     return 64*sum(len(value) for value in values)
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _identity(record, *buffers):
@@ -134,7 +126,7 @@ class MagmaticPayload:
     def __init__(self, component_ids, component_mass_kg, enthalpy_j,
                  source_density_kg_m3, *, source_id, transfer_id, enthalpy_source,
                  budget=None, cancel=None):
-        _cancel(cancel)
+        check_event(cancel, 'magmatic emplacement cancelled')
         _ids(component_ids, 'component IDs', _MAX_COMPONENTS)
         _text(source_id, 'payload source'); _text(transfer_id, 'transfer ID')
         _text(enthalpy_source, 'payload enthalpy source')
@@ -159,7 +151,7 @@ class MagmaticPayload:
             record = dict(method=_METHOD, components=component_ids, source=source_id,
                           transfer=transfer_id, enthalpy_j=e, enthalpy_source=enthalpy_source,
                           source_density_kg_m3=rho)
-            _cancel(cancel)
+            check_event(cancel, 'magmatic emplacement cancelled')
             for name, value in dict(component_ids=component_ids, source_id=source_id,
                     transfer_id=transfer_id, enthalpy_source=enthalpy_source,
                     payload_id=_identity(record, b), mass_kg=mass,
@@ -185,7 +177,7 @@ class EmplacementTarget:
 
     def __init__(self, column_ids, area_m2, receiving_density_kg_m3, mass_weights,
                  *, geometry_source, frame_id, datum_id, epoch_id, budget=None, cancel=None):
-        _cancel(cancel)
+        check_event(cancel, 'magmatic emplacement cancelled')
         if type(column_ids) is not tuple or not 0 < len(column_ids) <= _MAX_CELLS:
             raise TectonicsError('bounded nonempty tuple of column IDs required')
         # Validate text before sizing; the potentially large uniqueness set is
@@ -211,7 +203,7 @@ class EmplacementTarget:
             if _sum(w) != 1.0:
                 raise TectonicsError('supplied nonnegative mass weights must sum to one')
             b = np.column_stack((a,r,w)).tobytes()
-            _cancel(cancel)
+            check_event(cancel, 'magmatic emplacement cancelled')
             for name,value in dict(column_ids=column_ids, geometry_source=geometry_source,
                     frame_id=frame_id, datum_id=datum_id, epoch_id=epoch_id,
                     target_id=_identity(record,b), _values=b).items():
@@ -249,7 +241,7 @@ class HostStock:
 
     def __init__(self, component_ids, component_mass_kg, enthalpy_j, density_kg_m3,
                  *, source_id, target, enthalpy_source, budget=None, cancel=None):
-        _cancel(cancel)
+        check_event(cancel, 'magmatic emplacement cancelled')
         _ids(component_ids, 'host component IDs', _MAX_COMPONENTS)
         _text(source_id, 'host source')
         _text(enthalpy_source, 'host enthalpy source')
@@ -277,7 +269,7 @@ class HostStock:
             cb, fb = c.tobytes(), np.column_stack((m,e,r,v)).tobytes()
             record = dict(method=_METHOD, components=component_ids, source_id=source_id,
                           target_id=target.target_id, enthalpy_source=enthalpy_source)
-            _cancel(cancel)
+            check_event(cancel, 'magmatic emplacement cancelled')
             for name,value in dict(component_ids=component_ids, source_id=source_id,
                     target_id=target.target_id, enthalpy_source=enthalpy_source,
                     stock_id=_identity(record,cb,fb), cells=n,
@@ -364,7 +356,7 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
     publish its components/enthalpy to an explicit destination. Underplating adds
     basal volume; extrusion adds surface volume. None predicts accommodation.
     """
-    _cancel(cancel)
+    check_event(cancel, 'magmatic emplacement cancelled')
     if type(payload) is not MagmaticPayload or type(target) is not EmplacementTarget:
         raise TectonicsError('typed finite payload and receiving target required')
     _text(source_id, 'emplacement source')
@@ -395,7 +387,7 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
                 mass, enthalpy = _allocate(payload.mass_kg,w,anchor), _allocate(payload.enthalpy_j,w,anchor)
                 components = np.empty((n,k))
                 for j in range(k):
-                    _cancel(cancel)
+                    check_event(cancel, 'magmatic emplacement cancelled')
                     components[:,j] = _allocate(payload.component_mass_kg[j],w,anchor)
                 volume = _quotient(mass,target.receiving_density_kg_m3,'receiving volume')
                 dz = _quotient(volume,target.area_m2,'receiving thickness')
@@ -433,7 +425,7 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
         if not all(np.isfinite(a).all() for a in arrays):
             raise TectonicsError('nonfinite emplacement fields')
         for i in range(n):
-            _cancel(cancel)
+            check_event(cancel, 'magmatic emplacement cancelled')
             # Separate exact global component accounts and scalar mass partitions
             # can differ by rounding in a cell; enforce frozen extensive gate.
             actual = _sum(components[i]); expected = incoming[i,0]
@@ -470,7 +462,7 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
                      _metadata=metadata)
         attrs.update(zip(('_incoming','_outgoing','_remaining','_geometry','_in_components',
                           '_out_components','_remaining_components'),buffers))
-        _cancel(cancel)
+        check_event(cancel, 'magmatic emplacement cancelled')
         for name,value in attrs.items():
             object.__setattr__(result,name,value)
         return result
@@ -489,7 +481,7 @@ def accounting_entries(results, *, budget=None, cancel=None):
         raise TectonicsError('bounded tuple of emplacement results required')
     if any(type(result) is not EmplacementResult for result in results):
         raise TectonicsError('typed emplacement result required')
-    _cancel(cancel)
+    check_event(cancel, 'magmatic emplacement cancelled')
     with _budget(budget).reserve(16*sum(len(r._metadata) for r in results)+8192,
                                  category='magma-ledger-view'):
         return _accounting_entries(results,cancel)
@@ -498,7 +490,7 @@ def accounting_entries(results, *, budget=None, cancel=None):
 def _accounting_entries(results,cancel):
     transfers, hosts, entries = set(),set(),[]
     for result in results:
-        _cancel(cancel)
+        check_event(cancel, 'magmatic emplacement cancelled')
         key = result.payload.transfer_id
         if key in transfers:
             raise TectonicsError('same magma transfer would be booked twice')

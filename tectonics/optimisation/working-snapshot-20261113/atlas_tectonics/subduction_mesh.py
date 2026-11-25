@@ -32,8 +32,9 @@ import numpy as np
 from scipy.spatial import Delaunay, QhullError
 
 from ._validation import TectonicsError, scalar, input_shape, read_array
-from .constitutive import _cancel
+from ._validation import frozen_asarray
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 
 
 MAX_ELEMENTS = 20000
@@ -55,11 +56,6 @@ _SEGMENTS = (((0., 0.), (50., 50.)), ((50., 50.), (600., 600.)),
 _REGION_SEGMENTS = ((0, 1, 2, 3), (0, 4, 5, 6), (1, 6, 7, 8))
 
 
-def _frozen(a, dtype=None):
-    a = np.asarray(a, dtype=dtype)
-    return np.frombuffer(a.tobytes(), dtype=a.dtype).reshape(a.shape)
-
-
 def quadrature(degree=5):
     """Positive Strang 7/9 rules: degree 5/6, 7/12 nodes, area-normalised weights."""
     if type(degree) is not int or degree not in (5, 6):
@@ -76,7 +72,7 @@ def quadrature(degree=5):
     for point, weight in groups:
         nodes = sorted(set(permutations(point)))
         bary.extend(nodes); weights.extend([weight]*len(nodes))
-    return _frozen(bary), _frozen(weights)
+    return frozen_asarray(bary), frozen_asarray(weights)
 
 
 def basis(bary, grad_lambda=None, *, budget=None, cancel=None):
@@ -90,13 +86,13 @@ def basis(bary, grad_lambda=None, *, budget=None, cancel=None):
     count = shape[0]*(1 if gs is None else gs[0])
     owner = WorkBudget(_CAP, parent=select_budget(budget))
     with owner.reserve(384*count+65536, category='subduction-basis'):
-        _cancel(cancel); b = read_array(bary, 'barycentric coordinates')
+        check_event_or_callable(cancel, 'constitutive work cancelled'); b = read_array(bary, 'barycentric coordinates')
         if np.max(np.abs(b.sum(axis=1)-1.)) > 2e-13 or np.min(b) < -2e-11 or np.max(b) > 1.+2e-11:
             raise TectonicsError('point lies outside its triangle')
         n = np.column_stack([b[:, i]*(2*b[:, i]-1) for i in range(3)]+
                             [4*b[:, i]*b[:, j] for i, j in _EDGES])
         if gs is None:
-            _cancel(cancel); return n
+            check_event_or_callable(cancel, 'constitutive work cancelled'); return n
         g = read_array(grad_lambda, 'barycentric gradients')
         scale = max(float(np.max(np.abs(g))), np.finfo(float).tiny)
         if np.max(np.abs(g.sum(axis=1))) > 2e-13*scale:
@@ -108,7 +104,7 @@ def basis(bary, grad_lambda=None, *, budget=None, cancel=None):
         for k, (i, j) in enumerate(_EDGES, 3):
             dn[:, :, k] = 4*(b[None, :, i, None]*g[:, None, j]+b[None, :, j, None]*g[:, None, i])
             lap[:, k] = 8*np.sum(g[:, i]*g[:, j], axis=1)
-        _cancel(cancel); return n, dn, lap
+        check_event_or_callable(cancel, 'constitutive work cancelled'); return n, dn, lap
 
 
 def _target(x, y, spacing, grading='interface-r3'):
@@ -130,7 +126,7 @@ def _target(x, y, spacing, grading='interface-r3'):
 def _segment_points(a, b, spacing, cancel, grading):
     result = [a]; pending = [(a, b)]
     while pending:
-        _cancel(cancel); left, right = pending.pop()
+        check_event_or_callable(cancel, 'constitutive work cancelled'); left, right = pending.pop()
         middle = tuple((x+y)/2 for x, y in zip(left, right))
         target = min(_target(*p, spacing, grading) for p in (left, middle, right))
         if math.dist(left, right) > target:
@@ -147,7 +143,7 @@ def _interior_cloud(spacing, cancel, grading):
     scale = math.sqrt(spacing/6.)
     polygons = [np.asarray(p) for p in _POLYGONS]
     while pending:
-        _cancel(cancel); x0, x1, y0, y1 = pending.pop(); visited += 1
+        check_event_or_callable(cancel, 'constitutive work cancelled'); x0, x1, y0, y1 = pending.pop(); visited += 1
         if visited > 8*_MAX_VERTICES:
             raise TectonicsError('subduction refinement exceeds bounded point-cloud work')
         x, y = (x0+x1)/2, (y0+y1)/2
@@ -180,7 +176,7 @@ def _separated(points, spacing, cancel, grading):
     ordered = sorted((_target(x, y, spacing, grading), x, y) for x, y in points)
     buckets, result = {}, []
     for target, x, y in ordered:
-        _cancel(cancel); level = max(0, int(math.log2(target/spacing))); reject = False
+        check_event_or_callable(cancel, 'constitutive work cancelled'); level = max(0, int(math.log2(target/spacing))); reject = False
         for k in range(level+1):
             size = spacing*2**k; ix, iy = math.floor(x/size), math.floor(y/size)
             for i in range(ix-2, ix+3):
@@ -260,7 +256,7 @@ class P2Mesh:
         self._lease = budget.reserve(allowance, category='subduction-mesh-retained')
         self._lease.__enter__()
         try:
-            self._arrays = {k: _frozen(v) for k, v in arrays.items()}
+            self._arrays = {k: frozen_asarray(v) for k, v in arrays.items()}
             self._locators = locators
             digest = hashlib.sha256(b'atlas.subduction-p2-geometry.v1')
             for key in ('points', 'cells', 'regions'):
@@ -274,7 +270,7 @@ class P2Mesh:
     def _check(self, cancel=None):
         if self._closed or threading.get_ident() != self._owner:
             raise TectonicsError('closed or wrong-thread subduction mesh')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     def _array(self, key):
         self._check(); return self._arrays[key].view()
@@ -311,7 +307,7 @@ class P2Mesh:
             area=self.area[selected], grad_lambda=self.grad_lambda[selected],
             global_nodes=self.global_nodes[nodes], global_elements=self.global_elements[selected])
         element_map = np.full(len(self.cells), -1, dtype=np.int64); element_map[selected] = np.arange(len(selected))
-        locators = tuple((r, t, _frozen(element_map[m])) for r, t, m in self._locators if r == 2)
+        locators = tuple((r, t, frozen_asarray(element_map[m])) for r, t, m in self._locators if r == 2)
         self._check(cancel)
         return P2Mesh(arrays, len(vertices), locators, self.spacing_km, self._budget, self._grading)
 
@@ -383,7 +379,7 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
         raise TectonicsError('explicit supported subduction mesh grading required')
     owner = WorkBudget(_CAP, parent=select_budget(budget))
     with owner.reserve(64*1024**2, category='subduction-mesh-build'):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         refinement = None
         if refinement_points_km is not None:
             shape = input_shape(refinement_points_km)
@@ -405,7 +401,7 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
         vertices, vertex_map, triangles, regions, locators = [], {}, [], [], []
         region_hulls = []
         for region in range(3):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             boundary = {p for i in _REGION_SEGMENTS[region] for p in segments[i]}
             local = np.asarray(sorted(boundary | set(clouds[region])), dtype=float)
             if len(vertex_map)+len(local) > 2*_MAX_VERTICES:
@@ -433,7 +429,7 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
             offset = len(triangles); triangles.extend(global_cells); regions.extend([region]*len(global_cells))
             if len(triangles) > MAX_ELEMENTS or len(vertices) > _MAX_VERTICES:
                 raise TectonicsError('subduction mesh exceeds 20000 triangles or vertex admission')
-            locators.append((region, tri, _frozen(np.arange(offset, len(triangles)), np.int64)))
+            locators.append((region, tri, frozen_asarray(np.arange(offset, len(triangles)), np.int64)))
             region_hulls.append({tuple(sorted((merge[a], merge[b]))) for a, b in expected})
         for a, b, ids in ((0, 1, (0,)), (0, 2, (1,)), (1, 2, (6,))):
             expected = {tuple(sorted((vertex_map[p], vertex_map[q]))) for i in ids
@@ -442,7 +438,7 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
                 raise TectonicsError('subduction interface edge mismatch')
         vertex_count = len(vertices); points = list(vertices); mids = {}; cells = []
         for t in triangles:
-            _cancel(cancel); cell = list(t)
+            check_event_or_callable(cancel, 'constitutive work cancelled'); cell = list(t)
             for i, j in _EDGES:
                 edge = tuple(sorted((int(t[i]), int(t[j]))))
                 if edge not in mids:
@@ -458,4 +454,4 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
         _edge_counts(cells)
         arrays = dict(points=points, cells=cells, regions=region_array, area=area, grad_lambda=gradients,
             global_nodes=np.arange(len(points), dtype=np.int64), global_elements=np.arange(len(cells), dtype=np.int64))
-        _cancel(cancel); return P2Mesh(arrays, vertex_count, tuple(locators), spacing, owner, grading)
+        check_event_or_callable(cancel, 'constitutive work cancelled'); return P2Mesh(arrays, vertex_count, tuple(locators), spacing, owner, grading)

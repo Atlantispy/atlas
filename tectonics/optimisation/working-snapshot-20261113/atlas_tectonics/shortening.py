@@ -7,30 +7,23 @@ with separately named exterior inventories, never a new transported state.
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-import hashlib
-import json
 import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, read_array, input_shape
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
 from .materials import MaterialState, _json, _name, _immutable_bytes
 from .mesh import ColumnGrid1D
-from .regional import _cancelled
 from .remapping import _publish
 from .resources import select_budget
+from .resources import check_event
+from .resources import record_id
 from .reuse import ExecutionContext, content_record
+from .transform import PlanarMaterialSnapshot
 
 
 MAX_SHORTENING_INTERVALS = 256
-_ROUND = float(128*np.finfo(float).eps)
 _GEOMETRY = 1e-12
-
-
-def _id(record, *buffers):
-    h = hashlib.sha256(_json(record))
-    for buf in buffers:
-        h.update(b'\0'); h.update(buf)
-    return h.hexdigest()
 
 
 def _sum_rows(values):
@@ -82,9 +75,9 @@ class ShorteningState:
 
 
 def _state(plan_id, material, stretch, shift, intervals):
-    key = _id(dict(method='w08-shortening-state-v1', plan=plan_id,
+    key = record_id(dict(method='w08-shortening-state-v1', plan=plan_id,
                    material=material.state_id, stretch=stretch,
-                   local_translation_m=shift, intervals=intervals))
+                   local_translation_m=shift, intervals=intervals), encode=_json)
     return ShorteningState(plan_id, material, stretch, shift, intervals, key)
 
 
@@ -104,12 +97,9 @@ class ShorteningProjection:
         return np.frombuffer(self._outside, np.float64).reshape(
             3, len(self.material.cohorts), 2)[index]
 
-    @property
-    def volume_m3(self): return self._field(0)
-    @property
-    def mass_kg(self): return self._field(1)
-    @property
-    def enthalpy_j(self): return self._field(2)
+    volume_m3 = PlanarMaterialSnapshot.volume_m3
+    mass_kg = PlanarMaterialSnapshot.mass_kg
+    enthalpy_j = PlanarMaterialSnapshot.enthalpy_j
     @property
     def outside_volume_m3(self): return self._exterior(0)
     @property
@@ -120,7 +110,7 @@ class ShorteningProjection:
     def nbytes(self):
         return (self.material.nbytes+self.material.grid.nbytes+len(self.material._transition_payload)
                 +len(self._fields)+len(self._outside)+len(self._record))
-    def descriptor(self): return json.loads(self._record)
+    descriptor = PlanarMaterialSnapshot.descriptor
 
 
 def boundary_flux_kg_s(*, thickness_m, density_kg_m3, width_m,
@@ -176,7 +166,7 @@ class PreparedShortening:
     def __init__(self, initial, histories, *, density_kg_m3, width_m, datum_id,
                  source_id, specific_enthalpy_j_kg=None, enthalpy_source=None,
                  context=None, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(initial) is not MaterialState or type(initial.grid) is not ColumnGrid1D:
             raise TectonicsError('explicit W02 MaterialState on ColumnGrid1D required')
         c, n = len(initial.cohorts), initial.grid.cells
@@ -240,13 +230,13 @@ class PreparedShortening:
                 maps.append(_segment(*maps[-1], e, e.end_time_s-times[-1], origin))
                 times.append(e.end_time_s)
             self._maps = tuple(maps); self._times = tuple(times)
-            self.plan_id = _id(content_record(dict(method='atlas.w08-shortening.v1', initial=initial.state_id,
+            self.plan_id = record_id(content_record(dict(method='atlas.w08-shortening.v1', initial=initial.state_id,
                 history=[asdict(e) for e in histories], width_m=width, datum=datum_id,
                 source=source_id, enthalpy_source=enthalpy_source, execution=self.execution_id,
-                representation='retained-piecewise-constant-material-parcels')), self._rho, self._inventory)
+                representation='retained-piecewise-constant-material-parcels')), self._rho, self._inventory, encode=_json)
             self.initial = _state(self.plan_id, initial, 1., 0., 0)
             self._cache = None; self._cache_lease = None
-            ctx.verify(); _cancelled(cancel)
+            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
             self._sealed = True
         except BaseException:
             lease.__exit__(None, None, None)
@@ -262,7 +252,7 @@ class PreparedShortening:
 
     def _live(self, cancel=None):
         if self._closed: raise TectonicsError('shortening preparation is closed')
-        _cancelled(cancel); self._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
 
     def _map(self, time_s):
         now = scalar(time_s, 'query time')
@@ -315,7 +305,7 @@ class PreparedShortening:
                 dict(operation='w08-exact-finite-shortening-v1', plan=self.plan_id,
                      stretch=s, local_translation_m=b, history_segments=j), budget=self._budget)
             result = _state(self.plan_id, material, s, b, j)
-            _cancelled(cancel); self._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
             return result
 
     def project(self, state, target_grid, *, exterior_ids, source_id, cancel=None):
@@ -329,7 +319,7 @@ class PreparedShortening:
         _name(source_id, 'projection geometry source')
         key = (state.state_id, target_grid.grid_id, exterior_ids, source_id)
         if self._cache is not None and self._cache[0] == key:
-            _cancelled(cancel); return self._cache[1]
+            check_event(cancel, 'regional transport cancelled; no candidate published'); return self._cache[1]
         c, ns, nt = len(state.material.cohorts), state.material.grid.cells, target_grid.cells
         with self._budget.reserve(160*c*(ns+nt)+256*(ns+nt)+8192*c+32768,
                                   category='shortening-project'):
@@ -362,8 +352,8 @@ class PreparedShortening:
             material = _publish(state.material, target_grid, values, state.material.time_s,
                                 record, budget=self._budget)
             buffers = fields.tobytes(), outside.tobytes(), _json(record)
-            result = ShorteningProjection(material, _id(record, *buffers), *buffers)
-            self._context.verify(); _cancelled(cancel)
+            result = ShorteningProjection(material, record_id(record, *buffers, encode=_json), *buffers)
+            self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
             # One retained exact view. Replacing it never changes scientific state.
             if self._cache_lease is not None:
                 self._cache_lease.__exit__(None, None, None)

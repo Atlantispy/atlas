@@ -5,7 +5,6 @@ Backward Euler solves slope, rock lowering and mobile cover together. Released
 grains are retained by cell/tag for the W09 sediment consumer, not discarded or
 silently called ocean export. No deposition, pore-water or structural adapter.
 """
-from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 import hashlib
 import json
@@ -17,11 +16,14 @@ import numpy as np
 
 from ._validation import TectonicsError, scalar, snapshot, frozen, input_shape
 from .constitutive import _cancel
+from ._validation import within_budget
 from .materials import _name, _json
 from .resources import WorkBudget, select_budget
+from .resources import _budget_statistics
+from .resources import _operation as _prepared_operation
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
-from .spreading import _within_budget
 
 CAP = 128 * 1024**2
 LIMIT = 256
@@ -250,7 +252,7 @@ class PreparedErosion:
                 _name(value,key); setattr(self,key,value)
             if store is not None:
                 if not isinstance(store, ArrayStore): raise TectonicsError('ArrayStore required')
-                _within_budget(self._resource, store._budget)
+                within_budget(self._resource, store._budget, 'call budget must descend from the prepared run budget')
             self.store = store
             self._context = ExecutionContext('reference')
             self.execution_id = self._context.identity
@@ -282,16 +284,9 @@ class PreparedErosion:
             raise TectonicsError('erosion plan closed or wrong thread')
         _cancel(cancel); self._context.verify()
 
-    @contextmanager
-    def _operation(self, cancel=None):
-        self._check(cancel)
-        if self._active: raise TectonicsError('reentrant erosion operation')
-        self._active = True
-        try:
-            yield
-            self._check(cancel)
-        finally:
-            self._active = False
+    _reentrant_message = 'reentrant erosion operation'
+    _operation_error = TectonicsError
+    _operation = _prepared_operation
 
     def _validate(self, state):
         if type(state) is not ErosionState or state.descriptor()['plan_id'] != self.plan_id:
@@ -362,7 +357,7 @@ class PreparedErosion:
         active = np.full(self._n,-1,dtype=int)
         avail = np.zeros(self._n)
         for i in self._order:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             j = self.receivers[i]
             if j < 0 or qroot[i] == 0 or inundated[i] or self.areas_m2[i] == 0: continue
             candidates = np.flatnonzero(np.any(rock[i] > 0,axis=1))
@@ -450,7 +445,7 @@ class PreparedErosion:
             for partition in range(partitions):
                 target = duration*(partition+1)/partitions
                 while elapsed < target:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                     if state.accepted_intervals+count >= LIMIT:
                         raise TectonicsError('cumulative erosion interval limit')
                     dt = target-elapsed
@@ -521,7 +516,7 @@ class PreparedErosion:
             self._stats['restored_states'] += 1
             return out
 
-    def statistics(self): return dict(self._stats,budget=self._resource.statistics())
+    statistics = _budget_statistics
 
     def close(self):
         if not self._closed:

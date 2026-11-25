@@ -8,21 +8,16 @@ work are discarded. The estimate excludes the caller-owned local HMM entries,
 factor/preconditioner and returned arrays. It is accounting, not an RSS cap.
 SPDX-License-Identifier: AGPL-3.0-only
 """
-from concurrent.futures import CancelledError
 from decimal import Decimal as D, ROUND_HALF_EVEN, localcontext
 import hashlib
 from pathlib import Path
+from .resources import check_event_or_callable
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def assert_current():
     return _LOADED
-
-
-def _cancel(cancel):
-    if cancel is not None and (cancel.is_set() if hasattr(cancel, 'is_set') else cancel()):
-        raise CancelledError('Decimal Newton direction cancelled')
 
 
 def _vector(values, size=None):
@@ -65,7 +60,7 @@ def prepare_scheme2_derivative(local, state, fixed, *, local_faces, cancel=None)
     """
     with localcontext() as context:
         context.prec, context.rounding = 80, ROUND_HALF_EVEN
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
         state = _vector(state)
         size, zero = len(state), D(0)
         fixed = frozenset(fixed)
@@ -73,7 +68,7 @@ def prepare_scheme2_derivative(local, state, fixed, *, local_faces, cancel=None)
             raise ValueError('fixed node outside Decimal state')
         force, denominator = [zero]*size, [zero]*size
         for entry in local:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
             ci, indexes = entry[:2]
             flux = local_faces(state, entry)
             force[ci] -= sum(flux, zero)
@@ -93,11 +88,11 @@ def prepare_scheme2_derivative(local, state, fixed, *, local_faces, cancel=None)
     def action(direction):
         with localcontext() as context:
             context.prec, context.rounding = 80, ROUND_HALF_EVEN
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
             direction = _vector(direction, size)
             dforce, ddenominator = [zero]*size, [zero]*size
             for entry in local:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
                 ci, indexes = entry[:2]
                 flux = local_faces(direction, entry)
                 dforce[ci] -= sum(flux, zero)
@@ -114,7 +109,7 @@ def prepare_scheme2_derivative(local, state, fixed, *, local_faces, cancel=None)
                           zip(force_sign, dforce, ratio, ddenominator, denominator))]
             result = dforce
             for entry in local:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
                 ids = (entry[0], *entry[1])
                 for at, i in enumerate(ids):
                     for j in ids[at+1:]:
@@ -149,7 +144,7 @@ def gmres(action, precondition, rhs, *, cancel=None, max_basis=32, max_restarts=
         raise ValueError('positive basis and nonnegative restart limits required')
     with localcontext() as context:
         context.prec, context.rounding = 80, ROUND_HALF_EVEN
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
         rhs = _vector(rhs)
         relative_target = D(relative_target)
         if not relative_target.is_finite() or not 0 < relative_target < 1:
@@ -175,7 +170,7 @@ def gmres(action, precondition, rhs, *, cancel=None, max_basis=32, max_restarts=
             return report(True, 'zero rhs')
         basis_limit = min(max_basis, size)
         for _ in range(max_restarts+1):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
             cycles += 1
             v, z = [[value/residual_norm for value in residual]], []
             h = [[zero]*basis_limit for _ in range(basis_limit+1)]
@@ -183,16 +178,16 @@ def gmres(action, precondition, rhs, *, cancel=None, max_basis=32, max_restarts=
             g = [residual_norm]+[zero]*basis_limit
             built, breakdown = 0, False
             for j in range(basis_limit):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
                 z.append(_vector(precondition(v[j]), size))
                 precondition_calls += 1
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
                 w = list(_vector(action(z[-1]), size))
                 action_calls += 1
                 steps += 1
                 for _ in range(2):
                     for i in range(j+1):
-                        _cancel(cancel)
+                        check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
                         coefficient = dot(v[i], w)
                         h[i][j] += coefficient
                         w = [a-coefficient*b for a, b in zip(w, v[i])]
@@ -223,7 +218,7 @@ def gmres(action, precondition, rhs, *, cancel=None, max_basis=32, max_restarts=
             for i in range(built-1, -1, -1):
                 y[i] = (g[i]-sum((h[i][j]*y[j] for j in range(i+1, built)), zero))/h[i][i]
             x = [value+sum((y[j]*z[j][i] for j in range(built)), zero) for i, value in enumerate(x)]
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
             ax = _vector(action(x), size)
             action_calls += 1
             residual = [b-a for b, a in zip(rhs, ax)]

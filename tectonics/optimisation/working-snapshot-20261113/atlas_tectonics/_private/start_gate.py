@@ -176,12 +176,15 @@ def stage_decision(key, *, records=(), booking_bytes=None, booking_basis=None):
     return decide(key, measured=stage_peaks(records, key), booking=booking)
 
 
-def add_arguments(parser):
+def add_arguments(parser, *,
+                  peak_help='a completed PASS stage-<stage>.json of the same stage and interval (repeatable)',
+                  bytes_help='declared stage peak in bytes, used only without a record',
+                  basis_help='where that booking comes from (recorded with it)'):
     """The by-need gate's launch options; a booking is used only when no record is given."""
     parser.add_argument('--peak-record', type=Path, action='append', default=[], dest='peak_records',
-                        help='a completed PASS stage-<stage>.json of the same stage and interval (repeatable)')
-    parser.add_argument('--booking-bytes', type=int, help='declared stage peak in bytes, used only without a record')
-    parser.add_argument('--booking-basis', help='where that booking comes from (recorded with it)')
+                        help=peak_help)
+    parser.add_argument('--booking-bytes', type=int, help=bytes_help)
+    parser.add_argument('--booking-basis', help=basis_help)
 
 
 def encode(decision):

@@ -20,6 +20,7 @@ from .integration_routing_views import _decoded_json_capacity as decoded_capacit
 from .integration_parallel_owner import nodes_for
 from .integration_parallel_binding import (REQUEST_FIELDS, WALL_KIND, WALL_REQUEST_FIELDS,
     request_fields, VOLUME_SCHEMA, VOLUME_REQUEST_FIELDS, INITIAL_VOLUME_REQUEST_FIELDS)
+from .resources import canonical_json
 
 # Algorithm-selection limit, not a scientific limit: beyond this depth the
 # unchanged serial path is used. One cumulative entry per ancestor keeps the
@@ -57,10 +58,6 @@ def _receive_capacity(payload, owner):
         return validation_capacity(payload)
     except (ValueError, TypeError, OverflowError, RecursionError):
         return None
-
-
-def canonical(record):
-    return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 class SlotLease:
@@ -147,7 +144,7 @@ class Hint:
     """
     def __init__(self, slot, *, max_payload, request, binding, fit):
         self.slot, self.max_payload = slot, max_payload
-        self.request, self.binding, self.fit = canonical(request), canonical(binding), fit
+        self.request, self.binding, self.fit = canonical_json(request), canonical_json(binding), fit
         self.payload = self.digest = None
         self.consumed = False
 
@@ -372,7 +369,7 @@ def _validated_wall(record, request, digests, fit):
     if not fields <= record.keys() or extra not in (set(), {WALL_ZERO}, {WALL_ZERO_MEASURE}, {WALL_TEMPORAL}):
         return False
     request_fields({key: record[key] for key in WALL_REQUEST_FIELDS})
-    if canonical({key: record[key] for key in WALL_REQUEST_FIELDS}) != request:
+    if canonical_json({key: record[key] for key in WALL_REQUEST_FIELDS}) != request:
         return False
     work, leaves, met = record['work_units'], record['leaves'], record['met']
     if (type(work) is not int or work < 0 or not fit.admits_work(work)
@@ -382,7 +379,7 @@ def _validated_wall(record, request, digests, fit):
     if (record['moment_polynomials'] != [] or record['moment_bounds'] != []
             or record['moment_time_measure'] != 'integrated over the complete physical interval'
             or not _wall_scalar(record['max_width_m3'])
-            or canonical(record['max_widths']) != canonical([record['max_width_m3']]*2)):
+            or canonical_json(record['max_widths']) != canonical_json([record['max_width_m3']]*2)):
         return False
     physical = record['physical_cell_id']
     if type(physical) is not str or len(physical) != 64 or any(c not in '0123456789abcdef' for c in physical):
@@ -437,7 +434,7 @@ def _wall_zero_certificate(certificate, face):
     if method != 'whole-interval-ray-cone-zero-area' or certificate.keys() != WALL_CONE_FIELDS:
         return False
     if (certificate['scope'] != 'fixed-face intersection lies in at most one ray throughout the complete time interval'
-            or canonical(certificate['face_normal']) != canonical(face['outward_normal'])):
+            or canonical_json(certificate['face_normal']) != canonical_json(face['outward_normal'])):
         return False
     literals = certificate['triangle_literals']
     if (type(literals) is not list or len(literals) != 3
@@ -462,7 +459,7 @@ def _validated_volume(record, request, fit):
         return False
     carried = {key: record[key] for key in VOLUME_REQUEST_FIELDS}
     request_fields(carried)
-    if canonical(carried) != request:
+    if canonical_json(carried) != request:
         return False
     work, leaves = record['work_units'], record['leaves']
     if (type(work) is not int or work < 0 or not fit.admits_work(work)
@@ -543,7 +540,7 @@ def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interfac
         if type(digest) is not str or hashlib.sha256(encoded).hexdigest() != digest:
             return False
         record = json.loads(encoded)
-        if type(record) is not dict or (not _owned_interface and canonical(record) != encoded):
+        if type(record) is not dict or (not _owned_interface and canonical_json(record) != encoded):
             return False
         if record.get('schema') == VOLUME_SCHEMA and 'relative_error' in record:
             # initpar r1 (T/ck/transforms/initpar_r1.py)
@@ -554,7 +551,7 @@ def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interfac
         if record.get('kind') == WALL_KIND:
             return _validated_wall(record, request, digests, fit)
         facts = _interface_facts(record)
-        return (facts is not None and (_owned_interface or canonical(
+        return (facts is not None and (_owned_interface or canonical_json(
             {key: record[key] for key in REQUEST_FIELDS}) == request)
             and _admits_interface(facts, digests, fit))
     except (ValueError, TypeError, OverflowError, RecursionError):
@@ -596,7 +593,7 @@ class MeasureHint(Hint):
                 or any(type(value) is not str or len(value) != 64 for value in digests.values())):
             raise ValueError('exact parent certificate source digests for this request kind are required')
         # Caller-owned snapshots; built before any lock is taken.
-        wanted, bound = canonical(request), canonical(binding)
+        wanted, bound = canonical_json(request), canonical_json(binding)
         with room.condition:
             if (room.state != 'ACTIVE' or self.consumed or self.slot is None or self.payload is None
                     or self.slot.budget is not budget or fit is not self.fit

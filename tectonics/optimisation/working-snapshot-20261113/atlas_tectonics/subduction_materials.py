@@ -8,7 +8,6 @@ complete component masses follow the same homogeneous donor fraction.
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict, field
-import hashlib
 import json
 import math
 import platform
@@ -16,22 +15,17 @@ import platform
 import numpy as np
 
 from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
 from .materials import MaterialCohort, _catalogue, _name, _json, _immutable_bytes
-from .regional import _cancelled
 from .resources import WorkBudget, DEFAULT_BUDGET, select_budget
+from .resources import check_event
+from .resources import record_id
 from .timebase import interval_end
 
 
 DESTINATIONS = ('accretion', 'deep-storage', 'export')
 SECTION_POLICY = 'translation-invariant-along-strike'
-_ROUND = float(128*np.finfo(float).eps)
 _DEFAULT_BUDGET = WorkBudget(128*1024**2, parent=DEFAULT_BUDGET)
-
-
-def _id(record, *payload):
-    digest = hashlib.sha256(_json(record))
-    for value in payload: digest.update(b'\0'); digest.update(value)
-    return digest.hexdigest()
 
 
 def _sum(values):
@@ -76,7 +70,7 @@ class SubductionInventory:
     def __init__(self, cohorts, layer_kinds, mass_kg, component_ids, component_mass_kg,
                  enthalpy_j, *, time_s, epoch_id, source_id, enthalpy_source,
                  budget=None, cancel=None):
-        _cancelled(cancel); now = scalar(time_s, 'inventory time')
+        check_event(cancel, 'regional transport cancelled; no candidate published'); now = scalar(time_s, 'inventory time')
         if type(cohorts) is not tuple or not 1 <= len(cohorts) <= 64:
             raise TectonicsError('one to 64 explicit material cohorts required')
         _catalogue(cohorts, now); count = len(cohorts)
@@ -110,10 +104,10 @@ class SubductionInventory:
             payload = _immutable_bytes(mass), _immutable_bytes(components), _immutable_bytes(heat), _json(record)
             values = dict(cohorts=cohorts, layer_kinds=layer_kinds, component_ids=component_ids,
                 time_s=now, epoch_id=epoch_id, source_id=source_id, enthalpy_source=enthalpy_source,
-                inventory_id=_id(record, *payload), _mass=payload[0], _components=payload[1],
+                inventory_id=record_id(record, *payload, encode=_json), _mass=payload[0], _components=payload[1],
                 _heat=payload[2], _record=payload[3])
             for name, value in values.items(): object.__setattr__(self, name, value)
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
 
     @property
     def mass_kg(self): return np.frombuffer(self._mass, np.float64)
@@ -193,7 +187,7 @@ class PreparedSubductionRetirement:
                  frame_id, section_policy, destination_kinds, destination_ids,
                  destination_fractions, flux_source, partition_source, source_id,
                  budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(inventory) is not SubductionInventory: raise TectonicsError('explicit SubductionInventory required')
         c, k = len(inventory.cohorts), len(inventory.component_ids)
         if (input_shape(density_kg_m3) != (c,) or input_shape(thickness_m) != (c,)
@@ -266,9 +260,9 @@ class PreparedSubductionRetirement:
             self.cohort_exhaustion_durations_s = times
             self._flows = _immutable_bytes(np.stack((vn, per_strike, rate, along)))
             self._tangent = _immutable_bytes(tangent); self._partition = _immutable_bytes(partition)
-            self._record = _json(record); self.plan_id = _id(record, self._flows, self._partition, self._tangent)
+            self._record = _json(record); self.plan_id = record_id(record, self._flows, self._partition, self._tangent, encode=_json)
             self._budget = resource; self._lease = lease; self._closed = False
-            _cancelled(cancel); self._sealed = True
+            check_event(cancel, 'regional transport cancelled; no candidate published'); self._sealed = True
         except BaseException:
             lease.__exit__(None, None, None); raise
 
@@ -290,7 +284,7 @@ class PreparedSubductionRetirement:
     def evaluate(self, duration_s, *, end_time_s=None, cancel=None):
         """A declared ``end_time_s`` (duration exactly end-start) is the published end."""
         if self._closed: raise TectonicsError('retirement preparation is closed')
-        _cancelled(cancel); duration = scalar(duration_s, 'retirement duration', nonnegative=True)
+        check_event(cancel, 'regional transport cancelled; no candidate published'); duration = scalar(duration_s, 'retirement duration', nonnegative=True)
         if self.exhaustion_duration_s is not None and duration > self.exhaustion_duration_s:
             raise RetirementExhaustionError(self.exhaustion_duration_s, self.exhausted_cohort_ids)
         source = self.inventory; c, k = len(source.cohorts), len(source.component_ids)
@@ -329,7 +323,7 @@ class PreparedSubductionRetirement:
                 raise TectonicsError('retirement mass/component/enthalpy allocation exceeds numerical range')
             residual = np.empty_like(initial)
             for i in range(c):
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 for j in range(k+2): residual[i, j] = _balance(initial[i, j], remaining[i, j], allocated[:, i, j])
                 _balance(retired[i, 0], 0., retired[i, 2:])
                 for destination in allocated[:, i]: _balance(destination[0], 0., destination[2:])
@@ -346,9 +340,9 @@ class PreparedSubductionRetirement:
                 meaning='single-initial-inventory-branch-not-cumulative-spending',
                 enthalpy_source=source.enthalpy_source)
             payload = _immutable_bytes(retired), _immutable_bytes(allocated), _immutable_bytes(residual), _json(record)
-            result = SubductionRetirementResult(self.plan_id, _id(record, *payload), duration, remainder,
+            result = SubductionRetirementResult(self.plan_id, record_id(record, *payload, encode=_json), duration, remainder,
                                                 self.destination_ids, *payload)
-            _cancelled(cancel); return result
+            check_event(cancel, 'regional transport cancelled; no candidate published'); return result
 
     def close(self):
         if not self._closed:

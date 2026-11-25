@@ -12,14 +12,17 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen
+from ._validation import within_budget
 from .materials import _name, _json, _immutable_bytes, _account
 from .parameters import PlateCoolingParameters
 from .constitutive import BoussinesqMaterial
 from .thermal_support import ThermalSupportParameters, _plate_material
-from .spreading import PreparedRidgeSpreading, SpreadingState, _product, _within_budget
+from .spreading import _within_budget
+from .spreading import PreparedRidgeSpreading, SpreadingState, _product
 from .spreading_integrals import spreading_thermal_means
-from .regional import _cancelled
 from .resources import select_budget
+from .regional import _cancelled
+from .resources import check_event
 
 
 HEAT_RELATIVE_TOLERANCE = 1.e-8
@@ -207,7 +210,7 @@ class PreparedSpreadingCooling:
     def __init__(self, spreading, parameters, *, budget=None, cancel=None):
         if type(spreading) is not PreparedRidgeSpreading or type(parameters) is not OceanCoolingParameters:
             raise TectonicsError('typed spreading plan and ocean cooling parameters required')
-        _cancelled(cancel); spreading._check(spreading.initial); spreading._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published'); spreading._check(spreading.initial); spreading._context.verify()
         if len(parameters.phase_materials) != len(spreading.phases):
             raise TectonicsError('exactly one ordered thermal material per spreading phase required')
         for phase, material in zip(spreading.phases, parameters.phase_materials):
@@ -218,7 +221,7 @@ class PreparedSpreadingCooling:
         if depths[-1] != parameters.plate.thickness_m or np.any(np.diff(depths) <= 0):
             raise TectonicsError('nonoverlapping thermal phases must exactly cover the selected plate')
         resource = spreading._budget if budget is None else select_budget(budget)
-        _within_budget(resource, spreading._budget)
+        within_budget(resource, spreading._budget, 'call budget must descend from the prepared run budget')
         n, p = spreading.grid.cells, len(spreading.phases)
         lease = resource.reserve((16*(p+5)+48)*n+16384, category='spreading-thermal-prepared')
         lease.__enter__()
@@ -230,7 +233,7 @@ class PreparedSpreadingCooling:
                     _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(spreading.initial, None, resource, cancel))
-            spreading._context.verify(); _cancelled(cancel)
+            spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             raise
@@ -290,7 +293,7 @@ class PreparedSpreadingCooling:
                 heat = (0., parameters.birth_enthalpy_stock_j, 0., parameters.basal_heat_stock_j,
                         0., 0., 0., 0., 0., 0.)
                 water = (0., parameters.water_stock_m3, 0., 0., 0., 0.)
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 return _state(self, motion, parent, _export_history(source, elapsed, parameters),
                               np.zeros((n, p+5)), np.zeros((n, p+5)), np.zeros(n),
                               np.zeros(n, dtype=np.bool_), heat, water)
@@ -359,7 +362,7 @@ class PreparedSpreadingCooling:
             heat_accounts = (birth, birth_remaining, basal, basal_remaining, surface, represented,
                              *export_energy, residual, relative)
             water_accounts = (drawn, water_remaining, resident_water, *export_water, water_residual)
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return _state(self, motion, parent, exports, cell, centre, fraction, centre_valid,
                           heat_accounts, water_accounts)
 

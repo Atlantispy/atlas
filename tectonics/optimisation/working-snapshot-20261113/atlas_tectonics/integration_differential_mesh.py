@@ -23,23 +23,11 @@ from .integration_spatial_ale import SpatialALEBounds
 from .integration_regional_inventory import _width
 from .integration_poly_tiles import clipped_tiles
 from .resources import WorkBudget
+from .integration_exterior_mesh import _stored_deviation as _stored_deviation
 
 # Pose width (c): the stored deviation sum is an outward bound with a short dyadic
 # denominator, at most 2**-DEVIATION_STORED_BITS above the exact sum relative.
 DEVIATION_STORED_BITS = 64
-
-
-def _stored_deviation(total, width):
-    """Outward short bound of an exact nonnegative sum already checked against width."""
-    if type(total) is not Q or type(width) is not Q or not 0 <= total <= width:
-        raise V.VolumeError('checked exact deviation sum required')
-    if total == 0:
-        return total
-    e = total.numerator.bit_length()-total.denominator.bit_length()
-    if Q(2)**e > total:
-        e -= 1
-    quantum = Q(2)**(e-DEVIATION_STORED_BITS)
-    return min(-((-total)//quantum)*quantum, width)
 
 
 def _reservoir_thermal_boundaries(faces, cells, native_boxes, basal, budget, arena):

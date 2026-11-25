@@ -60,15 +60,19 @@ class CallerInventory:
     result_bytes: int
     justification: str
 
+    _count_refusal = 'Explicit positive input, Decimal/Python work and result inventories required'
+    _justification_refusal = 'Caller inventory justification required'
+    _overflow_refusal = 'Caller inventory exceeds addressable storage'
+
     def total(self):
         counts = (self.input_bytes, self.work_bytes, self.result_bytes)
         if any(type(value) is not int or value <= 0 for value in counts):
-            raise ValueError('Explicit positive input, Decimal/Python work and result inventories required')
+            raise ValueError(self._count_refusal)
         if type(self.justification) is not str or not self.justification.strip():
-            raise ValueError('Caller inventory justification required')
+            raise ValueError(self._justification_refusal)
         value = sum(counts)
         if value > sys.maxsize:
-            raise OverflowError('Caller inventory exceeds addressable storage')
+            raise OverflowError(self._overflow_refusal)
         return value
 
 

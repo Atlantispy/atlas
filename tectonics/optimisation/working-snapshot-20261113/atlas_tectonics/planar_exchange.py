@@ -20,16 +20,18 @@ from shapely.errors import GEOSException
 from shapely.geometry import MultiPolygon
 
 from ._validation import TectonicsError, input_shape, read_array
+from ._validation import _PLANAR_MAP_ERROR as MAP_ERROR
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
 from .geometry import (PlanarGeometry, GeometryError, DEFAULT_GEOMETRY_LIMITS,
                        _label, _json, _check_cancel, _overlay_budget, _validate_shape)
-from .planar_projection import PreparedPlanarProjection, _identity, _sum
+from .planar_projection import PreparedPlanarProjection, _sum
+from .geometry import _json as _projection_json
 from .resources import WorkBudget, DEFAULT_BUDGET, select_budget
+from .resources import record_id
 
 
 MAX_REGIONS = 64
 MAX_PIECES = 4096
-MAP_ERROR = 1e-10
-_ROUND = float(128*np.finfo(float).eps)
 _DEFAULT_BUDGET = WorkBudget(128*1024**2, parent=DEFAULT_BUDGET)
 
 
@@ -322,7 +324,7 @@ def planar_exchange(start_polygons, end_polygons, deformation_between, extensive
             record = dict(operation='atlas.w08-planar-exchange.v2', source=source_id,
                 frame=frame, parcel_ids=parcel_ids, region_ids=region_ids, exterior_id=exterior_id,
                 account_order=(*region_ids, exterior_id), initial_projection=initial_plan_id,
-                final_projection=final_plan_id, piece_projection=_identity(piece_projections),
+                final_projection=final_plan_id, piece_projection=record_id(piece_projections, encode=_projection_json),
                 transport='donor-material-coordinates-with-exact-endpoint-containment',
                 donor_fraction_max_residuals=donor_fraction_residuals,
                 generated_pieces=len(pieces), account_residuals=residual.tolist(),
@@ -330,7 +332,7 @@ def planar_exchange(start_polygons, end_polygons, deformation_between, extensive
                 meaning='endpoint-material-origin-to-destination-not-intermediate-crossing-count',
                 exterior='retained-exterior-material-with-explicit-return')
             payload = transfer.tobytes(), initial_stock.tobytes(), final_stock.tobytes(), residual.tobytes(), _json(record)
-            result = ExchangeResult(_identity(record, deformation.tobytes(), stock.tobytes(), *payload),
+            result = ExchangeResult(record_id(record, deformation.tobytes(), stock.tobytes(), *payload, encode=_projection_json),
                                     fields, size, *payload)
         _check_cancel(cancel)
         return result

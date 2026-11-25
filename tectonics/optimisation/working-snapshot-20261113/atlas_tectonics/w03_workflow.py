@@ -33,6 +33,7 @@ from .precursor_sampling import _profile_mean, _temperature, PrecursorSamplingLi
 from .regional_workflow import (RegionalWorkflowState, save_regional_workflow,
                                 load_regional_workflow)
 from .resources import select_budget
+from .resources import json_sha256
 from .reuse import (ExecutionContext, ReuseController, cached_plate_temperature, content_record,
                     cached_plate_thermal_response)
 
@@ -53,7 +54,7 @@ class W03ExecutionContext:
 
     @property
     def identity(self):
-        return _id(dict(reference=self.reference.identity, scipy=self.scipy.identity))
+        return json_sha256(dict(reference=self.reference.identity, scipy=self.scipy.identity), _json)
 
     def verify(self):
         self.reference.verify()

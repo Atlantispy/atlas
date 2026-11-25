@@ -19,14 +19,10 @@ import stat
 import uuid
 
 from atlas_tectonics._private.compact_contracts import CATALOG_BYTES, ContractError, SegmentRef, _sha, _uint
+from atlas_tectonics.resources import canonical_json as canonical
 
 CATALOG_SCHEMA = 'atlas.interval-catalog.v1'
 _BASENAME = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,199}\.sqlite\Z')
-
-
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'),
-                      ensure_ascii=True, allow_nan=False).encode('ascii')
 
 
 def digest(raw):
@@ -279,15 +275,24 @@ def flush_file(file):
 def durable_replace(source, target):
     safe_path(source, existing=True)
     safe_path(target)
+    _durable_move(source, target)
+
+
+def _durable_move(source, target, *, overwrite=True):
     if os.name == 'nt':
         kernel = ctypes.WinDLL('kernel32', use_last_error=True)
         move = kernel.MoveFileExW
         move.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
         move.restype = ctypes.c_int
-        if not move(str(source), str(target), 0x1 | 0x8):
+        if not move(str(source), str(target), 0x9 if overwrite else 0x8):
             raise ctypes.WinError(ctypes.get_last_error())
     else:
-        os.replace(source, target)
+        if overwrite:
+            os.replace(source, target)
+        else:
+            if os.path.lexists(target):
+                raise FileExistsError(target)
+            os.rename(source, target)
         directory = os.open(Path(target).parent, os.O_RDONLY)
         try:
             os.fsync(directory)

@@ -67,6 +67,7 @@ from .integration_parallel_binding import (BATCH_LIMIT, batch_worker_complete, c
     interpreter_seed)
 from .integration_parallel_owner import nodes_for
 from .integration_parallel_results import SlotLease, raw_capacity
+from .resources import is_sha256 as _digest
 
 SCHEMA = 'atlas.private.pressure-wall.r1'
 INPUT_SCHEMA = 'atlas.private.pressure-wall-inputs.r1'
@@ -103,10 +104,6 @@ def parallel(policy, context, *, test=None):
 def reports():
     """The last few wall decisions, newest last: execution reports, never issued state."""
     return [json.loads(json.dumps(report, default=str)) for report in _REPORTS]
-
-
-def _digest(value):
-    return type(value) is str and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
 
 
 def check_request(request):

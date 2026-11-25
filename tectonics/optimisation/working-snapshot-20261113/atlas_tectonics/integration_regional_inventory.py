@@ -20,7 +20,9 @@ from .regional_execution import RegionalMechanicalSnapshot
 from .regional_execution3d import SIDES
 from .regional_transport3d import FiniteBoundaryStock3D
 from .resources import WorkBudget, select_budget
+from .resources import canonical_json
 from .reuse import content_record
+from .integration_volume import _encoded as _encoded
 
 
 TRACERS = ('accumulated_strain_ii', 'damage', 'source_kappa')
@@ -32,10 +34,6 @@ class InventoryRefused(TectonicsError):
     """Unfunded, overlapping, stale or exhausted regional boundary inventory."""
 
 
-def _json(row):
-    return json.dumps(row, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
 def _q(value):
     if type(value) not in (list, tuple) or len(value) != 2 or any(type(v) is not str for v in value):
         raise InventoryRefused('an exact rational is a numerator/denominator string pair')
@@ -43,10 +41,6 @@ def _q(value):
         return Q(*(int(v, 16) if v.startswith(('0x', '-0x')) else int(v) for v in value))
     except (ValueError, ZeroDivisionError) as exc:
         raise InventoryRefused('invalid exact inventory rational') from exc
-
-
-def _encoded(value):
-    return [hex(value.numerator), hex(value.denominator)]
 
 
 def _width(value):
@@ -133,10 +127,10 @@ class ComponentRegistry:
                         any(type(row['profile'][n]) is not dict for n in ('material', 'rheology'))):
                     raise InventoryRefused('actual thermophysical and rheology profile records required')
                 try:
-                    plain = json.loads(_json(row))
+                    plain = json.loads(canonical_json(row))
                 except (TypeError, ValueError) as exc:
                     raise InventoryRefused('component profile must be finite canonical data') from exc
-                given.append(dict(component_id=hashlib.sha256(_json(plain)).hexdigest(), **plain))
+                given.append(dict(component_id=hashlib.sha256(canonical_json(plain)).hexdigest(), **plain))
             if not sources or tuple((r['lineage']['patch_id'], r['lineage']['sublayer'])
                     for r in given if r['lineage']['kind'] == 'initial-patch-layer') != tuple(sorted(sources)):
                 raise InventoryRefused('actual source prefix must preserve the sorted patch/layer order')
@@ -150,7 +144,7 @@ class ComponentRegistry:
                 record['max_components'] = max_components
             if initial_source_plate_ids:
                 record['initial_source_plate_ids'] = list(initial_source_plate_ids)
-            encoded = _json(record)
+            encoded = canonical_json(record)
             object.__setattr__(self, '_record', encoded)
             object.__setattr__(self, '_budget', budget)
             lease = budget.reserve(8192+len(encoded), category='regional-component-registry-retained')
@@ -238,7 +232,7 @@ def birth_source_id(supply, column):
     from .integration_transfer import Supply
     if type(supply) is not Supply or type(column) is not M.BirthColumn:
         raise InventoryRefused('typed actual Supply and BirthColumn required')
-    return hashlib.sha256(_json(content_record(dict(supply=supply.record(), birth_column=column.record())))).hexdigest()
+    return hashlib.sha256(canonical_json(content_record(dict(supply=supply.record(), birth_column=column.record())))).hexdigest()
 
 
 def finite_birth_stocks(registry, supply, column, *, native, sphere, finite_area_m2,
@@ -355,20 +349,20 @@ def _finite_birth_stocks(registry, supply, column, *, native, source_context, fi
                 admission_volume_projection_m3=_encoded(declared_v-volume),
                 account_rule='declared source = physical finite stock + separate once-only admission projection',
                 scalar_heat_roundoff_owner=(j == 0))
-            ident = hashlib.sha256(_json(dict(source=supply.source, sublayer=j))).hexdigest()
+            ident = hashlib.sha256(canonical_json(dict(source=supply.source, sublayer=j))).hexdigest()
             result.append(dict(stock_id=ident, kind='source', lineage=lineage,
                                volume_m3=_encoded(volume), exact={k: _encoded(v) for k, v in fields.items()}))
         return result
 
 
 def _finite_export_rows(sink, context, names):
-    source_id = hashlib.sha256(_json(content_record(dict(sink=sink.record(), source_context=context)))).hexdigest()
+    source_id = hashlib.sha256(canonical_json(content_record(dict(sink=sink.record(), source_context=context)))).hexdigest()
     result = []
     for destination, fraction, stock in sink.destinations:
         lineage = dict(kind='declared-finite-trench-export', source_id=source_id,
             source_context=context, sink=sink.record(), destination=destination,
             destination_fraction=_encoded(Q(fraction)), declared_stock_node=stock)
-        identity = hashlib.sha256(_json(content_record(dict(source_id=source_id, destination=destination, stock=stock)))).hexdigest()
+        identity = hashlib.sha256(canonical_json(content_record(dict(source_id=source_id, destination=destination, stock=stock)))).hexdigest()
         result.append(dict(stock_id=identity, kind='sink', lineage=lineage,
             volume_m3=_encoded(Q(0)), exact={k: _encoded(Q(0)) for k in names}))
     return result
@@ -599,7 +593,7 @@ class RegionalBoundaryFunding:
         else:
             components = {(v['patch_id'], v['sublayer']): i for i, v in enumerate(layout['components'])}
         patches = {p.patch_id: p for p in U.required(sphere.material).patches}
-        remaining = {(r['patch_id'], r['sublayer']): json.loads(_json(r)) for r in remainder}
+        remaining = {(r['patch_id'], r['sublayer']): json.loads(canonical_json(r)) for r in remainder}
         for row in remaining.values():
             row['stocks'] = {k: _encoded(_q(q)) for k, q in row['stocks'].items()}
             row['geometry_volume_enclosure_m3'] = [_encoded(_q(q)) for q in row['geometry_volume_enclosure_m3']]
@@ -679,9 +673,9 @@ class RegionalBoundaryFunding:
             model='finite homogeneous boundary finite volumes; proportional withdrawal is the uniform FV law, never a refill',
             geometry_scope='initial physical halo support; depleted reservoirs are FV inventories, not certified moving swept-tube remainders',
             global_scope='frozen reference source; no active global exterior draw, no reinsertion, no shared kinematic clock')
-        self._record = _json(record)
+        self._record = canonical_json(record)
         content = content_record(record)  # the stored record keeps every field; the identifier is content-only
-        self.funding_id = hashlib.sha256(self._record if content is record else _json(content)).hexdigest()
+        self.funding_id = hashlib.sha256(self._record if content is record else canonical_json(content)).hexdigest()
         self._keys = tuple(f'{side}:{key}' for side in SIDES for key in self._fields)
         self._array_shapes = {f'{side}:{key}': a.shape for side, values in arrays.items() for key, a in values.items()}
         initial_arrays = {f'remaining:{side}:{key}': a for side, values in arrays.items() for key, a in values.items()}

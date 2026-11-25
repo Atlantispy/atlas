@@ -9,6 +9,7 @@ from time import perf_counter
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
+from ._validation import within_budget
 from .constitutive import _json, _cancel
 from .geological_records import GeologySource
 from .regional_execution import (RegionalMechanicalSnapshot, RegionalMechanicsScales,
@@ -20,9 +21,10 @@ from .free_surface import PreparedFreeSurface2D
 from .surface_geometry import SurfaceProjection
 from .timebase import interval_partition
 from .resources import WorkBudget, select_budget
+from .resources import _budget_statistics
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
-from .spreading import _within_budget
 from .stokes_execution import _native_lease
 
 
@@ -116,7 +118,7 @@ class PreparedW07Workflow:
             raise TectonicsError('explicit regional boundary motion required')
         self._owner=threading.get_ident();self._active=False;self._closed=False
         self._resource=WorkBudget(128*1024**2,parent=select_budget(budget))
-        if store is not None:_within_budget(self._resource,store._budget)
+        if store is not None:within_budget(self._resource,store._budget, 'call budget must descend from the prepared run budget')
         self.geology,self.store,self.route=geology,store,route
         self.times,self.steps=times,steps
         self._current=self._current_guard=None
@@ -128,7 +130,7 @@ class PreparedW07Workflow:
             category='w07-workflow-prepared')
         self._guard.__enter__()
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context=ExecutionContext('scipy');self.execution_id=self._context.identity
             d=geology.descriptor();self._geology_descriptor=d
             if d['execution_backend']==self._context.backend:
@@ -252,7 +254,7 @@ class PreparedW07Workflow:
 
     def _check(self,cancel=None):
         if self._closed or threading.get_ident()!=self._owner:raise TectonicsError('closed or wrong-thread W07 workflow')
-        _cancel(cancel);self._context.verify();self.geology.verify(cancel=cancel,context=self._geology_context)
+        check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify();self.geology.verify(cancel=cancel,context=self._geology_context)
         if _hash(content_record(self._definition))!=self.plan_id:raise TectonicsError('W07 source/policy changed; prepare a new workflow')
 
     @contextmanager
@@ -277,7 +279,7 @@ class PreparedW07Workflow:
 
     def checkpoint_id(self,index):return _hash(self._invocation(index))
     def descriptor(self):return json.loads(_json(self._definition))
-    def statistics(self):return dict(self._stats,budget=self._resource.statistics())
+    statistics = _budget_statistics
 
     def _state(self,T,time,steps,parent):
         return RegionalMechanicalSnapshot(dict(schema='atlas.w07-thermal-state.v1',geology=self.geology.binding_id,
@@ -419,7 +421,7 @@ class PreparedW07Workflow:
     def _scan(self,end,cancel):
         latest,meta,parent,gap=-1,None,None,False
         for i in range(end+1):
-            _cancel(cancel);candidate=self.store.metadata(self.checkpoint_id(i))
+            check_event_or_callable(cancel, 'constitutive work cancelled');candidate=self.store.metadata(self.checkpoint_id(i))
             if candidate is None:gap=True;continue
             if gap:raise TectonicsError('W07 requested-output checkpoint history has a gap')
             self._header(i,candidate,parent)

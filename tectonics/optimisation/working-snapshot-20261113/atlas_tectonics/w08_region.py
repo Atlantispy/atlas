@@ -13,9 +13,10 @@ from shapely.strtree import STRtree
 
 from ._validation import TectonicsError, input_shape, read_array, scalar, _replay_fsum
 from .geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS
-from .magmatic_emplacement import (_allocate, _budget, _cancel, _identity_bytes,
+from .magmatic_emplacement import (_allocate, _budget, _identity_bytes,
     _ids, _json, _quotient, _sum, _text, _text_allowance)
 from .planar_projection import _disjoint
+from .resources import check_event
 
 
 _METHOD = 'atlas.w08-region.v1'
@@ -42,7 +43,7 @@ def _footprints(polygons, *, count=None, frame_id=None):
 
 def _validate_footprints(polygons, budget, cancel):
     # each parcel was validated when made and _footprints checked the default limits.
-    _cancel(cancel)
+    check_event(cancel, 'magmatic emplacement cancelled')
     shapes = tuple(g._geom for g in polygons)
     _disjoint(shapes, STRtree(shapes), budget, cancel, 'regional parcel')
 
@@ -230,7 +231,7 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
 
 
 def _regional_view(region, inventory, polygons, reference_inventory, reference_polygons, budget, cancel, *, emit=True):
-    _cancel(cancel)
+    check_event(cancel, 'magmatic emplacement cancelled')
     if type(region) is not W08Region:
         raise TectonicsError('typed W08 regional placement required')
     n,p = len(region.node_ids),len(region.parcel_ids)
@@ -267,7 +268,7 @@ def _regional_view(region, inventory, polygons, reference_inventory, reference_p
         try:
             with np.errstate(over='raise',invalid='raise',divide='raise',under='ignore'):
                 for row,i in enumerate(indices):
-                    _cancel(cancel)
+                    check_event(cancel, 'magmatic emplacement cancelled')
                     row_weights = weights[row]
                     anchor = int(np.argmax(row_weights))
                     mass[row] = _allocate(inventory.mass_kg[i],row_weights,anchor)
@@ -289,7 +290,7 @@ def _regional_view(region, inventory, polygons, reference_inventory, reference_p
                 for mode,target in (('extrusive',1),('underplating',2)):
                     for parcel in range(p):
                         if parcel % 32 == 0:
-                            _cancel(cancel)
+                            check_event(cancel, 'magmatic emplacement cancelled')
                         changes[target,parcel] = _replay_fsum(lambda: (
                             float(additions[row,parcel])
                             for row,placement in enumerate(region.placement_modes) if placement == mode))
@@ -304,7 +305,7 @@ def _regional_view(region, inventory, polygons, reference_inventory, reference_p
         if not all(np.isfinite(a).all() for a in (stocks,components,changes)):
             raise TectonicsError('nonfinite regional diagnostic result')
         if not emit:
-            _cancel(cancel)
+            check_event(cancel, 'magmatic emplacement cancelled')
             return
         record = dict(method=_METHOD, region_id=region.region_id, source_id=region.source_id,
             epoch_id=region.epoch_id, datum_id=region.datum_id, frame_id=region.frame_id,
@@ -325,7 +326,7 @@ def _regional_view(region, inventory, polygons, reference_inventory, reference_p
             structural_owner='diagnostic-only-no-support-solution',
             additions='mass-delta-only-at-fixed-receiving-density-and-current-area')
         buffers = stocks.tobytes(),components.tobytes(),changes.tobytes()
-        _cancel(cancel)
+        check_event(cancel, 'magmatic emplacement cancelled')
         encoded = _json(record)
         return W08RegionalView(region.region_id,_identity_bytes(encoded,*buffers),region.node_ids,
             region.parcel_ids,inventory.component_ids,inventory.time_s,*buffers,encoded)

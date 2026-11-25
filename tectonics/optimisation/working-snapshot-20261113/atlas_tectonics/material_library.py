@@ -25,6 +25,8 @@ import numpy as np
 
 from ._validation import TectonicsError, scalar
 from .resources import select_budget
+from .resources import _immutable_deepcopy
+from .resources import check_event
 from .geological_records import MaterialDefinition, GeologySource, GeologyError
 from .earth_material_data import LIBRARY_VERSION, SOURCES, ROWS, SEDIMENT_RECIPES
 
@@ -103,8 +105,7 @@ def _sha_identity(value):
 
 def _cancel(cancel):
     if cancel is not None:
-        from .regional import _cancelled
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
 
 
 @dataclass(frozen=True, slots=True)
@@ -342,7 +343,7 @@ class EarthMaterialLibrary:
     @property
     def nbytes(self):return len(self._payload)
     def __reduce__(self):return (EarthMaterialLibrary,(self.version,self.profiles,self.sources,self.recipes))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
     def coverage(self, *, reference_temperature_k=293.15):
         """Reference-compatible coverage, not hot/high-pressure validation.
@@ -609,7 +610,7 @@ class PreparedMaterialTable:
     def __reduce__(self):
         return (_restore_table, (self.library_id,self.material_ids,self.properties,
             self.reference_temperature_k,self._values,self._known,self.table_id))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_table(library_id,ids,properties,t,raw,mask,expected):

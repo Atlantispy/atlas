@@ -13,13 +13,18 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, frozen, scalar
+from ._validation import within_budget
 from .materials import _account, _immutable_bytes, _json, _name, _ROUNDOFF
 from .mesh import ColumnGrid1D
-from .regional import _cancelled
 from .resources import select_budget
+from .regional import _cancelled
+from .resources import check_event
 from .reuse import ExecutionContext, content_record
+from .spreading import _within_budget
 from .spreading import (MAX_SPREADING_CELLS, MAX_SPREADING_INTERVALS,
-                        MAX_SPREADING_PHASES, SpreadingPhase, _product, _within_budget)
+                        MAX_SPREADING_PHASES, SpreadingPhase, _product)
+from .spreading import SpreadingState
+from .spreading import PreparedRidgeSpreading
 
 
 MAX_HISTORY_EVENTS = 256
@@ -170,10 +175,7 @@ class HistorySpreadingState:
     def centre_valid(self):
         return np.frombuffer(self._valid, dtype=np.bool_)
 
-    @property
-    def accounts_kg(self):
-        """Phase x (created, remaining, resident, left export, right export, residual)."""
-        return np.frombuffer(self._accounts, dtype=np.float64).reshape(self._phases, 6)
+    accounts_kg = SpreadingState.accounts_kg
 
     @property
     def nbytes(self):
@@ -246,7 +248,7 @@ def _project(grid, strips, elapsed, ridge, cancel):
     valid = np.zeros(grid.cells, dtype=np.bool_)
     occupied = np.zeros(grid.cells)
     for index, strip in enumerate(strips):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         start = max(0, int(np.searchsorted(edges, strip.left_m, side='right'))-1)
         stop = min(grid.cells, int(np.searchsorted(edges, strip.right_m, side='left')))
         if stop <= start:
@@ -295,7 +297,7 @@ def _exports(events, durations, elapsed, bounds, crossing_strips, cancel):
             rate = abs(slope); oldest_position = born.ridge_position_m
             exported_until = born.offset_s
             for j in range(i, len(events)):
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 motion = events[j]; duration = durations[j]
                 if duration == 0:
                     continue
@@ -351,7 +353,7 @@ class PreparedSpreadingHistory:
 
     def __init__(self, grid, events, phases, *, time_s, epoch_id, width_m, source_id,
                  context=None, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         origin = scalar(time_s, 'history onset time'); _event_catalogue(grid, events, origin)
         if (type(phases) is not tuple or not 1 <= len(phases) <= MAX_SPREADING_PHASES
                 or any(type(p) is not SpreadingPhase for p in phases)):
@@ -383,7 +385,7 @@ class PreparedSpreadingHistory:
                     _owns_context=owned, _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(origin, 0., 0, None, resource, cancel))
-            ctx.verify(); _cancelled(cancel)
+            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -441,7 +443,7 @@ class PreparedSpreadingHistory:
                 velocity_name = side+'_velocity_m_s'; plate_name = side+'_plate_id'
                 suffix = 0.
                 for i in range(count-1, -1, -1):
-                    _cancelled(cancel)
+                    check_event(cancel, 'regional transport cancelled; no candidate published')
                     event = events[i]; duration = durations[i]
                     later = suffix
                     suffix = scalar(math.fsum((suffix, getattr(event, velocity_name)*duration)),
@@ -497,7 +499,7 @@ class PreparedSpreadingHistory:
                     _valid=valid.tobytes(), _accounts=_immutable_bytes(accounts)).items():
                 object.__setattr__(result, key, value)
             object.__setattr__(result, 'state_id', _state_identity(result))
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return result
 
     def advance(self, state, *, time_s, budget=None, cancel=None):
@@ -522,7 +524,7 @@ class PreparedSpreadingHistory:
     def phase_thickness(self, state, *, budget=None):
         self._check(state); self._context.verify()
         resource = self._budget if budget is None else select_budget(budget)
-        _within_budget(resource, self._budget)
+        within_budget(resource, self._budget, 'call budget must descend from the prepared run budget')
         with resource.reserve(32*len(self.phases)*self.grid.cells+64*self.grid.cells+8192,
                               category='spreading-history-projection'):
             occupied = np.zeros(self.grid.cells)
@@ -536,14 +538,7 @@ class PreparedSpreadingHistory:
         self._context.verify()
         return result
 
-    def close(self):
-        if not self._closed:
-            object.__setattr__(self, '_closed', True)
-            try:
-                if self._owns_context:
-                    self._context.close()
-            finally:
-                self._lease.__exit__(None, None, None)
+    close = PreparedRidgeSpreading.close
 
     def __enter__(self):
         self._check(self.initial)

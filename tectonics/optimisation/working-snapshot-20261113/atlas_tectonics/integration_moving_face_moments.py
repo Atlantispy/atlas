@@ -18,6 +18,7 @@ from itertools import combinations
 
 from .integration_q2_directed import _Intervals, _Branch
 from . import integration_volume as V, integration_volume_overlap as O
+from ._validation import _arithmetic_sub
 
 ORDER = 12
 POSE_LEVEL = 128
@@ -176,8 +177,7 @@ class _Jets:
     def neg(self, a):
         return tuple(self.I.neg(q) for q in a)
 
-    def sub(self, a, b):
-        return self.add(a, self.neg(b))
+    sub = _arithmetic_sub
 
     def scale(self, a, q):
         if not q:
@@ -717,11 +717,14 @@ def _clip(poly, line, identity, J, incidence=None, guard=None, classification=No
     if not poly:
         return ()
     def value(point, index):
-        if identity in point[2] or incidence is not None and incidence(identity, point[2]):
-            result = J.z
+        if identity in point[2]:
+            result, proved = J.z, None
         else:
-            result = J.add(J.add(J.mul(line[0], point[0]), J.mul(line[1], point[1])), line[2])
-        return guard(identity, index, len(poly), result, point[2]) if guard is not None else result
+            proved = incidence is not None and bool(incidence(identity, point[2]))
+            result = J.z if proved else J.add(J.add(J.mul(line[0], point[0]), J.mul(line[1], point[1])), line[2])
+        if guard is not None:
+            result = guard(identity, index, len(poly), result, point[2])
+        return result, proved
     def inside(v, index):
         if classification is not None:
             proved = classification(identity, index, len(poly))
@@ -738,9 +741,12 @@ def _clip(poly, line, identity, J, incidence=None, guard=None, classification=No
         proved = classification(identity, index, len(poly)) if classification is not None else None
         return proved is positive
     out = []
-    previous = poly[-1]; old = value(previous, len(poly)-1); old_inside = inside(old, len(poly)-1)
+    previous = poly[-1]
+    old, _ = value(previous, len(poly)-1)
+    old_inside = inside(old, len(poly)-1)
     for index, point in enumerate(poly):
-        current = value(point, index); current_inside = inside(current, index)
+        current, proved = value(point, index)
+        current_inside = inside(current, index)
         if current_inside != old_inside:
             # An exactly on-cut endpoint IS the crossing, including when the
             # other endpoint departs only on the open time interval. Retain
@@ -760,7 +766,9 @@ def _clip(poly, line, identity, J, incidence=None, guard=None, classification=No
                 crossing = tuple(J.add(previous[j], J.mul(fraction, J.sub(point[j], previous[j]))) for j in range(2))
             out.append((*crossing, active | {identity}))
         if current_inside:
-            proved = incidence is not None and incidence(identity, point[2])
+            # An explicit identity bypassed the first proof, so keep its first call here.
+            if proved is None:
+                proved = incidence is not None and incidence(identity, point[2])
             out.append((*point[:2], point[2] | {identity}) if proved else point)
         previous, old, old_inside = point, current, current_inside
     return tuple(out)
@@ -1301,8 +1309,7 @@ class _RationalIntervals:
             value = -a[0]
             return value, value
         return -a[1], -a[0]
-    def sub(self, a, b):
-        return self.add(a, self.neg(b))
+    sub = _arithmetic_sub
     def mul(self, a, b):
         if (a[0] == a[1] and b[0] == b[1] and
                 type(a[0]) is type(a[1]) is type(b[0]) is type(b[1]) is Q):

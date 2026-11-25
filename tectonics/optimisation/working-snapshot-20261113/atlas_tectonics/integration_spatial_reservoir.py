@@ -22,15 +22,12 @@ from .integration_regional_inventory import _width
 from .integration_spatial_transport import (SpatialTransportResult, _json_encoding_capacity,
     _workspace, _preserve_workspace)
 from .resources import WorkBudget, _ResizableLease
+from .resources import canonical_json as _json
 from .reuse import content_record
 from .integration_routing_views import _decoded_json_capacity, _decode_workspace
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _MATERIAL_QUADRATURE = 'material_quadrature_m3'
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _hash(value):

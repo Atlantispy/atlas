@@ -38,9 +38,9 @@ partition restore. Per-scalar re-decoding and the streamed identity recomputatio
 belong to the mandatory independent fresh-process reader, which reads the SEALED files.
 """
 import json
-from hashlib import sha256
 
 import numpy as np
+from atlas_tectonics.resources import json_sha256 as workflow_hash
 
 PRESEAL_SCHEMA = 'atlas.r2-bounded-preseal.v2'
 # Fixed transient booking under the run budget (category below). Manifest verification
@@ -68,12 +68,6 @@ class PresealRefused(ValueError):
 def require(ok, message):
     if not ok:
         raise PresealRefused(message)
-
-
-def workflow_hash(value):
-    """Identical to integration_regional_workflow._json/_hash (RC1 lines 27-32)."""
-    raw = json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-    return sha256(raw).hexdigest()
 
 
 class _Throttle:

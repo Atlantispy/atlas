@@ -21,7 +21,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 import hashlib
-import json
 import math
 import struct
 import threading
@@ -32,8 +31,11 @@ from shapely.errors import GEOSException
 from shapely.geometry import Polygon, LineString, GeometryCollection
 
 from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import frozen_c_order as _typed_frozen
 from .coordinates import _label
 from .resources import elements, select_budget
+from .resources import _immutable_deepcopy
+from .resources import canonical_json as _json
 
 
 class GeometryError(TectonicsError):
@@ -69,15 +71,6 @@ def _limits(value):
     if type(value) is not GeometryLimits:
         raise GeometryError('explicit GeometryLimits required')
     return value
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
-
-
-def _typed_frozen(value, dtype):
-    a = np.asarray(value, dtype=dtype, order='C')
-    return np.frombuffer(a.tobytes(), dtype=dtype).reshape(a.shape)
 
 
 def _check_cancel(cancel):
@@ -573,7 +566,7 @@ class PlanarGeometry:
             return self._from_shape(out,self.frame_id,limits=limits)
 
     def __reduce__(self): return (_restore_planar,(self._wkb,self.frame_id,self.geometry_id))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_planar(raw, frame_id, expected):

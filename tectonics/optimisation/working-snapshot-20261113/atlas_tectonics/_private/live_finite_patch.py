@@ -8,7 +8,7 @@ import json
 from atlas_tectonics._private.compact_contracts import ContractError
 from atlas_tectonics._private import live_composite as LIVE_COMPOSITE
 from atlas_tectonics._private.record_tables import RecordCodec, Scratch
-from atlas_tectonics._private.record_views import CompactRecord, RecordRef, _ObjectRecordRef
+from atlas_tectonics._private.record_views import RecordRef, _ObjectRecordRef
 from atlas_tectonics._private import live_spatial_patch as L
 
 MAX_MUTABLE_BYTES = 64 << 20
@@ -84,18 +84,14 @@ def issue(cls, record, owner, ordinary):
     return result
 
 
-def _compact(data):
-    return type(data) is CompactRecord or LIVE_COMPOSITE.is_live(data)
-
-
 def identity(proposal):
     data = proposal._encoded
-    return data.identity().sha256 if _compact(data) else sha256(data).hexdigest()
+    return data.identity().sha256 if LIVE_COMPOSITE.is_compact(data) else sha256(data).hexdigest()
 
 
 def record(proposal):
     data = proposal._encoded
-    if not _compact(data):
+    if not LIVE_COMPOSITE.is_compact(data):
         return dict(proposal_id=identity(proposal), **json.loads(data))
     base = data.root()
     header = RecordCodec().pack_record(dict(proposal_id=identity(proposal)),
@@ -104,13 +100,13 @@ def record(proposal):
 
 
 def graph(proposal):
-    if _compact(proposal._encoded):
+    if LIVE_COMPOSITE.is_compact(proposal._encoded):
         return proposal._encoded.root().field('graph')
     return json.loads(proposal._encoded)['graph']
 
 
 def stocks(proposal, decode):
-    if not _compact(proposal._encoded):
+    if not LIVE_COMPOSITE.is_compact(proposal._encoded):
         return {key: tuple(map(decode, values))
                 for key, values in json.loads(proposal._encoded)['stocks'].items()}
     with proposal._encoded.root().field('stocks') as ref:

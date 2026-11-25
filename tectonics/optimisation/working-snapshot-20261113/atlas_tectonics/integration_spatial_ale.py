@@ -16,7 +16,6 @@ from dataclasses import dataclass, field
 from fractions import Fraction as Q
 from itertools import product
 import hashlib
-import json
 import math
 import weakref
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
@@ -27,6 +26,7 @@ from . import integration_collar_geometry as F
 from . import integration_exterior_mesh as E
 from . import integration_wall_measures as W
 from .resources import WorkBudget
+from .resources import canonical_json
 
 
 class GCLInfeasible(V.VolumeError):
@@ -37,10 +37,6 @@ class GCLInfeasible(V.VolumeError):
         self.incoming_lower_m3 = incoming_lower
         self.outgoing_upper_m3 = outgoing_upper
         self.unsatisfied_m3 = unsatisfied
-
-
-def _encoded(record):
-    return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _issue(cls, record, budget, *, physical_surfaces=None):
@@ -59,7 +55,7 @@ def _issue(cls, record, budget, *, physical_surfaces=None):
 
 
 def _legacy_issue(cls, record, budget):
-    encoded = _encoded(record)
+    encoded = canonical_json(record)
     lease = budget.reserve(8192+4*len(encoded), category='spatial-ale-retained')
     lease.__enter__()
     try:

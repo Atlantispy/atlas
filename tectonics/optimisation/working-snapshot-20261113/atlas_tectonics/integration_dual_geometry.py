@@ -10,14 +10,13 @@ from atlas_tectonics._private import live_finite_patch as LIVE_FINITE
 from contextlib import ExitStack
 from fractions import Fraction as Q
 import heapq
+from .resources import _integer_storage as _selection_int_bytes
+from .resources import _difference_bits as _selection_difference_bits
+from .integration_volume import _encoded as _enc
 
 
 def _pair(encoded):
     return Q(int(encoded[0], 16), int(encoded[1], 16))
-
-
-def _enc(value):
-    return [hex(value.numerator), hex(value.denominator)]
 
 
 def physical_record(record, booked, errors, finite, *, geometric_starts=None,
@@ -280,12 +279,6 @@ def _minimum_cost(nodes, edges, arena):
     return values, augmentations
 
 
-import sys
-
-
-def _selection_int_bytes(bits):
-    return 40 + sys.int_info.sizeof_digit * ((max(1, bits) +
-        sys.int_info.bits_per_digit - 1) // sys.int_info.bits_per_digit)
 
 
 def _selection_q_bits(value):
@@ -305,11 +298,6 @@ def _selection_raw_bits(encoded):
 
 def _selection_q_bytes(bits):
     return 64 + sum(_selection_int_bytes(b) for b in bits)
-
-
-def _selection_difference_bits(a, b):
-    # Before cancellation: a.n*b.d - b.n*a.d over a.d*b.d.
-    return max(a[0] + b[1], b[0] + a[1]) + 1, a[1] + b[1]
 
 
 def _selection_encoding_bytes(bits):

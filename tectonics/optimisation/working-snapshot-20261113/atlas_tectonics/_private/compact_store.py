@@ -16,6 +16,7 @@ import math
 import numpy as np
 
 from atlas_tectonics.resources import WorkBudget
+from atlas_tectonics.resources import _retained_charge, _release_retained_charge
 from atlas_tectonics.storage import ArrayStore, StoreError, _json, _sha
 from atlas_tectonics.integration_spatial_transport import _workspace
 from atlas_tectonics._private.mesh_tables import CompactMesh, MAX_SUPPORT_BYTES
@@ -33,17 +34,10 @@ class CompactStoreRefused(StoreError):
 
 class _RetainedMetadata:
     """Keep the lazy reader's bounded support inventory charged with its view."""
-    def __init__(self, budget, size):
-        self.guard = None
-        guard = budget.reserve(size, category='compact-store-support-inventory')
-        guard.__enter__()
-        self.guard = guard
+    _retained_category = 'compact-store-support-inventory'
+    __init__ = _retained_charge
 
-    def __del__(self):
-        guard = getattr(self, 'guard', None)
-        if guard is not None:
-            self.guard = None
-            guard.__exit__(None, None, None)
+    __del__ = _release_retained_charge
 
 
 def _digest(value):

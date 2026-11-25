@@ -17,17 +17,13 @@ from numbers import Integral
 import numpy as np
 
 from ._validation import TectonicsError, input_shape, snapshot, text
+from ._validation import frozen_c_order
 from .resources import select_budget
 
 
 _MAX_NODES = 256
 _MAX_LINKS = 2048
 _SCHEMA = "atlas.w09-drainage.v1:steepest-flat-bfs-id-ties"
-
-
-def _freeze(values, dtype):
-    array = np.asarray(values, dtype=dtype, order="C")
-    return np.frombuffer(array.tobytes(order="C"), dtype=dtype).reshape(array.shape)
 
 
 @dataclass(frozen=True, eq=False)
@@ -174,7 +170,7 @@ def _ordered_basins(receiver, outlets):
     for node in reversed(order):
         if receiver[node] != node:
             basin_of[node] = basin_of[receiver[node]]
-    cells = tuple(_freeze(np.flatnonzero(basin_of == basin), np.int64)
+    cells = tuple(frozen_c_order(np.flatnonzero(basin_of == basin), np.int64)
                   for basin in range(len(pits)))
     return order, basin_of, cells
 
@@ -255,7 +251,7 @@ def prepare_drainage(bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
         if any(areas[node] != 0 for node in outlets):
             raise TectonicsError("outlet nodes require zero storage area")
         lengths = (snapshot(link_lengths_m, "link_lengths_m") if edge_count
-                   else _freeze([], np.float64))
+                   else frozen_c_order([], np.float64))
         if np.any(lengths <= 0):
             raise TectonicsError("positive link lengths required")
         records, known = [], set()
@@ -266,8 +262,8 @@ def prepare_drainage(bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
             known.add((a, b))
             records.append((a, b, float(lengths[index])))
         records.sort()
-        edge_array = _freeze([(a, b) for a, b, _ in records], np.int64).reshape(edge_count, 2)
-        lengths = _freeze([length for _, _, length in records], np.float64)
+        edge_array = frozen_c_order([(a, b) for a, b, _ in records], np.int64).reshape(edge_count, 2)
+        lengths = frozen_c_order([length for _, _, length in records], np.float64)
         neighbours = [[] for _ in range(count)]
         for a, b, length in records:
             neighbours[a].append((b, length))
@@ -293,10 +289,10 @@ def prepare_drainage(bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
                 best_saddles[key] = level
         saddles = tuple((a, b, level) for (a, b), level in sorted(best_saddles.items()))
         flood_level, flood_parent = _priority_flood(bed, neighbours, outlets)
-        receiver, order, basin_of = (_freeze(data, np.int64)
+        receiver, order, basin_of = (frozen_c_order(data, np.int64)
                                       for data in (receiver, order, basin_of))
-        flood_level = _freeze(flood_level, np.float64)
-        flood_parent = _freeze(flood_parent, np.int64)
+        flood_level = frozen_c_order(flood_level, np.float64)
+        flood_parent = frozen_c_order(flood_parent, np.int64)
         arrays = (bed, areas, edge_array, lengths, receiver, order, basin_of,
                   flood_level, flood_parent, *basin_cells)
         signature = _signature(arrays, saddles, outlets, identities)

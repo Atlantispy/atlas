@@ -24,6 +24,7 @@ from . import integration_volume_overlap as O
 from . import integration_patch_heat as PH
 from .regional_execution import RegionalMechanicalSnapshot
 from .stokes_execution import _factored_scale
+from .pressure_midpoint_values import _over as _over, _dyadic_outward, _add, _mul, _minus, _scale as _arithmetic_original_scale
 
 
 class PressureCouplingRefused(TectonicsError):
@@ -37,32 +38,6 @@ _ZERO, _ONE, _HALF, _THIRD, _QUARTER, _MINUS_QUARTER = Q(0), Q(1), Q(1, 2), Q(1,
 _ZERO_PAIR = (_ZERO, _ZERO)
 
 
-def _over(numerator, denominator):
-    """Q(numerator, denominator); for two ints with denominator > 0, Fraction.__new__'s own
-    gcd reduction without its dispatch. Anything else takes the constructor itself."""
-    if type(numerator) is int and type(denominator) is int and denominator > 0:
-        g = math.gcd(numerator, denominator)
-        return Q._from_coprime_ints(numerator//g, denominator//g)
-    return Q(numerator, denominator)
-
-
-if not hasattr(Q, '_from_coprime_ints'):    # before Python 3.12: the plain constructor
-    _over = Q
-
-
-def _dyadic_outward(pair, denominator):
-    lo, hi = pair
-    if type(lo) in (int, Q) and type(hi) in (int, Q):
-        # Scaling exact numerators avoids constructing and reducing temporary
-        # Fractions merely to discard their fractional part. Python's integer
-        # division is floor division, including for negative endpoints.
-        floor = lo.numerator*denominator // lo.denominator
-        ceiling = -((-hi.numerator*denominator) // hi.denominator)
-        return _over(floor, denominator), _over(ceiling, denominator)
-    return (Q((lo*denominator).__floor__(), denominator),
-            Q((hi*denominator).__ceil__(), denominator))
-
-
 def _jet_outward(jet):
     """Bound derivative arithmetic, never physical coefficients or stocks.
 
@@ -74,61 +49,6 @@ def _jet_outward(jet):
     """
     denominator = 1 << _JET_PRECISION.get()
     return tuple(_dyadic_outward(pair, denominator) for pair in jet)
-
-
-def _add(a, b):
-    return a[0]+b[0], a[1]+b[1]
-
-
-def _mul(a, b):
-    # Ordered exact rational intervals need only their extremal products.
-    # Keep the original iterable behaviour for reversed/mixed/non-rational
-    # inputs, including its empty-iterable errors and tie result types.
-    if (type(a) is tuple and type(b) is tuple and len(a) == len(b) == 2
-            and type(a[0]) is Q and type(a[1]) is Q
-            and type(b[0]) is Q and type(b[1]) is Q):
-        lo, hi = a
-        low, high = b
-        # T/ps P3: Fraction's own integer comparisons without its dispatch:
-        # x <= y is x.n*y.d <= x.d*y.n and x >= 0 is x.n >= 0 (positive denominators).
-        if (lo._numerator*hi._denominator <= lo._denominator*hi._numerator
-                and low._numerator*high._denominator <= low._denominator*high._numerator):
-            if lo._numerator >= 0:
-                if low._numerator >= 0:
-                    return lo*low, hi*high
-                if high._numerator <= 0:
-                    return hi*low, lo*high
-                return hi*low, hi*high
-            if hi._numerator <= 0:
-                if low._numerator >= 0:
-                    return lo*high, hi*low
-                if high._numerator <= 0:
-                    return hi*high, lo*low
-                return lo*high, lo*low
-            if low._numerator >= 0:
-                return lo*high, hi*high
-            if high._numerator <= 0:
-                return hi*low, lo*low
-            first, second = lo*high, hi*low
-            third, fourth = lo*low, hi*high
-            # min() keeps the first unless the second is smaller; max() unless it is larger.
-            return (second if second._numerator*first._denominator < first._numerator*second._denominator else first,
-                    fourth if fourth._numerator*third._denominator > third._numerator*fourth._denominator else third)
-    values = tuple(x*y for x in a for y in b)
-    return min(values), max(values)
-
-
-def _arithmetic_original_scale(a, q):
-    if type(q) is int and type(a) is tuple and all(type(x) is Q for x in a):
-        # T/ps P3: a Fraction times an int is the Fraction times Fraction(q).
-        q = Q(q)
-    values = tuple(x*q for x in a)
-    if len(values) == 2 and type(values[0]) is Q and type(values[1]) is Q:
-        first, second = values
-        # min() and max() of two Fractions by Fraction's own integer comparison.
-        return (second if second._numerator*first._denominator < first._numerator*second._denominator else first,
-                second if second._numerator*first._denominator > first._numerator*second._denominator else first)
-    return min(values), max(values)
 
 
 def _arithmetic_exact_pair(pair):
@@ -163,10 +83,6 @@ def _sqrt(q, bits=72):
 
 def _cross2(a, b):
     return a[0]*b[1]-a[1]*b[0]
-
-
-def _minus(a, b):
-    return tuple(x-y for x, y in zip(a, b))
 
 
 def _hull(points):

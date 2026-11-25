@@ -8,14 +8,11 @@ from fractions import Fraction as Q
 from itertools import combinations
 
 from . import integration_differential_geometry as G
+from ._mimetic_enclosure import _dot_exact as _dot
 
 MAX_LITERALS = 32
 MAX_TRIPLES = 128
 ORDERS = (2, 4, 8, 16)
-
-
-def _dot(a, b):
-    return sum((x*y for x, y in zip(a, b)), Q(0))
 
 
 def _cross(a, b):

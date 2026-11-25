@@ -25,15 +25,12 @@ from .regional import RegionalGrid1D
 from .parameters import FlexureParameters, PeriodicGrid1D
 from .plate_integrals import plate_cooling_deficit_change
 from .resources import select_budget
+from .resources import canonical_json as _json
 from .reuse import (ReuseController, content_record, cached_column_load_change, cached_flexure,
                     cached_finite_flexure, cached_variable_flexure)
 from .storage import ArrayStore
 from .stokes_execution import _factored_scale
 from .w03_workflow import W03ColumnState, W03ExecutionContext
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
 def _id(value, payload=b''):

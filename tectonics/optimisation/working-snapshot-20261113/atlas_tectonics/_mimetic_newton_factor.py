@@ -19,7 +19,6 @@ allocation envelope, not an RSS cap. No physical diagonal shift, drop rule,
 matrix cache, new Krylov limit or residual tolerance is introduced.
 SPDX-License-Identifier: AGPL-3.0-only
 """
-from concurrent.futures import CancelledError
 from contextlib import contextmanager, ExitStack
 from decimal import Decimal as D, DecimalException, ROUND_HALF_EVEN, localcontext
 import hashlib
@@ -30,6 +29,7 @@ from scipy import sparse
 from scipy.sparse.linalg import splu
 
 from .resources import WorkBudget, MemoryLimitError
+from .resources import check_event_or_callable
 from .regional_multigrid3d import _native_factor_bytes
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -37,11 +37,6 @@ _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 def assert_current():
     return _LOADED
-
-
-def _cancel(cancel):
-    if cancel is not None and (cancel.is_set() if hasattr(cancel,'is_set') else cancel()):
-        raise CancelledError('selected-J preconditioner cancelled')
 
 
 class _Unavailable(Exception):
@@ -61,7 +56,7 @@ class _Factor:
     def __call__(self, values):
         if self.closed:
             raise ValueError('selected-J preconditioner used after release')
-        assert_current(); self.source_check(); _cancel(self.cancel)
+        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         if len(values) != len(self.dr) or any(not value.is_finite() for value in values):
             raise ValueError('finite complete selected-J load required')
         try:
@@ -85,7 +80,7 @@ class _Factor:
             self.evidence['action_fallbacks'] += 1
             self.evidence['last_action_fallback'] = str(exc)
             result = self.fallback(values)
-        assert_current(); self.source_check(); _cancel(self.cancel)
+        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         return result
 
 
@@ -119,7 +114,7 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
         if not dt.is_finite() or dt<=0:
             raise ValueError('positive finite selected-J timestep required')
         for ci,(entry,block) in enumerate(zip(local,blocks)):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
             ids = (entry[0],*entry[1])
             if entry[0]!=ci or any(type(i) is not int or not 0<=i<size for i in ids):
                 raise ValueError('valid selected-J local node coverage required')
@@ -136,7 +131,7 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
                 raise ValueError('positive finite selected-J capacity required')
             add(i,i,value)
         for i,j,d,branch,k,gamma in active:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
             if (any(type(a) is not int or not 0<=a<size for a in (i,j)) or i==j
                     or branch not in (1,2) or k is not None
                     or not d.is_finite() or d<=0 or not gamma.is_finite() or gamma<0):
@@ -151,7 +146,7 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
                 if not row[j]:del row[j]
         dr = []
         for row in rows:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
             largest = max(map(abs,row.values()),default=zero)
             if not largest:raise _Unavailable('zero selected-J free row')
             dr.append(1/largest)
@@ -176,7 +171,7 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
                                   fallback,cancel,source_check,evidence,phase)
         rr,cc,vv = [],[],[]
         for i,(scale,row) in enumerate(zip(dr,rows)):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
             for j,value in row.items():
                 number = float(scale*value*dc[j])
                 if not np.isfinite(number) or not number:
@@ -190,13 +185,13 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
         held.enter_context(budget.reserve(native_bytes,category='mimetic-selected-j-native'))
         evidence['native_admitted_bytes'] = native_bytes
         phase['native_admitted_bytes'] = native_bytes
-        assert_current(); source_check(); _cancel(cancel)
+        assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
         try:
             factor = splu(matrix,permc_spec='COLAMD',diag_pivot_thresh=1.,
                           options={'Equil':False,'SymmetricMode':False})
         except RuntimeError as exc:
             raise _Unavailable('selected-J general LU failed: '+str(exc)) from exc
-        _cancel(cancel); assert_current(); source_check()
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled'); assert_current(); source_check()
         factor_nnz = factor.L.nnz+factor.U.nnz
         realised = 1024**2+_native_factor_bytes(n,nnz,factor_nnz)
         if realised>native_bytes:
@@ -226,7 +221,7 @@ class _DecimalFactor(_Factor):
     def __call__(self, values):
         if self.closed:
             raise ValueError('selected-J preconditioner used after release')
-        assert_current(); self.source_check(); _cancel(self.cancel)
+        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         if len(values)!=len(self.dr) or any(not value.is_finite() for value in values):
             raise ValueError('finite complete selected-J load required')
         try:
@@ -235,10 +230,10 @@ class _DecimalFactor(_Factor):
                 y = [D(0)]*len(values)
                 for at,k in enumerate(self.order):y[k] = self.dr[at]*values[at]
                 for k,row in enumerate(self.rows):
-                    _cancel(self.cancel)
+                    check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
                     y[k] -= sum((value*y[j] for j,value in row.items() if j<k),D(0))
                 for k in range(len(y)-1,-1,-1):
-                    _cancel(self.cancel)
+                    check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
                     row = self.rows[k]
                     y[k] = (y[k]-sum((value*y[j] for j,value in row.items() if j>k),D(0)))/row[k]
                 result = [self.dc[at]*y[k] for at,k in enumerate(self.order)]
@@ -250,7 +245,7 @@ class _DecimalFactor(_Factor):
             self.evidence['action_fallbacks'] += 1
             self.evidence['last_action_fallback'] = str(exc)
             result = self.fallback(values)
-        assert_current(); self.source_check(); _cancel(self.cancel)
+        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         return result
 
 
@@ -271,14 +266,14 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
         raise ValueError('complete frozen selected-J permutation required')
     above = [set() for _ in rows]
     for i,row in enumerate(rows):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
         for j in row:
             if i!=j:
                 low,high = sorted((order[i],order[j]))
                 above[high].add(low)
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     fill = symbolic_fill(above)
-    _cancel(cancel); assert_current(); source_check()
+    check_event_or_callable(cancel, 'selected-J preconditioner cancelled'); assert_current(); source_check()
     if type(fill) is not int or not 0<=fill<=n*(n-1)//2:
         raise ValueError('valid symmetric-union symbolic fill count required')
     del above
@@ -292,7 +287,7 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
     # already covered by the assembly lease. Factor/fill leases are now live.
     factors = [{} for _ in rows]
     for i,row in enumerate(rows):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
         for j,value in row.items():
             number = dr[i]*value*dc[j]
             if not number.is_finite() or not number:
@@ -309,7 +304,7 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
     zero = D(0)
     minimum,maximum = None,zero
     for k,row in enumerate(factors):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
         pivot = row.get(k,zero)
         if not pivot.is_finite() or not pivot:
             phase.update(refused_pivot=k,pivot_decimal=str(pivot))
@@ -319,7 +314,7 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
         maximum = max(maximum,magnitude)
         upper = tuple((j,value) for j,value in row.items() if j>k and value)
         for i in sorted(columns[k]):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
             target = factors[i]
             value = target[k]
             if not value:continue
@@ -336,7 +331,7 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
                 target[j] = updated
         columns[k].clear()
     del columns
-    assert_current(); source_check(); _cancel(cancel)
+    assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     phase.update(status='selected-j-decimal160',factor_nnz=stored,
                  minimum_absolute_pivot_decimal=str(minimum),maximum_absolute_pivot_decimal=str(maximum))
     evidence.update(status='selected-j-decimal160',
@@ -354,7 +349,7 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
     Invalid input, source changes and cancellation propagate. The fallback
     already belongs to the heat caller; this helper never releases it.
     """
-    assert_current(); source_check(); _cancel(cancel)
+    assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     if type(budget) is not WorkBudget or type(size) is not int or size<1 or not free:
         raise ValueError('shared budget and nonempty selected-J geometry required')
     if (permutation is None)!=(symbolic_fill is None):
@@ -387,7 +382,7 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
             yield owner if owner is not None else fallback,evidence
         finally:
             if owner is not None:owner.close()
-    assert_current(); source_check(); _cancel(cancel)
+    assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
 
 
 def solve_direction(local, blocks, capacity, dt, free, size, active, *,
@@ -407,7 +402,7 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
     from . import integration_mimetic_newton as N
 
     def check():
-        assert_current(); N.assert_current(); source_check(); _cancel(cancel)
+        assert_current(); N.assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
 
     check()
     with localcontext() as context:

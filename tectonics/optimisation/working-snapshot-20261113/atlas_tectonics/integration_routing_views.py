@@ -12,11 +12,11 @@ import json
 import math
 import re
 import sys
-import weakref
 
 from .integration_volume_bounds import _Arena
 from .integration_regional_inventory import _width
 from .resources import WorkBudget, _GrowingLease
+from .resources import _retain_failure
 
 
 _ROW = frozenset(('voxel_index', 'source_chart_id', 'material_angular_velocity_rad_s',
@@ -242,8 +242,7 @@ class _FailureOwner:
     The finalizer owns only an ExitStack of resource callbacks, never the
     exception/traceback or this owner. Thus traceback cycles remain collectable.
     """
-    def __init__(self, stack):
-        self.release = weakref.finalize(self, stack.close)
+    __init__ = _retain_failure
 
 
 class _OwnedPayload(dict):

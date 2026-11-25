@@ -14,7 +14,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import hashlib
-import json
 import math
 import re
 from typing import Mapping
@@ -24,6 +23,7 @@ import numpy as np
 from ._validation import TectonicsError, frozen, read_array, scalar, input_shape
 from .geometry import _check_cancel
 from .resources import select_budget
+from .resources import canonical_json as _json
 
 
 class ReferenceDataError(TectonicsError):
@@ -52,10 +52,6 @@ BOUNDARY_CLASSES = ('CCB', 'CTF', 'CRB', 'OSR', 'OTF', 'OCB', 'SUB')
 _END = '*** end of line segment ***'
 _COORD = re.compile(r'^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*,\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*$')
 _BOUNDARY = re.compile(r'^[A-Z]{2}[-/\\][A-Z]{2}$')
-
-
-def _json(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _git_blob(raw: bytes) -> str:

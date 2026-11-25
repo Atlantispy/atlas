@@ -15,6 +15,8 @@ import numpy as np
 from ._validation import TectonicsError
 from .integration_regional_evolution import PreparedRegionalOwner, RegionalOwnerAdvance
 from .resources import select_budget
+from .resources import canonical_json as _json
+from .integration_volume import _encoded as _encoded
 
 SCHEMA = 'atlas.material-owned-mechanical-heat.v1'
 ENERGIES = ('creep_j', 'plastic_j', 'constitutive_partition_j', 'quadrature_roundoff_j',
@@ -22,16 +24,8 @@ ENERGIES = ('creep_j', 'plastic_j', 'constitutive_partition_j', 'quadrature_roun
             'mechanical_source_integral_j', 'source_enthalpy_change_j')
 
 
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
 def _q(value):
     return Q(float(value))
-
-
-def _encoded(value):
-    return [hex(value.numerator), hex(value.denominator)]
 
 
 def _width(value):

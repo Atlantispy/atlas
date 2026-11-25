@@ -28,14 +28,17 @@ from shapely.geometry import Polygon, LineString
 
 from .coordinates import SphericalFrame
 from ._validation import read_array, scalar, input_shape
+from ._validation import unit_rows
 from .geometry import (GeometryError, _limits, _label, _json, _point_shape,
                        _check_cancel, GeometryLimits)
 from .resources import select_budget, reserve_budgets, elements
+from .resources import _immutable_deepcopy
+from .resources import require_sha256
 from .reuse import content_record
 from .spherical_geometry import SphericalChart, SphericalGeometry, _directions, _ring_area
 from .geometry_index import GeometryFeature, GeometryIndex
 from .boundaries import (BoundaryRegion, BoundaryNetwork, SharedBoundary,
-                         BoundaryJunction, BoundaryFrames, BoundaryKinematics, _sha)
+                         BoundaryJunction, BoundaryFrames, BoundaryKinematics)
 
 _SCHEMA = 'atlas.closed-spherical-atlas.v1'
 _METHOD = 'canonical-minor-arcs-oriented-manifold-v1'
@@ -101,14 +104,6 @@ class SphericalPatch:
                 'holes': [list(h) for h in self.holes], 'chart': self.chart.descriptor()}
 
 
-def _unit(a):
-    scale = np.max(np.abs(a), axis=-1, keepdims=True)
-    if np.any(scale == 0) or not np.isfinite(scale).all():
-        raise GeometryError('zero or nonfinite direction')
-    v = a / scale
-    return v / np.sqrt(np.sum(v * v, axis=-1, keepdims=True))
-
-
 def _capture_directions(a):
     """Keep an existing unit registry byte-stable across chart reattachment.
 
@@ -123,8 +118,8 @@ def _capture_directions(a):
         norms = np.linalg.norm(a, axis=-1)
     change = np.abs(norms-1) > 16*np.finfo(float).eps
     if a.ndim == 1:
-        return _unit(a) if bool(change) else a
-    if change.any(): a[change] = _unit(a[change])
+        return unit_rows(a, GeometryError, 'zero or nonfinite direction') if bool(change) else a
+    if change.any(): a[change] = unit_rows(a[change], GeometryError, 'zero or nonfinite direction')
     return a
 
 
@@ -223,10 +218,10 @@ def _vertex_links(points, edge_array, sides, patch_count, resolution, cancel):
     source[1::2] = edge_array[:, 1]; target[1::2] = edge_array[:, 0]
     radial = points[source]; other = points[target]
     axis = np.eye(3)[np.argmin(np.abs(radial), axis=1)]
-    east = _unit(np.cross(axis, radial))
+    east = unit_rows(np.cross(axis, radial), GeometryError, 'zero or nonfinite direction')
     north = np.cross(radial, east)
-    normal = _unit(np.cross(radial + other, other - radial))
-    tangent = _unit(np.cross(normal, radial))
+    normal = unit_rows(np.cross(radial + other, other - radial), GeometryError, 'zero or nonfinite direction')
+    tangent = unit_rows(np.cross(normal, radial), GeometryError, 'zero or nonfinite direction')
     _check_cancel(cancel)
     for k in range(2*count):
         if k % 8192 == 0:
@@ -290,16 +285,12 @@ class SphericalAtlas:
 
     @property
     def vertex_directions(self): return np.frombuffer(self._points, dtype='f8').reshape(-1, 3)
-    @property
-    def edge_vertices(self): return np.frombuffer(self._edges, dtype='i8').reshape(-1, 2)
-    @property
-    def side_patches(self): return np.frombuffer(self._sides, dtype='i8').reshape(-1, 2)
+    edge_vertices = BoundaryNetwork.edge_vertices
+    side_patches = BoundaryNetwork.side_regions
     @property
     def patch_areas_sr(self): return np.frombuffer(self._areas, dtype='f8')
-    @property
-    def vertex_count(self): return len(self.vertex_ids)
-    @property
-    def edge_count(self): return len(self.edge_ids)
+    vertex_count = BoundaryNetwork.vertex_count
+    edge_count = BoundaryNetwork.edge_count
     @property
     def plate_ids(self): return tuple(sorted({p.plate_id for p in self.patches}))
     @property
@@ -427,12 +418,12 @@ class SphericalAtlas:
                 ab = self.vertex_directions[self.edge_vertices[ids[start:end]]]
                 if reverse: ab = ab[:, ::-1]
                 a, b = ab[:, 0], ab[:, 1]
-                left = _unit(np.cross(a+b, b-a)); theta = _angle(a, b)
-                radial = a if f == 0 else b if f == 1 else _unit(
-                    np.cos(f*theta)[:, None]*a + np.sin(f*theta)[:, None]*np.cross(left, a))
+                left = unit_rows(np.cross(a+b, b-a), GeometryError, 'zero or nonfinite direction'); theta = _angle(a, b)
+                radial = a if f == 0 else b if f == 1 else unit_rows(
+                    np.cos(f*theta)[:, None]*a + np.sin(f*theta)[:, None]*np.cross(left, a), GeometryError, 'zero or nonfinite direction')
                 with np.errstate(over='ignore', invalid='ignore'):
                     p[start:end] = radial*self.sphere.radius_m
-                    t[start:end] = _unit(np.cross(left, radial))
+                    t[start:end] = unit_rows(np.cross(left, radial), GeometryError, 'zero or nonfinite direction')
                     normal[start:end] = -left; length[start:end] = theta*self.sphere.radius_m
             if not all(np.isfinite(x).all() for x in (p, t, normal, length)):
                 raise GeometryError('spherical metric outside binary64 range')
@@ -492,9 +483,7 @@ class SphericalAtlas:
     def __reduce__(self):
         return (_restore_atlas, (self.descriptor(), self._points))
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None, cancel=None,
@@ -691,7 +680,7 @@ class SphericalAtlasIndex:
                 # The vertex-mean cap is tighter when it remains hemispherical;
                 # positive dot products make that cap geodesically convex, so it
                 # contains every edge and the polygon interior (also if concave).
-                candidate = _unit(np.array([math.fsum(points[:,j]) for j in range(3)]))
+                candidate = unit_rows(np.array([math.fsum(points[:,j]) for j in range(3)]), GeometryError, 'zero or nonfinite direction')
                 candidate_radius = float(np.max(_angle(points, candidate)))
                 if np.all(points @ candidate > 0) and candidate_radius < radius:
                     centre, radius = candidate, candidate_radius
@@ -708,11 +697,8 @@ class SphericalAtlasIndex:
     def __enter__(self): return self
     def __exit__(self, *args): self.close()
 
-    def close(self):
-        with self._lock:
-            if self._active: raise GeometryError('join active queries before closing atlas index')
-            if not self._closed:
-                self._groups.clear(); self._closed = True; self._guard.__exit__(None, None, None)
+    _close_refusal = 'join active queries before closing atlas index'
+    close = GeometryIndex.close
 
     def query(self, directions, *, by_plate=True, angular_tolerance_rad=_ANGULAR_RESOLUTION,
               budget=None, cancel=None):
@@ -835,7 +821,7 @@ def save_spherical_atlas(atlas, store, *, budget=None, cancel=None):
 
 
 def load_spherical_atlas(store, atlas_id, *, limits=None, budget=None, cancel=None):
-    _sha(atlas_id); _check_cancel(cancel)
+    require_sha256(atlas_id, GeometryError, 'lowercase SHA256 identity required'); _check_cancel(cancel)
     values=store.get(atlas_id,budget=budget)
     if values is None: return None
     if set(values) != {'directions'} or values['directions'].dtype != np.dtype('f8') or values['directions'].ndim != 2 or values['directions'].shape[1] != 3:
@@ -890,7 +876,7 @@ def stitch_spherical_networks(networks, vertices, vertex_bindings, *, region_bin
             if type(binding) is not tuple or len(binding) != network.vertex_count or len(set(binding)) != len(binding):
                 raise GeometryError('one distinct global vertex ID per local network vertex required')
             if not set(binding) <= set(canonical): raise GeometryError('unknown registered seam vertex')
-            original = _unit(network.domain.chart._unproject(network.vertex_xy))
+            original = unit_rows(network.domain.chart._unproject(network.vertex_xy), GeometryError, 'zero or nonfinite direction')
             mapped = np.array([canonical[v] for v in binding])
             errors = _angle(original, mapped)
             if np.any(errors > _ANGULAR_RESOLUTION):

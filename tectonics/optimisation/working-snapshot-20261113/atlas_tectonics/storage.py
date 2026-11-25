@@ -16,7 +16,6 @@ import hashlib
 import json
 import math
 from pathlib import Path
-import re
 import sqlite3
 import stat
 import struct
@@ -28,6 +27,7 @@ from typing import Mapping
 import numpy as np
 
 from .resources import WorkBudget, select_budget, reserve_budgets
+from .resources import _sha256_pattern as _SHA
 from . import _w08_history_funding as _history
 
 
@@ -39,7 +39,6 @@ class StoreConflict(StoreError):
     """One immutable scientific identity was assigned conflicting results."""
 
 
-_SHA = re.compile(r'[0-9a-f]{64}\Z')
 _SCHEMA = 'atlas.array-store.v1'
 # The only schema a store may hold, as SQLite records it (IF NOT EXISTS is not kept in sqlite_master.sql). Every
 # storage.py revision created exactly these tables. A view, trigger, generated column, default, check or extra

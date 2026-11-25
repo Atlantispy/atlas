@@ -23,13 +23,15 @@ try:
 except ImportError:
     LinearOperator = gmres = spilu = splu = None
 from ._validation import TectonicsError, text, scalar, input_shape, read_array
+from ._validation import _stored_array
 from .resources import select_budget, MemoryLimitError
+from .resources import check_event_or_callable
 from . import anderson as _aa
 from . import preconditioner_reuse as _pr
 from . import adaptive_inner as _ai
 from .reuse import ExecutionContext, content_record
 from .constitutive import (DiffusiveScales, RheologyProfile, ConstitutiveLimits,
-                           _native_law, _check_fields, _json, _cancel)
+                           _native_law, _check_fields, _json)
 from .stokes import StokesBox2D, _BOUNDARY, _GAUGE
 from .stokes_execution import _factored_scale, _checked_scale, _native_lease, _hex, _digest
 from .variable_stokes import (NonlinearStokesPolicy, _StressMACOperator,
@@ -222,10 +224,8 @@ class VariableStokesSolution:
     def array_names(self):return tuple(k for k,_,_ in self._arrays)
     @property
     def nbytes(self):return len(self._metadata)+sum(len(v) for _,_,v in self._arrays)
-    def array(self,key):
-        for k,s,v in self._arrays:
-            if k==key:return np.frombuffer(v,dtype='f8').reshape(s)
-        raise TectonicsError('unknown variable mechanical array')
+    _missing_array = 'unknown variable mechanical array'
+    array = _stored_array
 
 
 class NonlinearStokesGuess:
@@ -296,10 +296,8 @@ class NonlinearStokesGuess:
     @property
     def nbytes(self):return len(self._metadata)+sum(len(v) for _,_,v in self._arrays)
 
-    def array(self,key):
-        for k,shape,v in self._arrays:
-            if k==key:return np.frombuffer(v,dtype='f8').reshape(shape)
-        raise TectonicsError('unknown initial-guess field')
+    _missing_array = 'unknown initial-guess field'
+    array = _stored_array
 
     @classmethod
     def restore(cls,metadata,arrays,guess_id,*,budget=None):
@@ -378,7 +376,7 @@ class PreparedVariableStokes2D:
         self._guard=self.budget.reserve(retained,category='variable-stokes-retained');self._guard.__enter__()
         self._retained=retained
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             if compiled:
                 with self.budget.reserve(template_build,category='variable-stokes-template-build'):
                     self._op=_StressMACOperator(box,hx,hz,compiled=True)
@@ -392,7 +390,7 @@ class PreparedVariableStokes2D:
             if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
             if adaptive_inner_policy is not None:binding['adaptive_inner_policy']=asdict(adaptive_inner_policy)
             self.identity=_digest(content_record(binding))
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         except BaseException:
             self._op=None;self._context=None;self._closed=True;self._guard.__exit__(None,None,None)
             raise
@@ -410,9 +408,9 @@ class PreparedVariableStokes2D:
             raise TectonicsError('closed/active variable plan or wrong driving thread')
         self._active=True
         try:
-            _cancel(cancel);self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
             with _native_lease():yield
-            _cancel(cancel);self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
         finally:self._active=False
     def close(self):
         if self._closed:return
@@ -485,7 +483,7 @@ class PreparedVariableStokes2D:
         """
         op=self._op;pol=self.policy;request=self._adaptive_request
         x0=np.zeros(op.n) if guess is None else np.asarray(guess,dtype=np.float64)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         defect=rhs-op.matvec(x0)
         norm_b=float(np.linalg.norm(rhs));norm_d=float(np.linalg.norm(defect))
         if not math.isfinite(norm_b) or not math.isfinite(norm_d):
@@ -497,9 +495,9 @@ class PreparedVariableStokes2D:
         count=0
         if np.any(rhs):
             self._factorise(cancel)
-            def matvec(x):_cancel(cancel);return op.matvec(x)
+            def matvec(x):check_event_or_callable(cancel, 'constitutive work cancelled');return op.matvec(x)
             def precondition(x):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 _,_,r,g=op.split(x)
                 mean=float(np.mean(r));p=-2*op.eta_c*(r-mean)
                 p-=np.mean(p);p+=op.c*g
@@ -507,7 +505,7 @@ class PreparedVariableStokes2D:
                 return np.concatenate((vu,p.ravel(),[mean/op.c]))
             def iteration(_):
                 nonlocal count
-                count+=1;_cancel(cancel)
+                count+=1;check_event_or_callable(cancel, 'constitutive work cancelled')
             a=LinearOperator((op.n,op.n),matvec=matvec,dtype=np.float64)
             m=LinearOperator((op.n,op.n),matvec=precondition,dtype=np.float64)
             delta,info=gmres(a,defect,M=m,rtol=0.,atol=target,
@@ -517,7 +515,7 @@ class PreparedVariableStokes2D:
             vector=x0+delta
         else:
             vector=np.zeros(op.n)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         residual=float(np.linalg.norm(rhs-op.matvec(vector)))
         if not np.isfinite(vector).all() or not math.isfinite(residual) or residual>target:
             raise TectonicsError('adaptive correction failed its true linear target')
@@ -538,7 +536,7 @@ class PreparedVariableStokes2D:
         if request is None:return
         if not request.rows or not request.rows[-1]['strict_certified']:
             raise TectonicsError('provisional adaptive result cannot be published')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         self._coefficients(request.cert_c,request.cert_v)
         residual=float(np.linalg.norm(rhs-self._op.matvec(vector)))
         target=self.policy.linear_rtol*float(np.linalg.norm(rhs))
@@ -549,7 +547,7 @@ class PreparedVariableStokes2D:
         request.returned_residual=residual
 
     def _factorise(self,cancel):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         reuse=self._reuse_request
         if reuse is None:
             return self._factorise_current(cancel)
@@ -559,28 +557,28 @@ class PreparedVariableStokes2D:
             self._approximate_reuses+=1
         else:self._factorise_current(cancel)
         reuse.selected(self._op,self._factor_key,decision)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     def _factorise_current(self,cancel):
         op=self._op;key=hashlib.sha256(op.eta_c.tobytes()+op.eta_v.tobytes()).hexdigest()
         kind=self._velocity_method()
         if self._factor_key==key and self._factor_kind==kind:
             self._factor_reuses+=1;return
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         try:
             if self.policy.method=='direct':factor=splu(op.sparse_reference(),permc_spec='COLAMD')
             elif kind=='gmg':
                 from ._velocity_multigrid import hierarchy_transfers, GeometricVcycle
                 if self._gmg_transfers is None:
-                    self._gmg_transfers=hierarchy_transfers(op.nx,lambda:_cancel(cancel))
-                factor=GeometricVcycle(op.velocity_matrix(),self._gmg_transfers,lambda:_cancel(cancel))
+                    self._gmg_transfers=hierarchy_transfers(op.nx,lambda:check_event_or_callable(cancel, 'constitutive work cancelled'))
+                factor=GeometricVcycle(op.velocity_matrix(),self._gmg_transfers,lambda:check_event_or_callable(cancel, 'constitutive work cancelled'))
                 if 2*factor.nbytes>self._gmg_allowance:
                     raise MemoryLimitError('multigrid hierarchy exceeds admitted retained estimate')
             else:
                 factor=spilu(op.velocity_matrix(),drop_tol=self.policy.ilu_drop_tolerance,
                              fill_factor=self.policy.ilu_fill_factor,permc_spec='COLAMD')
         except RuntimeError as exc:raise TectonicsError('variable viscosity factorisation failed; no direct fallback') from exc
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         self._factor=factor;self._factor_key=key;self._factor_builds+=1
         self._factor_kind=kind
         if kind=='gmg':self._gmg_builds+=1
@@ -599,9 +597,9 @@ class PreparedVariableStokes2D:
         if not np.any(rhs):return np.zeros(op.n),0
         self._factorise(cancel)
         if pol.method=='direct':return self._factor.solve(rhs),0
-        def matvec(x):_cancel(cancel);return op.matvec(x)
+        def matvec(x):check_event_or_callable(cancel, 'constitutive work cancelled');return op.matvec(x)
         def precondition(x):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             _,_,r,g=op.split(x)
             # Pressure mean/gauge pair is handled exactly. The projected local
             # inverse approximates the Schur complement on mean-zero pressure.
@@ -612,13 +610,13 @@ class PreparedVariableStokes2D:
         count=0
         def iteration(_):
             nonlocal count
-            count+=1;_cancel(cancel)
+            count+=1;check_event_or_callable(cancel, 'constitutive work cancelled')
         a=LinearOperator((op.n,op.n),matvec=matvec,dtype=np.float64)
         m=LinearOperator((op.n,op.n),matvec=precondition,dtype=np.float64)
         x,info=gmres(a,rhs,x0=guess,M=m,rtol=pol.linear_rtol,atol=0.,restart=pol.restart,
                      maxiter=pol.max_cycles,callback=iteration,callback_type='pr_norm')
         if info!=0:raise TectonicsError('variable Stokes GMRES failed within its fixed iteration envelope')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if not np.isfinite(x).all():raise TectonicsError('nonfinite variable solution')
         # Lagged linear solve gate cannot be mistaken for nonlinear acceptance.
         _diagnostics(op,x,rhs,pol)
@@ -725,7 +723,7 @@ class PreparedVariableStokes2D:
                                                 epoch_id,time_s,source,cancel,initial_guess)
             history=[]
             for _ in range(self.policy.max_picard_iterations):
-                _cancel(cancel);self._coefficients(ec,ev)
+                check_event_or_callable(cancel, 'constitutive work cancelled');self._coefficients(ec,ev)
                 candidate,it=self._linear(rhs,vector,cancel)
                 if self.policy.relaxation!=1.:
                     candidate=vector+self.policy.relaxation*(candidate-vector)
@@ -757,7 +755,7 @@ class PreparedVariableStokes2D:
         policy=self.anderson_policy
         images=[];errors=[];history=[];accepted=rejected=0
         for index in range(self.policy.max_picard_iterations):
-            _cancel(cancel);self._coefficients(ec,ev)
+            check_event_or_callable(cancel, 'constitutive work cancelled');self._coefficients(ec,ev)
             image,it=self._linear(rhs,vector,cancel)
             if self._adaptive_request is not None and self._adaptive_request.rows[-1]['history_reset']:
                 images.clear();errors.clear()
@@ -790,12 +788,12 @@ class PreparedVariableStokes2D:
             images.append(image.copy());errors.append(image-vector)
             del images[:-policy.depth-1];del errors[:-policy.depth-1]
             if len(images)>=policy.warmup_maps:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 proposal,details=_aa._propose(images,errors,self._op.nv,policy)
                 row['depth_used']=details.get('depth_used',0)
                 row['action']='rejected_history'
                 if proposal is not None:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                     try:
                         ac,av,_,_=self._law(proposal,F,eta,profile,law)
                         self._coefficients(ac,av)
@@ -922,7 +920,7 @@ class PreparedVariableStokes2D:
         if initial_guess is not None:
             metadata['initial_guess']=dict(guess_id=initial_guess.guess_id,descriptor=initial_guess.descriptor())
             arrays.update({'initial_guess_'+k:initial_guess.array(k) for k in ('u_m_s','w_m_s','pressure_pa')})
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return VariableStokesSolution(metadata,arrays)
 
 
@@ -930,7 +928,7 @@ def save_variable_stokes_solution(result,store,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if type(result) is not VariableStokesSolution or not isinstance(store,ArrayStore):raise TectonicsError('typed result/store required')
     policy=store._budget if budget is None else budget
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(policy).reserve(3*result.nbytes+65536,category='variable-stokes-save'):
         return store.put(result.result_id,{k:result.array(k) for k in result.array_names},result.descriptor(),budget=policy,cancel=cancel)
 
@@ -938,7 +936,7 @@ def save_variable_stokes_solution(result,store,*,budget=None,cancel=None):
 def load_variable_stokes_solution(store,result_id,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if not isinstance(store,ArrayStore):raise TectonicsError('ArrayStore required')
-    _hex(result_id,'variable result');_cancel(cancel);policy=store._budget if budget is None else budget
+    _hex(result_id,'variable result');check_event_or_callable(cancel, 'constitutive work cancelled');policy=store._budget if budget is None else budget
     meta=store.metadata(result_id)
     if meta is None:raise TectonicsError('variable mechanical snapshot absent')
     a=store.get(result_id,budget=policy)
@@ -946,5 +944,5 @@ def load_variable_stokes_solution(store,result_id,*,budget=None,cancel=None):
     with select_budget(policy).reserve(3*sum(v.nbytes for v in a.values())+131072,category='variable-stokes-restore'):
         out=VariableStokesSolution(meta,a)
         if out.result_id!=result_id:raise TectonicsError('variable mechanical identity differs')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return out

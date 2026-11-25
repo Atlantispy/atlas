@@ -15,7 +15,6 @@ from hashlib import sha256
 from itertools import chain
 import json
 import math
-import re
 import sys
 from threading import RLock
 
@@ -23,6 +22,8 @@ import numpy as np
 
 from atlas_tectonics.integration_spatial_transport import _workspace
 from atlas_tectonics.resources import MemoryLimitError
+from atlas_tectonics.resources import _sha256_pattern as _HEX_DIGEST
+from atlas_tectonics.resources import canonical_json as canonical
 
 from atlas_tectonics._private.compact_contracts import (BindingIndexRef, ContractError, LogicalIdentity,
     SnapshotLocator, SegmentRef, SEGMENT_REF_SCHEMA, BINDING_INDEX_SCHEMA,
@@ -113,11 +114,6 @@ def cancel_check(cancel):
         raise CancelledError('segmented operation cancelled')
 
 
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'),
-                      ensure_ascii=True, allow_nan=False).encode('ascii')
-
-
 def _pairs(items):
     result = {}
     for key, value in items:
@@ -149,7 +145,6 @@ def _uint(value, name):
 
 # S1: same acceptance as the former per-character test (exactly 64 characters,
 # each one of the 16 ASCII lowercase hex digits), as one compiled match.
-_HEX_DIGEST = re.compile(r'[0-9a-f]{64}')
 
 
 def _digest(value):

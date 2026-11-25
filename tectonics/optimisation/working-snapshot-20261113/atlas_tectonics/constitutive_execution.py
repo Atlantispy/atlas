@@ -17,10 +17,11 @@ import numpy as np
 
 from ._validation import TectonicsError, input_shape, read_array, snapshot, scalar
 from .resources import elements, select_budget
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
 from .execution import KernelExecutor, ExecutionPolicy, _AdmittedCall
 from .constitutive import (RheologyProfile, ConstitutiveLimits, DiffusiveScales,
-                           evaluate_rheology, advance_memory, _inputs, _json, _cancel, _METHOD)
+                           evaluate_rheology, advance_memory, _inputs, _json, _METHOD)
 
 
 class LawResult:
@@ -166,9 +167,11 @@ class PreparedRheology:
 
     def __exit__(self,*_): self.close()
 
+    _close_refusal = 'join active law evaluation before closing'
+
     def close(self):
         with self._lock:
-            if self._active: raise TectonicsError('join active law evaluation before closing')
+            if self._active: raise TectonicsError(self._close_refusal)
             if self._closed: return
             # No executor outlives an evaluation and none is active here, so the
             # plan holds no worker pool or native-thread lease and has no owning
@@ -185,9 +188,9 @@ class PreparedRheology:
             if self._closed or self._active: raise TectonicsError('closed or already-driven constitutive plan')
             self._active=True
         try:
-            _cancel(cancel); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
             yield
-            _cancel(cancel); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
         finally:
             with self._lock: self._active=False
 
@@ -256,7 +259,7 @@ class PreparedRheology:
                 'scales':None if self.scales is None else asdict(self.scales),
                 'array_units':'dimensionless reference units; strain-rate invariant sqrt(e:e/2)',
                 'physics':'local response only; not a PDE solution or physically accepted plate generation'}
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return LawResult(md,arrays)
 
     def advance(self,damage,strain_rate_ii,temperature,elapsed,*,units='dimensionless',cancel=None):
@@ -308,7 +311,7 @@ def save_law_result(result,store,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if type(result) is not LawResult or not isinstance(store,ArrayStore):
         raise TectonicsError('typed law result and ArrayStore required')
-    _cancel(cancel); policy=store._budget if budget is None else budget
+    check_event_or_callable(cancel, 'constitutive work cancelled'); policy=store._budget if budget is None else budget
     with select_budget(policy).reserve(3*result.nbytes+65536,category='constitutive-save'):
         return store.put(result.result_id,{k:result.array(k) for k in result.array_names},
                          result.descriptor(),budget=policy,cancel=cancel)
@@ -319,12 +322,12 @@ def load_law_result(store,result_id,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if not isinstance(store,ArrayStore) or not isinstance(result_id,str) or len(result_id)!=64:
         raise TectonicsError('ArrayStore and result digest required')
-    _cancel(cancel); policy=store._budget if budget is None else budget
+    check_event_or_callable(cancel, 'constitutive work cancelled'); policy=store._budget if budget is None else budget
     metadata=store.metadata(result_id)
     arrays=store.get(result_id,budget=policy)
     if arrays is None or metadata is None: raise TectonicsError('stored law result not found')
     with select_budget(policy).reserve(3*sum(v.nbytes for v in arrays.values())+131072,category='constitutive-restore'):
         result=LawResult(metadata,arrays)
         if result.result_id!=result_id: raise TectonicsError('stored law result identity mismatch')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return result

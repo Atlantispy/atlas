@@ -22,6 +22,7 @@ import tempfile
 from types import MappingProxyType, SimpleNamespace
 
 from atlas_tectonics.resources import WorkBudget
+from atlas_tectonics._private.historical_input_contract import _identity
 
 FORMAT = 'atlas.diagnostic-capture.v1'
 MAGIC = b'ATCP16\x00\x01'
@@ -120,10 +121,6 @@ def _plain_path(path, *, missing=False):
             if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise CaptureError('capture must be a regular single-link file')
     return path
-
-
-def _identity(info):
-    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
 
 
 def _text(value, name):

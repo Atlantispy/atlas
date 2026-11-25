@@ -13,9 +13,10 @@ import threading
 import numpy as np
 
 from ._validation import TectonicsError, scalar
-from .constitutive import _cancel
 from .materials import _json
 from .resources import select_budget
+from .resources import check_event_or_callable
+from .resources import json_sha256
 from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
 from .w03_workflow import (W03ColumnState, W03ExecutionContext,
@@ -83,7 +84,7 @@ def _verify_native_bindings(descriptor, reference_identity):
         raise TectonicsError('native output has no verifiable execution binding')
     with ExecutionContext('scipy') as scipy, ExecutionContext('numba') as numba:
         allowed = {reference_identity, scipy.identity, numba.identity,
-                   _hash(dict(reference=reference_identity, scipy=scipy.identity))}
+                   json_sha256(dict(reference=reference_identity, scipy=scipy.identity), _json)}
         if not bindings <= allowed:
             raise TectonicsError('native output source/runtime differs; no automatic rebind')
 
@@ -157,7 +158,7 @@ def publish_workflow_output(output, store, *, context, scope, budget=None, cance
         raise TectonicsError('explicit supported physical scope required')
     resource = store._budget if budget is None else select_budget(budget)
     with resource.reserve(4 << 20, category='w12-export-verifier'), ExecutionContext() as verifier:
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         description = describe_workflow_output(output)
         owner_binding = _native_owner_binding(output, native_owner, description, cancel)
         binding_descriptor = dict(native=description['descriptor'], native_owner=owner_binding)
@@ -228,7 +229,7 @@ class PreparedColumnAssembly:
     def __init__(self, initial, initial_surface, support_policy, schedule, *, store,
                  context, source_id, reservoir_weights, external_pressure_pa,
                  budget=None, cancel=None):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if (type(initial) is not W03ColumnState or type(initial_surface) is not W04SurfaceInputs
                 or type(support_policy) is not W04SupportPolicy or not isinstance(store, ArrayStore)):
             raise TectonicsError('typed native column, surface, support and store required')
@@ -315,7 +316,7 @@ class PreparedColumnAssembly:
             raise TectonicsError('assembly source/runtime changed')
 
     def _key(self, index):
-        return _hash(dict(schema='atlas.w12-column-checkpoint.v1', plan_id=self.plan_id, index=index))
+        return json_sha256(dict(schema='atlas.w12-column-checkpoint.v1', plan_id=self.plan_id, index=index), _json)
 
     def _surface(self, state, cancel):
         return W04SurfaceInputs(state, self.initial_surface.cell_ids,
@@ -324,13 +325,13 @@ class PreparedColumnAssembly:
 
     @contextmanager
     def _operation(self, cancel):
-        self.verify(); _cancel(cancel)
+        self.verify(); check_event_or_callable(cancel, 'constitutive work cancelled')
         if self._active:
             raise TectonicsError('assembly execution is not reentrant')
         self._active = True
         try:
             yield
-            self.verify(); _cancel(cancel)
+            self.verify(); check_event_or_callable(cancel, 'constitutive work cancelled')
         finally:
             self._active = False
 
@@ -412,7 +413,7 @@ class PreparedColumnAssembly:
                 raise TectonicsError('output index outside the declared schedule')
             state, product = self.initial, None
             for index in range(target+1):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 saved = self.store.metadata(self._key(index))
                 if saved is not None:
                     product = self.store.metadata(saved.get('product_id'))

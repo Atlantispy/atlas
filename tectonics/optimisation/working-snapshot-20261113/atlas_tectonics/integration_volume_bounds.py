@@ -85,6 +85,19 @@ class _Arena:
             self.lease.add(size, category=category)
 
 
+
+class _ChildArena(_Arena):
+    """Live scratch unwinds locally. Attempted work remains charged to the parent."""
+
+    def __init__(self, parent):
+        super().__init__(parent.resource)
+        self.parent = parent
+
+    def work(self, count):
+        self.parent.work(count)
+        self.work_units += count
+
+
 def _points(poly):
     return tuple(sorted({p for face in poly for p in face}))
 

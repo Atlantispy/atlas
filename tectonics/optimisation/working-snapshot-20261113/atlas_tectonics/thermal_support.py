@@ -6,7 +6,6 @@ See docs/W03_THERMAL_SUPPORT.md for equations, references and validity limits.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
 from dataclasses import dataclass
 import math
 
@@ -16,6 +15,7 @@ from ._validation import TectonicsError, read_array, input_shape, frozen, scalar
 from .constitutive import BoussinesqMaterial
 from .parameters import PlateCoolingParameters, identity
 from .resources import elements, select_budget
+from .resources import check_event as _cancel
 from .stokes_execution import _factored_scale
 from .thermal import _batch_count, DEFAULT_COOLING_BATCH_ELEMENTS
 
@@ -53,11 +53,6 @@ class ThermalSupportParameters:
     @property
     def restoring_density_contrast_kg_m3(self):
         return self.compensation_density_kg_m3-self.fill_density_kg_m3
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError()
 
 
 def _material(material):

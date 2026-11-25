@@ -119,9 +119,11 @@ class GeometryIndex:
 
     def __enter__(self):return self
     def __exit__(self,*args):self.close()
+    _close_refusal = 'join active geometry queries before closing index'
+
     def close(self):
         with self._lock:
-            if self._active:raise GeometryError('join active geometry queries before closing index')
+            if self._active:raise GeometryError(self._close_refusal)
             if not self._closed:
                 self._groups.clear();self._closed=True;self._guard.__exit__(None,None,None)
 

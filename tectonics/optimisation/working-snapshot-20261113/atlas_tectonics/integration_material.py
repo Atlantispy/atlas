@@ -37,8 +37,10 @@ from . import integration_splits as _splits
 from . import integration_state as _state
 from . import integration_transfer as _transfer
 from ._validation import TectonicsError
+from ._validation import bounded_record
 from .integration_ledger import LedgerError, _exact, _exact_text
 from .materials import _json, _name
+from .materials import _json as _material_json
 
 
 INVALID_INPUT = 'REFUSED_INVALID_INPUT'
@@ -738,7 +740,7 @@ def _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, refer
         described['physical_columns'] = dict(representation='retained physical h and exact areal sensible heat',
             historical_reconstruction=False, account=physical_account, patches=len(physical_rows),
             rational_codec=_patch_heat.RATIONAL_CODEC)
-    record = _sphere._canonical(described, 'moving state record')
+    record = bounded_record(described, 'moving state record', _material_json, _sphere.SphereError, _sphere.MAX_RECORD, ': record exceeds the bounded envelope')
     return _state._issue(MovingState, state_id=sphere.state_id, network_id=network.network_id,
                          material_id=material.material_id, time_s=network.time_s, step=network.step,
                          declared_step=declared_step,

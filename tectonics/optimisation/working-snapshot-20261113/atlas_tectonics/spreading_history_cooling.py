@@ -11,10 +11,13 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar
+from ._validation import within_budget
 from .materials import _json, _immutable_bytes, _account
-from .regional import _cancelled
 from .resources import select_budget
-from .spreading import _product, _within_budget
+from .regional import _cancelled
+from .resources import check_event
+from .spreading import _within_budget
+from .spreading import _product
 from .spreading_history import PreparedSpreadingHistory, HistorySpreadingState, HistoryExport
 from .spreading_cooling import (OceanCoolingParameters, PreparedSpreadingCooling,
     SpreadingThermalState, HEAT_RELATIVE_TOLERANCE, _remaining, _identity)
@@ -73,7 +76,7 @@ class PreparedHistoryCooling:
     def __init__(self, spreading, parameters, *, budget=None, cancel=None):
         if type(spreading) is not PreparedSpreadingHistory or type(parameters) is not OceanCoolingParameters:
             raise TectonicsError('typed spreading history and ocean cooling parameters required')
-        _cancelled(cancel); spreading._check(spreading.initial); spreading._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published'); spreading._check(spreading.initial); spreading._context.verify()
         if len(parameters.phase_materials) != len(spreading.phases):
             raise TectonicsError('exactly one ordered thermal material per spreading phase required')
         if any(phase.density_kg_m3 != material.density_kg_m3
@@ -84,7 +87,7 @@ class PreparedHistoryCooling:
         if depths[-1] != parameters.plate.thickness_m or np.any(np.diff(depths) <= 0):
             raise TectonicsError('thermal phases must exactly cover the selected plate')
         resource = spreading._budget if budget is None else select_budget(budget)
-        _within_budget(resource, spreading._budget)
+        within_budget(resource, spreading._budget, 'call budget must descend from the prepared run budget')
         n, p = spreading.grid.cells, len(spreading.phases)
         lease = resource.reserve((16*(p+5)+48)*n+16384, category='history-thermal-prepared')
         lease.__enter__()
@@ -96,14 +99,12 @@ class PreparedHistoryCooling:
                     _depths=_immutable_bytes(depths), _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(spreading.initial, None, resource, cancel))
-            spreading._context.verify(); _cancelled(cancel)
+            spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             raise
 
-    @property
-    def depth_edges_m(self):
-        return np.frombuffer(self._depths, dtype=np.float64)
+    depth_edges_m = PreparedSpreadingCooling.depth_edges_m
 
     def _check(self, state):
         if self._closed:
@@ -143,7 +144,7 @@ class PreparedHistoryCooling:
                 heat = (0., parameters.birth_enthalpy_stock_j, 0., parameters.basal_heat_stock_j,
                         0., 0., 0., 0., 0., 0.)
                 water = (0., parameters.water_stock_m3, 0., 0., 0., 0.)
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 return _state(self, motion, parent, (), np.zeros((n, p+5)),
                     np.zeros((n, p+5)), np.zeros(n), np.zeros(n, dtype=np.bool_), heat, water)
             indices = intersections[:, 0].astype(np.intp)
@@ -202,7 +203,7 @@ class PreparedHistoryCooling:
                 parameters.left_export_id if history.side == 'left' else parameters.right_export_id,
                 float(energy), float(water_volume))
                 for history, energy, water_volume in zip(motion.exports, exit_energy, exit_water))
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return _state(self, motion, parent, exports, cell, centre, fraction, valid, heat, water)
 
     def advance(self, state, *, time_s, budget=None, cancel=None):
@@ -217,14 +218,8 @@ class PreparedHistoryCooling:
         self.spreading._context.verify(); _cancelled(cancel)
         return result
 
-    def close(self):
-        if not self._closed:
-            object.__setattr__(self, '_closed', True)
-            self._lease.__exit__(None, None, None)
+    close = PreparedSpreadingCooling.close
 
-    def __enter__(self):
-        self._check(self.initial)
-        return self
+    __enter__ = PreparedSpreadingCooling.__enter__
 
-    def __exit__(self, *args):
-        self.close()
+    __exit__ = PreparedSpreadingCooling.__exit__

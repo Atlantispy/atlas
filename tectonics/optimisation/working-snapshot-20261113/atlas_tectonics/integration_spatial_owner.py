@@ -29,6 +29,7 @@ from .integration_spatial_reservoir import PreparedFiniteStocks
 from .regional_collar3d import PreparedRegionalCollar3D, RegionalCollarSourceFlowStage
 from .regional_execution import RegionalMechanicalSnapshot
 from .resources import WorkBudget
+from .resources import canonical_json as _json
 from .reuse import content_record
 from .integration_dual_measures import B_NAME, policy_record, check_state_cells, transport_audit
 
@@ -76,10 +77,6 @@ def _capacity_pair_bytes(shape):
     # Four simultaneous string/list/encoded-metadata generations, with the
     # existing conservative four-byte character and scalar-header policy.
     return 4*(256+4*((shape[0]+3)//4+(shape[1]+3)//4+8))
-
-
-def _json(record):
-    return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _hash(record):

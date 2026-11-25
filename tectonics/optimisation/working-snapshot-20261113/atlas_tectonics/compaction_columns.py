@@ -7,27 +7,19 @@ as a compaction column. See docs/W03_COMPACTION.md.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
 from dataclasses import dataclass, field, asdict
 import hashlib
-import json
 import math
 
 import numpy as np
 
 from ._validation import TectonicsError, scalar, text, input_shape, snapshot, frozen
+from ._validation import finite_array
 from .compaction import CompactionParameters, compaction_response
 from .materials import MaterialCohort
 from .resources import select_budget, elements
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError()
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf8')
+from .resources import check_event as _cancel
+from .resources import canonical_json as _json
 
 
 def _bytes(value):
@@ -40,16 +32,10 @@ def _bytes(value):
     return owner
 
 
-def _finite(value, name):
-    if not np.isfinite(value).all():
-        raise TectonicsError(name+' exceeds finite numerical range')
-    return value
-
-
 def _multiply(a, b, name):
     with np.errstate(over='ignore', under='ignore', invalid='ignore'):
         result = np.multiply(a, b)
-    _finite(result, name)
+    finite_array(result, name, TectonicsError, ' exceeds finite numerical range')
     if np.any((np.asarray(a) != 0) & (np.asarray(b) != 0) & (result == 0)):
         raise TectonicsError(name+' underflows numerical range')
     return result
@@ -58,7 +44,7 @@ def _multiply(a, b, name):
 def _divide(a, b, name):
     with np.errstate(over='ignore', under='ignore', invalid='ignore', divide='ignore'):
         result = np.divide(a, b)
-    _finite(result, name)
+    finite_array(result, name, TectonicsError, ' exceeds finite numerical range')
     if np.any((np.asarray(a) != 0) & (result == 0)):
         raise TectonicsError(name+' underflows numerical range')
     return result
@@ -154,10 +140,10 @@ def _stress(parcels, solid, area, traction, conditions):
         raise TectonicsError('each grain mixture must be denser than the pore fluid')
     increments = _multiply(_multiply(_divide(solid, area, 'solid thickness'), contrast,
                                     'buoyant sheet'), conditions.gravity_m_s2, 'effective stress increment')
-    below = _finite(np.cumsum(increments, axis=0), 'cumulative effective stress')
+    below = finite_array(np.cumsum(increments, axis=0), 'cumulative effective stress', TectonicsError, ' exceeds finite numerical range')
     above = np.vstack((np.zeros((1, solid.shape[1])), below[:-1]))
     half = _multiply(increments, .5, 'midpoint stress')
-    return _finite(traction+above+half, 'effective stress')
+    return finite_array(traction+above+half, 'effective stress', TectonicsError, ' exceeds finite numerical range')
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -278,12 +264,12 @@ def compaction_geometry(state, *, budget=None, cancel=None):
     with select_budget(budget).reserve(256*elements(state.shape)+8192, category='compaction-geometry'):
         solid = state.grain_volume_m3
         pore = _multiply(solid, state.void_ratio, 'pore volume')
-        bulk = _finite(solid+pore, 'bulk volume')
+        bulk = finite_array(solid+pore, 'bulk volume', TectonicsError, ' exceeds finite numerical range')
         thickness = _divide(bulk, state.area_m2, 'bulk thickness')
         grain_mass = _multiply(solid, np.array([p.grain_density_kg_m3 for p in state.parcels])[:, None], 'grain mass')
         fluid_mass = _multiply(pore, state.conditions.pore_fluid_density_kg_m3, 'fluid mass')
-        density = _divide(_finite(grain_mass+fluid_mass, 'bulk mass'), bulk, 'bulk density')
-        bottom = _finite(np.cumsum(thickness, axis=0), 'depth below sediment top')
+        density = _divide(finite_array(grain_mass+fluid_mass, 'bulk mass', TectonicsError, ' exceeds finite numerical range'), bulk, 'bulk density')
+        bottom = finite_array(np.cumsum(thickness, axis=0), 'depth below sediment top', TectonicsError, ' exceeds finite numerical range')
         top = np.vstack((np.zeros((1, state.shape[1])), bottom[:-1]))
         if np.any(bottom <= top):
             raise TectonicsError('parcel depth interval is unrepresentable')
@@ -343,7 +329,7 @@ def advance_compaction(state, *, area_m2, top_effective_stress_pa, time_s, epoch
         # Compute interval exchange from delta-e, not subtraction of large absolute
         # pore inventories. Internal redistribution is allowed in the drained limit.
         per_parcel_out = _multiply(state.grain_volume_m3, state.void_ratio-response[..., 0], 'pore exchange')
-        out = _finite(np.sum(per_parcel_out, axis=0), 'net pore exchange')
+        out = finite_array(np.sum(per_parcel_out, axis=0), 'net pore exchange', TectonicsError, ' exceeds finite numerical range')
         total_out = math.fsum(map(float, out))
         if not math.isfinite(total_out) or -total_out > available:
             raise TectonicsError('insufficient explicit reservoir fluid for saturated rebound')

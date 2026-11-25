@@ -1174,7 +1174,13 @@ measured on the sphere: the area every amount is counted against.
   special cases with a constant spatial rate. The current port does not inspect
   those cases to admit exceptions or substitute a final rotation for a different
   forcing history. Omitting motion still permits material-only reading for a map
-  or three-dimensional region; a section requires motion.
+  or three-dimensional region; a section requires motion. The forcing preparation
+  records each plate's relative angular rate and, for a planar section, its
+  translation at the section origin. When laying out cells, the workflow compares
+  these accepted coefficients from the sample record. A single planar field
+  requires equality of the full translation and angular rate, including the
+  translation due to an offset pivot. A spherical field compares the angular
+  rates.
 - **Forces and work** are not calculated here. They are passed as unknown, never as
   zero.
 
@@ -2043,6 +2049,14 @@ selected B route, the inherited SQLite text-length limitation and the uncertain,
 not-enabled A1 result.
 
 ### Check identity at publication and worker boundaries
+
+Record producers share canonical JSON encoding and hashing where their byte
+contracts agree. A framed identity hashes its record and then a zero-byte
+separator before each payload. Column loads update their unframed buffers in
+order. The W04 record hashes its JSON concatenated with the single payload.
+Array-bearing ports and the spherical network use the same ordered descriptors
+and C-order payload bytes. The heat worker reaches clone selection with its
+standalone encoder, then loads the selected package.
 
 The separate [rigid-support identity rule](../../optimisation/working-snapshot-20261113/README.md#keep-funding-out-of-rigid-support-identifiers)
 keeps funding as provenance while omitting it from the wall support and

@@ -32,10 +32,12 @@ import numpy as np
 from .coordinates import SphericalFrame
 from .geometry import GeometryError, _limits, _label, _json, _check_cancel
 from ._validation import input_shape, read_array
+from ._validation import unit_rows
 from .resources import select_budget
+from .resources import _immutable_deepcopy
 from .spherical_geometry import SphericalChart
 from .spherical_atlas import (SphericalAtlas, SphericalPatch, build_spherical_atlas,
-                              _capture_directions, _unit)
+                              _capture_directions)
 
 _SCHEMA = 'atlas.planetary-partition.v1'
 _METHOD = 'unweighted-spherical-voronoi-shared-dual-v1'
@@ -159,42 +161,42 @@ def _small_diagram(sites, names):
     """
     n = len(names); vertices = {}; faces = []
     if n <= 2:
-        axis = sites[0] if n == 1 else _unit(sites[0]-sites[1])
+        axis = sites[0] if n == 1 else unit_rows(sites[0]-sites[1], GeometryError, 'zero or nonfinite direction')
         helper = np.eye(3)[int(np.argmin(np.abs(axis)))]
-        east = _unit(np.cross(helper, axis)); north = np.cross(axis, east)
+        east = unit_rows(np.cross(helper, axis), GeometryError, 'zero or nonfinite direction'); north = np.cross(axis, east)
         vertices = {'pole+': axis, 'pole-': -axis,
                     'equator0': east, 'equator1': north,
                     'equator2': -east, 'equator3': -north}
         for side in range(2):
             for k in range(4):
                 ids = ('pole+' if side == 0 else 'pole-', f'equator{k}', f'equator{(k+1)%4}')
-                centre = _unit(np.array([math.fsum(vertices[x][axis] for x in ids) for axis in range(3)]))
+                centre = unit_rows(np.array([math.fsum(vertices[x][axis] for x in ids) for axis in range(3)]), GeometryError, 'zero or nonfinite direction')
                 faces.append((names[0 if n == 1 else side], ids, tuple(centre)))
     else:
         raw = np.cross(sites[1]-sites[0], sites[2]-sites[0])
         if np.linalg.norm(raw) < _DUAL_SEPARATION:
             raise PartitionCandidateError('degenerate-three-site-diagram')
-        pole = _unit(raw)
+        pole = unit_rows(raw, GeometryError, 'zero or nonfinite direction')
         if pole[int(np.argmax(np.abs(pole)))] < 0: pole = -pole
         vertices.update({'pole+': pole, 'pole-': -pole})
         mids = {}
         for i, j in itertools.combinations(range(3), 2):
             k = 3-i-j
-            mid = _unit(np.cross(pole, sites[i]-sites[j]))
+            mid = unit_rows(np.cross(pole, sites[i]-sites[j]), GeometryError, 'zero or nonfinite direction')
             margin = float(mid @ (sites[i]-sites[k]))
             if abs(margin) < _DUAL_SEPARATION:
                 raise PartitionCandidateError('ambiguous-three-site-edge')
             if margin < 0: mid = -mid
             key = f'edge-{i}-{j}'; vertices[key] = mid; mids[(i, j)] = key
         for i, name in enumerate(names):
-            centre = _unit(sites[i]-float(sites[i]@pole)*pole)
+            centre = unit_rows(sites[i]-float(sites[i]@pole)*pole, GeometryError, 'zero or nonfinite direction')
             anchor = f'centre-{i}'; vertices[anchor] = centre
             others = [j for j in range(3) if j != i]
             rim = ('pole+', mids[tuple(sorted((i, others[0])))],
                    'pole-', mids[tuple(sorted((i, others[1])))])
             for a, b in zip(rim, rim[1:]+rim[:1]):
                 ids = (anchor, a, b)
-                centre = _unit(np.array([math.fsum(vertices[x][axis] for x in ids) for axis in range(3)]))
+                centre = unit_rows(np.array([math.fsum(vertices[x][axis] for x in ids) for axis in range(3)]), GeometryError, 'zero or nonfinite direction')
                 faces.append((name, ids, tuple(centre)))
     return vertices, faces
 
@@ -282,7 +284,7 @@ class PlanetaryPartitionPlan:
     def retained_bytes_estimate(self):
         return len(self._sites)+len(self._vertices)+len(self._faces)+512*(len(self.plate_ids)+len(self.vertex_ids))
 
-    def __deepcopy__(self, memo): memo[id(self)] = self; return self
+    __deepcopy__ = _immutable_deepcopy
     def __reduce__(self):
         # Do not trust restored mutable arrays or reuse an unvalidated derived hull.
         return (_restore_plan, (self.sphere, self.plate_ids, self._sites, self.partition_id))
@@ -314,7 +316,7 @@ class PlanetaryPartitionPlan:
                     vertices[anchor] = centre
                     for j, (a, b) in enumerate(zip(ring, ring[1:]+ring[:1])):
                         tri = (a, b, anchor)
-                        c = _unit(vertices[a]+vertices[b]+centre)
+                        c = unit_rows(vertices[a]+vertices[b]+centre, GeometryError, 'zero or nonfinite direction')
                         if min(float(vertices[v]@c) for v in tri) < _CHART_MARGIN:
                             raise PartitionCandidateError('unconditioned-triangle')
                         chart = SphericalChart(self.sphere, tuple(c), _CHART_MARGIN)

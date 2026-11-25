@@ -7,7 +7,31 @@
       "path": "tectonics/evidence/i02-workflow-timing-r12.json",
       "sha256": "ca3913c425008b7f66b1ee46fb2cc5a5765329d6d52fb461a5d5bb0fb1affa3a",
       "status": "historical",
-      "note": "Five strict-mode repetitions on 5 October 2026 after the reviewed optimisation batch; all seven equality/parity/source checks passed. No concurrent Atlas tests or benchmarks. This is bounded Windows column workflow timing, not a release-mode speed measurement or physical/planetary acceptance. Reclassified historical: tectonics/src/atlas_tectonics/integration_strength.py changed after this receipt was recorded (by the slope_min port, commit 3cb64d9). The receipt bytes and recorded bindings are preserved; no successor capture was made."
+      "note": "Five strict-mode repetitions on 5 October 2026 after the reviewed optimisation batch; all seven equality/parity/source checks passed. No concurrent Atlas tests or benchmarks. This is bounded Windows column workflow timing, not a release-mode speed measurement or physical/planetary acceptance. Reclassified historical: tectonics/src/atlas_tectonics/integration_strength.py changed after this receipt was recorded (by the slope_min port, commit 3cb64d9). The receipt bytes and recorded bindings are preserved; the later capture is recorded as i02-workflow-timing-r13."
+    },
+    {
+      "id": "i02-workflow-timing-r13",
+      "path": "tectonics/evidence/i02-workflow-timing-r13.json",
+      "sha256": "221eefcd2fcbae6fb3e49a82002a8db51067f7f763ca40fd3a0e7a89693f359d",
+      "status": "current",
+      "note": "Bounded Windows i02 workflow rerun on dcc1fc4. All seven equality, parity and source checks passed. Timed samples totalled 3.19 seconds.",
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
+      "not_checked": [
+        {
+          "pointer": "/execution_identity",
+          "kind": "runtime",
+          "reason": "Execution identity recorded by the run. Source verification does not reproduce that runtime."
+        }
+      ],
+      "limits": [
+        "One Windows machine and interpreter. Bounded column workflow timing only.",
+        "No release-mode speed, whole-generator performance or scientific acceptance is established."
+      ]
     },
     {
       "id": "i01-melt-segregation-r1",
@@ -409,7 +433,14 @@
       "path": "tectonics/evidence/environment-install.json",
       "sha256": "28617b845f72a3739627c528883d564a2ab156d315783505ea2910170c16380a",
       "status": "historical",
-      "note": "Reviewed clean Windows CPython 3.12.14 installation of 39 pinned packages, dependency/metadata checks, ten environment tests and tiny compiled-library/render smoke calls. No Atlas simulation, visual workflow, Linux check or native restart. Reclassified historical: tectonics/requirements/windows-amd64-cp312.json changed after this receipt was recorded (when gmpy2 was declared as a dependency, commit 3cb64d9). The receipt bytes and recorded bindings are preserved; no successor capture was made."
+      "note": "Reviewed clean Windows CPython 3.12.14 installation of 39 pinned packages, dependency/metadata checks, ten environment tests and tiny compiled-library/render smoke calls. No Atlas simulation, visual workflow, Linux check or native restart. Reclassified historical: tectonics/requirements/windows-amd64-cp312.json changed after this receipt was recorded (when gmpy2 was declared as a dependency, commit 3cb64d9). The receipt bytes and recorded bindings are preserved; the later capture is recorded as environment-install-r2."
+    },
+    {
+      "id": "environment-install-r2",
+      "path": "tectonics/evidence/environment-install-r2.json",
+      "sha256": "f7b7db463bfcf0b1c9db856fea1952b3d84abcfa8018d077d267957375a3bf86",
+      "status": "historical",
+      "note": "Clean Windows CPython 3.12.14 installation on dcc1fc4. All 40 pins, including gmpy2 2.3.2, passed metadata checks. Dependency consistency, ten environment tests and the smoke check passed. The receipt reports the source revision and installation results. Public copy omits the local environment label. No Linux, macOS, native checkpoint compatibility or scientific acceptance is established."
     },
     {
       "id": "boundary-kinematics-r1",

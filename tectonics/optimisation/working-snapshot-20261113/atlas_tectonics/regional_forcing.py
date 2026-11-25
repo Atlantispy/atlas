@@ -20,6 +20,7 @@ import shapely
 from shapely.geometry import LineString
 
 from ._validation import TectonicsError, scalar, read_array, input_shape
+from ._validation import finite_array
 from .coordinates import SphericalFrame, _label
 from .kinematics import _unit
 from .geological_records import GeologySource
@@ -29,6 +30,7 @@ from .spherical_atlas import SphericalAtlas, save_spherical_atlas, load_spherica
 from .geometry_index import GeometryFeature, GeometryIndex
 from .regional import RegionalGrid1D, TransportBoundary, _boundaries
 from .resources import select_budget
+from .resources import json_sha256
 from .reuse import ExecutionContext, content_record
 from .timebase import advance_time
 
@@ -64,21 +66,11 @@ def _record(value):
                      else getattr(value, f.name)) for f in fields(value) if f.init}
 
 
-def _digest(record):
-    return hashlib.sha256(_json(record)).hexdigest()
-
-
 def _array_digest(arrays, descriptor):  # callers: samples identity, forcing_id issue and re-make
     h = hashlib.sha256(_json(content_record(descriptor)))
     for name, a in sorted(arrays.items()):
         h.update(_json((name, a.dtype.str, a.shape))); h.update(a.tobytes())
     return h.hexdigest()
-
-
-def _finite(a, name):
-    if not np.isfinite(a).all():
-        raise MotionReductionError(name + ' exceeds binary64 range')
-    return a
 
 
 def _dot(a, b):
@@ -353,7 +345,7 @@ class RegionalMotionDefinition:
 
     @property
     def identity(self):
-        return _digest(self.descriptor())
+        return json_sha256(self.descriptor(), _json)
 
     def __reduce__(self):
         return (type(self), tuple(getattr(self, f.name) for f in fields(self)))
@@ -498,9 +490,9 @@ class PreparedRegionalForcing:
             self._region_ids = tuple(names)
             pindex = {m.plate_id: i for i, m in enumerate(definition.motions)}
             self._region_plate = np.asarray([pindex[mapping[n]] for n in names], dtype='i8').tobytes()
-            self.identity = _digest(content_record({'method': _METHOD, 'execution_id': self._execution_id,
+            self.identity = json_sha256(content_record({'method': _METHOD, 'execution_id': self._execution_id,
                                      'definition': definition.descriptor(), 'section': section.descriptor(),
-                                     'reduction': reduction.descriptor()}))
+                                     'reduction': reduction.descriptor()}), _json)
             _check_cancel(cancel); self._context.verify()
         except BaseException:
             self._stack.close(); self._closed = True
@@ -522,16 +514,16 @@ class PreparedRegionalForcing:
             if index % 256 == 0: _check_cancel(cancel)
             omega = np.asarray(motion.angular_velocity_rad_s)
             frame_omega = np.asarray(section.frame_angular_velocity_rad_s)
-            delta = _finite(omega-frame_omega, 'relative angular rate')
+            delta = finite_array(omega-frame_omega, 'relative angular rate', MotionReductionError, ' exceeds binary64 range')
             if self._spherical:
                 base = np.zeros(3)
                 admissible = _parallel(delta, pole)
                 reason = 'axial Euler flow has no meridional or radial transport' if admissible else 'relative Euler pole is not the section pole: unrepresented cross-section flow'
             else:
-                shift = _finite(np.asarray(section.origin_m)-motion.pivot_m, 'pivot shift')
-                cross = _finite(np.cross(omega, shift), 'pivot velocity')
+                shift = finite_array(np.asarray(section.origin_m)-motion.pivot_m, 'pivot shift', MotionReductionError, ' exceeds binary64 range')
+                cross = finite_array(np.cross(omega, shift), 'pivot velocity', MotionReductionError, ' exceeds binary64 range')
                 base = np.array([math.fsum((motion.translation_m_s[j], float(cross[j]), -section.frame_velocity_m_s[j])) for j in range(3)])
-                _finite(base, 'relative translation')
+                finite_array(base, 'relative translation', MotionReductionError, ' exceeds binary64 range')
                 admissible = bool(np.all(delta == 0) and _orthogonal(base, pole) and base[2] == 0)
                 reason = ('relative translation parallel to the entire section; no cross/vertical transport' if admissible else
                           'relative angular, transverse or vertical motion is unrepresented by planar columns')
@@ -558,7 +550,7 @@ class PreparedRegionalForcing:
         else:
             positions = np.asarray(self.section.origin_m) + s[:, None] * basis[0]
             frames = np.broadcast_to(basis, (len(s), 3, 3))
-        _finite(positions, 'section coordinates')
+        finite_array(positions, 'section coordinates', MotionReductionError, ' exceeds binary64 range')
         start = (np.frombuffer(self._basis, dtype='f8').reshape(3, 3)[0] * self.section.sphere.radius_m if self._spherical else np.asarray(self.section.origin_m))
         if np.any((s != 0) & np.all(positions == start, axis=1)):
             raise MotionReductionError('nonzero section offset is lost at this coordinate origin')
@@ -737,7 +729,7 @@ class PreparedRegionalForcing:
                     result[start:stop, 3:6] = fv + np.cross(fw, d)
                     relative = c[:, :3] + np.cross(c[:, 3:], d)
                     result[start:stop, 6:] = np.sum(frames[iq] * relative[:, None, :], axis=2)
-        return _finite(result, 'prescribed velocity')
+        return finite_array(result, 'prescribed velocity', MotionReductionError, ' exceeds binary64 range')
 
     def faces(self, grid, *, frame_id, epoch_id, start_time_s, duration_s,
               selections=None, backend='vectorised', cancel=None):

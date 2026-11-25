@@ -12,7 +12,6 @@ No upstream implementation is copied and their dynamic closures are not adopted.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
 from dataclasses import dataclass
 import hashlib
 import json
@@ -22,6 +21,7 @@ import numpy as np
 
 from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar, text
 from atlas_tectonics.resources import WorkBudget, select_budget
+from .resources import check_event
 
 _MAX_NODES = 64
 _MAX_COMPONENTS = 64
@@ -44,11 +44,6 @@ def _identity(component_ids, cp, latent, tm, tref, source_id, provenance):
         allow_nan=False).encode("utf-8")).hexdigest()
 
 
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError("magmatic thermodynamics cancelled; no result published")
-
-
 @dataclass(frozen=True, slots=True, init=False)
 class MagmaticThermodynamics:
     """Supplied additive constant properties and one common melting temperature.
@@ -69,7 +64,7 @@ class MagmaticThermodynamics:
     def __init__(self, component_ids, cp_j_kg_k, latent_heat_j_kg, *,
                  melting_temperature_k, reference_temperature_k, source_id,
                  provenance, budget=None, cancel=None):
-        _cancel(cancel)
+        check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
         if type(component_ids) is not tuple or not 0 < len(component_ids) <= _MAX_COMPONENTS:
             raise TectonicsError("component_ids must be a nonempty tuple of at most 64 components")
         for value in component_ids:
@@ -90,7 +85,7 @@ class MagmaticThermodynamics:
                                 nonnegative=True)
             if cp.shape != shape or latent.shape != shape or np.any(cp <= 0):
                 raise TectonicsError("positive cp and unchanged component shapes required")
-            _cancel(cancel)
+            check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
             for name, value in dict(component_ids=component_ids,
                     melting_temperature_k=tm, reference_temperature_k=tref,
                     source_id=source_id, provenance=provenance,
@@ -218,7 +213,7 @@ def _invert(component_mass, enthalpy, thermodynamics, cancel):
     p = thermodynamics
     temperatures, fractions, phases, masses = [], [], [], []
     for row, energy in zip(component_mass, enthalpy):
-        _cancel(cancel)
+        check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
         mass, cp, latent = _totals(row, p)
         masses.append(mass)
         if mass == 0:
@@ -249,7 +244,7 @@ def _invert(component_mass, enthalpy, thermodynamics, cancel):
         if not math.isfinite(temperature) or temperature <= 0:
             raise TectonicsError("enthalpy implies an invalid absolute temperature")
         temperatures.append(temperature); fractions.append(fraction); phases.append(phase)
-    _cancel(cancel)
+    check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
     return MagmaticThermalState(p.component_ids, p.thermodynamics_id, tuple(temperatures),
         tuple(fractions), tuple(phases), component_mass.tobytes(), enthalpy.tobytes(),
         np.asarray(masses, dtype=np.float64).tobytes())
@@ -258,7 +253,7 @@ def _invert(component_mass, enthalpy, thermodynamics, cancel):
 def invert_enthalpy(component_mass_kg, enthalpy_j, thermodynamics, *, budget=None,
                     cancel=None):
     """Invert the supplied common-Tm phase rule exactly, without iteration."""
-    _cancel(cancel)
+    check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
     shape = _shape(component_mass_kg, enthalpy_j, thermodynamics)
     with _budget(budget).reserve(thermodynamics_work_bytes(*shape),
                                 category="magma-enthalpy"):
@@ -276,7 +271,7 @@ def reheat(component_mass_kg, enthalpy_j, heat_j, thermodynamics, *, budget=None
     This may melt or crystallise according to the same enthalpy rule. It never
     creates/extracts material or rebooks latent heat during bulk transfer.
     """
-    _cancel(cancel)
+    check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
     shape = _shape(component_mass_kg, enthalpy_j, thermodynamics)
     if input_shape(heat_j, "heat_j") != (shape[0],):
         raise TectonicsError("one heat increment required per node")
@@ -312,7 +307,7 @@ def melt_source_fraction(component_mass_kg, enthalpy_j, fraction, external_heat_
     exists to pay; a transfer plan's temperature test of a declared source kind
     does not make such a node convertible here.
     """
-    _cancel(cancel)
+    check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
     shape = _shape(component_mass_kg, enthalpy_j, thermodynamics)
     if shape[0] != 1:
         raise TectonicsError("conversion requires exactly one source node")
@@ -353,5 +348,5 @@ def melt_source_fraction(component_mass_kg, enthalpy_j, fraction, external_heat_
         if melted.phase != ("liquid",):
             raise TectonicsError("liquid target is not resolved by supplied enthalpy")
         remaining = _invert(remainder, np.array([remaining_e]), thermodynamics, cancel)
-        _cancel(cancel)
+        check_event(cancel, 'magmatic thermodynamics cancelled; no result published')
         return MagmaticMeltConversion(remaining, melted, cost, heat - cost)

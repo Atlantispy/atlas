@@ -16,8 +16,10 @@ import numpy as np
 
 from ._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
 from .resources import WorkBudget, select_budget
+from .resources import _budget_statistics
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
-from .constitutive import _cancel, _json
+from .constitutive import _json
 from .stokes_execution import _native_lease, _factored_scale
 from ._validation import effort_paths as _paths, without_effort as _without
 
@@ -207,7 +209,7 @@ class PreparedRegionalStokes2D:
         self._guard = self._resource.reserve(retained, category='regional-mechanics-prepared')
         self._guard.__enter__()
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._definition = {'schema': 'atlas.regional-mechanics-plan.v1',
                 'nx': nx, 'nz': nz, 'width_m': width_m, 'height_m': height_m,
                 'viscosity_pa_s': viscosity_pa_s, 'boundary_types': pattern,
@@ -239,7 +241,7 @@ class PreparedRegionalStokes2D:
                         eta_vertex=_factored_scale(ev,(),(viscosity_pa_s,),'scaled vertex viscosity'))),
                     rigid_constraints=rigid_constraints, method=method,
                     linear_rtol=1e-12, max_iterations=1200, restart=60, cancel=cancel)
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context.verify()
         except BaseException:
             self._context = self._core = None
@@ -294,7 +296,7 @@ class PreparedRegionalStokes2D:
                 self._stats['coefficient_refills']=self._stats.get('coefficient_refills',0)+1
             else:
                 self._stats['coefficient_reuse_hits']=self._stats.get('coefficient_reuse_hits',0)+1
-            self._context.verify();_cancel(cancel)
+            self._context.verify();check_event_or_callable(cancel, 'constitutive work cancelled')
             updated=dict(d,material_source=material_source,stress_site_viscosity={
                 'centre_sha256':_array_hash(ec),'vertex_sha256':_array_hash(ev),
                 'sampling':sampling,'units':'Pa s'})
@@ -341,8 +343,7 @@ class PreparedRegionalStokes2D:
     def descriptor(self):
         return json.loads(_json(self._definition))
 
-    def statistics(self):
-        return dict(self._stats, budget=self._resource.statistics())
+    statistics = _budget_statistics
 
     def coordinates(self, location):
         from .regional_stokes import boundary_coordinates
@@ -368,11 +369,11 @@ class PreparedRegionalStokes2D:
                 raise TectonicsError('regional plan invalidated by an interrupted coefficient refill; close it and prepare a new plan')
             self._active = True
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context.verify()
             with _native_lease():
                 yield
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context.verify()
         except BaseException:
             # A failed final cancellation/source check cannot leave a newly
@@ -490,7 +491,7 @@ class PreparedRegionalStokes2D:
                         scaled = _factored_scale(effective, (length,), (eta, velocity), 'scaled boundary traction')
                     normalised_boundary[side][component] = (kind, scaled)
             raw = self._core.solve(nu, nw, boundaries=normalised_boundary, cancel=cancel)
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             arrays = {'force_u_n_m3': fx, 'force_w_n_m3': fz,
                       'u_m_s': _factored_scale(raw['u'], (velocity,), (), 'published u'),
                       'w_m_s': _factored_scale(raw['w'], (velocity,), (), 'published w'),
@@ -577,7 +578,7 @@ class PreparedRegionalStokes2D:
                 'iterations': int(raw['iterations']),
                 'steady_snapshot': True, 'time_advanced': False}
             result = RegionalMechanicalSnapshot(metadata, arrays)
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context.verify()
             self._stats['solves'] += 1
             self._latest_key, self._latest = key, result

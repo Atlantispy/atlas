@@ -20,6 +20,7 @@ import numpy as np
 from ._validation import FloatArray, TectonicsError, frozen, input_shape, read_array, scalar
 from .kinematics import Rotation
 from .resources import elements, select_budget
+from .resources import _immutable_deepcopy
 
 
 def _label(value: str, name: str) -> str:
@@ -367,9 +368,7 @@ class LocalCartesianFrame:
         return (type(self), (self.sphere,self.frame_id,self.longitude_rad,self.latitude_rad,
                             self.height_m,self.axis_rotation_rad))
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def east_south_up_to_enu(values, *, axial: bool = False, budget=None,

@@ -89,10 +89,12 @@ from . import integration_support as Q
 from . import integration_transfer as T
 from . import integration_volume as V
 from ._validation import TectonicsError
+from ._validation import bounded_record
 from .coordinates import SphericalFrame
 from .kinematics import Rotation
 from .material_library import earth_material_library
 from .materials import _name
+from .materials import _json as _material_json
 from .parameters import PlateCoolingParameters, ThermalParameters
 from .plate_cooling import finite_plate_temperature
 from .resources import MemoryLimitError, select_budget
@@ -1831,7 +1833,7 @@ def _starting_family(request, budget):
         edge_constructions=tuple(e['construction'] for e in edges), boundary_ids=boundary_ids,
         edge_kinds=kinds, edge_subducting=subducting, slabs=tuple(slabs), geometry_id='', _edges=edges,
         _outlines=outlines)
-    object.__setattr__(geometry, 'geometry_id', S._identity(S._canonical(geometry.record(), 'family geometry'),
+    object.__setattr__(geometry, 'geometry_id', S._identity(bounded_record(geometry.record(), 'family geometry', _material_json, S.SphereError, S.MAX_RECORD, ': record exceeds the bounded envelope'),
                                                             geometry.arrays()))
 
     # Sampling: the I03 network of level L, its material pieces and the declared initial state.
@@ -1947,13 +1949,13 @@ def _starting_family(request, budget):
         record_columns.append(column.record())
         arrays += [('column:%s:%s' % (column_id, key), getattr(column, key))
                    for key in ('depths_m', 'temperatures_k', 'density_kg_m3', 'alpha_per_k')]
-    record = S._canonical(dict(schema=schema, status=STATUS, request=request.record(), geometry=geometry.record(),
+    record = bounded_record(dict(schema=schema, status=STATUS, request=request.record(), geometry=geometry.record(),
                                columns=record_columns, network_id=network.network_id,
                                material_id=material.material_id, state_id=state.state_id, report=report),
-                          'family record')
+                          'family record', _material_json, S.SphereError, S.MAX_RECORD, ': record exceeds the bounded envelope')
     return _state._issue(StartingFamily, request=request, geometry=geometry, columns=MappingProxyType(columns),
                          network=network, material=material, state=state, family_id=S._identity(record, arrays),
-                         _report=S._canonical(report, 'family report'))
+                         _report=bounded_record(report, 'family report', _material_json, S.SphereError, S.MAX_RECORD, ': record exceeds the bounded envelope'))
 
 
 # ----------------------------------------------------------------------------- P1: family columns at the trace

@@ -24,8 +24,10 @@ import numpy as np
 from . import integration_sphere as S
 from . import integration_state as _state
 from ._validation import TectonicsError, _replay_fsum
-from .constitutive import _cancel
+from ._validation import frozen_contiguous as _frozen
 from .resources import select_budget
+from .resources import check_event_or_callable
+from .resources import json_sha256
 from .materials import _json
 
 
@@ -83,7 +85,7 @@ def _name(value, label):
 def plate_support_id(network_id, plate_ids):
     """P5 support: the network's plates, in order, as a versioned record bound to network_id."""
     _sha(network_id, 'network')
-    return _digest(dict(schema=PLATE_SUPPORT, network_id=network_id, plate_ids=list(plate_ids)))
+    return json_sha256(dict(schema=PLATE_SUPPORT, network_id=network_id, plate_ids=list(plate_ids)), _json)
 
 
 def _digest(record, arrays=()):
@@ -166,11 +168,6 @@ class Header:
                     frame_id=self.frame_id, owner=self.owner, producer=self.producer)
 
 
-def _frozen(array, dtype):
-    raw = np.ascontiguousarray(array, dtype=dtype)
-    return np.frombuffer(raw.tobytes(), dtype=dtype).reshape(raw.shape)
-
-
 @dataclass(frozen=True, init=False, eq=False, slots=True)
 class TraceSupport(_state._Immutable):
     """P1 support on one network: every plate-boundary edge's endpoints and midpoint, in the sphere's axes.
@@ -239,7 +236,7 @@ def trace_support(network):
     record = dict(schema=TRACE_SUPPORT, network_id=network.network_id, radius_m=network.sphere.radius_m,
                   boundary_ids=list(ids), plates=[list(pair) for pair in owners],
                   point_order='edge-major; left then right', sides=[LEFT, RIGHT])
-    return _state._issue(TraceSupport, network_id=network.network_id, support_id=_digest(record, arrays),
+    return _state._issue(TraceSupport, network_id=network.network_id, support_id=S._identity(_json(record), arrays),
                          radius_m=float(network.sphere.radius_m), boundary_ids=ids, plates=tuple(owners),
                          material_id=None, piece_keys=None, patch_ids=None, original_edges=None,
                          **dict(arrays))
@@ -294,7 +291,7 @@ def material_trace_support(sphere):
     record = dict(schema=MATERIAL_TRACE_SUPPORT, base_support_id=base.support_id,
                   material_id=sphere.material.material_id, original_edges=original,
                   piece_keys=keys, patch_ids=patches)
-    return _state._issue(TraceSupport, network_id=base.network_id, support_id=_digest(record, arrays),
+    return _state._issue(TraceSupport, network_id=base.network_id, support_id=S._identity(_json(record), arrays),
                          radius_m=base.radius_m, boundary_ids=base.boundary_ids, plates=tuple(owners),
                          material_id=sphere.material.material_id, piece_keys=tuple(keys),
                          patch_ids=tuple(patches), original_edges=tuple(original), **dict(arrays))
@@ -417,7 +414,7 @@ def columns_port(header, offsets, thickness_m, reference_density_kg_m3, alpha_pe
                     _name(name, 'contributing cohort')
         record['representation'] = [None if entry is None else [entry[0], list(entry[1])] for entry in representation]
     return _state._issue(Columns, header=header, water_depth_m=water, water_source=water_source, sources=sources,
-                         port_id=_digest(record, arrays), representation=representation,
+                         port_id=S._identity(_json(record), arrays), representation=representation,
                          **{name: array for name, array in arrays if name != 'water_depth_m'})
 
 
@@ -477,7 +474,7 @@ def _plate_motion(header, plate_ids, omega_rad_s, *, frame_id, balance_id, evalu
         record['coupling_residual'] = coupling_residual
     return _state._issue(PlateMotion, header=header, plate_ids=plate_ids, omega_rad_s=omega, frame_id=frame_id,
                          balance_id=balance_id, evaluation=evaluation, coupling_residual=coupling_residual,
-                         port_id=_digest(record, (('omega_rad_s', omega),)))
+                         port_id=S._identity(_json(record), (('omega_rad_s', omega),)))
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -539,7 +536,7 @@ def _mechanical_increment(header, pieces, offsets, kappa_increment, bound):
         raise PortRefused('an increment above 2 integral e dt', UNSUPPORTED, detail='increment above 2∫e dt')
     record = dict(schema=SCHEMA, header=header.record(), units=INCREMENT_UNITS, pieces=[list(p) for p in pieces])
     return _state._issue(MechanicalIncrement, header=header, pieces=pieces, offsets=arrays[0][1],
-                         kappa_increment=values, bound=ceiling, port_id=_digest(record, arrays))
+                         kappa_increment=values, bound=ceiling, port_id=S._identity(_json(record), arrays))
 
 
 @dataclass(frozen=True, init=False, eq=False, slots=True)
@@ -572,7 +569,7 @@ def _dissipation(header, pieces, offsets, creep, plastic, heat_rule):
                   heat_rule=heat_rule)
     return _state._issue(Dissipation, header=header, pieces=pieces, offsets=arrays[0][1],
                          creep_energy_j_m3=arrays[1][1], plastic_energy_j_m3=arrays[2][1], heat_rule=heat_rule,
-                         port_id=_digest(record, arrays))
+                         port_id=S._identity(_json(record), arrays))
 
 
 @dataclass(frozen=True, init=False, eq=False, slots=True)
@@ -606,13 +603,13 @@ class BoundaryReaction(_state._Immutable):
         lanes retain ordered NumPy arithmetic; a widened row selects that original
         vector route for the entire call, without evaluating any product twice.
         """
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         owner = select_budget(budget)
         count = len(plate_ids)
         owned_count = 0
         for edge, owned in enumerate(self.owned):
             if edge % 1024 == 0:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
             owned_count += owned
 
         # CPython's general-key table bounds also cover its smaller string-key
@@ -629,7 +626,7 @@ class BoundaryReaction(_state._Immutable):
             order = {}
             for row, plate in enumerate(plate_ids):
                 if row % 1024 == 0:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                 order[plate] = row
             packet = np.empty((owned_count, 3), dtype=np.float64)
             successor = np.full(2*owned_count, -1, dtype=np.int32)
@@ -643,7 +640,7 @@ class BoundaryReaction(_state._Immutable):
                 ordinal = 0
                 for edge, owned in enumerate(self.owned):
                     if edge % 1024 == 0:
-                        _cancel(cancel)
+                        check_event_or_callable(cancel, 'constitutive work cancelled')
                     if not owned:
                         continue
                     if edge < first:
@@ -656,14 +653,14 @@ class BoundaryReaction(_state._Immutable):
                     out[order[plates[edge][0]]] += value
                     out[order[plates[edge][1]]] -= value
                     ordinal += 1
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 return out
 
             ordinal = 0
             has_exceptional = False
             for edge, owned in enumerate(self.owned):
                 if edge % 1024 == 0:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                 if not owned:
                     continue
                 tau = radius_m*self.edge_length_m[edge]*np.cross(
@@ -692,7 +689,7 @@ class BoundaryReaction(_state._Immutable):
                 visits = 0
                 while occurrence >= 0:
                     if visits % 1024 == 0:
-                        _cancel(cancel)
+                        check_event_or_callable(cancel, 'constitutive work cancelled')
                     value = float(packet[occurrence//2, axis])
                     yield -value if occurrence % 2 else value
                     occurrence = int(successor[occurrence])
@@ -700,7 +697,7 @@ class BoundaryReaction(_state._Immutable):
 
             for row in range(count):
                 if row % 1024 == 0:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                 for axis in range(3):
                     if exceptional[row, axis]:
                         continue
@@ -716,7 +713,7 @@ class BoundaryReaction(_state._Immutable):
                 ordinal = 0
                 for edge, owned in enumerate(self.owned):
                     if edge % 1024 == 0:
-                        _cancel(cancel)
+                        check_event_or_callable(cancel, 'constitutive work cancelled')
                     if not owned:
                         continue
                     left, right = order[plates[edge][0]], order[plates[edge][1]]
@@ -724,7 +721,7 @@ class BoundaryReaction(_state._Immutable):
                     np.add(out[left], tau, out=out[left], where=exceptional[left])
                     np.subtract(out[right], tau, out=out[right], where=exceptional[right])
                     ordinal += 1
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return out
 
 
@@ -745,4 +742,4 @@ def _boundary_reaction(header, support, owned, velocity, traction, length):
         arrays.append((name, _frozen(value, float)))
     record = dict(schema=REACTION, header=header.record(), units=REACTION_UNITS, owned=list(owned))
     return _state._issue(BoundaryReaction, header=header, owned=owned, velocity_jump_m_s=arrays[0][1],
-                         traction_left_n_m=arrays[1][1], edge_length_m=arrays[2][1], port_id=_digest(record, arrays))
+                         traction_left_n_m=arrays[1][1], edge_length_m=arrays[2][1], port_id=S._identity(_json(record), arrays))

@@ -29,6 +29,7 @@ from . import integration_ledger as _ledger
 from . import integration_state as _state
 from ._validation import TectonicsError, scalar
 from .timebase import advance_time
+from .resources import issue as _issue
 
 
 SAVEPOINT = 'savepoint'
@@ -91,13 +92,6 @@ class Outcome(_state._Immutable):
 
     def __init__(self, *args, **kwargs):
         raise TypeError('Outcome is issued by Clock.advance() only')
-
-
-def _issue(cls, **values):
-    item = object.__new__(cls)
-    for key, value in values.items():
-        object.__setattr__(item, key, value)
-    return item
 
 
 def _cancelled(cancel):

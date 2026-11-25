@@ -28,17 +28,14 @@ from .materials import (MaterialCohort, MaterialState, MaterialBoundary,
     _hash_array, _transition_record, _positive_total, _account, _METRICS)
 from .reuse import ExecutionContext, PreparedInput, ReuseController, cached_material_transport, content_record
 from .resources import select_budget
+from .resources import json_sha256
+from .resources import canonical_json as _json
 from .storage import ArrayStore
 
 _SCHEMA = 'atlas.regional-workflow.v1'
 _THERMAL = 'initial-epoch only; not evolved heat or temperature'
 _MAX_STEPS = 256
 _MAX_COHORTS = 4096
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'),
-                      ensure_ascii=True, allow_nan=False).encode('utf8')
 
 
 def _digest(value):  # every caller issues or re-makes workflow_id
@@ -199,7 +196,7 @@ def _state(samples, forcing, support, fluids, material, parent, max_steps, schem
         _root=None if parent is None else parent if parent._root is None else parent._root)
     for k, v in values.items():
         object.__setattr__(obj, k, v)
-    object.__setattr__(obj, 'workflow_id', _digest(obj.descriptor()))
+    object.__setattr__(obj, 'workflow_id', json_sha256(content_record(obj.descriptor())))
     return obj
 
 

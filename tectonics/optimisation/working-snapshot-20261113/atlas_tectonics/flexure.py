@@ -14,6 +14,7 @@ import numpy as np
 
 from ._validation import FloatArray, TectonicsError, read_array as array, frozen, input_shape
 from .resources import elements, select_budget
+from .resources import _immutable_deepcopy
 from .parameters import FlexureParameters, PeriodicGrid1D, identity
 
 
@@ -146,6 +147,4 @@ class PeriodicFlexure:
         # Rebuild from the typed definition, never deserialize mutable gain data.
         return (type(self), (self.grid, self.parameters))
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
+    __deepcopy__ = _immutable_deepcopy

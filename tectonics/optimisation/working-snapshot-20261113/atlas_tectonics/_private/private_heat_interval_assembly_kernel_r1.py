@@ -21,7 +21,7 @@ from fractions import Fraction as Q
 import json
 import sys
 
-from atlas_tectonics._private.private_heat_decimal_sparse_core_r1 import OwnedSolve, RoundedFace, RoundedSystem
+from atlas_tectonics._private.private_heat_decimal_sparse_core_r1 import CallerInventory, OwnedSolve, RoundedFace, RoundedSystem
 
 
 class UnresolvedRounding(ValueError):
@@ -66,16 +66,10 @@ class DiagnosticInventory:
     result_bytes: int
     justification: str
 
-    def total(self):
-        counts = (self.input_bytes, self.work_bytes, self.result_bytes)
-        if any(type(value) is not int or value <= 0 for value in counts):
-            raise ValueError('Explicit positive input, exact/Decimal work and result allowances required')
-        if type(self.justification) is not str or not self.justification.strip():
-            raise ValueError('Explicit diagnostic inventory justification required')
-        value = sum(counts)
-        if value > sys.maxsize:
-            raise OverflowError('Diagnostic inventory exceeds addressable storage')
-        return value
+    _count_refusal = 'Explicit positive input, exact/Decimal work and result allowances required'
+    _justification_refusal = 'Explicit diagnostic inventory justification required'
+    _overflow_refusal = 'Diagnostic inventory exceeds addressable storage'
+    total = CallerInventory.total
 
 
 class OwnedAssembly(OwnedSolve):

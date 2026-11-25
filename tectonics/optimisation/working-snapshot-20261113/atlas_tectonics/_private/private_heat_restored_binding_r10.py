@@ -40,7 +40,7 @@ _PINS = {
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
     'private_heat_forward_kernel_r13.py': 'b56ad1d244eee93a9f817acc451a5c375b4f7bb3b8d5715175670a42a8d3878a',
     'private_heat_grouped_account_r1.py': '6bdf936e6dec7ce0630b3a9db2ec9f72f1a5bea6b2cee74af4f2c5865e25e920',
-    'private_heat_joined_consumer_r6.py': '58ac10dfb27e17be07228794489d77c9663b0c74c3503300777bead8c4f6bab9',
+    'private_heat_joined_consumer_r6.py': 'b337e8f37657803e49b8747a03defcc4c28f97b79ef6b4621d83104ca10e59c6',
 }
 _SOURCES = {_atlas_identity.relkey(HERE/name): pin for name, pin in _PINS.items()}
 _SOURCES[_atlas_identity.relkey(__file__)] = R.source_hash(__file__)

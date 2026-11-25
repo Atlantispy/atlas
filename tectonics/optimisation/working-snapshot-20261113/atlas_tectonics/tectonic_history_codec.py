@@ -11,15 +11,16 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar
-from .constitutive import _cancel
 from .evolving_flexure import EvolvingW04SupportResult
 from .evolving_mechanics import EvolvingMechanicalResult, RegionalInputContext
 from .geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS, _label
-from .materials import MaterialCohort
+from .materials import MaterialCohort, _json as _material_json
 from .regional_checkpoint import (pack_regional_snapshots, restore_regional_snapshots,
     _json, _parse, _keys, _sha, _hash)
 from .regional_execution import RegionalMechanicalSnapshot
 from .resources import WorkBudget, MemoryLimitError, select_budget
+from .resources import check_event_or_callable
+from .resources import record_id
 from .regional_stokes import boundary_coordinates
 from .underthrust import UnderthrustState, UnderthrustInterface, MAX_PARCELS, MAX_RECEIVERS, _id as _under_id
 from .w04_workflow import _id as _w04_id
@@ -150,7 +151,8 @@ def _under_arrays(out, d):
         arrays['geometry_'+str(i)] = np.frombuffer(p.wkb, dtype=np.uint8)
     if vertices > DEFAULT_GEOMETRY_LIMITS.max_vertices or current_ids != d['current_geometry_ids']:
         _fail('underthrust geometry identity/complexity mismatch')
-    if _under_id(d,out._fields,out._work,out._potential,out._displacement) != history_result_id(out):
+    if record_id(content_record(d), out._fields, out._work, out._potential, out._displacement,
+                 encode=_material_json) != history_result_id(out):
         _fail('underthrust intrinsic identity mismatch')
     return arrays
 
@@ -283,7 +285,7 @@ def _catalogue(arrays, cancel, resource):
         _fail('invalid array catalogue count')
     specs = {}; total = 0
     for name, value in sorted(arrays.items()):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if (type(name) is not str or len(name) > 128 or type(value) is not np.ndarray or
                 value.dtype not in (np.dtype('float64'),np.dtype('uint8')) or
                 not value.flags.c_contiguous or len(value.shape) > 4 or
@@ -311,7 +313,7 @@ def _costs(specs, descriptor, regional):
 
 def _pack_history_result(out, *, budget=None, cancel=None):
     """Pack one exact typed result without a plan, timestep or scientific solve."""
-    _cancel(cancel); kind = _kind(out); retained = history_result_nbytes(out)
+    check_event_or_callable(cancel, 'constitutive work cancelled'); kind = _kind(out); retained = history_result_nbytes(out)
     resource = WorkBudget(CAP,parent=select_budget(budget))
     with resource.reserve(retained+65536,category='tectonic-history-source'):
         d = _record(out); regional = None
@@ -328,13 +330,13 @@ def _pack_history_result(out, *, budget=None, cancel=None):
         _json(meta)
         with resource.reserve(costs['work_bytes'],category='tectonic-history-pack'):
             captured = {k:np.frombuffer(v.tobytes(),dtype=v.dtype).reshape(v.shape) for k,v in arrays.items()}
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return captured,meta
 
 
 def _restore_history_result(arrays, metadata, *, budget=None, cancel=None):
     """Restore internal integrity; the owner still checks expected input context."""
-    _cancel(cancel); _keys(metadata,_META,'history envelope')
+    check_event_or_callable(cancel, 'constitutive work cancelled'); _keys(metadata,_META,'history envelope')
     _json(metadata)
     if metadata['schema'] != SCHEMA or metadata['kind'] not in _KINDS.values():
         _fail('unsupported history schema/type')
@@ -356,7 +358,7 @@ def _restore_history_result(arrays, metadata, *, budget=None, cancel=None):
                 _fail('underthrust array coverage mismatch')
             polygons = []
             for i in range(n):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 if arrays['geometry_'+str(i)].dtype != np.uint8 or arrays['geometry_'+str(i)].ndim != 1:
                     _fail('WKB must be uint8 vector')
                 polygons.append(PlanarGeometry.from_wkb(raw['geometry_'+str(i)],frame_id=d['frame_id'],budget=resource))
@@ -380,7 +382,7 @@ def _restore_history_result(arrays, metadata, *, budget=None, cancel=None):
         # Equal raw byte lengths alone must not accept a different shape/dtype.
         if any(a.shape != expected[k].shape or a.dtype != expected[k].dtype for k,a in arrays.items()):
             _fail('restored logical field shape/dtype mismatch')
-        history_result_nbytes(out); _cancel(cancel)
+        history_result_nbytes(out); check_event_or_callable(cancel, 'constitutive work cancelled')
         return out
 
 

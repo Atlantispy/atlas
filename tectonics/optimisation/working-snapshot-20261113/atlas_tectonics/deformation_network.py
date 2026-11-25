@@ -22,23 +22,17 @@ from shapely.geometry import Polygon, LineString, Point
 from shapely.strtree import STRtree
 
 from ._validation import input_shape, read_array, scalar
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
 from .geometry import (GeometryError, PlanarGeometry, _check_cancel, _json,
                        _label, _limits, geometry_runtime)
 from .resources import WorkBudget, select_budget
+from .resources import record_id
 from .reuse import ExecutionContext, content_record
 
 
 MAX_NETWORK_INTERVALS = 256
 MAX_NETWORK_TRIANGLES = 4096
-_ROUND = float(128*np.finfo(float).eps)
 _PHYSICAL_TOLERANCE = 1e-12  # relative to declared local length/velocity scales
-
-
-def _identity(record, *payloads):
-    digest = hashlib.sha256(_json(record))
-    for payload in payloads:
-        digest.update(b'\0'); digest.update(payload)
-    return digest.hexdigest()
 
 
 def _cross(a, b):
@@ -317,7 +311,7 @@ class PreparedDeformationNetwork:
                     execution=self.execution_id,
                     physical_scale_tolerance=_PHYSICAL_TOLERANCE,
                     determinant_guard_epsilon_units=128)
-                self.plan_id = _identity(content_record(record), vertices.tobytes(), self._triangles)
+                self.plan_id = record_id(content_record(record), vertices.tobytes(), self._triangles, encode=_json)
                 self._record = _json(record)
                 _check_cancel(cancel); self._sealed = True
         except FloatingPointError as exc:
@@ -347,10 +341,12 @@ class PreparedDeformationNetwork:
 
     def descriptor(self): return json.loads(self._record)
 
+    _closed_query = 'deformation network is closed'
+
     @contextmanager
     def _query(self, cancel):
         with self._lock:
-            if self._closed: raise GeometryError('deformation network is closed')
+            if self._closed: raise GeometryError(self._closed_query)
             object.__setattr__(self, '_active', self._active+1)
         try:
             _check_cancel(cancel); yield
@@ -396,7 +392,7 @@ class PreparedDeformationNetwork:
                         triangle_ids=self.triangle_ids, completed_intervals=j,
                         active_interval=j if now != self._times[j] else None)
                     payloads = vertices.tobytes(), self._triangles, gradient.tobytes(), jacobian.tobytes()
-                    state_id = _identity(record, *payloads)
+                    state_id = record_id(record, *payloads, encode=_json)
                     state = NetworkState(self.plan_id, state_id, now, self.frame_id, self.source_id,
                                          self.triangle_ids, tuple(polygons), *payloads, _json(record))
                     _check_cancel(cancel)
@@ -418,3 +414,22 @@ class PreparedDeformationNetwork:
 
     def __enter__(self): return self
     def __exit__(self, *args): self.close()
+
+
+def _check_parcel_overlap(polygons, budget, limits, cancel, pair_error, overlap_error, vertex_error=None):
+    shapes = [polygon._geom for polygon in polygons]
+    tree = STRtree(shapes)
+    pairs = 0
+    for i, shape in enumerate(shapes):
+        _check_cancel(cancel)
+        for j in tree.query(shape):
+            j = int(j)
+            if j <= i:
+                continue
+            pairs += 1
+            if pairs > limits.max_overlay_pairs:
+                raise GeometryError(pair_error)
+            if vertex_error is not None and polygons[i].vertex_count*polygons[j].vertex_count > limits.max_overlay_pairs:
+                raise GeometryError(vertex_error)
+            if polygons[i].overlay(polygons[j], limits=limits, budget=budget, cancel=cancel).area_m2 > 0:
+                raise GeometryError(overlap_error)

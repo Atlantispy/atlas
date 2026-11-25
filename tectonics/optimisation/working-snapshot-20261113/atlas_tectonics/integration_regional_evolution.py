@@ -27,19 +27,13 @@ from .regional_execution3d import SIDES, PreparedRegionalStokes3D
 from .regional_execution3d import _digest_array
 from .stokes_execution import _factored_scale
 from .resources import WorkBudget
+from .resources import canonical_json
+from .resources import json_sha256
 from .reuse import content_record
 
 
 class RegionalOwnerRefused(TectonicsError):
     """Unsupported material, map, reservation or checkpoint; never homogenise."""
-
-
-def _json(row):
-    return json.dumps(row, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
-def _hash(row):
-    return hashlib.sha256(_json(row)).hexdigest()
 
 
 def _exact(q):
@@ -263,7 +257,7 @@ class RegionalVolumeMap:
                 area_scope='existing directed area enclosure and atan premise; booked area is not exact geometric area',
                 disjointness='regular native grid cells have disjoint interiors by construction',
                 projection=B._plain(projection))
-            encoded = _json(described)
+            encoded = canonical_json(described)
             object.__setattr__(self, '_record', encoded)
             object.__setattr__(self, 'volume_map_id', hashlib.sha256(encoded).hexdigest())
 
@@ -345,7 +339,7 @@ class RegionalOwnerState:
     __slots__ = ('native_state', 'exchange', 'inventory', '_metadata', 'owner_state_id')
 
     def __init__(self, native_state, exchange, metadata, inventory=None):
-        encoded = _json(metadata)
+        encoded = canonical_json(metadata)
         object.__setattr__(self, 'native_state', native_state)
         object.__setattr__(self, 'exchange', exchange)
         object.__setattr__(self, 'inventory', inventory)
@@ -355,7 +349,7 @@ class RegionalOwnerState:
             exchange_id=None if exchange is None else exchange.result_id)
         if inventory is not None:
             identity['inventory_id'] = inventory.result_id
-        object.__setattr__(self, 'owner_state_id', _hash(content_record(identity)))
+        object.__setattr__(self, 'owner_state_id', json_sha256(content_record(identity)))
 
     def __setattr__(self, name, value):
         raise RegionalOwnerRefused('regional owner states are immutable')
@@ -550,7 +544,7 @@ class PreparedRegionalOwner:
                         source_patches=[patches[p].record() for p in source_patches])
         layout = dict(schema='atlas.regional-owner-layout.v1', region_id=footprint.region_id,
             cells=list(native_plan.cells), lengths_m=list(native_plan.lengths_m), plate_ids=list(plate_ids),
-            components=components, native_plan_id=native_plan.plan_id, transfer_id=_hash(transfer))
+            components=components, native_plan_id=native_plan.plan_id, transfer_id=json_sha256(transfer))
         binding = dict(sphere_state_id=sphere.state_id, network_id=sphere.network.network_id,
                        material_id=sphere.material.material_id, moving_id=moving.moving_id)
         reservation = dict(schema='atlas.regional-source-reservation.v1', source=binding,
@@ -602,10 +596,10 @@ class PreparedRegionalOwner:
                 ('volume_m3', 'mass_kg', 'absolute_heat_j', 'source_kappa_mass_kg'), residuals[i])})
                 for i in range(len(keys))]
             base['source_minus_native_projection'] = projection
-            self._projection = _json(projection)
-            self._definition = _json(base)
-            self.owner_id = _hash(content_record(base))
-            self._layout, self._reservation = _json(layout), _json(reservation)
+            self._projection = canonical_json(projection)
+            self._definition = canonical_json(base)
+            self.owner_id = json_sha256(content_record(base))
+            self._layout, self._reservation = canonical_json(layout), canonical_json(reservation)
             fields = dict(component_mass_kg=masses, enthalpy_j=enthalpy,
                 **{'tracer:damage': np.zeros(shape), 'tracer:accumulated_strain_ii': np.zeros(shape),
                    'tracer:source_kappa': kappa})
@@ -820,10 +814,10 @@ class PreparedRegionalOwner:
             base['basal_side'] = self._basal_side
             base['boundary_scope'] = ('natural normal basal traction; admission only; complete-grid mechanics '
                                       'and actual carved finite basal inventories required for continuation')
-        self._definition = _json(base)
-        object.__setattr__(self, 'owner_id', _hash(content_record(base)))
-        self._layout, self._reservation = _json(layout), _json(reservation)
-        self._projection, self._physical, self._remainder = _json(residuals), _json(binding), _json(remainders)
+        self._definition = canonical_json(base)
+        object.__setattr__(self, 'owner_id', json_sha256(content_record(base)))
+        self._layout, self._reservation = canonical_json(layout), canonical_json(reservation)
+        self._projection, self._physical, self._remainder = canonical_json(residuals), canonical_json(binding), canonical_json(remainders)
         fields = dict(component_mass_kg=masses, enthalpy_j=enthalpy,
             **{'tracer:damage': np.zeros(shape), 'tracer:accumulated_strain_ii': np.zeros(shape),
                'tracer:source_kappa': kappa})
@@ -850,9 +844,9 @@ class PreparedRegionalOwner:
             physical_remainder=funding['physical_remainder'],
             accounting='source = native + finite halo reservoirs + physical remainder + separately booked projection',
             boundary_scope='finite initially homogeneous physical halo reservoirs; no refill or global reinsertion')
-        self._definition = _json(base)
-        object.__setattr__(self, 'owner_id', _hash(content_record(base)))
-        self._remainder = _json(funding['physical_remainder'])
+        self._definition = canonical_json(base)
+        object.__setattr__(self, 'owner_id', json_sha256(content_record(base)))
+        self._remainder = canonical_json(funding['physical_remainder'])
         previous = self.initial_state.native_state
         native = self._native._state({k: previous.array(k) for k in previous.array_names},
             previous.descriptor()['time_s'], self.owner_id, None)
@@ -954,7 +948,7 @@ class PreparedRegionalOwner:
                     inventory['source_audit_id'] != exchange.get('source_audit_id')):
                 raise RegionalOwnerRefused('boundary transfers do not belong to the saved native exchange')
             if (exchange.get('schema') != 'atlas.regional-owner-exchange.v1' or
-                    exchange.get('layout') != self.layout() or exchange.get('layout_id') != _hash(self.layout()) or
+                    exchange.get('layout') != self.layout() or exchange.get('layout_id') != json_sha256(self.layout()) or
                     exchange.get('state_id') != state.native_state.result_id or
                     exchange.get('parent_state_id') != native.get('parent_state_id') or
                     native.get('time_s') != exchange.get('start_time_s', math.nan)+exchange.get('duration_s', math.nan) or

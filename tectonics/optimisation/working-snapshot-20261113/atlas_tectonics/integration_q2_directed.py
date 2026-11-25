@@ -18,6 +18,7 @@ from . import integration_volume as V
 from . import integration_volume_bounds as B
 from .regional_heat3d import _cancel
 from .resources import WorkBudget, _GrowingLease
+from ._validation import _arithmetic_sub
 
 # A fixed even order, independent of the caller's outcome. Root events are
 # isolated first; the high order controls smooth intervals without spending
@@ -50,8 +51,7 @@ class _Intervals:
     def neg(self, a):
         return a[1].copy_negate(), a[0].copy_negate()
 
-    def sub(self, a, b):
-        return self.add(a, self.neg(b))
+    sub = _arithmetic_sub
 
     def mul(self, a, b):
         # Multiplication is monotone in each argument while its sign is fixed.
@@ -119,8 +119,7 @@ class _Jets:
     def neg(self, a):
         return [self.I.neg(x) for x in a]
 
-    def sub(self, a, b):
-        return self.add(a, self.neg(b))
+    sub = _arithmetic_sub
 
     def mul(self, a, b):
         result = []

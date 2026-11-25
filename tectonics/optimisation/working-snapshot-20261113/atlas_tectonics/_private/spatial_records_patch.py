@@ -19,6 +19,7 @@ from atlas_tectonics._private.record_views import (CompactRecord, RecordRef, Log
 from atlas_tectonics._private.segment_store import SegmentBackend
 from atlas_tectonics._private import spatial_record_recipes as RECIPES
 from atlas_tectonics._private import width_gate as WG
+from atlas_tectonics.resources import require as _require
 
 
 BUNDLE_SCHEMA = 'atlas.spatial-record-bundle.v1'
@@ -36,39 +37,34 @@ DIFFERENTIAL_NAMES = ('interval_id', 'parent_network_id', 'endpoint_network_id',
                       'start_time_s', 'end_time_s', 'trajectory_id', 'prior_trajectory_id')
 
 
-def require(ok, message):
-    if not ok:
-        raise ContractError(message)
-
-
 def _scope(store, budget, scope=None):
     scope = getattr(store, 'scope', None) if scope is None else scope
-    require(scope is not None and scope.run_budget is budget and store.scope is scope,
-            'record publication requires its actual retained store scope')
+    _require(scope is not None and scope.run_budget is budget and store.scope is scope,
+            'record publication requires its actual retained store scope', ContractError)
     return scope
 
 
 def _check(cancel):
     if cancel is not None:
         stopped = cancel.is_set() if hasattr(cancel, 'is_set') else cancel()
-        require(not stopped, 'compact record operation cancelled')
+        _require(not stopped, 'compact record operation cancelled', ContractError)
 
 
 def _producer(source_producer):
-    require(type(source_producer) is dict and bool(source_producer), 'actual record producer required')
+    _require(type(source_producer) is dict and bool(source_producer), 'actual record producer required', ContractError)
     return sha256(canonical(source_producer)).hexdigest()
 
 
 def _descriptor(value, kind):
-    require(type(value) is dict and set(value) == {'bytes', 'sha256', 'compact'},
-            'complete compact record descriptor required')
-    require(type(value['bytes']) is int and value['bytes'] >= 0 and
+    _require(type(value) is dict and set(value) == {'bytes', 'sha256', 'compact'},
+            'complete compact record descriptor required', ContractError)
+    _require(type(value['bytes']) is int and value['bytes'] >= 0 and
             type(value['sha256']) is str and len(value['sha256']) == 64 and
-            all(c in '0123456789abcdef' for c in value['sha256']), 'invalid logical record identity')
+            all(c in '0123456789abcdef' for c in value['sha256']), 'invalid logical record identity', ContractError)
     compact = value['compact']
-    require(type(compact) is dict and set(compact) == {'schema', 'segment', 'field'} and
+    _require(type(compact) is dict and set(compact) == {'schema', 'segment', 'field'} and
             compact['schema'] == REFERENCE_SCHEMA and compact['field'] == kind,
-            'record field/schema binding differs')
+            'record field/schema binding differs', ContractError)
     return SegmentRef.from_wire(compact['segment'])
 
 
@@ -84,9 +80,9 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
     of the original row before any descriptor is returned.
     """
     scope = _scope(store, budget, scope)
-    require(type(rows) is dict and 0 < len(rows) <= 16 and
+    _require(type(rows) is dict and 0 < len(rows) <= 16 and
             all(type(k) is str and 0 < len(k) <= 64 and not k.startswith('~') for k in rows),
-            'bounded distinct record set required')
+            'bounded distinct record set required', ContractError)
     check = lambda: _check(cancel)
     producer = _producer(source_producer)
     planner = RECIPES.Planner(scope)
@@ -99,8 +95,8 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
             plain_borrowed += RECIPES.borrowed_bytes(rows[kind])
     # Small borrowed rows still share one bundle with the natives; together
     # with recipe fragments they stay inside one bounded builder import.
-    require(plain_borrowed+planner.imported_bytes <= RECIPES.MAX_IMPORT_BYTES,
-            'borrowed bundle imports exceed their bound')
+    _require(plain_borrowed+planner.imported_bytes <= RECIPES.MAX_IMPORT_BYTES,
+            'borrowed bundle imports exceed their bound', ContractError)
     bundle_rows = dict(plain)
     if planner.fragments:
         bundle_rows[RECIPES.FRAGMENTS] = planner.fragments
@@ -115,7 +111,7 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
             child = root.field(kind)
             if proofs is not None and kind in plain:
                 # The read path's feeding stream (open_records); the fragments row gets no scan.
-                require(child._fields is None, 'projection has no implicit full-record identity')
+                _require(child._fields is None, 'projection has no implicit full-record identity', ContractError)
                 scans[kind] = WG.OptionalScan()
                 identities[kind] = RECIPES.stream_identity(child, check, feed=scans[kind].feed)
             else:
@@ -150,7 +146,7 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
         got = RECIPES.stream_identity(rebuilt, check, feed=None if scan is None else scan.feed)
         rebuilt.close()
         expected = RECIPES.value_identity(rows[kind], scope=scope, check=check)
-        require(got == expected, 'record recipe does not reproduce its exact logical bytes: '+kind)
+        _require(got == expected, 'record recipe does not reproduce its exact logical bytes: '+kind, ContractError)
         result[kind] = RECIPES.descriptor_wire(kind, got, segments, wire)
         if scan is not None:
             proofs.enter(result[kind], got, scan)
@@ -172,32 +168,32 @@ def primary_segment(refs):
 
 def _bundle_metadata(segment, refs, source_producer=None):
     if source_producer is not None:
-        require(segment._owner.value['producer'] == _producer(source_producer),
-                'record producer differs from authenticated root')
+        _require(segment._owner.value['producer'] == _producer(source_producer),
+                'record producer differs from authenticated root', ContractError)
     # The authenticated root owner already pays for the decoded manifest.
     # Borrow its bounded metadata rather than manufacture an unowned copy.
     metadata = segment._owner.value['metadata']
-    require(type(metadata) is dict and set(metadata) == {'schema', 'codec', 'records'} and
+    _require(type(metadata) is dict and set(metadata) == {'schema', 'codec', 'records'} and
             metadata['schema'] == BUNDLE_SCHEMA and type(metadata['records']) is dict and
             0 < len(metadata['records']) <= 16+(RECIPES.FRAGMENTS in metadata['records']),
-            'unknown or incomplete record bundle metadata')
+            'unknown or incomplete record bundle metadata', ContractError)
     scratch = Scratch(segment.scope.run_budget, 2 << 20)
     codec, identity = codec_metadata(canonical(metadata['codec']))
-    require(identity == segment.info.ref.identity and segment.info.array_count == len(codec['arrays']),
-            'bundle codec identity or column inventory differs from authenticated root')
+    _require(identity == segment.info.ref.identity and segment.info.array_count == len(codec['arrays']),
+            'bundle codec identity or column inventory differs from authenticated root', ContractError)
     for name, descriptor in codec['arrays'].items():
         with segment.info.array(name) as held:
-            require(held.value.dtype == descriptor['dtype'] and list(held.value.shape) == descriptor['shape'],
-                    'bundle codec column descriptor differs from authenticated index')
+            _require(held.value.dtype == descriptor['dtype'] and list(held.value.shape) == descriptor['shape'],
+                    'bundle codec column descriptor differs from authenticated index', ContractError)
     for kind, descriptor in metadata['records'].items():
-        require(type(kind) is str and 0 < len(kind) <= 64 and type(descriptor) is dict and
+        _require(type(kind) is str and 0 < len(kind) <= 64 and type(descriptor) is dict and
                 set(descriptor) == {'bytes', 'sha256'} and type(descriptor['bytes']) is int and
                 descriptor['bytes'] >= 0 and type(descriptor['sha256']) is str and
                 len(descriptor['sha256']) == 64 and all(c in '0123456789abcdef' for c in descriptor['sha256']),
-                'unknown or malformed bundle logical record descriptor')
+                'unknown or malformed bundle logical record descriptor', ContractError)
     for kind, descriptor in refs.items():
-        require(metadata['records'].get(kind) == {k: descriptor[k] for k in ('bytes', 'sha256')},
-                'record identity differs from authenticated bundle index')
+        _require(metadata['records'].get(kind) == {k: descriptor[k] for k in ('bytes', 'sha256')},
+                'record identity differs from authenticated bundle index', ContractError)
     del scratch
     return metadata
 
@@ -217,10 +213,10 @@ def _split_refs(refs):
 def verify_records(store, refs, *, budget, scope=None, cancel=None, source_producer=None):
     """Check descriptors, index and root bindings without opening payload arrays."""
     scope = _scope(store, budget, scope)
-    require(type(refs) is dict and 0 < len(refs) <= 16, 'bounded record references required')
+    _require(type(refs) is dict and 0 < len(refs) <= 16, 'bounded record references required', ContractError)
     groups, recipes = _split_refs(refs)
     for ref, selected in groups.values():
-        require(ref.identity.record_schema == BUNDLE_SCHEMA, 'foreign record bundle schema')
+        _require(ref.identity.record_schema == BUNDLE_SCHEMA, 'foreign record bundle schema', ContractError)
         segment = SegmentBackend().open(store, ref, scope=scope, cancel=cancel)
         _bundle_metadata(segment, selected, source_producer)
         segment.close()
@@ -261,7 +257,7 @@ class _Opened:
                 metadata = _bundle_metadata(segment, selected or {}, self.source_producer)
                 record = CompactRecord.from_segment(segment, canonical(metadata['codec']), check=check)
                 with record.root() as root, root.keys() as keys:
-                    require(set(keys.value) == set(metadata['records']), 'bundle logical record inventory differs')
+                    _require(set(keys.value) == set(metadata['records']), 'bundle logical record inventory differs', ContractError)
                 self.metadata[key] = metadata
             else:
                 producer = None if self.source_producer is None else _producer(self.source_producer)
@@ -285,13 +281,13 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
     instead of decoding them a second time (I1). Outside a collector nothing scans.
     """
     scope = _scope(store, budget, scope)
-    require(type(refs) is dict and 0 < len(refs) <= 16, 'bounded record references required')
+    _require(type(refs) is dict and 0 < len(refs) <= 16, 'bounded record references required', ContractError)
     groups, recipes = _split_refs(refs)
     opened = _Opened(store, scope, cancel, source_producer, render_direct=not prove)
     roots, children = [], {}
     proofs = WG.active(store) if prove else None
     for ref, selected in groups.values():
-        require(ref.identity.record_schema == BUNDLE_SCHEMA, 'foreign record bundle schema')
+        _require(ref.identity.record_schema == BUNDLE_SCHEMA, 'foreign record bundle schema', ContractError)
         record = opened.record(ref, selected)
         # Children borrow from this root, so it stays open with them.
         root = record.root()
@@ -301,13 +297,13 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
             if proofs is not None:
                 scan = WG.OptionalScan()
                 identity = RECIPES.stream_identity(child, lambda: _check(cancel), feed=scan.feed)
-                require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},
-                        'record logical identity differs from its authenticated descriptor')
+                _require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},
+                        'record logical identity differs from its authenticated descriptor', ContractError)
                 proofs.enter(descriptor, identity, scan)
             elif prove:
                 identity = child.identity()
-                require(identity.sha256 == descriptor['sha256'] and identity.canonical_bytes == descriptor['bytes'],
-                        'record logical identity differs from its authenticated descriptor')
+                _require(identity.sha256 == descriptor['sha256'] and identity.canonical_bytes == descriptor['bytes'],
+                        'record logical identity differs from its authenticated descriptor', ContractError)
             children[kind] = child
     for kind, (segments, recipe) in recipes.items():
         child = RECIPES.build(recipe, [opened.record(ref) for ref in segments])
@@ -315,8 +311,8 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
             scan = WG.OptionalScan() if proofs is not None else None
             identity = RECIPES.stream_identity(child, lambda: _check(cancel),
                                                feed=None if scan is None else scan.feed)
-            require(identity == {k: refs[kind][k] for k in ('bytes', 'sha256')},
-                    'record logical identity differs from its authenticated descriptor')
+            _require(identity == {k: refs[kind][k] for k in ('bytes', 'sha256')},
+                    'record logical identity differs from its authenticated descriptor', ContractError)
             if scan is not None:
                 proofs.enter(refs[kind], identity, scan)
         children[kind] = child
@@ -388,9 +384,9 @@ def _export_once(child, descriptor, check):
                 if buffered and stop <= size:
                     raw[length:stop] = part
                 length = stop
-    require(length == size and digest.hexdigest() == descriptor['sha256'],
-            'record logical identity differs from its authenticated descriptor')
-    require(buffered, 'logical export bound exceeded')
+    _require(length == size and digest.hexdigest() == descriptor['sha256'],
+            'record logical identity differs from its authenticated descriptor', ContractError)
+    _require(buffered, 'logical export bound exceeded', ContractError)
     charge = _decode_charge(raw)
     if charge+OWNER_BYTES > EXPORT_OWNED_BYTES:
         del raw, scratch
@@ -455,11 +451,11 @@ def records(cls, state, exchange, budget, *, store, source_producer=None, persis
     from atlas_tectonics._private import spatial_workflow_patch as Y
     from atlas_tectonics._private.mesh_tables import CompactMesh
     scope = _scope(store, budget, scope)
-    require(not aliases, 'segmented spatial successors cannot contain mesh aliases')
+    _require(not aliases, 'segmented spatial successors cannot contain mesh aliases', ContractError)
     owner = state.indexed_record() if hasattr(state, 'indexed_record') else None
     saved = owner.value if owner is not None else state
-    require(isinstance(saved, dict) and type(saved.get('thermal_mesh')) is CompactMesh,
-            'segmented spatial publication requires its compact mesh')
+    _require(isinstance(saved, dict) and type(saved.get('thermal_mesh')) is CompactMesh,
+            'segmented spatial publication requires its compact mesh', ContractError)
     mesh = saved['thermal_mesh']
     # V3 mesh publication verifies an existing immutable reference or persists
     # only columns owned here; partition-owned supports stay external.
@@ -473,7 +469,7 @@ def records(cls, state, exchange, budget, *, store, source_producer=None, persis
             graph, transport, heat = (exchange.field(k) for k in ('spatial_graph', 'transport', 'joined_heat'))
             borrowed.extend((body, graph, transport, heat))
         else:
-            require(type(exchange) is dict, 'actual exchange record required')
+            _require(type(exchange) is dict, 'actual exchange record required', ContractError)
             body = {k: v for k, v in exchange.items() if k not in ('spatial_graph', 'transport', 'joined_heat')}
             graph, transport, heat = (exchange[k] for k in ('spatial_graph', 'transport', 'joined_heat'))
         rows.update(exchange=body, graph=graph, transport=transport, heat=heat)
@@ -497,18 +493,18 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
     from atlas_tectonics._private.compact_store import CompactMeshStoreV3
     from atlas_tectonics._private.compact_contracts import proving
     scope = _scope(store, budget, scope)
-    require(type(arrays) is dict and not arrays, 'compact spatial operands are reference-only')
+    _require(type(arrays) is dict and not arrays, 'compact spatial operands are reference-only', ContractError)
     expected = state_header['compact_mesh']
     if proving():    # proof mode: the second open of the mesh root
         Y.verify_reference(store, expected, budget=budget)
-    require(expected['schema'] == 'atlas.compact-mesh-store.v3', 'segmented spatial state requires v3 mesh')
+    _require(expected['schema'] == 'atlas.compact-mesh-store.v3', 'segmented spatial state requires v3 mesh', ContractError)
     mesh = CompactMeshStoreV3(store, scope=scope, support_source=support_source).open(
         SegmentRef.from_wire(expected['segment']), expected_geometry_id=expected['geometry_id'])
     refs = dict(state_header['record_blobs'])
-    require(set(refs) == {'state'}, 'compact state record inventory differs')
+    _require(set(refs) == {'state'}, 'compact state record inventory differs', ContractError)
     if exchange_header is not None:
         other = exchange_header['record_blobs']
-        require(set(other) == {'exchange', 'graph', 'transport', 'heat'}, 'compact exchange record inventory differs')
+        _require(set(other) == {'exchange', 'graph', 'transport', 'heat'}, 'compact exchange record inventory differs', ContractError)
         refs.update(other)
     with open_records(store, refs, budget=budget, scope=scope,
                       source_producer=expected.get('source_producer'),
@@ -519,15 +515,15 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
                                    max_owned_bytes=SMALL_LOGICAL_BYTES)
         selected.close()
         cells = state_ref.field('cells')
-        require(cells.kind == 'array', 'state cells must be a compact row array')
+        _require(cells.kind == 'array', 'state cells must be a compact row array', ContractError)
         state = _OwnedDict(dict(metadata.value, cells=cells, thermal_mesh=mesh), [metadata])
         exchange = None
         if exchange_header is not None:
             exchange = LogicalExchange.from_records(opened['exchange'],
                 spatial_graph=opened['graph'], transport=opened['transport'], joined_heat=opened['heat'])
         if proving():
-            require(headers(state, exchange, refs, mesh_reference=expected) == (state_header, exchange_header),
-                    'compact spatial lineage differs from full logical state')
+            _require(headers(state, exchange, refs, mesh_reference=expected) == (state_header, exchange_header),
+                    'compact spatial lineage differs from full logical state', ContractError)
         yield state, exchange
         if exchange is not None:
             exchange.close()
@@ -539,7 +535,7 @@ def restore_records(cls, state_header, exchange_header, arrays, budget, *, store
 def certification_payload(cls, solution, budget, *, store, source_producer, cancel=None):
     from atlas_tectonics.integration_regional_inventory import _width
     cls._certification_required(True, solution)
-    require(solution._resource is budget, 'certification must share publication budget')
+    _require(solution._resource is budget, 'certification must share publication budget', ContractError)
     force = solution.proposal.force_exchange
     width = len(solution._json)+len(solution.proposal._json)+_width(solution.proposal._owner._definition)+force.nbytes
     # Keep the native descriptor-decode reservation; compact persistence alone
@@ -557,30 +553,30 @@ def certification_payload(cls, solution, budget, *, store, source_producer, canc
 def restore_certification(cls, header, arrays, budget, *, store, graph, interval, expected,
                           source_audit, cancel=None, source_producer=None):
     from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
-    require(type(header) is dict and type(arrays) is dict and arrays and
+    _require(type(header) is dict and type(arrays) is dict and arrays and
             all(k.startswith('certification-force:') for k in arrays),
-            'complete compact certification operands required')
+            'complete compact certification operands required', ContractError)
     fields = {k.removeprefix('certification-force:'): v for k, v in arrays.items()}
-    require(all(type(a) is np.ndarray and a.dtype == np.dtype('float64') for a in fields.values()),
-            'actual saved differential force fields are missing or malformed')
+    _require(all(type(a) is np.ndarray and a.dtype == np.dtype('float64') for a in fields.values()),
+            'actual saved differential force fields are missing or malformed', ContractError)
     ref = header['record_blob']
     with export_record(store, ref, 'certification', budget=budget, cancel=cancel,
                        source_producer=source_producer) as records:
-        require(type(records) is dict and set(records) == {'solution', 'proposal', 'iteration', 'force', 'bindings'},
-                'saved differential certification record set differs')
+        _require(type(records) is dict and set(records) == {'solution', 'proposal', 'iteration', 'force', 'bindings'},
+                'saved differential certification record set differs', ContractError)
         workspace = Scratch(budget, 65536+3*sum(a.nbytes for a in fields.values()))
         force = RegionalMechanicalSnapshot(records['force'], fields)
         cls._check_certification_records(records, force, graph, interval, expected, source_audit)
-        require(cls._certification_header(records, ref) == header,
-                'saved certification header differs from complete accepted evidence')
+        _require(cls._certification_header(records, ref) == header,
+                'saved certification header differs from complete accepted evidence', ContractError)
         del force, workspace
 
 
 @contextmanager
 def differential_payload(interval, budget, *, store, source_producer, cancel=None):
     from atlas_tectonics.integration_differential_geometry import DifferentialInterval
-    require(type(interval) is DifferentialInterval and interval._resource is budget,
-            'actual shared-budget differential interval required')
+    _require(type(interval) is DifferentialInterval and interval._resource is budget,
+            'actual shared-budget differential interval required', ContractError)
     network = interval.endpoint_network
     workspace = Scratch(budget, 65536+8*len(interval._json)+8*network.nbytes)
     record = dict(interval=interval.descriptor(), endpoint_network=network.descriptor())
@@ -596,20 +592,20 @@ def differential_payload(interval, budget, *, store, source_producer, cancel=Non
 def restore_differential(header, arrays, budget, *, store, cancel=None, source_producer=None):
     from atlas_tectonics.integration_differential_geometry import DifferentialInterval
     from atlas_tectonics import integration_sphere as S
-    require(type(header) is dict and type(arrays) is dict and
+    _require(type(header) is dict and type(arrays) is dict and
             all(k.startswith('differential-network:') for k in arrays),
-            'complete compact differential operands required')
+            'complete compact differential operands required', ContractError)
     ref = header['record_blob']
     with export_record(store, ref, 'differential', budget=budget, cancel=cancel,
                        source_producer=source_producer) as record:
-        require(type(record) is dict and set(record) == {'interval', 'endpoint_network'},
-                'saved differential geometry record changed')
+        _require(type(record) is dict and set(record) == {'interval', 'endpoint_network'},
+                'saved differential geometry record changed', ContractError)
         fields = {k.removeprefix('differential-network:'): v for k, v in arrays.items()}
         network = S.restore_network(record['endpoint_network'], fields, budget=budget)
-        require(set(fields) == set(network.arrays()), 'saved differential endpoint has unowned fields')
+        _require(set(fields) == set(network.arrays()), 'saved differential endpoint has unowned fields', ContractError)
         interval = DifferentialInterval.restore(record['interval'], network, budget=budget)
         expected = {k: record['interval'][k] for k in DIFFERENTIAL_NAMES}
-        require(header == dict(expected, record_blob=ref), 'saved differential lineage differs from actual geometry')
+        _require(header == dict(expected, record_blob=ref), 'saved differential lineage differs from actual geometry', ContractError)
         return interval
 
 
@@ -626,7 +622,7 @@ def verify_publication_references(store, row, *, budget, scope=None, cancel=None
             continue
         refs = header.get('record_blobs', {})
         expected = kinds - ({'mesh'} if 'compact_mesh' in header else set())
-        require(set(refs) == expected, 'complete spatial publication record set required')
+        _require(set(refs) == expected, 'complete spatial publication record set required', ContractError)
         verify_records(store, refs, budget=budget, scope=scope, cancel=cancel, source_producer=source_producer)
         if 'compact_mesh' in header:
             from atlas_tectonics._private.spatial_workflow_patch import verify_reference
@@ -672,14 +668,14 @@ def holder_bytes(holder):
 
 
 def _replace(source, old, new):
-    require(source.count(old) == 1, 'record source seam missing or ambiguous: '+old[:100])
+    _require(source.count(old) == 1, 'record source seam missing or ambiguous: '+old[:100], ContractError)
     return source.replace(old, new, 1)
 
 
 def transform(source):
     """Apply after existing spatial/partition transforms; frozen sources stay intact."""
-    require(type(source) is str and 'import atlas_tectonics._private.spatial_records_patch as _COMPACT_RECORDS' not in source,
-            'record transform requires unapplied source')
+    _require(type(source) is str and 'import atlas_tectonics._private.spatial_records_patch as _COMPACT_RECORDS' not in source,
+            'record transform requires unapplied source', ContractError)
     source = _replace(source, 'import json\n', 'import json\nimport atlas_tectonics._private.spatial_records_patch as _COMPACT_RECORDS\n')
     changes = (
         ('    def _certification_payload(cls, solution, budget):\n',

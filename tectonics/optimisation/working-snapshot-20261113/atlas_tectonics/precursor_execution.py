@@ -18,6 +18,7 @@ from .geological_records import GeologyError, _names, _tuple
 from .geometry import PlanarGeometry, _check_cancel
 from .spherical_geometry import SphericalGeometry, _directions
 from .geological_case import _check_geometry_frame
+from .constitutive_execution import _Cancellation
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,13 +59,6 @@ class PrecursorExecutionPolicy:
         if kind == 'points':
             return indexed_points and count >= self.min_parallel_points
         return self.min_parallel_cells is not None and count >= self.min_parallel_cells
-
-
-class _Cancellation:
-    def __init__(self, external, aborted):
-        self.external = external; self.aborted = aborted
-    def is_set(self):
-        return self.aborted.is_set() or (self.external is not None and self.external.is_set())
 
 
 class _RequestLedger:

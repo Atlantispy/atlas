@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from contextlib import ExitStack
-import hashlib
 import json
 import math
 import numpy as np
@@ -16,24 +15,18 @@ import shapely
 from scipy.linalg import expm
 
 from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import _PLANAR_MAP_ERROR as MAP_ERROR
 from .geometry import PlanarGeometry, GeometryLimits, geometry_runtime
 from .materials import MaterialCohort, _catalogue, _name, _json, _immutable_bytes
-from .regional import _cancelled
 from .resources import WorkBudget, select_budget
+from .resources import check_event
+from .resources import record_id
 from .reuse import ExecutionContext, content_record
 
 
 MAX_INTERVALS = 256
 MAX_PARCELS = 4096
 WORK_BYTES = 128*1024**2
-MAP_ERROR = 1e-10
-
-
-def _identity(record, *payloads):
-    h = hashlib.sha256(_json(content_record(record)))
-    for payload in payloads:
-        h.update(b'\0'); h.update(payload)
-    return h.hexdigest()
 
 
 def _budget(value):
@@ -165,7 +158,7 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
         object.__setattr__(self, name, value)
 
     def __init__(self, polygons, histories, *, parcel_ids, time_s, source_id, budget=None, cancel=None):
-        _cancelled(cancel); polygons = _polygons(polygons)
+        check_event(cancel, 'regional transport cancelled; no candidate published'); polygons = _polygons(polygons)
         _names(parcel_ids, len(polygons), 'parcel IDs'); _name(source_id, 'motion source')
         if (type(histories) is not tuple or not 1 <= len(histories) <= MAX_INTERVALS or
                 any(type(e) is not AffineMotionInterval for e in histories)):
@@ -189,14 +182,14 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
             self._origin = _immutable_bytes(origin); self._length = scalar(length, 'domain scale', positive=True)
             maps = [np.eye(3)]; times = [time_s]
             for event in histories:
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 current = _finite_map(event, event.end_time_s-times[-1], origin, length)@maps[-1]
                 _valid_map(current[:2, :2]); maps.append(current); times.append(event.end_time_s)
             self._maps = _immutable_bytes(np.array(maps)); self._times = tuple(times)
-            self.plan_id = _identity(dict(method='atlas.w08-affine-motion.v1',
+            self.plan_id = record_id(content_record(dict(method='atlas.w08-affine-motion.v1',
                 polygons=[g.geometry_id for g in polygons], parcel_ids=parcel_ids, time_s=time_s,
                 source=source_id, history=[e.descriptor() for e in histories], runtime=geometry_runtime(),
-                execution=self.execution_id), self._maps)
+                execution=self.execution_id)), self._maps, encode=_json)
             preparation.close()
             self._sealed = True
         except BaseException:
@@ -206,7 +199,7 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
 
     def evaluate(self, time_s, *, cancel=None):
         if self._closed: raise TectonicsError('motion preparation closed')
-        _cancelled(cancel); now = scalar(time_s, 'output time')
+        check_event(cancel, 'regional transport cancelled; no candidate published'); now = scalar(time_s, 'output time')
         if not self._times[0] <= now <= self._times[-1]: raise TectonicsError('output outside supplied history')
         j = int(np.searchsorted(self._times, now, side='right'))-1
         maps = np.frombuffer(self._maps).reshape(-1, 3, 3)
@@ -222,8 +215,8 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
             record = dict(plan=self.plan_id, time_s=now, source=self.source_id,
                           frame=self.frame_id, physical_model='prescribed-constant-spatial-gradient',
                           polygons=[g.geometry_id for g in polygons], parcel_ids=self.parcel_ids)
-            _cancelled(cancel)
-            return PlanarMotionState(polygons, self.parcel_ids, now, _identity(record, data), data, _json(record))
+            check_event(cancel, 'regional transport cancelled; no candidate published')
+            return PlanarMotionState(polygons, self.parcel_ids, now, record_id(content_record(record), data, encode=_json), data, _json(record))
 
     def close(self):
         if not self._closed:
@@ -327,7 +320,7 @@ class PreparedPlanarMaterials:
         from .planar_projection import PreparedPlanarProjection
         if type(motion) not in (PreparedAffineMotion, PreparedDeformationNetwork, PreparedFaultSlip):
             raise TectonicsError('explicit affine, compatible nodal or straight fault-slip producer required')
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         self._budget = motion._budget if budget is None else select_budget(budget)
         # A separate budget must share the same root; do not evade a producer's
         # retained admission by running material operations under another envelope.
@@ -381,9 +374,9 @@ class PreparedPlanarMaterials:
                               formation_time_s=k.formation_time_s) for k in cohorts], parcel_ids=ids,
                 enthalpy_source=enthalpy_source, enthalpy_present=enthalpy_source is not None,
                 execution=ctx.identity, geometry='retained-piecewise-constant-planar-parcels'))
-            self.plan_id = _identity(json.loads(self._record), self._inventory, self._rho)
+            self.plan_id = record_id(content_record(json.loads(self._record)), self._inventory, self._rho, encode=_json)
             self._cache = None; self._cache_lease = None
-            ctx.verify(); _cancelled(cancel); self._sealed = True
+            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published'); self._sealed = True
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None: ctx.close()
@@ -391,12 +384,12 @@ class PreparedPlanarMaterials:
 
     def _live(self, cancel=None):
         if self._closed: raise TectonicsError('planar material preparation closed')
-        _cancelled(cancel); self._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
 
     def evaluate(self, time_s, *, cancel=None):
         self._live(cancel)
         result = self._evaluate(time_s, cancel=cancel)
-        self._context.verify(); _cancelled(cancel)
+        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         return result
 
     def _evaluate(self, time_s, *, cancel=None):
@@ -415,9 +408,9 @@ class PreparedPlanarMaterials:
             if np.any((inventory[0] > 0) & (h == 0)): raise TectonicsError('deformed thickness underflows')
             record = dict(json.loads(self._record), plan=self.plan_id, motion_state=state.state_id, time_s=state.time_s)
             raw = _immutable_bytes(h)
-            result = PlanarMaterialSnapshot(state, self.cohorts, _identity(record, raw, self._inventory), raw,
+            result = PlanarMaterialSnapshot(state, self.cohorts, record_id(content_record(record), raw, self._inventory, encode=_json), raw,
                                             self._inventory, _json(record))
-            _cancelled(cancel); return result
+            check_event(cancel, 'regional transport cancelled; no candidate published'); return result
 
     def project(self, time_s, targets, *, target_ids, exterior_id, source_id, cancel=None):
         from .planar_projection import PreparedPlanarProjection
@@ -434,8 +427,8 @@ class PreparedPlanarMaterials:
                           exterior_id=exterior_id, view_source=source_id, projection_plan=p.plan_id,
                           exterior_meaning='retained-outside-view-not-deleted-or-re-exported')
             result = PlanarMaterialProjection(self.cohorts, targets,
-                _identity(record, account.inside.tobytes(), account.outside.tobytes()), account, _json(record))
-        self._context.verify(); _cancelled(cancel)
+                record_id(content_record(record), account.inside.tobytes(), account.outside.tobytes(), encode=_json), account, _json(record))
+        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         if self._cache_lease is not None:
             self._cache_lease.__exit__(None, None, None)
             object.__setattr__(self, '_cache', None); object.__setattr__(self, '_cache_lease', None)
@@ -465,8 +458,8 @@ class PreparedPlanarMaterials:
             record = dict(result.descriptor(), material_plan=self.plan_id, material=json.loads(self._record),
                 start_time_s=start,end_time_s=end,start_motion=first.state_id,end_motion=last.state_id,
                 field_order=[(quantity,c.cohort_id) for quantity in ('volume_m3','mass_kg','relative_enthalpy_j') for c in self.cohorts])
-            result = replace(result,exchange_id=_identity(record,result._transfer,result._initial,result._final),_record=_json(record))
-            self._context.verify(); _cancelled(cancel); return result
+            result = replace(result,exchange_id=record_id(content_record(record),result._transfer,result._initial,result._final, encode=_json),_record=_json(record))
+            self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published'); return result
 
     def close(self):
         if not self._closed:

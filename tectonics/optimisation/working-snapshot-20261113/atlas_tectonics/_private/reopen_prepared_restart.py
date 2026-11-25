@@ -1422,7 +1422,12 @@ def main(argv=None):
     action.add_argument('--workload', action='store_true')
     action.add_argument('--finalise', action='store_true')
     parser.add_argument(SG.ARGUMENT)
-    RG.add_arguments(parser)
+    RG.SG.add_arguments(
+        parser,
+        peak_help='matching Route 2 successor LM postcheck or reader final record (repeatable)',
+        bytes_help='declared peak; used only without measured records',
+        basis_help='explicit source/basis of that booking',
+    )
     args = parser.parse_args(argv)
     require(_PACKAGED_STARTUP is None or (Path(_PACKAGED_STARTUP[0]) == args.profile
                                           and _PACKAGED_STARTUP[1] == args.profile_sha256),

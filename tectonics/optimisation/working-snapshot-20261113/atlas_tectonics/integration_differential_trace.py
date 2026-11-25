@@ -22,9 +22,11 @@ from . import integration_volume as V
 from . import integration_wall_measures as W
 from . import integration_sphere as S
 from ._validation import TectonicsError, frozen
+from ._validation import shaped_finite_array
 from .integration_regional_evolution import RegionalVolumeMap
 from .regional_execution3d import PreparedRegionalStokes3D, SIDES, _digest_array
 from .resources import WorkBudget
+from .resources import _retain_failure
 
 
 POWERS = tuple((i, j) for i in range(4) for j in range(4) if (i, j) != (3, 3))
@@ -449,8 +451,7 @@ def _partition_endpoint(partition, geometry, *, static, endpoint, network_id):
 
 class _TraceConstructionScratchOwner:
     """Keep only release callbacks alive with an escaping construction error."""
-    def __init__(self, stack):
-        self.release = weakref.finalize(self, stack.close)
+    __init__ = _retain_failure
 
 
 class PreparedDifferentialTrace:
@@ -962,8 +963,8 @@ class PreparedDifferentialTrace:
         # Final interval audits must use that actual solved field, not replace
         # it with this rebuilt projector's different numerical minimiser.
         projected_velocity = self.velocity(rates)
-        field = projected_velocity if actual_velocity_m_s is None else D._array(
-            actual_velocity_m_s, projected_velocity.shape, 'actual native boundary velocity')
+        field = projected_velocity if actual_velocity_m_s is None else shaped_finite_array(
+            actual_velocity_m_s, projected_velocity.shape, 'actual native boundary velocity', '', ' has an incompatible shape or nonfinite value')
         velocity = field.ravel()[self._fixed]
         omega = tuple(Q(float(v)) for v in np.asarray(rates).ravel())
         d = tuple(Q(float(v)) for v in velocity)
@@ -976,7 +977,7 @@ class PreparedDifferentialTrace:
                 hi += coefficient*(b if coefficient >= 0 else a)
         if hi < 0:
             raise TectonicsError('negative upper bound of an actual squared trace error')
-        r = D._array(reaction, self._full.shape[1:], 'actual native reaction').ravel()[self._fixed]
+        r = shaped_finite_array(reaction, self._full.shape[1:], 'actual native reaction', '', ' has an incompatible shape or nonfinite value').ravel()[self._fixed]
         dual = _linear_solve(self._mass, r)
         norm2 = _dual_bound(self._exact_mass, r, dual, self._lower_eigenvalue)*self._duration**2
         work2 = hi*norm2
@@ -1145,7 +1146,7 @@ def audit_interval_solution(trace, native_faces, force_exchange, *,
             force.get('virtual_work_relative_residual', float('inf')) > D.WORK):
         raise TectonicsError('final trace and force do not share the actual native proposal, geometry or accepted clock')
     plates = driving['plate_ids']
-    omega = D._array(force_exchange.array('omega_rad_s'), (len(plates), 3), 'actual solved plate rates')
+    omega = shaped_finite_array(force_exchange.array('omega_rad_s'), (len(plates), 3), 'actual solved plate rates', '', ' has an incompatible shape or nonfinite value')
     expected = interval['plate_angular_velocity_rad_s']
     if set(plates) != set(expected) or any(tuple(Q(float(q)) for q in values) !=
             tuple(map(W._decode, expected[p])) for p, values in zip(plates, omega)):

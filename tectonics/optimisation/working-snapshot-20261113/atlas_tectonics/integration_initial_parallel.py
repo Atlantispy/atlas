@@ -31,6 +31,7 @@ from . import integration_parallel_dispatch as P
 from . import machine_resources_monitor as MON
 from . import resources_gate as RG
 from .integration_component_volume_parallel import ComponentParallelSession, request_for
+from .resources import canonical_json
 
 # Worker bound for this family: the host's cores less one (was eight, one per core on the
 # eight-core PC, R1). The session bypasses ComponentParallelSession's own bound of two.
@@ -59,7 +60,7 @@ def validated_initial_volume(record, request, fit):
     """
     from .integration_parallel_binding import INITIAL_VOLUME_REQUEST_FIELDS
     from .integration_parallel_results import (VOLUME_POSES, VOLUME_RESULT_FIELDS, VOLUME_WITNESS_FIELDS,
-        VOLUME_WITNESS_RULE, _wall_scalar, canonical, request_fields)
+        VOLUME_WITNESS_RULE, _wall_scalar, request_fields)
     fields = INITIAL_VOLUME_REQUEST_FIELDS | VOLUME_RESULT_FIELDS | {'relative_error_bound'}
     extra = record.keys()-fields
     if (not fields <= record.keys()
@@ -68,7 +69,7 @@ def validated_initial_volume(record, request, fit):
         return False
     carried = {key: record[key] for key in INITIAL_VOLUME_REQUEST_FIELDS}
     request_fields(carried)
-    if canonical(carried) != request:
+    if canonical_json(carried) != request:
         return False
     work, leaves = record['work_units'], record['leaves']
     if (type(work) is not int or work < 0 or not fit.admits_work(work)

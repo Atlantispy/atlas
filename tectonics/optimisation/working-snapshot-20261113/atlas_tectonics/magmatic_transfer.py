@@ -19,9 +19,9 @@ from scipy.integrate import DOP853
 from scipy.linalg import expm
 
 from ._validation import TectonicsError, frozen, input_shape, read_array, scalar
-from .constitutive import _cancel
 from .materials import _name, _json
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 from .stokes_execution import _native_lease
 from .timebase import interval_end
 
@@ -86,7 +86,7 @@ class MagmaticInventory:
 
     def _initialise(self, node_ids, node_kinds, component_ids, component_mass_kg,
                     enthalpy_j, source_id, enthalpy_source, time_s, budget, cancel, known_mass):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         nodes = _names(node_ids, 'node IDs', 64)
         components = _names(component_ids, 'component IDs', 64)
         if type(node_kinds) is not tuple or len(node_kinds) != len(nodes) or any(k not in KINDS for k in node_kinds):
@@ -110,7 +110,7 @@ class MagmaticInventory:
                 time_s=now, source_id=source_id, enthalpy_source=enthalpy_source,
                 inventory_id=_identity(record, c, e), _components=_keep(c, owner), _enthalpy=_keep(e, owner))
             for key, value in values.items(): object.__setattr__(self, key, value)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     @property
     def component_mass_kg(self): return self._components.view()
@@ -200,7 +200,7 @@ class PreparedMagmaticTransfer:
         if not isinstance(inventory, MagmaticInventory): raise TectonicsError('MagmaticInventory required')
         if context is not None and (not isinstance(context,ExecutionContext) or context.backend!='scipy'):
             raise TectonicsError('magmatic transfer requires a scipy execution context')
-        _name(source_id, 'transfer source'); _cancel(cancel)
+        _name(source_id, 'transfer source'); check_event_or_callable(cancel, 'constitutive work cancelled')
         n = len(inventory.node_ids); k = len(inventory.component_ids)
         if input_shape(rates_kg_s) != (n, n): raise TectonicsError('donor-by-receiver rate matrix required')
         self.budget = WorkBudget(CAP, parent=select_budget(budget))
@@ -321,7 +321,7 @@ class PreparedMagmaticTransfer:
         calls = 0
         def rhs(t, flat):
             nonlocal calls
-            calls += 1; _cancel(cancel)
+            calls += 1; check_event_or_callable(cancel, 'constitutive work cancelled')
             if calls > 4096: raise TectonicsError('magmatic integration exceeds bounded derivative work')
             return (self._coefficients(t)@flat.reshape(size,n+2)).ravel()
         # Drive one step at a time: retain only active state, never a growing
@@ -352,7 +352,7 @@ class PreparedMagmaticTransfer:
             if end_time_s is not None and end_time_s != end:
                 raise TectonicsError('declared magmatic end is not start plus duration')
         if duration > 0 and end == self.inventory.time_s: raise TectonicsError('unresolved inventory clock')
-        self.context.verify(); _cancel(cancel)
+        self.context.verify(); check_event_or_callable(cancel, 'constitutive work cancelled')
         if (self._latest is not None and self._latest.duration_s == duration
                 and self._latest.remaining.time_s == end): return self._latest
         n = len(self.mass); e = len(self.edges); k = len(self.inventory.component_ids); size = n+e+2
@@ -409,7 +409,7 @@ class PreparedMagmaticTransfer:
                 result = MagmaticTransferResult(remaining,self.plan_id,_identity(record,final,edges,encoded=encoded),
                     duration,edge_ids,_keep(edge_mass,self.budget),_keep(edges[:,:k],self.budget),
                     _keep(edges[:,k],self.budget),_keep(heat,self.budget),encoded)
-                _cancel(cancel); self.context.verify(); self._latest = result
+                check_event_or_callable(cancel, 'constitutive work cancelled'); self.context.verify(); self._latest = result
                 return result
         finally: self._active = False
 

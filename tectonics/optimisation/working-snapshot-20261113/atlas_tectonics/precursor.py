@@ -24,6 +24,7 @@ from .geological_domain import GeologicalDomain
 from .geometry import _check_cancel, GeometryLimits
 from .material_library import EarthMaterialLibrary, restore_material_library
 from .resources import select_budget
+from .resources import _immutable_deepcopy
 from .spherical_atlas import SphericalAtlas
 
 _SCHEMA = 'atlas.geological-precursor.v1'
@@ -546,9 +547,7 @@ class PrecursorState:
                 raise GeologyError('density unavailable at the requested reference condition: '+m.material_id)
         return t
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 @dataclass(frozen=True, slots=True, init=False)

@@ -25,6 +25,8 @@ import sys
 import threading
 
 from .resources import WorkBudget
+from .resources import canonical_json as canonical
+from .resources import is_sha256 as _digest
 
 
 REQUEST_FIELDS = frozenset((
@@ -109,11 +111,6 @@ def request_fields(request):
     return REQUEST_FIELDS
 
 
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'),
-                      ensure_ascii=True, allow_nan=False).encode('utf8')
-
-
 def _decode(raw):
     if type(raw) is not bytes:
         raise ValueError('immutable canonical bytes required')
@@ -121,10 +118,6 @@ def _decode(raw):
     if type(record) is not dict or canonical(record) != raw:
         raise ValueError('canonical JSON object required')
     return record
-
-
-def _digest(value):
-    return type(value) is str and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
 
 
 def interpreter_seed():

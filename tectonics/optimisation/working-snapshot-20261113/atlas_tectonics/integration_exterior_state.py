@@ -11,7 +11,6 @@ from fractions import Fraction as Q
 import hashlib
 import json
 from types import MappingProxyType
-import weakref
 
 import numpy as np
 
@@ -23,17 +22,14 @@ from .regional_collar3d import (PreparedRegionalCollar3D, RegionalCollarAdvance,
 from .regional_execution import RegionalMechanicalSnapshot
 from .regional_execution3d import SIDES, _hash, _json
 from .resources import WorkBudget
+from .resources import _retain_result
 from .reuse import content_record
+from .integration_volume import _encoded
 
 
 
 class ExteriorRefused(TectonicsError):
     """Unfunded, stale, incompatible or unlocated exterior exchange."""
-
-
-def _enc(value):
-    value = Q(value)
-    return [hex(value.numerator), hex(value.denominator)]
 
 
 def _q(pair):
@@ -43,19 +39,9 @@ def _q(pair):
         value = Q(int(pair[0], 16), int(pair[1], 16))
     except (ValueError, ZeroDivisionError) as exc:
         raise ExteriorRefused('invalid exact exterior inventory') from exc
-    if _enc(value) != pair:
+    if _encoded(Q(value)) != pair:
         raise ExteriorRefused('noncanonical exact exterior inventory')
     return value
-
-
-def _retain(obj, size, budget):
-    lease = budget.reserve(size, category='exterior-fv-retained')
-    lease.__enter__()
-    try:
-        weakref.finalize(obj, lease.__exit__, None, None, None)
-    except BaseException:
-        lease.__exit__(None, None, None)
-        raise
 
 
 @dataclass(frozen=True, slots=True, weakref_slot=True, init=False)
@@ -201,7 +187,7 @@ class PreparedExteriorOwner:
                     support=dict(radial_layer=row['radial_layer'], patch_id=row['patch_id'],
                         funding_id=funding.funding_id, exclusions='funding.cell_geometries',
                         geometry_volume_enclosure_m3=row['geometry_volume_enclosure_m3']),
-                    exact={k: [_enc(v) for v in mass] if k == 'component_mass_kg' else _enc(values[k])
+                    exact={k: [_encoded(Q(v)) for v in mass] if k == 'component_mass_kg' else _encoded(Q(values[k]))
                            for k in self._fields}))
             cells.sort(key=lambda r: tuple(r['source_key']))
             self._cell_definition = {tuple(r['source_key']): {k: v for k, v in r.items() if k != 'exact'} for r in cells}
@@ -210,10 +196,10 @@ class PreparedExteriorOwner:
                 parent_state_id=None, collar_state_id=None, support_id=None, trajectory=None,
                 trajectory_id=_hash([]),
                 cells=cells, geometry_projection_intervals_m3=[
-                    [_enc(self._values(row)['volume_m3']-_q(row['support']['geometry_volume_enclosure_m3'][1])),
-                     _enc(self._values(row)['volume_m3']-_q(row['support']['geometry_volume_enclosure_m3'][0]))]
+                    [_encoded(Q(self._values(row)['volume_m3']-_q(row['support']['geometry_volume_enclosure_m3'][1]))),
+                     _encoded(Q(self._values(row)['volume_m3']-_q(row['support']['geometry_volume_enclosure_m3'][0])))]
                     for row in cells],
-                projection_accounts={k: _enc(0) for k in self._account_names()}))
+                projection_accounts={k: _encoded(Q(0)) for k in self._account_names()}))
         except BaseException:
             self._guard.__exit__(None, None, None); self._guard = None
             raise
@@ -261,7 +247,7 @@ class PreparedExteriorOwner:
             result = object.__new__(ExteriorFVState)
             object.__setattr__(result, '_snapshot', snapshot)
             object.__setattr__(result, '_budget', self._budget)
-            _retain(result, 8192+2*snapshot.nbytes+4*_width(record), self._budget)
+            _retain_result(result, 8192+2*snapshot.nbytes+4*_width(record), self._budget, 'exterior-fv-retained')
             return result
 
     def _bound(self, state):
@@ -308,8 +294,8 @@ class PreparedExteriorOwner:
 
     def _exact(self, values):
         n = len(self._keys)
-        return dict(volume_m3=_enc(values[0]), component_mass_kg=list(map(_enc, values[1:1+n])),
-            enthalpy_j=_enc(values[1+n]), **{'tracer:'+k: _enc(q) for k, q in zip(self._tracers, values[2+n:])})
+        return dict(volume_m3=_encoded(Q(values[0])), component_mass_kg=[_encoded(Q(value)) for value in values[1:1+n]],
+            enthalpy_j=_encoded(Q(values[1+n])), **{'tracer:'+k: _encoded(Q(q)) for k, q in zip(self._tracers, values[2+n:])})
 
     @staticmethod
     def _side(value):
@@ -430,13 +416,13 @@ class PreparedExteriorOwner:
                 actual = self._vector(cells[key])[0]+chosen
                 if actual < 0 or not a+lo <= actual <= b+hi:
                     raise ExteriorRefused('proposed volume violates endpoint geometry or propagated projection bounds')
-                geometry_projection.append([_enc(lo), _enc(hi)])
+                geometry_projection.append([_encoded(Q(lo)), _encoded(Q(hi))])
             record = dict(schema='atlas.exterior-fv-offer.v1', owner_id=self.owner_id,
                 parent_state_id=state.state_id, duration_s=dt, wall=wall,
                 donor_debits=[dict(source_key=list(k), exact=self._exact(debits[k])) for k in self._keys],
                 conditional_donor_field_error=[dict(source_key=list(k), exact=self._exact(inlet_error[k])) for k in self._keys],
                 outer_normal_ids=expected,
-                native_outward_volume_m3={s: list(map(_enc, map(Q, streams[s][1].flat))) for s in SIDES},
+                native_outward_volume_m3={s: list(map(_encoded, map(Q, streams[s][1].flat))) for s in SIDES},
                 boundary_stock_ids={s: stocks[s].result_id for s in SIDES},
                 geometry_projection_intervals_m3=geometry_projection,
                 method='current carried first-order FV donor fields; native transport method unchanged')
@@ -445,7 +431,7 @@ class PreparedExteriorOwner:
             object.__setattr__(issued, '_metadata', encoded)
             object.__setattr__(issued, 'boundary_stocks', MappingProxyType(stocks))
             object.__setattr__(issued, '_budget', self._budget)
-            _retain(issued, 8192+4*len(encoded)+sum(a.array(k).nbytes for a in stocks.values() for k in a.array_names), self._budget)
+            _retain_result(issued, 8192+4*len(encoded)+sum(a.array(k).nbytes for a in stocks.values() for k in a.array_names), self._budget, 'exterior-fv-retained')
             return issued
 
     def validate_driving(self, offer, rigid_motion, duration_s):
@@ -537,7 +523,7 @@ class PreparedExteriorOwner:
                 cells.append(dict(row, exact=self._exact(after)))
                 delta = [a+b-c for a, b, c in zip(delta, debits[key], credits[key])]
             labels = ('volume_m3',)+tuple('component_mass_kg:'+str(i) for i in range(n))+('enthalpy_j',)+tuple('tracer:'+k for k in self._tracers)
-            projection = {k: _enc(_q(old['projection_accounts'][k])+q) for k, q in zip(labels, delta)}
+            projection = {k: _encoded(Q(_q(old['projection_accounts'][k])+q)) for k, q in zip(labels, delta)}
             endpoint = {tuple(r['exterior_cell_key']): r for r in wall['exterior_cells']}
             geometric = []
             for i, key in enumerate(self._keys):
@@ -552,7 +538,7 @@ class PreparedExteriorOwner:
                 actual = self._values(cells[i])['volume_m3']
                 if not a+lo <= actual <= b+hi:
                     raise ExteriorRefused('carried volume lies outside endpoint geometry and propagated projection bounds')
-                geometric.append([_enc(lo), _enc(hi)])
+                geometric.append([_encoded(Q(lo)), _encoded(Q(hi))])
             metadata = dict(old); metadata.pop('state_id')
             metadata.update(time_s=float(_q(wall['end_time_s'])), intervals=old['intervals']+1,
                 parent_state_id=parent.state_id, collar_state_id=None,
@@ -570,7 +556,7 @@ class PreparedExteriorOwner:
                 conditional_donor_field_error=record['conditional_donor_field_error'],
                 conditional_receiver_field_error=[dict(source_key=list(k), exact=self._exact(credit_error[k])) for k in self._keys],
                 field_error_scope='wall-integration uncertainty conditional on current first-order FV fields, not cumulative physical solution error',
-                projection_delta={k: _enc(q) for k, q in zip(labels, delta)},
+                projection_delta={k: _encoded(Q(q)) for k, q in zip(labels, delta)},
                 ownership='same native signed flux, actual located exterior receiver; no unlocated export bucket',
                 discretisation='first-order well-mixed exterior donor/receiver fields; native transport method unchanged')
             snapshot = RegionalMechanicalSnapshot(metadata, self._arrays(metadata))
@@ -578,7 +564,7 @@ class PreparedExteriorOwner:
             for key, value in dict(_snapshot=snapshot, _exchange=_json(exchange),
                                    _native_stage=native, _budget=self._budget).items():
                 object.__setattr__(result, key, value)
-            _retain(result, 8192+2*snapshot.nbytes+4*len(result._exchange), self._budget)
+            _retain_result(result, 8192+2*snapshot.nbytes+4*len(result._exchange), self._budget, 'exterior-fv-retained')
             return result
 
     def finish(self, transported, collar_advance):
@@ -603,7 +589,7 @@ class PreparedExteriorOwner:
             metadata['collar_state_id'] = exchange['collar_state_id'] = collar_advance.state.result_id
             state = self._issue(metadata); self._bound(state)
             result = ExteriorAdvance(state, _json(exchange))
-            _retain(result, 8192+4*len(result._metadata), self._budget)
+            _retain_result(result, 8192+4*len(result._metadata), self._budget, 'exterior-fv-retained')
             return result
 
     def advance(self, parent, offer, collar_advance):

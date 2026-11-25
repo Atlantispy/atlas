@@ -37,6 +37,8 @@ from types import MappingProxyType
 import numpy as np
 
 from atlas_tectonics.resources import WorkBudget, _ResizableLease
+from atlas_tectonics.resources import canonical_json as canonical
+from atlas_tectonics.resources import _arena_init
 from atlas_tectonics._private.compact_contracts import ContractError, LogicalIdentity, UINT64_MAX
 
 SCHEMA = 'atlas.compact-record.v1'
@@ -164,11 +166,6 @@ def require(ok, message):
         raise ContractError(message)
 
 
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'),
-                      ensure_ascii=True, allow_nan=False).encode('ascii')
-
-
 def narrow(maximum):
     require(type(maximum) is int and 0 <= maximum <= UINT64_MAX, 'reference overflow')
     return next(dtype for bound, dtype in ((255, 'u1'), (65535, '<u2'),
@@ -189,8 +186,7 @@ class Scratch:
 
 
 class _Arena:
-    def __init__(self, budget):
-        self.budget, self.owners, self.free = budget, [], 0
+    __init__ = _arena_init
 
     def hold(self, size):
         if size > self.free:

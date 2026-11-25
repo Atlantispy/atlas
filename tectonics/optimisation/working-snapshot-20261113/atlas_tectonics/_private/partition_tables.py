@@ -26,6 +26,7 @@ from types import MappingProxyType
 import numpy as np
 
 from atlas_tectonics._private import mesh_tables as M
+from atlas_tectonics.resources import _arena_init
 
 
 SCHEMA = 'atlas.compact-differential-partition.v1'
@@ -107,8 +108,7 @@ def _hash_json(record, budget):
 
 class _Arena:
     """Incremental retained build/index charges, not a schema-maximum reserve."""
-    def __init__(self, budget):
-        self.budget, self.owners, self.free = budget, [], 0
+    __init__ = _arena_init
 
     def hold(self, size):
         if size > self.free:

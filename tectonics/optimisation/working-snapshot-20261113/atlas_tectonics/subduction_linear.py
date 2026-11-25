@@ -17,8 +17,8 @@ from scipy.sparse.csgraph import reverse_cuthill_mckee
 from scipy.sparse.linalg import LinearOperator, gmres, splu
 
 from ._validation import TectonicsError, input_shape, read_array, frozen
-from .constitutive import _cancel
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 
 
 _CAP = 128*1024**2
@@ -91,7 +91,7 @@ def _factor(matrix, scale, velocity, owner, stack, cancel):
         ordering_work = 3*_bytes(matrix)+64*n+4096 if velocity else 0
         if ordering_work > allowance:
             raise TectonicsError('velocity ordering workspace exceeds admission')
-        _cancel(cancel); scaled = _scaled_csc(matrix, scale); factor = None
+        check_event_or_callable(cancel, 'constitutive work cancelled'); scaled = _scaled_csc(matrix, scale); factor = None
         permutation = None; permutation_bytes = 0
         try:
             if velocity:
@@ -113,7 +113,7 @@ def _factor(matrix, scale, velocity, owner, stack, cancel):
                 raise TectonicsError(f'{name} retained footprint exceeds admission: {retained} > {retained_bound} bytes')
             if np.any(factor.U.diagonal() <= 0.):
                 raise TectonicsError('saddle block has nonpositive factor pivots')
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             diagnostics = dict(admitted_bytes=allowance, retained_factor_bytes=actual,
                 realised_accounted_bytes=construction, retained_admitted_bytes=retained_bound,
                 retained_accounted_bytes=retained, factor_nnz=factor.L.nnz+factor.U.nnz,
@@ -154,7 +154,7 @@ def _bfbt(k, g, c, gauge, owner, stack, cancel):
         raise TectonicsError('BFBT pressure product exceeds sparse support admission')
     work = 3*(12*support+4*(n+1))+2*_bytes(g)+32*(g.shape[0]+n)
     with owner.reserve(work, category='subduction-bfbt-product'):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         weighted = g.copy(); weighted.data *= np.repeat(inverse_c, degree)
         poisson = (g.T@weighted).tocsr(); poisson.sort_indices()
         if gauge:
@@ -171,7 +171,7 @@ def _bfbt(k, g, c, gauge, owner, stack, cancel):
         return scaling*factor.solve(scaling*load)
 
     def inverse_schur(load):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         first = inverse_poisson(load)
         velocity = inverse_c*(g@first)
         middle = g.T@(inverse_c*(k@velocity))
@@ -193,7 +193,7 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
     These are not tolerance or solver fallbacks; full saddle LU is never formed.
     Returned storage belongs to the caller; all factor/work leases end on return.
     """
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     k = _csr(k_freevelocity, 'velocity stiffness'); g = _csr(g_freevelocity_pressure, 'velocity-pressure coupling')
     m = _csr(pressure_mass, 'inverse-viscosity pressure mass')
     nv, npres = g.shape; gauge = pressure_mean_weights is not None; size = nv+npres+int(gauge)
@@ -236,7 +236,7 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
         global_correction_v = 0.; global_pressure_shift = 0.; global_before = 0.
 
         def physical(value):
-            _cancel(cancel); v, p = value[:nv], value[nv:nv+npres]
+            check_event_or_callable(cancel, 'constitutive work cancelled'); v, p = value[:nv], value[nv:nv+npres]
             a, b = k@v+g@p, g.T@v
             return np.r_[a, b+q*value[-1], q@p] if gauge else np.r_[a, b]
 
@@ -270,7 +270,7 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
                 gauge_multiplier=0. if not gauge else float(value[-1]/weight_norm))
 
         if rhs_norm == 0.:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return frozen(np.zeros(nv)), frozen(np.zeros(npres)), dict(assess(np.zeros(size)),
                 iterations=0, corrections=0, preconditioner_applications=0, method='zero physical rhs')
         # Form the pressure product before holding the larger velocity factor.
@@ -286,7 +286,7 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
 
         def precondition(load):
             nonlocal applications
-            _cancel(cancel); applications += 1
+            check_event_or_callable(cancel, 'constitutive work cancelled'); applications += 1
             pressure_load = load[nv:nv+npres]; multiplier = 0.
             if gauge:
                 multiplier = float(np.sum(pressure_load))/float(q.sum())
@@ -313,14 +313,14 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
             matvec=lambda y: equilibration*physical(precondition(y/equilibration)), dtype=np.float64)
         def callback(_):
             nonlocal iterations
-            iterations += 1; _cancel(cancel)
+            iterations += 1; check_event_or_callable(cancel, 'constitutive work cancelled')
             if iterations > _ITERATIONS:
                 raise TectonicsError('saddle GMRES exceeded 1200 total inner iterations')
         # Arnoldi basis is allocated by GMRES, not by block factorisation.
         stack.enter_context(owner.reserve(8*_RESTART*size, category='subduction-gmres-basis'))
         solution = np.zeros(size); info = 0
         for correction in range(3):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             remaining = _ITERATIONS-iterations
             if remaining <= 0:
                 break
@@ -355,7 +355,7 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
             refine = not diagnostics['refinement_at_roundoff'] and correction < 2 and iterations < _ITERATIONS
             if (diagnostics['linear_residual'] <= _TOLERANCE and diagnostics['relative_residual'] <= _TOLERANCE
                     and not refine):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 return frozen(solution[:nv]), frozen(solution[nv:nv+npres]), dict(diagnostics,
                     iterations=iterations, corrections=correction, gmres_info=int(info),
                     preconditioner_applications=applications, restart=_RESTART, iteration_limit=_ITERATIONS,

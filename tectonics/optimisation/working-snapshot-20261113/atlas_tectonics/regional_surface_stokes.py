@@ -30,8 +30,8 @@ from scipy import sparse
 from scipy.sparse.linalg import LinearOperator, gmres, spilu, splu
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
-from .constitutive import _cancel
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 from .stokes_execution import _native_lease
 
 
@@ -128,10 +128,10 @@ class PreparedSurfaceStokes2D:
             raise TectonicsError('surface plan closed/active or wrong driving thread')
         self._active = True
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             with _native_lease():
                 yield
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         finally:
             self._active = False
 
@@ -281,7 +281,7 @@ class PreparedSurfaceStokes2D:
         def callback(_):
             nonlocal count
             count += 1
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         if not np.any(rhs):
             return np.zeros_like(rhs), 0, 0.
         solution, info = gmres(matrix, rhs, M=preconditioner, rtol=1e-12, atol=0.,
@@ -374,7 +374,7 @@ class PreparedSurfaceStokes2D:
                     preconditioner = LinearOperator(operator.shape,matvec=apply,dtype=float)
                     prepared = perf_counter()
                     solution,iterations,true = self._gmres(operator,rhs,preconditioner,cancel)
-                solved = perf_counter(); _cancel(cancel)
+                solved = perf_counter(); check_event_or_callable(cancel, 'constitutive work cancelled')
                 velocity = physical_lift.copy(); velocity[self._freev] += U*solution[:len(self._freev)]
                 pc = (E*U/L)*solution[len(self._freev):].reshape(self.elements,3)
                 residual = K@velocity+B.T@pc.ravel()-body-traction
@@ -465,7 +465,7 @@ class PreparedSurfaceStokes2D:
                     diagnostics=diagnostics,geometry_id=self._geometry_id,
                     timings=dict(assembly_seconds=assembled-started,preconditioner_seconds=prepared-assembled,
                                  solve_seconds=solved-prepared,diagnostics_seconds=perf_counter()-solved))
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 return result
 
     def top_trace(self, result):

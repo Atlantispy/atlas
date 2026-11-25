@@ -8,13 +8,13 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar
-from .constitutive import _cancel
 from .geological_records import GeologySource
 from .precursor_sampling import _temperature, _profile_mean, PrecursorSamplingLimits
 from .regional_execution import RegionalMechanicalSnapshot, _name, _hash, content_metadata
 from .regional_forcing import PlanarRegionalSection
 from .regional_workflow import RegionalWorkflowState
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
 
 
@@ -108,7 +108,7 @@ class RegionalGeologicalInputs(RegionalMechanicalSnapshot):
         Identity access still rereads sources and verifies loaded implementations;
         only repeated identity construction is avoided. The caller owns closure.
         """
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         d = self.descriptor()
         identity = _hash({'metadata': content_metadata(d), 'arrays': {
             key: {'shape': shape, 'sha256': hashlib.sha256(raw).hexdigest()}
@@ -124,7 +124,7 @@ class RegionalGeologicalInputs(RegionalMechanicalSnapshot):
                 raise TectonicsError('geological verification requires a same-backend execution context')
             if context.identity != d['execution_id']:
                 raise TectonicsError('geological source/runtime changed; no automatic rebind')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     def surface_parameters(self):
         d = self.descriptor()
@@ -209,7 +209,7 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
     The external surface pressure is required and has no assumed value: state it
     in Pa, zero gauge as an explicit 0. An unstated pressure is refused.
     """
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     if type(workflow) is not RegionalWorkflowState:
         raise TectonicsError('typed current RegionalWorkflowState required')
     if type(ownership) is not RegionalPhysicsOwnership:
@@ -317,7 +317,7 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
             raise TectonicsError('stress site outside geological support')
 
         for layer in layers:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             # Whole-envelope endpoint/table-extremum check, not just mean validity.
             profile = layer['profile']
             cuts = (layer['top_depth_m'], layer['bottom_depth_m'],
@@ -341,7 +341,7 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
         for j, z in enumerate(zc):
             eta_c[j] = laws[at_depth(bottom-z)['material'].material_id].viscosity_pa_s
         for j, z in enumerate(zv):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             layer = at_depth(bottom-z)
             temp_v[j] = temperature(layer, bottom-z)
             lo, hi = max(0., z-.5*dz), min(height, z+.5*dz)
@@ -409,7 +409,7 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
             force_semantics='full physical rho_b*(0,-g); regional execution alone subtracts declared reference gravity',
             inventory_semantics='actual W02 phase amounts; exact ordered phase intersections; reference_mass uses original rho0, not buoyancy density',
             homogeneous_material=homogeneous, isothermal=isothermal, surface_eligible=surface_eligible)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         context.verify()
         result = object.__new__(RegionalGeologicalInputs)
         RegionalMechanicalSnapshot.__init__(result, metadata, arrays)

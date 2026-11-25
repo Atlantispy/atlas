@@ -20,24 +20,21 @@ normal path; reference scalar formulae are retained in independent tests.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
+from concurrent.futures import CancelledError as CancelledError
 from dataclasses import asdict, dataclass
 import hashlib
-import json
 import math
 
 import numpy as np
 
 from ._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
 from .resources import select_budget, elements
+from .resources import check_event_or_callable
+from .resources import canonical_json as _json
 
 _METHOD = 'atlas.constitutive-r3.v1'
 _TOSI_DOI = '10.1002/2015GC005807'
 _MEMORY_DOI = '10.1029/2023GC011179'
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
 def _cancel(cancel):
@@ -264,7 +261,7 @@ def evaluate_rheology(profile, temperature, depth, strain_rate_ii, damage=None, 
         damage=0.
     args=(temperature,depth,strain_rate_ii,damage); names=('temperature','depth','strain rate','damage')
     shape,n,inputs=_inputs(args,names,limits); batch=min(n,limits.batch_points)
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     # Capture, outputs, immutable publication and a fixed-size ufunc scratch.
     with select_budget(budget).reserve(24*inputs+144*n+256*batch+65536,category='constitutive-evaluate'):
         values=tuple(read_array(v,k) for v,k in zip(args,names))
@@ -282,14 +279,14 @@ def evaluate_rheology(profile, temperature, depth, strain_rate_ii, damage=None, 
         with np.errstate(over='raise',invalid='raise',divide='raise'):
             try:
                 for chunk in it:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                     results=_native_law(profile,*chunk)
                     m=chunk[0].size
                     for dst,src in zip(out,results): dst[offset:offset+m]=src
                     offset+=m
             except FloatingPointError as exc:
                 raise TectonicsError('constitutive result outside numerical range') from exc
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         keys=('viscosity','stress_ii','yield_parameter','weakening_factor','healing_rate','viscosity_bound_code')
         result={k:frozen(v.reshape(shape)) for k,v in zip(keys,out)}
         if profile.family in ('constant','tosi-linear'):
@@ -312,7 +309,7 @@ def advance_memory(profile, damage, strain_rate_ii, temperature, elapsed, *, lim
     dt=scalar(elapsed,'elapsed dimensionless time',nonnegative=True)
     if dt>limits.max_elapsed: raise TectonicsError('elapsed time exceeds envelope')
     shape,n,inputs=_inputs((damage,strain_rate_ii,temperature),('damage','rate','temperature'),limits)
-    batch=min(n,limits.batch_points); _cancel(cancel)
+    batch=min(n,limits.batch_points); check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(24*inputs+32*n+128*batch+65536,category='constitutive-memory'):
         vals=tuple(read_array(v,k) for v,k in zip((damage,strain_rate_ii,temperature),('damage','rate','temperature')))
         d,e,T=np.broadcast_arrays(*vals)
@@ -323,7 +320,7 @@ def advance_memory(profile, damage, strain_rate_ii, temperature, elapsed, *, lim
         with np.errstate(over='raise',invalid='raise',divide='raise'):
             try:
                 for a,r,t in it:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                     h=p['B']*np.exp(-p['Ed']/(t+1.)+p['Ed']/2.)
                     x=h*dt
                     # expm1 preserves tiny healing; evaluate via dt*phi for x<1
@@ -340,7 +337,7 @@ def advance_memory(profile, damage, strain_rate_ii, temperature, elapsed, *, lim
                     out[pos:pos+a.size]=value; pos+=a.size
             except FloatingPointError as exc:
                 raise TectonicsError('memory update outside numerical range') from exc
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return frozen(out.reshape(shape))
 
 
@@ -420,7 +417,7 @@ def boussinesq_response(material,temperature_k,composition,gravity_m_s2,temperat
     except ValueError as exc: raise TectonicsError('incompatible material-field shapes') from exc
     n=elements(shape)
     if n>ConstitutiveLimits().max_points: raise TectonicsError('body-force request too large')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(256*n+24*(elements(gs)+elements(qs)+elements(ts)+elements(cs))+65536,category='constitutive-thermochemical'):
         T,C=np.broadcast_arrays(read_array(temperature_k,'temperature'),read_array(composition,'composition'))
         if np.any((T<material.temperature_range_k[0])|(T>material.temperature_range_k[1])) or np.any((C<0)|(C>1)):
@@ -433,7 +430,7 @@ def boussinesq_response(material,temperature_k,composition,gravity_m_s2,temperat
         heat=np.full(shape,material.internal_heating_w_m3)
         if viscous_dissipation_w_m3 is not None:
             heat+=np.broadcast_to(read_array(viscous_dissipation_w_m3,'dissipation',nonnegative=True),shape)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return {'density_anomaly_kg_m3':frozen(density),
                 'body_force_n_m3':frozen(density[...,None]*np.broadcast_to(gravity,shape+(gs[-1],))),
                 'conductive_flux_w_m2':frozen(-material.conductivity_w_m_k*np.broadcast_to(gradient,shape+(gs[-1],))),

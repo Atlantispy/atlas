@@ -1,0 +1,24 @@
+{
+  "schema": "atlas.tectonics-environment-install.v1",
+  "id": "environment-install-r2",
+  "date": "2026-11-23",
+  "source": "git archive of dcc1fc4 (tectonics/requirements/windows-amd64-cp312{,-core,-acceptance,-visual}.txt; tools/check_tectonics_environment.py; tests/test_tectonics_environment.py)",
+  "supersedes_note": "environment-install (26 Sep, 39 pins), marked historical at dcc1fc4; that record is unchanged",
+  "interpreter": {"python": "3.12.14", "base": "the scientific environment's base CPython, sha256 ceabb31054d429f5..."},
+  "venv": {"created_s": 4.306, "pip": "25.0.1 (ensurepip, not upgraded)", "disk": "470 MB"},
+  "installs": [
+    {"route": "core", "installed": 29, "elapsed_s": 38.238, "includes": "gmpy2-2.3.2-cp312-cp312-win_amd64.whl sha256 753baf48bf00b391297622cecc4d33fb3e10966fe3e61c2e6e22a3f387fa6446 (1.1 MB)"},
+    {"route": "acceptance", "installed": 1, "elapsed_s": 1.195},
+    {"route": "visual", "installed": 10, "elapsed_s": 10.517}
+  ],
+  "download_mb_from_pip_output": 123.0,
+  "checks": {
+    "metadata_checker": "PASS: 40 pins (core 29, acceptance 1, visual 10); os_version 10.0.26300 vs recorded 10.0.26200 noted as provenance only",
+    "pip_check": "No broken requirements found",
+    "focused_tests": "Ran 10 tests, OK",
+    "smoke": "exit 0, same smoke.py (sha256 cc043f632761...) as the 26 Sep record"
+  },
+  "comparison_with_scientific_environment": {"distributions": 40, "identical_files": 5790, "native_binaries_identical": "195 of 195", "different_files": 15, "different_explained": "all under Scripts/ (launchers)", "only_in_new_environment": 31, "only_in_scientific_environment": 0},
+  "not_established": ["native execution-identity equality", "checkpoint compatibility", "any Atlas simulation or science", "Linux/macOS"],
+  "first_attempt_note": "the metadata checker and tests first ran from the wrong folder (file not found / no tests ran); rerun from the export root, without reinstalling"
+}

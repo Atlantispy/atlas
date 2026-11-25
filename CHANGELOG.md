@@ -14,6 +14,24 @@ review and scientific acceptance are separate outcomes; no entry here claims acc
 - Added the repository layout rules: the target folders, the module skeleton, how files move and how old
   code is retired. The public-path check scans the planned `shared/` folder once it exists.
 
+### Changed
+- Reused shared validation, record-writing, geometry and worker helpers in the optimised snapshot. Kept the
+  existing caller-specific calculations where sharing would change the route or add work.
+- Reused a clipping incidence result within each moving-face and moving-interface cut. The scalar and signed
+  moving-face checks matched outputs and work budgets, with 20 and 32 fewer incidence calls respectively.
+- Kept full plan validation at joined heat finish entry and retained live owner and cancellation checks
+  at exit. The focused finish check matched endpoint bytes and preserved four refusal cases.
+
+### Evidence
+- On the Unit 4 baseline, strict graph comparison with the preceding snapshot failed on four source-fingerprint pairs, with
+  1,989 substitutions accepted for this pair only. Stored identifiers, the full partition and all 2,016
+  ordered supports matched. The fresh diagnostic chain passed all eight steps. Six admitted heat workers
+  computed all 5,315 faces and exited cleanly without fallback. That chain covered the Unit 4 baseline.
+  The two follow-up changes have the focused evidence above. Scientific and production acceptance remain open.
+- Recorded the [bounded i02 timing rerun](tectonics/evidence/i02-workflow-timing-r13.json) and [clean Windows
+  installation](tectonics/evidence/environment-install-r2.json), including gmpy2 2.3.2. Both used the
+  preceding review revision. Earlier receipts remain available in the evidence register.
+
 ## [0.1.0.dev44](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev44) - 2026-11-21
 
 ### Changed

@@ -194,12 +194,17 @@ def validate_plan(owner, definition, header, mesh):
         I._validate_target_plan(definition)
 
 
-def validate_owner(value, owner, step, mesh, *, cancel=None):
+def _verify_owner(value, owner, step, mesh, *, cancel=None):
     header = verify_live(value, cancel=cancel)
     if (any(a is not b for a,b in zip(value._call._origin_objects,
             (owner, step, mesh, step.result._snapshot), strict=True))
             or owner._heat_label != LABEL):
         raise ValueError('Joined heat belongs to another actual owner/transport/mesh')
+    return header
+
+
+def validate_owner(value, owner, step, mesh, *, cancel=None):
+    header = _verify_owner(value, owner, step, mesh, cancel=cancel)
     validate_plan(owner, value.plan_descriptor(), header, INDEXED.mesh_rows(mesh))
     return header
 
@@ -371,7 +376,8 @@ The heat result remains private; this is not whole-method resource admission.
                 step.result, heat, scope=EXCHANGE_RECORD.required_scope(owner),
                 check=lambda: R.check(cancel))
             del exchange, graph, transported
-            validate_owner(heat, owner, step, mesh, cancel=cancel)
+            # Retain live owner and source checks. The bound plan is unchanged.
+            _verify_owner(heat, owner, step, mesh, cancel=cancel)
             return result
 
 

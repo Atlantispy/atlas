@@ -13,10 +13,11 @@ from time import perf_counter
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
-from .constitutive import DiffusiveScales, RheologyProfile, evaluate_rheology, _cancel, _json
+from .constitutive import DiffusiveScales, RheologyProfile, evaluate_rheology, _json
 from .regional_execution import (PreparedRegionalStokes2D, RegionalMechanicalSnapshot,
                                  _array_hash, _hash, _name)
 from .stokes_execution import _factored_scale
+from .resources import check_event_or_callable
 
 _SAMPLING = ('regional-tensor-collocation-v1: centre shear=four-vertex mean; '
              'vertex normal strain=bilinear centre reconstruction with linear boundary extrapolation; '
@@ -196,7 +197,7 @@ def solve_regional_rheology(plan, profile, scales, thermal_center_k, thermal_ver
             raise TectonicsError('BF requires explicit frozen damage on both stress supports')
     elif damage_center is not None or damage_vertex is not None:
         raise TectonicsError('only BF regional snapshots accept frozen damage')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     count = sum(int(np.prod(s)) for s in shapes)
     with plan._resource.reserve(256*count+262144, category='regional-rheology-state'):
         temperatures = tuple(frozen(read_array(v, 'stress-site temperature')) for v in (thermal_center_k, thermal_vertex_k))
@@ -237,7 +238,7 @@ def solve_regional_rheology(plan, profile, scales, thermal_center_k, thermal_ver
         request = dict(frame_id=frame_id, epoch_id=epoch_id, time_s=time_s,
                        force_source=force_source, boundary_source=boundary_source, cancel=cancel)
         for iteration in range(1, max_iterations+1):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             solved = plan.solve(*loads, boundary, **request)
             rates = _invariant_sites(*(solved.array('strain_'+axis+'_s_1') for axis in ('xx', 'zz', 'xz')))
             current = law(rates)
@@ -248,7 +249,7 @@ def solve_regional_rheology(plan, profile, scales, thermal_center_k, thermal_ver
                             'momentum_residual': diagnostics['momentum_residual'],
                             'normalised_work_residual': diagnostics['normalised_work_residual']})
             if change <= 1e-8 and accepted is not None:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 metadata = {'schema': 'atlas.regional-rheology-snapshot.v1', 'binding': binding,
                     'mechanical_result_id': accepted.result_id, 'linear_solve_result_id': solved.result_id,
                     'used_viscosity_hashes': [_array_hash(a) for a in viscosities],

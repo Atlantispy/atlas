@@ -11,6 +11,7 @@ import json
 import numpy as np
 from ._validation import TectonicsError, input_shape, snapshot
 from .resources import select_budget
+from .resources import _immutable_deepcopy
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -61,9 +62,7 @@ class ColumnGrid1D:
     def descriptor(self):
         return {'kind':'column-grid-v1','frame_id':self.frame_id,'cells':self.cells,'grid_id':self.grid_id}
     def __reduce__(self): return (_restore_grid,(self.edges_m,self.frame_id,self.grid_id))
-    def __deepcopy__(self,memo):
-        memo[id(self)]=self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_grid(edges,frame,expected):

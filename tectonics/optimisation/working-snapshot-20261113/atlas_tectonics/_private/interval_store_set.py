@@ -35,6 +35,7 @@ from atlas_tectonics._private.content_cache import ChargeSpec
 from atlas_tectonics._private.interval_catalog import (Catalog, CatalogEntry, _checked_path, canonical, check_cancel,
                               digest, file_token, flush_file, publication_lock,
                               publish_catalog, read_catalog, relative_file, safe_path, tagged)
+from atlas_tectonics._private.interval_catalog import _durable_move
 from atlas_tectonics._private import sealed_guard_set
 
 
@@ -248,24 +249,7 @@ def _sidecars_absent(path):
 
 def _rename_no_replace(source, target):
     """Atomic same-directory rename that never replaces an existing target."""
-    if os.name == 'nt':
-        import ctypes
-        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-        move = kernel.MoveFileExW
-        move.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
-        move.restype = ctypes.c_int
-        # MOVEFILE_WRITE_THROUGH only: no REPLACE_EXISTING, no COPY_ALLOWED.
-        if not move(str(source), str(target), 0x8):
-            raise ctypes.WinError(ctypes.get_last_error())
-    else:
-        if os.path.lexists(target):
-            raise FileExistsError(target)
-        os.rename(source, target)
-        directory = os.open(Path(target).parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+    _durable_move(source, target, overwrite=False)
 
 
 def _immutable(path):

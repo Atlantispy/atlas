@@ -15,11 +15,12 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
-from .constitutive import DiffusiveScales, RheologyProfile, _cancel, _json
+from .constitutive import DiffusiveScales, RheologyProfile, _json
 from .regional_execution import PreparedRegionalStokes2D, _name, _hash, _array_hash
 from .regional_rheology import solve_regional_rheology, _validate_boundary_support
 from .regional_transport import (PreparedHeatTransport, translate_material_regions,
                                  HeatBoundary, _pair)
+from .resources import check_event_or_callable
 
 
 _TEMPERATURE_SAMPLING = 'cell-mean-linear-centre-and-vertex-v1'
@@ -168,7 +169,7 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
     shapes=((g.nz,g.nx+1),(g.nz+1,g.nx))
     if any(input_shape(v)!=shape for v,shape in zip((other_force_u_n_m3,other_force_w_n_m3),shapes)):
         raise TectonicsError('other physical forces need complete MAC support')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     # Charge coupling state plus all heat scratch to the mechanical shared cap.
     # Heat's own guard additionally honours its explicitly supplied owner budget.
     with plan._resource.reserve(heat.work_bytes+512*g.nx*g.nz+131072,
@@ -232,7 +233,7 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
             'force_ownership':'supplied other forces plus optional TOTAL thermal gravity; reference pressure removed once',
             'retained_history':'initial and final states only; no per-substep field history',
             'time_advanced':True}
-        _cancel(cancel);plan._context.verify()
+        check_event_or_callable(cancel, 'constitutive work cancelled');plan._context.verify()
         return RegionalThermomechanicalResult(initial.mechanics,final.mechanics,evolved['temperature_k'],
             None if material is None else material['regions'],None if material is None else material['cell_mass_kg'],
             None if material is None else material['cell_volume_fraction'],_json(metadata))

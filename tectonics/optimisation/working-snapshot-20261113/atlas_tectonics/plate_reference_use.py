@@ -26,9 +26,10 @@ from .plate_reference_acceptance import (
 )
 from .plate_reference_dataset import (
     PB2002_COMMIT, PB2002Dataset, ReferenceDataError,
-    _json, load_pb2002, step_motion,
+    load_pb2002, step_motion,
 )
 from .resources import select_budget
+from .resources import json_sha256 as _hash
 
 _POLICY_PATH = Path(__file__).resolve().parents[2] / 'cases' / 'plate_reference_use_policy.json'
 _POLICY_SHA256 = '89c7ad4421b0a796234f24650b1e0fa9c27e520eb4caaf85fd5988fb9aa6b26d'
@@ -44,10 +45,6 @@ _ALL_USES = frozenset((
     'unique_surface_topology', 'complete_deformation_mask', 'historical_validation',
     'independent_model_validation', 'geological_generator_acceptance',
 ))
-
-
-def _hash(value) -> str:
-    return hashlib.sha256(_json(value)).hexdigest()
 
 
 def _freeze(value):

@@ -33,6 +33,8 @@ import numpy as np
 
 from ._validation import snapshot as array, frozen, input_shape, TectonicsError
 from .resources import elements, select_budget, MemoryLimitError
+from .resources import check_event
+from .resources import canonical_json as _json
 from .storage import ArrayStore
 from .thermal import half_space_temperature, cooling_work_bytes
 from .flexure import PeriodicFlexure
@@ -42,11 +44,6 @@ from .parameters import ThermalParameters
 
 def _digest(data):
     return hashlib.sha256(data).hexdigest()
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'),
-                      allow_nan=False).encode('utf-8')
 
 
 # Fields that name code, not content: exact names only (a data digest under another name is content).
@@ -1737,12 +1734,12 @@ class CachePolicy:
             raise TectonicsError("invalid cache timing threshold")
 
 
+_FLIGHT_RETRIES = 3
+
+
 def _cancelled(cancel):
     if cancel is not None and cancel.is_set():
         raise CancelledError("caller cancelled; completed publications are not rolled back")
-
-
-_FLIGHT_RETRIES = 3
 
 
 class _Flights:
@@ -1754,7 +1751,7 @@ class _Flights:
         self.max_entries, self.max_waiters = max_entries, max_waiters
 
     def run(self, key, produce, *, cancel=None, timeout=30., validate=None):
-        _cancelled(cancel)
+        check_event(cancel, 'caller cancelled; completed publications are not rolled back')
         ident = threading.get_ident()
         deadline = time.monotonic()+timeout
         # An owner's own cancellation is not a waiter's: a waiter whose event is unset registers again (becoming
@@ -1798,7 +1795,7 @@ class _Flights:
                 break
             try:
                 while True:
-                    _cancelled(cancel)
+                    check_event(cancel, 'caller cancelled; completed publications are not rolled back')
                     remaining = deadline-time.monotonic()
                     if remaining <= 0:
                         raise TimeoutError("waiting for identical cache request timed out")
@@ -1809,7 +1806,7 @@ class _Flights:
                         if future.done():
                             raise  # a producer's own TimeoutError is not a wait timeout
             except CancelledError as exc:
-                _cancelled(cancel)               # this caller's own cancellation stays its own
+                check_event(cancel, 'caller cancelled; completed publications are not rolled back')               # this caller's own cancellation stays its own
                 seen = future
                 if attempt == _FLIGHT_RETRIES:
                     raise TectonicsError("identical cache computation was cancelled by its other callers "
@@ -1819,7 +1816,7 @@ class _Flights:
                 with self._lock:
                     self._waiters -= 1
             break
-        _cancelled(cancel)
+        check_event(cancel, 'caller cancelled; completed publications are not rolled back')
         if not leader and validate is not None:
             validate()
         return result.view()
@@ -1881,7 +1878,7 @@ def _process_claim(store, key, cancel, timeout):
             text = os.read(fd,64).decode("ascii","replace")
             return text if _SHA.fullmatch(text) else None
         while not acquired:
-            _cancelled(cancel)
+            check_event(cancel, 'caller cancelled; completed publications are not rolled back')
             try:
                 take(); acquired = True
             except OSError as exc:
@@ -1986,7 +1983,7 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
         # before execution so a concurrent producer cannot consume its capacity.
         with budget.reserve(8 * elements(shape), category="pending-result"), \
                 _process_claim(store,key,cancel,max(0.,deadline-time.monotonic())):
-            _cancelled(cancel)
+            check_event(cancel, 'caller cancelled; completed publications are not rolled back')
             costs = controller.cost(key)
             recompute = cache_policy.mode == "auto" and costs.get("restore",0) > costs.get("compute",float("inf"))
             start = time.perf_counter()
@@ -1997,17 +1994,17 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
                     raise TectonicsError("cached result contract mismatch")
                 result = check_result(restored["result"])
                 context.verify()
-                _cancelled(cancel)
+                check_event(cancel, 'caller cancelled; completed publications are not rolled back')
                 controller.count("hits")
                 controller.cost(key,restore=restore_time)
                 if admission_key is not None:
                     controller.profile(admission_key, restore=restore_time)
                 return result
             controller.count("recomputes" if recompute else "misses")
-            _cancelled(cancel)
+            check_event(cancel, 'caller cancelled; completed publications are not rolled back')
             start = time.perf_counter(); result = check_result(compute())
             compute_time = time.perf_counter()-start
-            context.verify(); _cancelled(cancel)
+            context.verify(); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
             controller.cost(key,compute=compute_time)
             if admission_key is not None:
                 controller.profile(admission_key,compute=compute_time)
@@ -2018,7 +2015,7 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
                 start = time.perf_counter()
                 def publication_check():
                     context.verify()
-                    _cancelled(cancel)
+                    check_event(cancel, 'caller cancelled; completed publications are not rolled back')
                 store.put(key,{"result":result},record,publication_check=publication_check,
                           cancel=cancel,budget=budget)
                 write_time = time.perf_counter()-start
@@ -2064,7 +2061,7 @@ def _prepare_reuse(store, cache_policy, nbytes, controller, operation, backend):
 
 
 def _direct(compute, control, admission_key, policy, cancel, context=None, backend=None):
-    _cancelled(cancel)
+    check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if context is not None:
         if not isinstance(context,ExecutionContext) or context.backend != backend:
             raise TectonicsError("context/backend mismatch")
@@ -2074,7 +2071,7 @@ def _direct(compute, control, admission_key, policy, cancel, context=None, backe
     duration=time.perf_counter()-start
     if context is not None:
         context.verify()
-    _cancelled(cancel)
+    check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if control is not None and policy.mode == "auto":
         control.profile(admission_key,compute=duration)
     return result
@@ -2091,7 +2088,7 @@ def cached_temperature(depth_m, age_s, parameters: ThermalParameters, *,
                        context=None, controller=None, cache_policy=None, cancel=None,
                        wait_timeout=30.):
     """Optimised cooling; auto admission skips cheap results, never physics."""
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     # A store-bound wrapper joins its run envelope even when auto bypasses disk.
     # The caller may still supply an explicitly related per-call child budget.
     if budget is None and isinstance(store, ArrayStore):
@@ -2129,7 +2126,7 @@ def cached_plate_temperature(depth_m, age_s, parameters, *, cell_bottom_m=None,
     from .parameters import PlateCoolingParameters
     if type(parameters) is not PlateCoolingParameters:
         raise TectonicsError('explicit PlateCoolingParameters required')
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     raw = {'depth': depth_m, 'age': age_s}
@@ -2169,7 +2166,7 @@ def cached_plate_thermal_response(age_s, reference_age_s, plate, material, param
     """Source-bound whole-column thermal load/support; auto skips cheap persistence."""
     from .thermal_support import plate_thermal_response, _plate_material
     _plate_material(plate, material, parameters)
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     shapes = (_shape(age_s), _shape(reference_age_s))
@@ -2212,7 +2209,7 @@ def cached_compaction_response(void_ratio, stress_pa, maximum_stress_pa, new_str
     from .compaction import CompactionParameters, compaction_response
     if type(parameters) is not CompactionParameters:
         raise TectonicsError('explicit CompactionParameters required')
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     inputs = (void_ratio, stress_pa, maximum_stress_pa, new_stress_pa)
@@ -2257,7 +2254,7 @@ def cached_column_load_change(reference, current, gravity_m_s2, *, store=None,
     """
     from .column_loads import column_load_change, _compatible
     g = _compatible(reference, current, gravity_m_s2, batch_columns)
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     shape = (len(reference.support.column_ids), 4)
@@ -2286,7 +2283,7 @@ def cached_flexure(operator: PeriodicFlexure, load_pa, *, store: ArrayStore | No
                    budget=None, context=None, controller=None, cache_policy=None,
                    cancel=None, wait_timeout=30.):
     if not isinstance(operator,PeriodicFlexure): raise TectonicsError("explicit PeriodicFlexure required")
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     shape = _shape(load_pa)
@@ -2315,7 +2312,7 @@ def cached_finite_flexure(operator, load_pa, *, store=None, budget=None, context
     """Verified reuse of the distinct continuous regional operator and derivatives."""
     if type(operator) is not FiniteRegionFlexure:
         raise TectonicsError('explicit FiniteRegionFlexure required')
-    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout = _timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     shape = _shape(load_pa)
@@ -2347,7 +2344,7 @@ def cached_variable_flexure(operator, load_pa, *, store=None, budget=None, conte
     from .variable_flexure import VariableRigidityFlexure
     if type(operator) is not VariableRigidityFlexure or operator._closed:
         raise TectonicsError('live explicit variable-rigidity operator required')
-    wait_timeout=_timeout(wait_timeout);_cancelled(cancel)
+    wait_timeout=_timeout(wait_timeout);check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store,ArrayStore): budget=store._budget
     shape=_shape(load_pa);operator.work_bytes(shape)
     output_shape=(operator.grid.cells,5,4)
@@ -2385,7 +2382,7 @@ def cached_regional_transport(thickness_m, face_velocity_m_s, grid, duration_s, 
     from ._validation import scalar
     _validate_definition(grid,left,right,scheme,backend)
     dt=scalar(duration_s,"duration_s",nonnegative=True)
-    wait_timeout=_timeout(wait_timeout); _cancelled(cancel)
+    wait_timeout=_timeout(wait_timeout); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store,ArrayStore): budget=store._budget
     shapes=(_shape(thickness_m),_shape(face_velocity_m_s))
     if shapes != ((grid.cells,),(grid.cells+1,)):
@@ -2436,7 +2433,7 @@ def cached_material_transport(state, face_velocity_m_s, duration_s, *, left, rig
     from ._validation import scalar
     _definition(state,left,right,scheme,backend)
     dt=scalar(duration_s,'duration',nonnegative=True);_end_time(state,dt)
-    wait_timeout=_timeout(wait_timeout);_cancelled(cancel)
+    wait_timeout=_timeout(wait_timeout);check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if budget is None and isinstance(store,ArrayStore):budget=store._budget
     n=state.grid.cells;c=len(state.cohorts)
     if _shape(face_velocity_m_s)!=(n+1,):raise TectonicsError('N+1 velocities required')

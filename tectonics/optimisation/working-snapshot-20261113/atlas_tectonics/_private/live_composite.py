@@ -18,7 +18,7 @@ from hashlib import sha256
 
 from atlas_tectonics._private.compact_contracts import ContractError, LogicalIdentity
 from atlas_tectonics._private.record_tables import MAX_DEPTH, RecordCodec
-from atlas_tectonics._private.record_views import LogicalExchange, LogicalRecord, RecordRef, _ObjectRecordRef
+from atlas_tectonics._private.record_views import CompactRecord, LogicalExchange, LogicalRecord, RecordRef, _ObjectRecordRef
 
 SCHEMA = 'atlas.live-composite-record.v1'
 # Test-only route switch for same-source A/B measurement: False sends every
@@ -188,3 +188,7 @@ def compose_record(value, *, record_schema, scope, check, eager_identity=True):
 
 def is_live(value):
     return type(value) is LiveRecord
+
+
+def is_compact(value):
+    return type(value) is CompactRecord or is_live(value)

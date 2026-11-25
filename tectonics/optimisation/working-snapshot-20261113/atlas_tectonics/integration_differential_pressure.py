@@ -9,7 +9,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
-import json
 import weakref
 
 import numpy as np
@@ -21,10 +20,7 @@ from . import integration_volume as V, integration_volume_overlap as O
 from . import integration_wall_measures as W
 from .regional_execution import RegionalMechanicalSnapshot
 from .resources import WorkBudget
-
-
-def _json(record):
-    return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+from .resources import canonical_json
 
 
 def _exact(value):
@@ -125,7 +121,7 @@ def prescribe_reservoir_pressure(funding, collar, native, *, pressure_at_origin_
             raise C.PressureCouplingRefused('declared absolute reservoir pressure becomes negative on its support')
     local = native.coordinates(side)
     chart = V.CartesianCell.from_record(f['cell_geometries'][0], budget=budget)
-    with budget.reserve(65536+4*local.nbytes+8*len(_json(f)), category='reservoir-full-traction'):
+    with budget.reserve(65536+4*local.nbytes+8*len(canonical_json(f)), category='reservoir-full-traction'):
         # Exact affine pullback in the ACTUAL physical chart, at the native
         # solver's represented quadrature coordinates. Rounding a world point
         # first would hide an additional pressure/work projection residual.
@@ -328,7 +324,7 @@ def _current_regions(sphere, funding, collar, state, spatial_state, supports, en
         extra, cone, physical_planes = (), (), ()
         if 'support' in physical:
             raw = physical['support']
-            support_id = hashlib.sha256(_json(raw)).hexdigest()
+            support_id = hashlib.sha256(canonical_json(raw)).hexdigest()
             if support_id not in posed or posed[support_id][0] != raw:
                 raise C.PressureCouplingRefused('force supplied a different physical component geometry')
             raw_support, view = posed[support_id]

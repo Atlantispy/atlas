@@ -58,6 +58,7 @@ from . import integration_state as _state
 from . import integration_junction_paths as _paths
 from .integration_junction_paths import JunctionPath
 from ._validation import TectonicsError, input_shape, read_array, scalar
+from ._validation import bounded_record
 from .geometry import _check_cancel, _limits
 from .integration_ledger import EXACT_LIMIT, ExchangeRefused, LedgerError, Transfer, _exact_text
 from .integration_sphere import (ATTACHMENT_BAND_RAD, RELATIVE_TOLERANCE, RIDGE, SIDES, TRANSFORM, TRENCH, Boundary,
@@ -68,6 +69,7 @@ from .materials import _json, _name, _sha
 from .resources import select_budget
 from .spherical_atlas import _capture_directions
 from .spherical_geometry import SphericalChart, _ring_area
+from .integration_volume import _cross as _cross
 
 
 SCHEMA = 'atlas.i03-sphere-step.v3'
@@ -98,16 +100,6 @@ class TransferRefused(ExchangeRefused):
     def __init__(self, message, code=None):
         super().__init__(message)
         self.code = code
-
-
-def _canonical(value, label):
-    try:
-        data = _json(value)
-    except TectonicsError as exc:
-        raise TransferRefused(label+': finite JSON data required') from exc
-    if len(data) > _sphere.MAX_RECORD:
-        raise TransferRefused(label+': record exceeds the bounded envelope')
-    return data
 
 
 # ----------------------------------------------------------------------------- the declared proposal
@@ -1632,10 +1624,6 @@ def _integers(points):
 
 def _dot(a, b):
     return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
-
-
-def _cross(a, b):
-    return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
 
 
 def _sign(value):
@@ -3319,7 +3307,7 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
         record['events'] = list(events)
     if motion.regional_returns:
         record['regional_returns'] = [item.extract_id for item in motion.regional_returns]
-    record = _canonical(record, 'step record')
+    record = bounded_record(record, 'step record', _json, TransferRefused, _sphere.MAX_RECORD, ': record exceeds the bounded envelope')
     return _state._issue(Step, parent_state_id=state.state_id, state=successor, motion=motion, map=overlap,
                          stock_transfers=transfers, _record=record, _lineage=lineage,
                          _material_routes=(tuple(motion_routes), tuple(mesh_routes)),

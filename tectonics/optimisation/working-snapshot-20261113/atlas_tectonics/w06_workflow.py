@@ -12,14 +12,15 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen
+from ._validation import within_budget
 from .materials import _json, _name
 from .constitutive import BoussinesqMaterial
 from .thermal_support import ThermalSupportParameters
-from .regional import _cancelled
 from .resources import select_budget
+from .resources import check_event
 from .reuse import content_record
 from .storage import ArrayStore
-from .spreading import _within_budget, MAX_SPREADING_INTERVALS
+from .spreading import MAX_SPREADING_INTERVALS
 from .spreading_cooling import PreparedSpreadingCooling
 from .spreading_history_cooling import PreparedHistoryCooling
 from .spreading_checkpoint import pack_ocean, restore_ocean
@@ -147,7 +148,7 @@ class PreparedW06Workflow:
         object.__setattr__(self, name, value)
 
     def __init__(self, prepared, output_times_s, *, margin_policy=None, store=None, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(prepared) not in (PreparedSpreadingCooling, PreparedHistoryCooling, PreparedMarginCooling):
             raise TectonicsError('supported prepared W06 physical route required')
         self.is_margin = type(prepared) is PreparedMarginCooling
@@ -168,9 +169,9 @@ class PreparedW06Workflow:
         if store is not None and not isinstance(store, ArrayStore):
             raise TectonicsError('ArrayStore required for W06 recovery')
         resource = prepared._budget if budget is None else select_budget(budget)
-        _within_budget(resource, prepared._budget)
+        within_budget(resource, prepared._budget, 'call budget must descend from the prepared run budget')
         if store is not None:
-            _within_budget(resource, store._budget)
+            within_budget(resource, store._budget, 'call budget must descend from the prepared run budget')
         self.prepared, self.margin_policy, self.store = prepared, margin_policy, store
         self.output_times_s, self._origin, self._budget = times, origin, resource
         self._closed, self._current, self._current_lease, self._reference = False, None, None, None
@@ -196,7 +197,7 @@ class PreparedW06Workflow:
     def _check(self, cancel=None):
         if self._closed:
             raise TectonicsError('W06 workflow is closed')
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if self.is_margin:
             self.prepared._check(self._budget, cancel)
         else:
@@ -238,7 +239,7 @@ class PreparedW06Workflow:
         if not self.is_margin:
             parents = (self.prepared.initial.motion.state_id, self.prepared.initial.state_id)
         for index in range(end+1):
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             meta = self.store.metadata(self.checkpoint_id(index))
             if meta is None:
                 gap = True

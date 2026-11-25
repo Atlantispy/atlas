@@ -9,7 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 import json
-import re
+from atlas_tectonics.resources import _sha256_pattern as _SHA256
 
 
 SEGMENT_REF_SCHEMA = 'atlas.segment-ref.v1'
@@ -31,7 +31,6 @@ SUPPORT_CACHE_BYTES = 128 * 1024 * 1024
 FACT_CACHE_BYTES = 64 * 1024 * 1024
 PAGE_CACHE_BYTES = 64 * 1024 * 1024
 UINT64_MAX = (1 << 64) - 1
-_SHA256 = re.compile(r'[0-9a-f]{64}\Z')
 
 
 class ContractError(ValueError):

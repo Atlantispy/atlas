@@ -13,13 +13,13 @@ original statements: no new decode, reservation or retained object.
 import copy
 from dataclasses import dataclass
 from hashlib import sha256
-import json
 import sys
 import weakref
 
 from atlas_tectonics._private import mesh_tables as M
 from atlas_tectonics._private import partition_native_patch as P
 from atlas_tectonics._private.partition_tables import NodeRef, LIST, OBJECT, MAX_DEPTH
+from atlas_tectonics.resources import canonical_json as _canonical
 
 
 HEADER = ('interval_id', 'start_time_s', 'end_time_s')
@@ -127,14 +127,6 @@ def _plain_bytes(value):
             raise TypeError('plain decoded header data required, not %s' % kind.__name__)
         total += sys.getsizeof(item)
     return total
-
-
-def _canonical(value):
-    """Canonical JSON bytes of plain header data: sorted keys, no whitespace, finite numbers only.
-
-    Unlike ==, these bytes tell 1, 1.0 and True apart, and -0.0 from 0.0.
-    """
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False).encode()
 
 
 def _guard_charges(guard):

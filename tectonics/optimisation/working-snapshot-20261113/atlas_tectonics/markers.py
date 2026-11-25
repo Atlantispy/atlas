@@ -13,7 +13,8 @@ from ._validation import snapshot, scalar, TectonicsError
 from .materials import _name, _json, _immutable_bytes, _end_time
 from .mesh import ColumnGrid1D
 from .resources import select_budget
-from .regional import _cancelled
+from .resources import _immutable_deepcopy
+from .resources import check_event
 
 
 @dataclass(frozen=True,slots=True,init=False)
@@ -49,12 +50,12 @@ class MaterialMarkers1D:
     def positions_m(self):return np.frombuffer(self._x,np.float64)
     @property
     def log_stretch(self):return np.frombuffer(self._strain,np.float64)
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def move_material_markers(markers,source,target,duration_s,*,budget=None,cancel=None):
     """Exact local affine position map; log stretches add along that material path."""
-    _cancelled(cancel)
+    check_event(cancel, 'regional transport cancelled; no candidate published')
     if type(markers) is not MaterialMarkers1D or type(source) is not ColumnGrid1D or type(target) is not ColumnGrid1D:
         raise TectonicsError('typed markers and source/target meshes required')
     if source.cells!=target.cells or source.frame_id!=target.frame_id or source.frame_id!=markers.frame_id:
@@ -68,7 +69,7 @@ def move_material_markers(markers,source,target,duration_s,*,budget=None,cancel=
             strain=markers.log_stretch+np.log(stretch)
             result=MaterialMarkers1D(markers.marker_ids,markers.cohort_ids,x,time_s=end,
                 epoch_id=markers.epoch_id,frame_id=markers.frame_id,log_stretch=strain,budget=budget)
-            _cancelled(cancel);return result
+            check_event(cancel, 'regional transport cancelled; no candidate published');return result
         except (ValueError,OverflowError,FloatingPointError) as exc:raise TectonicsError(str(exc)) from exc
 
 

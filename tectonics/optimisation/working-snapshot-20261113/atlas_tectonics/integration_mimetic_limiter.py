@@ -16,13 +16,14 @@ that caller. No global result cache is constructed.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from collections import namedtuple
-from concurrent.futures import CancelledError
 from decimal import Decimal as D, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_EVEN, localcontext, getcontext
 from fractions import Fraction as Q
 import hashlib
 from pathlib import Path
 from .resources import WorkBudget, MemoryLimitError
+from .resources import check_event_or_callable
 from . import _mimetic_enclosure as _gamma
+from ._mimetic_enclosure import _dot_exact as _dot
 
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -37,15 +38,6 @@ def assert_current():
     if _gamma.assert_current() != _GAMMA_LOADED:
         raise ValueError('certified gamma dependency changed during solve')
     return _LOADED
-
-
-def _cancel(cancel):
-    if cancel is not None and (cancel.is_set() if hasattr(cancel, 'is_set') else cancel()):
-        raise CancelledError('KSS limiter work cancelled')
-
-
-def _dot(a, b):
-    return sum((x*y for x, y in zip(a, b)), Q(0))
 
 
 def _vector(values, size):
@@ -69,7 +61,7 @@ def _partition_nonnegative(target, weights, cancel=None):
     with the span between arbitrary Decimal exponents. A positive tiny part
     can round to zero. No returned state or global coefficient is clipped.
     """
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'KSS limiter work cancelled')
     if not target.is_finite() or target < 0 or not weights:
         raise ValueError('finite nonnegative target and nonempty weights required')
     with localcontext() as context:
@@ -77,7 +69,7 @@ def _partition_nonnegative(target, weights, cancel=None):
         if +target != target:
             raise ValueError('exactly representable Decimal80 partition target required')
         for value in weights:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             if not value.is_finite() or value < 0:
                 raise ValueError('finite nonnegative partition weights required')
         zero = D(0)
@@ -90,7 +82,7 @@ def _partition_nonnegative(target, weights, cancel=None):
         context.rounding = ROUND_CEILING
         total = zero
         for value in weights:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             total += value
         if not total:
             raise ValueError('positive partition weight required for positive target')
@@ -100,7 +92,7 @@ def _partition_nonnegative(target, weights, cancel=None):
         context.rounding = ROUND_FLOOR
         parts, used = [], zero
         for value in weights[:-1]:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             part = ((value/total)*target).quantize(quantum)
             parts.append(part)
             used += part
@@ -111,7 +103,7 @@ def _partition_nonnegative(target, weights, cancel=None):
         used += remainder
         if used != target:
             raise ValueError('Decimal80 partition lost its exact global coefficient')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'KSS limiter work cancelled')
         return tuple(parts)
 
 
@@ -270,7 +262,7 @@ def _recovery_cells(geometry, cancel, *, raw=False):
     operators = []
     face_normals = [None]*nf
     for ci, (volume, centre, faces, signs, offsets, normals, _) in enumerate(cells):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'KSS limiter work cancelled')
         coeff = {}
         for fi, sign, offset, normal in zip(faces, signs, offsets, normals):
             at = nc+fi
@@ -344,7 +336,7 @@ def _raw_face_recovery(geometry, fi, fixed, cell_normals, face_normals):
 def prepare(geometry, local, base_blocks, fixed, cancel=None, bounds=None):
     """Form the identical graph with streamed raw-normal recovery and exact mu."""
     assert_current()
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'KSS limiter work cancelled')
     nc, nf = len(geometry._cells), len(geometry._incidence)
     size, zero = nc+nf, D(0)
     fixed = frozenset(fixed)
@@ -371,7 +363,7 @@ def prepare(geometry, local, base_blocks, fixed, cancel=None, bounds=None):
         context.prec, context.rounding = 80, ROUND_HALF_EVEN
         assembled, positive = {}, {}
         for at, (entry, block) in enumerate(zip(local, base_blocks)):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             ci, indexes = entry[:2]
             if ci != at or tuple(indexes) != tuple(nc+j for j in geometry._cells[ci][2]):
                 raise ValueError('KSS local entries do not match exact geometry')
@@ -399,7 +391,7 @@ def prepare(geometry, local, base_blocks, fixed, cancel=None, bounds=None):
         neighbours = [None]*size
         checked_cell_rows = 0
         for a in range(size):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             if a >= nc and coords[a] is None:
                 raise ValueError('unowned exact KSS face')
             if a < nc:
@@ -436,7 +428,7 @@ def prepare(geometry, local, base_blocks, fixed, cancel=None, bounds=None):
                 except MemoryLimitError:
                     gamma_statistics['scratch_refusals'] += 1
                 for at, end, other in adjacency[a]:
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'KSS limiter work cancelled')
                     delta = tuple(x-y for x, y in zip(coords[a], coords[other]))
                     if interval is not None:
                         try:
@@ -463,7 +455,7 @@ def prepare(geometry, local, base_blocks, fixed, cancel=None, bounds=None):
         del coords, operators, face_normals
         graph = []
         for at, ((i, j), d) in enumerate(edges):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             occurrences = positive[i, j]
             weights = _partition_nonnegative(d, tuple(row[3] for row in occurrences), cancel)
             shares = tuple((cell, a, b, share) for (cell, a, b, _), share in zip(occurrences, weights))
@@ -471,7 +463,7 @@ def prepare(geometry, local, base_blocks, fixed, cancel=None, bounds=None):
         result = _Prepared(size, nc, tuple(neighbours), tuple(graph), cancel, bounds)
         result.gamma_statistics = gamma_statistics
         assert_current()
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'KSS limiter work cancelled')
         return result
 
 
@@ -494,7 +486,7 @@ class _Prepared:
         mins = [min(row, key=state.__getitem__) for row in self.neighbours] if self.bounds is None else None
         maxs = [max(row, key=state.__getitem__) for row in self.neighbours] if self.bounds is None else None
         for edge in self.graph:
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
             i, j = edge.i, edge.j
             delta = state[i]-state[j]
             sign = D(1) if delta >= 0 else D(-1)
@@ -532,7 +524,7 @@ class _Prepared:
         check. Caller-owned active coefficients and Newton vector storage
         remain in their existing admitted lifetime.
         """
-        assert_current(); _cancel(self.cancel)
+        assert_current(); check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
         with localcontext() as context:
             context.prec, context.rounding = 80, ROUND_HALF_EVEN
             expected = iter(active)
@@ -543,13 +535,13 @@ class _Prepared:
                     break
             if same:
                 same = next(expected, None) is None
-        assert_current(); _cancel(self.cancel)
+        assert_current(); check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
         return same
 
     def corrections(self, state):
         """Return local nonnegative frozen coefficients for P._corrected_faces."""
         assert_current()
-        _cancel(self.cancel)
+        check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
         with localcontext() as context:
             context.prec, context.rounding = 80, ROUND_HALF_EVEN
             output, zero = [[] for _ in range(self.local_count)], D(0)
@@ -559,7 +551,7 @@ class _Prepared:
                 for (at, a, b, _), weight in zip(edge.shares, weights):
                     output[at].append((a, b, weight))
         assert_current()
-        _cancel(self.cancel)
+        check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
         return output
 
     def derivative(self, state, *, line_direction=None, line_step=None, budget=None):
@@ -577,7 +569,7 @@ class _Prepared:
         Decimal-only active coefficients charged by Newton's workspace.
         """
         assert_current()
-        _cancel(self.cancel)
+        check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
         with localcontext() as context:
             context.prec, context.rounding = 80, ROUND_HALF_EVEN
             if (line_direction is None) != (line_step is None):
@@ -598,13 +590,13 @@ class _Prepared:
                     # captured by the returned Decimal derivative action.
                     def points():
                         for value, step_direction in zip(state, direction):
-                            _cancel(self.cancel)
+                            check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
                             yield Q(value)+line_step*Q(step_direction)
                     point = tuple(points())
                     bounds = tuple(map(Q, self.bounds))
                     def selected_branches():
                         for edge in self.graph:
-                            _cancel(self.cancel)
+                            check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
                             yield _event_branch(edge, point, bounds)
                     return tuple((edge.i, edge.j, edge.d, branch, k, gamma)
                         for edge, (_, _, branch, k, gamma) in zip(self.graph, selected_branches()) if branch)
@@ -615,13 +607,13 @@ class _Prepared:
 
         def action(direction):
             assert_current()
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
             with localcontext() as context:
                 context.prec, context.rounding = 80, ROUND_HALF_EVEN
                 direction = _vector(direction, self.size)
                 result = [D(0)]*self.size
                 for i, j, d, branch, k, gamma in active:
-                    _cancel(self.cancel)
+                    check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
                     other = direction[k] if k is not None else D(0)
                     limited = gamma*((other-direction[i]) if branch == 1 else
                                      (direction[j]-other))
@@ -629,7 +621,7 @@ class _Prepared:
                     result[i] += amount
                     result[j] -= amount
             assert_current()
-            _cancel(self.cancel)
+            check_event_or_callable(self.cancel, 'KSS limiter work cancelled')
             return result
         # Immutable tuple is the actual selected linearisation, including
         # exact adjacent-region choices; preconditioners must not reselect it.
@@ -656,10 +648,10 @@ def _adjacent_workspace_bytes(state, direction, bounds, graph, line_step, cancel
         span = max(span, len(item.digits)+abs(item.exponent))
     for values in (state, direction, bounds):
         for value in values:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             include(value)
     for edge in graph:
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'KSS limiter work cancelled')
         for value in (edge.gamma_i, edge.gamma_j):
             if value is not None:
                 include(value)
@@ -744,7 +736,7 @@ def _edge_pieces(edge, state, direction, bounds, cancel=None):
     zero, one = Q(0), Q(1)
     i, j = edge.i, edge.j
     delta, dd = state[i]-state[j], direction[i]-direction[j]
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'KSS limiter work cancelled')
     single = _single_edge_piece(edge, state, direction, bounds, delta, dd)
     if single is not None:
         return single
@@ -773,7 +765,7 @@ def _edge_pieces(edge, state, direction, bounds, cancel=None):
         return sign, lines
     outer = sorted(cuts)
     for lo, hi in zip(outer, outer[1:]):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'KSS limiter work cancelled')
         _, lines = choices((lo+hi)/2)
         for at, (p, q) in enumerate(lines):
             for pp, qq in lines[at+1:]:
@@ -816,7 +808,7 @@ def event_line_search(limiter, state, direction, residual, base_direction, dt, *
         raise ValueError('explicit shared WorkBudget required')
     if limiter.bounds is None:
         raise ValueError('event search supports fixed a-priori bounds only')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'KSS limiter work cancelled')
     size, edge_count = limiter.size, len(limiter.graph)
     if any(len(v) != size for v in (state, direction, residual, base_direction)):
         raise ValueError('complete line-search state, direction and residual vectors required')
@@ -863,7 +855,7 @@ def event_line_search(limiter, state, direction, residual, base_direction, dt, *
         a, b = list(residual), [zero if i in fixed else value for i,value in enumerate(base_direction)]
         events = []
         for edge in limiter.graph:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             pieces = _edge_pieces(edge, uq, pq, bounds, cancel)
             coefficient = dtq*Q(edge.d)
             derivative = coefficient*((pq[edge.i]-pq[edge.j])-pieces[0][3])
@@ -874,7 +866,7 @@ def event_line_search(limiter, state, direction, residual, base_direction, dt, *
                 change = -coefficient*(right[3]-left[3])
                 if change:
                     events.append((right[0], edge.i, edge.j, change))
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'KSS limiter work cancelled')
         events.sort(key=lambda event: event[0])
         # Reuse this one event ordering. A rejected direction may supply ONE
         # adjacent-region Jacobian, without another graph/event preparation.
@@ -893,7 +885,7 @@ def event_line_search(limiter, state, direction, residual, base_direction, dt, *
         original_merit, best_merit, best_step = aa, aa, zero
         intervals, at, previous = 0, 0, Q(0)
         while True:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             following = events[at][0] if at < len(events) else Q(1)
             lo, hi = decimal(previous), decimal(following)
             step = max(lo, min(hi, -ab/bb)) if bb else lo
@@ -929,14 +921,14 @@ def event_line_search(limiter, state, direction, residual, base_direction, dt, *
         initial_slopes = [_event_allowance(edge,uq,bounds) for edge in limiter.graph]
         best_step, checked_merit = zero, original_merit
         for step in candidates:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'KSS limiter work cancelled')
             if not step:
                 continue
             stepq = Q(step)
             trial = tuple(v+stepq*w for v,w in zip(uq,pq))
             f = [zero if i in fixed else v+step*w for i,(v,w) in enumerate(zip(residual,base_direction))]
             for edge, initial_slope in zip(limiter.graph,initial_slopes):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'KSS limiter work cancelled')
                 slope = _event_allowance(edge,trial,bounds)
                 difference = stepq*(pq[edge.i]-pq[edge.j])-(slope-initial_slope)
                 amount = decimal(dtq*Q(edge.d)*difference)

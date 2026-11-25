@@ -16,15 +16,16 @@ from time import perf_counter
 import numpy as np
 
 from ._validation import TectonicsError, scalar
-from .constitutive import _cancel, _json
+from ._validation import within_budget
+from .constitutive import _json
 from .evolving_flexure import (PreparedEvolvingW04Support, W04RigidityState,
                               EvolvingW04SupportResult)
 from .evolving_mechanics import (PreparedEvolvingRegionalMechanics,
                                 RegionalMechanicalRequest, EvolvingMechanicalResult, _sum_forces)
 from .materials import _name
 from .resources import WorkBudget
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
-from .spreading import _within_budget
 from .storage import ArrayStore
 from .tectonic_history_codec import (pack_history_result, restore_history_result,
                                      history_result_id, history_result_nbytes, history_restore_bytes)
@@ -101,7 +102,7 @@ class PreparedTectonicHistory:
         object.__setattr__(self, name, value)
 
     def __init__(self, prepared, inputs, *, source_id, store=None, cancel=None):
-        _cancel(cancel); _name(source_id, 'tectonic history source')
+        check_event_or_callable(cancel, 'constitutive work cancelled'); _name(source_id, 'tectonic history source')
         if type(inputs) is not tuple or not 1 <= len(inputs) <= MAX_OUTPUTS:
             raise TectonicsError('one to 256 complete scheduled inputs required')
         if store is not None and not isinstance(store, ArrayStore):
@@ -165,7 +166,7 @@ class PreparedTectonicHistory:
         self.times = times
         self._resource = WorkBudget(CAP,parent=budget)
         if store is not None:
-            _within_budget(self._resource,store._budget)
+            within_budget(self._resource,store._budget, 'call budget must descend from the prepared run budget')
             if store._budget.max_bytes > CAP:
                 raise TectonicsError('history store and producer require a common <=128 MiB budget')
         self._guard = self._resource.reserve(input_bytes+2*MAX_METADATA,
@@ -195,7 +196,7 @@ class PreparedTectonicHistory:
             raise TectonicsError('borrowed producer must remain open and idle')
         if getattr(p,'_owner',self._owner) != self._owner:
             raise TectonicsError('history and producer must share an owner thread')
-        _cancel(cancel); self._context.verify()
+        check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
         # Catch a preparation created under older loaded/source bytes even on a
         # restore-only route which would never call its numerical solver.
         old = (p.execution_id if self.route == 'underthrust-section' else
@@ -329,7 +330,7 @@ class PreparedTectonicHistory:
     def _scan(self,end,cancel):
         latest,meta,parent,gap = -1,None,None,False
         for i in range(end+1):
-            _cancel(cancel); candidate = self.store.metadata(self.checkpoint_id(i))
+            check_event_or_callable(cancel, 'constitutive work cancelled'); candidate = self.store.metadata(self.checkpoint_id(i))
             if candidate is None: gap=True; continue
             if gap: raise TectonicsError('tectonic checkpoint prefix has a gap')
             self._header(i,candidate,parent)
@@ -430,7 +431,7 @@ class PreparedTectonicHistory:
                 if self.store is not None and current is not None:
                     # A writer may commit just after our previous publication, even within this run call.
                     self._check_store_token(parent_token)
-                _cancel(cancel); started = perf_counter()
+                check_event_or_callable(cancel, 'constitutive work cancelled'); started = perf_counter()
                 out = self._compute(i,current,cancel)
                 self._stats['physics_seconds'] += perf_counter()-started
                 guard = self._resource.reserve(history_result_nbytes(out.result)+65536,

@@ -11,6 +11,10 @@ import numpy as np
 
 from atlas_tectonics._private.compact_contracts import ContractError
 from atlas_tectonics._private.content_cache import ChargeSpec, RetainedScope
+from atlas_tectonics.resources import _close_consumed_stack
+
+
+input_stack = _close_consumed_stack
 
 
 def _once(source, old, new):
@@ -232,7 +236,7 @@ import json
 
 from atlas_tectonics._private import live_composite as LIVE_COMPOSITE
 from atlas_tectonics._private.record_tables import RecordBuilder, RecordCodec, Scratch
-from atlas_tectonics._private.record_views import CompactRecord, RecordRef
+from atlas_tectonics._private.record_views import RecordRef
 from atlas_tectonics._private import spatial_validation_patch as VALIDATION
 
 _ACTIVE = ContextVar('live-spatial-construction', default=None)
@@ -302,13 +306,9 @@ def issue(cls, record, budget, ordinary):
     return result
 
 
-def _compact(payload):
-    return type(payload) is CompactRecord or LIVE_COMPOSITE.is_live(payload)
-
-
 def holder_identity(holder):
     payload = holder._json
-    return payload.identity().sha256 if _compact(payload) else sha256(payload).hexdigest()
+    return payload.identity().sha256 if LIVE_COMPOSITE.is_compact(payload) else sha256(payload).hexdigest()
 
 
 def holder_content_identity(holder):
@@ -318,7 +318,7 @@ def holder_content_identity(holder):
     known = getattr(holder, '_content_id', None)
     if known is None:
         payload = holder._json
-        if _compact(payload):
+        if LIVE_COMPOSITE.is_compact(payload):
             with payload.root() as root:
                 known = VALIDATION.content_identity(root, None)
         else:
@@ -339,12 +339,12 @@ def graph_content_identity(value, ordinary):
 
 def holder_record(holder):
     payload = holder._json
-    return payload.root() if _compact(payload) else json.loads(payload)
+    return payload.root() if LIVE_COMPOSITE.is_compact(payload) else json.loads(payload)
 
 
 def holder_bytes(holder):
     payload = holder._json
-    return payload.identity().canonical_bytes if _compact(payload) else len(payload)
+    return payload.identity().canonical_bytes if LIVE_COMPOSITE.is_compact(payload) else len(payload)
 
 
 class _Object(VALIDATION._Object):
@@ -524,17 +524,6 @@ def release_columns(value, key, keep=()):
         columns.release(name)
 
 
-@contextmanager
-def input_stack():
-    stack = ExitStack()
-    try:
-        yield stack
-    except BaseException:
-        raise
-    else:
-        stack.close()
-
-
 def is_transport_snapshot(value):
     from atlas_tectonics._private.live_transport_result import CompactTransportSnapshot
     return type(value) is CompactTransportSnapshot
@@ -590,7 +579,7 @@ def access(value):
 
 @contextmanager
 def record_access(holder, *, scope=_UNSPECIFIED):
-    if not _compact(holder._json):
+    if not LIVE_COMPOSITE.is_compact(holder._json):
         current = _LEGACY_READS.get()
         for original, payload, budget, record in reversed(current):
             if original is holder:

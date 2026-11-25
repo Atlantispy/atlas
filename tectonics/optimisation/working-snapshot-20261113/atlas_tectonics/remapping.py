@@ -11,7 +11,9 @@ import math
 import numpy as np
 from ._validation import TectonicsError, input_shape, snapshot, frozen, scalar
 from .resources import select_budget, MemoryLimitError
-from .regional import RegionalGrid1D, _cancelled, _METRICS
+from .resources import _immutable_deepcopy
+from .resources import check_event
+from .regional import RegionalGrid1D, _METRICS
 from .mesh import ColumnGrid1D
 from .reuse import content_record
 from .materials import (MaterialState, MaterialBoundary, MaterialTransportResult,
@@ -153,7 +155,7 @@ class RemapPlan:
         return (np.frombuffer(self._p,np.int64),np.frombuffer(self._d,np.int64),
                 np.frombuffer(self._l,np.float64),np.frombuffer(self._o,np.float64))
     def __reduce__(self):return (_restore_plan,(self.source,self.target,self.builder_backend))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_plan(source,target,backend):
@@ -245,7 +247,7 @@ def remap_materials(state, target, *, plan=None, scheme='linear', backend='numba
     never a memory-pressure fallback. Coarsening can lose spatial detail: total
     conservation does NOT imply arbitrary remap/inverse remap is reversible.
     """
-    _cancelled(cancel);_mesh_state(state);_backend(backend)
+    check_event(cancel, 'regional transport cancelled; no candidate published');_mesh_state(state);_backend(backend)
     if type(target) is not ColumnGrid1D or scheme not in ('linear','constant'):
         raise TectonicsError('target mesh and linear/constant reconstruction required')
     if plan is not None and (type(plan) is not RemapPlan or plan.source!=state.grid or plan.target!=target):
@@ -262,7 +264,7 @@ def remap_materials(state, target, *, plan=None, scheme='linear', backend='numba
             else:h=_remap_reference(state.thickness_m,state.grid.edges_m,target.edges_m,scheme=='linear')
             before=_inventories(state.thickness_m,state.grid,backend);after=_inventories(h,target,backend)
             accounts=[_account(float(b),float(a),0.,0.,0.) for b,a in zip(before,after)]
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return _publish(state,target,h,state.time_s,{'operation':_REMAP_METHOD,
                 'plan':op.plan_id,'scheme':scheme,'backend':backend,'cohort_accounts':accounts},budget=budget)
         except (ValueError,OverflowError,FloatingPointError) as exc:
@@ -318,7 +320,7 @@ def advect_ale(state, face_velocity_m_s, mesh_velocity_m_s, duration_s, *,left,r
     boundary exchange uses u-w. The method evolves H*width (not H) and averages
     stage fluxes. Known event times may be endpoints but must not lie inside a step.
     """
-    _cancelled(cancel);_mesh_state(state);_backend(backend)
+    check_event(cancel, 'regional transport cancelled; no candidate published');_mesh_state(state);_backend(backend)
     if scheme not in ('muscl','upwind'):raise TectonicsError('explicit muscl/upwind scheme required')
     dt=scalar(duration_s,'duration',nonnegative=True);end=_end_time(state,dt)
     for t in event_times_s:
@@ -352,7 +354,7 @@ def advect_ale(state, face_velocity_m_s, mesh_velocity_m_s, duration_s, *,left,r
                     'cohort_accounts':accounts.tolist()}
             new=_publish(state,target,h,end,record,budget=budget)
             result=MaterialTransportResult(new,scheme,backend,_immutable_bytes(flux),_immutable_bytes(accounts))
-            _cancelled(cancel);return result
+            check_event(cancel, 'regional transport cancelled; no candidate published');return result
         except (ValueError,OverflowError,FloatingPointError) as exc:
             if isinstance(exc,MemoryLimitError):raise
             raise TectonicsError(str(exc)) from exc

@@ -3,7 +3,6 @@
 Piecewise-constant forcing is integrated to bed/sill/drying events. Physical
 volumes, routing geometry and infiltrated/evaporated/exported accounts are distinct.
 """
-from contextlib import contextmanager
 from collections import OrderedDict
 from dataclasses import dataclass
 import hashlib
@@ -14,21 +13,21 @@ import threading
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen, input_shape, snapshot
-from .constitutive import _cancel
+from ._validation import _check_owner_thread
+from ._validation import within_budget
 from .materials import _name, _json
 from .resources import WorkBudget, select_budget
+from .resources import _budget_statistics
+from .resources import _operation as _prepared_operation
+from .resources import check_event_or_callable
+from .resources import json_sha256
 from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
-from .spreading import _within_budget
 from .w09_drainage import prepare_drainage, DrainageGeometry
+from .w09_erosion import LIMIT
 
 CAP = 128 * 1024**2
-LIMIT = 256
 EPS = np.finfo(float).eps
-
-
-def _hash(value):
-    return hashlib.sha256(_json(value)).hexdigest()
 
 
 def _sum(values):
@@ -117,7 +116,7 @@ class PreparedWater:
         if store is not None:
             if not isinstance(store, ArrayStore):
                 raise TectonicsError('ArrayStore required')
-            _within_budget(self._resource, store._budget)
+            within_budget(self._resource, store._budget, 'call budget must descend from the prepared run budget')
         self.store = store
         self._stats = dict(geometry_preparations=1, computed_intervals=0,
                            latest_hits=0, restored_states=0)
@@ -131,32 +130,21 @@ class PreparedWater:
                 source_id=source_id, budget=self._resource)
             self._context = ExecutionContext('reference')
             self.execution_id = self._context.identity
-            self.plan_id = _hash(content_record(dict(schema='atlas.w09-water.v1', geometry=self.geometry.signature,
+            self.plan_id = json_sha256(content_record(dict(schema='atlas.w09-water.v1', geometry=self.geometry.signature,
                 execution=self.execution_id, shoreline='one-sided-wet-contact',
-                spill_ties='lowest-level-then-stable-basin', intervals=LIMIT)))
+                spill_ties='lowest-level-then-stable-basin', intervals=LIMIT)), _json)
             self._n = len(self.geometry.bed_m)
             self._cells = tuple(np.asarray(c, dtype=int) for c in self.geometry.basin_cells)
         except BaseException:
             self.close()
             raise
 
-    def _check(self, cancel=None):
-        if self._closed or threading.get_ident() != self._owner:
-            raise TectonicsError('water model closed or driven from a different thread')
-        _cancel(cancel)
-        self._context.verify()
+    _thread_refusal = 'water model closed or driven from a different thread'
+    _check = _check_owner_thread
 
-    @contextmanager
-    def _operation(self, cancel=None):
-        self._check(cancel)
-        if self._active:
-            raise TectonicsError('reentrant water operation')
-        self._active = True
-        try:
-            yield
-            self._check(cancel)
-        finally:
-            self._active = False
+    _reentrant_message = 'reentrant water operation'
+    _operation_error = TectonicsError
+    _operation = _prepared_operation
 
     def _vector(self, value, name):
         shape = input_shape(value, name)
@@ -221,7 +209,7 @@ class PreparedWater:
         export = _sum(water[g.basin_of < 0])
         edges = sorted(g.saddles, key=lambda e: (e[2], e[0], e[1]))
         for iteration in range(1+4*(len(groups)+1)*(len(edges)+1)):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             changed = False
             for a, b, sill in edges:
                 a = owner[a]
@@ -462,7 +450,7 @@ class PreparedWater:
             g=self.geometry
             q=np.array(self._vector(runoff_m_s,'runoff')*g.areas_m2,copy=True)
             for i in g.order:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 receiver=int(g.receivers[i])
                 if receiver != i:
                     q[receiver]+=q[i]
@@ -474,7 +462,7 @@ class PreparedWater:
             w=self._vector(by_cell_m3,'supplied water')
             water,export,_=self._equilibrate(state.water_m3+w,cancel)
             return self._new(state,water,supplied=_sum(w),exported=export,
-                             event_id=_hash(dict(source=source_id,volumes=w.tolist())))
+                             event_id=json_sha256(dict(source=source_id,volumes=w.tolist()), _json))
 
     def advance(self, state, duration_s, *, runoff_m_s=0, rain_m_s=None,
                 evaporation_m_s=0, infiltration_m_s=0, boundary_inflow_m3_s=0,
@@ -490,15 +478,15 @@ class PreparedWater:
             forcing=(r,self._vector(r if rain_m_s is None else rain_m_s,'lake rain'),
                 self._vector(evaporation_m_s,'evaporation'),self._vector(infiltration_m_s,'infiltration'),
                 self._vector(boundary_inflow_m3_s,'boundary inflow'))
-            key=_hash(dict(parent=state.state_id,duration=duration,source=forcing_id,
-                           forcing=[a.tolist() for a in forcing]))
+            key=json_sha256(dict(parent=state.state_id,duration=duration,source=forcing_id,
+                           forcing=[a.tolist() for a in forcing]), _json)
             if self._latest is not None and self._latest[0] == key:
                 self._stats['latest_hits']+=1
                 return self._latest[1]
             water=np.array(state.water_m3,copy=True)
             elapsed=0.; terms=[[],[],[],[]]; intervals=0
             while elapsed < duration:
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 if state.accepted_intervals+intervals >= LIMIT:
                     raise TectonicsError('cumulative accepted water interval limit')
                 water,escaped,pools=self._equilibrate(water,cancel)
@@ -543,15 +531,15 @@ class PreparedWater:
                     not np.array_equal(old.areas_m2,g.areas_m2)):
                 raise TectonicsError('relocation requires compatible same-cell physical support')
             water,export,_=self._equilibrate(state.water_m3,cancel)
-            return self._new(state,water,exported=export,event_id=_hash(dict(
-                source=source_id,old=old.signature,new=g.signature)))
+            return self._new(state,water,exported=export,event_id=json_sha256(dict(
+                source=source_id,old=old.signature,new=g.signature), _json))
 
     def checkpoint(self, state, *, cancel=None):
         with self._operation(cancel):
             self._validate(state)
             if self.store is None:
                 raise TectonicsError('checkpoint requires an explicit ArrayStore')
-            key=_hash(dict(plan=self.plan_id,state=state.state_id))
+            key=json_sha256(dict(plan=self.plan_id,state=state.state_id), _json)
             meta=dict(schema='atlas.w09-water-checkpoint.v1',plan=self.plan_id,
                       state_id=state.state_id,state=state.descriptor())
             self.store.put(key,{'water':state.water_m3},meta,
@@ -571,13 +559,12 @@ class PreparedWater:
                 raise TectonicsError('incomplete water checkpoint')
             out=WaterState(arrays['water'],**meta['state'])
             self._validate(out)
-            if out.state_id != meta['state_id'] or checkpoint_id != _hash(dict(plan=self.plan_id,state=out.state_id)):
+            if out.state_id != meta['state_id'] or checkpoint_id != json_sha256(dict(plan=self.plan_id,state=out.state_id), _json):
                 raise TectonicsError('water checkpoint content mismatch')
             self._stats['restored_states']+=1
             return out
 
-    def statistics(self):
-        return dict(self._stats,budget=self._resource.statistics())
+    statistics = _budget_statistics
 
     def close(self):
         if not self._closed:

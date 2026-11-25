@@ -19,9 +19,12 @@ from . import integration_sphere as S
 from . import integration_support as U
 from . import integration_transfer as T
 from ._validation import TectonicsError, frozen
+from ._validation import shaped_finite_array
 from .regional_execution import RegionalMechanicalSnapshot
 from .regional_execution3d import PreparedRegionalStokes3D, SIDES, _digest_array
 from .resources import WorkBudget
+from .resources import json_sha256
+from .resources import canonical_json as _json
 
 
 SCHEMA = 'atlas.plate-regional-driving.v1'
@@ -30,25 +33,13 @@ WORK = 5e-9                           # existing native mechanical-work gate
 GEOMETRY_KEYS = ('cells', 'lengths_m', 'scales', 'boundary_types', 'frame_id', 'vertical_datum')
 
 
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
-def _hash(value):
-    return hashlib.sha256(_json(value)).hexdigest()
+_hash = json_sha256
 
 
 def _name(value):
     if type(value) is not str or not value or len(value) > 512:
         raise TectonicsError('bounded explicit identity/source required')
     return value
-
-
-def _array(value, shape, label):
-    a = np.asarray(value, dtype=float)
-    if a.shape != shape or not np.isfinite(a).all():
-        raise TectonicsError(label+' has an incompatible shape or nonfinite value')
-    return a
 
 
 def _relative(error, *operands):
@@ -214,7 +205,7 @@ class PlateBoundaryLift:
             self.plate_ids = (boundary.left_plate_id, boundary.right_plate_id)
             frame, projection, rings, _, _ = B._charted(network, footprint)
             nodes = native.coordinates('velocity')
-            origin = _array(origin_local_m, (3,), 'box origin')
+            origin = shaped_finite_array(origin_local_m, (3,), 'box origin', '', ' has an incompatible shape or nonfinite value')
             points = frame.positions_to_cartesian(nodes+origin, budget=budget)
             physical_binding = None
             if volume_map is not None:
@@ -452,10 +443,10 @@ class PreparedRegionalDriving:
                 for key in ('native_state_id', 'spatial_state_id', 'reservoir_closure_id'):
                     _name(current[key])
                 shape = (len(plate_ids), 3)
-                wall = _array(differential_pressure.array('hydrostatic_wall_torque_n_m'), shape, 'current wall torque')
-                owned = _array(differential_pressure.array('native_owned_wall_torque_n_m'), shape, 'owned wall torque')
-                cut = _array(differential_pressure.array('reservoir_cut_torque_n_m'), shape, 'prescribed cut torque')
-                error = _array(differential_pressure.array('torque_error_bound_n_m'), shape, 'pressure torque error')
+                wall = shaped_finite_array(differential_pressure.array('hydrostatic_wall_torque_n_m'), shape, 'current wall torque', '', ' has an incompatible shape or nonfinite value')
+                owned = shaped_finite_array(differential_pressure.array('native_owned_wall_torque_n_m'), shape, 'owned wall torque', '', ' has an incompatible shape or nonfinite value')
+                cut = shaped_finite_array(differential_pressure.array('reservoir_cut_torque_n_m'), shape, 'prescribed cut torque', '', ' has an incompatible shape or nonfinite value')
+                error = shaped_finite_array(differential_pressure.array('torque_error_bound_n_m'), shape, 'pressure torque error', '', ' has an incompatible shape or nonfinite value')
                 if np.any(error < 0):
                     raise TectonicsError('pressure integration error must be explicitly nonnegative')
                 reference = reference_torque(pressure_native, lift)
@@ -468,8 +459,8 @@ class PreparedRegionalDriving:
                 side = current['reservoir_native_side']
                 if side != trace['open_side'] or pd['boundary_types'][side] != ['traction']*3:
                     raise TectonicsError('reservoir closure differs from the actual natural boundary')
-                traction = _array(differential_pressure.array('reservoir_native_traction_pa'),
-                                  pressure_native.coordinates(side).shape, 'full physical reservoir traction')
+                traction = shaped_finite_array(differential_pressure.array('reservoir_native_traction_pa'),
+                                  pressure_native.coordinates(side).shape, 'full physical reservoir traction', '', ' has an incompatible shape or nonfinite value')
                 self._natural_traction_binding = dict(schema='atlas.natural-traction-binding.v1',
                     source=current['reservoir_closure_id'], side=side, traction_sha256=_digest_array(traction))
                 self._differential_pressure = dict(forcing=current, reference_resisting_torque_n_m=reference.tolist(),
@@ -677,9 +668,9 @@ class PreparedRegionalDriving:
         k, nv = self._lift._basis.shape[1], len(self._lift._points)
         with self._budget.reserve(65536+mechanical.nbytes+8*(2*len(self._b)**2+128*nv+64*len(self._b)),
                                   category='plate-regional-result'):
-            q = _array(mechanical.array('generalized_rates_s_inv'), (k,), 'native rates')
-            r = _array(mechanical.array('velocity_constraint_reaction_n'), (nv, 3), 'native reaction')
-            u = _array(mechanical.array('velocity_m_s'), (nv, 3), 'native velocity')
+            q = shaped_finite_array(mechanical.array('generalized_rates_s_inv'), (k,), 'native rates', '', ' has an incompatible shape or nonfinite value')
+            r = shaped_finite_array(mechanical.array('velocity_constraint_reaction_n'), (nv, 3), 'native reaction', '', ' has an incompatible shape or nonfinite value')
+            u = shaped_finite_array(mechanical.array('velocity_m_s'), (nv, 3), 'native velocity', '', ' has an incompatible shape or nonfinite value')
             pair = self._lift._basis@q
             imposed = np.einsum('a,aij->ij', pair, self._lift._full)
             actual = np.where(self._lift._mask, u, 0.)
@@ -688,8 +679,8 @@ class PreparedRegionalDriving:
             recorded_force = mechanical.array('generalized_regional_force_j')
             datum_account = None
             if 'datum_free_velocity_constraint_reaction_n' in mechanical.array_names:
-                free = _array(mechanical.array('datum_free_velocity_constraint_reaction_n'), (nv, 3), 'datum-free reaction')
-                datum = _array(mechanical.array('pressure_datum_velocity_constraint_reaction_n'), (nv, 3), 'datum reaction')
+                free = shaped_finite_array(mechanical.array('datum_free_velocity_constraint_reaction_n'), (nv, 3), 'datum-free reaction', '', ' has an incompatible shape or nonfinite value')
+                datum = shaped_finite_array(mechanical.array('pressure_datum_velocity_constraint_reaction_n'), (nv, 3), 'datum reaction', '', ' has an incompatible shape or nonfinite value')
                 # Publication adds these operands (plus optional analytic
                 # hydrostatic reaction); never recover the small free field by
                 # subtracting the large datum from the rounded full reaction.

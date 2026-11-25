@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import math
+import threading
 from numbers import Real
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from .resources import elements
+from .resources import check_event_or_callable, elements
 
 FloatArray = NDArray[np.float64]
 
@@ -145,6 +146,98 @@ def snapshot(value: Any, name: str, *, nonnegative: bool = False) -> FloatArray:
     return read_array(result, name, nonnegative=nonnegative)
 
 
+def _check_owner_thread(self, cancel=None):
+    if self._closed or threading.get_ident() != self._owner:
+        raise TectonicsError(self._thread_refusal)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
+    self._context.verify()
+
+
+def _stored_array(self, key):
+    for name, shape, raw in self._arrays:
+        if name == key:
+            return np.frombuffer(raw, dtype='f8').reshape(shape)
+    raise TectonicsError(self._missing_array)
+
+
+def _coded_refusal(self, message, code, detail=None):
+    if code not in self._allowed_codes:
+        raise ValueError(self._unknown_code % code)
+    TectonicsError.__init__(self, message)
+    self.code, self.detail = code, detail
+
+
+_PLANAR_ROUNDOFF = float(128*np.finfo(float).eps)
+_PLANAR_MAP_ERROR = 1e-10
+
+
+def unit_rows(a, error, message, finite_first=False):
+    scale = np.max(np.abs(a), axis=-1, keepdims=True)
+    if finite_first:
+        invalid = not np.isfinite(scale).all() or np.any(scale == 0)
+    else:
+        invalid = np.any(scale == 0) or not np.isfinite(scale).all()
+    if invalid:
+        raise error(message)
+    scaled = a / scale
+    return scaled / np.sqrt(np.sum(scaled * scaled, axis=-1, keepdims=True))
+
+
+def finite_array(value, name, error, suffix):
+    if not np.isfinite(value).all():
+        raise error(name + suffix)
+    return value
+
+
+def shaped_finite_array(value, shape, label, prefix, suffix):
+    data = np.asarray(value, dtype=np.float64)
+    if data.shape != shape or not np.isfinite(data).all():
+        raise TectonicsError(prefix + label + suffix if prefix else label + suffix)
+    return data
+
+
+def bounded_record(value, label, encode, error, limit=None, limit_suffix=None):
+    try:
+        raw = encode(value)
+    except TectonicsError as exc:
+        raise error(label + ': finite JSON data required') from exc
+    if limit is not None and len(raw) > limit:
+        raise error(label + limit_suffix)
+    return raw
+
+
+def within_budget(candidate, owner, message):
+    node = candidate
+    while node is not None:
+        if node is owner:
+            return
+        node = node._parent
+    raise TectonicsError(message)
+
+
+def banded_solvers(message):
+    try:
+        from scipy.linalg import cholesky_banded, cho_solve_banded
+    except ImportError as exc:
+        raise TectonicsError(message) from exc
+    return cholesky_banded, cho_solve_banded
+
+
+def frozen_contiguous(array, dtype):
+    data = np.ascontiguousarray(array, dtype=dtype)
+    return np.frombuffer(data.tobytes(), dtype=dtype).reshape(data.shape)
+
+
+def frozen_asarray(value, dtype=None):
+    data = np.asarray(value, dtype=dtype)
+    return np.frombuffer(data.tobytes(), dtype=data.dtype).reshape(data.shape)
+
+
+def frozen_c_order(value, dtype):
+    data = np.asarray(value, dtype=dtype, order='C')
+    return np.frombuffer(data.tobytes(order='C'), dtype=dtype).reshape(data.shape)
+
+
 def frozen(value: Any) -> FloatArray:
     """Detached bytes-backed result: callers cannot re-enable write access."""
     input_shape(value, "result")
@@ -220,3 +313,7 @@ def _replay_fsum(factory):
         for value in factory():
             total += _float_quanta(value)
         return _quanta_float(total)
+
+
+def _arithmetic_sub(self, a, b):
+    return self.add(a, self.neg(b))

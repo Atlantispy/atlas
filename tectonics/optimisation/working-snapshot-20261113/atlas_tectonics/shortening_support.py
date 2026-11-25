@@ -14,15 +14,17 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, input_shape, read_array, scalar, text
+from ._validation import within_budget
 from .column_loads import LoadPhase, LoadSupport, ColumnLoadState, column_load_change
-from .extension import _within_budget
 from .extension_support import ContinuousCellMeanFlexure
+from .extension_support import ExtensionSupportResult
 from .finite_flexure import FiniteRegionFlexure, FlexureBoundary1D
 from .materials import _json
 from .mesh import ColumnGrid1D
 from .parameters import FlexureParameters
-from .regional import RegionalGrid1D, _cancelled
+from .regional import RegionalGrid1D
 from .resources import select_budget
+from .resources import check_event
 from .reuse import content_record
 from .shortening import PreparedShortening, _overlaps
 from .stokes_execution import _factored_scale
@@ -77,10 +79,7 @@ class ShorteningSupportResult:
     def cell_means(self):
         return np.frombuffer(self._fields, dtype=np.float64).reshape(-1, 7)
 
-    @property
-    def face_centre_response(self):
-        """Rows face, centre, face...; columns w, w', w'', w''' (point values)."""
-        return np.frombuffer(self._points, dtype=np.float64).reshape(-1, 4)
+    face_centre_response = ExtensionSupportResult.face_centre_response
 
     @property
     def phase_load_pa(self):
@@ -122,7 +121,7 @@ class PreparedShorteningSupport:
 
     def __init__(self, motion, target_grid, policy, *, support_height_m,
                  replacement_density_kg_m3, geometry_source, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(motion) is not PreparedShortening or type(policy) is not ShorteningSupportPolicy:
             raise TectonicsError('typed prepared shortening and support policy required')
         motion._check(motion.initial)
@@ -136,7 +135,7 @@ class PreparedShorteningSupport:
             raise TectonicsError('explicit per-column finite height and replacement density required')
         self.motion, self.grid, self.policy = motion, target_grid, policy
         self._budget = motion._budget if budget is None else select_budget(budget)
-        _within_budget(self._budget, motion._budget)
+        within_budget(self._budget, motion._budget, 'call/store budget must descend from the prepared run budget')
         self._stack = ExitStack()
         self._closed = False
         try:
@@ -174,7 +173,7 @@ class PreparedShorteningSupport:
                 motion=motion.plan_id, policy=asdict(policy), reference=self._reference_load.state_id,
                 projection=self._reference_projection.projection_id, operator=self.operator.operator_id,
                 mean_operator=self.mean_operator.operator_id, execution=motion.execution_id)))).hexdigest()
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             motion._context.verify()
             self._sealed = True
         except (FloatingPointError, OverflowError) as exc:
@@ -200,7 +199,7 @@ class PreparedShorteningSupport:
             donor, target, _ = _overlaps(state.material.grid.edges_m, self.grid.edges_m)
             if np.any(heights[donor] > self.support.height_m[target]):
                 raise TectonicsError('parcel interior exceeds the finite support height')
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         return projection
 
     def _load(self, projection, state, cancel):
@@ -213,7 +212,7 @@ class PreparedShorteningSupport:
     def solve(self, state, *, cancel=None):
         if self._closed:
             raise TectonicsError('shortening support preparation is closed')
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         n, c = self.grid.cells, len(self.phases)
         with self._budget.reserve(1536*n+128*c*n+32768, category='shortening-support-output'):
             # project authenticates state and live source on entry/publication.
@@ -234,7 +233,7 @@ class PreparedShorteningSupport:
                         phase_loads[j] = _factored_scale(dh[j], (phase.density_kg_m3,
                             self.policy.elastic.gravity_m_s2), (), 'cohort downward load')
                     points = self.operator.solve(np.r_[pressure, 0., 0.], budget=self._budget)
-                    _cancelled(cancel)
+                    check_event(cancel, 'regional transport cancelled; no candidate published')
                     means = self.mean_operator.solve(pressure, budget=self._budget)
                     valid = _continuous_envelopes(self.operator, pressure, points)
                     strain = scalar(self.policy.elastic.elastic_thickness_m/2*valid[2],
@@ -274,7 +273,7 @@ class PreparedShorteningSupport:
             for name, value in (('_metadata', metadata), ('_fields', payload), ('_points', point_payload),
                     ('_phase_loads', phase_payload), ('result_id', identity.hexdigest())):
                 object.__setattr__(result, name, value)
-            _cancelled(cancel)
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             self.motion._context.verify()
             return result
 

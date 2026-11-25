@@ -2,7 +2,6 @@
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from dataclasses import asdict, dataclass
-import json
 import math
 from time import perf_counter
 from types import MappingProxyType
@@ -10,11 +9,13 @@ from types import MappingProxyType
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
-from .constitutive import _cancel, _json
+from .constitutive import _json
 from .regional_execution import (PreparedRegionalStokes2D, RegionalMechanicalSnapshot,
                                  _array_hash, _hash, _name)
 from .regional_rheology import _same_state, _validate_boundary_support
+from .regional_rheology import RegionalRheologyResult
 from .resources import select_budget
+from .resources import check_event_or_callable
 from .stokes_execution import _factored_scale
 
 _METHOD = 'atlas.regional-dry-strength-c01.v1'
@@ -75,7 +76,7 @@ def evaluate_dry_strength(profile, physical_pressure_pa, strain_xx_s_1,
     count = math.prod(shape)
     if not 1 <= count <= 16384:
         raise TectonicsError('C01 point evaluation supports at most 16384 samples')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(256*count+64*sum(math.prod(s) for s in shapes)+65536,
                                        category='regional-strength-evaluate'):
         p, xx, zz, xz = np.broadcast_arrays(*(read_array(v, 'C01 input') for v in values))
@@ -112,7 +113,7 @@ def evaluate_dry_strength(profile, physical_pressure_pa, strain_xx_s_1,
                 tau_ii = np.hypot(np.hypot(txx/np.sqrt(2.), tzz/np.sqrt(2.)), txz)
         except FloatingPointError as exc:
             raise TectonicsError('C01 evaluation outside finite binary64 support') from exc
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         result = {'viscosity_pa_s': eta, 'yield_stress_pa': strength, 'strain_rate_ii_s_1': invariant,
                   'stress_ii_pa': tau_ii, 'largest_effective_principal_stress_pa': largest,
                   'effective_pressure_pa': effective, 'yielded': yielded.astype(float),
@@ -158,8 +159,7 @@ class RegionalStrengthResult:
     mechanics: RegionalMechanicalSnapshot
     _metadata: bytes
 
-    def descriptor(self):
-        return json.loads(self._metadata)
+    descriptor = RegionalRheologyResult.descriptor
 
 
 def solve_regional_strength(plan, profile, force_u_n_m3, force_w_n_m3, boundary_values, *,
@@ -184,7 +184,7 @@ def solve_regional_strength(plan, profile, force_u_n_m3, force_w_n_m3, boundary_
     if input_shape(force_u_n_m3) != (d['nz'], d['nx']+1) or input_shape(force_w_n_m3) != (d['nz']+1, d['nx']):
         raise TectonicsError('regional body forces require complete staggered supports')
     _validate_boundary_support(d, boundary_values)
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     count = sum(math.prod(shape) for shape in shapes)
     with plan._resource.reserve(512*count+262144, category='regional-strength-state'):
         forces = read_array(force_u_n_m3, 'strength force u'), read_array(force_w_n_m3, 'strength force w')
@@ -203,7 +203,7 @@ def solve_regional_strength(plan, profile, force_u_n_m3, force_w_n_m3, boundary_
         request = dict(frame_id=frame_id, epoch_id=epoch_id, time_s=time_s,
                        force_source=force_source, boundary_source=boundary_source, cancel=cancel)
         for iteration in range(1, max_iterations+1):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             solved = plan.solve(*forces, boundary, **request)
             t0 = perf_counter()
             response = _snapshot_law(plan, profile, solved, cancel)
@@ -229,7 +229,7 @@ def solve_regional_strength(plan, profile, force_u_n_m3, force_w_n_m3, boundary_
                     'current_law_diagnostics': diagnostics, 'viscosity_clipping': False,
                     'damage_evolved': False, 'strain_softening': False, 'localisation_claim': False,
                     'time_advanced': False, 'timings': {'law_evaluation_s': evaluation_s, 'total_s': perf_counter()-start}}
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 return RegionalStrengthResult(mechanics, _json(metadata))
             viscosity = current
         raise TectonicsError('C01 did not converge within the fixed Picard envelope; '+str(history[-1]))

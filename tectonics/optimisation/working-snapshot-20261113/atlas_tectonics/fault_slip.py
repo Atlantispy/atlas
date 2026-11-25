@@ -7,9 +7,7 @@ inferred. This producer has no mechanics, earthquake cycle, or localisation law.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass, field
-import hashlib
 import json
 import math
 import threading
@@ -17,26 +15,22 @@ import weakref
 
 import numpy as np
 import shapely
-from shapely.strtree import STRtree
 
 from ._validation import input_shape, read_array, scalar
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
 from .geometry import (GeometryError, PlanarGeometry, _check_cancel, _json,
                        _label, _limits, geometry_runtime)
 from .resources import WorkBudget, select_budget
+from .resources import record_id
 from .reuse import ExecutionContext, content_record
+from .deformation_network import NetworkState
+from .deformation_network import _check_parcel_overlap
+from .deformation_network import PreparedDeformationNetwork
 
 
 MAX_SLIP_INTERVALS = 256
 MAX_SLIP_PARCELS = 4096
-_ROUND = float(128*np.finfo(float).eps)
 _GEOMETRY_TOLERANCE = 1e-12
-
-
-def _identity(record, *payloads):
-    digest = hashlib.sha256(_json(record))
-    for raw in payloads:
-        digest.update(b'\0'); digest.update(raw)
-    return digest.hexdigest()
 
 
 def _dot(a, b):
@@ -96,10 +90,8 @@ class FaultSlipState:
     _translations: bytes = field(repr=False)
     _record: bytes = field(repr=False)
 
-    @property
-    def deformation_gradient(self): return np.frombuffer(self._gradient, np.float64).reshape(-1, 2, 2)
-    @property
-    def jacobian(self): return np.frombuffer(self._jacobian, np.float64)
+    deformation_gradient = NetworkState.deformation_gradient
+    jacobian = NetworkState.jacobian
     @property
     def interface_point_m(self): return np.frombuffer(self._point, np.float64)
     @property
@@ -112,27 +104,7 @@ class FaultSlipState:
         return (sum(len(raw) for raw in (self._gradient, self._jacobian, self._point,
                                         self._translations, self._record))
                 + sum(p.retained_bytes for p in self.polygons))
-    def descriptor(self): return json.loads(self._record)
-
-
-def _disjoint(polygons, limits, budget, cancel):
-    shapes = [p._geom for p in polygons]
-    tree = STRtree(shapes)
-    candidates = 0
-    for i, shape in enumerate(shapes):
-        _check_cancel(cancel)
-        for j in tree.query(shape):
-            j = int(j)
-            if j <= i: continue
-            candidates += 1
-            if candidates > limits.max_overlay_pairs:
-                raise GeometryError('fault parcel intersection envelope exceeds GeometryLimits')
-            # The sum of input vertices is bounded before GEOS sees this pair.
-            # The product limits possible intersection complexity, not just hits.
-            if polygons[i].vertex_count*polygons[j].vertex_count > limits.max_overlay_pairs:
-                raise GeometryError('fault parcel overlay complexity exceeds GeometryLimits')
-            if polygons[i].overlay(polygons[j], limits=limits, budget=budget, cancel=cancel).area_m2 > 0:
-                raise GeometryError('reference fault parcels overlap')
+    descriptor = NetworkState.descriptor
 
 
 def _normal_motion(event, normal, duration, length_scale):
@@ -231,7 +203,9 @@ class PreparedFaultSlip:
                     if not np.isfinite(signed).all() or np.any(signed < 0):
                         raise GeometryError('parcel crosses interface or occupies its wrong declared half-plane')
                     distances.append(float(np.min(signed))); scales.append(scale)
-                _disjoint(polygons, policy, resource, cancel)
+                _check_parcel_overlap(polygons, resource, policy, cancel,
+                                  'fault parcel intersection envelope exceeds GeometryLimits',
+                                  'reference fault parcels overlap', 'fault parcel overlay complexity exceeds GeometryLimits')
                 scale = min(scales)  # smallest local parcel, never a distant global-origin magnitude
                 scalar(scale, 'fault parcel physical scale', positive=True)
                 prefix = [np.zeros((3, 2))]
@@ -273,7 +247,7 @@ class PreparedFaultSlip:
                     normal_velocity_tolerance_epsilon_units=128,
                     geometry_relative_tolerance=_GEOMETRY_TOLERANCE,
                     finite_ends='complete-footprints-retained-no-implicit-incoming-material')
-                self._record = _json(record); self.plan_id = _identity(content_record(record), self._prefix)
+                self._record = _json(record); self.plan_id = record_id(content_record(record), self._prefix, encode=_json)
                 _check_cancel(cancel); self._sealed = True
         except (FloatingPointError, OverflowError) as exc:
             lease.__exit__(None, None, None)
@@ -299,15 +273,8 @@ class PreparedFaultSlip:
                 + sum(p.retained_bytes for p in self.polygons)+48*len(self.histories))
     def descriptor(self): return json.loads(self._record)
 
-    @contextmanager
-    def _query(self, cancel):
-        with self._lock:
-            if self._closed: raise GeometryError('fault-slip plan is closed')
-            object.__setattr__(self, '_active', self._active+1)
-        try:
-            _check_cancel(cancel); yield
-        finally:
-            with self._lock: object.__setattr__(self, '_active', self._active-1)
+    _closed_query = 'fault-slip plan is closed'
+    _query = PreparedDeformationNetwork._query
 
     def evaluate(self, time_s, *, cancel=None):
         with self._query(cancel):
@@ -341,7 +308,7 @@ class PreparedFaultSlip:
                         polygons=[p.geometry_id for p in output],
                         physical_model='prescribed-discontinuous-straight-tangential-slip')
                     payloads = gradient, jacobian, point.tobytes(), shifts.tobytes(), _json(record)
-                    state = FaultSlipState(tuple(output), self.parcel_ids, now, _identity(record, *payloads),
+                    state = FaultSlipState(tuple(output), self.parcel_ids, now, record_id(record, *payloads, encode=_json),
                         self.plan_id, self.frame_id, self.source_id, self.interface_id, *payloads)
                     _check_cancel(cancel)
                     weakref.finalize(state, lease.__exit__, None, None, None)

@@ -18,8 +18,10 @@ import math
 import threading
 import numpy as np
 from ._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
+from ._validation import _stored_array
 from .resources import select_budget, MemoryLimitError
-from .constitutive import _cancel, _json
+from .resources import check_event_or_callable
+from .constitutive import _json
 from .reuse import ExecutionContext, content_record
 from .stokes import face_force_from_density, StokesSolvePolicy
 from .stokes_execution import PreparedStokes2D, _native_lease, _factored_scale, _hex
@@ -389,10 +391,8 @@ class ThermochemicalStep:
     def array_names(self): return tuple(k for k,_,_ in self._arrays)
     @property
     def nbytes(self): return self.before.nbytes+self.state.nbytes+len(self._metadata)+sum(len(a) for _,_,a in self._arrays)
-    def array(self,key):
-        for k,shape,raw in self._arrays:
-            if k==key: return np.frombuffer(raw,dtype='f8').reshape(shape)
-        raise TectonicsError('unknown step array')
+    _missing_array = 'unknown step array'
+    array = _stored_array
 
 
 class CourantLimitError(TectonicsError):
@@ -477,7 +477,7 @@ class PreparedThermochemical2D:
         self._guard=self.budget.reserve(6*1024**2+128*problem.box.nx*problem.box.nz,category='thermochemical-plan-retained')
         self._guard.__enter__()
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             # Imported only by explicit preparation; the old NumPy-only route remains.
             from . import _thermochemical_native as native
             self._native=native
@@ -497,7 +497,7 @@ class PreparedThermochemical2D:
             if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
             if adaptive_inner_policy is not None:binding['adaptive_inner_policy']=asdict(adaptive_inner_policy)
             self.identity=_digest(content_record(binding))
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         except BaseException:
             self._context=None;self._diffusion=None;self._closed=True
             self._guard.__exit__(None,None,None)
@@ -516,9 +516,9 @@ class PreparedThermochemical2D:
             raise TectonicsError('closed/active thermal plan or wrong driving thread')
         self._active=True
         try:
-            _cancel(cancel);self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
             with _native_lease(): yield
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         finally: self._active=False
     def close(self):
         if self._closed:return
@@ -679,7 +679,7 @@ class PreparedThermochemical2D:
             flux(q0,cx,cz,fx,fz,walls)
             if update is None:q1[:]=q0+(fx[:,:,:-1]-fx[:,:,1:])+(fz[:,:-1,:]-fz[:,1:,:])
             else:update(q0,fx,fz,q1)
-            _check_fields(self.problem,*q1);_cancel(cancel)
+            _check_fields(self.problem,*q1);check_event_or_callable(cancel, 'constitutive work cancelled')
             meanx=fx*.5;meanz=fz*.5
             if velocity is None:
                 guess=None
@@ -769,7 +769,7 @@ class PreparedThermochemical2D:
                     input_stage1_result_id=None if previous is None else previous.descriptor()['source_result_id'],
                     mechanical_plan_id=self._mechanics.identity,output_guess_id=next_guess.guess_id)
                 del flow1
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             final=ThermochemicalState(self.problem,tf,cf,time_s=end_time,source=source,
                 parent_id=state.state_id,step_index=state.step_index+1,evolution_id=self.identity,execution=self._context.identity,
                 step_record=record,next_initial_guess=next_guess,budget=self.budget)
@@ -786,7 +786,7 @@ def save_thermochemical_state(state,store,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if type(state) is not ThermochemicalState or not isinstance(store,ArrayStore): raise TectonicsError('state and ArrayStore required')
     policy=select_budget(store._budget if budget is None else budget)
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     with policy.reserve(3*state.nbytes+65536,category='thermochemical-save'):
         return store.put(state.state_id,{k:state.array(k) for k in state.array_names},state.descriptor(),budget=policy,cancel=cancel)
 
@@ -794,7 +794,7 @@ def save_thermochemical_state(state,store,*,budget=None,cancel=None):
 def load_thermochemical_state(store,state_id,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if not isinstance(store,ArrayStore): raise TectonicsError('ArrayStore required')
-    _hex(state_id,'thermal state');_cancel(cancel)
+    _hex(state_id,'thermal state');check_event_or_callable(cancel, 'constitutive work cancelled')
     policy=select_budget(store._budget if budget is None else budget)
     meta=store.metadata(state_id)
     if meta is None: raise TectonicsError('thermochemical snapshot missing')
@@ -805,5 +805,5 @@ def load_thermochemical_state(store,state_id,*,budget=None,cancel=None):
     with policy.reserve(3*sum(a.nbytes for a in arrays.values())+262144,category='thermochemical-restore'):
         state=ThermochemicalState.restore(meta,arrays,budget=policy)
         if state.state_id!=state_id: raise TectonicsError('thermal snapshot identity mismatch')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return state

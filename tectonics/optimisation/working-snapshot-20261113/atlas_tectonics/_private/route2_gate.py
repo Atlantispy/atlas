@@ -101,13 +101,6 @@ def command_key(profile, python, *, entry, step, stop_before_advance=False,
         producer_receipt_sha256=producer_receipt_sha256, mode=mode, store_route=store_route)
 
 
-def add_arguments(parser):
-    parser.add_argument('--peak-record', type=Path, action='append', default=[], dest='peak_records',
-        help='matching Route 2 successor LM postcheck or reader final record (repeatable)')
-    parser.add_argument('--booking-bytes', type=int, help='declared peak; used only without measured records')
-    parser.add_argument('--booking-basis', help='explicit source/basis of that booking')
-
-
 def unchanged(bindings):
     for binding in bindings.values():
         SG.require(file_binding(binding['path']) == binding,

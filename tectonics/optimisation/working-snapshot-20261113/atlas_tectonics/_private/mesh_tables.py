@@ -21,6 +21,8 @@ import math
 from types import MappingProxyType
 
 import numpy as np
+from atlas_tectonics.resources import canonical_json as canonical
+from atlas_tectonics.resources import json_sha256
 
 
 SCHEMA = 'atlas.compact-exterior-mesh.v1'
@@ -55,6 +57,9 @@ SPECIAL = frozenset(('cells', 'faces', 'support_tables', 'grid_lines',
 SUPPORT_KEYS = ('voxel_id', 'radial_layer_id', 'cone_id', 'differential_support_id', 'logical_cell_id')
 
 
+digest = json_sha256
+
+
 class MeshTablesRefused(ValueError):
     pass
 
@@ -62,14 +67,6 @@ class MeshTablesRefused(ValueError):
 def require(test, message):
     if not test:
         raise MeshTablesRefused(message)
-
-
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('ascii')
-
-
-def digest(value):
-    return sha256(canonical(value)).hexdigest()
 
 
 def _sha(value):

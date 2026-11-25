@@ -20,6 +20,8 @@ import json
 import math
 
 import numpy as np
+from atlas_tectonics.resources import canonical_json as _json
+from atlas_tectonics.resources import json_sha256 as _hash
 
 
 class TransferRefused(ValueError):
@@ -72,14 +74,6 @@ def retained_snapshot_source(source: str) -> str:
     if type(source) is not str or source.count(_SNAPSHOT_OLD) != 1:
         raise TransferRefused('snapshot constructor differs from the reviewed patch base')
     return source.replace(_SNAPSHOT_OLD, _SNAPSHOT_NEW, 1)
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
-def _hash(value):
-    return hashlib.sha256(_json(value)).hexdigest()
 
 
 def _digest(value, label):

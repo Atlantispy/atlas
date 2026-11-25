@@ -12,11 +12,9 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
-import json
 import math
 from pathlib import Path
 import re
-import sys
 import weakref
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private import live_finite_patch as LIVE_FINITE
@@ -28,11 +26,15 @@ from scipy.linalg.lapack import get_lapack_funcs
 from scipy.sparse.linalg import gmres
 
 from ._validation import TectonicsError
+from ._validation import _float_quanta as _dyadic_integer
 from .integration_mimetic_heat import _enc, _q
 from .integration_regional_inventory import _width, _project
 from .regional_execution import RegionalMechanicalSnapshot
 from .regional_heat3d import _cancel
 from .resources import WorkBudget, _GrowingLease
+from .resources import _difference_bits
+from .resources import _integer_storage
+from .resources import canonical_json as _json
 from .stokes_execution import _native_lease
 
 # Iterative refinement of the implicit solve stops at this componentwise
@@ -47,10 +49,6 @@ MAX_REFINEMENTS = 32
 _FLOOR = Q(1, 2**1022)
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _retain(obj, size, budget):
@@ -112,11 +110,6 @@ class _workspace:
         raise error.with_traceback(traceback)
 
 
-def _integer_storage(bits):
-    return 40 + sys.int_info.sizeof_digit * ((max(1, bits) +
-        sys.int_info.bits_per_digit - 1) // sys.int_info.bits_per_digit)
-
-
 def _hex_pair_bits(pair):
     # Existing _q remains the validator and numerical decoder.
     if type(pair) is not list or len(pair) != 2 or any(type(v) is not str for v in pair):
@@ -138,10 +131,6 @@ def _rational_storage(bits):
 
 def _rational_encoding_storage(bits):
     return 128 + sum(96 + (n + 3) // 4 for n in bits)
-
-
-def _difference_bits(a, b):
-    return max(a[0] + b[1], b[0] + a[1]) + 1, a[1] + b[1]
 
 
 def _sum_profile_bits(profile):
@@ -303,11 +292,6 @@ def _transport_plan_capacity(rows, faces, budget):
                          for count in duplicate_counts.values())
         transient += 64 * _integer_storage(2098 + (max(duplicate_counts.values()) - 1).bit_length())
         return retained, transient
-
-
-def _dyadic_integer(value):
-    numerator, denominator = float(value).as_integer_ratio()
-    return numerator << (1074 - (denominator.bit_length() - 1))
 
 
 def _dyadic_float(total):

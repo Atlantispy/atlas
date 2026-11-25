@@ -8,13 +8,14 @@ The compiled backend is normal; the independent NumPy/Python reference remains
 explicit. The regional API does not alter the historical periodic API.
 """
 from __future__ import annotations
-from dataclasses import dataclass
 from concurrent.futures import CancelledError
+from dataclasses import dataclass
 import math
 from typing import Any
 import numpy as np
 from ._validation import TectonicsError, FloatArray, input_shape, read_array, frozen, scalar
 from .resources import select_budget
+from .resources import check_event
 
 
 @dataclass(frozen=True, slots=True)
@@ -270,7 +271,7 @@ def advect_regional(thickness_m: Any, face_velocity_m_s: Any, grid: RegionalGrid
     Cancellation is checked before work and before publication. A running native
     call is drained, not killed. Caller owns the returned arrays' later lifetime.
     """
-    _cancelled(cancel)
+    check_event(cancel, 'regional transport cancelled; no candidate published')
     _validate_definition(grid,left,right,scheme,backend)
     dt=scalar(duration_s,"duration_s",nonnegative=True)
     if input_shape(thickness_m,"thickness")!=(grid.cells,) or input_shape(face_velocity_m_s,"velocity")!=(grid.cells+1,):
@@ -309,7 +310,7 @@ def advect_regional(thickness_m: Any, face_velocity_m_s: Any, grid: RegionalGrid
             raise TectonicsError(str(exc)) from exc
         except ImportError as exc:
             raise TectonicsError("declared Numba backend unavailable; no fallback") from exc
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         return RegionalTransportResult(frozen(updated),frozen(flux),before,after,incoming,outgoing,
                                        residual,maximum,lx,rx,scheme,backend)
 

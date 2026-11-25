@@ -33,6 +33,9 @@ from . import _integration_heat as heat
 from . import _integration_motion as motion
 from . import _integration_thermomechanical as tm
 from . import _integration_weakening as weakening
+from .resources import issue as _issue
+from .resources import _immutable_copy
+from .resources import _immutable_deepcopy
 
 STRETCH_CEILING = (.6, 1.4)              # frozen: the drag-only reachable range at the authored forcing and 1e14 s
 TEMPERATURE_CEILING_K = (273., 1613.)    # frozen: the reviewed surface and strip-base temperatures
@@ -323,13 +326,6 @@ def _held_guess(stage):
     return dict(x=weakening.frozen(stage["x"]), rate=float(stage["rate"]))
 
 
-def _issue(cls, **values):
-    item = object.__new__(cls)
-    for key, value in values.items():
-        object.__setattr__(item, key, value)
-    return item
-
-
 class _Issued:
     """Issued by this module only: no public constructor, replace(), pickle or copies of prepared operators."""
     __slots__ = ()
@@ -340,12 +336,9 @@ class _Issued:
     def __reduce__(self):
         raise TypeError(type(self).__name__+" is never serialised: rebuild it from the pinned inputs")
 
-    def __copy__(self):
-        return self
+    __copy__ = _immutable_copy
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 @dataclasses.dataclass(frozen=True, eq=False, init=False, slots=True)

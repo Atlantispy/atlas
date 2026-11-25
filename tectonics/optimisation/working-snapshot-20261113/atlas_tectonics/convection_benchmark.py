@@ -15,6 +15,7 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError
+from ._validation import shaped_finite_array
 from .constitutive import (BoussinesqMaterial, DiffusiveScales, RheologyProfile,
                            evaluate_rheology, reference_rheology)
 from .resources import select_budget
@@ -98,14 +99,6 @@ def tosi_endpoint_flow(state, prepared, *, budget=None, cancel=None):
         time_s=state.time_s, source='R4.4 accepted endpoint ' + state.state_id, cancel=cancel)
 
 
-def _array(value, shape, label):
-    # No mutation, clipping, silent broadcasting or nonfinite diagnostics.
-    a = np.asarray(value, dtype=np.float64)
-    if a.shape != shape or not np.isfinite(a).all():
-        raise TectonicsError('finite correctly shaped ' + label + ' required')
-    return a
-
-
 def _wall_viscosities(profile, theta, exx, ezz, *, budget=None):
     """Free-slip boundary samples, not unobserved subcell extrema.
 
@@ -146,11 +139,11 @@ def convection_diagnostics(temperature, u, w, viscosity_cell, viscosity_vertex,
     if profile.viscosity_bounds is not None:
         raise TectonicsError('published cases do not use numerical viscosity clipping')
     with select_budget(budget).reserve(320*n*n + 65536, category='convection-diagnostics'):
-        T = _array(temperature, (n, n), 'dimensionless temperature')
-        a = _array(u, (n, n+1), 'horizontal velocity')
-        b = _array(w, (n+1, n), 'vertical velocity')
-        c = _array(viscosity_cell, (n, n), 'cell viscosity')
-        v = _array(viscosity_vertex, (n-1, n-1), 'vertex viscosity')
+        T = shaped_finite_array(temperature, (n, n), 'dimensionless temperature', 'finite correctly shaped ', ' required')
+        a = shaped_finite_array(u, (n, n+1), 'horizontal velocity', 'finite correctly shaped ', ' required')
+        b = shaped_finite_array(w, (n+1, n), 'vertical velocity', 'finite correctly shaped ', ' required')
+        c = shaped_finite_array(viscosity_cell, (n, n), 'cell viscosity', 'finite correctly shaped ', ' required')
+        v = shaped_finite_array(viscosity_vertex, (n-1, n-1), 'vertex viscosity', 'finite correctly shaped ', ' required')
         if np.any((T < 0) | (T > 1)) or np.any(c <= 0) or np.any(v <= 0):
             raise TectonicsError('temperature/rheology outside published domain')
         if np.any(a[:, [0, -1]]) or np.any(b[[0, -1]]):

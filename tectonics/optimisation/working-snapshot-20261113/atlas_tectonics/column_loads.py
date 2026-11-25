@@ -8,7 +8,6 @@ not this prescribed load. See docs/W04_COLUMN_LOADS.md for scope and sources.
 """
 from __future__ import annotations
 
-from concurrent.futures import CancelledError
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -18,6 +17,7 @@ import numpy as np
 from ._validation import TectonicsError, input_shape, read_array, scalar, text
 from .constitutive import BoussinesqMaterial
 from .resources import select_budget
+from .resources import check_event
 from .thermal_support import _temperature
 from .stokes_execution import _factored_scale
 
@@ -32,11 +32,6 @@ def _identity(record, *buffers):
     for buffer in buffers:
         h.update(buffer)
     return h.hexdigest()
-
-
-def _cancel(cancel):
-    if cancel is not None and cancel.is_set():
-        raise CancelledError('column load construction cancelled')
 
 
 def _ids(values, name, maximum):
@@ -153,7 +148,7 @@ class ColumnLoadState:
 
     def __init__(self, support, phases, volume_m3, fill_density_kg_m3, *,
                  source_id, epoch_id, temperature_k=None, budget=None, cancel=None):
-        _cancel(cancel)
+        check_event(cancel, 'column load construction cancelled')
         if type(support) is not LoadSupport:
             raise TectonicsError('explicit LoadSupport required')
         if type(phases) is not tuple or not 0 < len(phases) <= _MAX_PHASES or any(type(p) is not LoadPhase for p in phases):
@@ -188,7 +183,7 @@ class ColumnLoadState:
             vb, fb = v.tobytes(), f.tobytes()
             record = dict(method=_METHOD, support=support.support_id, phases=[asdict(x) for x in phases],
                           source=source_id, epoch=epoch_id, thermal='unapplied-fixed-coverage-anomaly')
-            _cancel(cancel)
+            check_event(cancel, 'column load construction cancelled')
             for name, value in dict(support=support, phases=phases, source_id=source_id,
                     epoch_id=epoch_id, _volumes=vb, _fill=fb, _temperature=tb,
                     state_id=_identity(record, vb, fb, tb)).items():
@@ -250,7 +245,7 @@ def column_load_change(reference, current, gravity_m_s2, *, budget=None,
     Finite input snapshots are reused without re-copying/hashing per column.
     """
     g = _compatible(reference, current, gravity_m_s2, batch_columns)
-    _cancel(cancel)
+    check_event(cancel, 'column load construction cancelled')
     n = len(reference.support.column_ids)
     batch = min(n, batch_columns)
     with select_budget(budget).reserve(64*n+384*batch+8192, category='column-load-change'):
@@ -262,7 +257,7 @@ def column_load_change(reference, current, gravity_m_s2, *, budget=None,
         try:
             with np.errstate(over='raise', invalid='raise', divide='raise', under='ignore'):
                 for start in range(0,n,batch):
-                    _cancel(cancel)
+                    check_event(cancel, 'column load construction cancelled')
                     s = slice(start,min(start+batch,n)); size = len(area[s])
                     sums = np.zeros((4,size)); corrections = np.zeros_like(sums)
                     # The unoccupied reference volume matters if replacement
@@ -293,7 +288,7 @@ def column_load_change(reference, current, gravity_m_s2, *, budget=None,
                     output[s,3] = _factored_scale(values[3], (g,), (), 'downward load')
         except FloatingPointError as exc:
             raise TectonicsError('column load arithmetic outside finite binary64 range') from exc
-        _cancel(cancel)
+        check_event(cancel, 'column load construction cancelled')
         if not np.isfinite(output).all():
             raise TectonicsError('nonfinite column load')
         return np.frombuffer(output.tobytes(), dtype=np.float64).reshape(n,4)

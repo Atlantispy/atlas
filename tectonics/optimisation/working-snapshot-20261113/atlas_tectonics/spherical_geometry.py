@@ -23,6 +23,7 @@ from shapely.errors import GEOSException
 from ._validation import read_array, scalar
 from .coordinates import SphericalFrame
 from .resources import elements, select_budget
+from .resources import _immutable_deepcopy
 from .geometry import (GeometryError, GeometryLimits, PlanarGeometry, _limits, _json,
     _point_shape, _vertices, _preflight_vertices, _validate_shape, _validate_once, _typed_frozen,
     _overlay_budget, _check_cancel)
@@ -102,7 +103,7 @@ class SphericalChart:
         except (TypeError,KeyError) as exc:raise GeometryError('invalid chart metadata') from exc
 
     def __reduce__(self):return (_restore_chart,(self.descriptor(),))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
     @property
     def basis(self):return np.frombuffer(self._basis,dtype=np.float64).reshape(3,3)
@@ -399,7 +400,7 @@ class SphericalGeometry:
             return type(self)._from_shape(g,a.chart,limits=limits)
 
     def __reduce__(self):return (_restore_spherical,(self._projected.wkb,self.chart,self.geometry_id))
-    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_spherical(raw,chart,expected):

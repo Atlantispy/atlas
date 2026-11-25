@@ -11,10 +11,11 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, frozen, scalar
+from ._validation import within_budget
 from .materials import _account, _ROUNDOFF, _sha
-from .regional import _cancelled
 from .resources import select_budget
-from .spreading import MAX_SPREADING_INTERVALS, _product, _within_budget
+from .resources import check_event
+from .spreading import MAX_SPREADING_INTERVALS, _product
 from .spreading_cooling import (PreparedSpreadingCooling, SpreadingThermalState,
     HEAT_RELATIVE_TOLERANCE, _export_history, _remaining, _state as _constant_state)
 from .spreading_history_cooling import (PreparedHistoryCooling, HistoryThermalState,
@@ -71,15 +72,15 @@ def pack_ocean(plan, state, *, budget=None, cancel=None):
     History adds export_accounts (one enthalpy/water pair per first-exit record).
     Returned arrays are immutable. No duplicate geometry, fractions or masks.
     """
-    kind = _kind(plan); _cancelled(cancel)
+    kind = _kind(plan); check_event(cancel, 'regional transport cancelled; no candidate published')
     expected_type = SpreadingThermalState if kind == 'constant' else HistoryThermalState
     if type(state) is not expected_type:
         raise TectonicsError('ocean checkpoint state type does not match plan')
     count = _export_count(plan, kind, len(state.exports))
     resource = plan._budget if budget is None else select_budget(budget)
-    _within_budget(resource, plan._budget)
+    within_budget(resource, plan._budget, 'call budget must descend from the prepared run budget')
     with resource.reserve(_work_bytes(plan, count), category='ocean-checkpoint-pack'):
-        plan._check(state); plan.spreading._context.verify(); _cancelled(cancel)
+        plan._check(state); plan.spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         arrays = dict(cell_values=state.cell_values, centre_values=state.centre_values,
             heat_accounts_j=state.heat_accounts_j, water_accounts_m3=state.water_accounts_m3)
         if kind == 'history':
@@ -90,7 +91,7 @@ def pack_ocean(plan, state, *, budget=None, cancel=None):
             time_s=state.time_s, intervals=state.motion.intervals,
             motion_parent_id=state.motion.parent_state_id, thermal_parent_id=state.parent_state_id,
             motion_state_id=state.motion.state_id, thermal_state_id=state.state_id, export_count=count)
-        plan.spreading._context.verify(); _cancelled(cancel)
+        plan.spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         return arrays, meta
 
 
@@ -223,7 +224,7 @@ def restore_ocean(plan, arrays, meta, *, time_s, intervals, motion_parent_id,
     Payload corruption, a foreign plan/source, or inconsistent accounts raises;
     none is a cache miss. Already checked ArrayStore chunks supply authenticity.
     """
-    kind = _kind(plan); _cancelled(cancel)
+    kind = _kind(plan); check_event(cancel, 'regional transport cancelled; no candidate published')
     end = scalar(time_s, 'expected checkpoint time'); count = _count(intervals)
     _parent(motion_parent_id, 'expected motion parent'); _parent(thermal_parent_id, 'expected thermal parent')
     origin = plan.spreading.time_s
@@ -259,9 +260,9 @@ def restore_ocean(plan, arrays, meta, *, time_s, intervals, motion_parent_id,
                 or arrays[name].shape != shape):
             raise TectonicsError('invalid ocean checkpoint field type/dtype/shape: '+name)
     resource = plan._budget if budget is None else select_budget(budget)
-    _within_budget(resource, plan._budget)
+    within_budget(resource, plan._budget, 'call budget must descend from the prepared run budget')
     with resource.reserve(_work_bytes(plan, export_count), category='ocean-checkpoint-restore'):
-        plan._check(plan.initial); plan.spreading._context.verify(); _cancelled(cancel)
+        plan._check(plan.initial); plan.spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         captured = {name: frozen(value) for name, value in arrays.items()}
         if any(captured[name].shape != shape for name, shape in shapes.items()):
             raise TectonicsError('ocean checkpoint array changed during capture')
@@ -296,5 +297,5 @@ def restore_ocean(plan, arrays, meta, *, time_s, intervals, motion_parent_id,
                 _accounts(plan, result, occupied, kind)
         except (FloatingPointError, OverflowError) as exc:
             raise TectonicsError('ocean checkpoint physical account exceeds finite range') from exc
-        plan._check(result); plan.spreading._context.verify(); _cancelled(cancel)
+        plan._check(result); plan.spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
         return result

@@ -11,14 +11,15 @@ import hashlib
 import numpy as np
 
 from ._validation import TectonicsError, scalar
-from .extension import (PreparedListricExtension, ExtensionState, _state, _within_budget,
+from ._validation import within_budget
+from .extension import (PreparedListricExtension, ExtensionState, _state, 
                         MAX_EXTENSION_INTERVALS)
 from .extension_support import PreparedExtensionSupport, ExtensionSupportResult
 from .materials import _json, _account, restore_material_state
 from .remapping import _inventories
 from .column_loads import column_load_change
-from .regional import _cancelled
 from .resources import select_budget
+from .resources import check_event
 from .storage import ArrayStore
 from .reuse import content_record
 
@@ -46,7 +47,7 @@ class PreparedExtensionWorkflow:
         object.__setattr__(self, name, value)
 
     def __init__(self, motion, policy, output_times_s, *, store=None, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(motion) is not PreparedListricExtension:
             raise TectonicsError('prepared extension motion required')
         if type(output_times_s) not in (tuple, list) or not 1 <= len(output_times_s) <= MAX_EXTENSION_INTERVALS:
@@ -64,8 +65,8 @@ class PreparedExtensionWorkflow:
             raise TectonicsError('ArrayStore required')
         owner = motion._budget if store is None else store._budget
         resource = owner if budget is None else select_budget(budget)
-        _within_budget(owner, motion._budget)
-        _within_budget(resource, owner)
+        within_budget(owner, motion._budget, 'call/store budget must descend from the prepared run budget')
+        within_budget(resource, owner, 'call/store budget must descend from the prepared run budget')
         self.motion, self.store, self.output_times_s = motion, store, times
         self._budget, self._closed, self._current = resource, False, None
         self._support = None
@@ -89,7 +90,7 @@ class PreparedExtensionWorkflow:
         if self._closed:
             raise TectonicsError('extension workflow is closed')
         self.motion._check(self.motion.initial)
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         self.motion._context.verify()
 
     def _index(self, index):
@@ -243,7 +244,7 @@ class PreparedExtensionWorkflow:
         if self.store is not None:
             latest, gap = -1, False
             for i in range(end+1):
-                _cancelled(cancel)
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 exists = self.store.contains(self.checkpoint_id(i))
                 if exists and gap:
                     raise TectonicsError('W05 output history has a missing requested checkpoint')

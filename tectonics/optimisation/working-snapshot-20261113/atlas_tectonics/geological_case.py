@@ -31,6 +31,7 @@ from .spherical_geometry import SphericalGeometry, SphericalChart
 from .spherical_atlas import SphericalAtlas, _restore_atlas
 from .boundaries import BoundaryNetwork, BoundaryRegion, build_boundary_network
 from .resources import select_budget
+from .resources import _immutable_deepcopy
 from .geological_domain import GeologicalDomain, restore_geological_domain
 
 _SCHEMA = 'atlas.geological-case.v1'
@@ -411,7 +412,7 @@ class GeologicalCase:
         if self.precedence.weak_zone_mode == 'retain_all': return tuple(sorted(matching_ids))
         return () if not matching_ids else (min(matching_ids,key=self._zone_rank.__getitem__),)
 
-    def __deepcopy__(self,memo): memo[id(self)] = self; return self
+    __deepcopy__ = _immutable_deepcopy
 
     def __reduce__(self):
         meta,arrays = _snapshot(self)

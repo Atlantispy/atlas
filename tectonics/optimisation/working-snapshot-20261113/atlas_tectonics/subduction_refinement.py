@@ -14,9 +14,9 @@ import weakref
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError, frozen, input_shape, read_array
-from atlas_tectonics.constitutive import _cancel
 from atlas_tectonics.resources import MemoryLimitError, WorkBudget
 from atlas_tectonics.subduction_mesh import P2Mesh, basis, quadrature
+from .resources import check_event_or_callable
 
 
 METHOD = 'aspect-style-mechanical-dorfler025-max-v2'
@@ -103,7 +103,7 @@ def _velocity_indicator(mesh, velocity, h, cancel):
     s, weights = (s+1)/2, weights/2
     squared = np.zeros(len(mesh.cells))
     for first in range(0, len(faces), _BATCH):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         ids = slice(first, first+_BATCH)
         edge = faces[ids]
         tangent = mesh.points[edge[:, 1]]-mesh.points[edge[:, 0]]
@@ -129,7 +129,7 @@ def _viscosity_indicator(mesh, temperature, h, owner, cancel):
     bary, weights = quadrature(6)
     result = np.empty(len(mesh.cells))
     for first in range(0, len(mesh.cells), _BATCH):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         ids = slice(first, first+_BATCH)
         local = temperature[mesh.cells[ids]]
         n, g, _ = basis(bary, mesh.grad_lambda[ids], budget=owner, cancel=cancel)
@@ -171,7 +171,7 @@ def select_refinement_points(mesh, wedge, temperature_k, wedge_velocity_paper, *
     # basis() separately charges its construction scratch through this owner.
     work_bytes = 1536*ne+16*nt+64*nv+4*1024**2
     with owner.reserve(work_bytes, category='subduction-refinement-work'):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         nodes, elements = wedge.global_nodes, wedge.global_elements
         if (len(nodes) != nv or len(elements) != ne or np.any(nodes < 0)
                 or np.any(nodes >= nt) or np.any(elements < 0)
@@ -195,7 +195,7 @@ def select_refinement_points(mesh, wedge, temperature_k, wedge_velocity_paper, *
                        & (points[:, 0] < 660.) & (points[:, 1] < 600.))
                 or len(np.unique(points, axis=0)) != len(points)):
             raise TectonicsError('unique strictly interior wedge centroids required')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         metadata = _Metadata(method=METHOD, case='2a', coordinate_system=mesh.coordinate_system,
             velocity_units='slab-speed units; x-right/y-down', spacing_km=mesh.spacing_km,
             geometry_id=mesh.geometry_id, wedge_geometry_id=wedge.geometry_id,

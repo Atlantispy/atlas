@@ -29,11 +29,26 @@ except ImportError:
 
 from ._validation import TectonicsError, text, scalar, input_shape, read_array, frozen
 from .resources import select_budget
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext, content_record
 from .execution import _acquire_native_limit, _release_native_limit
-from .constitutive import DiffusiveScales, RheologyProfile, _json, _cancel
+from .constitutive import DiffusiveScales, RheologyProfile, _json
 from .stokes import (StokesBox2D, StokesSolvePolicy, _scaling, _MACOperator,
                      _SeparableVelocityInverse, _METHOD, _BOUNDARY, _GAUGE)
+
+
+@contextmanager
+def _native_operation(self, cancel=None):
+    self._check(cancel)
+    if self._active:
+        raise TectonicsError(self._reentrant_message)
+    self._active = True
+    try:
+        with _native_lease():
+            yield
+        self._check(cancel)
+    finally:
+        self._active = False
 
 
 def _digest(value):
@@ -301,17 +316,17 @@ class PreparedStokes2D:
         self._guard=self.budget.reserve(retained,category='stokes-plan-retained')
         self._guard.__enter__()
         try:
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context=ExecutionContext('scipy')
             self._context_id=self._context.identity
             with _native_lease():
                 self._inverse=_SeparableVelocityInverse(self._op)
                 if policy.method=='direct':
-                    _cancel(cancel)
+                    check_event_or_callable(cancel, 'constitutive work cancelled')
                     matrix=self._op.sparse_reference()
                     self._factor=splu(matrix,permc_spec='COLAMD')
                     del matrix
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._context.verify()
             self.identity=_digest(content_record({'method':_METHOD,'box':asdict(box),'profile':profile.descriptor(),
                                    'scales':asdict(scales),'policy':asdict(policy),
@@ -341,10 +356,10 @@ class PreparedStokes2D:
                 raise TectonicsError('closed/active Stokes plan or wrong driving thread')
             self._active=True
         try:
-            _cancel(cancel); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
             with _native_lease():
                 yield
-            _cancel(cancel); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
         finally:
             with self._lock:
                 self._active=False
@@ -408,15 +423,15 @@ class PreparedStokes2D:
                 rhs[op.nu:op.nv]=_checked_scale(fz,force_amplitude,'normalised z force',divide=True).ravel()
             iterations=0
             def matvec(v):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 return op.matvec(v)
             def inverse(v):
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 return self._inverse.apply(v)
             def callback(_):
                 nonlocal iterations
                 iterations+=1
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
             if amplitude==0:
                 vector=np.zeros(op.n)
             elif self.policy.method=='direct':
@@ -434,7 +449,7 @@ class PreparedStokes2D:
                 # not an arbitrary small-speed clamp or a looser transport gate.
                 # Keep the explicit sparse direct route an independent reference.
                 self._inverse.project_velocity(vector)
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             if not np.all(np.isfinite(vector)):
                 raise TectonicsError('non-finite Stokes solution')
             u,w,p,_=op.split(vector)
@@ -449,7 +464,7 @@ class PreparedStokes2D:
                 usi[:,1:-1]=_factored_scale(u,velocity_factors,(eta,),'SI velocity')
                 wsi[1:-1]=_factored_scale(w,velocity_factors,(eta,),'SI velocity')
                 psi=_factored_scale(p,pressure_factors,(),'SI pressure')
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 # Gate the values the caller will ACTUALLY receive. Reuse the
                 # private solve vector for the reconstructed normalised fields,
                 # so only one independent residual/work pass is needed. This
@@ -491,7 +506,7 @@ def save_stokes_solution(result,store,*,budget=None,cancel=None):
     from .storage import ArrayStore
     if type(result) is not StokesSolution or not isinstance(store,ArrayStore):
         raise TectonicsError('Stokes solution and ArrayStore required')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     policy=store._budget if budget is None else budget
     with select_budget(policy).reserve(3*result.nbytes+65536,category='stokes-save'):
         return store.put(result.result_id,{k:result.array(k) for k in result.array_names},
@@ -504,7 +519,7 @@ def load_stokes_solution(store,result_id,*,budget=None,cancel=None):
     if not isinstance(store,ArrayStore):
         raise TectonicsError('ArrayStore required')
     _hex(result_id,'Stokes result')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     policy=store._budget if budget is None else budget
     metadata=store.metadata(result_id)
     arrays=store.get(result_id,budget=policy)
@@ -514,5 +529,5 @@ def load_stokes_solution(store,result_id,*,budget=None,cancel=None):
         result=StokesSolution(metadata,arrays)
         if result.result_id!=result_id:
             raise TectonicsError('Stokes snapshot identity mismatch')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return result

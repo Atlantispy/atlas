@@ -58,8 +58,15 @@ import numpy as np
 
 from . import integration_state as _state
 from ._validation import TectonicsError, scalar
+from ._validation import bounded_record
+from ._validation import frozen_asarray
+from ._validation import frozen_contiguous
 from .materials import _json, _name, _sha
 from .resources import select_budget
+from .resources import _immutable_copy
+from .resources import _immutable_deepcopy
+from .resources import issue as _issue
+from .resources import is_sha256 as _is_sha
 from .storage import ArrayStore, StoreConflict
 from .timebase import advance_time
 
@@ -173,19 +180,9 @@ class _Issued:
     def __reduce__(self):
         raise TypeError(type(self).__name__+' is not pickled; it is read back from its native store')
 
-    def __copy__(self):
-        return self
+    __copy__ = _immutable_copy
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
-
-
-def _issue(cls, **values):
-    item = object.__new__(cls)
-    for key, value in values.items():
-        object.__setattr__(item, key, value)
-    return item
+    __deepcopy__ = _immutable_deepcopy
 
 
 # ----------------------------------------------------------------------------- transfers and exchange accounts
@@ -353,26 +350,21 @@ class Exchange(_Issued):
                         allowance_j=_exact_text(self._allowance[1])))
 
 
-def _frozen(array, dtype=np.float64):
-    raw = np.ascontiguousarray(array, dtype=dtype)
-    return np.frombuffer(raw.tobytes(), dtype=dtype).reshape(raw.shape)
-
-
 def _exchange(inventory, exteriors, initial, supplied, rounding, allowance):
     """Issue exchange accounts; the identity binds the inventory, exteriors and every exact account."""
     components = len(inventory.component_ids)
     for value in (*initial[0], initial[1], *(v for row in supplied[0] for v in row), *supplied[1], *rounding[0],
                   rounding[1], *allowance[0], allowance[1]):
         _bounded(value, 'an exact exchange account')
-    supplied_kg = _frozen(np.array([[float(v) for v in row] for row in supplied[0]],
-                                   dtype=np.float64).reshape(len(exteriors), components))
-    supplied_j = _frozen(np.array([float(v) for v in supplied[1]], dtype=np.float64))
+    supplied_kg = frozen_contiguous(np.array([[float(v) for v in row] for row in supplied[0]],
+                                   dtype=np.float64).reshape(len(exteriors), components), np.float64)
+    supplied_j = frozen_contiguous(np.array([float(v) for v in supplied[1]], dtype=np.float64), np.float64)
     item = _issue(Exchange, inventory=inventory, exteriors=exteriors, exchange_id='', _initial=initial,
                   _supplied=supplied, _rounding=rounding, _allowance=allowance, _supplied_kg=supplied_kg,
                   _supplied_j=supplied_j)
     record = item.descriptor()
     del record['exchange_id'], record['inventory']
-    object.__setattr__(item, 'exchange_id', hashlib.sha256(_canonical(record, 'exchange record')).hexdigest())
+    object.__setattr__(item, 'exchange_id', hashlib.sha256(bounded_record(record, 'exchange record', _json, LedgerError)).hexdigest())
     return item
 
 
@@ -529,7 +521,7 @@ def _apply(ledger_id, parent_key, interval, key, exchange, transfers, applied, e
                       label=transfer.label, producer=transfer.producer, donor=transfer.donor,
                       receiver=transfer.receiver, component_mass_kg=dict(transfer.component_mass_kg),
                       enthalpy_j=transfer.enthalpy_j, basis=transfer.basis, units=UNITS)
-        records.append(dict(record, transfer_id=hashlib.sha256(_canonical(record, 'transfer record')).hexdigest()))
+        records.append(dict(record, transfer_id=hashlib.sha256(bounded_record(record, 'transfer record', _json, LedgerError)).hexdigest()))
         digests.append(digest)
     stored, stored_j = np.array(old), np.array(energy)
     rounding, rounding_j = list(exchange._rounding[0]), exchange._rounding[1]
@@ -638,10 +630,6 @@ def _digests(array):
     return tuple(row.tobytes() for row in raw)
 
 
-def _is_sha(value):
-    return type(value) is str and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
-
-
 def _step_times(start_s, step_s, steps):
     """Epoch times of the global step boundaries 0..steps of the fixed schedule; they must all be distinct."""
     times = [advance_time(start_s, k*step_s) for k in range(steps+1)]
@@ -713,11 +701,6 @@ _REFERENCE_FIELDS = {'layer_thickness_m': 'layer_thickness_m', 'point_layer': 'p
                      'radiogenic_w_m2': 'radiogenic_w_m2', 'thermal_density_kg_m3': 'thermal_density_kg_m3'}
 _COLUMN_FIELDS = {'theta_k': 'theta_k', 'kappa': 'kappa', 'yield_stage_counts': 'yield_stage_counts',
                   'initial_theta_k': 'initial_theta_k', 'initial_kappa': 'initial_kappa'}
-
-
-def _copy(array):
-    array = np.asarray(array)
-    return np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=array.dtype).reshape(array.shape)
 
 
 def _root_metadata(ledger_id, declaration, root, exchange, sphere=None, moving=None):
@@ -883,7 +866,7 @@ class Ledger:
                 raise LedgerError('a moving state is attached only beside its spherical network')
             declaration['moving'] = _bound_moving(sphere, moving)
             arrays.update(moving.arrays())
-        ledger_id = hashlib.sha256(_canonical(declaration, 'ledger declaration')).hexdigest()
+        ledger_id = hashlib.sha256(bounded_record(declaration, 'ledger declaration', _json, LedgerError)).hexdigest()
         if exchange is not None:
             arrays.update(_exchange_arrays(exchange, _applied([])))
         metadata = _root_metadata(ledger_id, declaration, root, exchange, sphere, moving)
@@ -915,7 +898,7 @@ class Ledger:
             raise LedgerError('the store holds no ledger with this identity')
         try:
             declaration = metadata['declaration']
-            ok = (hashlib.sha256(_canonical(declaration, 'ledger declaration')).hexdigest() == ledger_id
+            ok = (hashlib.sha256(bounded_record(declaration, 'ledger declaration', _json, LedgerError)).hexdigest() == ledger_id
                   and declaration['schema'] == SCHEMA and declaration['route'] == _state.ROUTE)
             produced = (metadata['state']['record']['identity']['source_id'],
                         metadata['state']['record']['identity']['runtime_id'])
@@ -964,8 +947,8 @@ class Ledger:
                 raise LedgerError('the stored moving state is not restored: '+str(exc)) from exc
             rebuilt['moving'] = _bound_moving(sphere, moving)
         expected = _root_metadata(ledger_id, rebuilt, root, exchange, sphere, moving)
-        if (_canonical(rebuilt, 'ledger declaration') != _canonical(declaration, 'ledger declaration')
-                or _canonical(expected, 'root record') != _canonical(metadata, 'root record')
+        if (bounded_record(rebuilt, 'ledger declaration', _json, LedgerError) != bounded_record(declaration, 'ledger declaration', _json, LedgerError)
+                or bounded_record(expected, 'root record', _json, LedgerError) != bounded_record(metadata, 'root record', _json, LedgerError)
                 or (exchange is not None and (ledger._stored_exchange(metadata, arrays).exchange_id
                                               != exchange.exchange_id or _digests(arrays['ledger.applied'])))):
             raise LedgerError('the stored root record is not the record of the rebuilt root: edited or foreign')
@@ -1014,7 +997,7 @@ class Ledger:
                           interval=None if interval is None else (interval['start_s'], interval['end_s'],
                                                                   interval['start_step'], interval['end_step']),
                           transfer_ids=tuple(t['transfer_id'] for t in metadata['transfers']),
-                          _metadata=_canonical(metadata, 'commit metadata'))
+                          _metadata=bounded_record(metadata, 'commit metadata', _json, LedgerError))
         except (KeyError, TypeError) as exc:
             raise LedgerError('a stored commit record is incomplete') from exc
 
@@ -1026,7 +1009,7 @@ class Ledger:
     def _current(self, commit):
         """The commit's manifest metadata as stored now; it must be exactly the metadata the commit was issued over."""
         metadata = self._store.metadata(commit.key)
-        if metadata is None or _canonical(metadata, 'commit metadata') != commit._metadata:
+        if metadata is None or bounded_record(metadata, 'commit metadata', _json, LedgerError) != commit._metadata:
             raise LedgerError('the commit is missing from, or changed in, its store')
         return metadata
 
@@ -1275,7 +1258,7 @@ class Ledger:
                 exchange = _exchange(inventory, tuple(tuple(pair) for pair in stored['exteriors']), initial, supplied,
                                      rounding, allowance)
                 ok = (exchange.exchange_id == stored['exchange_id']
-                      and _canonical(exchange.descriptor(), 'exchange record') == _canonical(stored, 'exchange record')
+                      and bounded_record(exchange.descriptor(), 'exchange record', _json, LedgerError) == bounded_record(stored, 'exchange record', _json, LedgerError)
                       and exchange._supplied_kg.tobytes() == np.asarray(arrays['exchange.supplied_kg'],
                                                                         dtype=np.float64).tobytes()
                       and exchange._supplied_j.tobytes() == np.asarray(arrays['exchange.supplied_j'],
@@ -1552,7 +1535,7 @@ class Ledger:
             _, units, support, owner, _, _, meaning = _state._INDEX[name]
             values = (getattr(state.column, _COLUMN_FIELDS[name]) if name in _COLUMN_FIELDS
                       else getattr(state.reference, _REFERENCE_FIELDS[name]))
-        values = _copy(values)
+        values = frozen_asarray(values)
         return dict(name=name, units=units, support=support, owner=owner, meaning=meaning, values=values,
                     dtype=values.dtype.str, shape=list(values.shape), commit=commit.key, state_id=state.state_id,
                     time_s=state.time_s, accepted_steps=state.column.accepted_steps, source_id=state.source_id,
@@ -1631,7 +1614,7 @@ class Ledger:
                                       'nothing')
             after, records, applied = None, (), ()
         else:
-            if json.loads(_canonical(exchange.descriptor(), 'exchange record')) != expected_parent['exchange']:
+            if json.loads(bounded_record(exchange.descriptor(), 'exchange record', _json, LedgerError)) != expected_parent['exchange']:
                 raise LedgerError('the parent stocks held in this process differ from the stored parent')
             applied = self._applied_digests(parent)
             after, records, new = _apply(self._ledger_id, parent.key, interval, key, exchange, transfers,
@@ -1660,7 +1643,7 @@ class Ledger:
         if moved is not None:
             arrays.update(moved.state.arrays())
             metadata['moving'] = _material.step_record(self._restored_moving(parent, expected_parent), moved)
-        self._checked(json.loads(_canonical(metadata, 'commit metadata')), parent)   # exactly what head() accepts
+        self._checked(json.loads(bounded_record(metadata, 'commit metadata', _json, LedgerError)), parent)   # exactly what head() accepts
         store = self._store
         parent_index = None if after is None else store.reference(parent.key, 'ledger.applied').descriptor_sha256
 

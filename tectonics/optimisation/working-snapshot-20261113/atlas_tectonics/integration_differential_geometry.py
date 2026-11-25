@@ -39,16 +39,13 @@ from .integration_cone_intervals import _cone_cross_bounds, _cone_dot_bounds
 from . import integration_wall_measures as W
 from .geometry import _limits
 from .resources import WorkBudget, MemoryLimitError
+from .resources import canonical_json
 from ._validation import effort_paths as _paths, without_effort as _without
 from .reuse import content_record
 
 
 SCHEMA = 'atlas.differential-physical-geometry.v1'
 MEASURE_SCHEMA = 'atlas.differential-physical-wall.v1'
-
-
-def _encoded(record):
-    return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _restore_scratch(*records):
@@ -95,7 +92,7 @@ def _scale_ray(value):
 
 
 def _issue(cls, record, budget, endpoint=None):
-    encoded = _encoded(record)
+    encoded = canonical_json(record)
     # The issued object retains ONE immutable byte buffer, not four decoded
     # copies. Codec/input work belongs to the issuing operation; fixed capacity
     # covers the small handle, byte header, finalizer and reservation metadata.
@@ -2106,8 +2103,8 @@ def _interface_identity(constraint):
     if identity is not None:
         return ('rigid', identity[0]), identity[1]
     if constraint['kind'] == 'moving-ray-edge':
-        forward = _encoded(constraint['rays'])
-        reverse = _encoded(list(reversed(constraint['rays'])))
+        forward = canonical_json(constraint['rays'])
+        reverse = canonical_json(list(reversed(constraint['rays'])))
         return ('deforming-ray-edge', min(forward, reverse)), (1 if forward <= reverse else -1)
     return None
 
@@ -2133,7 +2130,7 @@ def _shape_key(constraints, literals):
     """sha256 of a cell's own bounding half-spaces: each literal's plane in canonical form times its side, equal items
     dropped, encoded items sorted. No name, id, index, chart or volume enters. Bound to the stored form: a ray record
     grows each interval, so the key names a shape within one graph record, never a cell across intervals."""
-    items = {_encoded(_shape_item(constraints[name], sign)) for name, sign in literals}
+    items = {canonical_json(_shape_item(constraints[name], sign)) for name, sign in literals}
     return hashlib.sha256(b'\n'.join(sorted(items))).hexdigest()
 
 
@@ -2213,8 +2210,8 @@ def _angular_possible(literals, constraints, omega, duration, arena, cache, owne
         if transformed is None:
             return True
         angular.append((transformed, sign))
-    angular_key = tuple((_encoded(value), sign) for value, sign in angular)
-    context_key = _encoded(dict(owner_rays=owner_rays, duration_s=_qtext(duration),
+    angular_key = tuple((canonical_json(value), sign) for value, sign in angular)
+    context_key = canonical_json(dict(owner_rays=owner_rays, duration_s=_qtext(duration),
                                 angular_velocity_rad_s=_store_vec(omega)))
     key = angular_key, context_key
     entries, owner = cache if cache is not None else ({}, arena)
@@ -2222,7 +2219,7 @@ def _angular_possible(literals, constraints, omega, duration, arena, cache, owne
         return entries[key]
     if any(any(O._cross(_load_vec(ray['angular_velocity_rad_s']), omega)) for ray in owner_rays):
         return True
-    with _PartitionScratch(owner) as scratch:
+    with B._ChildArena(owner) as scratch:
         posed = tuple((_constraint_pose(value, Q(0), duration, 0, scratch), sign) for value, sign in angular)
         # The owner triangle is the positive cone of its actual three rays.
         # A separating literal excludes that entire cone if all three exact
@@ -2286,7 +2283,7 @@ def _merged_start_fans(record, fans, rays, budget):
                 if identity in failed:
                     continue
                 names = set(left+right)
-                histories = {_encoded(record['rays'][name].get('prior_rotations', [])) for name in names}
+                histories = {canonical_json(record['rays'][name].get('prior_rotations', [])) for name in names}
                 if len(histories) != 1:
                     failed.add(identity); continue
                 points = {name: _ray_parts(rays[name])[0] for name in names}
@@ -2304,17 +2301,6 @@ def _merged_start_fans(record, fans, rays, budget):
             if not merged:
                 break
     return tuple(rings)
-
-
-class _PartitionScratch(B._Arena):
-    """Recyclable live clipping scratch; finite work stays on the parent."""
-    def __init__(self, parent):
-        super().__init__(parent.resource)
-        self.parent = parent
-
-    def work(self, count):
-        self.parent.work(count)
-        self.work_units += count
 
 
 def _v2_scaled(values):
@@ -2486,7 +2472,7 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
                 continue
             live = ExitStack()
             try:
-                with _PartitionScratch(arena) as scratch:
+                with B._ChildArena(arena) as scratch:
                     poly = base_poly
                     for literal in literals:
                         poly = K._clip(poly, K._plane(outer_planes[literal]), scratch)
@@ -2500,7 +2486,7 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
                 order = list(range(len(subtract)))
                 for group_index in order:
                     group, after = subtract[group_index], []
-                    with _PartitionScratch(arena) as scratch:
+                    with B._ChildArena(arena) as scratch:
                         for local_path, local_literals, local_poly in local_parts:
                             inside, prefix = local_poly, []
                             for index, name in enumerate(group):
@@ -2564,7 +2550,7 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
             # New birth lineage intentionally includes its actual birth interval.
             if kind == 'birth':
                 identity['birth_interval_id'] = identity_id
-            components.append(dict(logical_cell_id=hashlib.sha256(_encoded(identity)).hexdigest(),
+            components.append(dict(logical_cell_id=hashlib.sha256(canonical_json(identity)).hexdigest(),
                 partition_path=path, owner_ray_ids=list(fans[path[1]]), constraints=literals))
         if not static:
             # Growth successor (a), new intervals only: store only the
@@ -2596,7 +2582,7 @@ def _cached_constraint_pose(value, duration, arena, cache):
     if cache is None:
         return _constraint_pose(value, Q(0), duration, 0, arena)
     entries, owner = cache
-    key = _encoded(value)
+    key = canonical_json(value)
     if key not in entries:
         result = _constraint_pose(value, Q(0), duration, 0, owner)
         owner.keep((*result[0], result[1], result[2]), objects=1)
@@ -3103,7 +3089,7 @@ def _growth_chart_empty(region, old_time, grid, arena, budget):
         return None
     literals = tuple((name, sign) for name, sign in chart['literals'])
     wrapped = chart['constraints']
-    rates = {_encoded(wrapped[name].get('angular_velocity_rad_s')) for name, _ in literals}
+    rates = {canonical_json(wrapped[name].get('angular_velocity_rad_s')) for name, _ in literals}
     if (not literals or len(rates) != 1 or
             any(wrapped[name].get('kind') != 'snapshot-rotated' or
                 W._decode(wrapped[name]['snapshot_offset_s']) != old_time for name, _ in literals)):
@@ -3536,7 +3522,7 @@ def _wall_cone_zero_measure(record, component, face, duration, arena):
         return None
     operands = (duration, *face[3], *(q for direction, omega, prior in keys for q in
         (*direction, *omega, *(v for old, dt in prior for v in (*old, dt)))))
-    with _PartitionScratch(arena) as scratch, V._work(operands, arena.resource):
+    with B._ChildArena(arena) as scratch, V._work(operands, arena.resource):
         scratch.work(128+64*len(keys))
         boxes = {}
         def box(index):
@@ -3590,7 +3576,7 @@ def _wall_outer_zero_measure(record, component, layer, face, duration, arena):
     values = (duration, layer.bottom_radius_m, layer.top_radius_m,
               *(q for vector in face[:4] for q in vector),
               *(q for pair in face[4] for q in pair))
-    with _PartitionScratch(arena) as scratch, V._work(values, arena.resource):
+    with B._ChildArena(arena) as scratch, V._work(values, arena.resource):
         polygon = W._rectangle(face[4])
         radial = W._radial_planes(face, face[4], layer, False)
         scratch.work(128)
@@ -3959,11 +3945,11 @@ def _cp_identity(constraint):
     rays = inner.get('rays')
     if type(rays) is not list or len(rays) != 2:
         return None
-    forward, reverse = _encoded(rays), _encoded([rays[1], rays[0]])
+    forward, reverse = canonical_json(rays), canonical_json([rays[1], rays[0]])
     if forward == reverse:
         return None
-    rest = _encoded(dict((k, v) for k, v in constraint.items() if k != 'constraint'))
-    inner_rest = _encoded(dict((k, v) for k, v in inner.items() if k != 'rays'))
+    rest = canonical_json(dict((k, v) for k, v in constraint.items() if k != 'constraint'))
+    inner_rest = canonical_json(dict((k, v) for k, v in inner.items() if k != 'rays'))
     return (rest, inner_rest, min(forward, reverse)), (1 if forward < reverse else -1)
 
 
@@ -5043,7 +5029,7 @@ def _clipped_voxel_edge_zero_volume(cell, literals, constraints, time, level, ar
         return None
     # A bounded one-plane clip, only after the existing root enclosure failed
     # to decide contact. Its polygons live in scratch, not in the certificate.
-    with _PartitionScratch(arena) as scratch:
+    with B._ChildArena(arena) as scratch:
         box = B._owned_box(cell, scratch)
         normals = {}
         for fixed_name, fixed_sign, normal, offset in fixed:
@@ -5914,7 +5900,7 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
         replay_cell = current_cell.record()
         try:
             storage.workspace('cell', (*current_cell._geometry(), level, 2*max_leaves), 12)
-            with _PartitionScratch(arena) as scratch:
+            with B._ChildArena(arena) as scratch:
                 answer = _component_volume_certificate(layer, current_cell, component['constraints'],
                     record['constraints'], time, level, arena, detail=detail,
                     _clip_arena=scratch, mask=mask, _cone_query=arena._component_ray_cache, _loose_witness=loose_witness)

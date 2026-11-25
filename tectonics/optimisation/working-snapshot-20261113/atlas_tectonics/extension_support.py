@@ -11,13 +11,15 @@ import json
 import math
 import numpy as np
 from ._validation import TectonicsError, scalar, text, frozen, read_array, input_shape
-from .extension import PreparedListricExtension, _within_budget
+from ._validation import within_budget
+from .extension import PreparedListricExtension
 from .materials import _json
-from .regional import RegionalGrid1D, _cancelled
+from .regional import RegionalGrid1D
 from .parameters import FlexureParameters
 from .finite_flexure import FiniteRegionFlexure, FlexureBoundary1D
 from .column_loads import LoadSupport, LoadPhase, ColumnLoadState, column_load_change
 from .resources import select_budget
+from .resources import check_event
 from .reuse import content_record
 
 
@@ -162,7 +164,7 @@ class PreparedExtensionSupport:
         object.__setattr__(self, name, value)
 
     def __init__(self, motion, policy, *, budget=None, cancel=None):
-        _cancelled(cancel)
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if type(motion) is not PreparedListricExtension or type(policy) is not ExtensionSupportPolicy:
             raise TectonicsError('typed prepared extension and support policy required')
         motion._check(motion.initial); motion._context.verify()
@@ -179,7 +181,7 @@ class PreparedExtensionSupport:
             raise TectonicsError('uniform shared load/motion grid required; no implicit remapping')
         self.motion = motion; self.policy = policy
         self._budget = motion._budget if budget is None else select_budget(budget)
-        _within_budget(self._budget, motion._budget)
+        within_budget(self._budget, motion._budget, 'call/store budget must descend from the prepared run budget')
         self._stack = ExitStack(); self._closed = False
         try:
             self._stack.enter_context(self._budget.reserve(2048*n+32768, category='extension-support-retained'))
@@ -213,7 +215,7 @@ class PreparedExtensionSupport:
                     motion=motion.plan_id, policy=asdict(policy), reference_load=self._reference_load.state_id,
                     operator=self.operator.operator_id, mean_operator=self.mean_operator.operator_id,
                     execution=motion.execution_id)))).hexdigest()
-            _cancelled(cancel); motion._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published'); motion._context.verify()
             self._sealed = True
         except BaseException:
             self._stack.close()
@@ -256,7 +258,7 @@ class PreparedExtensionSupport:
     def solve(self, state, *, cancel=None):
         if self._closed:
             raise TectonicsError('extension support preparation is closed')
-        self.motion._check(state); _cancelled(cancel); self.motion._context.verify()
+        self.motion._check(state); check_event(cancel, 'regional transport cancelled; no candidate published'); self.motion._context.verify()
         n = self.motion.grid.cells
         with self._budget.reserve(1024*n+32768, category='extension-support-output'):
             fields = self.motion.geometry_fields(state, budget=self._budget)
@@ -309,7 +311,7 @@ class PreparedExtensionSupport:
             for name, value in (('_metadata', metadata), ('_fields', payload), ('_points', point_payload),
                     ('result_id', hashlib.sha256(_json(content_record(record))+payload+point_payload).hexdigest())):
                 object.__setattr__(result, name, value)
-            _cancelled(cancel); self.motion._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published'); self.motion._context.verify()
             return result
 
     def close(self):

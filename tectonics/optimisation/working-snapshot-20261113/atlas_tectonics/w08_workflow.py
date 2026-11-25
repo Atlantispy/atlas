@@ -4,7 +4,7 @@ Prescribed affine regional footprints and homogeneous finite material stocks.
 Steady wedge temperature is a separate accepted diagnostic, not a transient heat
 history. A regime label never supplies missing kinematics or a continental law.
 """
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 from dataclasses import dataclass
 import hashlib
 import json
@@ -15,15 +15,17 @@ from time import perf_counter
 import numpy as np
 
 from ._validation import TectonicsError, scalar, frozen, _immutable_view, _float_quanta
+from ._validation import within_budget
 from . import _w08_history_funding as _history
 from .materials import _json, _name
-from .constitutive import _cancel
 from .geometry import PlanarGeometry
 from .resources import WorkBudget, select_budget
+from .resources import _budget_statistics
+from .resources import check_event_or_callable
+from .resources import json_sha256
 from .reuse import ExecutionContext, content_record
 from .storage import ArrayStore
-from .spreading import _within_budget
-from .stokes_execution import _native_lease
+from .stokes_execution import _native_operation
 from .transform import AffineMotionInterval, PreparedAffineMotion
 from .w08_inventory import W08Inventory, advance_magmatic, advance_retirement
 from .w08_region import W08Region, _regional_view
@@ -124,10 +126,10 @@ class W08Output:
         return self._output_id(_array_id(self.deformation_gradient))
 
     def _output_id(self, deformation_digest):
-        return _hash(content_record(dict(receipt=self.descriptor(),inventory=self.inventory.inventory_id,
+        return json_sha256(content_record(dict(receipt=self.descriptor(),inventory=self.inventory.inventory_id,
                           geometry=[g.geometry_id for g in self.polygons],
                           reference=[g.geometry_id for g in self.reference_polygons],
-                          deformation=deformation_digest)))
+                          deformation=deformation_digest)), _json)
 
 
 class W08ExhaustionError(TectonicsError):
@@ -184,7 +186,7 @@ class PreparedW08Workflow:
                     raise TectonicsError('retirement and regional spatial/time frames differ')
             start,previous = interval.end_time_s,interval.regime
         self._resource = WorkBudget(CAP,parent=select_budget(budget))
-        if store is not None: _within_budget(self._resource,store._budget)
+        if store is not None: within_budget(self._resource,store._budget, 'call budget must descend from the prepared run budget')
         self._owner = threading.get_ident(); self._closed = self._active = False
         self.initial,self.region,self.intervals,self.store = initial,region,intervals,store
         self.thermodynamics = thermodynamics
@@ -256,18 +258,10 @@ class PreparedW08Workflow:
     def _check(self,cancel=None):
         if self._closed: raise TectonicsError('W08 workflow closed')
         if threading.get_ident() != self._owner: raise TectonicsError('drive W08 from its owning thread')
-        _cancel(cancel); self._context.verify()
+        check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
 
-    @contextmanager
-    def _operation(self,cancel=None):
-        self._check(cancel)
-        if self._active: raise TectonicsError('reentrant W08 spending refused')
-        self._active = True
-        try:
-            with _native_lease():
-                yield
-            self._check(cancel)
-        finally: self._active = False
+    _reentrant_message = 'reentrant W08 spending refused'
+    _operation = _native_operation
 
     def _index(self,index):
         if type(index) is not int or not 0 <= index < len(self.intervals):
@@ -275,9 +269,9 @@ class PreparedW08Workflow:
         return index
 
     def checkpoint_id(self,index):
-        return _hash(dict(plan=self.plan_id,index=self._index(index)))
+        return json_sha256(dict(plan=self.plan_id,index=self._index(index)), _json)
 
-    def statistics(self): return dict(self._stats,budget=self._resource.statistics())
+    statistics = _budget_statistics
 
     def _validate(self,out,*,issued_here=False,retirement_heat_present=False):
         _validation_work = self._history_hold(2*_history.GRAPH+_history.PARSE+_history.NUMERIC,
@@ -612,7 +606,7 @@ class PreparedW08Workflow:
                 None if out.interval_index==0 else self.checkpoint_id(out.interval_index-1)),
             output_id=out.output_id,inventory=out.inventory.descriptor(),receipt=out.descriptor(),
             arrays={k:_array_id(v) for k,v in arrays.items()})
-        packed = dict(header,content_id=_hash(header))
+        packed = dict(header,content_id=json_sha256(header, _json))
         if funds is not None:
             funds.resize(_history.GRAPH+_history.NUMERIC)
             caller_holds = getattr(self,'_w08_history_pack_holds',None)
@@ -630,7 +624,7 @@ class PreparedW08Workflow:
         r = meta['receipt']
         if (meta['schema'] != 'atlas.w08-checkpoint.v1' or meta['plan_id'] != self.plan_id or
                 meta['execution'] != self.execution_id or meta['index'] != index or
-                meta['checkpoint_id'] != key or meta['content_id'] != _hash(header) or
+                meta['checkpoint_id'] != key or meta['content_id'] != json_sha256(header, _json) or
                 meta['parent_checkpoint_id'] != parent_key or
                 type(r) is not dict or r.get('parent_output_id') != parent or
                 r.get('phase') != 'complete' or r.get('interval_index') != index or
@@ -643,7 +637,7 @@ class PreparedW08Workflow:
         latest_key = parent_key = None
         latest_holds = []
         for i in range(end+1):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             candidate_holds = []
             key = self.checkpoint_id(i)
             with self._fund_store(candidate_holds):

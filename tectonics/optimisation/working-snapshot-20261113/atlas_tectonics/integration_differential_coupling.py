@@ -24,6 +24,7 @@ from . import integration_sphere as S
 from . import integration_volume as V
 from . import integration_wall_measures as W
 from ._validation import TectonicsError, frozen, input_shape
+from ._validation import shaped_finite_array
 from .integration_collar_geometry import FullCellFunding
 from .integration_differential_pressure import DifferentialPressureForcing
 from .integration_native_faces import measure_native_faces
@@ -36,18 +37,15 @@ from .kinematics import Rotation
 from .regional_collar3d import PreparedRegionalCollar3D, RegionalCollarState
 from .regional_execution3d import SIDES, _digest_array, _cancel
 from .resources import WorkBudget, MemoryLimitError
+from .resources import canonical_json
 from ._validation import effort_paths as _paths, without_effort as _without
 
 # A-15: counts of work left out of proposal_id; the stored record keeps them.
 PROPOSAL_EFFORT = _paths('attempt')
 
 
-def _json(record):
-    return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
 def _issue(cls, record, resource, **objects):
-    encoded = _json(record)
+    encoded = canonical_json(record)
     guard = resource.reserve(8192+4*len(encoded), category='differential-coupling-receipt')
     guard.__enter__()
     try:
@@ -82,7 +80,7 @@ def _force_failure_diagnostic(metadata, arrays, budget):
         record = dict(schema='atlas.differential-force-failure.v1', **metadata,
             arrays={key: value.tolist() for key, value in arrays.items()},
             scope='failed geometry admission after an actual force solve; no material or heat publication')
-        if len(_json(record)) > 262144:
+        if len(canonical_json(record)) > 262144:
             return None
         return _issue(_ForceFailure, record, budget)
 
@@ -120,7 +118,7 @@ class DifferentialForceProposal:
         try:
             return self._proposal_id
         except AttributeError:
-            value = hashlib.sha256(_json(_without(json.loads(self._json), PROPOSAL_EFFORT))).hexdigest()
+            value = hashlib.sha256(canonical_json(_without(json.loads(self._json), PROPOSAL_EFFORT))).hexdigest()
             object.__setattr__(self, '_proposal_id', value)
             return value
 
@@ -169,7 +167,7 @@ def _driver_family(driver):
 
 def _motion_from_rates(network, end_step, duration, rates, supplies, sinks):
     """Finite rotations of the actual rates; never project onto a coaxial axis."""
-    values = D._array(rates, (len(network.plate_ids), 3), 'actual solved angular rates')
+    values = shaped_finite_array(rates, (len(network.plate_ids), 3), 'actual solved angular rates', '', ' has an incompatible shape or nonfinite value')
     rotations = {}
     for plate, row in zip(network.plate_ids, values):
         speed = math.hypot(*map(float, row))
@@ -282,7 +280,7 @@ class PreparedDifferentialIteration:
                 supplies=[s.record() for s in self._supplies], sinks=[s.record() for s in self._sinks],
                 time_rule='accepted-start physical pressure and constitutive state; frozen interval-mask fixed-point proposals',
                 publication='none; only actual final trace plus exact carried-stock GCL may enter one workflow CAS')
-            self.iteration_id = hashlib.sha256(_json(self._definition)).hexdigest()
+            self.iteration_id = hashlib.sha256(canonical_json(self._definition)).hexdigest()
         except BaseException:
             self.close()
             raise
@@ -291,7 +289,7 @@ class PreparedDifferentialIteration:
         if self._guard is None:
             raise TectonicsError('differential iteration is closed')
         self._spatial_owner.validate_parent(self._spatial_state, self._state)
-        return dict(iteration_id=self.iteration_id, **json.loads(_json(self._definition)))
+        return dict(iteration_id=self.iteration_id, **json.loads(canonical_json(self._definition)))
 
     def propose(self, driver=None, *, cancel=None):
         self.descriptor(); _cancel(cancel)

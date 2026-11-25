@@ -8,6 +8,10 @@ from atlas_tectonics._private.compact_contracts import ContractError
 from atlas_tectonics._private.record_views import RecordRef
 from atlas_tectonics._private import live_spatial_patch as L
 from atlas_tectonics._private import spatial_validation_patch as V
+from atlas_tectonics.resources import _close_consumed_stack
+
+
+proposal_stack = _close_consumed_stack
 
 
 class _Rows(V._Rows):
@@ -283,13 +287,3 @@ def collar_source(source):
     return source
 
 
-@contextmanager
-def proposal_stack():
-    stack = ExitStack()
-    try:
-        yield stack
-    except BaseException:
-        # Do not ExitStack.__exit__ a failed consumer's borrowed fields.
-        raise
-    else:
-        stack.close()

@@ -34,8 +34,10 @@ except ImportError:
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen, text
 from .resources import select_budget
+from .resources import check_event_or_callable
 from .reuse import ExecutionContext
-from .constitutive import _json, _cancel
+from .constitutive import _json
+from .constitutive_execution import PreparedRheology
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,14 +94,8 @@ class PreparedDamageRegularisation:
 
     def __exit__(self,*_): self.close()
 
-    def close(self):
-        with self._lock:
-            if self._active: raise TectonicsError('join regularisation before close')
-            if self._closed:return
-            self._closed=True
-        try:
-            if self._context is not None:self._context.close()
-        finally:self._guard.__exit__(None,None,None)
+    _close_refusal = 'join regularisation before close'
+    close = PreparedRheology.close
 
     def apply(self,damage,*,cancel=None):
         if input_shape(damage,'raw damage')!=(self.parameters.cells,):
@@ -108,7 +104,7 @@ class PreparedDamageRegularisation:
             if self._closed or self._active: raise TectonicsError('closed or active regularisation plan')
             self._active=True
         try:
-            _cancel(cancel); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
             with self.budget.reserve(96*self.parameters.cells+65536,category='damage-length-solve'):
                 raw=read_array(damage,'raw damage',nonnegative=True)
                 value=cho_solve_banded((self._factor,True),raw,check_finite=False)
@@ -120,7 +116,7 @@ class PreparedDamageRegularisation:
                 if np.max(np.abs(residual))>128*np.finfo(float).eps*(1+4*self._s)*scale or np.min(value)<0:
                     raise TectonicsError('nonlocal damage solve failed residual/positivity check')
                 result=frozen(value)
-            _cancel(cancel); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
             return result
         finally:
             with self._lock:self._active=False

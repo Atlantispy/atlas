@@ -32,6 +32,7 @@ from atlas_tectonics._private.record_views import (
     _ObjectRecordRef,
 )
 from atlas_tectonics._private.segment_store import SegmentBackend
+from atlas_tectonics.resources import require as _require
 
 REF_V2 = 'atlas.spatial-record-ref.v2'
 DIRECT_SCHEMA = 'atlas.spatial-record-direct.v1'
@@ -48,20 +49,15 @@ FRAGMENTS = '~fragments'
 _ORDINARY = (RecordRef, LogicalRecord, LogicalExchange)
 
 
-def require(ok, message):
-    if not ok:
-        raise ContractError(message)
-
-
 def _leaf(value):
-    require(type(value) in _ORDINARY and value._fields is None,
-            'only whole record nodes or object overlays can be persisted by reference')
+    _require(type(value) in _ORDINARY and value._fields is None,
+            'only whole record nodes or object overlays can be persisted by reference', ContractError)
     return value
 
 
 def borrowed_bytes(value, depth=0):
     """Logical bytes of borrowed compact content inside a row value."""
-    require(depth <= MAX_RECIPE_DEPTH, 'record overlay nesting exceeds bound')
+    _require(depth <= MAX_RECIPE_DEPTH, 'record overlay nesting exceeds bound', ContractError)
     if type(value) is _ObjectRecordRef:
         base, overlay, _, _, _, overrides = value._owner.value
         return sum(borrowed_bytes(item, depth+1)
@@ -101,18 +97,18 @@ class Planner:
 
     def _fragment(self, value):
         self.imported_bytes += borrowed_bytes(value)
-        require(self.imported_bytes <= MAX_IMPORT_BYTES, 'small borrowed imports exceed their bound')
-        require(len(self.fragments) < MAX_FRAGMENTS, 'too many native record fragments')
+        _require(self.imported_bytes <= MAX_IMPORT_BYTES, 'small borrowed imports exceed their bound', ContractError)
+        _require(len(self.fragments) < MAX_FRAGMENTS, 'too many native record fragments', ContractError)
         self.fragments.append(value)
         return ('fragment', len(self.fragments)-1)
 
     def _direct(self, ref):
         view = ref._view
-        require(type(view) is CompactRecord and view.scope is self.scope,
-                'borrowed record has a foreign retained scope')
+        _require(type(view) is CompactRecord and view.scope is self.scope,
+                'borrowed record has a foreign retained scope', ContractError)
         slot = self.views.get(id(view))
         if slot is None:
-            require(len(self.direct) < MAX_SEGMENTS, 'too many directly published records')
+            _require(len(self.direct) < MAX_SEGMENTS, 'too many directly published records', ContractError)
             slot = self.views[id(view)] = len(self.direct)
             self.direct.append(view)
         return ('direct', slot, ref.index)
@@ -124,7 +120,7 @@ class Planner:
         transport) must not drag the hidden records into its recipe: they
         would be published, referenced and re-validated for nothing.
         """
-        require(depth <= MAX_RECIPE_DEPTH and self.nodes < MAX_RECIPE_NODES, 'record recipe exceeds bound')
+        _require(depth <= MAX_RECIPE_DEPTH and self.nodes < MAX_RECIPE_NODES, 'record recipe exceeds bound', ContractError)
         self.nodes += 1
         if type(value) is _ObjectRecordRef:
             base, overlay, keys, overlay_keys, _, overrides = value._owner.value
@@ -190,23 +186,23 @@ def check_wire(recipe, segment_count, depth=0, budget=None):
     """Strict shape, before any record is built from an untrusted descriptor."""
     budget = [MAX_RECIPE_NODES] if budget is None else budget
     budget[0] -= 1
-    require(depth <= MAX_RECIPE_DEPTH and budget[0] >= 0 and type(recipe) is dict, 'invalid record recipe')
+    _require(depth <= MAX_RECIPE_DEPTH and budget[0] >= 0 and type(recipe) is dict, 'invalid record recipe', ContractError)
     if set(recipe) == {'node'}:
         node = recipe['node']
-        require(type(node) is list and len(node) == 2 and all(type(x) is int for x in node) and
-                0 <= node[0] < segment_count and 0 <= node[1] <= (1 << 63), 'invalid recipe node')
+        _require(type(node) is list and len(node) == 2 and all(type(x) is int for x in node) and
+                0 <= node[0] < segment_count and 0 <= node[1] <= (1 << 63), 'invalid recipe node', ContractError)
         return
-    require(set(recipe) == {'base', 'keys', 'overlay', 'overrides'}, 'invalid recipe overlay')
+    _require(set(recipe) == {'base', 'keys', 'overlay', 'overrides'}, 'invalid recipe overlay', ContractError)
     keys = recipe['keys']
-    require(type(keys) is list and all(type(k) is str for k in keys) and keys == sorted(set(keys)),
-            'recipe keys must be sorted distinct strings')
-    require(recipe['overlay'] is None or recipe['overrides'] is None, 'one overlay source required')
+    _require(type(keys) is list and all(type(k) is str for k in keys) and keys == sorted(set(keys)),
+            'recipe keys must be sorted distinct strings', ContractError)
+    _require(recipe['overlay'] is None or recipe['overrides'] is None, 'one overlay source required', ContractError)
     check_wire(recipe['base'], segment_count, depth+1, budget)
     if recipe['overlay'] is not None:
         check_wire(recipe['overlay'], segment_count, depth+1, budget)
     if recipe['overrides'] is not None:
-        require(type(recipe['overrides']) is dict and recipe['overrides'] and
-                set(recipe['overrides']) <= set(keys), 'invalid recipe overrides')
+        _require(type(recipe['overrides']) is dict and recipe['overrides'] and
+                set(recipe['overrides']) <= set(keys), 'invalid recipe overrides', ContractError)
         for child in recipe['overrides'].values():
             check_wire(child, segment_count, depth+1, budget)
 
@@ -235,7 +231,7 @@ def build(recipe, records):
 def fragment_nodes(bundle, count):
     """Node index of each native fragment inside a packed or reopened bundle."""
     with bundle.root() as root, root.field(FRAGMENTS) as fragments:
-        require(fragments.kind == 'array' and fragments.size == count, 'record fragment inventory differs')
+        _require(fragments.kind == 'array' and fragments.size == count, 'record fragment inventory differs', ContractError)
         nodes = []
         for at in range(count):
             with fragments.at(at) as item:
@@ -247,15 +243,15 @@ def check_direct_metadata(segment, producer=None):
     """Authenticated root metadata only; never the payload columns."""
     row = segment._owner.value
     if producer is not None:
-        require(row['producer'] == producer, 'record producer differs from authenticated root')
+        _require(row['producer'] == producer, 'record producer differs from authenticated root', ContractError)
     metadata = row['metadata']
-    require(type(metadata) is dict and set(metadata) == {'schema', 'codec'} and
+    _require(type(metadata) is dict and set(metadata) == {'schema', 'codec'} and
             metadata['schema'] == DIRECT_SCHEMA and type(metadata['codec']) is dict,
-            'unknown or incomplete direct record metadata')
+            'unknown or incomplete direct record metadata', ContractError)
     codec = metadata['codec']
-    require(codec.get('identity') == segment.info.ref.identity.to_wire() and
+    _require(codec.get('identity') == segment.info.ref.identity.to_wire() and
             type(codec.get('arrays')) is dict and segment.info.array_count == len(codec['arrays']),
-            'direct record codec identity or column inventory differs from authenticated root')
+            'direct record codec identity or column inventory differs from authenticated root', ContractError)
     return metadata
 
 
@@ -307,25 +303,25 @@ def open_direct(segment, producer=None, check=lambda: None, render=True):
 def descriptor_wire(kind, identity, segments, recipe):
     compact = {'schema': REF_V2, 'segments': [ref.to_wire() for ref in segments], 'recipe': recipe}
     result = {**identity, 'compact': compact}
-    require(len(canonical(result)) <= MAX_DESCRIPTOR_BYTES, 'record descriptor exceeds bound: '+kind)
+    _require(len(canonical(result)) <= MAX_DESCRIPTOR_BYTES, 'record descriptor exceeds bound: '+kind, ContractError)
     return result
 
 
 def parse_descriptor(value, kind):
     """(segments, recipe) for a v2 descriptor; strict and bounded."""
-    require(type(value) is dict and set(value) == {'bytes', 'sha256', 'compact'},
-            'complete compact record descriptor required')
-    require(type(value['bytes']) is int and value['bytes'] >= 0 and
+    _require(type(value) is dict and set(value) == {'bytes', 'sha256', 'compact'},
+            'complete compact record descriptor required', ContractError)
+    _require(type(value['bytes']) is int and value['bytes'] >= 0 and
             type(value['sha256']) is str and len(value['sha256']) == 64 and
-            all(c in '0123456789abcdef' for c in value['sha256']), 'invalid logical record identity')
-    require(len(canonical(value)) <= MAX_DESCRIPTOR_BYTES, 'record descriptor exceeds bound')
+            all(c in '0123456789abcdef' for c in value['sha256']), 'invalid logical record identity', ContractError)
+    _require(len(canonical(value)) <= MAX_DESCRIPTOR_BYTES, 'record descriptor exceeds bound', ContractError)
     compact = value['compact']
-    require(type(compact) is dict and set(compact) == {'schema', 'segments', 'recipe'} and
-            compact['schema'] == REF_V2, 'record reference schema/binding differs')
+    _require(type(compact) is dict and set(compact) == {'schema', 'segments', 'recipe'} and
+            compact['schema'] == REF_V2, 'record reference schema/binding differs', ContractError)
     segments = compact['segments']
-    require(type(segments) is list and 0 < len(segments) <= MAX_SEGMENTS, 'invalid recipe segment list')
+    _require(type(segments) is list and 0 < len(segments) <= MAX_SEGMENTS, 'invalid recipe segment list', ContractError)
     parsed = [SegmentRef.from_wire(item) for item in segments]
-    require(len({ref.to_json() for ref in parsed}) == len(parsed), 'repeated recipe segment')
+    _require(len({ref.to_json() for ref in parsed}) == len(parsed), 'repeated recipe segment', ContractError)
     check_wire(compact['recipe'], len(parsed))
     return parsed, compact['recipe']
 

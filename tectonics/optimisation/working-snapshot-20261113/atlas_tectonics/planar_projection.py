@@ -11,7 +11,6 @@ from __future__ import annotations
 from array import array
 from contextlib import ExitStack
 from dataclasses import dataclass, field
-import hashlib
 from itertools import chain
 import json
 import math
@@ -24,21 +23,15 @@ from shapely.errors import GEOSException
 from shapely.strtree import STRtree
 
 from ._validation import TectonicsError, input_shape, read_array
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
 from .geometry import (PlanarGeometry, GeometryError, DEFAULT_GEOMETRY_LIMITS,
                        _label, _json, _check_cancel, _overlay_budget,
                        _validate_shape)
 from .resources import select_budget
+from .resources import record_id
 
 
 MAX_PLANAR_POLYGONS = 4096
-_ROUND = float(128*np.finfo(float).eps)
-
-
-def _identity(record, *buffers):
-    h = hashlib.sha256(_json(record))
-    for buf in buffers:
-        h.update(b'\0'); h.update(buf)
-    return h.hexdigest()
 
 
 def _sum(values):
@@ -212,8 +205,8 @@ class PreparedPlanarProjection:
             self._order = order.astype(np.int64).tobytes()
             self._starts = starts.astype(np.int64).tobytes()
             self._record = _json(record)
-            self.plan_id = _identity(record, self._donor, self._target, self._area,
-                                     self._fraction, self._outside)
+            self.plan_id = record_id(record, self._donor, self._target, self._area,
+                                     self._fraction, self._outside, encode=_json)
             self.candidate_count = candidates
             self._trees = (source_tree, target_tree)
             self._budget = resource; self._leases = leases
@@ -284,7 +277,7 @@ class PreparedPlanarProjection:
                     fields=fields, account_residuals=residual.tolist(),
                     exterior='retained-per-donor-outside-view-not-deleted-or-re-exported')
                 payload = inside.tobytes(), outside.tobytes(), residual.tobytes(), _json(record)
-                result = PlanarProjection(self.plan_id, _identity(record, stock.tobytes(), *payload),
+                result = PlanarProjection(self.plan_id, record_id(record, stock.tobytes(), *payload, encode=_json),
                                           fields, ns, nt, *payload)
                 _check_cancel(cancel)
                 return result

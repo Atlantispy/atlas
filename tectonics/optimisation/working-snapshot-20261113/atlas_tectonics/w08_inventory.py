@@ -16,10 +16,10 @@ import weakref
 import numpy as np
 
 from ._validation import TectonicsError, input_shape, read_array, scalar
-from .constitutive import _cancel
 from .magmatic_transfer import MagmaticInventory, PreparedMagmaticTransfer
 from .materials import MaterialCohort, _json, _name
 from .resources import DEFAULT_BUDGET, WorkBudget, select_budget
+from .resources import check_event_or_callable
 from .subduction_materials import (
     DESTINATIONS, PreparedSubductionRetirement, SubductionInventory)
 
@@ -115,7 +115,7 @@ class W08Inventory:
     def _initialise(self, node_ids, node_kinds, component_ids, component_mass_kg,
                     enthalpy_j, source_id, enthalpy_source, time_s,
                     formation_time_s, origin_ids, budget, cancel, known_mass):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         nodes = _names(node_ids, 'node IDs')
         components = _names(component_ids, 'component IDs')
         count, kinds = len(nodes), node_kinds
@@ -167,7 +167,7 @@ class W08Inventory:
             weakref.finalize(self, lease.__exit__, None, None, None)
             for key, value in values.items():
                 object.__setattr__(self, key, value)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     @property
     def component_mass_kg(self): return self._components.view()
@@ -221,7 +221,7 @@ def _closure(initial, components, enthalpy, heat, moved_c, moved_e):
             (initial._enthalpy, enthalpy, heat, moved_e.flat)]:
         old, new, external, transfers = map(tuple, (old, new, external, transfers))
         residual = _sum((*new, *(-x for x in old), *(-x for x in external)))
-        scale = _sum(abs(x) for group in (old, new, external, transfers) for x in group)
+        scale = _sum((abs(x) for group in (old, new, external, transfers) for x in group))
         if abs(residual) > ROUND*scale:
             raise TectonicsError('global W08 component/enthalpy account does not close')
         residuals.append(residual)
@@ -232,7 +232,7 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
                      source_id, heat_w=None, thermodynamics=None, context=None,
                      end_time_s=None, budget=None, cancel=None):
     """Map a finite magma segment into exact shared rows, retaining all others."""
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     indices = _selection(inventory, selected_node_ids)
     owner = _owner(budget)
     with owner.reserve(256*len(inventory.node_ids)*(len(inventory.component_ids)+4)+65536,
@@ -264,7 +264,7 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
                 exhausted_node_ids=kernel['exhausted_nodes'], account=account,
                 kernel=kernel,
                 ownership='shared inventory owns terminal stocks; edge transfers are receipts only')
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return updated, json.loads(_json(record))
 
 
@@ -276,7 +276,7 @@ def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s
     PreparedSubductionRetirement except destinations/source/budget/cancel. The
     caller's outer ExecutionContext verifies source/runtime identity.
     """
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     indices = _selection(inventory, selected_node_ids)
     if any(inventory.node_kinds[i] not in ('crust', 'mantle') for i in indices):
         raise TectonicsError('retirement sources must be explicitly crust or mantle')
@@ -331,5 +331,5 @@ def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s
                 exhausted_node_ids=kernel['exhausted_cohort_ids'], account=account,
                 source_cohorts=local.descriptor()['cohorts'], kernel=kernel,
                 ownership='all retirement destinations are physical shared inventory rows')
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return updated, json.loads(_json(record))

@@ -67,17 +67,6 @@ class _PoseCache:
             return answer
 
 
-class _ScratchArena(B._Arena):
-    """Temporary child proofs unwind; ALL attempted work stays on the parent."""
-    def __init__(self,parent):
-        super().__init__(parent.resource)
-        self.parent=parent
-
-    def work(self,count):
-        self.parent.work(count)
-        self.work_units+=count
-
-
 def _aggregate(nodes,widths,arena):
     """Sequential exact sums: each real growing accumulator is admitted.
 
@@ -304,7 +293,7 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
         nonlocal evaluations
         _cancel(cancel);evaluations+=1
         child=(*face[:4],bounds)
-        with _ScratchArena(arena) as scratch:
+        with B._ChildArena(arena) as scratch:
             old=fallback(bounds,Q(0),duration,0)
             answer=None
             if all(lo==hi for lo,hi in old):

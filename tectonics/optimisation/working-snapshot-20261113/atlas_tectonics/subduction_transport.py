@@ -28,8 +28,11 @@ from scipy import sparse
 from scipy.sparse.linalg import splu
 
 from ._validation import TectonicsError, input_shape, read_array
-from .constitutive import _cancel
+from ._validation import _PLANAR_ROUNDOFF as _ROUND
+from ._validation import frozen_asarray as _frozen
 from .resources import WorkBudget, select_budget
+from .resources import canonical_json
+from .resources import check_event_or_callable
 from .stokes_execution import _native_lease
 from .subduction_mesh import P2Mesh, MAX_ELEMENTS, basis, quadrature
 
@@ -38,16 +41,7 @@ _EDGES = ((0, 1), (1, 2), (2, 0))
 _P2_BARY = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.],
                      [.5, .5, 0.], [0., .5, .5], [.5, 0., .5]])
 _CAP = 128*1024**2
-_ROUND = float(128*np.finfo(float).eps)
 _BATCH = 128
-
-
-def _frozen(value, dtype=None):
-    value = np.asarray(value, dtype=dtype)
-    return np.frombuffer(value.tobytes(), dtype=value.dtype).reshape(value.shape)
-
-
-def _json(record): return json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
 
 
 def _p3_derivatives(bary):
@@ -154,7 +148,7 @@ class PreparedSubductionTransport:
         points = list(map(tuple, vertices)); entries = {}; p3 = np.empty((len(cells), 10), np.int64)
         p3[:, :3] = cells[:, :3]
         for element, cell in enumerate(cells):
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             for edge, (i, j) in enumerate(_EDGES):
                 a, b = int(cell[i]), int(cell[j]); key = tuple(sorted((a, b)))
                 if key not in entries:
@@ -207,7 +201,7 @@ class PreparedSubductionTransport:
         self._dq = _frozen(_p3_derivatives(self._bary)); self._dn = _frozen(_p3_derivatives(_P2_BARY))
         local = np.empty((len(cells), 10, 10))
         for start in range(0, len(cells), _BATCH):
-            _cancel(cancel); end = min(start+_BATCH, len(cells))
+            check_event_or_callable(cancel, 'constitutive work cancelled'); end = min(start+_BATCH, len(cells))
             gradient = _gradient(self._dq, mesh.grad_lambda[start:end])
             local[start:end] = np.einsum('eqnd,eqmd,q,e->enm', gradient, gradient,
                 self._weights, mesh.area[start:end], optimize=True)
@@ -221,7 +215,7 @@ class PreparedSubductionTransport:
             p3_nodes=len(points), free_nodes=len(self._free), boundary_nodes=len(self._fixed),
             quadrature_degree=6, numpy=np.__version__, scipy=scipy.__version__,
             coordinates=mesh.coordinate_system, boundary='single-oriented-component-longest-edge-closure')
-        digest = hashlib.sha256(_json(record))
+        digest = hashlib.sha256(canonical_json(record))
         for array in (mesh.points, cells, mesh.area, mesh.grad_lambda): digest.update(array.tobytes())
         self.plan_id = digest.hexdigest()
 
@@ -270,12 +264,12 @@ class PreparedSubductionTransport:
         self._active = True
         try:
             with _native_lease(): yield
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         finally: self._active = False
 
     def _get_factor(self, cancel):
         if self._factor is not None: return self._factor
-        _cancel(cancel); n, nnz = self._matrix.shape[0], self._matrix.nnz
+        check_event_or_callable(cancel, 'constitutive work cancelled'); n, nnz = self._matrix.shape[0], self._matrix.nnz
         if not n: return None
         # Explicit bounded scalar-factor admission, coordinated with the root's
         # sequential flow/transfer/heat phases. Actual retained fill still gates
@@ -288,7 +282,7 @@ class PreparedSubductionTransport:
             actual = sum(a.nbytes for m in (factor.L, factor.U) for a in (m.data, m.indices, m.indptr))
             if 3*actual+self._matrix.data.nbytes > allowance:
                 raise TectonicsError('scalar thermal-transfer factor exceeds admitted fill')
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             self._factor = factor; self._factor_lease = lease; self._factorisations += 1
             return factor
         except BaseException:
@@ -300,7 +294,7 @@ class PreparedSubductionTransport:
         # One consistent traversal: cell orientation is positive in the numerical
         # x/y coordinates, so (dy,-dx) is the outward normal times edge length.
         for edge_index, (element, edge) in enumerate(self._boundary):
-            _cancel(cancel); i, j = _EDGES[edge]
+            check_event_or_callable(cancel, 'constitutive work cancelled'); i, j = _EDGES[edge]
             xy = self.mesh.points[self.mesh.cells[element, [i, j]]]
             tangent = xy[1]-xy[0]; normal_length = np.array([tangent[1], -tangent[0]])
             length_squared = float(tangent@tangent)
@@ -328,13 +322,13 @@ class PreparedSubductionTransport:
         prefixes = np.empty((len(increments), 2))
         total = 0.; correction = 0.
         for edge_index, value in enumerate(increments):
-            _cancel(cancel); prefixes[edge_index] = total, correction
+            check_event_or_callable(cancel, 'constitutive work cancelled'); prefixes[edge_index] = total, correction
             updated = total+value
             correction += ((total-updated)+value if abs(total) >= abs(value) else (value-updated)+total)
             total = updated
         gauge_total, gauge_correction = prefixes[gauge_edge]
         for edge_index, (element, edge) in enumerate(self._boundary):
-            _cancel(cancel); i, j = _EDGES[edge]
+            check_event_or_callable(cancel, 'constitutive work cancelled'); i, j = _EDGES[edge]
             xy = self.mesh.points[self.mesh.cells[element, [i, j]]]
             tangent = xy[1]-xy[0]; normal_length = np.array([tangent[1], -tangent[0]])
             trace = velocity[element, [i, edge+3, j]]@normal_length
@@ -355,7 +349,7 @@ class PreparedSubductionTransport:
             potential, net, flux_scale, mode = self._boundary_values(velocity, boundary_streamfunction, cancel)
             rhs = np.zeros(len(self._points)); elements = len(self.mesh.cells)
             for start in range(0, elements, _BATCH):
-                _cancel(cancel); end = min(start+_BATCH, elements)
+                check_event_or_callable(cancel, 'constitutive work cancelled'); end = min(start+_BATCH, elements)
                 gradient = _gradient(self._dq, self.mesh.grad_lambda[start:end])
                 curl = gradient[..., ::-1].copy(); curl[..., 1] *= -1
                 target = np.einsum('qn,end->eqd', self._p2, velocity[start:end], optimize=True)
@@ -375,7 +369,7 @@ class PreparedSubductionTransport:
             output = np.empty_like(velocity); div_max = div_scaled = 0.; input_div_integral = 0.
             output_div_integral = change_integral = input_integral = 0.
             for start in range(0, elements, _BATCH):
-                _cancel(cancel); end = min(start+_BATCH, elements)
+                check_event_or_callable(cancel, 'constitutive work cancelled'); end = min(start+_BATCH, elements)
                 local_potential = potential[self._cells[start:end]]
                 pg = _potential_gradient(self._dn, self.mesh.grad_lambda[start:end], local_potential)
                 output[start:end, :, 0] = pg[:, :, 1]; output[start:end, :, 1] = -pg[:, :, 0]
@@ -428,9 +422,9 @@ class PreparedSubductionTransport:
                 linear_residual=linear_error, factorisations=self._factorisations,
                 tangential_velocity_preserved=False, mechanical_field_replaced=False,
                 p3_nodes=len(self._points), free_scalar_nodes=len(self._free), elements=elements)
-            payload = output.tobytes(), potential.tobytes(), _json(record)
+            payload = output.tobytes(), potential.tobytes(), canonical_json(record)
             digest = hashlib.sha256(self.plan_id.encode()+mode.encode()+velocity.tobytes()+payload[0]+payload[1])
-            _cancel(cancel)
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return ConservativeVelocityResult(self.plan_id, digest.hexdigest(), elements, *payload)
 
     def release_factor(self):

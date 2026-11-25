@@ -12,11 +12,12 @@ import threading
 import numpy as np
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, _replay_fsum
-from .constitutive import _cancel, _json
+from .constitutive import _json
 from .regional_execution import (PreparedRegionalStokes2D, RegionalMechanicalSnapshot,
     RegionalMechanicsScales, RegionalReferencePressure, _name, _hash)
 from .regional_stokes import boundary_coordinates
 from .resources import WorkBudget, select_budget
+from .resources import check_event_or_callable
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +70,7 @@ class RegionalInputBlock(RegionalMechanicalSnapshot):
     def __init__(self, context, kind, fields, *, source_id, producer_state_id,
                  sampling, effect_ids=(), boundary_types=None,
                  includes_total_gravity=False, budget=None, cancel=None):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if type(context) is not RegionalInputContext:
             raise TectonicsError('typed mechanical input context required')
         for value, name in ((source_id, 'source'), (producer_state_id, 'producer state'),
@@ -126,7 +127,7 @@ class RegionalInputBlock(RegionalMechanicalSnapshot):
                 includes_total_gravity=includes_total_gravity,
                 force_convention='total-physical-not-pressure-split', response_owner='W07')
             super().__init__(metadata, arrays)
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     @property
     def context(self): return RegionalInputContext(**self.descriptor()['context'])
@@ -199,7 +200,7 @@ def regional_thermal_gravity(context, temperature_k, law, *, producer_state_id,
     _name(effect_id, 'gravity effect')
     if input_shape(temperature_k) != (context.nz,context.nx):
         raise TectonicsError('temperature cell means must match the mechanical input context')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(256*(context.nx+1)*(context.nz+1)+65536,
                                        category='evolving-thermal-gravity'):
         centre, vertex = temperature_stress_sites(temperature_k)
@@ -213,11 +214,11 @@ def regional_thermal_gravity(context, temperature_k, law, *, producer_state_id,
 
 
 def _sum_forces(blocks, name, *, cancel=None):
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     arrays = tuple(block.array(name) for block in blocks)
     result = np.empty_like(arrays[0])
     for row in range(result.shape[0]):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         for column in range(result.shape[1]):
             index = (row, column)
             try:
@@ -225,7 +226,7 @@ def _sum_forces(blocks, name, *, cancel=None):
             except OverflowError as exc:
                 raise TectonicsError('combined physical body force exceeds binary64') from exc
     if not np.isfinite(result).all(): raise TectonicsError('nonfinite total body force')
-    _cancel(cancel)
+    check_event_or_callable(cancel, 'constitutive work cancelled')
     return result
 
 
@@ -265,7 +266,7 @@ class PreparedEvolvingRegionalMechanics:
     def __init__(self, context, boundary_types, *, scales, viscosity_scale_pa_s,
                  physical_mean_pressure_pa=None, reference_pressure=None, rigid_constraints=None,
                  budget=None, cancel=None):
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if type(context) is not RegionalInputContext or type(scales) is not RegionalMechanicsScales:
             raise TectonicsError('typed mechanical context and scales required')
         if reference_pressure is not None and type(reference_pressure) is not RegionalReferencePressure:
@@ -287,7 +288,7 @@ class PreparedEvolvingRegionalMechanics:
     def evaluate(self, request, *, cancel=None):
         if self._closed or self._active or self._owner != threading.get_ident():
             raise TectonicsError('open idle evolving-mechanics plan on its owner thread required')
-        _cancel(cancel)
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if type(request) is not RegionalMechanicalRequest:
             raise TectonicsError('typed coincident mechanical request required')
         context = request.context
@@ -351,7 +352,7 @@ class PreparedEvolvingRegionalMechanics:
                     origin_x_m=context.origin_x_m, origin_z_m=context.origin_z_m,
                     coordinates='local x-right,z-up; add declared origin for world coordinates')
                 result = EvolvingMechanicalResult(mechanics,_hash(record),_json(record))
-                _cancel(cancel)
+                check_event_or_callable(cancel, 'constitutive work cancelled')
                 guard = self._resource.reserve(2*len(result._record)+65536,
                                                category='evolving-mechanical-latest')
                 guard.__enter__()
