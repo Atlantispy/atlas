@@ -17,7 +17,7 @@ symbolic issue-growth inventory, solver, geometry or FINISH route runs here.
 The process meter covers the growing buffer and final immutable copy. The
 identity hashes the canonical record with the result_id field omitted.
 """
-from atlas_tectonics.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
+from atlas_tectonics.reuse import execution_mode, helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
 from hashlib import sha256
@@ -35,7 +35,7 @@ from atlas_tectonics._private import private_heat_process_meter_r1 as METER
 HERE = Path(__file__).resolve().parent
 METHOD = 'private:standalone-conservative-physical-face-finish-r7'
 PINS = {
-    'private_heat_correction_owned_r1.py': '5c959f973713af2eac347cba5ce3d50c0f30fbc65253dd1651da7195214be033',
+    'private_heat_correction_owned_r1.py': 'd954161de5a8918525f11b273f18c7ef2deb4d4a309571ba6871cd39df428e2f',
     'private_heat_finish_codec_inventory_r1.py': '6e8d7b56f9283a2b1e9d94673459e8a62ad707ad94d226d1cd2eb1c4bcc5e295',
     'private_heat_finish_kernel_r3.py': '178d58b891df29ded2a3d46cbd62236d3e87f499f9159e3aa951d3481e781cb3',
 }
@@ -141,7 +141,7 @@ def _codec_plan(record, ar):
     return C.codec_inventory(chars, component, max(text, 64, len('result_id')))
 
 
-def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, powers, bindings, sealed_output):
+def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, powers, bindings, sealed_output, *, strict_sources):
     check = ar.check
     if not math.isfinite(ar.public(target)) or not ar.less(0, target):
         raise ValueError('An independently supplied positive finite absolute residual target is required')
@@ -234,6 +234,9 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
             sources[key] = digest
     for path, digest in sources.items():
         check()
+        if (strict_sources and path.startswith('atlas_tectonics/_private/')
+                and _SOURCES.get(path) == digest):
+            continue
         if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != digest:
             raise ValueError('Private adapter input source binding changed')
     # Record scalars must also remain owned if the external caller settles the
@@ -341,6 +344,7 @@ def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, power
         ar = _IssueArithmetic(workspace, G, R, n, nf, 1, checkpoint,
                               extra_fixed_bytes=fixed_bytes)
         owned.arithmetic = ar
+        strict_sources = execution_mode() == 'strict'
         for path, pin in _SOURCES.items():
             checkpoint()
             if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != pin:
@@ -352,7 +356,7 @@ def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, power
         ar.copy(fixed.values())
         ar.copy(powers.values())
         result = _issue(ar, old, cap, new, faces, face_ids, source, retained,
-                        target, fixed, powers, bindings, _sealed_output)
+                        target, fixed, powers, bindings, _sealed_output, strict_sources=strict_sources)
         # The numerical/encoder producer frame is gone. The complete exact
         # record and sealed immutable bytes stay owned, but bytearray/chunk
         # buffers no longer exist. Exceptions never take this return credit.

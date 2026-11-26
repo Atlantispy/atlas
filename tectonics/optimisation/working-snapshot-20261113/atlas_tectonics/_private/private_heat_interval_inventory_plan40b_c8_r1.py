@@ -88,13 +88,10 @@ class AssessmentInventory:
 
 
 def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+    _check(cancel)
+    verify_sources(cancel)
     return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
                    budget=budget, cancel=cancel, owned=False)
-
-
-def _derive_owned(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
-    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
-                   budget=budget, cancel=cancel, owned=True)
 
 
 def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, owned):
@@ -109,7 +106,6 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
     Inputs must not mutate between this inspection and the immediate assembly.
     """
     _check(cancel)
-    verify_sources(cancel)
     base_derive = BASE._derive_owned if owned else BASE.derive
     base = base_derive(rows, cells, boundary, witness=witness,
                        source_bindings=source_bindings, budget=budget, cancel=cancel)

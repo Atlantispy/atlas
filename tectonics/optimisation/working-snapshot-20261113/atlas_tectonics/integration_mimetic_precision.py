@@ -601,9 +601,10 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     best, improved = norm(r), 0
     form = None
     while iterations < limit:
-        if 2*norm(r) <= best:
-            best, improved = norm(r), iterations
-        if norm(r) <= absolute_target:
+        residual_norm = norm(r)
+        if 2*residual_norm <= best:
+            best, improved = residual_norm, iterations
+        if residual_norm <= absolute_target:
             ax = reduced_action(x)
             true_r = [b-a for b, a in zip(reduced_rhs, ax)]
             if norm(true_r) <= absolute_target:
@@ -693,11 +694,11 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
             _cancel(cancel)
             ax = reduced_action(x)
             r = [b-a for b, a in zip(reduced_rhs, ax)]
-            if norm(r) <= absolute_target or refinements == _DIRECT_REFINEMENTS:
+            converged = norm(r) <= absolute_target
+            if converged or refinements == _DIRECT_REFINEMENTS:
                 break
             x = [a+b for a, b in zip(x, direct_solve(r))]
             refinements += 1
-        converged = norm(r) <= absolute_target
         direct = dict(method='Decimal80 (rounded) LDL^T of the same symmetric form, coefficients evaluated as for '
                              'the preconditioner, in the rounded factor order; refinement on the matrix-free residual',
                       iterations_before=iterations, lower_factor_nnz=direct_nnz, refinements=refinements,

@@ -218,32 +218,24 @@ def clean_child_env():
 _worker_mode_token = None
 
 
-def bind_worker_mode(startup_path, startup_sha256):
-    """Install only the mode from the already authenticated one-shot startup record."""
+def _bind_worker_mode(mode, execution_identity):
+    """Bind the selected child's authenticated startup values to this module."""
     global _worker_mode_token
     _require(_worker_mode_token is None, "worker mode is already bound")
-    path = _path(str(startup_path))
-    _require(path.stat().st_size <= MAX_STARTUP_BYTES, "worker startup record exceeds its bound")
-    state = _json(_raw(path,startup_sha256))
-    mode = state.get('execution_mode','strict')
     _require(mode in ('strict','release'), "worker execution mode is invalid")
-    _require(path == _path(state['directory'])/'startup.json', "worker mode is outside its owned startup")
-    _worker_mode_token = (str(path),startup_sha256,mode,state.get('execution_identity'))
+    _worker_mode_token = (mode, execution_identity)
 
 
 def worker_execution_mode():
     """Strict by default; Release needs the immutable source-bound startup transport."""
     if _worker_mode_token is None:
         return 'strict'
-    path,pin,mode,_ = _worker_mode_token
-    state = _json(_raw(_path(path),pin))
-    _require(state.get('execution_mode','strict') == mode, "worker execution mode changed")
-    return mode
+    return _worker_mode_token[0]
 
 
 def worker_execution_identity():
     """The parent's execution identity from the bound fresh startup record; None with none bound (every parent)."""
-    return None if _worker_mode_token is None else _worker_mode_token[3]
+    return None if _worker_mode_token is None else _worker_mode_token[1]
 
 
 def _parent_worker_mode(state):
@@ -315,7 +307,7 @@ def run_worker(startup_path, startup_sha256, marker_directory):
     boundary_module.bind_imports(boundary)
     canonical = importlib.import_module(MODULE)
     canonical.configure(boundary_module, boundary, boundary_sha256=state["boundary_sha256"])
-    canonical.bind_worker_mode(startup,startup_sha256)
+    canonical._bind_worker_mode(state.get("execution_mode", "strict"), None)
     # Use the original entry's actual source, selected by the same finder as
     # the parent. The original worker's runtime/source/receipt checks remain.
     import runpy
@@ -859,7 +851,7 @@ def run_fresh_worker(startup_path, startup_sha256, marker_directory):
     # historical/data-only exclusions; its finally restores paths and verifies.
     with sources.selected():
         canonical = importlib.import_module(MODULE)
-        canonical.bind_worker_mode(startup,startup_sha256)
+        canonical._bind_worker_mode(state.get("execution_mode", "strict"), state["execution_identity"])
         canonical.configure_fresh_sources(sources, runner)
         selected = dict(state)
         selected.pop("directory")

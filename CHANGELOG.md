@@ -203,6 +203,24 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev51 - 2026-11-26
+
+### Optimisations
+
+- Reused the authenticated source identity for the lifetime of a frozen execution context.
+- Reused startup source digests at worker readiness and checked only newly loaded names during face
+  processing. Worker result admission keeps its independent checks.
+- Reused the selected GMP version pair when reporting runtime facts.
+- Reused the profiling row lookup for repeated source paths.
+- Reused the source inventory during heat interval assessment.
+- Carried the source bindings proved by the same heat operation through FINISH.
+- Reused the accepted area and mass calculations in free-surface processing.
+- Reused one funded zero vector during flexure setup.
+- Reused the current residual norm in the mimetic precision solve.
+- Carried the first request digest through regional history processing.
+- Dropped discarded masked-geometry digests and kept the digest used by the evidence record.
+
+
 ## 0.1.0.dev50 - 2026-11-26
 
 ### Tectonics

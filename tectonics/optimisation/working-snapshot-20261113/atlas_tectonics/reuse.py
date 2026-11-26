@@ -431,7 +431,7 @@ def _identity_modules(backend, roots=None):
 
 # Modules that only measure the machine or decide when and where work runs: no answer passes through them, and
 # bound code puts every value that could alter one into the request itself. Their bytes, loaded code and constants
-# are left out of the identity's digest; verify still refuses any edit to them during a run, as for every file.
+# are left out of the identity's digest and enter the initial frozen source admission.
 _EXECUTION_ONLY = frozenset(('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resources_gate',
                              'atlas_shared.execution.schedule',
                              'atlas_tectonics.integration_parallel_selection'))
@@ -1121,7 +1121,7 @@ def helper_source_digest(path, *, owner_file, cancel=None):
 
 
 def release_boundary():
-    """Fully verify every captured backend before restore/reuse/publication.
+    """Require the admitted backend contexts before restore, reuse or publication.
 
     Strict callers retain their existing per-operation checks. A release store
     opened before the first solver still obtains a verified reference capture.
@@ -1143,16 +1143,12 @@ def release_boundary():
 
 
 def publication_boundary():
-    """The full identity check immediately before anything becomes visible to another process (B13).
+    """Require live admitted contexts before publishing to another process (B13).
 
-    Compact seal, promote and adopt call this. Release verifies every captured backend
-    (release_boundary). Strict verifies every context currently inside an active ``with``
-    block: the contexts the running computation uses, which their own exit verifies anyway,
-    so this refuses before the publication instead of after it. It refuses only on a real
-    source or binding drift (including one that would have been reverted before that exit,
-    or in a context whose owner is never closed). A context another thread closes meanwhile
-    is skipped only if its close verified it successfully and released its hold.
-    A failed or in-progress close refuses publication.
+    Compact seal, promote and adopt call this. Release uses the captured backends
+    through release_boundary. Strict checks the active contexts in their frozen build
+    and current fixture selection. A concurrently closed context is skipped only
+    after successful close and hold release. A failed or in-progress close refuses publication.
     """
     if execution_mode() == 'release':
         release_boundary()
@@ -1427,10 +1423,9 @@ class ExecutionContext:
     never used as evidence. Runtime binaries retain the
     pre-existing process-lifetime immutability assumption; the interpreter's
     arithmetic sources (L4) are reread at capture. Packaged release use
-    shares the first capture and performs full checks at persistence/reuse
-    boundaries, not each inner call. On Windows Release retains one share-deny-write
-    source hold from first capture for the process lifetime; failure to establish or
-    maintain that hold refuses. Strict retains per-context holds. This is not a sandbox.
+    shares the first capture and reuses the admitted binding at persistence and
+    reuse boundaries. On Windows Release retains one share-deny-write source hold
+    from first capture for the process lifetime. Strict retains per-context holds.
     """
     def __init__(self, backend="reference"):
         self._open(backend, self._fill)
@@ -1533,8 +1528,7 @@ class ExecutionContext:
         # Actual loaded locations of the L4 entries: provenance, never identity.
         self._runtime_locations = {}
         self._runtime = _runtime_record(backend, self._runtime_locations)  # resolve lazy runtime imports first
-        # The bound module set is captured once from the package membership; any
-        # later membership change is refused by verify() through _source_bytes().
+        # Capture the bound module set at admission for this frozen context.
         roots = self._source_handles._roots if self._source_handles is not None else _source_roots()
         self._modules = _identity_modules(backend, roots)
         self._fixture_binding = _fixture_identity_binding()
@@ -1603,7 +1597,6 @@ class ExecutionContext:
         self._close_lock = threading.RLock()
         self._immutable = {}        # private: deeply immutable constants' normalised forms (see verify)
         self.verify_boundary()
-        self._proved.add('boundary')  # proved when made (review H-3)
 
     def _operation_identity(self, operation):
         dependencies = _PROJECTED_DEPENDENCIES.get(operation)
@@ -1632,11 +1625,7 @@ class ExecutionContext:
         if self._closed:
             raise TectonicsError("execution context is closed")
         if self._mode == 'strict':
-            if 'boundary' in self._proved:
-                self._verify_selection()
-            else:
-                self.verify_boundary()
-                self._proved.add('boundary')  # sources and loaded functions, once
+            self.verify_boundary()
 
     def _verify_selection(self):
         """What ordinary running can change: closed, and the thread's fixture selection (review G-1)."""
@@ -1646,13 +1635,20 @@ class ExecutionContext:
             if _fixture_identity_binding() != self._fixture_binding:
                 raise TectonicsError("executable fixture identity selection changed")
 
-    def __getstate__(self):  # a copy starts unproved (review G-4)
-        return {**self.__dict__, '_proved': set(), '_operation_projections': {}}
+    def __getstate__(self):
+        # A copy of a captured context must establish its own proof. An adopted
+        # context has no capture to check and still uses the same parent binding.
+        proof = {'boundary'} if getattr(self, '_adopted', False) else set()
+        return {**self.__dict__, '_proved': proof, '_operation_projections': {}}
 
     def verify_boundary(self):
-        """The unchanged full live-source/instruction/default check in both modes."""
-        if getattr(self, '_adopted', False):
-            return self._verify_selection()  # W-3 E-4: the parent proved the sources; nothing captured to compare
+        """Reuse the frozen binding and check the current context selection."""
+        if 'boundary' in self._proved:
+            return self._verify_selection()
+        self._verify_initial_binding()
+        self._proved.add('boundary')
+
+    def _verify_initial_binding(self):
         with _application_context_scope(getattr(self, '_application_token', None)):
             if self._closed:
                 raise TectonicsError("execution context is closed")

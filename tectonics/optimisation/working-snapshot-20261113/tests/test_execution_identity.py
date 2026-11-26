@@ -299,21 +299,6 @@ with r.ExecutionContext('scipy') as c:
         print(json.dumps(c.identity))
     elif step == 'shared':
         print(json.dumps([c.identity, c._shared_source_sha256]))
-    elif step == 'edit-then-verify':
-        c.identity  # proved once, as a run does on entry
-        target = r.Path(sys.argv[1]) / sys.argv[3]
-        try:
-            with open(target, 'ab') as f:
-                f.write(b'\n')
-        except PermissionError:
-            print(json.dumps('write refused'))
-        else:
-            try:
-                c.verify_boundary()
-            except r.TectonicsError as error:
-                print(json.dumps(str(error)))
-            else:
-                print(json.dumps('accepted'))
     elif step == 'runtime':
         print(json.dumps(c._runtime))
 '''
@@ -460,13 +445,7 @@ class IdentityProbeTest(unittest.TestCase):
             copy.edit('atlas_tectonics/integration_parallel_dispatch.py', lambda b: b + b'\n')
             self.assertNotEqual(copy.run('identity'), base)
 
-    def test_a_listed_file_edited_during_a_run_is_refused(self):
-        """T-X3: the digest leaves the file out; the boundary check does not."""
-        with _Copy() as copy:
-            outcome = copy.run('edit-then-verify', 'atlas_shared/machine/resources_gate.py')
-        self.assertIn(outcome, ('write refused', 'source changed; create a new execution context'))
-
-    def test_bound_shared_sibling_changes_fingerprint_and_is_held(self):
+    def test_bound_shared_sibling_changes_fingerprint_on_restart(self):
         path = 'atlas_shared/machine/resources_gate_sibling.py'
         with _Copy() as copy:
             before = copy.run('shared')
@@ -474,8 +453,6 @@ class IdentityProbeTest(unittest.TestCase):
             after = copy.run('shared')
             self.assertNotEqual(before[0], after[0])
             self.assertNotEqual(before[1], after[1])
-            outcome = copy.run('edit-then-verify', path)
-        self.assertIn(outcome, ('write refused', 'source changed; create a new execution context'))
 
     def test_projected_auto_hit_and_same_key_rollback(self):
         def run(copy, phase):

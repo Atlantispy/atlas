@@ -17,7 +17,7 @@ R, I, C, STORE = B1.R, B1.I, B1.C, B1.STORE
 EXCHANGE_SCHEMA = B1.EXCHANGE_SCHEMA
 ExteriorMesh = B1.ExteriorMesh
 RestoredHeatBinding = B1.RestoredHeatBinding
-_BINDING_SHA = 'a86b45b3e13e0667f6fa6f740745b51ec53d0038f20cd784e0700aaa928e74bb'
+_BINDING_SHA = '2de8cf7569316b32e88313618d5d0e87b863269d9234ac4ea6d051bc68dbb0a5'
 _SELF_SHA = R.source_hash(__file__)
 _binding_verified = False
 

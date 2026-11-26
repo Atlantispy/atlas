@@ -207,18 +207,19 @@ def select(refusal_type):
         if requested == 'gmpy2':
             raise refusal_type('requested gmpy2 exact arithmetic is unavailable: '+detail) from exc
         return _Selection(requested, 'python', None, {}, False, 'gmpy2 not used: '+detail)
-    return _Selection(requested, 'gmpy2', gmpy2, files, sealed, 'gmpy2 %s (%s)' % pair)
+    return _Selection(requested, 'gmpy2', gmpy2, files, sealed, 'gmpy2 %s (%s)' % pair, versions=pair)
 
 
 
 class _Selection:
-    def __init__(self, requested, backend, library, files, sealed, reason):
+    def __init__(self, requested, backend, library, files, sealed, reason, *, versions=()):
         self.backend = backend
         self._requested = requested
         self._library = library
         self._files = files
         self._sealed = sealed
         self._reason = reason
+        self._versions = versions
 
     def selection(self):
         """Requested mode, executing backend and the recorded reason."""
@@ -232,8 +233,8 @@ class _Selection:
         """Versions and native file paths. The execution-record owner hashes the files."""
         if self._library is None:
             return {'versions': {'exact_arithmetic': 'python-fraction'}, 'binaries': {}}
-        return {'versions': {'exact_arithmetic': 'gmpy2', 'gmpy2': self._library.version(),
-                             'gmp': self._library.mp_version(),
+        return {'versions': {'exact_arithmetic': 'gmpy2', 'gmpy2': self._versions[0],
+                             'gmp': self._versions[1],
                              'gmp_binary_scope': ('wheel-libraries' if self._sealed
                                                   else 'extension-only; external GMP unsealed')},
                 'binaries': dict(self._files)}

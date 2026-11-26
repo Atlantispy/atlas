@@ -194,7 +194,7 @@ def integrate_signed_complement(record,component,layer,face,normal_polynomial,po
     half the original stream width. Failed premises return None.
     """
     from . import integration_moving_face_moments as TM
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     if normal_polynomial is None or any(type(i) is not int or type(j) is not int or
         not 0<=i<=2 or not 0<=j<=2 for i,j in normal_polynomial):
         return None
@@ -244,7 +244,7 @@ def integrate_signed_complement(record,component,layer,face,normal_polynomial,po
             per_stage_width_m3=V._encoded(stage_width),proof_leaves=2,
             full_face_leaves=full['leaves'],temporal_leaves=temporal_leaves,
             relation='unchanged opposite-sign full-face stream; P-N lies in the actual signed-mask interval')
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     return values,leaves,all(hi-lo<=width for (lo,hi),width in zip(values,widths)),certificate
 
 
@@ -262,7 +262,7 @@ def integrate_near_signed(record,component,layer,face,normal_polynomial,polynomi
     caps the measure. The actual moving mask still supplies the signed moment.
     """
     from . import integration_moving_face_moments as TM
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     if normal_polynomial is None or any(type(i) is not int or type(j) is not int or
         not 0<=i<=2 or not 0<=j<=2 for i,j in normal_polynomial):
         return None
@@ -342,7 +342,7 @@ def integrate_near_signed(record,component,layer,face,normal_polynomial,polynomi
             arena.keep((*moments[0],negative_cap,positive_cap,signed_width),objects=20)
             certificate['outer_support_enclosure']=outer_certificate
             leaves+=proof_leaves
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     return values,leaves,all(hi-lo<=width for (lo,hi),width in zip(values,widths)),certificate
 
 
@@ -356,7 +356,7 @@ def integrate(record,component,layer,face,normal_polynomial,polynomials,widths,d
     """
     from . import integration_differential_geometry as G
     from .integration_moving_face_moments import _face_in_layer
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     if normal_polynomial is None:
         return None
     # This route integrates tensor Q2, not a truncation of a general polynomial.
@@ -393,5 +393,5 @@ def integrate(record,component,layer,face,normal_polynomial,polynomials,widths,d
                                (d**(j+1)-c**(j+1))/Q(j+1)
                                for (i,j),coefficient in polynomial.items()),Q(0))
             values.append((value,value))
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     return tuple(values),streams['leaves'],all(hi-lo<=w for (lo,hi),w in zip(values,widths))

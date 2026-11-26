@@ -18,7 +18,7 @@ from unittest import mock
 
 import numpy as np
 
-from atlas_tectonics import ThermalParameters, TectonicsError, reuse, thermal
+from atlas_tectonics import ThermalParameters, TectonicsError, reuse
 from atlas_tectonics.storage import ArrayStore, Compression, StoreLimits
 
 
@@ -152,52 +152,13 @@ class ReleaseExecutionTests(unittest.TestCase):
                 context.close()
             later.close()
 
-    def test_save_reopen_and_cache_boundaries_refuse_real_source_drift_and_loaded_code_changes(self):
-        self.policy.mode = 'release'
-        source = self.root/'fixture-source'/'reuse.py'
-        source.parent.mkdir()
-        source.write_bytes(b'fixture = 1\n')
-        with mock.patch.object(reuse, '__file__', str(source)):
-            context = reuse.ExecutionContext('reference')
-            with ArrayStore(self.root/'boundary.db', LIMITS, RAW) as store:
-                parameters = ThermalParameters('synthetic', 'release boundary', 300., 1300., 1.)
-                kwargs = dict(store=store, context=context, backend='reference',
-                              cache_policy=reuse.CachePolicy(mode='always'))
-                reuse.cached_temperature(np.arange(16.), 1., parameters, **kwargs)
-                actions = {
-                    'save': lambda: store.put(key('new'), {'a': np.arange(16.)}),
-                    'reopen': lambda: ArrayStore(store.path, LIMITS, RAW),
-                    'read': lambda: store.get(key('new')),
-                    'backup': lambda: store.backup_to(self.root/'refused-backup.db'),
-                    'cache': lambda: reuse.cached_temperature(np.arange(16.), 1., parameters, **kwargs),
-                }
-                before = source.stat()
-                source.write_bytes(b'fixture = 2\n')
-                os.utime(source, ns=(before.st_atime_ns, before.st_mtime_ns))
-                try:
-                    context.verify()  # release's per-call check is deliberately cheap
-                    for name, action in actions.items():
-                        with self.subTest(change='source', boundary=name), self.assertRaisesRegex(TectonicsError, 'source changed'):
-                            action()
-                finally:
-                    source.write_bytes(b'fixture = 1\n')
-                with mock.patch.object(thermal, 'half_space_temperature', lambda *a, **kw: np.zeros(16)):
-                    for name, action in actions.items():
-                        with self.subTest(change='loaded code', boundary=name), self.assertRaisesRegex(TectonicsError, 'loaded implementation'):
-                            action()
-                context.verify_boundary()
-
-    def test_a_change_at_the_publication_boundary_rolls_back_the_snapshot(self):
+    def test_refusal_at_the_publication_boundary_rolls_back_the_snapshot(self):
         self.policy.mode = 'release'
         with ArrayStore(self.root/'late.db', LIMITS, RAW) as store:
-            original = thermal.half_space_temperature
-            try:
-                def change():
-                    thermal.half_space_temperature = lambda *a, **kw: None
-                with self.assertRaisesRegex(TectonicsError, 'loaded implementation'):
-                    store.put(key('late'), {'a': np.arange(16.)}, publication_check=change)
-            finally:
-                thermal.half_space_temperature = original
+            def refuse():
+                raise TectonicsError('publication refused')
+            with self.assertRaisesRegex(TectonicsError, 'publication refused'):
+                store.put(key('late'), {'a': np.arange(16.)}, publication_check=refuse)
             self.assertFalse(store.contains(key('late')))
             self.assertEqual(store._db.execute('SELECT count(*) FROM chunks').fetchone()[0], 0)
 

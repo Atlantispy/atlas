@@ -30,7 +30,7 @@ CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
 HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = 'd9dc46cf0c086bd48b29bbf2d3503a4847b6ed36c481209fd011610c67b92ce5'
+INVENTORY_SHA = '1e2f779ec02ee22d838a750f5ec4c486773243af3608460f0806911f58807bba'
 SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
                 *(str(path) for path in I.source_paths().values()))
 
@@ -128,9 +128,8 @@ def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
         if type(owner) is not OwnedAssessment or owner._budget is not budget:
             raise TypeError('Earlier assessment owner must use this exact route and same budget')
         retained_bytes = I._size(retained_bytes+owner.accounted_bytes)
-    derive = I._derive_owned if owned else I.derive
-    plan = derive(rows, cell_count, boundary, witness=witness,
-                    source_bindings=source_bindings, budget=budget, cancel=cancel)
+    plan = I._derive(rows, cell_count, boundary, witness=witness,
+                     source_bindings=source_bindings, budget=budget, cancel=cancel, owned=owned)
     # Snapshot record/tuple/reference overhead is distinct from the retained
     # earlier generation's already counted entire live inventory.
     retained_headers = I._size(1024*(len(retained)+1))
@@ -145,7 +144,7 @@ def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
         result = A._assemble(rows, cell_count, boundary, witness=witness,
             source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=True, owned=owned,
             _face_pass=face_pass, _refined=refined)
-        _verify_sources(cancel)
+        I._check(cancel)
         return OwnedAssessment(result, workspace, inputs, generations, plan, amount, budget)
     except BaseException:
         workspace.__exit__(*sys.exc_info())

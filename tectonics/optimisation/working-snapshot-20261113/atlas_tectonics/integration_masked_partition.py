@@ -276,7 +276,7 @@ def _definite_cut(record,component,face,normal,bounds,duration,arena,cache):
 
 def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
               fallback,max_leaves,arena,cancel=None,_pose_cache=None):
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     if (normal is None or polynomials or any(type(i) is not int or type(j) is not int or
             not 0<=i<=2 or not 0<=j<=2 for i,j in normal) or not TM._face_in_layer(face,layer)):
         return None
@@ -386,5 +386,5 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
         local_requested_width_m3=V._encoded(local_goal),
         relation='exact disjoint face partition; sum of certified directed intervals compared with original global widths',
         work_rule='all attempted child work on one caller arena; temporary proof scratch unwinds per child')
-    source_digest();_cancel(cancel)
+    _cancel(cancel)
     return values,cost,met,certificate

@@ -625,6 +625,7 @@ def round_bounds(bounds):
 _H3_NAME = 'private_heat_compiled_dot_r1'
 _H3_SHA256 = '3a4e1da27afd6188b5a6cde97b56e7b96f89b0bb2a8063c32c97942da030b901'
 _h3_route = []  # per-process route choice; lower-case, so the loaded identity binds no state here
+_h3_loaded = None  # successful execution of the locally verified bytes
 
 
 def _h3_module():
@@ -632,6 +633,7 @@ def _h3_module():
 
     The helper beside this kernel is read once, hashed, and exactly those bytes run.
     """
+    global _h3_loaded
     if not _h3_route:
         import sys as _sys
         import types as _types
@@ -661,6 +663,7 @@ def _h3_module():
                 _h3_route.append((None, 'unavailable: %s: %s' % (type(error).__name__, error)))
                 return None
             module._H3_SEAL = seal
+            _h3_loaded = module, seal
         _h3_route.append((module, 'compiled'))
     return _h3_route[0][0]
 

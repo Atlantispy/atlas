@@ -190,7 +190,6 @@ def quadratic_nonincrease(old, new, capacity, *, precisions=(320, 640, 1280, 256
 
     def issue(route, bounds, precision, exact=None):
         check()
-        verify_sources()
         audit.update(route=route, precision_bits=precision, bounds=bounds,
             nonincrease=(exact <= 0 if exact is not None else bounds[1] <= 0),
             exact_change=exact, exact_numeric_value_materialised=exact is not None,

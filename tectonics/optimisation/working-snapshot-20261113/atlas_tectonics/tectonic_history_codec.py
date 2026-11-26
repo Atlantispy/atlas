@@ -229,8 +229,10 @@ def _regional_validate(out, d):
     for key in ('nx','nz','width_m','height_m','frame_id','vertical_datum'):
         if definition[key] != getattr(c,key): _fail('regional support binding mismatch')
     if (d['origin_x_m'] != c.origin_x_m or d['origin_z_m'] != c.origin_z_m or
-            mr['time_s'] != c.time_s or mr['epoch_id'] != c.epoch_id or
-            mr['force_source'] != _hash(_json(r)) or mr['boundary_source'] != _hash(_json(r)) or
+            mr['time_s'] != c.time_s or mr['epoch_id'] != c.epoch_id):
+        _fail('regional input/result binding mismatch')
+    request_id = _hash(_json(r))
+    if (mr['force_source'] != request_id or mr['boundary_source'] != request_id or
             m['request_id'] != _hash(_json(mr)) or definition['material_source'] != r['material'] or
             mr['plan_id'] != _hash(_json(content_record(dict(definition=definition,context=m['context_id']))))):
         _fail('regional input/result binding mismatch')

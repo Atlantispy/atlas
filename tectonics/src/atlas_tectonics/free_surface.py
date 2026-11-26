@@ -233,7 +233,8 @@ class PreparedFreeSurface2D:
         wm=np.zeros_like(mesh);wm[...,1]=wmz
         area,physical=cell_volume_and_flux(mesh,v);_,moving=cell_volume_and_flux(mesh,wm)
         L=self._d['scales']['length_m'];U=self._d['scales']['velocity_m_s']
-        volume_scale=max(float(area.sum()),self._d['width_m']*self._d['reference_height_m'])
+        area_sum=area.sum()
+        volume_scale=max(float(area_sum),self._d['width_m']*self._d['reference_height_m'])
         if abs(projection['projection_volume_residual_m2_s'])>1e-10*U*L:
             raise TectonicsError('weak surface projection does not preserve boundary flux')
         continuity=float(np.max(np.abs(physical.sum(axis=-1))/area))*L/U
@@ -242,7 +243,7 @@ class PreparedFreeSurface2D:
         change=-self._d['density_kg_m3']*self._d['strike_width_m']*(physical-moving).sum(axis=-1)
         return wm,change,dict(projection,independent_cell_divergence_scaled=continuity,
             volume_scale_m2=volume_scale,physical_boundary_flux_m2_s=float(physical.sum()),
-            maximum_surface_speed_m_s=float(np.max(np.abs(v[-1,:,0]))))
+            maximum_surface_speed_m_s=float(np.max(np.abs(v[-1,:,0])))),area_sum
 
     def _relaxation_step(self,mesh,dt):
         """zeta for the fastest relaxation mode admitted by this mesh's thickest column."""
@@ -279,7 +280,7 @@ class PreparedFreeSurface2D:
                 start,stop=bounds[i],bounds[i+1];dt=stop-start
                 if dt<=0.:raise TectonicsError('unresolvable surface substep')
                 m=current.array('mesh_nodes_m');mass=current.array('cell_mass_kg')
-                wm0,dm0,a0=self._rate(current,cancel,descriptor=d if i==0 else None)
+                wm0,dm0,a0,old_area_sum=self._rate(current,cancel,descriptor=d if i==0 else None)
                 trial=m+dt*wm0;trialmass=mass+dt*dm0
                 # Declared per-step bounds, not an automatic substep: the thickest
                 # column of either stage sets the fastest relaxation rate.
@@ -291,7 +292,7 @@ class PreparedFreeSurface2D:
                 if float(np.max(np.abs(dt*wm0[...,1])))>.2*float(np.min(height)):
                     raise TectonicsError('surface step exceeds geometric displacement envelope')
                 intermediate=self._state(trial,trialmass,d['epoch_id'],stop,d['accepted_steps']+i+1,current.result_id)
-                wm1,dm1,a1=self._rate(intermediate,cancel)
+                wm1,dm1,a1,_=self._rate(intermediate,cancel)
                 courant=max(a0['maximum_surface_speed_m_s'],a1['maximum_surface_speed_m_s'])*dt/spacing
                 if not courant<=courant_limit*(1+8*np.finfo(float).eps):
                     raise TectonicsError(f'surface step exceeds the declared surface Courant limit {courant_limit:g} '
@@ -302,10 +303,12 @@ class PreparedFreeSurface2D:
                     raise TectonicsError('surface corrector exceeds geometric displacement envelope')
                 area,_=cell_volume_and_flux(final)
                 rho_width=self._d['density_kg_m3']*self._d['strike_width_m']
-                density_error=float(np.max(np.abs(finalmass-rho_width*area)/np.maximum(rho_width*area,np.finfo(float).tiny)))
-                mass_error=abs(float(finalmass.sum()-mass.sum()))/max(float(mass.sum()),np.finfo(float).tiny)
-                oldarea,_=cell_volume_and_flux(m)
-                volume_error=abs(float(area.sum()-oldarea.sum()))/a0['volume_scale_m2']
+                uniform_mass=rho_width*area
+                density_error=float(np.max(np.abs(finalmass-uniform_mass)/np.maximum(uniform_mass,np.finfo(float).tiny)))
+                final_mass_sum=finalmass.sum()
+                old_mass_sum=mass.sum()
+                mass_error=abs(float(final_mass_sum-old_mass_sum))/max(float(old_mass_sum),np.finfo(float).tiny)
+                volume_error=abs(float(area.sum()-old_area_sum))/a0['volume_scale_m2']
                 if min(float(trialmass.min()),float(finalmass.min()))<=0. or max(density_error,mass_error,volume_error)>1e-9:
                     raise TectonicsError('free-surface geometric/material conservation failed')
                 current=self._state(final,finalmass,d['epoch_id'],stop,d['accepted_steps']+i+1,current.result_id)

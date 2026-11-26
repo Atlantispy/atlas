@@ -119,11 +119,12 @@ def rows(raw, root, out, notes):
         for f, x in refs:
             want_line[(f, x)].add(i)
             if f in paths:
-                ps = sorted(paths[f], key=lambda p: ('working-snapshot-20261113' not in p, len(p)))
-                amb[f] = len(ps)
                 if f not in cache:
+                    candidates = paths[f]
+                    amb[f] = len(candidates)
+                    first = min(candidates, key=lambda p: ('working-snapshot-20261113' not in p, len(p)))
                     try:
-                        cache[f] = defs(ps[0])
+                        cache[f] = defs(first)
                     except (SyntaxError, OSError):
                         cache[f] = {}
                 q = cache[f].get(x)

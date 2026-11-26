@@ -57,11 +57,12 @@ expm1 preserves narrow cells; parity handles cells straddling the source.
         a = np.minimum(a, 745.)
         width = np.minimum(width, 745.)
         return (-.5*z**d*np.exp(z*a)*np.expm1(z*width)).real
+    crossing_origin = np.zeros(np.sum(crossing))
     for d in range(4):
         out[positive, d] = integral(lo[positive], hi[positive]-lo[positive], d)
         out[negative, d] = (-1)**d*integral(-hi[negative], hi[negative]-lo[negative], d)
-        out[crossing, d] = (integral(np.zeros(np.sum(crossing)), hi[crossing], d)
-                            +(-1)**d*integral(np.zeros(np.sum(crossing)), -lo[crossing], d))
+        out[crossing, d] = (integral(crossing_origin, hi[crossing], d)
+                            +(-1)**d*integral(crossing_origin, -lo[crossing], d))
     return out
 
 

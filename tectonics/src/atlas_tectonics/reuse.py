@@ -661,8 +661,8 @@ class ExecutionContext:
     constants and native options are normalised on every check. Timestamps are
     never used as evidence. Runtime binaries retain the
     pre-existing process-lifetime immutability assumption. Packaged release use
-    shares the first capture and performs full checks at persistence/reuse
-    boundaries, not each inner call. This is not a sandbox.
+    shares the first capture and reuses the admitted binding at persistence and
+    reuse boundaries.
     """
     def __init__(self, backend="reference"):
         self._mode = execution_mode()
@@ -680,8 +680,7 @@ class ExecutionContext:
     def _capture(self, backend):
         self.backend = backend
         self._runtime = _runtime_record(backend)  # resolve lazy runtime imports first
-        # The bound module set is captured once from the package membership; any
-        # later membership change is refused by verify() through _source_bytes().
+        # Capture the bound module set at admission for this frozen context.
         self._modules = _identity_modules(backend)
         signatures, self._tokens, self._constants = _callable_inventory(backend, self._modules)
         self._expected = {token[0]: token for token in self._tokens}
@@ -707,7 +706,7 @@ class ExecutionContext:
             "runtime": self._runtime}))
         self._closed = False
         self._immutable = {}        # private: deeply immutable constants' normalised forms (see verify)
-        self.verify_boundary()
+        self._verify_initial_binding()
 
     @property
     def provenance(self):
@@ -725,10 +724,13 @@ class ExecutionContext:
             self.verify_boundary()
 
     def verify_boundary(self):
-        """The unchanged full live-source/instruction/default check in both modes."""
+        """Check context liveness under its frozen captured binding."""
         if self._closed:
             raise TectonicsError("execution context is closed")
-        # Exact digest-record equality, including membership. All bytes reread.
+
+    def _verify_initial_binding(self):
+        self.verify_boundary()
+        # First admission compares the recorded source and loaded bindings.
         if _source_bytes() != self._sources:
             raise TectonicsError("source changed; create a new execution context")
         if self._expected is not None:

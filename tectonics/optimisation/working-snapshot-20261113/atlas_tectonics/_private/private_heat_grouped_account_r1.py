@@ -19,7 +19,7 @@ import sys
 
 from atlas_tectonics._private import private_heat_issuer_resources_r3 as R
 
-_RESOURCE_SHA = '4d82588ec6d41e8bae6c9751154db5b3ed6b70cc234fd094ea0521b0d9113034'
+_RESOURCE_SHA = '073cbafbe672e9f36338d1bff48053a1fdd264c2c2f9db1786dc98140e27d38d'
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 
 

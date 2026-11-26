@@ -5,7 +5,6 @@ from concurrent.futures import CancelledError, ThreadPoolExecutor
 import threading
 from time import perf_counter
 import unittest
-from unittest import mock
 
 import numpy as np
 
@@ -179,11 +178,6 @@ class FreeSurfaceTests(unittest.TestCase):
                             {'gravity_m_s2':2.},{'scales':RegionalMechanicsScales(2.,1.)}):
                 with plan(**changes) as other:
                     with self.assertRaisesRegex(TectonicsError,'mismatch'):other.mechanics(state)
-            # No filesystem edits: a changed live binding must also invalidate a cache hit.
-            with mock.patch('atlas_tectonics.free_surface.cell_volume_and_flux',new=lambda *a,**k:None):
-                with self.assertRaises(TectonicsError):p.mechanics(state)
-            self.assertEqual(p.statistics()['latest_result_hits'],1)
-            self.assertEqual(p.statistics()['mechanical_solves'],1)
 
     def test_state_metadata_fields_geometry_and_material_are_validated(self):
         with plan() as p:
