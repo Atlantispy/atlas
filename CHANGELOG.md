@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev46 - 2026-11-26
+
+### Tectonics
+
+- Removed the obsolete first-generation factory, piece assembly and provider adapter for diagnostic
+  END capture. The active second-generation capture route remains in use.
+
 ## 0.1.0.dev45 - 2026-11-26
 
 ### Documentation
