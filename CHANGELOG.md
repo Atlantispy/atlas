@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev47 - 2026-11-26
+
+### Tectonics
+
+- Removed the unused fixed-Cartesian belt solver from the working snapshot. Its shared solver
+  dependencies and frozen historical implementation remain available.
+
 ## 0.1.0.dev46 - 2026-11-26
 
 ### Tectonics

@@ -6,7 +6,7 @@ It imports neither `engineering/work` nor `shared_generator`; those are separate
 Atlas routes. Static spherical geometry, regional evolution and a physically
 accepted evolving planet are different capabilities.
 
-The optimised package's version string is `0.1.0.dev46`; `pyproject.toml` and the older package copies
+The optimised package's version string is `0.1.0.dev47`; `pyproject.toml` and the older package copies
 under `src` and `optimisation/composed-r2` keep `0.1.0.dev42`. It is not a release or acceptance marker. Receipts bind actual source
 and execution identities. Read [current delivery and acceptance](../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 for reviewed scope, platform coverage, holds and remaining work, including I04/I05a.
