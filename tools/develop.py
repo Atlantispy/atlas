@@ -27,22 +27,30 @@ sys.path.insert(1, str(_root / "engineering"))
 
 class _SourceLoader(importlib.abc.Loader):
     """Capture the exact public-package bytes executed, ignoring old bytecode."""
-    def __init__(self, path):
+    def __init__(self, path, expected=None):
         self.path = path
+        self.expected = expected
 
     def create_module(self, spec):
         return None
 
     def exec_module(self, module):
         raw = self.path.read_bytes()
+        actual = hashlib.sha256(raw).hexdigest()
+        if self.expected is not None and actual != self.expected:
+            raise ImportError("executed public development source differs: " + str(self.path))
         module.__file__ = str(self.path)
         exec(compile(raw, str(self.path), "exec", dont_inherit=True), module.__dict__)
-        if self.path.read_bytes() != raw:
-            raise RuntimeError("public development source changed during import")
-        module._ATLAS_DEV_EXECUTED_SHA256 = hashlib.sha256(raw).hexdigest()
+        module._ATLAS_DEV_EXECUTED_SHA256 = actual
 
 
 class _DevelopmentFinder(importlib.abc.MetaPathFinder):
+    def __init__(self):
+        self.inventory = None
+
+    def bind(self, inventory):
+        self.inventory = inventory
+
     def find_spec(self, fullname, path=None, target=None):
         if fullname == "atlas_dev":
             source = _root / "development/atlas_dev/__init__.py"
@@ -53,12 +61,20 @@ class _DevelopmentFinder(importlib.abc.MetaPathFinder):
             source = _root / "development/atlas_dev" / (name + ".py")
         else:
             return None
-        return importlib.util.spec_from_file_location(fullname, source, loader=_SourceLoader(source),
+        expected = None
+        if self.inventory is not None:
+            relative = source.relative_to(_root).as_posix()
+            entry = self.inventory.get(relative)
+            if entry is None:
+                raise ImportError("unbound public development source: " + relative)
+            expected = entry["sha256"]
+        return importlib.util.spec_from_file_location(fullname, source, loader=_SourceLoader(source, expected),
                 submodule_search_locations=[str(source.parent)] if fullname == "atlas_dev" else None)
 
 
-sys.meta_path.insert(0, _DevelopmentFinder())
+_finder = _DevelopmentFinder()
+sys.meta_path.insert(0, _finder)
 from atlas_dev.cli import main
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(bind_imports=_finder.bind))

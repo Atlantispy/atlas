@@ -207,10 +207,11 @@ def verify_executed(inventory: dict[str, dict[str, Any]], root: Path = ROOT) -> 
     if safe(root) != ROOT:
         return  # Only unit-test inventory fixtures may supply an alternate root.
     for name, module in tuple(sys.modules.items()):
-        if name == "atlas_dev" or name.startswith("atlas_dev."):
+        if module is not None and (name == "atlas_dev" or name.startswith("atlas_dev.")):
             path = Path(module.__file__)
             relative = path.relative_to(ROOT).as_posix()
-            if getattr(module, "_ATLAS_DEV_EXECUTED_SHA256", None) != inventory.get(relative, {}).get("sha256"):
+            entry = inventory.get(relative)
+            if entry is None or getattr(module, "_ATLAS_DEV_EXECUTED_SHA256", None) != entry["sha256"]:
                 raise DevelopmentError("executed public development source differs: " + relative)
     main = sys.modules.get("__main__")
     if (not main or Path(getattr(main, "__file__", "")).absolute() != ROOT / "tools/develop.py"
@@ -220,18 +221,27 @@ def verify_executed(inventory: dict[str, dict[str, Any]], root: Path = ROOT) -> 
 
 def capture(root: Path = ROOT) -> dict[str, Any]:
     """Create a NEW public identity; cannot import or update any prior binding."""
+    return _capture(root)
+
+
+def _capture(root: Path = ROOT, *, runtime: dict[str, Any] | None = None) -> dict[str, Any]:
     root = safe(root)
-    first = source_inventory(root)
-    runtime = runtime_identity()
-    verify_executed(first, root)
-    if first != source_inventory(root):
-        raise DevelopmentError("source changed while capturing public binding")
+    sources = source_inventory(root)
+    if runtime is None:
+        runtime = runtime_identity()
+    verify_executed(sources, root)
     body = {"schema": BINDING_SCHEMA, "scope": SCOPE, "package_version": VERSION,
-            "source_root": str(root), "source_files": first, "runtime": runtime}
+            "source_root": str(root), "source_files": sources, "runtime": runtime}
     return {"binding": body, "binding_sha256": digest(canonical(body))}
 
 
 def verify(record: dict[str, Any], root: Path = ROOT) -> str:
+    identity, _ = _verify(record, root)
+    return identity
+
+
+def _verify(record: dict[str, Any], root: Path = ROOT, *, runtime: dict[str, Any] | None = None
+            ) -> tuple[str, dict[str, dict[str, Any]]]:
     if type(record) is not dict or set(record) != {"binding", "binding_sha256"}:
         raise DevelopmentError("new public-development binding required; no historical checkpoints")
     body = record["binding"]
@@ -249,9 +259,11 @@ def verify(record: dict[str, Any], root: Path = ROOT) -> str:
                    if body["source_files"].get(key) != current.get(key)]
         raise DevelopmentError("public source changed; capture a NEW binding after review: " + ", ".join(changed[:4]))
     verify_executed(current, root)
-    if body["runtime"] != runtime_identity():
+    if runtime is None:
+        runtime = runtime_identity()
+    if body["runtime"] != runtime:
         raise DevelopmentError("development runtime changed; no silent adoption")
-    return record["binding_sha256"]
+    return record["binding_sha256"], body["source_files"]
 
 
 def source_link(root: Path) -> bytes:

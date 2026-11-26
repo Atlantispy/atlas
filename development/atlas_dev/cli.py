@@ -13,6 +13,9 @@ from . import SCOPE
 from . import core
 
 
+PROFILE_SCHEMA = "atlas.public-development.tests.v1"
+
+
 def _binding(path: str):
     return core.parse(core.read(Path(path)))
 
@@ -28,11 +31,10 @@ def _check_outside_source(path: Path) -> Path:
     return path
 
 
-def _profile(name: str, record: dict) -> dict:
+def _profile(name: str, identity: str) -> dict:
     config = core.profiles()
     if name not in config["profiles"]:
         raise core.DevelopmentError("unsupported profile; inspect doctor for excluded routes")
-    identity = core.verify(record)
     sys.path.insert(0, str(core.ROOT))
     sys.path.insert(0, str(core.ROOT / "tests"))
     if name == "tooling":
@@ -42,8 +44,7 @@ def _profile(name: str, record: dict) -> dict:
             raise core.DevelopmentError("source wiring check failed")
     suite = unittest.defaultTestLoader.loadTestsFromNames(config["profiles"][name]["tests"])
     result = unittest.TextTestRunner(verbosity=2, stream=sys.stderr).run(suite)
-    core.verify(record)
-    report = {"schema": "atlas.public-development.tests.v1", "scope": SCOPE, "profile": name,
+    report = {"schema": PROFILE_SCHEMA, "scope": SCOPE, "profile": name,
               "binding_sha256": identity, "tests_run": result.testsRun, "failures": len(result.failures),
               "errors": len(result.errors), "skipped": len(result.skipped),
               "status": "PASS" if result.wasSuccessful() and not result.skipped else "INCOMPLETE"}
@@ -52,7 +53,7 @@ def _profile(name: str, record: dict) -> dict:
     return report
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, bind_imports=None) -> int:
     parser = argparse.ArgumentParser(description="Atlas offline public development; no historical run adoption.")
     sub = parser.add_subparsers(dest="command", required=True,
                                 metavar="{doctor,bootstrap,capture,check,smoke,test}")
@@ -88,27 +89,30 @@ def main(argv: list[str] | None = None) -> int:
                 raise core.DevelopmentError("venv created, but initial binding failed; no ready environment claimed")
             print("Ready for PUBLIC profiles only. Interpreter: " + str(interpreter))
             return 0
-        core.runtime_identity()
+        runtime = core.runtime_identity()
         if args.command == "capture":
             output = _check_outside_source(Path(args.output))
-            record = core.capture()
+            record = core._capture(runtime=runtime)
             core.write_new(output, core.canonical(record) + b"\n")
             print(json.dumps({"status": "NEW_PUBLIC_BINDING", "binding_sha256": record["binding_sha256"],
                               "file": str(output), "source_files": len(record["binding"]["source_files"])}))
             return 0
-        record = _binding(args.binding)
-        identity = core.verify(record)
+        identity, inventory = core._verify(_binding(args.binding), runtime=runtime)
         if args.command == "check":
             print(json.dumps({"status": "PASS", "scope": SCOPE, "binding_sha256": identity}))
             return 0
         report_path = _check_outside_source(Path(args.report)) if args.report else None
         if report_path is not None and report_path.exists():
             raise core.DevelopmentError("report already exists; no execution begun")
+        if args.command in ("smoke", "_profile"):
+            if bind_imports is None:
+                raise core.DevelopmentError("use the source-captured tools/develop.py launcher")
+            bind_imports(inventory)
         if args.command == "smoke":
-            from .fixture import smoke
-            report = smoke(record)
+            from .fixture import _smoke
+            report = _smoke(identity, inventory)
         elif args.command == "_profile":
-            report = _profile(args.profile, record)
+            report = _profile(args.profile, identity)
         else:
             config = core.profiles()["profiles"]
             selected = list(config) if args.profile == "all-public" else [args.profile]
@@ -122,15 +126,22 @@ def main(argv: list[str] | None = None) -> int:
                     command = _command("_profile", "--binding", str(Path(args.binding).absolute()),
                                        "--profile", name, "--report", str(private_report))
                     result = subprocess.run(command, cwd=core.ROOT, check=False, timeout=180)
-                    if private_report.exists():
-                        reports.append(core.parse(core.read(private_report)))
-                    else:
-                        raise core.DevelopmentError("profile failed before obtaining test evidence: " + name)
+                    try:
+                        child_report = core.parse(core.read(private_report))
+                    except FileNotFoundError as exc:
+                        raise core.DevelopmentError("profile failed before obtaining test evidence: " + name) from exc
+                    if (type(child_report) is not dict or child_report.get("schema") != PROFILE_SCHEMA
+                            or child_report.get("scope") != SCOPE or child_report.get("profile") != name
+                            or child_report.get("binding_sha256") != identity
+                            or child_report.get("status") not in ("PASS", "INCOMPLETE", "FAIL")):
+                        raise core.DevelopmentError("profile report does not match the verified request: " + name)
+                    if result.returncode != (0 if child_report["status"] == "PASS" else 1):
+                        raise core.DevelopmentError("profile report disagrees with process exit: " + name)
+                    reports.append(child_report)
                     if result.returncode:
                         break
                 finally:
                     private_report.unlink(missing_ok=True)
-            core.verify(record)
             complete = len(reports) == len(selected) and all(r["status"] == "PASS" for r in reports)
             report = {"schema": "atlas.public-development.suite.v1", "scope": SCOPE,
                       "binding_sha256": identity, "profiles": reports,
@@ -139,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             core.write_new(report_path, core.canonical(report) + b"\n")
         print(json.dumps(report, indent=2))
         return 0 if report["status"] == "PASS" else 1
-    except (core.DevelopmentError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as exc:
+    except (core.DevelopmentError, ImportError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as exc:
         print("REFUSED: " + str(exc), file=sys.stderr)
         return 2
 

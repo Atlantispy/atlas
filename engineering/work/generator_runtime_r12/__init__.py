@@ -45,8 +45,6 @@ class _CapturedLoader(_abc.Loader):
         code = compile(raw, str(self.path), 'exec', dont_inherit=True)
         module.__file__ = str(self.path)
         exec(code, module.__dict__)
-        if _raw(self.path) != raw:
-            raise ValueError('execution source changed during import')
         module._R12_EXECUTED_SHA256 = _hashlib.sha256(raw).hexdigest()
 
 

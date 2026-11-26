@@ -7,9 +7,10 @@ R11 graph contract, a source-bound synthetic producer and a dedicated namespace.
 from __future__ import annotations
 
 from copy import deepcopy
+from functools import cache
 import importlib.util
+import os
 from pathlib import Path
-import sys
 from typing import Any
 
 from . import SCOPE
@@ -60,8 +61,14 @@ def snapshot(root: Path = core.ROOT):
 
 
 def smoke(binding: dict[str, Any], root: Path = core.ROOT) -> dict[str, Any]:
-    identity = core.verify(binding, root)
+    identity, inventory = core._verify(binding, root)
+    return _smoke(identity, inventory, root)
+
+
+def _smoke(identity: str, inventory: dict, root: Path = core.ROOT) -> dict[str, Any]:
+    root = Path(os.path.abspath(root))
     data = load_fixture(root)
+    from work import generator_runtime_r12
     from work.generator_runtime_r12 import executor, store
     s = snapshot(root)
     port = {"quantity": "SYNTHETIC_INTEGER", "unit": "count", "support_id": "PUBLIC_FIXTURE",
@@ -74,15 +81,21 @@ def smoke(binding: dict[str, Any], root: Path = core.ROOT) -> dict[str, Any]:
     producer_id = core.digest(core.canonical({"public_binding": identity,
                     "fixture": data, "producer": "integer-base-plus-parents-v1"}))
 
+    @cache
     def check() -> None:
-        core.verify(binding, root)
-        for module in (executor, store, s):
-            path = Path(module.__file__)
-            if getattr(module, "_R12_EXECUTED_SHA256", None) != core.digest(core.read(path)):
-                raise core.DevelopmentError("actually executed public component differs")
+        components = ((generator_runtime_r12, "generator_runtime_r12/__init__.py"),
+                      (executor, "generator_runtime_r12/executor.py"), (store, "generator_runtime_r12/store.py"),
+                      (s, "generator_upgrade_r11/snapshot.py"))
+        for module, name in components:
+            relative = "engineering/work/" + name
+            entry = inventory.get(relative)
+            if (entry is None or Path(module.__file__).absolute() != root / relative
+                    or getattr(module, "_R12_EXECUTED_SHA256", None) != entry["sha256"]):
+                raise core.DevelopmentError("actually executed public component differs: " + relative)
+
+    check()
 
     def producer(ctx, inputs, incoming):
-        check()
         return s.emission(ctx, {"value": port},
                           {"value": inputs["base"] + sum(incoming.values())},
                           evidence=data["evidence"], source_status="SYNTHETIC TEST", status="MODELLED")
@@ -104,11 +117,11 @@ def smoke(binding: dict[str, Any], root: Path = core.ROOT) -> dict[str, Any]:
     # A short directory keeps R12's Windows record path under 260 UTF-16 units
     # for checkout roots up to 90 characters.
     cache_root = core.safe(root / ".atlas-dev/cache" / identity[:16])
-    cache = store.Store(cache_root, producer_id, max_bytes=8 * 1024 * 1024)
+    cache_store = store.Store(cache_root, producer_id, max_bytes=8 * 1024 * 1024)
     first_stats: dict[str, Any] = {}
     warm_stats: dict[str, Any] = {}
-    first = executor.run(s, recipe, registry, store=cache, stats=first_stats)
-    warm = executor.run(s, recipe, registry, store=cache, stats=warm_stats)
+    first = executor.run(s, recipe, registry, store=cache_store, stats=first_stats)
+    warm = executor.run(s, recipe, registry, store=cache_store, stats=warm_stats)
     oracle = s.run(recipe, registry)
     values = {key: row["product"]["values"]["value"] for key, row in warm["state"]["rows"].items()}
     if (any(type(value) is not int for value in values.values())
@@ -119,7 +132,6 @@ def smoke(binding: dict[str, Any], root: Path = core.ROOT) -> dict[str, Any]:
     if warm["production_authorised"] or warm["canon_changed"] or any(
             row["domain_acceptance_declared"] for row in warm["category_closure"].values()):
         raise core.DevelopmentError("synthetic fixture must never claim physical authority")
-    check()
     return {
         "schema": "atlas.public-development.result.v1", "scope": SCOPE,
         "binding_sha256": identity, "fixture_id": data["fixture_id"],

@@ -203,6 +203,16 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev49 - 2026-11-26
+
+### Tools
+
+- Capture public development source and runtime information once when writing a binding.
+- Fingerprint the same source bytes the public development and R12 loaders compile.
+- Check late public development imports against the verified source list before they execute.
+- Bind each profile result to the requested run and require its status to match the child process exit.
+- Reuse verified loader identities inside each development smoke run.
+
 ## 0.1.0.dev48 - 2026-11-26
 
 ### Optimisations

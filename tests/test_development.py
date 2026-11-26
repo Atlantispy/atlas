@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from types import ModuleType
 import unittest
 from unittest.mock import patch
 
@@ -172,12 +173,6 @@ class BindingTests(unittest.TestCase):
         with self.assertRaises(core.DevelopmentError):
             core.verify(record, self.root)
 
-    def test_mid_capture_inventory_change_refused(self):
-        original = core.source_inventory(self.root)
-        with patch.object(core, "source_inventory", side_effect=[original, {}]):
-            with self.assertRaisesRegex(core.DevelopmentError, "while capturing"):
-                core.capture(self.root)
-
     def test_generated_private_records_not_part_of_source_inventory(self):
         private = self.root / ".atlas-dev/cache"
         private.mkdir(parents=True)
@@ -272,6 +267,14 @@ class EnvironmentAndCommandTests(unittest.TestCase):
             with self.assertRaisesRegex(core.DevelopmentError, "executed public"):
                 core.verify_executed(inventory)
 
+    def test_late_public_source_must_match_before_execution(self):
+        with tempfile.TemporaryDirectory(prefix="atlas-dev-late-test-") as directory:
+            path = Path(directory) / "late.py"
+            path.write_text("raise AssertionError('unverified source executed')")
+            loader = sys.modules["__main__"]._SourceLoader(path, "0" * 64)
+            with self.assertRaisesRegex(ImportError, "executed public"):
+                loader.exec_module(ModuleType("atlas_dev.late"))
+
     def test_changed_on_disk_identity_cannot_describe_old_executed_package(self):
         inventory = core.source_inventory()
         inventory["development/atlas_dev/core.py"]["sha256"] = "0" * 64
@@ -283,6 +286,31 @@ class EnvironmentAndCommandTests(unittest.TestCase):
         self.assertEqual(set(config["profiles"]), {"runtime", "numerics", "tooling"})
         self.assertNotIn("work.native_terrain_r1.test_hillslope.AnalyticalDecayTests",
                          config["profiles"]["numerics"]["tests"])
+
+    def test_profile_report_matches_selected_binding_and_process_exit(self):
+        identity = "1" * 64
+        report = {"schema": cli.PROFILE_SCHEMA, "scope": SCOPE, "profile": "runtime",
+                  "binding_sha256": identity, "status": "PASS"}
+        with tempfile.TemporaryDirectory(prefix="atlas-dev-report-test-") as directory:
+            root = Path(directory)
+            (root / ".atlas-dev").mkdir()
+            with patch.object(core, "ROOT", root), patch.object(cli, "_binding"), \
+                    patch.object(core, "runtime_identity"), patch.object(core, "_verify", return_value=(identity, {})), \
+                    patch.object(core, "profiles", return_value={"profiles": {"runtime": {}}}), \
+                    patch.object(cli.subprocess, "run") as child:
+                def run(command, **kwargs):
+                    Path(command[-1]).write_bytes(core.canonical({**report, **changed}))
+                    return subprocess.CompletedProcess(command, status)
+
+                child.side_effect = run
+                cases = [({}, 0, 0), ({"status": "INCOMPLETE"}, 1, 1), ({}, 1, 2)]
+                for key in ("schema", "scope", "profile", "binding_sha256"):
+                    cases.append(({key: "unexpected"}, 0, 2))
+                for changed, status, expected in cases:
+                    with self.subTest(changed=changed, status=status), \
+                            redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                        self.assertEqual(cli.main(["test", "--binding", "selected.json", "--profile", "runtime"]), expected)
+                self.assertEqual(list((root / ".atlas-dev").iterdir()), [])
 
     def test_malformed_profile_test_name_refused(self):
         config = core.profiles()

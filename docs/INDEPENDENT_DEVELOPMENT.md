@@ -116,9 +116,11 @@ runtime validators remain untouched and mandatory on their own routes.
 
 ## Interpreting the results
 
-`test` launches each selected profile in a fresh subprocess and checks the binding
-before and after it. A profile failure stops the aggregate; failed imports are
-errors, not successful skips. The machine-readable report
+`test` launches each selected profile in a fresh subprocess. The parent and each
+child verify the selected binding once. A child checks a newly loaded development
+module against that inventory before executing it. The parent checks the returned
+profile, scope, binding and process exit. A profile failure stops the aggregate.
+Failed imports count as errors. The machine-readable report
 (`atlas.public-development.suite.v1`) has `schema`, `scope`, `binding_sha256`,
 `status` (`PASS` only when every selected profile passed) and `profiles`, one
 entry per profile run (`atlas.public-development.tests.v1`) with `profile`,

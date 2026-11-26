@@ -1573,6 +1573,54 @@
         "docs/LANDING_TOOLING.md#optional-finite-stock-reference-case"
       ],
       "cost_note": "One physical cell, one transport solve and one adoption; no call during ordinary simulation."
+    },
+    {
+      "id": "atlas.dev.profile-report-binding",
+      "purpose": "Require a child profile report and process exit to agree with the parent's verified request.",
+      "module": "development/atlas_dev/cli.py",
+      "process": "Public development test profiles",
+      "entry_point": "python -I -B tools/develop.py test --binding BINDING --profile PROFILE",
+      "owner": "Atlas development tooling owner",
+      "consumers": ["Public development suite"],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Profile evidence for explicit public development; outside ordinary simulation.",
+      "classification_refs": ["docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"],
+      "execution": {
+        "stages": ["development"],
+        "trigger": "Each completed child report read by the parent profile command.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit public test command."
+      },
+      "on_failure": "Exit 2 for a missing or mismatched report or a contradictory process exit.",
+      "affected_by": ["Profile request", "Selected binding", "Child report and process exit"],
+      "evidence": ["tests/test_development.py", "docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"],
+      "cost_note": "Compare the already parsed report fields with the verified binding and subprocess exit; no added I/O."
+    },
+    {
+      "id": "atlas.dev.bound-source-component",
+      "purpose": "Bind late development imports and the smoke graph's loaded execution components to their selected source paths and bytes.",
+      "module": "tools/develop.py",
+      "process": "Public development test profiles and smoke fixture",
+      "entry_point": "python -I -B tools/develop.py test --binding BINDING --profile PROFILE or smoke --binding BINDING",
+      "owner": "Atlas development tooling owner",
+      "consumers": ["Public development profile discovery", "Public integer smoke fixture"],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Source-bound public development evidence outside ordinary simulation.",
+      "classification_refs": ["docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"],
+      "execution": {
+        "stages": ["development"],
+        "trigger": "First development-module load after binding verification or first use of the loaded smoke components.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit public test or smoke command."
+      },
+      "on_failure": "Refuse unbound or mismatching development source before executing it and mismatching smoke components before starting the graph.",
+      "affected_by": ["Verified source inventory", "Loaded module path", "Executed-byte digest"],
+      "evidence": ["tests/test_development.py", "development/atlas_dev/fixture.py"],
+      "cost_note": "Reuse the digest of the import bytes or the recorded execution digest. Check each selected component once."
     }
   ]
 }
