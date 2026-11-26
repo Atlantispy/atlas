@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev48 - 2026-11-26
+
+### Optimisations
+
+- Consolidated the heat FINISH entry into the active implementation. It admits getter allocations
+  before extraction and reuses the maximum operand width for exact equality checks.
+
 ## 0.1.0.dev47 - 2026-11-26
 
 ### Tectonics
