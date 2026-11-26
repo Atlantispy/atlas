@@ -747,7 +747,7 @@ class IntervalStoreSet:
                         *(i for i, _ in catalog.entries[-1].references)}
             for i in required:
                 entry = catalog.entries[i]
-                safe_path(relative_file(result.catalog_path.parent, entry.filename), existing=True)
+                relative_file(result.catalog_path.parent, entry.filename, existing=True)
             result._handle(catalog.entries[-1].interval, cancel=cancel)
             return result
         except BaseException:

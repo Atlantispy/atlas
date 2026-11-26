@@ -203,6 +203,43 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev50 - 2026-11-26
+
+### Tectonics
+
+- Moved rolling scheduling for endpoint, wall and interface workers into the shared execution package.
+- Moved single-contact job selection and its cost model into the shared scheduler.
+- Shared the checks and result ownership used to restore joined heat state from cold storage or RAM.
+
+### Optimisations
+
+- Removed a second walk of the budget ancestry when funding a parallel batch owner.
+- Reused the checked catalogue path when reading an interval catalogue image.
+- Reused authenticated producer records when admitting an overlap reader.
+- Read the durable finalisation gate once while checking it against the producer's four recorded pins.
+- Reused the validated root verdict and runner identity when seeding interval one.
+- Reused the authenticated root-runner hash in both stock seal paths.
+- Reused the frozen heat-source identity during restore.
+- Reused the validated packed-array edge span when walking record children.
+- Reused stored enthalpy array views throughout the heat endpoint loop.
+- Used the transported-cell index to reject duplicate cell IDs before field access.
+- Carried the policy, source inventories, manifests and evidence already authenticated at prepared
+  admission into the materialisation receipt.
+- Reused the startup code identity throughout scheduler timing. Timing still checks live runtime and
+  instrumentation changes.
+- Sorted eligible positions once per paying-set search in the shared scheduler.
+- Reused the checked ledger ancestry paths during worker fit preflight.
+- Checked each required interval catalogue path once before using its saved file stat.
+
+### Bugfixes
+
+- Bounded the memory used to read wide maps during cold restore. Cancelled reads now release their
+  temporary allocations.
+- Kept interrupted one-shot worker returns available for retry and cleared each return only after it
+  succeeded.
+- Isolated the heat-plan content identity test so a reused worker cannot load the wrong copy of the
+  tectonics package.
+
 ## 0.1.0.dev49 - 2026-11-26
 
 ### Tools

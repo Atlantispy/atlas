@@ -433,7 +433,7 @@ def _identity_modules(backend, roots=None):
 # bound code puts every value that could alter one into the request itself. Their bytes, loaded code and constants
 # are left out of the identity's digest; verify still refuses any edit to them during a run, as for every file.
 _EXECUTION_ONLY = frozenset(('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resources_gate',
-                             'atlas_tectonics.integration_parallel_rolling',
+                             'atlas_shared.execution.schedule',
                              'atlas_tectonics.integration_parallel_selection'))
 
 

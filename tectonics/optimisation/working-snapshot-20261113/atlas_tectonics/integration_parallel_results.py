@@ -31,6 +31,7 @@ from .resources import canonical_json
 # owner-registration storage has its own retained owner lease. A standalone
 # private-helper caller must supply that surrounding bookkeeping allowance.
 RETURN_ANCESTORS = 8
+_owner_price = object()
 
 def raw_capacity(length):
     """Immutable payload plus prepaid constant-state scanner workspace."""
@@ -75,8 +76,11 @@ class SlotLease:
 
     @classmethod
     def attempt(cls, resources, budget, capacity):
-        if len(nodes_for((budget,))) > RETURN_ANCESTORS:
+        depth = len(nodes_for((budget,)))
+        if depth > RETURN_ANCESTORS:
             return None
+        if capacity is _owner_price:
+            capacity = 8192+256*depth
         charged = resources._admit_budgets(
             capacity, budget, category='parallel-result-slot', _optional=True)
         if charged is None:
@@ -257,10 +261,14 @@ class FitWitness:
             return None
         work = budget._predicate_work
         ledgers = (budget,) if work is None else (budget, work)
-        if any(len(nodes_for((ledger,))) > RETURN_ANCESTORS for ledger in ledgers):
-            return None
+        nodes = {}
+        for ledger in ledgers:
+            path = nodes_for((ledger,))
+            if len(path) > RETURN_ANCESTORS:
+                return None
+            nodes.update((id(node), node) for node in path)
         if any(type(node) is not resources.WorkBudget or _OVERRIDES.intersection(vars(node))
-               for node in nodes_for(ledgers)):
+               for node in nodes.values()):
             return None
         if (max_units is None) != (work is None):
             raise ValueError('the envelope must use the ledger mode of its budget')

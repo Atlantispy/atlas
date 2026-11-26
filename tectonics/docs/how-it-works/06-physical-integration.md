@@ -1868,6 +1868,17 @@ lookahead while retaining serial adoption order, resource admission and refusal 
 mismatched inputs. Its timing comes from a detached endpoint replay, not a run of
 the integrated successor or a whole interval.
 
+The working snapshot uses `atlas_shared.execution.schedule` for rolling endpoint,
+wall and interface batches. A restored endpoint advances the same serial position
+as a newly measured endpoint. If that query was already in a speculative batch,
+the scheduler keeps the batch funded until its remaining queries are consumed
+and excludes the affected batch from timing estimates.
+
+The same module also chooses individual contacts for automatic interface
+and non-rolling wall dispatch. The cost model selects eligible serial
+positions whose estimated saving pays for the workers. The dispatcher
+owns admission and adoption.
+
 ### Retain only plain support headers on the compact route
 
 [Plan18](../../optimisation/workbench/plan18/README.md) retains charged plain headers

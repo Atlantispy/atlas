@@ -472,10 +472,15 @@ def preseal_or_review(preseal, *, seal_for_review, check):
 
 
 def require_promoted_root(store, store_directory, retained=None):
+    runner, _, _ = _promoted_root(store, store_directory, retained)
+    return runner
+
+
+def _promoted_root(store, store_directory, retained=None):
     """Run B's precondition: the accepted catalog holds exactly run A's adopted root.
 
     The chain is run A's runner record -> its sealed record -> the reader's PASS
-    verdict on that entry -> the accepted catalog entry. Returns the runner record.
+    verdict on that entry -> the accepted catalog entry.
     """
     runner = read_record(runner_record_path(store_directory, 0), schema=RUNNER_RECORD_SCHEMA)
     runner_sha = sha256(canonical(runner)).hexdigest()
@@ -493,7 +498,7 @@ def require_promoted_root(store, store_directory, retained=None):
     if retained is not None:
         require(retained['root_receipt_sha256'] == verdict['producer_receipt_sha256'],
                 'retained root claim does not name the adopted root receipt')
-    return runner
+    return runner, runner_sha, verdict
 
 
 def retained_root_provenance(claim, runner, *, profile_sha256, proof):
@@ -869,7 +874,7 @@ def _copy_pinned(source, target, pin, check):
 
 
 def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_directory, root_output, artifacts,
-                              binding, check=lambda: None, recorded=None):
+                              binding, check=lambda: None, recorded=None, _promoted=None):
     """Item 7: copy run A's closed, pinned measurement store before this producer's admission.
 
     ``root_runner`` is require_promoted_root's: run A's root has its reader PASS for exactly
@@ -885,12 +890,16 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     earlier = seed.get(SEED_ACROSS)                                     # D-3: across a recorded change
     expected_profile = profile_sha256 if earlier is None else earlier['sha256']
     receipt_sha256, pin = RUN._sha(seed['receipt_sha256']), RUN._sha(seed['store_sha256'])
-    root_sha = sha256(canonical(root_runner)).hexdigest()
-    verdict = read_record(verdict_path(store_directory, 0), schema=VERDICT_SCHEMA)
+    if _promoted is None:
+        root_sha = sha256(canonical(root_runner)).hexdigest()
+        verdict = read_record(verdict_path(store_directory, 0), schema=VERDICT_SCHEMA)
+    else:
+        root_sha, verdict = _promoted
     adopted = read_record(Path(store_directory)/record_name('adopted', 0), schema=ADOPTED_SCHEMA)
     verdict_sha = sha256(canonical(verdict)).hexdigest()
-    require(verdict['status'] == READER_PASS['root'] and verdict['interval'] == 0 and
-            verdict['runner_record_sha256'] == root_sha and verdict.get('producer_receipt_sha256') == receipt_sha256,
+    require((_promoted is not None or verdict['status'] == READER_PASS['root'] and
+             verdict['runner_record_sha256'] == root_sha) and verdict['interval'] == 0 and
+            verdict.get('producer_receipt_sha256') == receipt_sha256,
             'the seed receipt is not the run A receipt its reader passed')
     require(adopted.get('status') == ADOPTED_STATUS and adopted.get('interval') == 0 and
             adopted.get('entry') == verdict['entry'] and adopted.get('verdict_sha256') == verdict_sha and
@@ -1296,17 +1305,22 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
             with CRS.CompactRestartStore.open_catalog(catalog, scope=scope) as store:
                 _store_configuration(store)
                 retained_execution = None
+                promoted = None
                 if lineage is None:
-                    root_runner = (require_promoted_root(store, store_directory) if retained_root is None
-                                   else require_promoted_root(store, store_directory, retained_root))
-                    if retained_root is not None:
+                    if retained_root is None:
+                        root_runner, root_sha, verdict = _promoted_root(store, store_directory)
+                        promoted = root_sha, verdict
+                    else:
+                        root_runner = require_promoted_root(store, store_directory, retained_root)
                         require(not production_release and diagnostic_tree(sources),
                                 'retained root is available only in Debug diagnostics')
                         retained_execution = retained_root_provenance(
                             retained_root, root_runner, profile_sha256=profile.sha256, proof=proof)
+                        root_sha = retained_root['root_runner_sha256']
                         record['retained_root'] = retained_root
                 else:
                     root_runner = require_lineage_head(store, lineage)
+                    root_sha = lineage['lineage']['records'][0]['runner_sha256']
                 reused = None
                 if seed is not None:
                     guard.phase('seed-initial-measurements')
@@ -1314,7 +1328,7 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                         reused = seed_initial_measurements(seed, profile_sha256=profile.sha256,
                             root_runner=root_runner, store_directory=store_directory,
                             root_output=mode_output(row, 'root'), artifacts=output, binding=binding, check=check,
-                            recorded=recorded)
+                            recorded=recorded, _promoted=promoted)
                     except Exception as error:  # recorded with its refusal, then raised: no fallback
                         record['reused_initial_cache'] = {'schema': SEED_SCHEMA, 'status': 'REFUSED_BEFORE_ADMISSION',
                                                           'requested': seed, 'refusal': _error(error)}
@@ -1334,7 +1348,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                     record.update(stop_before_advance=True, compact_operations=store.statistics())
                 else:
                     record['sealed'] = _advance(record=record, save=save, guard=guard, store=store, m=m, FRESH=FRESH,
-                        PRESEAL=PRESEAL, sources=sources, root_runner=root_runner, identities=identities,
+                        PRESEAL=PRESEAL, sources=sources, root_runner=root_runner, root_runner_sha256=root_sha,
+                        identities=identities,
                         budget=budget, output=output, catalog=catalog, query_directory=query_directory,
                         store_directory=store_directory, check=check, query_stages=query_stages,
                         number=number, lineage=lineage, query_store=(EndpointCheckpoints, declared,
@@ -1351,9 +1366,9 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     return budget
 
 
-def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_runner, identities, budget, output,
-             catalog, query_directory, store_directory, check, query_store, measurements=None, query_stages=None,
-             number=1, lineage=None, retained_execution=None):
+def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_runner, root_runner_sha256,
+             identities, budget, output, catalog, query_directory, store_directory, check, query_store,
+             measurements=None, query_stages=None, number=1, lineage=None, retained_execution=None):
     """Run B's interval: begin interval ``number``, advance once, then the post-advance protocol with the workflow open.
 
     Interval 1 advances from the adopted root; interval N >= 2 from the adopted interval N-1 of
@@ -1401,7 +1416,7 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
                                  'r3_heat_checkpoint': getattr(workflow, '_r3_heat_checkpoint', None),
                                  'end_mesh_supports': list(sources.module('publish_mesh_patch').END_MESH_SUPPORTS)}
         base = {'workflow_id': after['workflow_id'], 'advanced_endpoint': after, 'previous_endpoint': before,
-                'producer_pid': os.getpid(), 'root_runner_record_sha256': sha256(canonical(root_runner)).hexdigest()}
+                'producer_pid': os.getpid(), 'root_runner_record_sha256': root_runner_sha256}
         if lineage is not None:
             base.update(parent_runner_record_sha256=lineage['lineage']['records'][-1]['runner_sha256'],
                         parent_adopted_sha256=lineage['parent_adopted_sha256'], lineage=lineage['lineage'])

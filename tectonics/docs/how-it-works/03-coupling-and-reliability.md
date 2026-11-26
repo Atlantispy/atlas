@@ -604,6 +604,11 @@ The compact forward heat route passes its exact sealed result to the existing pr
 The projector checks that it received that same object before it reuses the issued temperature and
 face-count facts. Independent results still go through both checks. The detached restore paths
 verify the original scalar and rational input formats and keep column order and uniqueness.
+The cold and two RAM heat restore entries use one implementation for their
+shared checks and result ownership. The cold reader keeps the compact ledger
+and its retained plan. The RAM entries keep their native snapshot and plan
+checks, including the recovery entry's separate source verification and
+checked collar coordinates.
 
 The persisted shared-mesh heat ledger streams its checked cell IDs in the
 original order as part of the canonical result hash. Its focused save and

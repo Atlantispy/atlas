@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from contextlib import contextmanager, nullcontext
+from contextlib import closing, contextmanager, nullcontext
 from collections import OrderedDict, deque
 from hashlib import sha256
 import gc
@@ -2666,32 +2666,70 @@ def effort_tree(paths):
     return tree
 
 
+def _packed_feed_members(ref, check):
+    view = ref._view
+    start, stop = view._range('shape', view._v('node.shape', ref.index))
+    edge_start = view._v('node.offset', ref.index)
+    for edge, at in enumerate(range(start, stop), edge_start):
+        ref._live()
+        check()
+        token = view._v('shape.key', at)
+        lo, hi = view._range('token', token)
+        charge = 4096+128+32*(hi-lo)
+        T.require(charge+OWNER_BYTES <= T.MAX_ROW_WORK_BYTES, 'object keys exceed owned byte bound')
+        with ref.scope.run_budget.reserve(charge, category='record-workspace'):
+            wire = b''.join(view._bytes('token.bytes', lo, hi))
+            try:
+                yield json.loads(wire), edge, wire
+            finally:
+                del wire
+
+
+@contextmanager
+def _feed_object_members(ref, check):
+    if type(ref) is RecordRef and ref._fields is None:
+        with ref._view._read_batch(), closing(_packed_feed_members(ref, check)) as members:
+            yield members
+    else:
+        with ref.keys(max_owned_bytes=T.MAX_ROW_WORK_BYTES) as names:
+            yield ((name, None, None) for name in names.value)
+
+
 def feed_without(digests, ref, drop, check=lambda: None, code=frozenset()):
     """Feed ref's canonical bytes less the drop tree (effort_tree) into every digest; with code, also less the
     code fields (reuse._CODE_FIELDS), at any depth and with its refusals: the bytes equal content_record's."""
     kind = ref.kind if drop or code else None
     if kind == 'object':
-        with ref.keys(max_owned_bytes=T.MAX_ROW_WORK_BYTES) as names:
+        with _feed_object_members(ref, check) as members:
             for digest in digests:
                 digest.update(b'{')
             kept = 0
-            for name in names.value:
-                check()
-                rule = drop[name] if name in drop else drop.get('*', {})
-                if rule is None:
-                    continue
-                with ref.field(name) as child:
-                    if name in code and child.kind != 'object':
-                        _code_digest(name, child)
+            for name, edge, wire in members:
+                try:
+                    if edge is None:
+                        check()
+                    rule = drop[name] if name in drop else drop.get('*', {})
+                    if rule is None:
                         continue
-                    for digest in digests:
-                        if kept:
-                            digest.update(b',')
-                        for part in T.string_parts(name):
-                            digest.update(part)
-                        digest.update(b':')
-                    kept += 1
-                    feed_without(digests, child, rule, check, code)
+                    member = (ref.field(name) if edge is None else
+                              RecordRef(ref._view, ref._view._v('edge.child', edge), parent_owner=ref._owner))
+                    with member as child:
+                        if name in code and child.kind != 'object':
+                            _code_digest(name, child)
+                            continue
+                        for digest in digests:
+                            if kept:
+                                digest.update(b',')
+                            if wire is not None:
+                                digest.update(wire)
+                            else:
+                                for part in T.string_parts(name):
+                                    digest.update(part)
+                            digest.update(b':')
+                        kept += 1
+                        feed_without(digests, child, rule, check, code)
+                finally:
+                    del name, wire
             for digest in digests:
                 digest.update(b'}')
         return
@@ -2705,12 +2743,20 @@ def feed_without(digests, ref, drop, check=lambda: None, code=frozenset()):
     if listed and ('*' in drop or code):
         for digest in digests:
             digest.update(b'[')
-        for at in range(ref.size):
+        view = ref._view
+        packed = ref._fields is None
+        start, stop = view._range('node', ref.index) if packed else (0, ref.size)
+        for edge in range(start, stop):
             check()
-            if at:
+            if edge != start:
                 for digest in digests:
                     digest.update(b',')
-            with ref.at(at) as item:
+            if packed:
+                ref._live()
+                member = RecordRef(view, view._v('edge.child', edge), parent_owner=ref._owner)
+            else:
+                member = ref.at(edge)
+            with member as item:
                 feed_without(digests, item, drop.get('*', {}), check, code)
         for digest in digests:
             digest.update(b']')

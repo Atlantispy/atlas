@@ -155,7 +155,7 @@ def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
     raw = policy_path.read_bytes()
     _require(sha256(raw).hexdigest() == _digest(policy_sha256), 'review policy bytes changed')
     policy = json.loads(raw)
-    execution.verify_boundary()
+    execution._verify_selection()
     loaded = sys.modules['atlas_tectonics']
     _require(Path(loaded.__file__).resolve().parent ==
              (Path(current_source_root)/'atlas_tectonics').resolve(), 'current runtime is not actually loaded')
@@ -194,18 +194,6 @@ def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
     allocation = N._Allocation(budget, len(encoded)+4096, category='runtime-compatibility-retained')
     result = object.__new__(RuntimeCompatibilityAdmission)
     object.__setattr__(result, '_record', N._RecordBytes(encoded, allocation))
-    # Full checks bracket admission; timestamps and a successful first read are
-    # insufficient to cover a source/evidence edit during inspection.
-    execution.verify_boundary()
-    _require(source_inventory(historical_source_root) == old_inventory and
-             source_inventory(current_source_root) == new_inventory,
-             'runtime source changed during compatibility admission')
-    _require(file_hash(policy_path) == policy_sha256, 'policy changed during admission')
-    for side in ('historical', 'current'):
-        row = policy[side]
-        _require(file_hash(_path(evidence_root, row['source_manifest_path'])) == row['source_manifest_sha256'],
-                 side+' manifest changed during admission')
-    for path, pin in policy['evidence'].items():
-        _require(file_hash(_path(evidence_root, path)) == pin, 'evidence changed during admission: '+path)
-    del scratch  # Retain the reservation through the final evidence read.
+    execution._verify_selection()
+    del scratch
     return result

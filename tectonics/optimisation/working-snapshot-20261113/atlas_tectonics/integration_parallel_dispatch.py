@@ -48,9 +48,9 @@ from .integration_parallel_binding import (BATCH_LIMIT, WALL_KIND, BatchBinding,
     is_batch, VOLUME_SCHEMA)
 from .integration_parallel_binding import (_BATCH_SCHEMA as BATCH_SCHEMA,
     _batch_worker_complete as _bound_batch_complete, _worker_complete)
-from .integration_parallel_owner import RevocableOwner, nodes_for
+from .integration_parallel_owner import RevocableOwner
 from .integration_parallel_results import (FitWitness, MeasureHint, SlotLease,
-    raw_capacity)
+    _owner_price, raw_capacity)
 from .integration_volume_bounds import _Arena
 
 MAX_INPUT = 2 << 20
@@ -921,8 +921,7 @@ class InterfaceParallelSession:
         # metadata remains separately funded until that owner actually
         # dies, including a held shutdown traceback. It is not confused
         # with the much larger temporary input/receipt graph below.
-        owner_bytes = 8192+256*len(nodes_for((self.budget,)))
-        owner_lease = SlotLease.attempt(R, self.budget, owner_bytes)
+        owner_lease = SlotLease.attempt(R, self.budget, _owner_price)
         if owner_lease is None:
             self.close()
             return None
@@ -1203,8 +1202,7 @@ class InterfaceParallelSession:
             if result is None:
                 raise ValueError('optional result verification declined')
             self.stats['adopted'] += 1
-            job['fit'].release()
-            job['baseline'].close()
+            self._return_job_leases(job)
             # The hand-over: the parent's seconds to send the request and to adopt its result.
             job['handover_seconds'] = job.get('dispatch_seconds', 0.0)+time.perf_counter()-begun
             self._outcome(job, True)
@@ -1222,6 +1220,15 @@ class InterfaceParallelSession:
         self._outcome(job, False)
         return None
 
+    @staticmethod
+    def _return_job_leases(job):
+        if job['fit'] is not None:
+            job['fit'].release()
+            job['fit'] = None
+        if job['baseline'] is not None:
+            job['baseline'].close()
+            job['baseline'] = None
+
     def _stop(self):
         # ALL children confirmed stopped before ANY child funding is released.
         for job in self.jobs.values():
@@ -1229,14 +1236,15 @@ class InterfaceParallelSession:
         if self.pool is not None:
             self.pool.shutdown(wait=True, cancel_futures=True)
             self.pool = None
-        for job in self.jobs.values():
+        while self.jobs:
+            key = next(iter(self.jobs))
+            job = self.jobs[key]
             job['hint'].close()
-            job['fit'].release()
-            job['baseline'].close()
+            self._return_job_leases(job)
             self.stats['peak_child_rss'] = max(self.stats['peak_child_rss'], job['child'].peak_rss)
             self._outcome(job, False)
+            del self.jobs[key]
             job.clear()
-        self.jobs.clear()
         # The caller owns the small session/policy handle. This lease owns the
         # temporary input/receipt/pool graph, which is now gone. Leaving the
         # bulk reservation alive here could itself cause a serial refusal.

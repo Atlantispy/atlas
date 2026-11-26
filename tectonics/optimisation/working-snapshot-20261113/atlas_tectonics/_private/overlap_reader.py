@@ -24,7 +24,7 @@ SPEC_FIELDS = frozenset(('schema', 'gate_path', 'attempt', 'stage', 'interval', 
                          'launcher', 'launcher_nonce', 'timeout_seconds', 'wait_basis'))
 
 
-def read_json(path, *, limit=8 << 20, pin=None):
+def read_json(path, *, limit=8 << 20, pin=None, canonical=None):
     """Bounded, complete, identity-stable JSON read with the repaired sharing retry."""
     path = Path(path)
     def complete():
@@ -47,6 +47,7 @@ def read_json(path, *, limit=8 << 20, pin=None):
         except (ValueError, UnicodeError, RecursionError) as error:
             raise G.GateRefused('malformed bounded JSON record') from error
         require(type(value) is dict, 'JSON record must be an object')
+        require(canonical is None or canonical(value) == raw, 'JSON record must be canonical')
         return value, digest
     return G._retry_sharing(complete, 'bounded JSON record')
 
@@ -217,15 +218,14 @@ def expected_gate(spec, waiter):
 
 @contextmanager
 def admitted_before_gate(*, admission, spec, record, save, guard, verify_sources,
-                         producer_inputs, producer_pins, memory_admit, available_memory,
+                         producer_inputs, memory_admit, available_memory,
                          waiter=None, clock=time.monotonic, source_check_seconds=10.0):
     """Enter independent admission, wait, authenticate, re-admit memory.
 
     admission is the caller's FRESH.admission(... initial_workers=0) context,
     created from its own budget and fresh output. producer_inputs is the original
-    store-free validator with only the receipt SHA supplied later. producer_pins
-    obtains the actual referenced immutable bytes after that preflight; it must
-    return all four pins. memory_admit uses the reader's own by-need prediction.
+    store-free validator with only the receipt SHA supplied later. Its result
+    carries the four checked file pins. memory_admit uses the reader's own by-need prediction.
     """
     validate_spec(spec)
     require(type(source_check_seconds) in (int, float) and math.isfinite(source_check_seconds) and
@@ -255,12 +255,10 @@ def admitted_before_gate(*, admission, spec, record, save, guard, verify_sources
         record['gate_wait_seconds'] = clock()-wait_started
         binding = {'gate': value, 'gate_sha256': G.gate_sha256(value)}
         G.validate_receipt_binding(binding, expected)
-        # This is the first producer-dependent call; keep its implementation and
-        # validations unchanged. The admission above used only the published store record; the caller tests it
-        # against this receipt.
+        # The caller tests the earlier measurement-store publication against this receipt.
         guard.phase('authenticate-producer-after-gate')
         producer = producer_inputs(value['producer_receipt_sha256'])
-        pins = producer_pins(producer)
+        pins = producer.get('gate_pins')
         fields = {'producer_receipt_sha256', 'guard_receipt_sha256', 'runner_sha256', 'sealed_sha256'}
         require(type(pins) is dict and set(pins) == fields and all(value[name] == pins[name] for name in fields),
                 'gate producer/STOPPED guard/runner/sealed pins differ from authenticated records')
@@ -285,7 +283,8 @@ def validate_finalise(record, *, expected, path, pin, producer_pins, waiter, mem
     fields = {'producer_receipt_sha256', 'guard_receipt_sha256', 'runner_sha256', 'sealed_sha256'}
     require(type(producer_pins) is dict and set(producer_pins) == fields,
             'complete closed producer/guard/runner/sealed pins required by finalise')
-    expected = dict(expected, waiter=waiter, **producer_pins)
+    expected = {'launcher': gate['launcher'], 'launcher_nonce': gate['launcher_nonce'],
+                **expected, 'waiter': waiter, **producer_pins}
     binding = G.validate_receipt_binding(record.get('overlap_gate'), expected)
     require(binding['gate_sha256'] == pin and binding['gate'] == gate and record.get('admitted_ahead') is True and
             record.get('producer_receipt_sha256') == gate['producer_receipt_sha256'] and
@@ -293,7 +292,8 @@ def validate_finalise(record, *, expected, path, pin, producer_pins, waiter, mem
     spec = record.get('overlap_wait_spec')
     validate_spec(spec)
     require(str(Path(path)) == spec['gate_path'], 'finalise gate path differs from the validated wait specification')
-    require(expected_gate(spec, waiter) == {name: expected[name] for name in expected_gate(spec, waiter)},
+    waited_for = expected_gate(spec, waiter)
+    require(waited_for == {name: expected[name] for name in waited_for},
             'reader wait specification differs from the published attempt')
     memory, start = record.get('memory_before_open_pending'), record.get('start_gate')
     for observation in (start, memory):

@@ -64,13 +64,19 @@ def safe_path(path, *, existing=False):
     return _checked_path(path, existing=existing)[0]
 
 
-def relative_file(root, filename):
+def relative_file(root, filename, *, existing=False):
     if type(filename) is not str or not _BASENAME.fullmatch(filename):
         raise ContractError('catalog filename must be a safe SQLite basename')
     if filename.split('.')[0].upper() in {'CON', 'PRN', 'AUX', 'NUL',
             *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}:
         raise ContractError('reserved Windows filename')
-    return safe_path(Path(root) / filename)
+    path, info = _checked_path(Path(root) / filename)
+    if existing:
+        if info is None:
+            raise ContractError('required interval file is missing')
+        if not stat.S_ISREG(info.st_mode):
+            raise ContractError('required path is not a regular file')
+    return path
 
 
 def file_token(path, *, reject_sidecars=False):
@@ -216,7 +222,7 @@ class Catalog:
 
 
 def _read_catalog_image(path, *, expected_size=None):
-    path = safe_path(path, existing=True)
+    path = Path(path).absolute()
     before = file_token(path)
     if before[2] > CATALOG_BYTES:
         raise ContractError('catalog exceeds 1 MiB bound')

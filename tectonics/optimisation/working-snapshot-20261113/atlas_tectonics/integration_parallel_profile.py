@@ -13,10 +13,8 @@ number and never by a clock. A file store is optional and caller-chosen. It
 must lie outside the source tree, is read once per process, and is replaced
 atomically; a file that is not a current store is neither used nor overwritten.
 
-A binding is read from the source on disk, but timings are taken by the code a
-process has LOADED. The inventory found when this module is imported is kept
-as that process's reference (``loaded_digest``): a caller whose disk source
-has since changed must neither plan from the profile nor add to it.
+The source inventory captured when this module is imported binds timings for
+the lifetime of this frozen build (``loaded_digest``).
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from collections import OrderedDict, deque
@@ -98,16 +96,7 @@ def code_digest():
 
 
 def loaded_digest():
-    """The source inventory digest found when this process imported this module, or None.
-
-    It stands for the code the process runs. An edit made after a module was
-    imported changes the disk inventory, not the loaded code, so only a call
-    whose disk inventory still equals this digest may bind its timings to it.
-    It is exact for everything imported from then on. A module imported
-    earlier and edited before this one was imported is not covered: binding
-    the loaded code itself needs an execution context, which the unfunded
-    decision does not create. None when that first inventory failed.
-    """
+    """The frozen build's initial source inventory digest, or None if capture failed."""
     return _state.loaded
 
 
@@ -144,8 +133,11 @@ def binding_digest(record):
     return hashlib.sha256(canonical(record)).hexdigest()
 
 
-def current_binding(budget, code=None, family='interface'):
-    return binding_record(code=code_digest() if code is None else code, runtime=runtime_facts(),
+_CAPTURE_CODE = object()
+
+
+def current_binding(budget, code=_CAPTURE_CODE, family='interface'):
+    return binding_record(code=code_digest() if code is _CAPTURE_CODE else code, runtime=runtime_facts(),
                           seed=seed_flag(), ledger=ledger_mode(budget), instrumented=instrumented(), family=family)
 
 

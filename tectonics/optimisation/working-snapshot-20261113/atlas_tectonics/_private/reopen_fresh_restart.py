@@ -317,7 +317,7 @@ def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False, int
 
 def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, sealed, guard_receipt, guard_control,
                               consumer_pid, mode, root_runner=None, review=False, interval=None, lineage=None,
-                              production_policy=None, recorded=None):
+                              production_policy=None, recorded=None, _runner_sha256=None):
     """Pure closed checks of a sealed producer result; returns the validated expectation.
 
     Interval N >= 2 (item 21) takes ``lineage``, the runner's sealed-lineage gate on adopted
@@ -334,7 +334,7 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
                             interval=interval, recorded=recorded)
     producer_mode, producer_limits = RO._producer_policy(receipt, production_policy)
     interval, entry, identities = number, sealed['entry'], receipt['identities']
-    runner_sha = sha256(F.canonical(runner)).hexdigest()
+    runner_sha = sha256(F.canonical(runner)).hexdigest() if _runner_sha256 is None else _runner_sha256
     require(runner['interval'] == sealed['interval'] == entry['interval'] == interval and
             runner['head'] == entry['head'] and runner['producer_pid'] == pid and
             runner['producer_identity'] == entry['producer_identity'] == identities['producer_identity'] and
@@ -446,13 +446,14 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
     row = profile.record()
     number = F.interval_number(mode, interval)
     output, store_directory = F.mode_output(row, mode, interval), Path(row['store_directory'])
-    receipt = RUN.pinned_json(output/'run.json', receipt_sha256, RO.MAX_RECEIPT)
+    receipt, receipt_pin = OR.read_json(RUN.ordinary(output/'run.json'), limit=RO.MAX_RECEIPT,
+                                        pin=RUN._sha(receipt_sha256))
     require(type(receipt) is dict and mode in F.MODES and receipt.get('mode') == mode,
             'producer receipt mode differs from the expected fresh route')
     require(reuse is None or 'production_release' not in receipt, 'reuse-previous-run reads a diagnostic producer only')
     require(reuse is None or not reuse['record']['identity_override'] or receipt.get('open_proofs') is not True,
             'the identity override is refused for a proof-mode producer (--open-proofs)')
-    guard = RO._bounded_json(output/'run.guard.json')
+    guard, guard_pin = OR.read_json(RUN.ordinary(output/'run.guard.json'), limit=RUN.MAX_CONFIG)
     control = RO._bounded_json(output/'run.guard-control.json')
     require(not (output/'run.guard-abort.json').exists() and not (output/'run.cancel').exists(),
             'producer was aborted or cancelled')
@@ -460,8 +461,13 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
     paths = (F.runner_record_path(store_directory, number), F.sealed_record_path(store_directory, number))
     require(all(type(pin) is dict and set(pin) == {'path', 'sha256'} and pin['path'] == str(path)
                 for pin, path in zip(pins, paths, strict=True)), 'producer durable record pins required')
-    runner = F.read_record(paths[0], schema=F.RUNNER_RECORD_SCHEMA, expected_sha256=pins[0]['sha256'])
-    sealed = F.read_record(paths[1], schema=F.SEALED_SCHEMA, expected_sha256=pins[1]['sha256'])
+    records = []
+    for path, pin, schema in zip(paths, pins, (F.RUNNER_RECORD_SCHEMA, F.SEALED_SCHEMA), strict=True):
+        value, digest = OR.read_json(RUN.ordinary(path), limit=RUN.MAX_CONFIG, pin=RUN._sha(pin['sha256']),
+                                     canonical=F.canonical)
+        require(value.get('schema') == schema, 'canonical '+schema+' record required: '+str(path))
+        records.append((value, digest))
+    (runner, runner_pin), (sealed, sealed_pin) = records
     root_runner = parent_widths = gate = None
     if number >= 2:
         gate = F.sealed_lineage(store_directory, number, runner.get('parent_adopted_sha256'),
@@ -485,10 +491,11 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
     require(member.parent == store_directory and not os.access(member, os.W_OK) and
             not any(Path(str(member)+suffix).exists() for suffix in ('-wal', '-journal', '-shm')),
             'pending sealed interval file must be read-only and closed')
-    expected = validate_producer_receipt(receipt, profile=profile, receipt_sha256=receipt_sha256, runner=runner,
+    expected = validate_producer_receipt(receipt, profile=profile, receipt_sha256=receipt_pin, runner=runner,
         sealed=sealed, guard_receipt=guard, guard_control=control, consumer_pid=consumer_pid, mode=mode,
         root_runner=root_runner, review=review, interval=interval, lineage=gate,
-        production_policy=RUN.producer_policy(receipt, sources, expected_route='fresh-'+mode), recorded=recorded)
+        production_policy=RUN.producer_policy(receipt, sources, expected_route='fresh-'+mode), recorded=recorded,
+        _runner_sha256=runner_pin)
     # source_proof: a verify() the caller has just made (repeat fix K15); None verifies here, except for the
     # records-only core, which checks no sources (unit A; the chain's first step did).
     if source_proof is not None or not records_only(mode, review, runner):
@@ -497,31 +504,14 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
                 'producer source proof differs from the selected sources')
     if parent_widths is not None:
         expected['parent_widths'] = parent_widths
+    expected['gate_pins'] = dict(producer_receipt_sha256=receipt_pin, guard_receipt_sha256=guard_pin,
+                                 runner_sha256=runner_pin, sealed_sha256=sealed_pin)
     return expected
 
 
 def _producer_inputs_retry(profile, **kwargs):
     """Retry the complete unchanged bounded, store-free producer preflight."""
     return OG._retry_sharing(lambda: producer_inputs(profile, **kwargs), 'producer input records')
-
-
-def producer_gate_pins(profile, producer, *, mode, interval=None):
-    """Pins of actual authenticated immutable records; no producer store is opened."""
-    row = profile.record()
-    number = F.interval_number(mode, interval)
-    output = F.mode_output(row, mode, interval)
-    directory = Path(row['store_directory'])
-    paths = (output/'run.json', output/'run.guard.json',
-             F.runner_record_path(directory, number), F.sealed_record_path(directory, number))
-    limits = (RO.MAX_RECEIPT, RUN.MAX_CONFIG, RUN.MAX_CONFIG, RUN.MAX_CONFIG)
-    records = [OR.read_json(path, limit=limit) for path, limit in zip(paths, limits, strict=True)]
-    require(records[0][1] == producer['receipt_sha256'] and
-            records[2][1] == producer['runner_sha256'] and records[2][0] == producer['runner'] and
-            records[3][0] == producer['sealed'] and records[1][0].get('status') == 'STOPPED' and
-            records[1][0].get('workload_exit_confirmed') is True,
-            'authenticated producer records changed before gate binding')
-    return dict(zip(('producer_receipt_sha256', 'guard_receipt_sha256', 'runner_sha256', 'sealed_sha256'),
-                    (record[1] for record in records), strict=True))
 
 
 def _reader_options(profile, *, mode, interval, producer_receipt_sha256, review, overlap_spec,
@@ -770,7 +760,6 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                     verify_sources=sources.check_imported,
                     producer_inputs=lambda pin: _producer_inputs_retry(profile, sources=sources, mode=mode,
                         receipt_sha256=pin, consumer_pid=os.getpid(), review=False, interval=_explicit(number)),
-                    producer_pins=lambda value: producer_gate_pins(profile, value, mode=mode, interval=_explicit(number)),
                     memory_admit=lambda free: SG.child_admit(start_gate, free),
                     available_memory=MONITOR.free_memory, waiter=guard.identity))
                 require(producer['measurement_store'] == seeded['store'],
@@ -1292,13 +1281,10 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
             if overlap_fields.intersection(reopen) or published.exists() or overlap_gate_sha256 is not None:
                 require(RO._digest(overlap_gate_sha256) and not review,
                         'published overlap requires the explicit complete gate pin and receipt binding')
-                authenticated = OG.read_gate(published)
-                require(OG.gate_sha256(authenticated) == overlap_gate_sha256, 'published overlap gate pin differs')
                 expected = {'attempt': str(Path(row['output_directory']).resolve()), 'stage': mode,
-                            'interval': producer['interval'], 'profile_sha256': profile.sha256,
-                            'launcher': authenticated['launcher'], 'launcher_nonce': authenticated['launcher_nonce']}
+                            'interval': producer['interval'], 'profile_sha256': profile.sha256}
                 OR.validate_finalise(reopen, expected=expected, path=published, pin=overlap_gate_sha256,
-                    producer_pins=producer_gate_pins(profile, producer, mode=mode, interval=interval),
+                    producer_pins=producer['gate_pins'],
                     waiter=reader_guard['parent'], memory_validator=SG.admit)
         if core != 'records':
             require(reopen.get('source_proof') == (proof if reuse is None else reuse['source_proof']),

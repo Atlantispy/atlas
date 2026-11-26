@@ -16,17 +16,17 @@ reason to stay serial. Policies, estimates, timings and decisions never enter
 an issued record, a receipt row, a measure or any identity.
 
 Both passes of the exterior router also carry a rolling batch schedule
-(integration_parallel_rolling). Its threshold is applied to the eligible work
+(atlas_shared.execution.schedule). Its threshold is applied to the eligible work
 expected in the whole pass, not to one lookahead window: the schedule reads a
 bounded distance ahead, groups upcoming requests into cost-targeted batches
 and gives each batch to one one-shot worker. Classes here supply its
-estimates, its gates, its session and its report; the single-contact planner
-below is unchanged and keeps its own first lookahead.
+estimates, its gates, its session and its report. The first lookahead for single-contact
+dispatch also uses the shared cost model.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from collections import deque
 from dataclasses import dataclass, fields
-from itertools import combinations, islice
+from itertools import islice
 import math
 import os
 import re
@@ -35,13 +35,16 @@ from time import perf_counter
 from . import integration_differential_geometry as G
 from . import integration_parallel_dispatch as D
 from . import integration_parallel_profile as PF
-from . import integration_parallel_rolling as RB
+from atlas_shared.execution import schedule as RB
 from . import resources as R
 from .integration_parallel_binding import BATCH_LIMIT
 from .integration_parallel_owner import nodes_for
 from .integration_parallel_results import MOMENTS, raw_capacity
 from atlas_shared.machine import resources_monitor as MON
 from atlas_shared.machine import resources_gate as RG
+
+schedule = RB.schedule
+_own = RB._own
 
 DECISION_SCHEMA = 'atlas.interface-parallel-decision.v1'
 MODES = ('auto', 'serial', 'off')
@@ -202,67 +205,6 @@ def exact_estimate(row):
     if row[0] != 'integrator':
         return dict(basis='exact-request', low=0.0, mid=0.0, high=0.0, samples=1, share=0.0)
     return dict(basis='exact-request', low=0.8*row[1], mid=row[1], high=1.25*row[1], samples=1, share=1.0)
-
-
-def _own(clock, work, alive, slowdown):
-    """When the parent finishes ``work`` seconds of its own contacts begun at ``clock``.
-
-    Until ``alive``, when the last worker of the plan ends, the parent runs
-    ``slowdown`` times slower: the threads that watch its workers share its
-    interpreter.
-    """
-    if clock >= alive or slowdown == 1:
-        return clock+work
-    fits = (alive-clock)/slowdown
-    return clock+work*slowdown if work <= fits else alive+(work-fits)
-
-
-def schedule(costs, eligible, *, workers, startup, transfer, contention, benefit_ratio, parent_slowdown=1.0):
-    """Best set of at most ``workers`` eligible positions to dispatch; pure.
-
-    costs are conservative serial seconds in router order, zero for unknown
-    work. The parent walks the list from time zero. The k-th launched job is
-    launched at k*transfer and its worker finishes startup+contention*cost
-    later; the parent adopts it on reaching its position, at the later of the
-    two times plus transfer. Every other position costs the parent its own
-    seconds, parent_slowdown times as many while any worker of the plan is
-    still alive (1 models an unaffected parent). Only one prepare exists, so
-    a job at the head of the queue can never be worth a worker: the parent
-    would only wait for it.
-
-    A set pays when its saving is positive and at least benefit_ratio times
-    the overhead it costs, len(set)*(startup+transfer). ``selected`` is the
-    paying set with the largest saving (fewer jobs, then earlier ones, on a
-    tie), so a second job that adds too little never costs the first its
-    worker. ``considered`` is the set with the largest saving whether or not
-    it pays; ``saving`` and ``overhead`` describe the selected set, or the
-    considered one when nothing is selected.
-    """
-    prefix = [0.0]
-    for cost in costs:
-        prefix.append(prefix[-1]+cost)
-    serial, best, chosen, worth, selected = prefix[-1], 0.0, (), 0.0, ()
-    # Rounding may neither turn a saving of exactly nothing into a gain nor
-    # let a larger set displace an equal smaller one.
-    noise = 1e-9*max(1.0, serial)
-    for size in range(1, min(workers, len(eligible))+1):
-        for positions in combinations(sorted(eligible), size):
-            ends = [order*transfer+startup+contention*costs[position] for order, position in enumerate(positions)]
-            alive, clock, done = max(ends), 0.0, 0
-            for position, end in zip(positions, ends, strict=True):
-                clock = _own(clock, prefix[position]-prefix[done], alive, parent_slowdown)
-                clock = max(clock, end)+transfer
-                done = position+1
-            # Work behind the last dispatched position costs the same either
-            # way, so it is left out and cannot cancel against the total.
-            saving = prefix[done]-clock
-            if not chosen or saving > best+noise:
-                best, chosen = saving, positions
-            if (saving > noise and saving >= benefit_ratio*size*(startup+transfer)
-                    and (not selected or saving > worth+noise)):
-                worth, selected = saving, positions
-    return dict(selected=selected, considered=chosen, serial_seconds=serial,
-                saving=worth if selected else best, overhead=len(selected or chosen)*(startup+transfer))
 
 
 def _public(text):
@@ -505,8 +447,6 @@ class _Automatic:
         self.session = self.observer = self.policy = self.budget = None
         self.store = self.digest = self.code = self._context = self._owned = None
         self._rows, self._classes, self._exact, self._finished, self.workers = [], {}, False, False, 0
-        self._observations_checked = False
-        self.stale = False
         self._times = MON.Timings()
         # Whether every gate that does not depend on a profile passed: the rolling passes ask this.
         self.admitted = False
@@ -564,25 +504,18 @@ class _Automatic:
         begun = perf_counter()
         self.leaves, self.width_text = max_leaves, G._qtext(width)
         self.bucket = PF.width_bucket(width)
-        self.code, loaded = ((PF.code_digest(), PF.loaded_digest()) if shared is None else
-                             (shared.code, shared.decision['binding']['loaded_code']))
-        # Timings are taken by the code this process LOADED, while a binding
-        # is read from disk. A process that imported the package before an
-        # edit neither plans from the profile of the new source nor adds its
-        # timings of the old code to it.
-        self.stale = loaded != self.code
+        self.code = PF.loaded_digest() if shared is None else shared.code
         record = PF.current_binding(budget, code=self.code, family=self.family)
         self.digest = PF.binding_digest(record)
-        decision['binding'] = dict(record, digest=self.digest, loaded_code=loaded, changed=False)
+        decision['binding'] = dict(record, digest=self.digest, loaded_code=self.code, changed=False)
         self.store, note = PF.open_store(policy.profile_path) if store is None else (store, None)
         if self.store['path'] is not None:
             MON.use_store(os.path.dirname(self.store['path']))    # the machine's samples sit beside the profile
         decision['profile'] = dict(PF.summary(self.store, self.digest), read_error=note, save_error=None, saved=False)
         decision['overhead_seconds']['binding'] = perf_counter()-begun
         self.observer = self._new_observer(max_leaves, self.bucket, policy.lookahead)
-        if not self._gate('source', dict(loaded=loaded, current=self.code), not self.stale):
-            return self._serial('source', 'the package source on disk is not the source this process imported: '
-                                'its timings bind to neither, so nothing is planned from the profile or added to it')
+        if not self._gate('source', dict(loaded=self.code, current=self.code), self.code is not None):
+            return self._serial('source', 'the frozen package timing identity was unavailable at startup')
         if not self._gate('mode', policy.mode, policy.mode == 'auto'):
             return self._serial('mode', 'policy mode is serial: observed and reported, never dispatched')
         if not self._gate('instrumentation', record['instrumented'], not record['instrumented']):
@@ -1007,30 +940,23 @@ class _Automatic:
                                              job['adopted']] + ([] if job.get('parent_seconds') is None
                                                                 else [job['parent_seconds']]))
         if not (observed['walls']['count'] or observed['interfaces'] or observed['dispatch']):
-            return    # nothing was timed: no second source inventory, nothing to fold or save
-        stale = self.stale
-        changed = timing_changed = False
+            return    # nothing was timed: nothing to fold or save
+        timing_changed = False
         try:
-            # Timings of a call during which the package source changed bind to neither version.
-            # A call that was stale from its start needs no second inventory to say so.
-            changed = not stale and PF.code_digest() != self.code
-            if not stale and not changed:
+            if self.code is not None:
                 current = PF.current_binding(self.budget, code=self.code, family=self.family)
                 timing_changed = (PF.binding_digest(current) != self.digest or current['instrumented'] or
                                   decision['binding']['instrumented'] or observer.instrumented)
         except Exception:
             timing_changed = True
-        self._observations_checked = True
         decision['overhead_seconds']['binding'] += perf_counter()-begun
         begun = perf_counter()
-        if stale or changed or timing_changed:
-            decision['binding']['changed'] = changed
+        if self.code is None or timing_changed:
             decision['binding']['timing_changed'] = timing_changed
             decision['observations'].update(recorded=0, discarded=summary['recorded']+summary['discarded'])
             decision['notes'].append('runtime or instrumentation changed or cannot be identified safely: '
-                'its observations were discarded' if timing_changed and not (stale or changed) else
-                'package source changed during the call: its observations were discarded' if changed else
-                'package source differs from the source this process imported: its observations were discarded')
+                'its observations were discarded' if timing_changed else
+                'frozen package timing identity was unavailable: its observations were discarded')
         else:
             PF.fold(self.store, self.digest, observed)
             error = PF.save(self.store)
@@ -1129,8 +1055,8 @@ class _WallBatches:
     """Bounded wall history and one active session; never a whole-wall task list.
 
     Prior clean batches can inform later ones through a private profile copy.
-    Their observations reach the real store only after the enclosing source and
-    runtime checks. The root observer still reports the complete wall timings.
+    Their observations reach the real store only with a known frozen source key
+    and compatible runtime. The root observer still reports the complete wall timings.
     """
     def __init__(self, parent):
         self.parent, self.active = parent, None
@@ -1206,7 +1132,7 @@ class _WallBatches:
             observed, summary = observer.collect()
             decision['observations'].update(summary)
             self.instrumented = self.instrumented or observer.instrumented
-            valid = (not self.parent.stale and not self.instrumented and
+            valid = (self.parent.code is not None and not self.instrumented and
                      automatic._current_timing_binding())
             if valid:
                 for job in decision['dispatch']['jobs']:
@@ -1238,13 +1164,9 @@ class _WallBatches:
         self.finished = True
         parent, report = self.parent, self.report
         binding = parent.decision['binding']
-        valid = (not parent.stale and not binding.get('changed') and not binding.get('timing_changed') and
+        valid = (parent.code is not None and not binding.get('timing_changed') and
                  not self.instrumented and not self.record['instrumented'] and
                  PF.binding_digest(PF.current_binding(parent.budget, code=parent.code, family='wall')) == self.digest)
-        if valid and not parent._observations_checked:
-            # Standalone bounded callers may not feed the enclosure observer.
-            # They still need the final source check, paid once, never per batch.
-            valid = PF.code_digest() == parent.code
         if valid and self.pending['bindings']:
             PF.fold(self.store, self.digest, PF.entry_observations(self.pending, self.digest))
             error = PF.save(self.store)
@@ -1253,7 +1175,7 @@ class _WallBatches:
         elif self.pending['bindings']:
             report['discarded'] += report['recorded']
             report['recorded'] = 0
-            report['notes'].append('wall observations discarded after source/runtime/instrumentation change')
+            report['notes'].append('wall observations discarded for unavailable timing identity or runtime/instrumentation change')
         report['profile'] = PF.summary(self.store, self.digest)
         parent.decision['wall_parallel'] = report
         if report['started']:
@@ -1733,7 +1655,7 @@ class _RollingWalls(_Rolling):
         try:
             observed, summary = observer.collect()
             self.instrumented = self.instrumented or observer.instrumented
-            if not self.parent.stale and not self.instrumented:
+            if self.parent.code is not None and not self.instrumented:
                 PF.fold(self.pending, self.digest, observed)
                 report['recorded'] += summary['recorded']
                 report['discarded'] += summary['discarded']
@@ -1759,11 +1681,9 @@ class _RollingWalls(_Rolling):
             self.notes.append('close: '+_text(error))
         parent, report = self.parent, self.report
         binding = parent.decision['binding']
-        valid = (not parent.stale and not binding.get('changed') and not binding.get('timing_changed') and
+        valid = (parent.code is not None and not binding.get('timing_changed') and
                  not self.instrumented and not self.record['instrumented'] and
                  PF.binding_digest(PF.current_binding(parent.budget, code=parent.code, family='wall')) == self.digest)
-        if valid and not parent._observations_checked:
-            valid = PF.code_digest() == parent.code
         if valid and self.pending['bindings']:
             PF.fold(self.store, self.digest, PF.entry_observations(self.pending, self.digest))
             error = PF.save(self.store)
@@ -1772,7 +1692,7 @@ class _RollingWalls(_Rolling):
         elif self.pending['bindings']:
             report['discarded'] += report['recorded']
             report['recorded'] = 0
-            report['notes'].append('wall observations discarded after source/runtime/instrumentation change')
+            report['notes'].append('wall observations discarded for unavailable timing identity or runtime/instrumentation change')
         report['profile'] = PF.summary(self.store, self.digest)
         rolling = self.summary()
         for name in ('started', 'adopted', 'declined', 'peak_child_rss'):

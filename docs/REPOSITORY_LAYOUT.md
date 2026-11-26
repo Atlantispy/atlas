@@ -87,6 +87,7 @@ tectonics-only native source digest.
 | --- | --- |
 | `atlas_tectonics/machine_resources_monitor.py` | `shared/src/atlas_shared/machine/resources_monitor.py` |
 | `atlas_tectonics/resources_gate.py` | `shared/src/atlas_shared/machine/resources_gate.py` |
+| `atlas_tectonics/integration_parallel_rolling.py` | `shared/src/atlas_shared/execution/schedule.py` |
 | `atlas_tectonics/exact_arithmetic.py` | `shared/src/atlas_shared/exact/exact_arithmetic.py` |
 
 - **A move changes no value.** Byte-identical bodies use move records. The exact backend

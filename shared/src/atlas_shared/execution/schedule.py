@@ -1,6 +1,9 @@
-"""Bounded rolling schedule of cost-targeted worker batches.
+"""Cost models for single contacts and rolling worker batches.
 
-Scheduling only. A schedule looks a bounded distance ahead of the parent in
+The single-contact planner selects the paying set of eligible jobs
+from conservative serial costs and measured worker overheads.
+
+A rolling schedule looks a bounded distance ahead of the parent in
 the router's own order, groups upcoming requests into batches of a target
 expected cost and gives each batch to one one-shot worker of a batch session.
 It never computes, validates or adopts anything: the session and the issuer
@@ -57,6 +60,7 @@ or any identity.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from collections import deque
+from itertools import combinations
 from time import perf_counter
 
 from atlas_shared.machine.resources_monitor import Timings
@@ -76,6 +80,69 @@ DEFER_MAX = 120.0    # the interval doubles up to this
 DEFERRALS = 24       # refused first opens before the pass stops looking (about 45 minutes)
 LATER = object()     # what session() returns when only the machine gates refused: open again later
 _FAILED = object()   # a guarded step of the schedule's own raised, and the schedule has stopped
+
+
+def _own(clock, work, alive, slowdown):
+    """When the parent finishes ``work`` seconds of its own contacts begun at ``clock``.
+
+    Until ``alive``, when the last worker of the plan ends, the parent runs
+    ``slowdown`` times slower: the threads that watch its workers share its
+    interpreter.
+    """
+    if clock >= alive or slowdown == 1:
+        return clock+work
+    fits = (alive-clock)/slowdown
+    return clock+work*slowdown if work <= fits else alive+(work-fits)
+
+
+def schedule(costs, eligible, *, workers, startup, transfer, contention, benefit_ratio, parent_slowdown=1.0):
+    """Best set of at most ``workers`` eligible positions to dispatch; pure.
+
+    costs are conservative serial seconds in router order, zero for unknown
+    work. The parent walks the list from time zero. The k-th launched job is
+    launched at k*transfer and its worker finishes startup+contention*cost
+    later; the parent adopts it on reaching its position, at the later of the
+    two times plus transfer. Every other position costs the parent its own
+    seconds, parent_slowdown times as many while any worker of the plan is
+    still alive (1 models an unaffected parent). Only one prepare exists, so
+    a job at the head of the queue can never be worth a worker: the parent
+    would only wait for it.
+
+    A set pays when its saving is positive and at least benefit_ratio times
+    the overhead it costs, len(set)*(startup+transfer). ``selected`` is the
+    paying set with the largest saving (fewer jobs, then earlier ones, on a
+    tie), so a second job that adds too little never costs the first its
+    worker. ``considered`` is the set with the largest saving whether or not
+    it pays; ``saving`` and ``overhead`` describe the selected set, or the
+    considered one when nothing is selected.
+    """
+    prefix = [0.0]
+    for cost in costs:
+        prefix.append(prefix[-1]+cost)
+    serial, best, chosen, worth, selected = prefix[-1], 0.0, (), 0.0, ()
+    # Rounding may neither turn a saving of exactly nothing into a gain nor
+    # let a larger set displace an equal smaller one.
+    noise = 1e-9*max(1.0, serial)
+    sizes = range(1, min(workers, len(eligible))+1)
+    ordered = sorted(eligible) if sizes else ()
+    for size in sizes:
+        for positions in combinations(ordered, size):
+            ends = [order*transfer+startup+contention*costs[position] for order, position in enumerate(positions)]
+            alive, clock, done = max(ends), 0.0, 0
+            for position, end in zip(positions, ends, strict=True):
+                clock = _own(clock, prefix[position]-prefix[done], alive, parent_slowdown)
+                clock = max(clock, end)+transfer
+                done = position+1
+            # Work behind the last dispatched position costs the same either
+            # way, so it is left out and cannot cancel against the total.
+            saving = prefix[done]-clock
+            if not chosen or saving > best+noise:
+                best, chosen = saving, positions
+            if (saving > noise and saving >= benefit_ratio*size*(startup+transfer)
+                    and (not selected or saving > worth+noise)):
+                worth, selected = saving, positions
+    return dict(selected=selected, considered=chosen, serial_seconds=serial,
+                saving=worth if selected else best, overhead=len(selected or chosen)*(startup+transfer))
 
 
 def expectation(shortcut, integrator, samples, minimum_samples, ceiling=None):

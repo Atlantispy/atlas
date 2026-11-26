@@ -16,7 +16,7 @@ from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1] / 'atlas_tectonics'
 SHARED = Path(find_spec('atlas_shared').origin).parent
-LISTED = ('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resources_gate', 'integration_parallel_rolling',
+LISTED = ('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resources_gate', 'atlas_shared.execution.schedule',
           'integration_parallel_selection')
 ADMITTED = LISTED[:3]  # admitted by construction; selection is held by (c)
 STANDARD = set(sys.stdlib_module_names) | {'psutil'}
