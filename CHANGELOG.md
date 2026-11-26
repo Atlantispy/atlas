@@ -1,7 +1,6 @@
 # Changelog
 
-Versions of the Atlas tectonics package, newest first. Each version uses the package version text and
-links to its tag. Tags dev0 to dev41 mark the first commit that carried that version. Passing tests,
+Versions of the Atlas tectonics package, newest first. Tagged versions link to their tags. Tags dev0 to dev41 mark the first commit that carried that version. Passing tests,
 review and scientific acceptance are separate outcomes. No entry claims acceptance.
 
 ## Unreleased
@@ -12,10 +11,11 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
   tests must pass. The older package tier reports its results only.
 - Documented the target folders, module skeleton, file moves and code retirement rules.
 - Extended the public-path check to scan the planned `shared/` folder once it exists.
-- Added a scratch landing command for diagnostic capture.
+- Added a scratch landing command that captures and seals diagnostic END outputs for later comparison.
 - Added a scratch landing command for saved-output comparison. The comparator preserves strict failures
   and limits a historical exception to its approved pair.
-- Added a scratch landing command for repeatable preparation.
+- Added a scratch landing command that binds the exact source diff and comparison result in a repeatable
+  preparation receipt.
 - Added an optional one-cell finite-stock adoption check for the collar identity path.
 
 ### Tectonics
@@ -203,6 +203,14 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## 0.1.0.dev45 - 2026-11-26
+
+### Documentation
+
+- Clarified what the tools, tectonics features and optimisations do in earlier changelog entries,
+  including how regional models exchange results with the spherical plate network and how supplied
+  plate splits, merges and ridge jumps are recorded.
+
 ## [0.1.0.dev44](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev44) - 2026-11-21
 
 ### Changed
@@ -217,10 +225,11 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 
 ### Added
 
-- Added tests of the content identifiers.
-- Added tests of the content record.
+- Added tests that verify content-derived identifiers stay stable when the underlying data stay the
+  same.
+- Added tests for the record that carries content-derived identifiers and their bindings.
 - Added tests of the identity rules for the moved records.
-- Added tests of the sampler switch.
+- Added tests that verify the profiling stack sampler stays off unless enabled.
 - Updated two repository tests to pass the continued state's code identity.
 
 ### Notes
@@ -268,24 +277,32 @@ Covers 21 Sep to 20 Nov 2026 (234 commits).
 ### Added
 
 - Added the W01 to W08 tectonics chain and its I01 to I05 integration.
-- Added the spherical network.
-- Added bridges.
-- Added events.
-- Added a 3D multigrid solver.
+- Added a closed spherical network with shared plate boundaries, moved by supplied rotations while
+  conserving material transfer.
+- Added bridges that pass part of the spherical plate network to a regional model and return results to
+  the same support and forcing.
+- Added support for supplied plate splits, merges and ridge jumps, committed with the intervals they
+  end.
+- Added a matrix-free multigrid option for 3D regional Stokes solves, applying the velocity equations
+  without storing the full matrix.
 - Added the tectonics roadmap (`docs/ATLAS_ROADMAP.md`).
 - Added completion plans 01 to 25 and their reviewed successors. They cover admission generation,
   preservation guards, heat correctness, comparison and extraction tools, geometry parity and restart
   validators.
-- Started the optimisation programme.
+- Started the optimisation programme to reduce repeated computation and storage work under existing
+  numerical checks.
 - Added measured geometry workers.
 - Added measured heat workers.
-- Added compiled heat.
+- Added a compiled path for the directed-rounding dot products used in heat certificates. The numerical
+  method and acceptance tolerances stay the same.
 - Reduced heat arithmetic under the optimisation programme.
 - Reduced pressure arithmetic under the optimisation programme.
-- Added endpoint lookahead.
-- Added lazy carried-start rows.
-- Added page carry.
-- Added the files query store.
+- Added bounded lookahead to keep endpoint workers busy while preserving serial adoption order.
+- Added lazy reads of the carried-start fields needed by each spatial operation, with a bounded
+  whole-row fallback.
+- Added optional reuse of verified pages between read batches of the same view, subject to freshness and
+  memory bounds.
+- Added a files query store that the prepared-state constructor declares for the snapshot loader.
 - Added working snapshots of the optimisation package from 13 Nov, with issued pins and source tables
   for each batch and for the first and second result-moving breaks.
 - Added the differential geometry phase with measured machine resources.
@@ -311,7 +328,8 @@ Covers 21 Sep to 20 Nov 2026 (234 commits).
 
 - Fixed the LF receipt writers after the 28 and 29 Sep reviews.
 - Fixed successor receipts after the 28 and 29 Sep reviews.
-- Fixed the before-commit guard after the 28 and 29 Sep reviews.
+- Fixed the guard that checks candidate bytes against the evidence register before commit, following the
+  28 and 29 Sep reviews.
 - Fixed Windows R5 recovery after the 28 and 29 Sep reviews.
 - Fixed public development defects from the 28 and 29 Sep reviews.
 - Fixed exact heat capacity projection.
@@ -370,7 +388,7 @@ Covers 21 Sep to 20 Nov 2026 (234 commits).
 
 ## [0.1.0.dev25](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev25) - 2026-09-19
 
-- Added R3 physical closure cases.
+- Added R3 physical closure cases for local rock rheology and retained mechanical memory.
 - Added the tectonics licence.
 - Added the repository licensing page.
 
@@ -383,16 +401,19 @@ Covers 21 Sep to 20 Nov 2026 (234 commits).
 ## [0.1.0.dev22](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev22) - 2026-09-18
 
 - Added R1 plate reference data with its use policy.
-- Added R2 precursor cases.
-- Added R2 scaling.
-- Optimised R2.
+- Added R2 precursor cases for plate-independent initial material volumes and temperature sampling.
+- Added an R2 execution case that checks scaling against the original numerical tolerances and
+  whole-request inventories.
+- Optimised R2 execution by pruning candidates conservatively and admitting independent batches. The
+  governing equations stay the same.
 
 ## [0.1.0.dev20](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev20) - 2026-09-18
 
 - Added W01 boundary cases.
-- Added W01 coordinate cases.
+- Added W01 cases for the coordinate frames and rotations used to describe geological geometry and
+  motion.
 - Added W01 Earth material cases.
-- Added W01 geological description cases.
+- Added W01 cases for describing starting geology before running the physical models.
 - Added W01 geometry cases.
 - Added the plate reference case.
 - Extended the tectonics README.
@@ -400,13 +421,15 @@ Covers 21 Sep to 20 Nov 2026 (234 commits).
 ## [0.1.0.dev10](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev10) - 2026-09-17
 
 - Completed W02 material transport.
-- Completed W02 regional transport.
+- Completed W02 regional transport, including material cohorts and their histories across regional
+  cells.
 - Added W02 optimisation foundations.
 
 ## [0.1.0.dev1](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev1) - 2026-09-17
 
 - Added the tectonics plan.
-- Added the optimisation reference.
+- Added the optimisation reference covering execution costs, resource accounting and methods for
+  avoiding repeated work.
 - Added bounded, deduplicated array persistence with memory and storage measurements.
 - Changed the remake kernels to validate their inputs.
 
