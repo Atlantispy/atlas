@@ -203,6 +203,14 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev68](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev68) - 2026-11-27
+
+### Bugfixes
+
+- Deleted three tests of checks that were removed in earlier landings (a code-change refusal on continued
+  thermal state, a mocked step-record source check and a module-list assertion), and updated one expected
+  refusal message to the current plan-change wording.
+
 ## [0.1.0.dev67](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev67) - 2026-11-27
 
 ### Tools

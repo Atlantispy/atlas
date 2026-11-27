@@ -5,10 +5,8 @@ from concurrent.futures import CancelledError
 from dataclasses import asdict,replace
 from pathlib import Path
 import inspect,json,os,shutil,subprocess,sys,tempfile,unittest
-from unittest import mock
 import numpy as np
 import atlas_tectonics as at
-from atlas_tectonics.thermal import thermochemical_execution as tx
 from atlas_tectonics.integration.resources import WorkBudget,MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits
 from tests.fixtures.variable_stokes_fixtures import coupled_problem,independent_nonlinear_two_cell_rhs
@@ -130,10 +128,10 @@ class CrossStepTests(unittest.TestCase):
     def test_modes_cannot_resume_each_other(self):
         a=self.first()
         with at.PreparedThermochemical2D(self.p,nonlinear_start='rk-stage0') as q:
-            with self.assertRaisesRegex(at.TectonicsError,'source/policy'):q.advance(a,.001,source='bad')
+            with self.assertRaisesRegex(at.TectonicsError,'physical plan changed'):q.advance(a,.001,source='bad')
             old=q.advance(self.s,.001,source='old').state
         with plan(self.p) as q:
-            with self.assertRaisesRegex(at.TectonicsError,'source/policy'):q.advance(old,.001,source='bad')
+            with self.assertRaisesRegex(at.TectonicsError,'physical plan changed'):q.advance(old,.001,source='bad')
     def test_algorithm_switch_cannot_resume(self):
         a=self.first()
         with plan(self.p,anderson_policy=at.AndersonPolicy()) as q:
@@ -246,11 +244,6 @@ class CrossStepTests(unittest.TestCase):
             self.assertEqual(actual.result_id,expected.result_id);self.assertEqual(b.reserved_bytes,0)
         self.assertEqual(a.descriptor(),before[0])
         for k,v in before[1].items():np.testing.assert_array_equal(v,a.array(k))
-    def test_source_mutation_refused(self):
-        a=self.first()
-        with plan(self.p) as q:
-            with mock.patch.object(tx,'_check_step_record',lambda *a:None):
-                with self.assertRaises(at.TectonicsError):q.advance(a,.001,source='bad')
     def test_self_contained_store_needs_no_parent_record(self):
         a,b=self.two()
         with tempfile.TemporaryDirectory() as tmp:

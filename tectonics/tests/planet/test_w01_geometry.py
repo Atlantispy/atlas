@@ -689,7 +689,6 @@ with ArrayStore(sys.argv[1],StoreLimits(1024,1<<20,4<<20)) as s:
 
     def test_context_tracks_geometry_functions_and_native_runtime(self):
         with ExecutionContext() as ctx:
-            self.assertIn('planet.geometry',ctx._modules)
             self.assertIn('shapely',ctx._runtime['versions'])
 
     def test_engine_report(self):

@@ -31,7 +31,7 @@ from atlas_tectonics import (StokesBox2D, DiffusiveScales, reference_rheology, B
 from atlas_tectonics.history.geological_records import GeologySource  # noqa: E402
 from atlas_tectonics.regional.execution import RegionalMechanicsScales, RegionalMechanicalSnapshot  # noqa: E402
 from atlas_tectonics.regional.workflow_geometry import RegionalColumnSupport  # noqa: E402
-from atlas_tectonics.integration.reuse import TectonicsError, content_record  # noqa: E402
+from atlas_tectonics.integration.reuse import content_record  # noqa: E402
 
 A, B, C = 'a'*64, 'b'*64, 'c'*64
 MODULES = (constitutive_execution, free_surface, precursor_sampling, regional_forcing, regional_geology,
@@ -150,20 +150,6 @@ class ThermochemicalTests(unittest.TestCase):
 
     def rest(self, b):
         return PrescribedMACVelocity(b, np.zeros((b.nz, b.nx+1)), np.zeros((b.nz+1, b.nx)), source='explicit zero velocity')
-
-    def test_continued_state_under_other_code_is_refused(self):  # W-1 case d (T-3)
-        _, s1 = self.run_once(A)
-        self.assertEqual(s1.descriptor()['execution'], A)
-        meta = s1.descriptor(); meta['execution'] = B  # code is not content: same state_id
-        self.assertEqual(ThermochemicalState.restore(meta, {k: s1.array(k) for k in s1.array_names}).state_id, s1.state_id)
-        for code in (A, B):
-            with Code(code), thermochemical_execution.PreparedThermochemical2D(self.problem(), backend='reference') as plan:
-                go = lambda: plan.advance(s1, .001, source='g3 step 2', velocity=self.rest(s1.problem.box))
-                if code == A:
-                    self.assertEqual(go().state.step_index, 2)
-                else:
-                    with self.assertRaisesRegex(TectonicsError, 'source/policy changed'):
-                        go()
 
     def test_code_identity_leaves_ids_and_evolution_id_enters_state_id(self):
         (pa, sa), (pb, sb) = self.run_once(A), self.run_once(B)
