@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev62](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev62) - 2026-11-27
+
+### Bugfixes
+
+- Updated the heat assessment inventory's source pin for `exact_gmp.py` after the dev61 geometry change,
+  and the interval assessment's pin of that inventory. On dev61 the heat assessment source check refused.
+
 ## [0.1.0.dev61](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev61) - 2026-11-27
 
 ### Optimisations
