@@ -17,6 +17,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -350,23 +351,37 @@ class TimeRefinementOracle(unittest.TestCase):
                 self.assertTrue(window[0] <= value <= window[1], (key, observed))
 
 
+def coupled_world():
+    state = Z.crust(Z.one_sided())
+    return state, Z.moving(state), Z.inputs(declaration=Z.side_declaration('right'))
+
+
+def coupled_levels(*levels, world=None):
+    """The coupled control's chains over T, one for each step count, all from the one start."""
+    state, moving0, inputs = world or coupled_world()
+    runs = {}
+    for n in levels:
+        end, moving, rotation, speed, results = chain(state, moving0, inputs, n, COUPLED_T_MYR/n)
+        runs[n] = dict(gain=max(max(c.kappa) for c in moving.cohorts)-Z.KAPPA0, rotation_rad=rotation,
+                       final_speed_m_s=speed, intervals=results)
+    return runs
+
+
 class TimeRefinementCoupled(unittest.TestCase):
     """The rulings' replacement time criterion (C3), with the one-sided carrier belt (mid-build ruling)."""
 
     def test_the_coupled_layered_feedback_resolves_under_step_halving(self):
-        network = Z.one_sided()
-        state = Z.crust(network)
-        moving0 = Z.moving(state)
-        inputs = Z.inputs(declaration=Z.side_declaration('right'))
-        start, _, _, _ = B.solve_at(state, moving0, inputs, interval=Z.interval(state), parent_state_id=state.state_id,
-                                    evaluation='start')
-        speed0 = v_rel(start.omega_rad_s)
-        runs = {}
-        for n in LEVELS:
-            end, moving, rotation, speed, results = chain(state, moving0, inputs, n, COUPLED_T_MYR/n)
-            gain = max(max(c.kappa) for c in moving.cohorts)-Z.KAPPA0
-            runs[n] = dict(gain=gain, rotation_rad=rotation, final_speed_m_s=speed, feedback_m_s=speed-speed0,
-                           intervals=results)
+        with threadpool_limits(limits=1, user_api='blas'):
+            coarser = beside(self, 'coupled_levels', *LEVELS[:-1])        # 4 and 8 steps beside, 16 here
+            world = coupled_world()
+            state, moving0, inputs = world
+            start, _, _, _ = B.solve_at(state, moving0, inputs, interval=Z.interval(state),
+                                        parent_state_id=state.state_id, evaluation='start')
+            speed0 = v_rel(start.omega_rad_s)
+            runs = coupled_levels(LEVELS[-1], world=world)
+        runs.update((int(n), run) for n, run in coarser().items())
+        for run in runs.values():
+            run['feedback_m_s'] = run['final_speed_m_s']-speed0
         changes = {key: relative_change(runs[8][key], runs[16][key]) for key in ('gain', 'rotation_rad',
                                                                                  'final_speed_m_s')}
         three = {key: (math.log2(abs(runs[4][key]-runs[8][key])/abs(runs[8][key]-runs[16][key]))
@@ -404,6 +419,40 @@ with threadpool_limits(limits=1, user_api='blas'):
     print(' '.join(T.ledger_summary(ledger)))
     store.close()
 '''
+CHILD = r'''
+import json
+import sys
+sys.path.insert(0, sys.argv[1])
+from threadpoolctl import threadpool_limits
+import tests.integration.test_i04_controls as T
+with threadpool_limits(limits=1, user_api='blas'):
+    value = getattr(T, sys.argv[2])(*json.loads(sys.argv[3]))
+print(json.dumps(T.B._plain(value)))
+'''
+
+
+def beside(case, name, *args):
+    """Start module function ``name(*args)`` in a fresh process; the returned call waits for its plain result.
+    For parts of one control that do not depend on each other. The assertions stay in the test."""
+    child = subprocess.Popen([sys.executable, '-B', '-c', CHILD, str(TECTONICS_ROOT), name, json.dumps(args)],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    case.addCleanup(child.__exit__, None, None, None)
+    case.addCleanup(child.kill)
+
+    def result():
+        out, err = child.communicate(timeout=3600)
+        *said, last = out.splitlines() or ['']
+        print('\n'.join(said), flush=True)
+        case.assertEqual(child.returncode, 0, err[-3000:])
+        return json.loads(last)
+    return result
+
+
+class Beside(unittest.TestCase):
+    def test_a_fresh_process_returns_the_plain_value_or_fails_the_test(self):
+        self.assertEqual(beside(self, 'relative_change', 1., 2.)(), .5)
+        with self.assertRaises(AssertionError):
+            beside(self, 'relative_change', 0., 0.)()
 
 
 def ledger_inputs():
@@ -427,8 +476,8 @@ def ledger_summary(ledger):
 
 
 class ReopenParity(unittest.TestCase):
-    """Two intervals, save, a fresh process reopens and continues two more: equal to the uninterrupted four field by
-    field and on the head record's sha256; every driving record replays."""
+    """A fresh process runs two intervals and saves; another reopens and continues two more: equal to the
+    uninterrupted four field by field and on the head record's sha256; every driving record replays."""
 
     def setUp(self):
         lease = threadpool_limits(limits=1, user_api='blas')
@@ -446,6 +495,21 @@ class ReopenParity(unittest.TestCase):
         return store, ledger
 
     def test_a_reopened_history_continues_to_the_same_head(self):
+        saved, part = self.ledger('saved')
+        ledger_id = part.ledger_id
+        saved.close()
+        command = [sys.executable, '-B', '-c', CONTINUE, str(TECTONICS_ROOT),
+                   str(self.folder/'saved'/'ledger.sqlite'), ledger_id, '2']
+        outputs = []
+
+        def two_fresh_processes():                  # two steps and save; then reopen and two more
+            for _ in range(2):
+                outputs.append(subprocess.run(command, capture_output=True, text=True, timeout=1800))
+                if outputs[-1].returncode:
+                    break
+        side = threading.Thread(target=two_fresh_processes)
+        side.start()
+        self.addCleanup(side.join)
         store, whole = self.ledger('whole')
         self.addCleanup(store.close)
         verified = None
@@ -455,17 +519,10 @@ class ReopenParity(unittest.TestCase):
         for commit in whole.chain()[1:]:
             self.assertEqual(B.verify_driving(whole, commit, cache=cache).status, B.REPLAYED)
         expected = ledger_summary(whole)
-        saved, part = self.ledger('saved')
-        verified = None
-        for _ in range(2):
-            verified = ledger_interval(part, verified)
-        ledger_id = part.ledger_id
-        saved.close()
-        path = str(self.folder/'saved'/'ledger.sqlite')
-        output = subprocess.run([sys.executable, '-B', '-c', CONTINUE, str(TECTONICS_ROOT), path, ledger_id, '2'],
-                                capture_output=True, text=True, timeout=1800)
-        self.assertEqual(output.returncode, 0, output.stderr[-3000:])
-        continued = output.stdout.split()
+        side.join()
+        for output in outputs:
+            self.assertEqual(output.returncode, 0, output.stderr[-3000:])
+        continued = outputs[-1].stdout.split()
         REPORT['reopen_parity'] = dict(uninterrupted=expected, continued=continued)
         self.assertEqual(continued, expected)
 

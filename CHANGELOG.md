@@ -203,6 +203,12 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev89](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev89) - 2026-11-27
+
+### Tests
+
+- Two long i04 controls run their independent parts in a second process: the coupled time-refinement control
+  falls from 498 to 318 seconds and the reopen control from 377 to 209 seconds, with the same reported values.
 ## [0.1.0.dev88](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev88) - 2026-11-27
 
 ### Tests
