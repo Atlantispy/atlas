@@ -1315,7 +1315,7 @@ class CompactMesh:
         # row (segment verified_read), not once per decoded scalar; the row is yielded only after the closing check.
         return nullcontext() if self._segment is None else self._segment._sealed_read()
 
-    def iter_legacy_json(self, *, encode=canonical):
+    def iter_legacy_json(self):
         """Explicit streamed hash/export: only one complete row/support at once."""
         header_owner = self.header()
         header = header_owner.value
@@ -1327,10 +1327,10 @@ class CompactMesh:
             self._check()
             if at:
                 yield b','
-            yield encode(name)
+            yield canonical(name)
             yield b':'
             if name in header:
-                yield encode(header[name])
+                yield canonical(header[name])
             elif name in ('cells', 'faces'):
                 yield b'['
                 count, load = (self.cell_count, self.cell) if name == 'cells' else (self.face_count, self.face)
@@ -1339,7 +1339,7 @@ class CompactMesh:
                         yield b','
                     with self._row_batch():
                         held = load(index)
-                        chunk = encode(held.value)
+                        chunk = canonical(held.value)
                         del held
                     yield chunk
                 yield b']'
@@ -1348,7 +1348,7 @@ class CompactMesh:
                 for ti, table in enumerate(self._tables):
                     if ti:
                         yield b','
-                    yield encode(table)
+                    yield canonical(table)
                     yield b':{'
                     first = True
                     for index in range(len(self._arrays['s.id'])):
@@ -1357,7 +1357,7 @@ class CompactMesh:
                         if not first:
                             yield b','
                         first = False
-                        yield encode(self.ident(int(self._arrays['s.id'][index])))
+                        yield canonical(self.ident(int(self._arrays['s.id'][index])))
                         yield b':'
                         if hasattr(self._reader, 'iter_json'):
                             with self._reader.iter_json(index) as stream:
@@ -1375,7 +1375,7 @@ class CompactMesh:
                 for index, value in enumerate(self._arrays['required.face']):
                     if index:
                         yield b','
-                    yield encode(self.face_id(int(value)))
+                    yield canonical(self.face_id(int(value)))
                 yield b']'
             else:
                 yield b'['
@@ -1389,7 +1389,7 @@ class CompactMesh:
                             yield b','
                         with self._row_batch():
                             grid_owner = self._row_owner((value,))
-                            chunk = encode(self._pair(value))
+                            chunk = canonical(self._pair(value))
                             del grid_owner
                         yield chunk
                     yield b']'

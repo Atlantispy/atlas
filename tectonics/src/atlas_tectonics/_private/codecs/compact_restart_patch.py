@@ -8,13 +8,13 @@ from contextlib import contextmanager
 from pathlib import Path
 import sys
 
-# WP16, capture-digest generation 2026-10-16: the three pre-advance operands are
-# written as atlas.diagnostic-capture.v1 files (exact bytes, zstd level 3) instead
+# WP16, capture-digest generation 2026-10-16: the pre-advance bounds operand is
+# written as an atlas.diagnostic-capture.v1 file (exact bytes, zstd level 3) instead
 # of gzip level 1. raw_bytes/raw_sha256 remain the codec-independent logical
-# identity (for the mesh, the view's geometry_id); container_sha256 only
-# authenticates one file against its own receipt and is never compared across runs.
+# identity; container_sha256 only authenticates one file against its own receipt
+# and is never compared across runs. The mesh and closed-graph captures had no reader.
 CAPTURE_FORMAT = 'atlas.diagnostic-capture.v1'
-CAPTURE_KINDS = {'mesh': 'mesh', 'closed_graph': 'closed-graph', 'bounds': 'bounds'}
+CAPTURE_KINDS = {'bounds': 'bounds'}
 CAPTURE_CHUNK = 65536
 # The existing pinned WP10 Zstandard library in its permanent folder; there is no
 # raw or gzip fallback: a missing or changed library refuses. It is named by its
@@ -122,33 +122,6 @@ def require_capture_route(store):
     return capture_backend().library_sha256
 
 
-class _CaptureItem(bytes):
-    """Canonical bytes keep their booking even in a retained consumer traceback."""
-    def __new__(cls, raw, lease):
-        result = super().__new__(cls, raw)
-        result._lease = lease
-        return result
-
-
-def _capture_canonical(value, budget):
-    """Book oversized JSON before serialization, not after its bytes are yielded.
-
-    The existing allocation-free mesh width is a conservative canonical-size
-    bound. Twice that bound funds text/bytes and the owned-byte copy. Header
-    slack covers small items and bounded per-object overhead. The lease follows
-    actual bytes/tracebacks, so failure cannot unbook still-retained memory.
-    """
-    from atlas_tectonics._private.codecs.capture_store import HEADER_WORK_BYTES, MAX_HEADER_BYTES, _Lease
-    from atlas_tectonics._private.codecs.mesh_tables import _width, canonical
-    size = _width(value)
-    # Leave space for the encoded capture header and the one slice copy.
-    slack = HEADER_WORK_BYTES - 2*MAX_HEADER_BYTES - CAPTURE_CHUNK
-    if 2*size <= slack:
-        return canonical(value)
-    lease = _Lease(budget, 2*size, 'canonical-item')
-    return _CaptureItem(canonical(value), lease)
-
-
 def _capture_parts(blocks, check):
     """bytes parts of at most 64 KiB, as write_capture requires.
 
@@ -156,8 +129,7 @@ def _capture_parts(blocks, check):
     wider item type would give parts over 64 KiB in machine byte order; it is refused before any part.
     A larger block is sliced through a view, so one 64 KiB slice is copied at a time. The view and
     the block are released before the next block is produced, so one item and one slice copy are
-    held here at most. Large canonical blocks retain their own lease; small blocks
-    and the slice copy fit the writer-header slack (see _capture_canonical).
+    held here at most.
     """
     for block in blocks:
         check()
@@ -231,24 +203,13 @@ def coverage_projection(mesh, *, budget, check):
 def inspect_compact_preadvance(coverage, mesh, graph, bounds, resources, budget,
                                cancel, artifacts, record, save):
     """Same physical predicates, with bounded projection and streamed capture."""
-    from atlas_tectonics._private.integration.geometry.exterior_mesh_patch import _view
     from atlas_tectonics.integration.heat.mimetic_heat import _q
     coverage.source_bindings()
-    view = _view(mesh)
     if type(graph._json) is not bytes or type(bounds._json) is not bytes:
         raise ValueError('coverage graph/bounds require their existing owned exact bytes')
     check = lambda: resources.check(cancel)
-    # Writer header slack covers small canonical items; larger items acquire
-    # their own lease before serialization and retain it with the yielded bytes.
-    mesh_row = capture_operand(artifacts, 'mesh',
-        view.iter_legacy_json(encode=lambda value: _capture_canonical(value, budget)),
-        budget=budget, check=check)
-    if mesh_row['raw_sha256'] != view.geometry_id:
-        raise ValueError('compact coverage mesh logical identity changed')
-    operands = capture_operands(artifacts, budget=budget, check=check,
-                                closed_graph=graph._json, bounds=bounds._json)
-    operands['mesh'] = mesh_row
-    record['preadvance_operands'] = operands
+    record['preadvance_operands'] = capture_operands(artifacts, budget=budget, check=check,
+                                                     bounds=bounds._json)
     save()
     with coverage_projection(mesh, budget=budget, check=check) as projected:
         record['observed_preadvance_counts'] = dict(cells=len(projected['cells']), faces=len(projected['faces']))
