@@ -51,7 +51,7 @@ SLOW_TESTS = MappingProxyType({
     # ED-7, 5 October 2026: one measured run of this single-test class, kept in full discovery.
     'tests.integration.test_i04_controls.ResolvedCaseB': 2760.8,
     # Measured in q1246 at 0726e3e, under the impact recorder (ids after the class split).
-    'tests.integration.test_i04_controls.CaseB.test_a_longer_length_widens_the_increment_profile': 102.4,
+    'tests.integration.test_i04_controls.CaseBLength.test_a_longer_length_widens_the_increment_profile': 102.4,
     'tests.integration.test_i04_controls.ReopenParity.test_a_reopened_history_continues_to_the_same_head': 377.9,
     'tests.integration.test_i04_controls.TimeRefinementCoupled.test_the_coupled_layered_feedback_resolves_under_step_halving': 503.5,
     'tests.integration.test_i04_controls.TimeRefinementOracle.test_the_oracle_control_is_first_order': 264.9,

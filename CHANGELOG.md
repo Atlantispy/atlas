@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev88](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev88) - 2026-11-27
+
+### Tests
+
+- Case B of the i04 controls is split into three classes that run in parallel. The slowest now takes under
+  5 minutes (measured at 284 seconds).
+
 ## [0.1.0.dev87](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev87) - 2026-11-27
 
 ### Tests

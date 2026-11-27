@@ -112,7 +112,8 @@ class CaseA(unittest.TestCase):
 
 
 class CaseB(unittest.TestCase):
-    """Direction (part_b case_b_direction), the w and side disclosures, mesh refinement and the ell sensitivity.
+    """Direction (part_b case_b_direction) and the w and side disclosures. CaseBRefinement and CaseBLength hold the
+    mesh refinement and the ell sensitivity: separate classes, so the runner spreads them.
 
     Each predeclared criterion is its own test. The two that failed are kept, unchanged, as expected failures under
     the coordinator's round-1 rulings (b1, b2): the FAIL stays recorded and is not re-gated."""
@@ -127,8 +128,6 @@ class CaseB(unittest.TestCase):
                         kappa0_2_5=summary(one(*Z.twin_case(kappa=2.5), Z.inputs())),
                         torque_x2=summary(one(cls.state, cls.moving, Z.inputs(2*Z.TORQUE))))
         REPORT['case_b_direction'] = dict(base=cls.base, **cls.runs)
-        cls.rows = {rows: summary(one(*Z.twin_case(rows=rows, kappa_profile=True), Z.inputs())) for rows in (2, 4, 8)}
-        REPORT['case_b_refinement'] = cls.rows
 
     def test_each_declared_change_moves_the_speed_the_expected_way(self):
         # the expected-failure sibling's operands exist and are finite (a renamed key must not hide in it)
@@ -165,6 +164,15 @@ class CaseB(unittest.TestCase):
         for item in (doubled, both, carrier):
             self.assertTrue(all(math.isfinite(item[k]) for k in ('v_rel_mm_yr', 'peak_resultant_n_m', 'max_dkappa')))
 
+
+class CaseBRefinement(unittest.TestCase):
+    """Mesh refinement of case B (part_b case_b_refinement), split from CaseB."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = {rows: summary(one(*Z.twin_case(rows=rows, kappa_profile=True), Z.inputs())) for rows in (2, 4, 8)}
+        REPORT['case_b_refinement'] = cls.rows
+
     def test_refinement_of_the_force_speed_and_raw_history_width(self):
         """Rows 2, 4, 8 with the smooth inherited weakness: the change between 4 and 8 rows <= 0.03 on the peak
         resultant, the relative speed and width_2sigma, here the raw-history width (inherited profile plus one
@@ -181,6 +189,10 @@ class CaseB(unittest.TestCase):
         0.03 was set for h/ell <= 0.25)."""
         self.assertLessEqual(relative_change(self.rows[4]['max_dkappa'], self.rows[8]['max_dkappa']),
                              TOL['mesh_refinement'])
+
+
+class CaseBLength(unittest.TestCase):
+    """The ell sensitivity of case B (part_b case_b_length), split from CaseB."""
 
     def test_a_longer_length_widens_the_increment_profile(self):
         """ell 2500 against 5000 m with belt cells < 2500 m (24 rows per side): the increment profile's
