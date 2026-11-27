@@ -203,6 +203,32 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev82](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev82) - 2026-11-27
+
+### Optimisations
+
+- Each step's stock record is now hashed as it is built. This removes one encode, one decode, one hash and one
+  lease of 8 KiB or more per step.
+- Snapshot metadata no longer rebuilds the manifest. Each metadata read with external fields no longer walks
+  every array entry or renders, hashes and parses the whole manifest.
+- One split now serves both mirror clips. Each hole plane saves one side filter, one row pass, one set of
+  crossing points and two reservations.
+
+### Cleanup
+
+- Removed three text patchers that nothing called, all anchored on a function that had already been deleted.
+
+### Pin records
+
+- `owned_assessment_inventory._PINS['exact_gmp.py']` changes from
+  `880223a8d807a6dfc4ca3c323923d5ac2db3e02c1f22e289181f88fd25c973a2` to
+  `59452e0134b960580bda89adc9e763e30221636752ca0ad6cc5c5b8955d532dd`, because the single-split change edits
+  `exact_gmp.py`.
+- `owned_interval_assessment.INVENTORY_SHA` changes from
+  `d752080fa6b91006ffee8d63f78b2978435f5ac314db19e33c4fad04089f15f9` to
+  `c1f571dbd39dd21f6b3e2acaf1b12a6f5880fbcb1dc47e4153536a9d5b03e0d0`, because the pin above edits
+  `owned_assessment_inventory.py`.
+
 ## [0.1.0.dev81](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev81) - 2026-11-27
 
 ### Tests

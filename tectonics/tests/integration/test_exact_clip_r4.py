@@ -24,9 +24,9 @@ from atlas_tectonics.integration.geometry import volume as V, volume_bounds as B
 OLD = '''\
         rows = {point: (num, den) for point, (num, den) in zip(points, _numerators(points, coeff))}
         if max(row[0] for row in rows.values()) <= 0:
-            return poly
+            return (), poly
         if min(row[0] for row in rows.values()) >= 0:
-            return ()
+            return poly, ()
 '''
 NEW = '''\
         rows, high, low = {}, 0, 0
@@ -37,15 +37,15 @@ NEW = '''\
             elif num < low:
                 low = num
         if high <= 0:
-            return poly
+            return (), poly
         if low >= 0:
-            return ()
+            return poly, ()
 '''
 MUTANTS = [
     ('largest never recorded', '                high = num\n', '                pass\n'),
     ('least never recorded', '                low = num\n', '                pass\n'),
-    ('early returns on the wrong sign', '            return poly\n        if low >= 0:\n            return ()',
-     '            return ()\n        if low >= 0:\n            return poly'),
+    ('early returns on the wrong sign', '            return (), poly\n        if low >= 0:\n            return poly, ()',
+     '            return poly, ()\n        if low >= 0:\n            return (), poly'),
 ]
 
 

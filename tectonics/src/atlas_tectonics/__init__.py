@@ -28,7 +28,7 @@ from atlas_tectonics.mechanics.compaction_columns import (GrainComponent, Compac
 from atlas_tectonics.mechanics.flexure import PeriodicFlexure
 from atlas_tectonics.mechanics.column_loads import LoadSupport, LoadPhase, ColumnLoadState, column_load_change
 
-__version__ = "0.1.0.dev81"
+__version__ = "0.1.0.dev82"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]

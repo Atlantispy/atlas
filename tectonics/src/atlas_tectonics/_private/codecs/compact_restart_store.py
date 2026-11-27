@@ -351,10 +351,9 @@ class CompactRestartStore:
                 return None
             if 'external' not in view._owner.value['metadata']:
                 return N._parse(N._json(view._owner.value['metadata']['metadata']))
-            # Externalised fields are returned only from the rebuilt native
-            # manifest, after its bytes hash to the snapshot identity.
+            # _external_field reserves nothing for the field bytes it holds.
             with self._workspace(8 * self.limits.max_manifest_bytes):
-                return self._manifest_from_segment(invocation, view)['metadata']
+                return N._parse(N._json(self._full_metadata(view._owner.value['metadata'])))
 
     @staticmethod
     def _external_plan(parsed):

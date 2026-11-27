@@ -376,15 +376,16 @@ class PreparedFiniteStocks:
                 graph=graph, physical_cell_ids=ids, active_stock_ids=active,
                 stocks={k: list(map(_enc, v)) for k, v in stocks.items()}), self)
 
-    def finish(self, proposal, result):
-        """Read actual joined face transfers; return an uncommitted successor."""
+    def finish_record(self, proposal, result):
+        """Read actual joined face transfers; return the uncommitted successor's record."""
         self._verify()
         if (type(proposal) is not FiniteStockProposal or proposal._owner is not self or
                 type(result) is not SpatialTransportResult or result._budget is not self._budget):
             raise TectonicsError('actual finite proposal and same-budget joined transport required')
         with LIVE_SPATIAL.access(proposal.record()) as p, LIVE_SPATIAL.access(result.record()) as r:
             with self._budget.reserve(131072+8*(LIVE_FINITE.width(p, _width)+LIVE_FINITE.width(r, _width)), category='finite-spatial-stock-finish'):
-                return self._state(self._finished_record(p, r))
+                new = self._finished_record(p, r)
+                return dict(state_id=_hash(new), **new)
 
     def _finished_record(self, p, r):
         if (r['geometry_id'] != LIVE_SPATIAL.graph_content_identity(p['graph'], _legacy_hash) or r['state_id'] != p['transport_parent_id'] or

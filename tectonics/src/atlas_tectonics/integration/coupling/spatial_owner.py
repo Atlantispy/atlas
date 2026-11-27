@@ -926,7 +926,7 @@ class PreparedSpatialOwner:
                 thermal_mesh=LIVE_SPATIAL.mesh_value(mesh, metric), cells=LIVE_SPATIAL.state_cells(cells),
                 projection_accounts={k: _enc(v) for k, v in projection.items()})
             if self._finite is not None:
-                record['finite_stock_state'] = self._finite.finish(step.finite_proposal, step.result).record()
+                record['finite_stock_state'] = self._finite.finish_record(step.finite_proposal, step.result)
             if self._measure_policy is not None:
                 record['measure_policy'] = self._measure_policy
                 record['native_material_quadrature_m3'] = [_enc(Q(float(v))) for v in native.array(B_NAME).flat]

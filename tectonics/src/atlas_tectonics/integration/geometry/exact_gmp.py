@@ -189,15 +189,6 @@ def _plane(plane):
     return result
 
 
-def _negated(plane):
-    """The opposite halfspace; bit lengths do not depend on sign."""
-    result = object.__new__(_Plane)
-    result.source = tuple(-v for v in plane.source)
-    result.bits, result.cuts = plane.bits, plane.cuts
-    result.admits_all = plane.source[3] <= 0
-    return result
-
-
 def _row(plane):
     """The plane over one positive common denominator, as native integers.
 
@@ -613,21 +604,36 @@ def _numerators(points, coeff):
 
 def _clip(poly, plane, arena):
     """Exact convex-polyhedron clipping; only EXACT zero-volume faces vanish."""
+    return _cut(poly, plane, arena, False)[1]
+
+
+def _split(poly, plane, arena):
+    """(poly clipped to the opposite halfspace, poly clipped to plane) from one pass.
+
+    Equals the two _clip calls it replaces (results, work units, charges, peak): negating a plane negates every row
+    numerator and keeps its denominator, bit lengths and every edge's crossing point.
+    """
+    return _cut(poly, plane, arena, True)
+
+
+def _cut(poly, plane, arena, split):
+    """(outside, inside); outside is meaningful only when split."""
     if not poly:
-        return ()
+        return (), ()
     if type(poly) is not _Poly or type(plane) is not _Plane:
         raise TypeError('native-resident polyhedron and plane required')
     if not plane.cuts:
-        return poly if plane.admits_all else ()
+        return (poly if plane.source[3] <= 0 else ()), (poly if plane.admits_all else ())
     _own(poly, arena)
     points = poly.points
-    arena.work(16+8*len(points))
+    for _ in range(1+split):
+        arena.work(16+8*len(points))
     with _work(poly.bits+plane.bits, 3*len(points)+4, arena.resource):
         side = _filtered_poly_side(plane, poly, arena.resource)
         if side == -1:
-            return poly
+            return (), poly
         if side == 1:
-            return ()
+            return poly, ()
         coeff, common = _row(plane)
         # Every plane entry is an exact int/Fraction with positive denominator,
         # so common is positive. It cancels from both edge-plane distances in
@@ -640,18 +646,18 @@ def _clip(poly, plane, arena):
             elif num < low:
                 low = num
         if high <= 0:
-            return poly
+            return (), poly
         if low >= 0:
-            return ()
+            return poly, ()
         row_bytes = 256*len(rows)+4*sum((n.bit_length()+(common*d).bit_length()+7)//8
                                       for n, d in rows.values())
         cache_bytes = 1024+768*sum(map(len, poly))+row_bytes
         with arena.resource.reserve(cache_bytes, category='curved-clip-edge-cache'):
             intersections, fresh = {}, {}
             try:
-                faces, cap = [], set()
+                faces, outer, cap = [], [], set()
                 for face in poly:
-                    out = []
+                    out, rest = [], []
                     for a, b in zip(face, face[1:]+face[:1]):
                         na, da = rows[a]
                         nb, db = rows[b]
@@ -659,6 +665,8 @@ def _clip(poly, plane, arena):
                             out.append(a)
                             if na == 0:
                                 cap.add(a)
+                        if split and na >= 0:
+                            rest.append(a)
                         if (na < 0 < nb) or (nb < 0 < na):
                             point = intersections.get((a, b))
                             if point is None:
@@ -669,23 +677,28 @@ def _clip(poly, plane, arena):
                                 intersections[a, b] = point
                                 intersections[b, a] = point
                             out.append(point)
+                            rest.append(point)
                             cap.add(point)
-                    if len(out) >= 3:
-                        unique = tuple(p for i, p in enumerate(out) if p != out[i-1])
-                        if len(unique) >= 3 and any(_noncollinear(unique[0], unique[i], unique[i+1])
-                                                    for i in range(1, len(unique)-1)):
-                            faces.append(unique)
+                    for ring, kept in ((out, faces), (rest, outer))[:1+split]:
+                        if len(ring) >= 3:
+                            unique = tuple(p for i, p in enumerate(ring) if p != ring[i-1])
+                            if len(unique) >= 3 and any(_noncollinear(unique[0], unique[i], unique[i+1])
+                                                        for i in range(1, len(unique)-1)):
+                                kept.append(unique)
                 cap = tuple(sorted(cap))
-                if len(cap) >= 3:
-                    ring = _cap_face(cap, tuple(range(len(cap))), coeff, poly, fresh, arena.resource)
-                    if ring is not None:
-                        faces.append(tuple(cap[i] for i in ring))
-                result = _poly(tuple(faces), poly.info, fresh)
-                arena._retain(1024+384*len(result.points)+128*sum(map(len, result))
-                              +4*result.quarters)
-                if result.extra:
-                    arena._retain(result.extra, NATIVE_RETAINED)
-                return result or ()
+                results = []
+                for kept, normal in ((outer, tuple(-c for c in coeff)), (faces, coeff))[not split:]:
+                    if len(cap) >= 3:
+                        ring = _cap_face(cap, tuple(range(len(cap))), normal, poly, fresh, arena.resource)
+                        if ring is not None:
+                            kept.append(tuple(cap[i] for i in ring))
+                    result = _poly(tuple(kept), poly.info, fresh)
+                    arena._retain(1024+384*len(result.points)+128*sum(map(len, result))
+                                  +4*result.quarters)
+                    if result.extra:
+                        arena._retain(result.extra, NATIVE_RETAINED)
+                    results.append(result or ())
+                return tuple(results) if split else ((), results[0])
             finally:
                 intersections.clear()
 

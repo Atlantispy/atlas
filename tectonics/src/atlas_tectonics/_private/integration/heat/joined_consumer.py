@@ -351,7 +351,7 @@ The heat result remains private; this is not whole-method resource admission.
                 trajectory=graph['trajectory'], grid_id=graph['grid_id'], thermal_mesh_id=mesh.geometry_id,
                 thermal_mesh=INDEXED.stored_mesh(mesh), cells=LIVE_SPATIAL.state_cells(cells), projection_accounts=accounts)
             if owner._finite is not None:
-                record['finite_stock_state'] = owner._finite.finish(step.finite_proposal, step.result).record()
+                record['finite_stock_state'] = owner._finite.finish_record(step.finite_proposal, step.result)
             if owner._measure_policy is not None:
                 record['measure_policy'] = owner._measure_policy
                 record['native_material_quadrature_m3'] = [O._enc(O.Q(float(v))) for v in native.array(O.B_NAME).flat]

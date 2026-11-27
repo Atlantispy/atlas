@@ -143,20 +143,35 @@ def _plane_integer_rows(points, plane):
 
 def _clip(poly, plane, arena):
     """Exact convex-polyhedron clipping; only EXACT zero-volume faces vanish."""
+    return _cut(poly, plane, arena, False)[1]
+
+
+def _split(poly, plane, arena):
+    """(poly clipped to the opposite halfspace, poly clipped to plane) from one pass.
+
+    Equals the two _clip calls it replaces (results, work units, charges, peak): negating a plane negates every row
+    numerator and keeps its denominator, bit lengths and every edge's crossing point.
+    """
+    return _cut(poly, plane, arena, True)
+
+
+def _cut(poly, plane, arena, split):
+    """(outside, inside); outside is meaningful only when split."""
     if not poly:
-        return ()
+        return (), ()
     normal, limit = plane[:3], plane[3]
     if not any(normal):
-        return poly if limit >= 0 else ()
+        return (poly if limit <= 0 else ()), (poly if limit >= 0 else ())
     points = _points(poly)
-    arena.work(16+8*len(points))
+    for _ in range(1+split):
+        arena.work(16+8*len(points))
     values = (*(v for p in points for v in p), *plane)
     with V._work(values, arena.resource, convert_values=False):
         rows = _plane_integer_rows(points, plane)
         if max(row[0] for row in rows.values()) <= 0:
-            return poly
+            return (), poly
         if min(row[0] for row in rows.values()) >= 0:
-            return ()
+            return poly, ()
         # Positive row denominators let integer numerators decide every side.
         # Admit both directed edge keys and the longer-lived integer row payload
         # before allocating the cache. Only true straddles construct a ratio.
@@ -166,9 +181,9 @@ def _clip(poly, plane, arena):
         with arena.resource.reserve(cache_bytes, category='curved-clip-edge-cache'):
             intersections = {}
             try:
-                faces, cap = [], set()
+                faces, outer, cap = [], [], set()
                 for face in poly:
-                    out = []
+                    out, rest = [], []
                     for a, b in zip(face, face[1:]+face[:1]):
                         na, da = rows[a]
                         nb, db = rows[b]
@@ -176,6 +191,8 @@ def _clip(poly, plane, arena):
                             out.append(a)
                             if na == 0:
                                 cap.add(a)
+                        if split and na >= 0:
+                            rest.append(a)
                         if (na < 0 < nb) or (nb < 0 < na):
                             point = intersections.get((a, b))
                             if point is None:
@@ -185,23 +202,28 @@ def _clip(poly, plane, arena):
                                 intersections[a, b] = point
                                 intersections[b, a] = point
                             out.append(point)
+                            rest.append(point)
                             cap.add(point)
-                    if len(out) >= 3:
-                        # Distinct adjacent vertices and non-collinearity are
-                        # exact predicates, never a small-face tolerance.
-                        unique = tuple(p for i, p in enumerate(out) if p != out[i-1])
-                        if len(unique) >= 3 and any(any(O._cross(O._minus(unique[i], unique[0]),
-                                O._minus(unique[i+1], unique[0]))) for i in range(1, len(unique)-1)):
-                            faces.append(unique)
+                    for ring, kept in ((out, faces), (rest, outer))[:1+split]:
+                        if len(ring) >= 3:
+                            # Distinct adjacent vertices and non-collinearity are
+                            # exact predicates, never a small-face tolerance.
+                            unique = tuple(p for i, p in enumerate(ring) if p != ring[i-1])
+                            if len(unique) >= 3 and any(any(O._cross(O._minus(unique[i], unique[0]),
+                                    O._minus(unique[i+1], unique[0]))) for i in range(1, len(unique)-1)):
+                                kept.append(unique)
                 cap = tuple(sorted(cap))
-                if len(cap) >= 3:
-                    ring = O._face(cap, tuple(range(len(cap))), normal)
-                    if ring is not None:
-                        faces.append(tuple(cap[i] for i in ring))
-                result = tuple(faces)
-                retained = _points(result)
-                arena.keep(tuple(v for p in retained for v in p), sum(map(len, result)))
-                return result
+                results = []
+                for kept, side in ((outer, tuple(-v for v in normal)), (faces, normal))[not split:]:
+                    if len(cap) >= 3:
+                        ring = O._face(cap, tuple(range(len(cap))), side)
+                        if ring is not None:
+                            kept.append(tuple(cap[i] for i in ring))
+                    result = tuple(kept)
+                    retained = _points(result)
+                    arena.keep(tuple(v for p in retained for v in p), sum(map(len, result)))
+                    results.append(result)
+                return tuple(results) if split else ((), results[0])
             finally:
                 intersections.clear()
 
@@ -254,10 +276,6 @@ def _volume(poly, arena, *, _consume=None):
 # what the kernels use, so the conversions are identities.
 def _plane(plane):
     return plane
-
-
-def _negated(plane):
-    return tuple(-v for v in plane)
 
 
 def _exact(value):
@@ -380,10 +398,9 @@ def _outside_holes(poly, holes, arena, kernel=None):
         for part in parts:
             inside = part
             for plane in hole_planes:
-                outside = K._clip(inside, K._negated(plane), arena)
+                outside, inside = K._split(inside, plane, arena)
                 if outside:
                     remaining.append(outside)
-                inside = K._clip(inside, plane, arena)
                 if not inside:
                     break
         parts = remaining

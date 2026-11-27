@@ -1329,20 +1329,6 @@ def indexed_owner_source(source):
     return owner_source(source)
 
 
-def reservoir_source(source):
-    source = _function(source, 'validate_saved', (
-        ('8*sum(map(_width, (state_record, proposal_record, transport_record)))',
-         '_SV.finite_workspace((state_record, proposal_record, transport_record), _width)'),
-        ('type(proposal_record) is not dict', 'not _SV.is_record(proposal_record)'),
-        ("_hash({k: v for k, v in proposal_record.items() if k != 'proposal_id'})",
-         "_SV.excluded_identity(proposal_record, ('proposal_id',), _hash)"),
-    ), scope='with _SV.transport_access(proposal_record, transport_record) as (proposal_record, transport_record):')
-    source = _function(source, '_finished_record', (
-        ("_hash(p['graph'])", "_SV.identity(p['graph'], _hash)"),
-    ), scope='with _SV.transport_access(p, r) as (p, r):')
-    return _finish(source)
-
-
 def measures_source(source):
     source = _function(source, 'transport_audit', (
         ('_json_encoding_capacity(graph, budget)', '_SV.encoding_capacity(graph, budget, _json_encoding_capacity)'),
