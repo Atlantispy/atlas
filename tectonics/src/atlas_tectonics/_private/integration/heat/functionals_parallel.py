@@ -152,6 +152,7 @@ What this does NOT guarantee:
 No arithmetic, order of rows, support, precision or reservation formula of the
 kernel is changed or repeated here, and no physical value is read.
 """
+from contextlib import contextmanager
 from copy import deepcopy
 from hashlib import sha256
 import json
@@ -195,7 +196,7 @@ RECORD = struct.Struct('>QI')   # a saved record: its length after these 8 bytes
 
 # The ONE mutable object of this module. It is lower-case, not callable and
 # never rebound; a driver or tool sets the count through configure().
-_state = dict(workers=6, calls=[], fallbacks=[], problems=0, events=[],
+_state = dict(workers=6, hold=None, calls=[], fallbacks=[], problems=0, events=[],
               totals=dict(calls=0, faces=0, collected=0, in_caller=0, fallbacks=0, restarts=0))
 
 
@@ -206,6 +207,54 @@ def configure(*, workers=None):
             raise ValueError('Worker count must be a nonnegative integer')
         _state['workers'] = workers
     return _state['workers']
+
+
+@contextmanager
+def hold():
+    """H4: a pool that served a call normally is kept for the next call inside this hold, then stopped at its end.
+
+    One forward call's reconstructions share their geometry, conductivity and budget. A kept pool is reused only
+    for the same kernel, worker count, meter and hello, with every worker ready and alive; every call still sends
+    all its inputs after hello and each worker rebuilds them, so only process start, imports and admission are saved.
+    """
+    if _state['hold'] is not None:
+        raise RuntimeError('A heat pool hold is already open')
+    held = _state['hold'] = dict(pool=None, key=None)
+    try:
+        yield
+    except BaseException:
+        _state['hold'] = None
+        if held['pool'] is not None:
+            held['pool'].stop(0., quiet=True)
+        raise
+    _state['hold'] = None
+    if held['pool'] is not None:
+        held['pool'].stop(GRACE_SECONDS, quiet=False)
+
+
+def _kept(meter, kernel, count, call):
+    """H4: the kept pool of the open hold if it fits this call, else a new pool. A kept pool leaves the hold."""
+    held = _state['hold']
+    pool = None if held is None else held['pool']
+    if pool is not None:
+        held['pool'] = None
+        try:
+            try:
+                table = _files()
+            except OSError:
+                table = None
+            if (table is not None and held['key'] == (kernel, count, meter) and not pool.stopped
+                    and all(worker.ready and worker.process.poll() is None for worker in pool.workers)
+                    and _hello(kernel, table) == pool.hello):
+                pool.renew(call['processes'], table)
+                return pool
+        except BaseException:
+            pool.stop(0., quiet=True)           # out of the hold and not returned: no worker may outlive this
+            raise
+        pool.stop(GRACE_SECONDS, quiet=False)
+    pool = _Pool(meter)
+    pool.rows = call['processes']
+    return pool
 
 
 def strict():
@@ -406,7 +455,13 @@ def _clone():
     return str(Path(atlas_tectonics.__file__).resolve().parent.parent)
 
 
-def _unlike(files, table, candidate, clone):
+def _shared_root():
+    """The import path entry atlas_shared was loaded from: the clone itself when installed, its own source folder in a repository."""
+    import atlas_shared
+    return str(Path(atlas_shared.__file__).resolve().parent.parent)
+
+
+def _unlike(files, table, candidate, clone, shared):
     """Names of the files a worker loaded that are not the caller's.
 
     ``table`` is the caller's own: what it has loaded, by path. A file the
@@ -427,7 +482,7 @@ def _unlike(files, table, candidate, clone):
             found = None
             if ((place.parent == candidate and (place.name.startswith('private_heat_') or
                     place.suffix == '.py' and place.stem in _INDEXED_RUNTIME_HELPERS))
-                    or any(place.is_relative_to(clone/package) for package in ('atlas_tectonics', 'atlas_shared'))):
+                    or place.is_relative_to(clone/'atlas_tectonics') or place.is_relative_to(shared/'atlas_shared')):
                 try:
                     found = _digest(path)
                 except OSError:
@@ -443,6 +498,13 @@ def _moment_part(face):
     return {name: face[name] for name in MOMENT_FIELDS}
 
 
+def _hello(kernel, table):
+    """The first message to a worker: what it must load and check before anything else."""
+    return _pack(('hello', dict(schema=SCHEMA, kernel=kernel.__name__, clone=_clone(), shared=_shared_root(),
+                                candidate=str(Path(kernel.__file__).resolve().parent), files=table,
+                                runtime=_runtime(), caller=os.getpid())))
+
+
 def _inputs(kernel, prepared, ladder, table):
     """The messages every worker is sent once, in order.
 
@@ -450,9 +512,7 @@ def _inputs(kernel, prepared, ladder, table):
     observation point of that face; it is sent without it and the worker joins
     the two again, so the coordinates travel and are held once.
     """
-    yield _pack(('hello', dict(schema=SCHEMA, kernel=kernel.__name__, clone=_clone(),
-                               candidate=str(Path(kernel.__file__).resolve().parent), files=table,
-                               runtime=_runtime(), caller=os.getpid())))
+    yield _hello(kernel, table)
     yield from _shared(prepared, ladder)
 
 
@@ -555,6 +615,7 @@ class _Worker:
         self.outbox = queue.SimpleQueue()
         self.began = perf_counter()
         self.watched, self.still = None, 0   # the face and processor time at the last look; looks without any since
+        self.admitted, self.earlier = False, []   # H4: admitted once; the rows of earlier calls of a kept pool
         self.row = dict(slot=slot, pid=None, ready_seconds=None, faces=0, busy_seconds=0., compute_seconds=0.,
                         moments=0, private_peak_bytes=0, working_set_peak_bytes=0, ended_by_caller=None,
                         exit_code=None, stderr_tail=None)
@@ -640,8 +701,9 @@ class _Worker:
             except (OSError, ValueError):
                 pass
         # Why a worker that failed or had to be ended did so: its own last words, kept on the record.
-        self.row.update(ended_by_caller=forced and not ended, exit_code=process.returncode,
-                        stderr_tail=_text(self.tail) if forced or process.returncode else None)
+        for row in (*self.earlier, self.row):
+            row.update(ended_by_caller=forced and not ended, exit_code=process.returncode,
+                       stderr_tail=_text(self.tail) if forced or process.returncode else None)
 
 
 class _Pool:
@@ -653,6 +715,19 @@ class _Pool:
         self.workers, self.started, self.allowances = [], [], 0
         self.rows = []                         # one record a worker, for the call's report; filled as they are created
         self.stopped = False
+        self.kept, self.hello, self.table = False, None, None
+
+    def renew(self, rows, table):
+        """H4: a kept pool before its next call. Each worker reports on a new row; its admission keys carry over."""
+        self.rows, self.kept, self.table = rows, True, table
+        for worker in self.workers:
+            fresh = dict(worker.row, ready_seconds=None, faces=0, busy_seconds=0., compute_seconds=0., moments=0,
+                         private_peak_bytes=0, working_set_peak_bytes=0)
+            fresh.pop('candidate_heat_route', None)
+            worker.earlier.append(worker.row)
+            worker.row = fresh
+            rows.append(fresh)
+            worker.ready, worker.index, worker.began, worker.watched, worker.still = False, None, perf_counter(), None, 0
 
     def start(self, count):
         """Charge ``count`` workers, then start them. Returns why one could not be started, or None."""
@@ -680,6 +755,24 @@ class _Pool:
 
     def admit(self, worker, facts, table, places):
         """A worker says it is ready. Returns why it cannot be used, or None once the meter reads it."""
+        if worker.admitted:
+            # H4: a kept worker, ready for another call. Its process, native handle, start allowance and meter
+            # entry are those of its first admission; what it has loaded and how it is set are checked again.
+            if type(facts) is not dict:
+                return 'a worker did not say which process it is'
+            unlike = _unlike(facts.get('files'), table, *places)
+            if unlike:
+                return 'a worker loaded other files: '+', '.join(unlike[:8])
+            import decimal
+            expected_context = decimal.Context(prec=decimal.getcontext().prec, rounding=decimal.ROUND_HALF_EVEN)
+            if facts.get('settings') != _settings(expected_context):
+                return 'a worker is not set as this process is'
+            if facts.get('pid') != worker.row['pid']:
+                return 'a kept worker named another process'
+            worker.ready = True
+            worker.row.update(ready_seconds=round(perf_counter()-worker.began, 3),
+                              ready_private_bytes=facts.get('private'), ready_working_set_bytes=facts.get('working_set'))
+            return None
         if type(facts) is not dict or type(facts.get('pid')) is not int:
             return 'a worker did not say which process it is'
         try:
@@ -711,7 +804,7 @@ class _Pool:
         except self.psutil.Error:
             return 'a worker ended before the meter read it'
         self.allowances -= 1
-        worker.ready = True
+        worker.ready = worker.admitted = True
         worker.row.update(pid=facts['pid'], ready_seconds=round(perf_counter()-worker.began, 3))
         return None
 
@@ -900,20 +993,22 @@ class _Saved:
         return None
 
     def _where(self, place, path):
-        if place not in ('candidate', 'clone') or type(path) is not str:
+        if place not in ('candidate', 'clone', 'shared') or type(path) is not str:
             return None
         relative = Path(path)
         if relative.is_absolute() or '..' in relative.parts:
             return None
-        return self.places[place == 'clone']/relative
+        return self.places[('candidate', 'clone', 'shared').index(place)]/relative
 
     def _place(self, path):
         """(place, path relative to it) of a file a worker named, or None when it is under neither place."""
-        path, (candidate, clone) = Path(path), self.places
+        path, (candidate, clone, shared) = Path(path), self.places
         if path.parent == candidate:
             return 'candidate', path.name
         if path.is_relative_to(clone):
             return 'clone', path.relative_to(clone).as_posix()
+        if path.is_relative_to(shared):
+            return 'shared', path.relative_to(shared).as_posix()
         return None
 
     def _aside(self):
@@ -1011,7 +1106,7 @@ def _saved(kernel, prepared, ladder, call):
     except (TypeError, ValueError) as error:
         call['saved_notes'].append('no header for the saved faces: %s' % error)
         return None
-    return _Saved(Path(folder), header, (Path(kernel.__file__).resolve().parent, Path(_clone()))).open()
+    return _Saved(Path(folder), header, (Path(kernel.__file__).resolve().parent, Path(_clone()), Path(_shared_root()))).open()
 
 
 def _take_saved(saved, kernel, prepared, face_ids, order, rows, census, done, seen, *, budget, cancelled, work, retain,
@@ -1097,16 +1192,21 @@ def _collect(pool, kernel, prepared, face_ids, order, count, rows, census, done,
     a worker failed on or None, why) when the workers cannot be used.
     """
     try:
-        table = _files()
+        table = pool.table if pool.kept else _files()
     except OSError as error:
         # Nothing to hold a worker to: the loop runs here, as it would have without this module.
         return None, 'this process could not read its own module files: %s' % error
-    places = Path(kernel.__file__).resolve().parent, Path(_clone())
+    places = Path(kernel.__file__).resolve().parent, Path(_clone()), Path(_shared_root())
     began = perf_counter()
-    problem = pool.start(count)
+    problem = None if pool.kept else pool.start(count)
     if problem is not None:
         return None, problem
-    for data in _inputs(kernel, prepared, certification_precisions, table):
+    for number, data in enumerate(_inputs(kernel, prepared, certification_precisions, table)):
+        if number == 0:
+            if pool.kept:
+                data = _pack(('call',))                 # H4: a kept worker has its hello; the rest is sent again
+            else:
+                pool.hello = data
         kernel.I.check(cancelled)
         METER.tick(budget)
         call['shared_input_bytes'] += len(data)
@@ -1322,8 +1422,7 @@ def reconstruct_faces(kernel, prepared, face_ids, *, budget, cancelled, certific
                 break
             failed, pool = (None, 'the call is not metered or has fewer than two workers'), None
             if meter is not None and count >= 2:
-                pool = _Pool(meter)
-                pool.rows = call['processes']
+                pool = _kept(meter, kernel, count, call)
                 try:
                     failed = _collect(pool, kernel, prepared, face_ids, order, count, rows, census, done, seen, call,
                                       saved=saved, **arguments)
@@ -1334,7 +1433,13 @@ def reconstruct_faces(kernel, prepared, face_ids, *, budget, cancelled, certific
                     raise
                 finally:
                     call['seconds'] = round(perf_counter()-began, 3)
-                pool.stop(GRACE_SECONDS if failed is None else 0., quiet=False)
+                held = _state['hold']
+                if failed is None and not call['restarted'] and held is not None and held['pool'] is None:
+                    held['pool'], held['key'] = pool, (kernel, count, meter)    # H4: for the next call of the hold
+                    for worker in pool.workers:
+                        worker.outbox.put(_pack(('idle',)))
+                else:
+                    pool.stop(GRACE_SECONDS if failed is None else 0., quiet=False)
             if failed is None:
                 break
             first, why = failed
@@ -1388,13 +1493,16 @@ def _select(hello):
     if early:
         raise RuntimeError('Runtime modules loaded before the caller\'s clone was selected: '+', '.join(early[:8]))
     candidate, clone = hello['candidate'], hello['clone']
-    for path in (candidate, clone):
+    for path in (hello['shared'], candidate, clone):
         while path in sys.path:
             sys.path.remove(path)
         sys.path.insert(0, path)
     importlib.import_module('atlas_tectonics')
     if _clone() != clone:
         raise RuntimeError('The runtime package did not load from the caller\'s clone')
+    importlib.import_module('atlas_shared')
+    if _shared_root() != hello['shared']:
+        raise RuntimeError('The shared package did not load from the caller\'s source folder')
     kernel = importlib.import_module(hello['kernel'])
     # The kernel imports this one inside its functions: loaded now, so that
     # the file check covers it before the first face needs it.
@@ -1445,7 +1553,7 @@ def _confirm(hello, bindings, names):
         path = Path(filename).resolve() if filename else None
         namespace = name.partition('.')[0]
         if namespace in ('atlas_tectonics', 'atlas_shared'):
-            expected = Path(hello['clone']).joinpath(*name.split('.'))
+            expected = Path(hello['clone' if namespace == 'atlas_tectonics' else 'shared']).joinpath(*name.split('.'))
             if path is None or path not in (
                     expected/'__init__.py', expected.with_suffix('.py') if name != namespace else None):
                 wrong.append(name)
@@ -1952,6 +2060,29 @@ def assembly_comparison_identity(evidence, build, process_id):
     return policy['comparison_identity'](evidence, context)
 
 
+def _intake(kernel, head, body, stdin):
+    """The shared inputs of one call, in the order _inputs sends them after its hello: points, faces, begin."""
+    if head[0] != 'points':
+        raise RuntimeError('Shared inputs out of order')
+    shared = pickle.loads(body)
+    points, ladder = shared['points'], shared['ladder']
+    _set(shared['context'], shared['settings'])
+    geometry, records = {}, {}
+    while True:
+        head, body = _unpack(_receive(stdin))
+        if head[0] != 'faces':
+            break
+        for fid, (entry, record) in pickle.loads(body).items():
+            if 'centre' not in entry:
+                entry['centre'] = points['power', fid]
+            geometry[fid], records[fid] = entry, record
+    if head[0] != 'begin':
+        raise RuntimeError('Shared inputs out of order')
+    prepared = dict(points=points, geometry=geometry, neumann=set(geometry), conductivity=shared['conductivity'])
+    prepared['pool'] = kernel.B.observation_pool(list(points.items()))
+    return ladder, prepared, geometry, records
+
+
 def _worker():
     import traceback
     stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
@@ -1972,25 +2103,8 @@ def _worker():
         kernel, named, admitted = _select(hello)
         from atlas_tectonics.integration.resources import WorkBudget
         head, body = _unpack(_receive(stdin))
-        if head[0] != 'points':
-            raise RuntimeError('Shared inputs out of order')
-        shared = pickle.loads(body)
-        points, ladder = shared['points'], shared['ladder']
-        _set(shared['context'], shared['settings'])
-        geometry, records = {}, {}
-        while True:
-            head, body = _unpack(_receive(stdin))
-            if head[0] != 'faces':
-                break
-            for fid, (entry, record) in pickle.loads(body).items():
-                if 'centre' not in entry:
-                    entry['centre'] = points['power', fid]
-                geometry[fid], records[fid] = entry, record
-        if head[0] != 'begin':
-            raise RuntimeError('Shared inputs out of order')
-        prepared = dict(points=points, geometry=geometry, neumann=set(geometry), conductivity=shared['conductivity'])
-        prepared['pool'] = kernel.B.observation_pool(list(points.items()))
-        shared = head = body = None
+        ladder, prepared, geometry, records = _intake(kernel, head, body, stdin)
+        head = body = None
         ready_names = _loaded_names()
         _confirm(hello, named, ready_names - admitted)
         admitted = ready_names
@@ -2009,6 +2123,30 @@ def _worker():
             head, body = _unpack(_receive(stdin))
         except EOFError:
             return 0
+        if head[0] == 'idle':
+            # H4: kept between calls; hold the imports, not the inputs.
+            prepared = geometry = records = moments = ladder = head = body = None
+            continue
+        if head[0] == 'call':
+            # H4: the next call of a kept pool: the same messages as a fresh worker's after hello, then ready.
+            prepared = geometry = records = moments = None
+            try:
+                head, body = _unpack(_receive(stdin))
+                ladder, prepared, geometry, records = _intake(kernel, head, body, stdin)
+                head = body = None
+                moments, candidate_heat_route = {}, None
+                ready_names = _loaded_names()
+                _confirm(hello, named, ready_names - admitted)
+                admitted = ready_names
+                info = own.memory_info()
+                send(('ready', dict(pid=os.getpid(), files=named, settings=_settings(), private=info.private,
+                                    working_set=info.rss)))
+            except EOFError:
+                return 0
+            except BaseException as error:
+                send(('refused', '%s: %s' % (type(error).__name__, error), traceback.format_exc()[-6000:]))
+                return 1
+            continue
         _, index, fid = head
         try:
             began = perf_counter()

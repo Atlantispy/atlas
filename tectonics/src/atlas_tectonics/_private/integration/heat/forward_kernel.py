@@ -321,7 +321,7 @@ frame disappears before the returned result graph replaces its entire stack.
         old, capacity, source = ordered['old'], ordered['capacity'], ordered['source']
         small = SMALL.shares(prepared, capacity, dt, cancel=check)
         refinements = []
-        with threadpool_limits(1):
+        with threadpool_limits(1), FUNCTIONS.PARALLEL.hold():     # H4: one pool for both reconstructions
             # Errata r2: beside only where the pool can start workers (FP's three tests); otherwise base order.
             meter = METER.active(budget)
             beside = (meter is not None and getattr(meter, 'categories', None) is None

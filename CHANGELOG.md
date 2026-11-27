@@ -203,6 +203,19 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev80](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev80) - 2026-11-27
+
+### Optimisations
+
+- Kept the heat face pool's workers from a pass's main call for its refine call. A kept worker was ready in
+  0.002 s, against 3.37 s for a fresh one (measured on dev75), so each refine call saves one pool start. Runs
+  with no refine call save nothing.
+
+### Bugfixes
+
+- Fixed the heat face pool refusing every worker when run from a repository checkout, where the shared package
+  sits in its own source folder. Such runs had fallen back to computing every face in one process.
+
 ## [0.1.0.dev79](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev79) - 2026-11-27
 
 ### Optimisations

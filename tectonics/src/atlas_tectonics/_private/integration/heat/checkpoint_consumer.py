@@ -31,7 +31,7 @@ _SOURCES = {
     'atlas_tectonics/_private/integration/heat/snapshot_store.py': 'b5b5691d97ae847582f19072b870c26262b1adc5dafcc1b576cfa01179a5bb99',
     'atlas_tectonics/_private/private_heat_issuer_resources_r4.py': '32e4161b5a01e465c0d21d4b16f8f136540b997c8e8303bbbd494ace59953cc7',
     'atlas_tectonics/_private/integration/heat/native_projection.py': '2e49297217d38e9be7f667906087b7d92a5dcfff4c06e6f043ae1e45d8b338ef',
-    'atlas_tectonics/_private/integration/heat/forward_kernel.py': '78ea9cc2c64193dcb27e610b59cee3a51da0fee95c36e34fbf57623bb610f944',
+    'atlas_tectonics/_private/integration/heat/forward_kernel.py': 'd1565e1a02d2c8435899e3ad9d1ec78c77b23907ef90b5775e0cbff873c98195',
     'atlas_tectonics/_private/integration/heat/native_issuer.py': _ISSUER_SHA,
 }
 _SOURCES[_atlas_identity.relkey(__file__)] = R.source_hash(__file__)
