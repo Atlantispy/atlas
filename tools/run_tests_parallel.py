@@ -840,7 +840,8 @@ def main(argv=None):
                         help="discovery pattern(s), e.g. 'test_i0[12]_*.py' (default: the tree's verify.py "
                              "FULL_PATTERNS, i.e. its full discovery including check_native_transport.py)")
     parser.add_argument('--only', action='append', help='restrict to these test, class or module IDs')
-    parser.add_argument('--workers', type=int, default=max(1, (os.cpu_count() or 2)-2))
+    parser.add_argument('--workers', type=int,  # a queue ticket's booking (RUNQ_WORKERS), else this machine
+                        default=int(os.environ.get('RUNQ_WORKERS') or max(1, (os.cpu_count() or 2)-2)))
     parser.add_argument('--serial', action='store_true', help='the conventional single-process reference run')
     parser.add_argument('--serial-unit', action='append', help='a unit to run in the serial group')
     parser.add_argument('--fresh', action='store_true', help='a new worker process for every unit')

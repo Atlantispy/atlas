@@ -79,8 +79,9 @@ python -B tools/run_tests_parallel.py --compare RUN_A/summary.json RUN_B/summary
 - **Units.** A unit is a test class, or a whole module when it defines `setUpModule`, `tearDownModule` or
   `load_tests`, so fixtures keep their meaning. A unit never splits across processes. Units start longest first when
   `--durations` names an earlier `results.jsonl`.
-- **Workers.** `--workers N` sets their number (default: CPU count minus 2, at least 1). Each worker is a separate
-  process of the tested interpreter, started in `--cwd DIR` (default: the root), with:
+- **Workers.** `--workers N` sets their number (default: the queue ticket's `RUNQ_WORKERS` when set, else CPU count
+  minus 2, at least 1). Each worker is a separate process of the tested interpreter, started in `--cwd DIR`
+  (default: the root), with:
   - single-threaded BLAS/OpenMP (`OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, ... = 1);
   - `PYTHONPATH` beginning with the selected `tectonics/src`, followed by the inherited entries (resolved before the
     worker changes directory);

@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev56](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev56) - 2026-11-27
+
+### Tools
+
+- The test runner's worker count now defaults to the queue ticket's booking (`RUNQ_WORKERS`) when run
+  from the queue, and to this machine's cores less two otherwise. An explicit `--workers` still wins.
+
 ## [0.1.0.dev55](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev55) - 2026-11-27
 
 ### Tectonics
