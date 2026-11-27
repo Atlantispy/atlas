@@ -117,6 +117,20 @@ def _gpy_mul(J, a, b):
     lm, hm, la, ha = J.I.lo.multiply, J.I.hi.multiply, J.I.lo.add, J.I.hi.add
     zero = J.zero
     z0, z1 = zero
+    live_a = [i for i, kx in enumerate(ka) if kx[0]]
+    live_b = [j for j, ky in enumerate(kb) if ky[0]]
+    if len(live_a) == 1 or len(live_b) == 1:
+        # One live coefficient: each result coefficient has at most one live pair;
+        # it is added to zero by the same two context adds as the full walk.
+        result = []
+        for k in range(ORDER+1):
+            i = live_a[0] if len(live_a) == 1 else k-live_b[0]
+            if 0 <= i <= k and ka[i][0] and kb[k-i][0]:
+                p0, p1 = _gpy_product(lm, hm, a[i], ka[i], b[k-i], kb[k-i])
+                result.append((la(z0, p0), ha(z1, p1)))
+            else:
+                result.append(zero)
+        return tuple(result)
     result = []
     for k in range(ORDER+1):
         v0, v1, live = z0, z1, False
@@ -320,6 +334,10 @@ def _rotated(vector, omega, bounds, J, arena):
         return tuple(tuple(column) for column in columns)
     # D2 (16 Oct 2026): point() of these two algebras is a pure function of a Fraction,
     # so each omega component and each 1/k is converted once; the same mul/sub calls follow.
+    key = (posed, omega, type(J.I))
+    entry = G._ROTATION_TABLE.get('b', key)
+    if entry is not None:
+        return entry
     point, mul, sub = J.I.point, J.I.mul, J.I.sub
     rates = (point(omega[0]), point(omega[1]), point(omega[2]))
     for k in range(1, ORDER+1):
@@ -329,7 +347,9 @@ def _rotated(vector, omega, bounds, J, arena):
             derivative = sub(mul(rates[(j+1) % 3], previous[(j+2) % 3]),
                              mul(rates[(j+2) % 3], previous[(j+1) % 3]))
             columns[j].append(mul(derivative, inverse))
-    return tuple(tuple(column) for column in columns)
+    entry = tuple(tuple(column) for column in columns)
+    G._ROTATION_TABLE.put('b', key, entry)
+    return entry
 
 
 _undecoded_path = object()

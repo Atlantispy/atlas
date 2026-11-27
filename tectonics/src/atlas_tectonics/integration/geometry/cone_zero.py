@@ -20,23 +20,35 @@ def _cross(a, b):
                  for i in range(3))
 
 
-def _series(s, order, shift, arena):
-    """Consecutive alternating partial sums for cos (0) or sinc (1)."""
-    total = term = Q(1)
-    for k in range(1, order+2):
+def _series(s, order, shift, arena, carry=None):
+    """Consecutive alternating partial sums for cos (0) or sinc (1).
+
+    Each term charges 32 work units. A carry from a lower order of the same
+    operands resumes after its last term; the skipped terms are charged in one
+    call and their (already admitted) reservations are not taken again.
+    """
+    start, previous, total, term = 0, None, Q(1), Q(1)
+    if carry is not None and carry.get(shift, (order+2,))[0] <= order+1:
+        start, previous, total, term = carry[shift]
+        arena.work(32*start)
+    for k in range(start+1, order+2):
         with G.V._work((s, total, term), arena.resource, convert_values=False):
             arena.work(32)
             term = -term*s/((2*k-1+shift)*(2*k+shift))
             previous, total = total, total+term
+    if carry is not None:
+        carry[shift] = (order+1, previous, total, term)
     return min(previous, total), max(previous, total)
 
 
-def projection_bounds(u, theta, g, arena, *, order=8):
+def projection_bounds(u, theta, g, arena, *, order=8, carry=None):
     """Enclose u.R(theta).g exactly; None declines |theta| > 1.
 
     Rodrigues gives A+B*cos(sqrt(s))+D*sinc(sqrt(s)), s=theta.theta.
     For 0<=s<=1 the alternating terms decrease, so consecutive sums bound
     each scalar function. Coefficient signs are handled before addition.
+    A carry (one dict per (u, theta, g), orders ascending) keeps s, A, B, D
+    and both series between orders; every work charge is still made.
     """
     if type(order) is not int or not 0 <= order <= 16:
         raise ValueError('order must be an integer from 0 to 16')
@@ -45,24 +57,30 @@ def projection_bounds(u, theta, g, arena, *, order=8):
     if any(type(x) not in (int, Q) for v in (u, theta, g) for x in v):
         raise ValueError('exact int/Fraction operands required')
     # One exact arithmetic route for this whole enclosure: the same rationals,
-    # work units and admissions on either; only the two bounds leave it.
+    # work units and admissions on either (a carry skips the same repeated
+    # admissions on both); only the two bounds leave it.
     kernel = G.B._resident()
     if (kernel is not G.B and _series is _reference[0] and _dot is _reference[1]
             and _cross is _reference[2]):
-        return kernel._projection_bounds(u, theta, g, arena, order)
+        return kernel._projection_bounds(u, theta, g, arena, order, carry)
     with G.V._work((*u, *theta, *g), arena.resource, convert_values=False):
         arena.work(96)
-        s, value = _dot(theta, theta), _dot(u, g)
-        if not s:
-            return value, value
-        if s > 1:
-            return None
-        A = _dot(u, theta)*_dot(theta, g)/s
-        B, D = value-A, _dot(u, _cross(theta, g))
+        if carry is not None and 'sABD' in carry:
+            s, A, B, D = carry['sABD']
+        else:
+            s, value = _dot(theta, theta), _dot(u, g)
+            if not s:
+                return value, value
+            if s > 1:
+                return None
+            A = _dot(u, theta)*_dot(theta, g)/s
+            B, D = value-A, _dot(u, _cross(theta, g))
+            if carry is not None:
+                carry['sABD'] = s, A, B, D
     with G.V._work((s, A, B, D), arena.resource, convert_values=False):
         if B == D == 0:
             return A, A
-        cosine, sinc = _series(s, order, 0, arena), _series(s, order, 1, arena)
+        cosine, sinc = _series(s, order, 0, arena, carry), _series(s, order, 1, arena, carry)
         with G.V._work((A, B, D, *cosine, *sinc), arena.resource, convert_values=False):
             arena.work(32)
             bc = sorted(B*x for x in cosine)
@@ -125,9 +143,9 @@ def plane_certificate(cell, literals, constraints, time, arena, *, detail=None):
                 continue
         bounds, orders = [], []
         for vertex in vertices:
-            pair = None
+            pair, carry = None, {}
             for order in ORDERS:
-                pair = projection_bounds(vertex, endpoint, signed, arena, order=order)
+                pair = projection_bounds(vertex, endpoint, signed, arena, order=order, carry=carry)
                 if pair is None or pair[1] <= 0 or pair[0] > 0:
                     break
             if pair is None or pair[1] > 0:
@@ -217,8 +235,10 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
                 if identity != expected:
                     raise ArithmeticError('signed adjugate identity failed')
             for u, maximum in axes:
+                carries = tuple({} for _ in generators)   # one per (u, g): sABD depends on both
                 for order in ORDERS:
-                    bounds = tuple(projection_bounds(u, theta, g, arena, order=order) for g in generators)
+                    bounds = tuple(projection_bounds(u, theta, g, arena, order=order, carry=c)
+                                   for g, c in zip(generators, carries, strict=True))
                     if any(pair is None for pair in bounds):
                         break
                     if all(low >= 0 for low, high in bounds):

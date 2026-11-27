@@ -203,6 +203,23 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev61](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev61) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- Resumed the projection bound's cosine and sinc partial sums when a plane certificate raises the series
+  order for the same vertex, endpoint and plane. Skipped terms are still charged at the same rate.
+- Remembered the ordered identity of each fan edge within one partition when both ray records are the same.
+- Computed Bernstein basis weights for a rotating normal once per degree and applied them to every
+  coefficient.
+- Skipped exactly-zero pairs in truncated moving-face jet products with one nonzero coefficient on a side.
+- Rotated each voxel and owned box into the pose frame once per spatial pressure correction and reused it on
+  every wall.
+- Added per-process rotation and jet-column tables, off until a byte cap is set from a measured Debug peak.
+  Every result, enclosure and refusal is unchanged; equality tests compare each step with the old route.
+
 ## [0.1.0.dev60](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev60) - 2026-11-27
 
 ### Bugfixes

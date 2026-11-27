@@ -213,6 +213,19 @@ def _back_box(cell, pose, radius, budget, *, erode=False, axis=None):
         tuple(b+m for b, m in zip(cell.upper_m, margins)), inverse(cell.origin_m), basis, budget=budget)
 
 
+def _kept_back_box(kept, cell, pose, radius, budget, *, erode=False, axis=None):
+    # One pressure call poses the same cells (the native regions and the
+    # owned box) for every wall; the rotated box depends only on the cell's
+    # values, the pose, radius, erosion and axis, never on the wall's rays.
+    if kept is None:
+        return _back_box(cell, pose, radius, budget, erode=erode, axis=axis)
+    key = (cell.lower_m, cell.upper_m, cell.origin_m, cell.basis,
+           tuple(map(tuple, pose.rotation())), pose._error, radius, erode, axis)
+    if key not in kept:
+        kept[key] = _back_box(cell, pose, radius, budget, erode=erode, axis=axis)
+    return kept[key]
+
+
 def _polygon_area(poly):
     return abs(sum((C._cross2(a, b) for a, b in zip(poly, poly[1:]+poly[:1])), Q(0)))/2
 
@@ -314,7 +327,7 @@ def _ray_length(region, points, radial, bottom, top, pose, axis=None):
 
 def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
                          gravity, support_radius, radius, width, max_leaves, budget, compute_density=True,
-                         _held=None):
+                         _held=None, _back_boxes=None):
     """Certified current density and owned-wall replacement on one named arc.
 
     Region declarations contain actual voxel, original cone, radial interval,
@@ -376,7 +389,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
                       *(q for row in cell.basis for q in row), *(q for p in original['cone'] for q in p),
                       *(q for p in declared_extra for q in p)), budget, convert_values=False):
             region = dict(original, planes=tuple(O._box_planes(cell))+extra)
-            back = _back_box(cell, pose, outer, budget, axis=axis)
+            back = _kept_back_box(_back_boxes, cell, pose, outer, budget, axis=axis)
             poly, contact = C.wall_polygon(back, a, b)
             # With a certified axis also keep the certified INNER polygon (the
             # eroded box cut by every halfspace moved inward by its own error)
@@ -385,9 +398,9 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
             # both contain the inner polygon and lie in the outer one.
             inner = posed = None
             if axis is not None:
-                eroded = _back_box(cell, pose, outer, budget, erode=True, axis=axis)
+                eroded = _kept_back_box(_back_boxes, cell, pose, outer, budget, erode=True, axis=axis)
                 inner = C.wall_polygon(eroded, a, b)[0] if eroded is not None else ()
-                posed = C.wall_polygon(_back_box(cell, pose, 0, budget), a, b)[0]
+                posed = C.wall_polygon(_kept_back_box(_back_boxes, cell, pose, 0, budget), a, b)[0]
             for p, q in zip(region['cone'], region['cone'][1:]+region['cone'][:1]):
                 n = O._cross(p, q)
                 poly = C._clip2(poly, (-O._dot(n, a), -O._dot(n, b)), 0)
@@ -433,7 +446,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
     elif _held is not None:
         _held.update(regions=regions, profiles=profiles, pose=pose, wall=(a, b, outer),
                      items=tuple(dict(region) for region in regions), active=active)
-    back_owned = _back_box(owned_box, pose, outer, budget, axis=axis)
+    back_owned = _kept_back_box(_back_boxes, owned_box, pose, outer, budget, axis=axis)
     native_poly, _ = C.wall_polygon(back_owned, a, b)
     owned = dict(planes=O._box_planes(owned_box), radial=(rc, outer), cone=())
     # Q is orthogonal and ||Q-Qtrue||_2 <= delta. For r<=R each local
@@ -445,7 +458,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
     inner_poly, strip_area = native_poly, Q(0)
     certain_domain = rc**2 <= low2 and high2 <= outer**2
     if certain_domain:
-        inner = _back_box(owned_box, pose, outer, budget, erode=True, axis=axis)
+        inner = _kept_back_box(_back_boxes, owned_box, pose, outer, budget, erode=True, axis=axis)
         inner_poly = C.wall_polygon(inner, a, b)[0] if inner is not None else ()
         strip_area = _polygon_area(native_poly)-_polygon_area(inner_poly)
         if strip_area < 0:
@@ -594,7 +607,7 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
             if 4*max(strips) > allowance:
                 strips = None
             else:
-                receiver = C.wall_polygon(_back_box(owned_box, pose, 0, budget), a, b)[0]
+                receiver = C.wall_polygon(_kept_back_box(_back_boxes, owned_box, pose, 0, budget), a, b)[0]
         try:
             if exact_rays or strips is not None:
                 radial_profiles = tuple((*row, Q(1, 2)) for profile in profiles for row in profile)
@@ -789,14 +802,14 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
         edges = [e for e in range(support.edges) if any(p in by_patch for p in support.patch_ids[e]) or
                  C.wall_polygon(back_outer, support.start[e], support.end[e])[0]]
         width = Q(max_torque_width_n_m)/max(1, len(edges))
-        leaves = 0
+        leaves, back_boxes = 0, {}
         for e in edges:
             selected = [dict(region, side=None) for region in native_regions]
             for side, patch in enumerate(support.patch_ids[e]):
                 selected.extend(dict(region, side=side) for region in by_patch.get(patch, ()))
             d, w, used = moving_wall_integrals(support.start[e], support.end[e], profiles[2*e:2*e+2],
                 selected, owned, pose, gravity=datum.gravity_m_s2, support_radius=rc, radius=radius,
-                width=width, max_leaves=max_leaves, budget=budget)
+                width=width, max_leaves=max_leaves, budget=budget, _back_boxes=back_boxes)
             leaves += used
             for side, sign in ((0, 1), (1, -1)):
                 plate = order[support.plates[e][side]]

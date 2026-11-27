@@ -2028,6 +2028,28 @@ do not supply the outstanding stored-result sizing, lost/gained-proof counts,
 selected large-scale proof coverage, joined/restart or scientific acceptance.
 Per-call key cost and any runtime saving remain unmeasured.
 
+Several geometric steps remember work they would otherwise repeat, without
+changing any bound or work charge. When a plane certificate raises the series
+order for the same vertex, endpoint and plane, the projection bound resumes the
+cosine and sinc partial sums where the lower order stopped and keeps the dot and
+cross products; the skipped terms are still charged at the same rate. One
+partition remembers the ordered identity of each fan edge, reusing it only when
+both ray records are the identical objects. Bernstein range bounds for a rotating
+normal compute the interval's basis weights once per degree and apply them to
+every coefficient, and a range scale multiplies by the factor directly. Truncated
+moving-face jet products with only one nonzero coefficient on either side skip
+pairs that are exactly zero, making the same two directed additions per result
+coefficient. One spatial pressure correction rotates each voxel and the owned box
+back into the pose frame once for a given radius, erosion and certified axis, and
+reuses that box on every wall, since it does not depend on the wall's rays; the
+box is keyed by the cell's bounds, origin, basis and the pose values. Rotation
+results can also be shared by the jobs of one worker process: exact rotations
+replay their work charges on a hit, and jet columns built on them are reused for
+the two interval classes whose point and product read no budget. These process
+tables are off until a byte cap is set from a measured Debug peak; while the cap
+is unset nothing is stored. Each result, enclosure and refusal is the same as
+before.
+
 ### Refine only the geometric bounds that need it
 
 [Plan19](../../optimisation/workbench/plan19/README.md) uses tighter bounds and an

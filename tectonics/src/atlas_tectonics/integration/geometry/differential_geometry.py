@@ -21,6 +21,7 @@ import hashlib
 import heapq
 import json
 import math
+import sys
 import threading
 import weakref
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
@@ -504,6 +505,12 @@ def _history_record(value):
 
 def _ray_parts(value):
     return value[0], value[1], value[2] if len(value) > 2 else ()
+
+
+def _replay(arena, charges):
+    # A memory hit charges the work the call would have done (decisions 863, 868).
+    for count in charges:
+        arena.work(count)
 
 
 class _ComponentRayCache:
@@ -1049,14 +1056,14 @@ def _bernstein_range_fraction(coefficients, a, b):
         # Higher transformed powers are exact zero; every Bernstein interval
         # is power[0]. Retain its original expression, including 0**0 = 1.
         degree = len(coefficients)-1
-        return _sum(_product(coefficients[k], (factor, factor))
+        return _sum(_wp23_scale(coefficients[k], factor)
             for k in range(degree+1)
             for factor in (Q(math.comb(k, 0))*a**k*(b-a)**0,))
     degree = len(coefficients)-1
-    power = tuple(_sum(_product(coefficients[k], (factor, factor))
+    power = tuple(_sum(_wp23_scale(coefficients[k], factor)
         for k in range(j, degree+1)
         for factor in (Q(math.comb(k, j))*a**(k-j)*(b-a)**j,)) for j in range(degree+1))
-    bernstein = tuple(_sum(_product(power[k], (factor, factor)) for k in range(j+1)
+    bernstein = tuple(_sum(_wp23_scale(power[k], factor) for k in range(j+1)
         for factor in (Q(math.comb(j, k), math.comb(degree, k)),)) for j in range(degree+1))
     return min(lo for lo, _ in bernstein), max(hi for _, hi in bernstein)
 
@@ -1112,6 +1119,46 @@ try:
 except ImportError:          # the original Fraction route remains complete
     _wp23_gmp = _wp23_mpq = None
 _WP23_MEMO_LIMIT = 4096
+# None = tables off (no entry is ever made). shortcut: moves to atlas_shared limits when the step-ceiling landing creates it
+ROTATION_TABLE_CAP_BYTES = None
+
+
+def _table_bytes(value):
+    size = sys.getsizeof(value)
+    if type(value) is tuple:
+        return size + sum(_table_bytes(v) for v in value)
+    if type(value) is Q:
+        return size + sys.getsizeof(value.numerator) + sys.getsizeof(value.denominator)
+    return size
+
+
+class _RotationTable:
+    """Process-wide rotation results: 'a' exact rotations with charges, 'b' jet columns."""
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.tables = {'a': {}, 'b': {}}
+        self.entries = self.bytes = 0
+
+    def get(self, name, key):
+        return self.tables[name].get(key)
+
+    def put(self, name, key, value):
+        cap = ROTATION_TABLE_CAP_BYTES
+        if cap is None:
+            return
+        size = _table_bytes(key) + _table_bytes(value)
+        if size > cap:
+            return
+        if self.bytes + size > cap:
+            self.clear()
+        self.tables[name][key] = value
+        self.entries += 1
+        self.bytes += size
+
+
+_ROTATION_TABLE = _RotationTable()
 
 
 def _wp23_bits(value):
@@ -1142,31 +1189,43 @@ def _wp23_cross_fixed(fixed, box):
     return tuple(out)
 
 
-def _wp23_bernstein(coefficients, a, b):
+def _wp23_basis(degree, a, b):
+    """_wp23_bernstein's weights for one degree and interval (mpq)."""
+    mpq = _wp23_mpq
+    if a == b:
+        return tuple(a**k for k in range(degree+1))
+    width = b-a
+    power = tuple(tuple(mpq(math.comb(k, j))*a**(k-j)*width**j for k in range(j, degree+1))
+                  for j in range(degree+1))
+    bernstein = tuple(tuple(mpq(1) if j == degree else mpq(math.comb(j, k), math.comb(degree, k))
+                            for k in range(j+1)) for j in range(degree+1))
+    return power, bernstein
+
+
+def _wp23_bernstein(coefficients, a, b, basis=None):
     """_bernstein_range_fraction's exact arithmetic on mpq values (mpq in, mpq out)."""
     mpq = _wp23_mpq
     degree = len(coefficients)-1
+    if basis is None:
+        basis = _wp23_basis(degree, a, b)
     if a == b:
         low = high = mpq(0)
         for k in range(degree+1):
-            factor = a**k
-            p = _wp23_scale(coefficients[k], factor)
+            p = _wp23_scale(coefficients[k], basis[k])
             low += p[0]; high += p[1]
         return low, high
-    width = b-a
+    weights, bernstein = basis
     power = []
     for j in range(degree+1):
         low = high = mpq(0)
-        for k in range(j, degree+1):
-            factor = mpq(math.comb(k, j))*a**(k-j)*width**j
+        for k, factor in enumerate(weights[j], j):
             p = _wp23_scale(coefficients[k], factor)
             low += p[0]; high += p[1]
         power.append((low, high))
     lows, highs = [], []
     for j in range(degree+1):
         low = high = mpq(0)
-        for k in range(j+1):
-            factor = mpq(1) if j == degree else mpq(math.comb(j, k), math.comb(degree, k))
+        for k, factor in enumerate(bernstein[j]):
             p = _wp23_scale(power[k], factor)
             low += p[0]; high += p[1]
         lows.append(low); highs.append(high)
@@ -1223,9 +1282,10 @@ def _wp23_rotation_compute(vector, omega, a, b, level, arena, charges):
     zero = mpq(0)
     with _wp23_work((*w, qa, qb, tail, *(q for t in terms for pair in t for q in pair)), arena.resource):
         out = []
+        basis = _wp23_basis(len(terms), qa, qb)
         for j in range(3):
             coefficients = tuple(t[j] for t in terms)+(((zero, zero) if inactive[j] else (-tail, tail)),)
-            low, high = _wp23_bernstein(coefficients, qa, qb)
+            low, high = _wp23_bernstein(coefficients, qa, qb, basis)
             out.append((_wp23_fraction(low), _wp23_fraction(high)))
         return tuple(out)
 
@@ -1250,11 +1310,17 @@ def _rotation_boxes(vector, omega, a, b, level, arena):
         hit = memo.get(key)
         if hit is not None:
             result, charges = hit
-            for count in charges:
-                arena.work(count)
+            _replay(arena, charges)
             return result
-    charges = []
-    result = _wp23_rotation_compute(vector, omega, a, b, level, arena, charges)
+    entry = _ROTATION_TABLE.get('a', key)
+    if entry is None:
+        charges = []
+        result = _wp23_rotation_compute(vector, omega, a, b, level, arena, charges)
+        entry = (result, tuple(charges))
+        _ROTATION_TABLE.put('a', key, entry)
+    else:
+        _replay(arena, entry[1])
+    result, charges = entry
     if memo is None:
         try:
             memo = arena._wp23_rotation_memo = {}
@@ -1263,7 +1329,7 @@ def _rotation_boxes(vector, omega, a, b, level, arena):
     if len(memo) < _WP23_MEMO_LIMIT:
         arena.keep((*(q for pair in vector for q in pair), *omega, a, b,
                     *(q for pair in result for q in pair)), objects=2)
-        memo[key] = (result, tuple(charges))
+        memo[key] = (result, charges)
     return result
 
 
@@ -2119,7 +2185,8 @@ def _plane_path_identity(path):
     return (tuple(q/first for q in normal), theta, omega), (1 if first > 0 else -1)
 
 
-def _ordered_plane_identities(constraints, owned_groups, fans, raw_rays, rays):
+def _ordered_plane_identities(constraints, owned_groups, fans, raw_rays, rays, memo=None):
+    # memo: one dict per partition; a fan edge's identity depends only on its two ray records.
     identities = {}
     entries = iter(constraints.items())
     for owner_index, group in owned_groups.items():
@@ -2140,7 +2207,13 @@ def _ordered_plane_identities(constraints, owned_groups, fans, raw_rays, rays):
                 for actual, constraint in entries:
                     identities[actual] = _plane_identity(constraint)
                 return identities
+            hit = None if memo is None else memo.get((first, second))
+            if hit is not None and hit[0] is pair[0] and hit[1] is pair[1]:
+                identities[name] = hit[2]
+                continue
             identities[name] = _plane_identity(constraint, decoded_rays=(rays[first], rays[second]))
+            if memo is not None:
+                memo[(first, second)] = (pair[0], pair[1], identities[name])
     for name, constraint in entries:
         identities[name] = _plane_identity(constraint)
     return identities
@@ -2400,7 +2473,8 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
                                kind='inherited', source_cones=None, exclusion_cells=(),
                                max_components, budget, _owner_face_ids=None, _source_chart=None,
                                _start_fans=None, _owner_fan_indices=None, _pose_cache=None,
-                               _angular_cache=None, _interval_record=None, _owned_result=False, _points=None):
+                               _angular_cache=None, _interval_record=None, _owned_result=False, _points=None,
+                               _plane_identities=None):
     """Conforming convex angular pieces valid over the WHOLE interval.
 
     A birth domain is current ownership minus the actual advected start owner.
@@ -2493,7 +2567,8 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
         subtract.append(tuple(group))
     duration = W._decode(record['duration_s'])
     with B._Arena(budget) as arena:
-        identities = _ordered_plane_identities(constraints, owned_groups, fans, record['rays'], rays)
+        identities = _ordered_plane_identities(constraints, owned_groups, fans, record['rays'], rays,
+                                               _plane_identities)
         arena.keep(tuple(q for item in identities.values() if item is not None
                          for vector in item[0] for q in vector), objects=2*len(identities))
         posed = {name: _cached_constraint_pose(value, duration, arena, _pose_cache) for name, value in constraints.items()}
@@ -2961,6 +3036,7 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                         category='differential-partition-candidates'), B._Arena(budget) as arena:
         pose_cache = ({}, arena)
         angular_cache = ({}, arena)
+        plane_identities = {}
         owner_planes = {}
         if not static:
             for plate in sorted({r['plate_id'] for r in regions}):
@@ -3028,6 +3104,7 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                     _owner_fan_indices=None if static else fan_candidates[region['plate_id']],
                     _pose_cache=pose_cache,
                     _angular_cache=angular_cache,
+                    _plane_identities=plane_identities,
                     _interval_record=current,
                     _owner_face_ids=(region['source_face_id'],) if static else None,
                     _owned_result=True, _points=points)

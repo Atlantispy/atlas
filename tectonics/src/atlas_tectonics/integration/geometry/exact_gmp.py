@@ -782,43 +782,54 @@ def _all_within(plane, points, *, resource=None, poly=None):
     return all(num <= 0 for num, _ in _numerators(points, coeff))
 
 
-def _series(s, width, order, shift, arena):
-    """integration_cone_zero._series: consecutive alternating partial sums."""
-    total = term = _one
-    for k in range(1, order+2):
+def _series(s, width, order, shift, arena, carry=None):
+    """integration_cone_zero._series: consecutive alternating partial sums, same carry."""
+    start, previous, total, term = 0, None, _one, _one
+    if carry is not None and carry.get(shift, (order+2,))[0] <= order+1:
+        start, previous, total, term = carry[shift]
+        arena.work(32*start)
+    for k in range(start+1, order+2):
         with _work(width+_bits(total)+_bits(term), 3, arena.resource):
             arena.work(32)
             term = -term*s/((2*k-1+shift)*(2*k+shift))
             previous, total = total, total+term
+    if carry is not None:
+        carry[shift] = (order+1, previous, total, term)
     return min(previous, total), max(previous, total)
 
 
-def _projection_bounds(u, theta, g, arena, order):
+def _projection_bounds(u, theta, g, arena, order, carry=None):
     """integration_cone_zero.projection_bounds for validated int/Fraction vectors.
 
     Same admissions in the same order: the nine inputs at their int/Fraction
     widths, then (s, A, B, D), every series term, and the final products.
-    Nothing is retained, so no surcharge arises.
+    Nothing is retained, so no surcharge arises. A carry skips the same
+    repeated work and admissions as there.
     """
     with _work(sum(V._bits(x) for v in (u, theta, g) for x in v), 9, arena.resource):
         arena.work(96)
-        u, theta, g = (tuple(map(_native, v)) for v in (u, theta, g))
-        s = theta[0]*theta[0]+theta[1]*theta[1]+theta[2]*theta[2]
-        value = u[0]*g[0]+u[1]*g[1]+u[2]*g[2]
-        if not s:
-            value = _exact(value)
-            return value, value
-        if s > 1:
-            return None
-        A = (u[0]*theta[0]+u[1]*theta[1]+u[2]*theta[2])*(theta[0]*g[0]+theta[1]*g[1]+theta[2]*g[2])/s
-        cross = O._cross(theta, g)
-        B, D = value-A, u[0]*cross[0]+u[1]*cross[1]+u[2]*cross[2]
+        if carry is not None and 'sABD' in carry:
+            s, A, B, D = carry['sABD']
+        else:
+            u, theta, g = (tuple(map(_native, v)) for v in (u, theta, g))
+            s = theta[0]*theta[0]+theta[1]*theta[1]+theta[2]*theta[2]
+            value = u[0]*g[0]+u[1]*g[1]+u[2]*g[2]
+            if not s:
+                value = _exact(value)
+                return value, value
+            if s > 1:
+                return None
+            A = (u[0]*theta[0]+u[1]*theta[1]+u[2]*theta[2])*(theta[0]*g[0]+theta[1]*g[1]+theta[2]*g[2])/s
+            cross = O._cross(theta, g)
+            B, D = value-A, u[0]*cross[0]+u[1]*cross[1]+u[2]*cross[2]
+            if carry is not None:
+                carry['sABD'] = s, A, B, D
     width = _bits(s)
     with _work(width+_bits(A)+_bits(B)+_bits(D), 4, arena.resource):
         if B == D == 0:
             A = _exact(A)
             return A, A
-        cosine, sinc = _series(s, width, order, 0, arena), _series(s, width, order, 1, arena)
+        cosine, sinc = _series(s, width, order, 0, arena, carry), _series(s, width, order, 1, arena, carry)
         with _work(sum(map(_bits, (A, B, D, *cosine, *sinc))), 7, arena.resource):
             arena.work(32)
             bc = sorted(B*x for x in cosine)
