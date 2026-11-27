@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev65](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev65) - 2026-11-27
+
+### Bugfixes
+
+- Repinned the joined control source and its derived text after the dev54 import move, so the fresh
+  interval route loads again. Four source pins had stayed on their pre-dev54 values.
+
 ## [0.1.0.dev64](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev64) - 2026-11-27
 
 ### Optimisations

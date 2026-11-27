@@ -31,7 +31,7 @@ from pathlib import Path as _Path
 
 _HERE = _Path(__file__).resolve().parent
 _SOURCE = _HERE / 'integration/runtime_joined_control.py'
-_SOURCE_SHA = 'e42eca16d6c5437c045afe73c8eb554c16e486d1f671288227627ad33e742e2e'
+_SOURCE_SHA = '8754e4c2235d23d173c594c8de4f1261e7789e08d2a4635b78dab7fab082bed3'
 _ACCOUNTS_SOURCE = _HERE / 'integration/runtime_global_accounts.py'
 _ACCOUNTS_SHA = '107693f21b3f06e159698ed7b1958ae77381ee24e2ffa11cf95c4eef0757a6a2'
 _PUBLIC_ACCOUNTS_SOURCE = _HERE.parent / 'integration/coupling/regional_workflow.py'

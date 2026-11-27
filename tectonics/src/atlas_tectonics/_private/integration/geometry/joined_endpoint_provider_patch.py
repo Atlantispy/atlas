@@ -6,7 +6,7 @@ separate candidate and does not select a provider or open a run/store.
 import ast
 import hashlib
 
-SELECTED_JOINED_DERIVATION = '5fde7cc1a8315767596dddec117e8c95498ef8c6c5a8e9f4f7f02fc6bcae2082'
+SELECTED_JOINED_DERIVATION = '5716281b6d50ca41a548c6539aa74a29c7257930afa6a9071eb0e852591a691c'
 
 
 def transform(source):
