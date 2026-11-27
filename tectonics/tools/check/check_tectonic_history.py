@@ -21,7 +21,6 @@ sys.path[:0] = [str(ROOT/'src'),str(ROOT)]
 import numpy as np
 import scipy
 from atlas_tectonics.integration.resources import WorkBudget
-from atlas_tectonics.integration.reuse import _source_bytes
 from atlas_tectonics.history.tectonic_history import PreparedTectonicHistory
 from atlas_tectonics.codecs.tectonic_history_codec import pack_history_result
 from tests.history.test_tectonic_history import make_history_case,open_store,SOURCE,ROUTES
@@ -29,6 +28,18 @@ from tests.history.test_tectonic_history import make_history_case,open_store,SOU
 
 def encoded(value):
     return json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+
+
+def production_sources():
+    """Recorded evidence: size and SHA-256 of every production source file measured (not a run-time check)."""
+    import atlas_shared, atlas_tectonics
+    out = {}
+    for prefix, package in (('', atlas_tectonics), ('atlas_shared/', atlas_shared)):
+        root = Path(package.__file__).parent
+        for p in sorted(root.rglob('*.py')):
+            raw = p.read_bytes()
+            out[prefix + p.relative_to(root).as_posix()] = dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    return out
 
 
 def signature(output,budget):
@@ -48,7 +59,7 @@ def source_binding():
             resolved = Path(path).resolve()
             if resolved.is_relative_to(ROOT/'tests'):
                 supporting.add(resolved)
-    return dict(production={name:json.loads(raw) for name,raw in _source_bytes().items()},
+    return dict(production=production_sources(),
         tools_and_fixtures={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
                             for p in sorted(supporting)})
 

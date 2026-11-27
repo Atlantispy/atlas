@@ -330,8 +330,7 @@ new linked candidate states during the call, then transfers ownership to caller.
         self._budget = budget
         self._closed = False
         self._controller = ReuseController()
-        context_bytes = sum(len(name)+len(pin) for name,pin in context._source_rows)
-        stack.enter_context(budget.reserve(root.retained_bytes+4*context_bytes+16384,
+        stack.enter_context(budget.reserve(root.retained_bytes+16384,
                                           category='workflow-prepared'))
         self._velocity = PreparedInput(root.forcing.face_velocity_m_s, budget=budget)
 
@@ -470,7 +469,7 @@ def load_regional_workflow(store, workflow_id, *, budget=None, cancel=None):
     try:
         _policy(metadata['scheme'], metadata['backend'], metadata['max_steps'])
         with ExecutionContext(metadata['backend']) as context, ExitStack() as retained:
-            if not context._declared_build or context.identity != metadata['execution_id']:
+            if context.identity != metadata['execution_id']:
                 raise TectonicsError('workflow source/runtime mismatch; no automatic rebind')
             records = []
             key = workflow_id

@@ -41,11 +41,6 @@ class InterpreterPortabilityTests(unittest.TestCase):
         with self.assertRaisesRegex(TectonicsError, 'unavailable or linked'):
             reuse._loaded_binary(str(p))
 
-    def test_source_inventory_still_refuses_linked_source(self):
-        self.link('linked.py', self.binary)
-        with self.assertRaisesRegex(TectonicsError, 'unavailable or linked'):
-            reuse._source_bytes((('', self.root),))
-
     def test_runtime_identity_omits_absolute_path(self):
         record = self.record(self.binary)
         self.assertNotIn(str(self.root), reuse._json(record).decode())

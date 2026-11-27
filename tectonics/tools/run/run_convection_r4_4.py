@@ -31,7 +31,6 @@ sys.path[:0] = [str(ROOT/'tools'), str(ROOT/'src'), str(ROOT.parent)]
 import numpy as np
 import atlas_tectonics as atlas
 from atlas_tectonics.integration.resources import WorkBudget
-from atlas_tectonics.integration.reuse import _application_operation
 from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
 
 SCHEMA = 'atlas.convection-run-r4-4.v1'
@@ -187,7 +186,6 @@ def schedule_feasibility(config, specification):
                 known_blockers=blockers, unknowns=unknowns, benchmark_accepted=False)
 
 
-@_application_operation()
 def main(args):
     output = args.output.absolute()
     safe_path(output)

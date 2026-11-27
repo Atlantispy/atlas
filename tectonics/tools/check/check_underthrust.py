@@ -29,7 +29,6 @@ import shapely
 from atlas_tectonics.planet.geometry import PlanarGeometry, geometry_runtime
 from atlas_tectonics.materials.materials import MaterialCohort
 from atlas_tectonics.integration.resources import WorkBudget
-from atlas_tectonics.integration.reuse import _source_bytes
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
 from atlas_tectonics.subduction.underthrust import (
     PreparedUnderthrust, UnderthrustInterface, UnderthrustInterval,
@@ -254,10 +253,22 @@ def run_sequence(fixture, prepared, owner):
                 final_reserved_bytes=budget.reserved_bytes)
 
 
+def production_sources():
+    """Recorded evidence: size and SHA-256 of every production source file measured (not a run-time check)."""
+    import atlas_shared, atlas_tectonics
+    out = {}
+    for prefix, package in (('', atlas_tectonics), ('atlas_shared/', atlas_shared)):
+        root = Path(package.__file__).parent
+        for p in sorted(root.rglob('*.py')):
+            raw = p.read_bytes()
+            out[prefix + p.relative_to(root).as_posix()] = dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    return out
+
+
 def capture_sources():
     files = (Path(__file__).resolve(), ROOT / 'cases/w08_regimes.json',
              ROOT / 'docs/W08_REGIMES.md')
-    manifest = {name: json.loads(raw) for name, raw in _source_bytes().items()}
+    manifest = production_sources()
     return dict(module_source_manifest=manifest,
         module_source_manifest_sha256=hashlib.sha256(json_bytes(manifest)).hexdigest(),
         supporting_files={path.relative_to(ROOT).as_posix():

@@ -417,6 +417,10 @@ class IdentityTests(unittest.TestCase):
                 self.assertEqual(ctx.identity,ctx.identity)
             with self.assertRaises(TectonicsError):ctx.verify()
 
+    def test_identity_is_the_same_for_one_backend_and_differs_between_backends(self):
+        self.assertEqual(reuse.execution_identity('reference'),reuse.execution_identity('reference'))
+        self.assertNotEqual(reuse.execution_identity('reference'),reuse.execution_identity('scipy'))
+
     def test_prepared_input_identity_reuses_only_immutable_snapshot(self):
         original=np.arange(32.);prepared=PreparedInput(original)
         digest=prepared.digest;original[:]=900

@@ -49,26 +49,9 @@ from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
 
-# Inserted before run_fresh_interval's ordinary orchestration imports.
-if __name__ == '__main__' and '--pressure-startup' in sys.argv:
-    if sys.argv.count('--pressure-startup') != 1:
-        raise ValueError('duplicate pressure startup selection')
-    _startup_index = sys.argv.index('--pressure-startup')
-    _startup_selection = json.loads(sys.argv[_startup_index + 1])
-    del sys.argv[_startup_index:_startup_index + 2]
-    _startup_path, _startup_pin = _startup_selection['helper']
-    _startup_raw = Path(_startup_path).read_bytes()
-    if sha256(_startup_raw).hexdigest() != _startup_pin:
-        raise ValueError('pressure startup helper source digest mismatch')
-    import types as _startup_types
-    _startup_module = _startup_types.ModuleType('_pressure_fresh_parent_startup')
-    _startup_module.__file__ = _startup_path
-    exec(compile(_startup_raw, _startup_path, 'exec', dont_inherit=True), _startup_module.__dict__)
-    _startup_module.prepare_fresh_parent(_startup_selection)
-    # main() requires these: argparse reads --profile/--profile-sha256 apart from the selection.
-    _PRESSURE_STARTUP = (_startup_selection['profile']['path'], _startup_selection['profile']['sha256'])
-else:
-    _PRESSURE_STARTUP = None        # no pressure startup selection was authenticated
+# Launched as a script (-s -P): the package folder is not on sys.path yet.
+if __name__ == '__main__':
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 
 from atlas_shared.execution import profiling
@@ -89,8 +72,7 @@ STOPPED_STATUS = 'STOPPED_BEFORE_ADVANCE_ROOT_REOPENED'
 READER_PASS = {'root': 'PASS_ROOT_INDEPENDENT_REOPEN', 'interval': 'PASS_INTERVAL_INDEPENDENT_REOPEN'}
 CATALOG = 'interval-catalog.json'
 DRIVER = 'fresh_interval_driver'
-# The composition declares its completed-query store
-# in the pinned source manifest. WP17's batched columnar store is used only when
+# The profile declares its completed-query store. WP17's batched columnar store is used only when
 # declared (Step 10 enables it after its durability refuter runs clean), else the
 # file store; a declared store the runtime lacks refuses, never a silent fallback.
 # flush() precedes the recorded counts with either store.
@@ -104,7 +86,7 @@ QUERY_STORES = {'columnar': {'storage': 'columnar', 'batch_entries': 128, 'batch
 FRESH_MODULES = ('prepared_interval_driver', 'heat_interval_r9_spec',
                  'private_heat_original_spatial_r1', 'private_heat_original_joined_r8',
                  'private_heat_joined_consumer_r6', 'private_heat_geometry_observer_r1',
-                 'runtime_radial_fixture', 'i04_differential_modes', 'initial_pressure_force',
+                 'runtime_radial_fixture', 'initial_pressure_force',
                  'compact_restart_store', 'compact_restart_patch', 'bounded_preseal', 'reopen_prepared_restart',
                  'content_cache', 'historical_admission', 'private_heat_continuation_guard_r3',
                  'windows_workload_job', 'private_heat_resource_diagnostics_r1',
@@ -135,8 +117,7 @@ MEASUREMENT_COUNTS = ('unique_chunks', 'snapshots', 'encoded_payload_bytes', 'da
 SEED_SCHEMA = 'atlas.fresh-interval-reused-initial-cache.v1'
 SEED_FIELDS = frozenset(('receipt_sha256', 'store_sha256'))
 SEED_ACROSS = 'across_change'          # D-3: the earlier profile, by path and SHA-256
-COMPOSITION = frozenset(('profile_sha256', 'source_proof', 'advance_driver_sha256', 'helper_sha256',
-                         'interpreter_seed'))
+COMPOSITION = frozenset(('profile_sha256', 'execution_identity', 'advance_driver_sha256', 'interpreter_seed'))
 DIAGNOSTIC = 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION'
 # Never read: seeds are explicit arguments only. The runner and the reader refuse it if set.
 SEED_ENVIRONMENT = 'ATLAS_INITIAL_MEASUREMENT_SEED'
@@ -267,19 +248,21 @@ class FreshProfile(RUN.RestartProfile):
     def read(cls, path, pin):
         path = RUN.ordinary(path)
         row = RUN.pinned_json(path, pin)
-        fields = {'schema', 'workspace', 'source_manifest', 'native_root', 'import_roots', 'modules',
+        fields = {'schema', 'workspace', 'completed_query_store', 'qualification_status', 'native_root', 'import_roots', 'modules',
                   'advance_driver', 'output_directory', 'store_directory', 'completed_query_directory',
                   'completed_query_limits', 'historical_inputs'}
         require(type(row) is dict and set(row) == fields and row['schema'] == PROFILE_SCHEMA,
-                'closed reviewed fresh-interval profile required')
+                'closed reviewed fresh-interval profile required; an older profile is moved with '
+                'tools/runs/migrate_run_profile.py')
         required = set(FRESH_MODULES)
         # A previous-run reader may still inspect a pinned pre-move profile.
         require(type(row['modules']) is dict and set(row['modules']) in (required, required | {'dev_stage_timing'}),
                 'complete explicit route (1) helper bindings required')
-        manifest, driver = row['source_manifest'], row['advance_driver']
-        require(type(manifest) is dict and set(manifest) == {'path', 'sha256'},
-                'explicit path and source pin required: source_manifest')
-        RUN._sha(manifest['sha256'])
+        driver = row['advance_driver']
+        require(row['completed_query_store'] in QUERY_STORES,
+                'the profile must declare its completed-query store: columnar or files')
+        require(type(row['qualification_status']) is str and row['qualification_status'],
+                'the profile must declare its qualification status')
         historical = row['historical_inputs']
         require(type(historical) is dict and set(historical) == {'path', 'sha256'}
                 and RUN._sha(historical['sha256']) == RUN.HISTORICAL_INPUTS_SHA256,
@@ -304,43 +287,11 @@ class FreshProfile(RUN.RestartProfile):
 
 
 class FreshSources(RUN.RestartSources):
-    """RestartSources' import fence and pins, for a route (1) profile."""
+    """RestartSources for a route (1) profile."""
 
     def __init__(self, profile):
         require(type(profile) is FreshProfile, 'typed pinned fresh-interval profile required')
-        profile.verify()
-        self.profile = profile
-        row = profile.record()
-        self.workspace = RUN.ordinary(row['workspace'], directory=True)
-        self.native_root = self.path(row['native_root'], directory=True)
-        self.import_roots = tuple(self.path(p, directory=True) for p in row['import_roots'])
-        self.manifest_path = self.path(row['source_manifest']['path'])
-        self.manifest_pin = row['source_manifest']['sha256']
-        manifest = RUN.pinned_json(self.manifest_path, self.manifest_pin)
-        require(type(manifest.get('files')) is dict and manifest['files'] and
-                type(manifest.get('source_hashes')) is dict and manifest['source_hashes'],
-                'whole native inventory and all participating helpers required')
-        require(type(manifest.get('data_only')) is dict and not set(manifest['data_only']) & set(manifest['files']),
-                'explicit data-only references disjoint from importable sources required')
-        require(manifest.get(QUERY_STORE_FLAG) in QUERY_STORES,
-                'the composition must declare its completed-query store: columnar or files')
-        self._manifest = canonical(manifest)
-        binding = manifest.get('installed_binding')
-        self._diagnostic = (binding['qualification_status'] == DIAGNOSTIC
-                            if isinstance(binding, dict) and 'qualification_status' in binding else None)
-        self.historical_inputs = RUN.load_historical_inputs(self.workspace, row['historical_inputs'], manifest)
-        self.selected_now = False
-        self._sealed = True
-
-    def configure_pressure_workers(self):
-        require(self.selected_now, 'source selection must precede pressure startup')
-        from atlas_tectonics.integration.parallel import worker_bootstrap as integration_worker_bootstrap
-        return integration_worker_bootstrap.configure_fresh_sources(self, sys.modules[__name__])
-
-    def query_store(self):
-        """The completed-query store the pinned composition declares."""
-        return RUN._json(self._manifest)[QUERY_STORE_FLAG]
-
+        super().__init__(profile)
 
 
 def query_store_arguments(owner_type, declared):
@@ -372,6 +323,7 @@ def composition(sources):
     from atlas_tectonics.integration.reuse import ExecutionContext
     from atlas_tectonics.codecs.storage import ArrayStore, Compression, StoreLimits
     from threadpoolctl import threadpool_limits
+    from atlas_tectonics._fixtures.tests.i04_differential_modes import ACTUATED_CONTROL
     module = sources.module
     require(all(callable(getattr(CollarWorkflow, name, None)) for name in WORKFLOW_ENTRY_POINTS),
             'the selected runtime lacks the fresh-root workflow entry points')
@@ -382,7 +334,7 @@ def composition(sources):
         J=module('private_heat_joined_consumer_r6'), Workflow=CollarWorkflow,
         joined=module('private_heat_original_joined_r8'),
         check_initial_pressure_force=module('initial_pressure_force').check_initial_pressure_force,
-        ACTUATED_CONTROL=module('i04_differential_modes').ACTUATED_CONTROL,
+        ACTUATED_CONTROL=ACTUATED_CONTROL,
         geometry_observer=module('private_heat_geometry_observer_r1'), threadpool_limits=threadpool_limits,
         PF=PF, prepared_interval_driver=module('prepared_interval_driver'), G=G,
         InterfaceParallelPolicy=InterfaceParallelPolicy)
@@ -472,18 +424,17 @@ def _promoted_root(store, store_directory, retained=None):
     return runner, runner_sha, verdict
 
 
-def retained_root_provenance(claim, runner, *, profile_sha256, proof):
-    """Bind diagnostic comparison to the original root's durable identity and source proof."""
-    require(type(claim) is dict and set(claim) == {'schema', 'profile_sha256', 'source_proof', 'producer',
+def retained_root_provenance(claim, runner, *, profile_sha256):
+    """Bind diagnostic comparison to the original root's durable identity."""
+    require(type(claim) is dict and set(claim) == {'schema', 'profile_sha256', 'producer',
             'root_runner_sha256', 'root_receipt_sha256', 'execution_identity'} and
             claim['schema'] == 'atlas.diagnostic-retained-root.v1' and
-            claim['profile_sha256'] == profile_sha256 and claim['source_proof'] == proof,
-            'retained root claim differs from the selected diagnostic profile or proof')
+            claim['profile_sha256'] == profile_sha256,
+            'retained root claim differs from the selected diagnostic profile')
     original = claim['producer']
     previous, current = RUN._sha(original['identity']), RUN._sha(claim['execution_identity'])
     require(runner['root']['execution_provenance'] == {'execution_identity': previous, 'execution_mode': 'strict'} and
             runner['producer_identity'] == original['profile']['sha256'] and
-            runner['runtime_identity'] == original['proof']['native_source_digest'] and
             sha256(canonical(runner)).hexdigest() == claim['root_runner_sha256'],
             'retained root claim differs from the original producer record')
     return previous, current
@@ -548,11 +499,8 @@ def interval_one_route(profile):
 
 
 def diagnostic_tree(sources):
-    """Whether this tree's manifest is a diagnostic one (rulings 4a, 27: proof and real trees are not)."""
-    if sources._diagnostic is not None:
-        return sources._diagnostic
-    # Preserve the original refusal at first use for a malformed or historical manifest.
-    return RUN._json(sources._manifest)['installed_binding']['qualification_status'] == DIAGNOSTIC
+    """Whether this tree's profile is a diagnostic one (rulings 4a, 27: proof and real trees are not)."""
+    return sources.profile.record()['qualification_status'] == DIAGNOSTIC
 
 
 def _pin_sha(value):
@@ -570,8 +518,7 @@ def _recording(sources, asked):
     """The list recorded tests go to, or None. Only a diagnostic tree records (RFR's _recording)."""
     if not asked:
         return None
-    manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
-    require(manifest['installed_binding']['qualification_status'] == 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION',
+    require(diagnostic_tree(sources),
             '--record-failed-prior is for diagnostic trees only')
     return []
 
@@ -773,17 +720,16 @@ def require_lineage_head(store, lineage):
     return lineage['root_runner']
 
 
-def measurement_composition(profile, sources, *, proof, interpreter_seed):
+def measurement_composition(profile, *, execution_identity, interpreter_seed):
     """What a reusable initial measurement store is bound to (review condition 2).
 
-    The profile pin, the source proof, the driver's and every helper's SHA-256, and the
+    The profile pin, the execution identity, the driver's SHA-256 and the
     interpreter seed. Every run records it with its closed store; a seeded run B refuses
     unless run A's equals its own, field by field.
     """
-    row, files = profile.record(), sources.files()
-    return {'profile_sha256': profile.sha256, 'source_proof': dict(proof),
+    row = profile.record()
+    return {'profile_sha256': profile.sha256, 'execution_identity': execution_identity,
             'advance_driver_sha256': row['advance_driver']['sha256'],
-            'helper_sha256': {name: files[path] for name, path in sorted(row['modules'].items())},
             'interpreter_seed': dict(interpreter_seed)}
 
 
@@ -919,11 +865,8 @@ def _across_change(theirs, binding, earlier_sha256):
     require(theirs['interpreter_seed'] == binding['interpreter_seed'],
             'run A measurement composition differs from this run: interpreter_seed')
     require(theirs['profile_sha256'] == earlier_sha256, "run A measurement composition is not the earlier profile's")
-    mine, old = binding['helper_sha256'], theirs['helper_sha256']
-    require(type(mine) is dict and type(old) is dict, 'run A measurement composition: helper_sha256 is not a table')
-    differences = [name for name in ('profile_sha256', 'source_proof', 'advance_driver_sha256')
+    differences = [name for name in ('profile_sha256', 'execution_identity', 'advance_driver_sha256')
                    if theirs[name] != binding[name]]
-    differences += ['helper_sha256.'+name for name in sorted(set(mine) | set(old)) if mine.get(name) != old.get(name)]
     return {'earlier_profile_sha256': earlier_sha256, 'differences': differences}
 
 
@@ -1159,7 +1102,7 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     adopted(N-1) file; see sealed_lineage. Neither is derived here.
     """
     require(type(profile) is FreshProfile and type(sources) is FreshSources and sources.profile is profile and
-            sources.selected_now and mode in MODES, 'actual selected pinned sources and a route (1) mode required')
+            mode in MODES, 'actual pinned sources and a route (1) mode required')
     require(type(stop_before_advance) is bool and (mode == 'interval' or not stop_before_advance),
             'stop-before-advance applies to run B only')
     require(seed is None or mode == 'interval', 'a measurement seed applies to run B only')
@@ -1196,16 +1139,17 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     RUN._guard_boundary(sources, guard, budget, limits=selected_limits)
     check = lambda: guard.check(force=True)
     check()
-    proof = sources.verify()
-    identities = {'producer_identity': profile.sha256, 'runtime_identity': proof['native_source_digest']}
+    from atlas_tectonics.integration.reuse import execution_identity
+    execution = execution_identity('scipy')
+    identities = {'producer_identity': profile.sha256, 'runtime_identity': execution}
     record.update(guard_limits=selected_limits, start_gate=admitted,
                   memory_at_start=dict(available_bytes=admitted['available_bytes'],
                     **({'physical_bytes':admitted['physical_bytes']} if production_release else {})),
-                  execution_mode='release' if production_release else 'strict', source_proof=proof, identities=identities,
+                  execution_mode='release' if production_release else 'strict', identities=identities,
                   completed_query_limits=dict(limits), production_acceptance=False)
     if admission is not None:
         record['production_release'] = admission['production_release']
-    binding = measurement_composition(profile, sources, proof=proof, interpreter_seed=record['interpreter_seed'])
+    binding = measurement_composition(profile, execution_identity=execution, interpreter_seed=record['interpreter_seed'])
     observed = {}
     _publish = bound['private_heat_continuation_guard_r3']._write   # the package's atomic JSON write (temporary, os.replace)
 
@@ -1284,7 +1228,7 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                         require(not production_release and diagnostic_tree(sources),
                                 'retained root is available only in Debug diagnostics')
                         retained_execution = retained_root_provenance(
-                            retained_root, root_runner, profile_sha256=profile.sha256, proof=proof)
+                            retained_root, root_runner, profile_sha256=profile.sha256)
                         root_sha = retained_root['root_runner_sha256']
                         record['retained_root'] = retained_root
                 else:
@@ -1481,43 +1425,6 @@ def pressure_launch_environment(environ=None):
     return result
 
 
-def pressure_startup_selection(sources):
-    require(type(sources) is FreshSources, 'typed fresh sources required for pressure startup')
-    pins = sources.files()
-
-    def binding(path):
-        path = RUN.ordinary(path)
-        require(path.is_relative_to(sources.workspace), 'pressure startup escaped the workspace')
-        name = path.relative_to(sources.workspace).as_posix()
-        require(name in pins, 'pressure startup source is absent from closure: '+name)
-        return [str(path), pins[name]]
-
-    modules = {'start_gate': binding(SG.__file__), 'route2_gate': binding(RUN.RG.__file__),
-               'run_prepared_restart': binding(RUN.__file__),
-               'run_fresh_interval': binding(__file__)}
-    return {'schema': 'atlas.private.pressure-fresh-selection.r1',
-            'profile': {'path': str(sources.profile.path), 'sha256': sources.profile.sha256},
-            'helper': binding(sources.native_root/'atlas_tectonics/integration/parallel/worker_bootstrap.py'),
-            'runner_modules': modules}
-
-
-def pressure_entry_point(argv, step, profile):
-    """Keep reader shape; bind the exact safe producer entry and startup record."""
-    require(type(argv) is list and len(argv) > 9 and all(type(item) is str for item in argv)
-            and argv[1] == '-B' and argv[8] == '-B',
-            'guarded step command differs from the launch shape')
-    if step == 'reader':
-        require(not argv[9].startswith('-'), 'reader entry is not a script')
-        return Path(argv[9])
-    require(step == 'runner' and len(argv) > 15 and argv[8:11] == ['-B', '-s', '-P']
-            and Path(argv[11]).resolve() == Path(__file__).resolve()
-            and argv[12] == '--pressure-startup' and argv[14] == '--workload',
-            'pressure producer requires its exact safe startup shape')
-    require(RUN._json(argv[13]) == pressure_startup_selection(FreshSources(profile)),
-            'pressure producer startup differs from pinned profile')
-    return Path(argv[11])
-
-
 @protect_profile
 def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
             interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False,
@@ -1551,7 +1458,7 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
     guard = sources.path(row['modules']['private_heat_continuation_guard_r3'])
     return [str(RUN.ordinary(python)), '-B', str(guard), '--launch', '--output', str(output/'run.json'), '--',
             str(RUN.ordinary(python)), '-B', '-s', '-P', str(Path(__file__).resolve()),
-            '--pressure-startup', canonical(pressure_startup_selection(sources)).decode(), '--workload',
+            '--workload',
             '--profile', str(profile.path), '--profile-sha256', profile.sha256, '--mode', mode,
             *(['--dev-timing'] if dev_timing else []),
             *profiling.profile_words(run_profile),
@@ -1638,61 +1545,55 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     # The supervisor has already claimed sidecars. Receipt creation is exclusive.
     with output.open('x', encoding='utf8') as stream:
         json.dump(record, stream)
-    with sources.selected():
-        record['pressure_worker_startup'] = sources.configure_pressure_workers()
-        G = sources.module('private_heat_continuation_guard_r3')
-        query_stages = QueryStages(record)
+    G = sources.module('private_heat_continuation_guard_r3')
+    query_stages = QueryStages(record)
 
-        def save():
-            query_stages.observe()
-            G._write(output, record)
+    def save():
+        query_stages.observe()
+        G._write(output, record)
+    try:
+        guard = G.ContinuationGuard(output, record, save,
+            **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
+               if admitted is not None else SG.child_limits(start_gate)))
+        record_stages = dev_timing or 'stages' in run_profile
+        with profiling.collect(guard, output.parent, enabled=record_stages, record=record,
+                            metadata={'profile_sha256': profile.sha256, 'mode': mode}):
+            budget = run_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save, mode=mode,
+                                        stop_before_advance=stop_before_advance, seed=seed,
+                                        start_gate=start_gate, query_stages=query_stages,
+                                        interval=interval, parent_adopted_sha256=parent_adopted_sha256,
+                                        production_release=production_release, recorded=recorded,
+                                        retained_root=retained_root, require_heat_pool=require_heat_pool)
+        record['status'] = 'VERIFYING_FINALISATION'
+    except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded in run.json
+        record['status'] = 'FAILED'
+        record['errors'].append(_error(error))
+        if guard is not None and guard.budget is not None:
+            record['logical_budget_at_failure'] = guard.budget.statistics()
+        save()
+    finally:
+        gc.collect()
+        budget = budget if budget is not None else getattr(guard, 'budget', None)
+        if budget is not None:
+            record['final_reserved_bytes'] = budget.reserved_bytes
+            statistics = budget.statistics()
+            record['logical_budget_final'] = {'peak_reserved_bytes': statistics['peak_reserved_bytes'],
+                                              'category_peaks': statistics['category_peaks']}
+            if budget.reserved_bytes:
+                record['errors'].append({'type': 'RetainedReservations', 'message': str(budget.reserved_bytes)})
+        times = os.times()
+        record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
         try:
-            guard = G.ContinuationGuard(output, record, save,
-                **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
-                   if admitted is not None else SG.child_limits(start_gate)))
-            record_stages = dev_timing or 'stages' in run_profile
-            source_pin = None
-            if record_stages:
-                from atlas_tectonics.integration.parallel.worker_bootstrap import installed_source_pin
-                source_pin = installed_source_pin(profiling)
-            with profiling.collect(guard, output.parent, enabled=record_stages, record=record, source_sha256=source_pin,
-                                metadata={'profile_sha256': profile.sha256, 'mode': mode}):
-                budget = run_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save, mode=mode,
-                                            stop_before_advance=stop_before_advance, seed=seed,
-                                            start_gate=start_gate, query_stages=query_stages,
-                                            interval=interval, parent_adopted_sha256=parent_adopted_sha256,
-                                            production_release=production_release, recorded=recorded,
-                                            retained_root=retained_root, require_heat_pool=require_heat_pool)
-            record['status'] = 'VERIFYING_FINALISATION'
-        except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded in run.json
-            record['status'] = 'FAILED'
+            if guard is not None:
+                guard.check(force=True)
+                guard.close()
+        except BaseException as error:  # noqa: BLE001 - a finalisation failure is recorded, never lost
             record['errors'].append(_error(error))
-            if guard is not None and guard.budget is not None:
-                record['logical_budget_at_failure'] = guard.budget.statistics()
-            save()
-        finally:
-            gc.collect()
-            budget = budget if budget is not None else getattr(guard, 'budget', None)
-            if budget is not None:
-                record['final_reserved_bytes'] = budget.reserved_bytes
-                statistics = budget.statistics()
-                record['logical_budget_final'] = {'peak_reserved_bytes': statistics['peak_reserved_bytes'],
-                                                  'category_peaks': statistics['category_peaks']}
-                if budget.reserved_bytes:
-                    record['errors'].append({'type': 'RetainedReservations', 'message': str(budget.reserved_bytes)})
-            times = os.times()
-            record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
-            try:
-                if guard is not None:
-                    guard.check(force=True)
-                    guard.close()
-            except BaseException as error:  # noqa: BLE001 - a finalisation failure is recorded, never lost
-                record['errors'].append(_error(error))
-            query_stages.finish()
-            if recorded:
-                record['recorded'] = recorded
-            record['status'] = final_status(record['errors'], mode, record)
-            save()
+        query_stages.finish()
+        if recorded:
+            record['recorded'] = recorded
+        record['status'] = final_status(record['errors'], mode, record)
+        save()
     return 0 if not record['errors'] else 1
 
 
@@ -1725,9 +1626,6 @@ def main(argv=None):
     parser.add_argument(SG.ARGUMENT, dest='start_gate', help='the launcher\'s start gate decision (--workload)')
     SG.add_arguments(parser)
     args = parser.parse_args(argv)
-    require(_PRESSURE_STARTUP is None or (Path(_PRESSURE_STARTUP[0]) == args.profile
-                                          and _PRESSURE_STARTUP[1] == args.profile_sha256),
-            'the pressure startup authenticated another profile')
     dev_timing = RUN._dev_timing_enabled(args.dev_timing)
     run_profile = profiling.profile_selection(args.run_profile)
     require((args.seed_receipt_sha256 is None) == (args.seed_store_sha256 is None),

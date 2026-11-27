@@ -90,7 +90,7 @@ def _packet(sources, route, gate, *, entry):
             'shipped strict-peak table source changed')
     measured = json.loads(raw, object_pairs_hook=_pairs)
     decision = gate.release_decision(route, composition['composition_sha256'], measured)
-    return {'schema':SCHEMA,'route':route,'source_manifest_sha256':sources.manifest_pin,
+    return {'schema':SCHEMA,'route':route,
             'composition_sha256':composition['composition_sha256'],
             'peak_table':{'path':relative,'sha256':pin},'decision':decision}
 
@@ -130,7 +130,4 @@ def producer_policy(receipt, *, sources, gate, expected_route):
     require(receipt.get('start_gate') == result['start_gate']
             and receipt.get('guard_limits') == result['guard_limits'],
             'producer decision or machine-sized guard limits differ')
-    proof = receipt.get('source_proof')
-    require(type(proof) is dict and proof.get('source_manifest_sha256') == sources.manifest_pin,
-            'producer source proof differs from selected manifest')
     return {'execution_mode':'release','guard_limits':result['guard_limits']}

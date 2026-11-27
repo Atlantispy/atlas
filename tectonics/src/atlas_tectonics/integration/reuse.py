@@ -16,7 +16,6 @@ import platform
 import re
 import sys
 import types
-import importlib
 import os
 import stat
 import errno
@@ -33,7 +32,7 @@ from atlas_tectonics._validation import snapshot as array, frozen, input_shape, 
 from atlas_tectonics.integration.resources import elements, select_budget, MemoryLimitError
 from atlas_tectonics.integration.resources import check_event
 from atlas_tectonics.integration.resources import canonical_json as _json
-from atlas_tectonics.codecs.storage import ArrayStore, _SnapshotConflict
+from atlas_tectonics.codecs.storage import ArrayStore
 from atlas_tectonics.thermal.thermal import half_space_temperature, cooling_work_bytes
 from atlas_tectonics.mechanics.flexure import PeriodicFlexure
 from atlas_tectonics.mechanics.finite_flexure import FiniteRegionFlexure
@@ -106,240 +105,6 @@ def _loaded_binary(path):
     return _file_hash(path)
 
 
-# Executable fixture assets are source members, but their import names are the
-# manifest's declared logical names, never atlas_tectonics._fixtures.* names.
-@dataclass(frozen=True)
-class _FixtureIdentitySources:
-    manifest: Path
-    manifest_sha256: str
-    root: Path
-    bindings: tuple
-    by_path: tuple
-    finder: object
-    source_rows: tuple
-    workspace: Path
-    file_pins: dict
-
-
-_fixture_identity_state = threading.local()
-
-
-def _fixture_identity_sources(check_sources=False):
-    selected = getattr(_fixture_identity_state, 'selected', None)
-    if selected is None:
-        return None
-    if not any(finder is selected.finder for finder in sys.meta_path):
-        raise TectonicsError('declared fixture identity finder is no longer installed')
-    bindings = tuple(sorted((name, path, pin) for name, (path, pin) in selected.finder.modules.items()))
-    if (selected.root != _atlas_identity.PKG_PARENT / 'atlas_tectonics' or bindings != selected.bindings
-            or tuple(sorted(selected.finder.by_path.items())) != selected.by_path):
-        raise TectonicsError('declared fixture identity selection changed')
-    if check_sources:
-        selected.finder.verify()
-    return selected
-
-
-_UNSELECTED = object()  # P6: no selection handed on (a selection may be None)
-
-
-def _fixture_identity_binding(selected=_UNSELECTED):
-    if selected is _UNSELECTED:
-        selected = _fixture_identity_sources()
-    return (() if selected is None else tuple((name, path.relative_to(selected.root).as_posix(), pin,
-                                               'by_path' if name in selected.finder.by_path else 'module')
-                                              for name, path, pin in selected.bindings))
-
-
-@contextmanager
-def fixture_identity_context(manifest_path, manifest_sha256, workspace, *, manifest=None, finder=None, source_rows=None):
-    """Bind all package fixture assets through the pinned manifest's logical imports.
-
-    Enter after selecting the native/import roots, before ExecutionContext, and
-    retain this context until every such ExecutionContext is closed. This uses
-    the existing FixtureSources finder. It changes no path, source, fence, stage
-    or worker selection. A different declaration requires a fresh interpreter.
-    """
-    if getattr(_fixture_identity_state, 'selected', None) is not None:
-        raise TectonicsError('nested fixture identity contexts are not supported')
-    from atlas_tectonics.integration.parallel.worker_bootstrap import FixtureSources, _ordinary, _pairs, _path, _raw
-    manifest_path, workspace = Path(manifest_path), Path(workspace)
-    if not manifest_path.is_absolute() or not workspace.is_absolute():
-        raise TectonicsError('fixture identity requires explicit absolute paths')
-    _ordinary(manifest_path)
-    _ordinary(workspace)
-    manifest_path, workspace = _path(str(manifest_path)), _path(str(workspace))
-    if manifest is None:
-        if manifest_path.stat().st_size > 8*1024**2:
-            raise TectonicsError('fixture identity manifest is too large')
-        def nonfinite(value):
-            raise TectonicsError('nonfinite fixture identity manifest value: '+value)
-        manifest_bytes = _raw(manifest_path, manifest_sha256)
-        if len(manifest_bytes) > 8*1024**2:
-            raise TectonicsError('fixture identity manifest is too large')
-        manifest = json.loads(manifest_bytes, object_pairs_hook=_pairs, parse_constant=nonfinite)
-    if finder is None:
-        finder = FixtureSources(manifest, workspace)
-    root = _atlas_identity.PKG_PARENT / 'atlas_tectonics'
-    inventory = manifest['source_hashes']
-    assets = {root.parent / name for name in inventory if name.startswith('atlas_tectonics/_fixtures/')}
-    bindings = tuple(sorted((name, path, pin) for name, (path, pin) in finder.modules.items()))
-    if {path for _, path, _ in bindings} != assets:
-        raise TectonicsError('declared fixture identity must cover every package fixture source exactly')
-    if any(inventory.get(path.relative_to(root.parent).as_posix()) != pin for _, path, pin in bindings):
-        raise TectonicsError('fixture identity differs from the native source inventory')
-    native = {name.removeprefix('atlas_tectonics/').removesuffix('.py').replace('/', '.')
-              for name in inventory
-              if name.startswith('atlas_tectonics/') and not name.startswith('atlas_tectonics/_fixtures/')}
-    if native.intersection(name for name, _, _ in bindings):
-        raise TectonicsError('fixture logical name collides with a native package module')
-    selected_names = {name: (path, pin) for name, path, pin in bindings}
-    for name, module in tuple(sys.modules.items()):
-        filename = getattr(module, '__file__', None)
-        if type(filename) is str and Path(filename).resolve() in assets:
-            if name not in selected_names or Path(filename).resolve() != selected_names[name][0]:
-                raise TectonicsError('undeclared loaded package fixture: '+name)
-    selected = _FixtureIdentitySources(manifest_path, manifest_sha256, root, bindings,
-                                       tuple(sorted(finder.by_path.items())), finder, source_rows if source_rows is not None
-                                       else _declared_source_rows(manifest, root.parent, workspace),
-                                       workspace, manifest["files"])
-    sys.meta_path.insert(0, finder)
-    _fixture_identity_state.selected = selected
-    try:
-        yield
-    finally:
-        _fixture_identity_state.selected = None
-        sys.meta_path[:] = [item for item in sys.meta_path if item is not finder]
-
-
-# Modules that only measure the machine or decide when and where work runs: no answer passes through them, and
-# bound code puts every value that could alter one into the request itself. Their bytes, loaded code and constants
-# are left out of the identity's digest and enter the initial frozen source admission.
-_EXECUTION_ONLY = frozenset(('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resources_gate',
-                             'atlas_shared.execution.schedule',
-                             'atlas_tectonics.integration.parallel.selection'))
-
-
-def _execution_only(key):
-    """Apply the same module boundary to source, loaded-code and constant keys."""
-    if key.endswith('.py'):
-        module = key.removesuffix('.py').replace('/', '.')
-        if not key.startswith('atlas_shared/'):
-            module = 'atlas_tectonics.' + module
-        return module in _EXECUTION_ONLY
-    return any(key.startswith(module + '.') for module in _EXECUTION_ONLY)
-
-
-_SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
-_SOURCE_CONTEXT_BYTES = 2*1024**2
-_SOURCE_FILES = 512
-_SOURCE_BLOCK_BYTES = 64*1024
-_PROJECTED_INVOCATION = 'atlas.kernel-invocation.projected.v1'
-_PROJECTED_SNAPSHOT = 'atlas.kernel-projected-snapshot.v1'
-_PROJECTED_SNAPSHOT_FIELDS = frozenset(('schema', 'invocation', 'producer_execution', 'producer_invocation_sha256'))
-_PROJECTED_PROVENANCE = 'producer_shared_source_sha256'
-_PROJECTED_DEPENDENCIES = types.MappingProxyType({
-    # These kernels and their backends are native. Shared machine leaves
-    # govern resource admission and do not implement a returned value.
-    operation: ('atlas_shared', 'atlas_shared.machine', 'atlas_shared.errors',
-                'atlas_shared.execution') for operation in (
-        'half-space-temperature-v2', 'finite-plate-temperature-v1', 'plate-thermal-support-v1',
-        'drained-compaction-v1', 'fixed-column-loads-v1', 'periodic-flexure-v2',
-        'continuous-regional-flexure-v1', 'hermite-variable-rigidity-refined-v1',
-        'regional-transport-packed-v1', 'material-transport-packed-v1', 'material-remap-v2', 'ale-packed-v2',
-    )
-})
-# These three leaves implement diagnostic output for the driver and stage hosts.
-# The twelve kernel operations above do not use them to compute their result.
-_PROJECTED_DIAGNOSTIC_LEAVES = frozenset((
-    'atlas_shared.execution.profiling', 'atlas_shared.execution.profile_reports',
-    'atlas_shared.execution.run_logging',
-))
-
-# Exact geometry is part of the full identity. The built-in cached
-# operations above do not depend on the shared exact geometry implementation.
-_PROJECTED_EXACT_LEAVES = frozenset(('atlas_shared.exact', 'atlas_shared.exact.exact_arithmetic'))
-
-
-def _source_roots():
-    from atlas_tectonics.integration.parallel.worker_bootstrap import _ordinary
-    package = importlib.import_module('atlas_shared')
-    filename = getattr(package, '__file__', None)
-    if not isinstance(filename, str):
-        raise TectonicsError("a regular atlas_shared source package is required")
-    path = Path(filename).absolute()
-    if path.name != '__init__.py' or path.parent.name != 'atlas_shared':
-        raise TectonicsError("a regular atlas_shared source package is required")
-    if not stat.S_ISREG(_ordinary(path).st_mode):
-        raise TectonicsError("a regular atlas_shared source package is required")
-    return (('', _atlas_identity.PKG_PARENT / 'atlas_tectonics'), ('atlas_shared/', path.parent))
-
-
-def _source_bytes(roots=None):
-    """Read every current source byte, retaining bounded digest records.
-
-    The 512-file/2 MiB limits cap file membership and the canonical
-    JSON inventory (schema, relative names, byte counts and SHA-256), not the raw
-    package text. A 64 KiB buffer streams each complete file on EVERY call; no
-    metadata result is cached. Values remain bytes for retained-context accounting.
-    Source text may exceed 2 MiB, with proportional I/O but no retained text copy.
-    Concurrent detected mutation refuses; this is not an atomic filesystem snapshot.
-    """
-    paths = []
-    for prefix, root in _source_roots() if roots is None else roots:
-        members = root.rglob("*.py")
-        if not prefix:
-            members = _atlas_identity.members(members)
-        for path in members:
-            if len(paths) >= _SOURCE_FILES:
-                raise TectonicsError("execution source inventory exceeds context budget")
-            paths.append((prefix + path.relative_to(root).as_posix(), path))
-    out = {}
-    encoded_bytes = len(_json({'schema': _SOURCE_INVENTORY_SCHEMA, 'files': {}}))
-    buffer = memoryview(bytearray(_SOURCE_BLOCK_BYTES))
-    for name, p in sorted(paths):
-        digest, size = hashlib.sha256(), 0
-        try:
-            # One non-following stat answers both regular-file and link checks.
-            # These are fresh per capture, never an mtime-based digest cache.
-            entry = p.lstat()
-            if not stat.S_ISREG(entry.st_mode):
-                raise TectonicsError("runtime/source file unavailable or linked")
-            with p.open("rb") as stream:
-                before = os.fstat(stream.fileno())
-                while True:
-                    # One excess byte detects growth without an unbounded read
-                    # from a file continuously appended by another process.
-                    count = stream.readinto(buffer[:min(_SOURCE_BLOCK_BYTES, before.st_size-size+1)])
-                    if not count:
-                        break
-                    size += count
-                    if size > before.st_size:
-                        raise TectonicsError("source changed during inventory capture")
-                    digest.update(buffer[:count])
-                after = os.fstat(stream.fileno())
-            current = p.lstat()
-        except OSError as exc:
-            raise TectonicsError("runtime/source file unavailable during capture") from exc
-        stamp = lambda stat: (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
-        if (not stat.S_ISREG(current.st_mode) or size != before.st_size
-                or stamp(entry) != stamp(before) or stamp(before) != stamp(after)
-                or stamp(before) != stamp(current)):
-            raise TectonicsError("source changed during inventory capture")
-        # Both fields have fixed JSON spelling: a non-negative byte count and
-        # hashlib's lowercase ASCII hex. Preserve canonical bytes without a
-        # generic encoder; every source byte and consistency check stays live.
-        record = (b'{"bytes":' + str(size).encode('ascii') + b',"sha256":"'
-                  + digest.hexdigest().encode('ascii') + b'"}')
-        encoded_bytes += len(_json(name)) + 1 + len(record) + bool(out)
-        if encoded_bytes > _SOURCE_CONTEXT_BYTES:
-            raise TectonicsError("execution source inventory exceeds context budget")
-        out[name] = record
-    if encoded_bytes > _SOURCE_CONTEXT_BYTES:
-        raise TectonicsError("execution source inventory exceeds context budget")
-    return out
-
-
-# The issued heat receipt uses these encoders for its private dependency record.
 def _normal_code(code):
     return code.replace(co_filename='<atlas>', co_consts=tuple(
         _normal_code(c) if isinstance(c, types.CodeType) else c for c in code.co_consts))
@@ -451,26 +216,6 @@ def _constant(value):
         return {"type": type(value).__qualname__, "values": _constant(asdict(value))}
     # Runtime objects (locks/budgets/modules) are not arbitrary serialised graphs.
     return {"type": type(value).__module__+"."+type(value).__qualname__}
-
-
-def _declared_source_rows(manifest, root, workspace):
-    members = manifest['source_hashes']
-    native = {name.removeprefix('atlas_tectonics/'): members[name] for name in _atlas_identity.members(members)
-              if name.startswith('atlas_tectonics/') and not _execution_only(name.removeprefix('atlas_tectonics/'))}
-    shared = {name: pin for name, pin in members.items()
-              if name.startswith('atlas_shared/') and not _execution_only(name)}
-    if not shared:
-        from atlas_tectonics.integration.parallel.worker_bootstrap import application_shared_root
-        shared_root = application_shared_root(root)
-        if shared_root.is_relative_to(workspace):
-            relative = shared_root.relative_to(workspace).as_posix()
-            prefix = 'atlas_shared/' if relative == '.' else relative + '/atlas_shared/'
-            for name, pin in manifest['files'].items():
-                if name.startswith(prefix):
-                    member = 'atlas_shared/' + name.removeprefix(prefix)
-                    if not _execution_only(member):
-                        shared[member] = pin
-    return tuple(sorted({**native, **shared}.items()))
 
 
 def _runtime_record(backend):
@@ -622,11 +367,6 @@ def helper_source_digest(path, *, owner_file, cancel=None):
         raise CancelledError("helper source digest cancelled")
     source = _atlas_identity.as_path(path).absolute()
     owner = _atlas_identity.as_path(owner_file).absolute()
-    selected = _fixture_identity_sources()
-    if selected is not None and source.is_relative_to(selected.workspace):
-        pin = selected.file_pins.get(source.relative_to(selected.workspace).as_posix())
-        if pin is not None:
-            return pin
     key = source, owner
     value = _strict_source_digests.get(key)
     if value is None:
@@ -670,86 +410,9 @@ def publication_boundary():
             context._close_lock.release()
 
 
-_application_adapter_lock = threading.RLock()
-
-
-def _application_source_lease():
-    """Open the ordinary packaged selection when the caller did not supply one."""
-    if _fixture_identity_sources() is not None:
-        return None
-    root = _atlas_identity.PKG_PARENT
-    manifest_path = root / 'atlas_tectonics/_application_sources.json'
-    pin_path = root / 'atlas_tectonics/_application_sources.sha256'
-    if not manifest_path.exists() and not pin_path.exists():
-        return None
-    with _application_adapter_lock:
-        adapter = sys.modules.get('atlas_runtime')
-        path = root / 'atlas_runtime.py'
-        if adapter is None:
-            spec = importlib.util.spec_from_file_location('atlas_runtime', path)
-            adapter = importlib.util.module_from_spec(spec)
-            sys.modules['atlas_runtime'] = adapter
-            try:
-                spec.loader.exec_module(adapter)
-            except BaseException:
-                if sys.modules.get('atlas_runtime') is adapter:
-                    del sys.modules['atlas_runtime']
-                raise
-        elif Path(adapter.__file__).resolve() != path:
-            raise TectonicsError('another installed application package is selected')
-        lease = adapter.application_sources()
-        lease.__enter__()
-        from contextlib import ExitStack
-        lifetime = ExitStack()
-        lifetime.callback(lease.close)
-        record = lease._active['record']
-        lifetime._application_token = (root, lease._active['pin'], record['application_files']['atlas_runtime.py'], adapter)
-        return lifetime
-
-
-def _active_application_token():
-    binding = getattr(_fixture_identity_state, 'ordinary_application', None)
-    if binding is None:
-        return None
-    selection, token = binding
-    if _fixture_identity_sources() is not selection:
-        return None
-    if sys.modules.get('atlas_runtime') is not token[3]:
-        raise TectonicsError('application adapter selection changed')
-    return token
-
-
-@contextmanager
-def _application_operation():
-    if _active_application_token() is not None:
-        yield
-        return
-    lease = _application_source_lease()
-    if lease is None:
-        yield
-        return
-    with lease:
-        _fixture_identity_state.ordinary_application = (_fixture_identity_sources(), lease._application_token)
-        try:
-            yield
-        finally:
-            del _fixture_identity_state.ordinary_application
-
-
 @lru_cache(maxsize=32)
-def _execution_build(backend, runtime, source_rows, fixture_binding, declared, version):
-    shared = {name.removesuffix('.py').removesuffix('/__init__').replace('/', '.'): (name, pin)
-              for name, pin in source_rows if name.startswith('atlas_shared/')}
-    dependencies = frozenset().union(*_PROJECTED_DEPENDENCIES.values())
-    allowed = dependencies | _PROJECTED_DIAGNOSTIC_LEAVES | _PROJECTED_EXACT_LEAVES
-    projection_members = {name: member for name, member in shared.items() if name in dependencies}
-    provenance = dict(source_rows) if declared else {'kind': 'undeclared', 'version': version}
-    record = dict(schema='atlas.kernel-execution.v6', backend=backend, runtime=json.loads(runtime),
-                  executable_fixtures=fixture_binding, source_provenance=provenance)
-    identity = _digest(_json(record))
-    base = _digest(_json(dict(record, schema='atlas.kernel-projection-base.v2',
-        source_provenance={name: pin for name, pin in source_rows if not name.startswith('atlas_shared/')})))
-    return identity, base, projection_members, declared and shared.keys() <= allowed, _digest(_json(dict(shared.values())))
+def _execution_build(backend, runtime, version):
+    return _digest(_json(dict(schema='atlas.kernel-execution.v7', backend=backend, runtime=json.loads(runtime), version=version)))
 
 
 class ExecutionContext:
@@ -757,65 +420,15 @@ class ExecutionContext:
     def __init__(self, backend="reference"):
         self._open(backend)
 
-    @staticmethod
-    def adopted(backend="reference"):
-        from atlas_tectonics.integration.parallel import worker_bootstrap as bootstrap
-        if bootstrap._worker_mode_token is None:
-            raise TectonicsError("no bound worker startup record to adopt")
-        identity = bootstrap.worker_execution_identity()
-        self = object.__new__(ExecutionContext)
-        self._open(backend, identity=identity)
-        return self
-
-    def _open(self, backend, *, identity=None):
+    def _open(self, backend):
         self._mode = execution_mode()
-        selected = _fixture_identity_sources()
-        self._explicit_fixtures = selected is not None and _active_application_token() is None
-        lease = _application_source_lease() if selected is None else None
-        try:
-            self._bind(backend, identity, _fixture_identity_sources() if lease is not None else selected)
-        finally:
-            if lease is not None:
-                lease.close()
-
-    def _bind(self, backend, identity, selected):
         self.backend = backend
         self._runtime = _runtime_record(backend)
-        self._fixture_binding = _fixture_identity_binding(selected)
-        self._source_rows = () if selected is None else selected.source_rows
-        self._declared_build = selected is not None
-        self._adopted = identity is not None
         self._closed = self._close_verified = False
         self._close_lock = threading.RLock()
-        self._operation_projections = {}
-        self._identity = identity
-        self._build = None
-        if identity is None:
-            self._identity = self._execution_projection()[0]
-
-    def _execution_projection(self):
-        if self._build is None:
-            from atlas_tectonics import __version__
-            with _release_state.lock:
-                self._build = _execution_build(
-                    self.backend, _json(self._runtime), self._source_rows,
-                    self._fixture_binding, self._declared_build, __version__)
-        return self._build
-
-    @property
-    def _shared_source_sha256(self):
-        return self._execution_projection()[4]
-
-    def _operation_identity(self, operation):
-        _, base, members, covered, _ = self._execution_projection()
-        dependencies = _PROJECTED_DEPENDENCIES.get(operation)
-        if not covered or dependencies is None or any(name not in members for name in dependencies):
-            return None
-        if dependencies not in self._operation_projections:
-            record = {'schema': 'atlas.kernel-operation-execution.v2', 'base': base,
-                      'members': {name: members[name] for name in sorted(dependencies)}}
-            self._operation_projections[dependencies] = _digest(_json(record))
-        return self._operation_projections[dependencies]
+        from atlas_tectonics import __version__
+        with _release_state.lock:
+            self._identity = _execution_build(backend, _json(self._runtime), __version__)
 
     @property
     def provenance(self):
@@ -829,10 +442,6 @@ class ExecutionContext:
     def verify(self):
         if self._closed:
             raise TectonicsError("execution context is closed")
-        selected = _fixture_identity_sources()
-        if ((selected is not None or self._explicit_fixtures)
-                and _fixture_identity_binding(selected) != self._fixture_binding):
-            raise TectonicsError("executable fixture identity selection changed")
 
     def verify_boundary(self):
         self.verify()
@@ -933,18 +542,17 @@ def _capture(value, name, *, nonnegative=False):
     return captured, None
 
 
-def _invocation_record(operation, inputs, parameters, backend, *, context=None, digests=None, project=True):
+def _invocation_record(operation, inputs, parameters, backend, *, context=None, digests=None):
     if context is None:
         with ExecutionContext(backend) as selected:
-            return _invocation_record(operation, inputs, parameters, backend, context=selected, digests=digests, project=project)
+            return _invocation_record(operation, inputs, parameters, backend, context=selected, digests=digests)
     execution = context.identity
     # A diagnostic declaration can brand a run while its cache still needs the actual code identity.
     execution = getattr(context, '_actual_identity', execution)
     if context.backend != backend:
         raise TectonicsError("context/backend mismatch")
-    projection = context._operation_identity(operation) if project else None
-    return {"schema": "atlas.kernel-invocation.v2" if projection is None else _PROJECTED_INVOCATION,
-        "operation": operation, "backend": backend, "execution": execution if projection is None else projection,
+    return {"schema": "atlas.kernel-invocation.v2",
+        "operation": operation, "backend": backend, "execution": execution,
         "inputs": {k: {"identity": (digests or {}).get(k) or _array_identity(v),
                        "shape": list(v.shape), "dtype": v.dtype.str}
                    for k,v in sorted(inputs.items())}, "parameters": parameters}
@@ -1219,53 +827,20 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
     encoded = _json(record)
     key = _digest(encoded)
     nbytes = 8 * elements(shape)
-    projected = record["schema"] == _PROJECTED_INVOCATION
 
     def check_result(result):
         if type(result) is not np.ndarray or result.shape != shape or result.dtype != np.dtype("float64"):
             raise TectonicsError("cached result contract mismatch")
         return result
 
-    def full_invocation():
-        producer = getattr(context, '_actual_identity', None) or context.identity
-        return dict(record, schema='atlas.kernel-invocation.v2', execution=producer)
-
-    def restore(snapshot, *, legacy=None):
+    def restore(snapshot):
         arrays, winner, mode = snapshot
         if set(arrays) != {"result"}:
             raise TectonicsError("cached result contract mismatch")
-        if legacy is not None:
-            if winner != legacy or mode not in ('strict', 'release'):
-                raise TectonicsError("legacy cache invocation differs from its snapshot")
-        elif projected:
-            if (type(winner) is not dict or winner.keys() - {_PROJECTED_PROVENANCE} != _PROJECTED_SNAPSHOT_FIELDS or
-                    winner['schema'] != _PROJECTED_SNAPSHOT or _json(winner['invocation']) != encoded or
-                    mode not in ('strict', 'release')):
-                raise TectonicsError("projected cache invocation differs from its snapshot")
-            if _PROJECTED_PROVENANCE in winner:
-                source = winner[_PROJECTED_PROVENANCE]
-                if type(source) is not str or re.fullmatch(r'[0-9a-f]{64}', source) is None:
-                    raise TectonicsError("projected cache producer shared source proof is malformed")
-            identity = winner['producer_execution']
-            if (type(identity) is not str or re.fullmatch(r'[0-9a-f]{64}', identity) is None or
-                    _digest(_json(dict(record, schema="atlas.kernel-invocation.v2", execution=identity))) !=
-                    winner['producer_invocation_sha256']):
-                raise TectonicsError("projected cache producer invocation differs from its snapshot")
-        elif winner != record:
+        if winner != record:
             raise TectonicsError("cached result contract mismatch")
         return check_result(arrays['result'])
 
-    def same_result(left, right):
-        capacity = min(nbytes, _SOURCE_BLOCK_BYTES)
-        with budget.reserve(2 * capacity, category="competing-cache-result-comparison"):
-            with np.nditer([left, right], flags=['external_loop', 'buffered', 'zerosize_ok'],
-                           op_flags=[['readonly', 'contig'], ['readonly', 'contig']],
-                           order='C', buffersize=max(1, capacity//8)) as rows:
-                for a, b in rows:
-                    _cancelled(cancel)
-                    if memoryview(a).cast('B') != memoryview(b).cast('B'):
-                        return False
-        return True
     # One deadline covers this caller's waiting: for an identical in-process flight, then, if it becomes the
     # owner (also after another owner's cancellation), for the process claim.
     deadline = time.monotonic()+wait_timeout
@@ -1280,17 +855,9 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
             recompute = cache_policy.mode == "auto" and costs.get("restore",0) > costs.get("compute",float("inf"))
             start = time.perf_counter()
             snapshot = None if recompute else store._restore_snapshot(key, budget=budget, evidence=True)
-            legacy = None
-            legacy_key = None
-            if snapshot is None and projected and not recompute:
-                # The current verified capture authenticates this exact v2 key.
-                # A declared or unrelated historic scalar cannot supply that proof.
-                legacy = full_invocation()
-                legacy_key = _digest(_json(legacy))
-                snapshot = store._restore_snapshot(legacy_key, budget=budget, evidence=True)
             restore_time = time.perf_counter()-start
             if snapshot is not None:
-                result = restore(snapshot, legacy=legacy)
+                result = restore(snapshot)
                 context.verify()
                 check_event(cancel, 'caller cancelled; completed publications are not rolled back')
                 controller.count("hits")
@@ -1311,29 +878,11 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
                 cache_policy.expected_reuses*(compute_time-costs.get("restore",0)) > costs.get("write",0))
             if admit:
                 start = time.perf_counter()
-                metadata = record
-                if projected:
-                    invocation = legacy if legacy is not None else full_invocation()
-                    metadata = {"schema": _PROJECTED_SNAPSHOT, "invocation": record,
-                                "producer_execution": invocation['execution'],
-                                "producer_invocation_sha256": legacy_key if legacy_key is not None else _digest(_json(invocation)),
-                                _PROJECTED_PROVENANCE: context._shared_source_sha256}
                 def publication_check():
                     context.verify()
                     check_event(cancel, 'caller cancelled; completed publications are not rolled back')
-                try:
-                    store.put(key, {"result": result}, metadata, publication_check=publication_check,
-                              cancel=cancel, budget=budget)
-                except _SnapshotConflict:
-                    if not projected:
-                        raise
-                    with budget.reserve(nbytes, category="competing-cache-result"):
-                        competing = store._restore_snapshot(key, budget=budget, evidence=True)
-                        if competing is None or not same_result(result, restore(competing)):
-                            raise
-                        publication_check()
-                        controller.count("hits")
-                        return competing[0]['result']
+                store.put(key, {"result": result}, record, publication_check=publication_check,
+                          cancel=cancel, budget=budget)
                 write_time = time.perf_counter()-start
                 controller.cost(key,write=write_time)
                 if admission_key is not None:
@@ -1377,7 +926,6 @@ def _prepare_reuse(store, cache_policy, nbytes, controller, operation, backend, 
         context = control.context(context_backend) if context is None else context
         if not isinstance(context, ExecutionContext) or context.backend != context_backend:
             raise TectonicsError("context/backend mismatch")
-        use = context._declared_build
     if not use:
         control.count("bypasses")
     return policy, control, use, admission_key, context
@@ -1607,8 +1155,7 @@ def cached_flexure(operator: PeriodicFlexure, load_pa, *, store: ArrayStore | No
         with resource.reserve(operator.work_bytes(shape)):
             record = _invocation_record("periodic-flexure-v2",{"load":load},
                 {"grid":asdict(operator.grid),"material":asdict(operator.parameters),
-                 "operator_id":operator.operator_id},"reference",context=ctx,digests={"load":digest},
-                project=type(operator) is PeriodicFlexure)
+                 "operator_id":operator.operator_id},"reference",context=ctx,digests={"load":digest})
         return _evaluate(store,record,lambda:operator.solve(load,budget=resource),shape,resource,
             context=ctx,controller=control,cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
 

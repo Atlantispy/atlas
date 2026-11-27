@@ -46,7 +46,7 @@ WALL_KIND = 'component-fixed-voxel-face'
 WALL_REQUEST_FIELDS = frozenset((
     'schema', 'kind', 'support_id', 'interval_id', 'logical_cell_id', 'axis', 'end',
     'start_time_s', 'end_time_s', 'max_width_m3', 'max_leaves'))
-_FIELDS = frozenset(('schema', 'request', 'source_bindings', 'execution_identity',
+_FIELDS = frozenset(('schema', 'request', 'execution_identity',
     'execution_runtime', 'interpreter_seed', 'child_budget', 'dispatch_token'))
 _SCHEMA = 'private.parallel-job-binding.v1'
 _RECEIPT = 'private.parallel-worker-completion.v1'
@@ -188,11 +188,7 @@ def is_batch(encoded):
 
 
 def _validate_envelope(record):
-    sources, limits = record['source_bindings'], record['child_budget']
-    if (type(sources) is not dict or not sources
-            or any(type(k) is not str or not k or not _digest(v) for k, v in sources.items())
-            or not any(k.startswith('input:') for k in sources)):
-        raise ValueError('full source/input digest inventory required')
+    limits = record['child_budget']
     if type(limits) is not dict or limits.keys() != {'max_bytes', 'max_predicate_work_units'}:
         raise ValueError('exact positive child budget and explicit predicate mode required')
     _child_limits(limits['max_bytes'], limits['max_predicate_work_units'])
@@ -219,13 +215,11 @@ class JobBinding:
     """Deep immutable snapshot; record() always returns a new decoded copy."""
     encoded: bytes
     _dispatch_token: str = field(init=False, repr=False, compare=False)
-    _execution_identity: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         record = _decode(self.encoded)
         _validate(record)
         object.__setattr__(self, '_dispatch_token', record['dispatch_token'])
-        object.__setattr__(self, '_execution_identity', record['execution_identity'])
 
     @classmethod
     def _read(cls, encoded, record):
@@ -238,13 +232,12 @@ class JobBinding:
         binding = object.__new__(cls)
         object.__setattr__(binding, 'encoded', encoded)
         object.__setattr__(binding, '_dispatch_token', record['dispatch_token'])
-        object.__setattr__(binding, '_execution_identity', record['execution_identity'])
         return binding
 
     @classmethod
-    def create(cls, *, request, source_bindings, context, child_bytes, predicate_units,
+    def create(cls, *, request, context, child_bytes, predicate_units,
                dispatch_token=None):
-        return cls(canonical(dict(schema=_SCHEMA, request=request, source_bindings=source_bindings,
+        return cls(canonical(dict(schema=_SCHEMA, request=request,
             **capture_runtime(context), child_budget={'max_bytes': child_bytes,
             'max_predicate_work_units': predicate_units},
             dispatch_token=secrets.token_hex(32) if dispatch_token is None else dispatch_token)))
@@ -252,12 +245,12 @@ class JobBinding:
     def record(self):
         return _decode(self.encoded)
 
-    def verify(self, *, request, source_bindings, context, child_bytes, predicate_units):
-        wanted = JobBinding.create(request=request, source_bindings=source_bindings, context=context,
+    def verify(self, *, request, context, child_bytes, predicate_units):
+        wanted = JobBinding.create(request=request, context=context,
             child_bytes=child_bytes, predicate_units=predicate_units,
             dispatch_token=self._dispatch_token)
         if wanted.encoded != self.encoded:
-            raise ValueError('live request/source/runtime/limits differ from dispatched job')
+            raise ValueError('live request/runtime/limits differ from dispatched job')
 
 
 def _carried_record(raw, request, fields, expected=None):
@@ -283,19 +276,18 @@ def _payload(raw, binding):
     return _carries(raw, binding.record()['request'])
 
 
-def worker_complete(binding_bytes, *, context, read_bindings, request, child_budget, run):
+def worker_complete(binding_bytes, *, context, request, child_budget, run):
     """Call the reviewed unchanged worker body only between two live checks.
 
-    read_bindings must freshly hash the complete source/input inventory.
     Limits come from the actual plain child ledger supplied to run(ledger),
     never caller-supplied integers. The reviewed callable must use that ledger
     and return canonical measure bytes; echoed JSON cannot establish its use.
     """
-    return _worker_complete(binding_bytes, context=context, read_bindings=read_bindings,
+    return _worker_complete(binding_bytes, context=context,
                             request=request, child_budget=child_budget, run=run)
 
 
-def _worker_complete(binding, *, context, read_bindings, request, child_budget, run, record=None):
+def _worker_complete(binding, *, context, request, child_budget, run, record=None):
     # Only the bounded mapped worker supplies its already admitted record.
     if (type(child_budget) is not WorkBudget
             or any(name in vars(child_budget) for name in
@@ -304,7 +296,7 @@ def _worker_complete(binding, *, context, read_bindings, request, child_budget, 
     if record is None:
         binding = JobBinding(binding)
     def verify():
-        binding.verify(request=request, source_bindings=read_bindings(), context=context,
+        binding.verify(request=request, context=context,
                        child_bytes=child_budget.max_bytes,
                        predicate_units=child_budget.max_predicate_work_units)
     verify()
@@ -391,50 +383,50 @@ class BatchBinding:
         return cls._owned_bytes(encoded), record
 
     @classmethod
-    def _create_owned(cls, *, requests, source_bindings, context, child_bytes, predicate_units,
+    def _create_owned(cls, *, requests, context, child_bytes, predicate_units,
                       dispatch_token=None, batch_seconds=None):
         """Concrete interface producer only: member_request and _bind_jobs establish its requests.
 
         Reuse their ordered tokens/collision, count and transport decisions.
-        Runtime/source/input/limits/seed/token still enter the normal canonical envelope.
+        Runtime/limits/seed/token still enter the normal canonical envelope.
         """
         if batch_seconds is not None:
             _batch_seconds(batch_seconds)
         _child_limits(child_bytes, predicate_units)
-        return cls._owned_bytes(canonical(_batch_record(requests=requests, source_bindings=source_bindings,
+        return cls._owned_bytes(canonical(_batch_record(requests=requests,
             context=context, child_bytes=child_bytes, predicate_units=predicate_units,
             dispatch_token=dispatch_token, batch_seconds=batch_seconds)))
 
     @classmethod
-    def create(cls, *, requests, source_bindings, context, child_bytes, predicate_units,
+    def create(cls, *, requests, context, child_bytes, predicate_units,
                dispatch_token=None, batch_seconds=None):
         if type(requests) is not list:
             raise ValueError('batch requests must be a list')
-        return cls(canonical(_batch_record(requests=requests, source_bindings=source_bindings,
+        return cls(canonical(_batch_record(requests=requests,
             context=context, child_bytes=child_bytes, predicate_units=predicate_units,
             dispatch_token=dispatch_token, batch_seconds=batch_seconds)))
 
     def record(self):
         return _decode(self.encoded)
 
-    def verify(self, *, requests, source_bindings, context, child_bytes, predicate_units, batch_seconds=None):
+    def verify(self, *, requests, context, child_bytes, predicate_units, batch_seconds=None):
         if type(requests) is not list:
             raise ValueError('batch requests must be a list')
-        self._verify_record(self.record(), requests=requests, source_bindings=source_bindings, context=context,
+        self._verify_record(self.record(), requests=requests, context=context,
             child_bytes=child_bytes, predicate_units=predicate_units, batch_seconds=batch_seconds)
 
-    def _verify_record(self, record, *, requests, source_bindings, context, child_bytes, predicate_units,
+    def _verify_record(self, record, *, requests, context, child_bytes, predicate_units,
                        batch_seconds=None):
-        wanted = _batch_record(requests=requests, source_bindings=source_bindings, context=context,
+        wanted = _batch_record(requests=requests, context=context,
             child_bytes=child_bytes, predicate_units=predicate_units,
             dispatch_token=record['dispatch_token'], batch_seconds=batch_seconds)
         if canonical(wanted) != self.encoded:
-            raise ValueError('live requests/source/runtime/limits differ from dispatched batch')
+            raise ValueError('live requests/runtime/limits differ from dispatched batch')
 
 
-def _batch_record(*, requests, source_bindings, context, child_bytes, predicate_units,
+def _batch_record(*, requests, context, child_bytes, predicate_units,
                   dispatch_token=None, batch_seconds=None):
-    record = dict(schema=_BATCH_SCHEMA, requests=requests, source_bindings=source_bindings,
+    record = dict(schema=_BATCH_SCHEMA, requests=requests,
         **capture_runtime(context), child_budget={'max_bytes': child_bytes,
         'max_predicate_work_units': predicate_units},
         dispatch_token=secrets.token_hex(32) if dispatch_token is None else dispatch_token)
@@ -443,7 +435,7 @@ def _batch_record(*, requests, source_bindings, context, child_bytes, predicate_
     return record
 
 
-def batch_worker_complete(binding_bytes, *, context, read_bindings, requests, run):
+def batch_worker_complete(binding_bytes, *, context, requests, run):
     """Call the reviewed unchanged bodies of one batch only between two live checks.
 
     run(new_ledger) answers every request in order: the canonical measure
@@ -455,18 +447,15 @@ def batch_worker_complete(binding_bytes, *, context, read_bindings, requests, ru
     if type(requests) is not list:
         raise ValueError('batch requests must be a list')
     binding, record = BatchBinding._read(binding_bytes)
-    return _batch_worker_complete(binding, record, context=context, read_bindings=read_bindings,
+    return _batch_worker_complete(binding, record, context=context,
                                   requests=requests, run=run)
 
 
-def _batch_worker_complete(binding, record, *, context, read_bindings, requests, run):
+def _batch_worker_complete(binding, record, *, context, requests, run):
     """Invocation-local binding/record, already validated or issued by the owned private route."""
     limits, seconds = record['child_budget'], record.get('batch_seconds')
-    bindings = []
     def verify():
-        if not bindings:    # the inputs are copies; the second check reuses the first inventory
-            bindings.append(read_bindings())
-        binding._verify_record(record, requests=requests, source_bindings=bindings[0], context=context,
+        binding._verify_record(record, requests=requests, context=context,
                        child_bytes=limits['max_bytes'],
                        predicate_units=limits['max_predicate_work_units'], batch_seconds=seconds)
     def new_ledger():

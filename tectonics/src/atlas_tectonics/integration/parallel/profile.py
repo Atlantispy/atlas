@@ -3,7 +3,7 @@
 Elapsed times choose execution only. Nothing here enters an issued record, a
 receipt row, a measure or any identity, and nothing here calls a ledger, an
 arena or a decoder. An observation is usable only under an equal binding of
-the package source, interpreter, machine, hash seed, ledger mode and
+the execution identity, interpreter, machine, hash seed, ledger mode and
 instrumentation; every other binding is stale and ignored, never converted.
 
 The store is small, bounded, caller-owned unfunded bookkeeping, like the reuse
@@ -13,12 +13,10 @@ number and never by a clock. A file store is optional and caller-chosen. It
 must lie outside the source tree, is read once per process, and is replaced
 atomically; a file that is not a current store is neither used nor overwritten.
 
-The source inventory captured when this module is imported binds timings for
-the lifetime of this frozen build (``loaded_digest``).
+The execution identity (``loaded_digest``) binds timings to this build.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from collections import OrderedDict, deque
-from functools import lru_cache
 import copy
 import hashlib
 import heapq
@@ -89,19 +87,12 @@ def ledger_mode(budget):
     return 'legacy' if budget.max_predicate_work_units is None else 'predicate'
 
 
-@lru_cache(maxsize=8)
-def _code_digest(rows):
-    return hashlib.sha256(canonical(dict(rows))).hexdigest()
-
-
 def code_digest(context=None):
-    """Use the solver declaration, including after its source scope closes."""
+    """The execution identity: it binds the worker-count observations to a build."""
     if context is not None:
-        return _code_digest(context._source_rows) if context._declared_build else None
-    from atlas_tectonics.integration.reuse import _application_operation, _fixture_identity_sources
-    with _application_operation():
-        selected = _fixture_identity_sources()
-        return None if selected is None else _code_digest(selected.source_rows)
+        return context.identity
+    from atlas_tectonics.integration.reuse import execution_identity
+    return execution_identity()
 
 
 def loaded_digest(context=None):
@@ -540,7 +531,7 @@ def decisions():
 def clear():
     """Forget this process's observations and decisions; files are not touched.
 
-    The digest of the source this process loaded is a fact about the process,
+    The execution identity of this process is a fact about the process,
     not an observation, and stays.
     """
     with _state.lock:

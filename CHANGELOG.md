@@ -203,6 +203,36 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev54](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev54) - 2026-11-27
+
+### Optimisations
+
+#### Dispatch and execution
+
+- The execution identity now comes only from the solver backend, the runtime library record and the package
+  version. The package no longer keeps a list of its own source files or hashes them at import, so
+  `_application_sources.json` and its checksum file are gone.
+- Every cache key, checkpoint id and plan id built from the execution identity misses once and is recomputed.
+  No science value moves.
+- A file edited without a version change keeps the same identity.
+- Removed the installed-module check and the fixture-source check. Test fixtures are now an ordinary
+  sub-package.
+- Worker startup records no longer carry source bindings.
+- Batch workers no longer re-hash the input files that the parent wrote in the same run.
+- Removed the mid-run re-hash of the admission helper's own file.
+
+### Bugfixes
+
+- Removed five calls to a context method that the dev52 regroup had dropped; the fresh-interval, restart
+  and heat-restore routes stopped there.
+- Reusing a previous run now refuses when that run was computed under another execution identity, or
+  when the two code trees differ in a control case file (it names the files).
+- Prepared restarts made before this version do not reopen after it; none is planned or queued. Older run
+  folders and history stores were not searched for one.
+- A measurement store made before this version cannot seed a run made after it.
+- The chain driver finds the shared package in a source checkout and hashes the selected package tree once
+  per run for the overlap sources.
+
 ## [0.1.0.dev53](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev53) - 2026-11-27
 
 ### Bugfixes

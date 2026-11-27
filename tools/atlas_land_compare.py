@@ -127,11 +127,14 @@ def end_arm(round_, contract, arm, temp, name):
     if arm.get("profile"):
         profile = round_.json(arm["profile"])
         require(arm["profile"]["sha256"] == receipt["profile_sha256"], "Receipt profile differs")
-        installed_ref = profile["source_manifest"]
-        manifest = round_.json({**installed_ref, "path": str(Path(profile["workspace"]) / installed_ref["path"])})
-        installed = manifest["installed_binding"]
-        require(installed["native_tree_sha256"] == receipt["package_tree"], "Receipt native tree differs")
-        lineage["qualification_status"] = installed["qualification_status"]
+        if "qualification_status" in profile:
+            lineage["qualification_status"] = profile["qualification_status"]
+        else:  # a reference arm built before landing 1 keeps it in its source list
+            installed_ref = profile["source_manifest"]
+            manifest = round_.json({**installed_ref, "path": str(Path(profile["workspace"]) / installed_ref["path"])})
+            installed = manifest["installed_binding"]
+            require(installed["native_tree_sha256"] == receipt["package_tree"], "Receipt native tree differs")
+            lineage["qualification_status"] = installed["qualification_status"]
 
     directory = round_.path(receipt_ref["path"]).parent
     graph_record = receipt["graph"]

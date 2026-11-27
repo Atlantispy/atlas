@@ -223,19 +223,13 @@ def verified(value):
     return value.verify()
 
 
-def load(workspace, binding, manifest):
+def load(workspace, binding):
     """Read one explicitly pinned data-only descriptor; no alternate review SHA."""
     workspace = _ordinary(workspace, directory=True)
     _require(type(binding) is dict and set(binding) == {'path', 'sha256'},
              'Exact historical-input path/sha256 reference required')
     relative = _relative(binding['path'])
     _require(_pin(binding['sha256']) == CATALOGUE_SHA256, 'Only the fixed historical input digest is accepted')
-    _require(type(manifest) is dict and type(manifest.get('files')) is dict
-             and type(manifest.get('data_only')) is dict, 'Executable/data manifest tables required')
-    _require(relative not in manifest['files'] and manifest['data_only'].get(relative) == CATALOGUE_SHA256,
-             'Historical input descriptor must be pinned as data-only')
-    _require(CATALOGUE_SHA256 not in manifest['files'].values(),
-             'Historical input descriptor bytes alias an executable source')
     path = _ordinary(workspace/relative)
     _require(path.is_relative_to(workspace) and path == workspace/relative, 'Historical input descriptor outside workspace')
     values = _parse(_read_fixed(path))

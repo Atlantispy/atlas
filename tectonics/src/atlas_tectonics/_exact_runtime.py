@@ -1,8 +1,6 @@
 """Bind the selected rational backend at the first tectonics request."""
 from ._validation import TectonicsError
-from atlas_tectonics.integration.parallel.worker_bootstrap import bind_shared_exact
 
-bind_shared_exact()
 from atlas_shared.exact.exact_arithmetic import select
 
 selected = select(TectonicsError)

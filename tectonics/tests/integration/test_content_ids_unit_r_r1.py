@@ -47,7 +47,7 @@ if __name__ == '__main__':
     with tempfile.TemporaryDirectory(prefix='atlas-unit-r-') as folder:
         root = Path(folder)
         shutil.copytree(src / 'atlas_tectonics', root / 'atlas_tectonics', ignore=shutil.ignore_patterns(
-            '_application_sources.json', '_application_sources.sha256', '_fixtures', '__pycache__'))
+            '_fixtures', '__pycache__'))
         shutil.copytree(shared / 'atlas_shared', root / 'atlas_shared', ignore=shutil.ignore_patterns('__pycache__'))
         sys.path.insert(0, str(root))
         unittest.main()

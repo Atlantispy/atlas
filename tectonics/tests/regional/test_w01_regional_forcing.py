@@ -2,8 +2,6 @@
 from concurrent.futures import CancelledError, ThreadPoolExecutor
 from dataclasses import replace, FrozenInstanceError
 from pathlib import Path
-import hashlib
-import json
 import math
 import pickle
 import shutil
@@ -554,7 +552,7 @@ class ValidationResourceAndPersistenceChecks(unittest.TestCase):
                 with mock.patch.object(store,'metadata',side_effect=lambda key: bad if key==f.forcing_id else meta(key)):
                     with self.assertRaises(MotionReductionError): load_regional_forcing(store,f.forcing_id)
 
-    def test_fresh_process_relocated_source_and_changed_source_refusal(self):
+    def test_fresh_process_relocated_source_loads_exactly(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp=Path(tmp)
             with PreparedRegionalForcing(definition(),planar(),reduction()) as p: f=faces(p)
@@ -564,32 +562,15 @@ class ValidationResourceAndPersistenceChecks(unittest.TestCase):
             shutil.copytree(ROOT.parent/'shared'/'src'/'atlas_shared', source/'atlas_shared')
             code='''import sys
 sys.path.insert(0,sys.argv[1])
-from atlas_tectonics.regional.forcing import load_regional_forcing,MotionReductionError
+from atlas_tectonics.regional.forcing import load_regional_forcing
 from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits
 with ArrayStore(sys.argv[2],StoreLimits(4096,8*1024**2,32*1024**2,decoded_cache_bytes=65536,max_manifest_bytes=1024**2,verified_cache_entries=32,sqlite_cache_bytes=65536)) as s:
- try:
-  f=load_regional_forcing(s,sys.argv[3])
-  assert sys.argv[4]=='same' and f.forcing_id==sys.argv[3]
-  print('same-source forcing exact')
- except MotionReductionError:
-  assert sys.argv[4]=='changed'
-  print('changed-source forcing refused')
+ f=load_regional_forcing(s,sys.argv[3])
+ assert f.forcing_id==sys.argv[3]
+ print('same-source forcing exact')
 '''
-            for mode in ('same','changed'):
-                if mode=='changed':
-                    member = 'atlas_tectonics/regional/forcing.py'
-                    pth = source/member
-                    modified = pth.read_bytes() + b'\n# deliberate changed-source test\n'
-                    pth.write_bytes(modified)
-                    # Authenticate the new disposable package so the real load reaches the saved execution check.
-                    declaration = source/'atlas_tectonics'/'_application_sources.json'
-                    manifest = json.loads(declaration.read_bytes())
-                    manifest['files'][member] = manifest['source_hashes'][member] = hashlib.sha256(modified).hexdigest()
-                    raw = (json.dumps(manifest, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
-                    declaration.write_bytes(raw)
-                    declaration.with_suffix('.sha256').write_bytes((hashlib.sha256(raw).hexdigest() + '\n').encode())
-                run=subprocess.run([sys.executable,'-I','-B','-c',code,str(source),str(db),f.forcing_id,mode],capture_output=True,text=True,timeout=30)
-                self.assertEqual(run.returncode,0,run.stderr); self.assertIn(mode+'-source forcing',run.stdout)
+            run=subprocess.run([sys.executable,'-I','-B','-c',code,str(source),str(db),f.forcing_id],capture_output=True,text=True,timeout=30)
+            self.assertEqual(run.returncode,0,run.stderr); self.assertIn('same-source forcing',run.stdout)
 
 
 if __name__ == '__main__':

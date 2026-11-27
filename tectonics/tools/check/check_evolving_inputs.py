@@ -28,7 +28,6 @@ from atlas_tectonics.integration.workflows.prescribed_support_workflow import W0
 from atlas_tectonics.planet.parameters import FlexureParameters
 from atlas_tectonics.mechanics.variable_flexure import RigidityProfile1D, VariableFlexureAccuracy
 from atlas_tectonics.integration.resources import WorkBudget
-from atlas_tectonics.integration.reuse import _source_bytes
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
 # Reuse only the real typed W01-W03 producer fixture, not its test oracle.
 # Every imported test-helper file is bound below along with all production files.
@@ -117,6 +116,18 @@ def flexure_fixture():
         note='three changed elastic/load scenarios at one actual W03 instant; no inferred material evolution')
 
 
+def production_sources():
+    """Recorded evidence: size and SHA-256 of every production source file measured (not a run-time check)."""
+    import atlas_shared, atlas_tectonics
+    out = {}
+    for prefix, package in (('', atlas_tectonics), ('atlas_shared/', atlas_shared)):
+        root = Path(package.__file__).parent
+        for p in sorted(root.rglob('*.py')):
+            raw = p.read_bytes()
+            out[prefix + p.relative_to(root).as_posix()] = dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    return out
+
+
 def source_binding():
     supporting = {Path(__file__).resolve(),ROOT/'cases/w08_regimes.json',ROOT/'cases/w07_mechanics.json'}
     for name,module in tuple(sys.modules.items()):
@@ -125,7 +136,7 @@ def source_binding():
             resolved = Path(path).resolve()
             if resolved.is_relative_to(ROOT/'tests'):
                 supporting.add(resolved)
-    return dict(production={name:json.loads(raw) for name,raw in _source_bytes().items()},
+    return dict(production=production_sources(),
         tools_and_fixtures={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
                             for p in sorted(supporting)})
 

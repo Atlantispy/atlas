@@ -42,15 +42,9 @@ def _arguments(argv=None):
 
 
 def _prepare_packaged_guard(argv):
-    """Installed-script startup: authenticate, with stdlib only, the bootstrap that loads the package.
-
-    Every builder starts the workload with the --profile/--profile-sha256 pair that the workload
-    authenticates itself (run_prepared_restart._prepare_packaged_script). This reads exactly that
-    pair from the command main() supervises, checks the profile, manifest and bootstrap pins, and
-    has prepare_installed_runner load the package and both siblings through its verifying Loader.
-    """
+    """Installed-script startup: read the --profile/--profile-sha256 pair of the workload main() supervises
+    and return that profile after its pin check; the package folder goes on sys.path."""
     from hashlib import sha256
-    import types
     _, command, _ = _arguments(argv)
     # Only the two exact spellings: the workload's argparse would also take '--profile=...' or an
     # abbreviation such as '--profile-sha', and so read a profile not authenticated here.
@@ -72,34 +66,8 @@ def _prepare_packaged_guard(argv):
     raw = Path(profile_path).read_bytes()
     if sha256(raw).hexdigest() != profile_pin:
         raise ValueError('installed guard profile pin differs')
-    profile = json.loads(raw)
-    workspace = Path(profile['workspace']).resolve()
-
-    def contained(name):
-        if (type(name) is not str or not name or '\\' in name or ':' in name
-                or Path(name).is_absolute() or '..' in Path(name).parts):
-            raise ValueError('noncanonical installed guard startup path')
-        path = (workspace/name).resolve()
-        if not path.is_relative_to(workspace):
-            raise ValueError('installed guard startup path escaped workspace')
-        return path
-
-    binding = profile['source_manifest']
-    manifest_raw = contained(binding['path']).read_bytes()
-    if sha256(manifest_raw).hexdigest() != binding['sha256']:
-        raise ValueError('installed guard manifest pin differs')
-    manifest = json.loads(manifest_raw)
-    bootstrap = (contained(profile['native_root'])/'atlas_tectonics/integration/parallel/worker_bootstrap.py').resolve()
-    raw = bootstrap.read_bytes()
-    if sha256(raw).hexdigest() != manifest['files'].get(bootstrap.relative_to(workspace).as_posix()):
-        raise ValueError('installed guard bootstrap pin differs')
-    helper = types.ModuleType('_installed_runner_bootstrap')
-    helper.__file__ = str(bootstrap)
-    exec(compile(raw, str(bootstrap), 'exec', dont_inherit=True), helper.__dict__)
-    helper.prepare_installed_runner(profile_path, profile_pin, __file__,
-                                    runner_modules=('private_heat_resource_diagnostics_r1', 'windows_workload_job',
-                                                    'private_heat_check3_recording_r1', 'start_gate'))
-    return profile
+    sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+    return json.loads(raw)
 
 
 _guard_profile = None

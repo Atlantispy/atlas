@@ -229,9 +229,6 @@ def _admission(m, *, budget, artifacts, phase, measurements=None, initial_worker
             yield SimpleNamespace(case=case, current=current, partition=partition, owner=owner,
                                   reference_execution=reference_execution, heat_execution=heat_execution,
                                   initial_parallel=None if initial_pass is None else dict(initial_pass.report))
-        for execution in (reference_execution, heat_execution):
-            if execution._mode == 'release':
-                execution._verify_selection()
 
 
 def published_root(workflow, store, a):

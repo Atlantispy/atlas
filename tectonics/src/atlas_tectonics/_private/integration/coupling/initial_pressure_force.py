@@ -2,9 +2,9 @@ from fractions import Fraction as Q
 
 import numpy as np
 
-import i04_fixtures as F
+from atlas_tectonics._fixtures.tests import i04_fixtures as F
 
-from i04_differential_modes import ORIGINAL_CONTROL
+from atlas_tectonics._fixtures.tests.i04_differential_modes import ORIGINAL_CONTROL
 
 from atlas_tectonics.integration.geometry import differential_geometry as G
 

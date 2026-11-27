@@ -3,10 +3,13 @@
 Vibe-coded with OpenAI ChatGPT/Codex under the owner's direction.
 No imports, migration or replacement of historical Atlas implementations.
 """
-from atlas_tectonics.integration.parallel.worker_bootstrap import bind_public_shared as _bind_public_shared
+import importlib.util as _util
+import sys as _sys
+from pathlib import Path as _Path
 
-_bind_public_shared()
-del _bind_public_shared
+if _util.find_spec('atlas_shared') is None:  # checkout and desktop payload both hold shared/src beside tectonics/
+    _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'shared' / 'src'))
+del _util, _sys, _Path
 
 from ._validation import TectonicsError
 from atlas_tectonics.planet.parameters import FlexureParameters, PeriodicGrid1D, ThermalParameters, PlateCoolingParameters, identity
@@ -25,7 +28,7 @@ from atlas_tectonics.mechanics.compaction_columns import (GrainComponent, Compac
 from atlas_tectonics.mechanics.flexure import PeriodicFlexure
 from atlas_tectonics.mechanics.column_loads import LoadSupport, LoadPhase, ColumnLoadState, column_load_change
 
-__version__ = "0.1.0.dev53"
+__version__ = "0.1.0.dev54"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-import i03_fixtures as F
+from atlas_tectonics._fixtures.tests import i03_fixtures as F
 from atlas_tectonics.integration.coupling import driving as D
 from atlas_tectonics.integration import ports as P
 from atlas_tectonics.integration.geometry import sphere as S

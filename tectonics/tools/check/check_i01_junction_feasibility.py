@@ -155,10 +155,7 @@ def balances(result, spec):
 def controls(spec):
     validate_case(spec)
     start = perf_counter()
-    from atlas_tectonics.integration.reuse import _application_operation
-
-    with _application_operation():
-        result = _controls(spec)
+    result = _controls(spec)
     result["checks"]["bounded_duration"] = perf_counter()-start <= spec["maximum_seconds"]
     result["passed"] = all(result["checks"].values())
     return result

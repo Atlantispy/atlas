@@ -493,13 +493,6 @@ def _verify_call_record(call, meta, cancel=None):
     if type(call) is not OwnerHeatCall:
         raise TypeError('A forward-issued owner call is required')
     HEAT_LEDGER.verify_scope(call)
-    execution, key = call._execution, ('issuer', tuple(call._bindings))
-    if key in execution._proved:
-        execution._verify_selection()  # closed and fixture selection, at every call (review G-1, G-2)
-    else:
-        execution.verify_boundary()
-        _verify_implementation()
-        execution._proved.add(key)  # last: a proof that failed is never recorded
     if (call.call_id != _snapshot_identity(call._snapshot, call._budget, cancel)
             or meta['geometry_id'] != INDEXED.metric_identity(call._geometry, cancel=cancel)
             or meta['plan_id'] != hashlib.sha256(call._plan).hexdigest()

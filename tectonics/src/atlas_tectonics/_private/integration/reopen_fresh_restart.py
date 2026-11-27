@@ -53,65 +53,9 @@ from pathlib import Path
 INITIAL_ADMISSION_KEYS = ('workers', 'batch_jobs', 'outstanding', 'opened', 'batches', 'offered', 'unshipped',
                           'skipped', 'retired', 'adopted', 'serial', 'refused', 'note', 'cause', 'last_error')
 
-def _prepare_packaged_script(argv):
-    """Authenticate the stdlib bootstrap before a direct installed-script import.
-
-    As the runners do, with this reader's own sibling imports. Returns the
-    package and the (profile, pin) authenticated here, which main() requires.
-    """
-    def argument(flag):
-        if argv.count(flag) != 1:
-            raise ValueError('one explicit '+flag+' required for installed startup')
-        index = argv.index(flag)
-        if index + 1 >= len(argv):
-            raise ValueError('missing installed startup argument')
-        return argv[index + 1]
-
-    # Only the two exact spellings: argparse would also take '--profile=...' or an
-    # abbreviation such as '--profile-sha', and so read a profile not authenticated here.
-    for token in argv:
-        name = token.split('=', 1)[0]
-        if (token.startswith('--') and len(name) > 2 and '--profile-sha256'.startswith(name)
-                and token not in ('--profile', '--profile-sha256')):
-            raise ValueError('installed startup takes only --profile and --profile-sha256, spelt out: '+token)
-    profile_path, profile_pin = argument('--profile'), argument('--profile-sha256')
-    raw = Path(profile_path).read_bytes()
-    if sha256(raw).hexdigest() != profile_pin:
-        raise ValueError('installed startup profile pin differs')
-    profile = json.loads(raw)
-    workspace = Path(profile['workspace']).resolve()
-    def contained(name):
-        if (type(name) is not str or not name or '\\' in name or ':' in name
-                or Path(name).is_absolute() or '..' in Path(name).parts):
-            raise ValueError('noncanonical installed startup path')
-        path = (workspace/name).resolve()
-        if not path.is_relative_to(workspace):
-            raise ValueError('installed startup path escaped workspace')
-        return path
-    binding = profile['source_manifest']
-    manifest_raw = contained(binding['path']).read_bytes()
-    if sha256(manifest_raw).hexdigest() != binding['sha256']:
-        raise ValueError('installed startup manifest pin differs')
-    manifest = json.loads(manifest_raw)
-    bootstrap = contained(profile['native_root'])/'atlas_tectonics/integration/parallel/worker_bootstrap.py'
-    bootstrap = bootstrap.resolve()
-    relative = bootstrap.relative_to(workspace).as_posix()
-    raw = bootstrap.read_bytes()
-    if sha256(raw).hexdigest() != manifest['files'].get(relative):
-        raise ValueError('installed startup bootstrap pin differs')
-    import types
-    helper = types.ModuleType('_installed_runner_bootstrap')
-    helper.__file__ = str(bootstrap)
-    exec(compile(raw, str(bootstrap), 'exec', dont_inherit=True), helper.__dict__)
-    package = helper.prepare_installed_runner(profile_path, profile_pin, __file__, runner_modules=(
-        'reopen_prepared_restart', 'run_fresh_interval', 'run_prepared_restart', 'start_gate', 'overlap_reader',
-        'reader_overlap_gate', 'reuse_previous_run', 'width_gate'))
-    return package, (profile_path, profile_pin)
-
-
-_PACKAGED_STARTUP = None        # (profile, pin) of an installed startup
-if (__name__ == '__main__' and Path(__file__).resolve().parent.parts[-3:] == ('atlas_tectonics', '_private', 'integration')):
-    __package__, _PACKAGED_STARTUP = _prepare_packaged_script(sys.argv[1:])
+if __name__ == '__main__' and Path(__file__).resolve().parent.parts[-3:] == ('atlas_tectonics', '_private', 'integration'):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    __package__ = 'atlas_tectonics._private.integration'
 
 
 from atlas_tectonics._private.integration import reopen_prepared_restart as RO
@@ -182,14 +126,6 @@ def reader_output(row, mode, interval=None, *, fallback=False):
 
 
 adopted_path, approval_path, review_approval = F.adopted_path, F.approval_path, F.review_approval
-
-
-def _own_pin(sources):
-    own = Path(__file__).resolve()
-    require(own.is_relative_to(sources.workspace) and
-            sources.files().get(own.relative_to(sources.workspace).as_posix()) == RUN.file_hash(own),
-            'independent fresh reader itself must be pinned')
-    return own
 
 
 def seed_from_producer(stored, source, output, check, *, binding, previous):
@@ -307,10 +243,9 @@ def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False, int
     before = RO.validate_retained_accounting(receipt.get('compact_retained_before_close'), pid=pid)
     after = RO.validate_retained_accounting(receipt.get('compact_retained_after_close'), pid=pid)
     RO.prior(RO.retained_release_agrees(before, after), 'producer compact retained scope was not released', recorded)
-    proof = receipt.get('source_proof')
-    require(type(proof) is dict and receipt.get('identities') == {
-            'producer_identity': profile.sha256, 'runtime_identity': proof.get('native_source_digest')},
-            'producer identities differ from its profile and selected runtime')
+    identities = receipt.get('identities')
+    require(type(identities) is dict and set(identities) == {'producer_identity', 'runtime_identity'} and
+            identities['producer_identity'] == profile.sha256, 'producer identities differ from its profile')
     return pid
 
 
@@ -404,7 +339,7 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
             require(interval == 1 and producer_mode == prior_mode == 'strict' and
                     receipt.get('open_proofs') is False, 'retained root is for the first Debug diagnostic interval')
             retained_execution = F.retained_root_provenance(
-                retained, root_runner, profile_sha256=profile.sha256, proof=receipt['source_proof'])
+                retained, root_runner, profile_sha256=profile.sha256)
         expected = {'root': root, 'previous_endpoint': previous, 'advanced_endpoint': advanced,
                     'parent_key': parent_key,
                     'completed_endpoint': _completed(receipt.get('completed_endpoint'), root=root, pid=pid,
@@ -434,7 +369,7 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
 
 
 def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, review=False, interval=None,
-                    source_proof=None, reuse=None, recorded=None):
+                    reuse=None, recorded=None):
     """Store-free preflight: pinned receipt, guard records, durable records, closed sealed file.
 
     Interval N >= 2 re-runs the runner's sealed-lineage gate from runner(N)'s own adopted(N-1)
@@ -450,6 +385,10 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
     require(type(receipt) is dict and mode in F.MODES and receipt.get('mode') == mode,
             'producer receipt mode differs from the expected fresh route')
     require(reuse is None or 'production_release' not in receipt, 'reuse-previous-run reads a diagnostic producer only')
+    stored = receipt.get('identities')
+    require(reuse is None or reuse['record']['identity_override'] or
+            type(stored) is dict and stored.get('runtime_identity') == reuse['execution_identity'],
+            'reuse-previous-run refused: the previous run was computed under another execution identity; recompute')
     require(reuse is None or not reuse['record']['identity_override'] or receipt.get('open_proofs') is not True,
             'the identity override is refused for a proof-mode producer (--open-proofs)')
     guard, guard_pin = OR.read_json(RUN.ordinary(output/'run.guard.json'), limit=RUN.MAX_CONFIG)
@@ -495,12 +434,6 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
         root_runner=root_runner, review=review, interval=interval, lineage=gate,
         production_policy=RUN.producer_policy(receipt, sources, expected_route='fresh-'+mode), recorded=recorded,
         _runner_sha256=runner_pin)
-    # source_proof: a verify() the caller has just made (repeat fix K15); None verifies here, except for the
-    # records-only core, which checks no sources (unit A; the chain's first step did).
-    if source_proof is not None or not records_only(mode, review, runner):
-        proof = sources.verify() if source_proof is None else source_proof
-        require(receipt.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
-                'producer source proof differs from the selected sources')
     if parent_widths is not None:
         expected['parent_widths'] = parent_widths
     expected['gate_pins'] = dict(producer_receipt_sha256=receipt_pin, guard_receipt_sha256=guard_pin,
@@ -664,10 +597,10 @@ def _reader_status(errors, mode, reuse):
 def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mode, start_gate=None,
                           overlap_spec=None, fallback=False, fallback_claim_sha256=None, scope_state=None,
                           reuse=None):
-    """Fresh-process reader core; call under sources.selected() and the live guard. ``start_gate``: the
+    """Fresh-process reader core; call under the live guard. ``start_gate``: the
     launcher's start_gate decision (encoded), admitted again here against this process's free memory."""
-    require(type(profile) is F.FreshProfile and type(sources) is F.FreshSources and sources.profile is profile and
-            sources.selected_now, 'actual selected pinned sources required')
+    require(type(profile) is F.FreshProfile and type(sources) is F.FreshSources and sources.profile is profile,
+            'sources of this profile required')
     if type(overlap_spec) is str:
         overlap_spec = OR.decode_spec(overlap_spec)
     require(mode in MODES and (type(producer) is dict and producer.get('mode') == mode or
@@ -690,10 +623,9 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
     from atlas_tectonics._private.integration import width_gate as WG
     from atlas_tectonics._private.integration import workflow_transfer as W
     from atlas_tectonics.integration.resources import WorkBudget
-    from atlas_tectonics.integration.reuse import require_strict_execution
+    from atlas_tectonics.integration.reuse import execution_identity, require_strict_execution
     from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
     if not records:
-        _own_pin(sources)
         m = F.composition(sources)
     require_strict_execution()
     record.update(RUN.interpreter_gate())
@@ -710,7 +642,6 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
     check = lambda: guard.check(force=True)
     if not records:
         H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
-        record['source_proof'] = sources.verify()
     record.update(guard_limits=selected_limits, start_gate=admitted,
                   memory_at_start={'available_bytes': available},
                   launch_environment={name: os.environ.get(name) for name in sorted(RUN.LAUNCH_ENV)},
@@ -735,7 +666,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
             guard.phase('rebuild-fresh-admission')
             then = row if reuse is None else reuse['previous'].record()     # as _read_store has it (:675)
             source = F.mode_output(then, mode, _explicit(number))
-            binding = F.measurement_composition(profile, sources, proof=record['source_proof'],
+            binding = F.measurement_composition(profile, execution_identity=execution_identity('scipy'),
                                                 interpreter_seed=record['interpreter_seed'])
             seeded = {}
 
@@ -934,15 +865,13 @@ def command(profile, python, *, mode, producer_receipt_sha256, review=False, sta
         _producer_inputs_retry(profile if reuse is None else reuse['previous'], sources=sources, mode=mode,
                                receipt_sha256=producer_receipt_sha256, consumer_pid=os.getpid(), review=review,
                                interval=interval, reuse=reuse, recorded=recorded)
-    else:
-        sources.verify()
     row = profile.record()
     if fallback:
         _fallback_binding(row, mode, interval, fallback_claim_sha256)
     output = reader_output(row, mode, interval, fallback=fallback)
     RUN.ordinary(output.parent, directory=True)
     require(output.is_relative_to(sources.workspace) and not output.exists(), 'exclusive new reader output directory required')
-    own = _own_pin(sources)
+    own = Path(__file__).resolve()
     guard = sources.path(row['modules']['private_heat_continuation_guard_r3'])
     python = str(RUN.ordinary(python))
     return [python, '-B', str(guard), '--launch', '--output', str(output/'reopen.json'), '--diagnostic-reader-integrity', '--',
@@ -1011,88 +940,84 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
     # The supervisor has already claimed sidecars. Receipt creation is exclusive.
     with output.open('x', encoding='utf8') as stream:
         json.dump(record, stream)
-    with sources.selected():
-        G = sources.module('private_heat_continuation_guard_r3')
-        save = lambda: G._write(output, record)
-        try:
-            if overlap_spec is None:
-                # o2: the producer's worker startup (run_fresh_interval :1448); a serial reader needs none
-                record['pressure_worker_startup'] = sources.configure_pressure_workers()
-            guard = G.ContinuationGuard(output, record, save, **SG.child_limits(start_gate))
-            context = json.loads(os.environ[G.ENV])
-            record['reader_guard_binding'] = {'job_name': context['job_name'], 'nonce': guard.nonce,
-                                              'parent': guard.identity}
-            if fallback:
-                evidence = _fallback_binding(profile.record(), mode, interval, fallback_claim_sha256)
-                require(evidence['profile_sha256'] == profile.sha256 and evidence['stage'] == mode and
-                        evidence['interval'] == number, 'fallback failure belongs to another profile or stage')
-                record.update(reader_fallback=True, fallback_claim_sha256=fallback_claim_sha256,
-                              fallback_evidence=evidence)
-                save()
-            producer = (None if overlap_spec is not None else
-                        _producer_inputs_retry(profile if reuse is None else reuse['previous'], sources=sources,
-                            mode=mode, receipt_sha256=producer_receipt_sha256, consumer_pid=os.getpid(),
-                            review=review, interval=interval, reuse=reuse, recorded=recorded))
-            if recorded:  # what this reader accepted of how its producer ended
-                record['recorded'] = recorded
-                save()
-            budget = reopen_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save,
-                producer=producer, mode=mode, start_gate=start_gate, overlap_spec=overlap_spec,
-                fallback=fallback, fallback_claim_sha256=fallback_claim_sha256, scope_state=scope_state,
-                reuse=reuse)
-            del producer
-            record['status'] = 'VERIFYING_FINALISATION'
-        except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded
-            record['status'] = 'FAILED'
-            record['errors'].append(_reader_error(error))
-            reason = OR.failure_reason(error)
-            if reason is not None and overlap_spec is not None:
-                record['overlap_failure_reason'] = reason
-            if guard is not None and guard.budget is not None:
-                record['logical_budget_at_failure'] = guard.budget.statistics()
+    G = sources.module('private_heat_continuation_guard_r3')
+    save = lambda: G._write(output, record)
+    try:
+        guard = G.ContinuationGuard(output, record, save, **SG.child_limits(start_gate))
+        context = json.loads(os.environ[G.ENV])
+        record['reader_guard_binding'] = {'job_name': context['job_name'], 'nonce': guard.nonce,
+                                          'parent': guard.identity}
+        if fallback:
+            evidence = _fallback_binding(profile.record(), mode, interval, fallback_claim_sha256)
+            require(evidence['profile_sha256'] == profile.sha256 and evidence['stage'] == mode and
+                    evidence['interval'] == number, 'fallback failure belongs to another profile or stage')
+            record.update(reader_fallback=True, fallback_claim_sha256=fallback_claim_sha256,
+                          fallback_evidence=evidence)
             save()
+        producer = (None if overlap_spec is not None else
+                    _producer_inputs_retry(profile if reuse is None else reuse['previous'], sources=sources,
+                        mode=mode, receipt_sha256=producer_receipt_sha256, consumer_pid=os.getpid(),
+                        review=review, interval=interval, reuse=reuse, recorded=recorded))
+        if recorded:  # what this reader accepted of how its producer ended
+            record['recorded'] = recorded
+            save()
+        budget = reopen_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save,
+            producer=producer, mode=mode, start_gate=start_gate, overlap_spec=overlap_spec,
+            fallback=fallback, fallback_claim_sha256=fallback_claim_sha256, scope_state=scope_state,
+            reuse=reuse)
+        del producer
+        record['status'] = 'VERIFYING_FINALISATION'
+    except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded
+        record['status'] = 'FAILED'
+        record['errors'].append(_reader_error(error))
+        reason = OR.failure_reason(error)
+        if reason is not None and overlap_spec is not None:
+            record['overlap_failure_reason'] = reason
+        if guard is not None and guard.budget is not None:
+            record['logical_budget_at_failure'] = guard.budget.statistics()
+        save()
+    finally:
+        # Every post-work failure is retained; none may skip an acquired guard's close.
+        try:
+            gc.collect()
+            scope = scope_state.pop('scope', None)
+            if scope is not None:
+                try:
+                    scope.close()
+                    record['retained_scope']['after_close'] = RO.retained_accounting(scope)
+                    record['retained_producer']['after_close'] = RO.producer_accounting(scope)
+                    require(record['retained_scope']['after_close']['retained_bytes'] == 0,
+                            'fresh reader retained owners after scope closure')
+                    if 'independent_checks' in record:  # there only when the reader's work passed (RFR:809)
+                        record['independent_checks']['retained_scope_released'] = True
+                except BaseException as close_error:  # retain primary and cleanup failures separately
+                    record['errors'].append(_reader_error(close_error))
+                finally:
+                    del scope
+            budget = budget if budget is not None else getattr(guard, 'budget', None)
+            if budget is not None:
+                record['final_reserved_bytes'] = budget.reserved_bytes
+                statistics = budget.statistics()
+                record['logical_budget_final'] = {'peak_reserved_bytes': statistics['peak_reserved_bytes'],
+                                                  'category_peaks': statistics['category_peaks']}
+                if budget.reserved_bytes:
+                    record['errors'].append({'type': 'RetainedReservations', 'message': str(budget.reserved_bytes)})
+            times = os.times()
+            record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
+            if guard is not None:
+                guard.check(force=True)
+        except BaseException as error:  # noqa: BLE001 - retain accounting and verification failures
+            record['errors'].append(_reader_error(error))
         finally:
-            # Every post-work failure is retained; none may skip an acquired guard's close.
-            try:
-                gc.collect()
-                scope = scope_state.pop('scope', None)
-                if scope is not None:
-                    try:
-                        scope.close()
-                        record['retained_scope']['after_close'] = RO.retained_accounting(scope)
-                        record['retained_producer']['after_close'] = RO.producer_accounting(scope)
-                        require(record['retained_scope']['after_close']['retained_bytes'] == 0,
-                                'fresh reader retained owners after scope closure')
-                        if 'independent_checks' in record:  # there only when the reader's work passed (RFR:809)
-                            record['independent_checks']['retained_scope_released'] = True
-                    except BaseException as close_error:  # retain primary and cleanup failures separately
-                        record['errors'].append(_reader_error(close_error))
-                    finally:
-                        del scope
-                budget = budget if budget is not None else getattr(guard, 'budget', None)
-                if budget is not None:
-                    record['final_reserved_bytes'] = budget.reserved_bytes
-                    statistics = budget.statistics()
-                    record['logical_budget_final'] = {'peak_reserved_bytes': statistics['peak_reserved_bytes'],
-                                                      'category_peaks': statistics['category_peaks']}
-                    if budget.reserved_bytes:
-                        record['errors'].append({'type': 'RetainedReservations', 'message': str(budget.reserved_bytes)})
-                times = os.times()
-                record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
-                if guard is not None:
-                    guard.check(force=True)
-            except BaseException as error:  # noqa: BLE001 - retain accounting and verification failures
-                record['errors'].append(_reader_error(error))
-            finally:
-                if guard is not None:
-                    try:
-                        receipt = guard.close()
-                        record['reader_process_proof'] = receipt['diagnostic_reader_close']
-                        record['remaining_children'] = []
-                    except BaseException as error:  # noqa: BLE001 - preserve close and earlier failures
-                        record['errors'].append(_reader_error(error))
-                record['status'] = _reader_status(record['errors'], mode, reuse)
-                save()
+            if guard is not None:
+                try:
+                    receipt = guard.close()
+                    record['reader_process_proof'] = receipt['diagnostic_reader_close']
+                    record['remaining_children'] = []
+                except BaseException as error:  # noqa: BLE001 - preserve close and earlier failures
+                    record['errors'].append(_reader_error(error))
+            record['status'] = _reader_status(record['errors'], mode, reuse)
+            save()
 
     return 0 if not record['errors'] else 1
 
@@ -1200,9 +1125,7 @@ def _recording(sources, asked):
     """The list that recorded tests go to, or None. Only a diagnostic tree records."""
     if not asked:
         return None
-    manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
-    require(manifest['installed_binding']['qualification_status'] == REUSE.DIAGNOSTIC,
-            '--record-failed-prior is for diagnostic trees only')
+    require(F.diagnostic_tree(sources), '--record-failed-prior is for diagnostic trees only')
     return []
 
 
@@ -1213,8 +1136,8 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
              record_failed_prior=False, _previous=None):
     """Store-free acceptance of a completed guarded reader; the exclusive verdict on PASS.
 
-    Under reuse_previous the records are the previous tree's and are tested against its profile
-    and source proof; the sources are this tree's.
+    Under reuse_previous the records are the previous tree's and are tested against its profile;
+    the sources are this tree's.
 
     A review-only verdict says so: it is evidence for the review, never an adoption by itself.
     """
@@ -1236,19 +1159,16 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
         then = profile if reuse is None else reuse['previous']
         reopen, _ = OR.read_json(output/'reopen.json', pin=reopen_receipt_sha256, limit=RO.MAX_RECEIPT)
         core = reopen.get('reader_core', 'full') if type(reopen) is dict else None
-        # Unit A (NR33): a records-only result is finalised without the source checks; the chain's first step made them.
-        proof = None if core == 'records' else sources.verify()
         producer = _producer_inputs_retry(then, sources=sources, mode=mode, receipt_sha256=producer_receipt_sha256,
                                           consumer_pid=os.getpid(), review=review, interval=interval,
-                                          source_proof=proof, reuse=reuse, recorded=recorded)
+                                          reuse=reuse, recorded=recorded)
         require(not (output/'reopen.guard-abort.json').exists() and not (output/'reopen.cancel').exists(),
                 'reader was aborted or cancelled')
         reader_guard, _ = OR.read_json(output/'reopen.guard.json', pin=guard_receipt_sha256)
         reader_control, _ = OR.read_json(output/'reopen.guard-control.json', pin=guard_control_sha256)
-        with sources.selected():
-            validate_reopen_receipt(reopen, guard_receipt=reader_guard,
-                guard_control=reader_control, profile=then,
-                producer=producer, mode=mode, recorded=recorded)
+        validate_reopen_receipt(reopen, guard_receipt=reader_guard,
+            guard_control=reader_control, profile=then,
+            producer=producer, mode=mode, recorded=recorded)
         overlap_fields = {'overlap_gate', 'overlap_wait_spec', 'admitted_ahead', 'gate_wait_seconds'}
         published = OR.gate_path(str(Path(row['output_directory']).resolve()), mode, producer['interval'])
         if fallback:
@@ -1270,9 +1190,6 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
                 OR.validate_finalise(reopen, expected=expected, path=published, pin=overlap_gate_sha256,
                     producer_pins=producer['gate_pins'],
                     waiter=reader_guard['parent'], memory_validator=SG.admit)
-        if core != 'records':
-            require(reopen.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
-                    'reader source proof differs from the selected sources')
         gate = reopen.get('width_gate')
         verdict = {'schema': F.VERDICT_SCHEMA, 'status': F.READER_PASS[mode], 'interval': producer['interval'],
                    'entry': producer['entry'], 'runner_record_sha256': producer['runner_sha256'],
@@ -1536,47 +1453,46 @@ def restore_retained_interval(store_directory, disposition, *, scope, assert_exc
 @protect_profile
 def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None):
     """Promote the sealed interval after its reader PASS, from the durable records only."""
-    sources = F.FreshSources(profile)
+    F.FreshSources(profile)        # puts the profile's roots on sys.path
     row = profile.record()
     store_directory, interval = Path(row['store_directory']), F.interval_number(mode, interval)
     path = adopted_path(store_directory, interval)
     done = path.exists()                  # S-4: the record written, the driver not told
     verdict, runner, sealed = adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256)
     entry = sealed['entry']
-    with sources.selected():
-        from atlas_tectonics._private.codecs import interval_store_set as IS
-        from atlas_tectonics.integration.resources import WorkBudget
-        from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
-        from atlas_tectonics._private.codecs.content_cache import create_retained_scope
-        budget = WorkBudget(MONITOR.machine_memory())
-        scope = create_retained_scope(budget, process_epoch='fresh-adopt-'+str(os.getpid()))
-        catalog = store_directory/F.CATALOG
+    from atlas_tectonics._private.codecs import interval_store_set as IS
+    from atlas_tectonics.integration.resources import WorkBudget
+    from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
+    from atlas_tectonics._private.codecs.content_cache import create_retained_scope
+    budget = WorkBudget(MONITOR.machine_memory())
+    scope = create_retained_scope(budget, process_epoch='fresh-adopt-'+str(os.getpid()))
+    catalog = store_directory/F.CATALOG
+    try:
+        fresh = sealed['expected_catalog_digest'] is None and not done and not os.path.lexists(catalog)
+        stores = (IS.IntervalStoreSet.create_migration(catalog, workflow_id=runner['workflow_id'], scope=scope)
+                  if fresh else IS.IntervalStoreSet.open_catalog(catalog, scope=scope))
         try:
-            fresh = sealed['expected_catalog_digest'] is None and not done and not os.path.lexists(catalog)
-            stores = (IS.IntervalStoreSet.create_migration(catalog, workflow_id=runner['workflow_id'], scope=scope)
-                      if fresh else IS.IntervalStoreSet.open_catalog(catalog, scope=scope))
-            try:
-                promoted = ((done or stores.catalog_digest != sealed['expected_catalog_digest'])   # S-4: reopened,
-                            and stores.head is not None and stores.head.to_wire() == entry)     # never retried
-                require(promoted or not done, 'this interval was already adopted')
-                adopted = stores.head if promoted else stores.adopt_and_promote(entry['filename'], expected_sha256=entry['file_sha256'],
-                    expected_logical_seal=entry['logical_seal'], head=SegmentRef.from_wire(runner['head']),
-                    producer_identity=runner['producer_identity'], runtime_identity=runner['runtime_identity'],
-                    expected_catalog_digest=sealed['expected_catalog_digest'],
-                    reader_view_digest=verdict['view_digest'])
-                require(adopted.to_wire() == entry, 'adopted entry differs from the sealed entry')
-                catalog_digest = stores.catalog_digest
-            finally:
-                stores.close()
+            promoted = ((done or stores.catalog_digest != sealed['expected_catalog_digest'])   # S-4: reopened,
+                        and stores.head is not None and stores.head.to_wire() == entry)     # never retried
+            require(promoted or not done, 'this interval was already adopted')
+            adopted = stores.head if promoted else stores.adopt_and_promote(entry['filename'], expected_sha256=entry['file_sha256'],
+                expected_logical_seal=entry['logical_seal'], head=SegmentRef.from_wire(runner['head']),
+                producer_identity=runner['producer_identity'], runtime_identity=runner['runtime_identity'],
+                expected_catalog_digest=sealed['expected_catalog_digest'],
+                reader_view_digest=verdict['view_digest'])
+            require(adopted.to_wire() == entry, 'adopted entry differs from the sealed entry')
+            catalog_digest = stores.catalog_digest
         finally:
-            active_error = sys.exception()
-            gc.collect()
-            try:
-                scope.close()
-            except BaseException as release_error:
-                if active_error is None:
-                    raise
-                active_error.add_note('Adoption scope finalisation also failed: '+repr(release_error))
+            stores.close()
+    finally:
+        active_error = sys.exception()
+        gc.collect()
+        try:
+            scope.close()
+        except BaseException as release_error:
+            if active_error is None:
+                raise
+            active_error.add_note('Adoption scope finalisation also failed: '+repr(release_error))
     value = {'schema': ADOPTED_SCHEMA, 'status': ADOPTED_STATUS, 'interval': interval, 'entry': entry,
              'catalog_digest': catalog_digest, 'catalog_sha256': RUN.file_hash(catalog),
              'verdict_sha256': verdict_sha256, 'runner_record_sha256': verdict['runner_record_sha256'],
@@ -1623,9 +1539,6 @@ def main(argv=None):
     require((args.guard_receipt_sha256 is not None) == args.finalise and
             (args.guard_control_sha256 is not None) == args.finalise,
             'terminal reader guard and control pins belong to finalise')
-    require(_PACKAGED_STARTUP is None or (Path(_PACKAGED_STARTUP[0]) == args.profile
-                                          and _PACKAGED_STARTUP[1] == args.profile_sha256),
-            'the installed startup authenticated another profile')
     require((args.reopen_receipt_sha256 is not None) == args.finalise and
             (args.verdict_sha256 is not None) == args.adopt and
             (args.producer_receipt_sha256 is not None) == (not args.adopt and args.overlap_spec is None) and

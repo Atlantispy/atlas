@@ -93,9 +93,9 @@ def command_key(profile, python, *, entry, step, stop_before_advance=False,
                    'reader options on producer refused')
     row = profile.record()
     return dict(route='prepared-restart', step=step, profile=_profile_digest(row, step),
-        source_manifest=row['source_manifest'], entry=file_binding(entry), python=file_binding(python),
+        entry=file_binding(entry), python=file_binding(python),
         gate_sources=[file_binding(SG.__file__), file_binding(__file__)], environment=dict(ENVIRONMENT),
-        environment_scope='executable bytes, declared launch environment and profile source/runtime policy; '
+        environment_scope='executable bytes, declared launch environment and profile runtime policy; '
                           'not an inventory of installed dependencies',
         stop_before_advance=stop_before_advance, dev_timing=dev_timing,
         producer_receipt_sha256=producer_receipt_sha256, mode=mode, store_route=store_route)
@@ -118,8 +118,7 @@ def _validate(key, snapshots):
     rows = {name: pair[0] for name, pair in snapshots.items()}
     bindings = {name: pair[1] for name, pair in snapshots.items()}
     profile, run, guard, control = (rows[name] for name in ('profile', 'run', 'guard', 'control'))
-    SG.require(_profile_digest(profile, step) == key['profile'] and
-               profile['source_manifest'] == key['source_manifest'], 'evidence profile/closure mismatch')
+    SG.require(_profile_digest(profile, step) == key['profile'], 'evidence profile/closure mismatch')
     SG.require(run.get('profile_sha256') == bindings['profile']['sha256'] and run.get('errors') == [] and
                run.get('production_acceptance') is False and type(run.get('final_reserved_bytes')) is int and
                run['final_reserved_bytes'] == 0, 'unsuccessful or unbound workload evidence')
@@ -172,7 +171,7 @@ def _validate(key, snapshots):
                    launch.get('profile') == bindings['profile'] and launch.get('env') == key['environment'] and
                    launch.get('stop_before_advance') is staged and launch.get('dev_timing') is key['dev_timing'] and
                    launch.get('start_gate', {}).get('key') == key and launch.get('workload') == key['entry'] and
-                   launch.get('python') == key['python']['path'] and launch.get('source_manifest') == key['source_manifest'],
+                   launch.get('python') == key['python']['path'],
                    'launch identity differs from measured command')
         decision = lambda value: {k: v for k, v in value.items()
                                   if k not in ('available_bytes', 'hash_randomization')}

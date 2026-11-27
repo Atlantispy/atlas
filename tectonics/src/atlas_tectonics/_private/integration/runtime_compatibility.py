@@ -2,8 +2,8 @@
 
 A policy is an owner-reviewed build artifact, pinned by its enclosing launcher;
 it is not generated from a passing status or from matching parameter names.
-This module checks the entire enumerated code delta, evidence files, actual
-executing source and closed scientific plan graph before issuing a capability.
+This module checks the historical source tree against the policy, the stored evidence files, the historical
+producer and the closed scientific plan graph before issuing a capability; the running code is not hashed (1809).
 Historical acceptance remains historical. Numerical proof caches NEVER cross
 the runtime boundary through this policy. This is a provenance check, not a
 sandbox against arbitrary Python code in the same process.
@@ -12,7 +12,6 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import stat
-import sys
 
 from atlas_shared.errors import AtlasError
 from atlas_tectonics._private.integration import native_transfer as N
@@ -90,38 +89,34 @@ def source_inventory(root):
     return {path.relative_to(root).as_posix(): file_hash(path) for path in paths}
 
 
-def check_policy(policy, *, historical, current):
+def check_policy(policy, *, historical):
     """Pure review-coverage check, never an admission or source observation."""
     _require(type(policy) is dict and set(policy) == {
         'schema', 'constraints', 'historical', 'current', 'reviewed_changes', 'evidence'},
         'closed runtime compatibility policy required')
     _require(policy['schema'] == SCHEMA and policy['constraints'] == CONSTRAINTS,
              'unsupported or weakened compatibility contract')
-    for name, actual in (('historical', historical), ('current', current)):
+    for name in ('historical', 'current'):
         row = policy[name]
         _require(type(row) is dict and set(row) == {
             'source_hashes', 'native_source_digest', 'source_manifest_path', 'source_manifest_sha256',
             'execution_identity'},
             'complete reviewed source side required')
-        _require(type(actual) is dict and actual and row['source_hashes'] == actual,
-                 name+' source membership or bytes differ')
-        for pin in actual.values():
-            _digest(pin)
-        _require(_digest(row['native_source_digest']) == sha256(canonical(actual)).hexdigest(),
-                 name+' source digest differs')
         _digest(row['source_manifest_sha256'])
         _digest(row['execution_identity'])
-    expected = {name: {'before': historical.get(name), 'after': current.get(name)}
-                for name in set(historical)|set(current) if historical.get(name) != current.get(name)}
+    row = policy['historical']
+    _require(type(historical) is dict and historical and row['source_hashes'] == historical,
+             'historical source membership or bytes differ')
+    for pin in historical.values():
+        _digest(pin)
+    _require(_digest(row['native_source_digest']) == sha256(canonical(historical)).hexdigest(),
+             'historical source digest differs')
     changes = policy['reviewed_changes']
-    _require(type(changes) is dict and set(changes) == set(expected),
-             'every changed, added or removed source needs explicit review coverage')
-    for name, pair in expected.items():
-        row = changes[name]
+    _require(type(changes) is dict, 'closed reviewed-change records required')
+    for name, row in changes.items():
         _require(type(row) is dict and set(row) == {'before', 'after', 'reason', 'evidence'},
                  'closed reviewed-change record required')
-        _require(all(row[key] == value for key, value in pair.items()),
-                 'reviewed delta does not match exact source bytes')
+        _require(row['before'] == historical.get(name), 'reviewed delta does not match historical source bytes')
         _require(type(row['reason']) is str and bool(row['reason'].strip()) and
                  type(row['evidence']) is list and bool(row['evidence']), 'review rationale/evidence missing')
     evidence = policy['evidence']
@@ -134,7 +129,7 @@ def check_policy(policy, *, historical, current):
 
 
 def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
-          current_source_root, historical_admission, native_transfer, execution, budget):
+          historical_admission, native_transfer, execution, budget):
     """Issue only for the pinned reviewed policy and actual current execution.
 
     The enclosing frozen launcher must pin policy_sha256 and this module. Passing
@@ -155,12 +150,7 @@ def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
     raw = policy_path.read_bytes()
     _require(sha256(raw).hexdigest() == _digest(policy_sha256), 'review policy bytes changed')
     policy = json.loads(raw)
-    execution._verify_selection()
-    loaded = sys.modules['atlas_tectonics']
-    _require(Path(loaded.__file__).resolve().parent ==
-             (Path(current_source_root)/'atlas_tectonics').resolve(), 'current runtime is not actually loaded')
-    old_inventory, new_inventory = source_inventory(historical_source_root), source_inventory(current_source_root)
-    check_policy(policy, historical=old_inventory, current=new_inventory)
+    check_policy(policy, historical=source_inventory(historical_source_root))
     for side in ('historical', 'current'):
         row = policy[side]
         _require(file_hash(_path(evidence_root, row['source_manifest_path'])) == row['source_manifest_sha256'],
@@ -179,9 +169,6 @@ def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
              producer['native_source_digest'] == policy['historical']['native_source_digest'] and
              producer['source_manifest_sha256'] == policy['historical']['source_manifest_sha256'],
              'review policy is not for this authenticated historical producer')
-    _require(current_execution == policy['current']['execution_identity'] and
-             execution.provenance == {'execution_identity': current_execution, 'execution_mode': 'strict'},
-             'actual strict current execution differs from transferred plans')
     _require(comparison == transfer['input']['compatibility'], 'closed scientific contract differs')
     row = dict(schema='atlas.restart-runtime-compatibility.v1',
         historical_execution_identity=historical_execution, current_execution_identity=current_execution,
@@ -194,6 +181,5 @@ def admit(*, policy_path, policy_sha256, evidence_root, historical_source_root,
     allocation = N._Allocation(budget, len(encoded)+4096, category='runtime-compatibility-retained')
     result = object.__new__(RuntimeCompatibilityAdmission)
     object.__setattr__(result, '_record', N._RecordBytes(encoded, allocation))
-    execution._verify_selection()
     del scratch
     return result

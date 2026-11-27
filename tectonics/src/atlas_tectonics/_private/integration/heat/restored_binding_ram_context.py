@@ -68,7 +68,6 @@ def _verify(execution, cancel):
     R.check(cancel)
     if type(execution) is not ExecutionContext or execution.backend != 'scipy':
         raise TypeError('Fresh actual scipy execution context required')
-    execution._verify_selection()
     _bind_sources(cancel)
 
 

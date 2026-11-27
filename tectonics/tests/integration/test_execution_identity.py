@@ -1,5 +1,6 @@
 """Execution-only module dependencies and selected arithmetic runtime facts."""
 import ast
+import functools
 from importlib.util import find_spec
 import json
 import sys
@@ -12,6 +13,12 @@ LISTED = ('atlas_shared.machine.resources_monitor', 'atlas_shared.machine.resour
           'integration.parallel.selection')
 ADMITTED = LISTED[:3]  # admitted by construction; selection is held by (c)
 STANDARD = set(sys.stdlib_module_names) | {'psutil'}
+
+
+@functools.cache
+def _tree(path):
+    return ast.parse(path.read_text(encoding='utf-8'))  # shared by the tests; trees are only walked
+
 
 # What every other package module takes from each listed module: names, and attribute chains read through an
 # alias of the module. A new entry is a new value crossing from outside the identity into bound code.
@@ -138,7 +145,7 @@ def _taken(path, wanted):
     A bare use of a module alias, other than as the base of an attribute, is recorded as '<module>'.
     """
     me = _module_of(path)
-    tree = ast.parse(path.read_text(encoding='utf-8'))
+    tree = _tree(path)
     taken = {}
     scopes = _scopes(tree)
     parent_alias = {}
@@ -250,7 +257,7 @@ class StaticBoundaryTest(unittest.TestCase):
         for name in ADMITTED:
             path = _module_path(name)
             me = _module_of(path)
-            for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
+            for node in ast.walk(_tree(path)):
                 if isinstance(node, ast.Import):
                     for a in node.names:
                         self.assertIn(a.name.split('.')[0], STANDARD, f'{name} imports {a.name}')
@@ -272,12 +279,43 @@ class StaticBoundaryTest(unittest.TestCase):
 
     def test_selection_takes_only_the_tabled_names_and_its_claims_return_only_the_session(self):
         self.assertEqual(_selection_takes(), SELECTION_TAKES)
-        tree = ast.parse((PACKAGE / 'integration/parallel/selection.py').read_text(encoding='utf-8'))
+        tree = _tree(PACKAGE / 'integration/parallel/selection.py')
         claims = [f for c in tree.body if isinstance(c, ast.ClassDef)
                   for f in c.body if isinstance(f, ast.FunctionDef) and f.name == 'claim']
         self.assertEqual(len(claims), 3)
         for function in claims:
             self.assertTrue(_claim_returns_only_the_session(function), f'claim at line {function.lineno}')
+
+    def test_execution_context_names_used_in_the_package_are_defined(self):
+        # Routes no test reaches can call a context name a regroup dropped (_verify_selection, dev52).
+        tree = _tree(PACKAGE / 'integration/reuse.py')
+        cls, = (c for c in tree.body if isinstance(c, ast.ClassDef) and c.name == 'ExecutionContext')
+        allowed = set(dir(object))
+        for node in cls.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                allowed.add(node.name)
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                allowed |= {t.id for t in targets if isinstance(t, ast.Name)}
+        allowed |= {n.attr for n in ast.walk(cls) if isinstance(n, ast.Attribute)
+                    and isinstance(n.ctx, ast.Store) and isinstance(n.value, ast.Name) and n.value.id == 'self'}
+
+        def holder(node):
+            name = node.id if isinstance(node, ast.Name) else node.attr if isinstance(node, ast.Attribute) else None
+            return name if name and (name == 'execution' or name.endswith('_execution')) else None
+
+        missing = []
+        for path in sorted(PACKAGE.rglob('*.py')):
+            if path == PACKAGE / 'materials/constitutive_execution.py':
+                continue  # its `execution` is an ExecutionPolicy, not the context
+            tree = _tree(path)
+            imported = {(a.asname or a.name).split('.')[0] for n in ast.walk(tree)
+                        if isinstance(n, (ast.Import, ast.ImportFrom)) for a in n.names}
+            missing += [f'{path.relative_to(PACKAGE).as_posix()}:{n.lineno} {n.attr}' for n in ast.walk(tree)
+                        if isinstance(n, ast.Attribute) and holder(n.value) not in (None, *imported)
+                        and n.attr not in allowed]
+        self.maxDiff = None
+        self.assertEqual(missing, [])
 
 
 class IdentityProbeTest(unittest.TestCase):

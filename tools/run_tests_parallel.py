@@ -273,15 +273,13 @@ class _Tracer:
 
     @staticmethod
     def _caller(listing=False):
-        """'identity' for the execution-identity guard's source reads; 'import' for the import system's own work
+        """'import' for the import system's own work
         (compiling a module it imports; for a listing, searching sys.path folders for a module or distribution
         metadata); else None. Those listings read names only, and a changed name is an added or deleted file, which
         selects everything anyway. Byte reads by metadata code still count."""
         frame, depth = sys._getframe(2), 0
         while frame is not None and depth < 10:
             code = frame.f_code
-            if code.co_name == '_source_bytes':
-                return 'identity'
             if code.co_filename.startswith('<frozen importlib') and code.co_name in ('get_code', '_fill_cache'):
                 return 'import'
             if listing and os.path.normcase(code.co_filename).endswith(_METADATA_FILES):
@@ -302,8 +300,6 @@ class _Tracer:
                 self.import_reads.add(path)
                 return
             self.opened.add(path)
-            if caller == 'identity':
-                self.identity_reads.add(path)
         elif event in ('sqlite3.connect', 'ctypes.dlopen', 'shutil.copyfile', 'shutil.copytree', 'shutil.move',
                        '_winapi.CopyFile2'):
             # Files read by C code without an 'open' event: databases, native libraries and copy sources (a copied

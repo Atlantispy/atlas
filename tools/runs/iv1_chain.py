@@ -229,9 +229,9 @@ Fast-loop r11 = r10 + resume after a reviewed pin change, driver only (resume-af
   RP     a resume whose earlier journal's package tree differs from this run's, and whose pinned issue record's
          `package_change` names that earlier tree, may reuse steps 1-4 only if: P-1 the present table with the
          named files' old hashes put back digests to the earlier tree at its start and end; P-2 the earlier
-         profile is the journaled one and equals this profile as data but for source_manifest; P-3 each reused
+         profile is the journaled one and equals this profile as data; P-3 each reused
          command is equal once the two profile words are set aside; P-4 reused receipts carry the earlier
-         journal's manifest hash and native digest (start = end) and the earlier profile as producer identity;
+         journal's execution identity and the earlier profile as producer identity;
          P-5 step 5 runs unseeded. Any failed test stops the chain; no member, or another earlier tree: today's
          rule. An earlier journal without check3_selection stops. Such a run is branded NOT SCIENTIFICALLY
          PERMISSIBLE (journal key on every save, file in the run's home, printed lines). Not with a continuation.
@@ -322,7 +322,7 @@ Fast-loop r1 (design .atlas-dev/designs/fast-loop-r1.md W1+W2), driver only, on 
          or if the earlier journal is RUNNING or INTERRUPTED (step processes may still run).
 
 Additive r3c: the interval producer must cross the accepted CHECK3 recording reader before its independent reader.
-The recorder/driver/pool/joined/guard identities come from the pinned profile manifest and actual installed tree;
+The recorder/driver/pool/joined/guard identities come from the pinned profile and actual installed tree;
 no journal selects executable code or authorises its own recorder/clock. Root mode keeps its original semantics.
 Source/runtime/native clock/bootstrap qualification and final selected input bindings remain prerequisites.
 
@@ -908,12 +908,6 @@ def issue_checks(config, identity, *, retained_provider=None):
     return result
 
 
-def current_proof(config, profile):
-    """F4: this run's source proof, as the reader and CHECK3 compare it (source manifest sha, native digest)."""
-    binding = check3_bindings(config, profile)
-    return binding['source_manifest']['sha256'], binding['native_source_digest']
-
-
 def accepted(name):
     """The status a step's acceptance journals, from its name 'N-mode-kind'; None for any other name."""
     parts = name.split('-') if type(name) is str else []
@@ -1058,12 +1052,10 @@ def run_child(argv, *, timeout, capture_output=False, text=False, **kwargs):
 
 
 def diagnostic_profile(profile):
-    """R-1, S-1: the profile's source manifest says a diagnostic tree (rulings 4a, 27). Unreadable: not diagnostic."""
+    """R-1, S-1: the profile says a diagnostic tree (rulings 4a, 27). Unreadable: not diagnostic."""
     try:
-        ref = profile['source_manifest']
-        manifest, _ = read_json(Path(profile['workspace'])/ref['path'], ref['sha256'])
-        return manifest['installed_binding']['qualification_status'] == DIAGNOSTIC
-    except (ChainStop, OSError, KeyError, TypeError, ValueError):
+        return profile['qualification_status'] == DIAGNOSTIC
+    except (KeyError, TypeError):
         return False
 
 
@@ -1215,9 +1207,8 @@ def machine_modules(config):
     if key not in _machine:
         checked = _package_tree.get(root)
         require(checked is not None and checked[0] == pin, 'machine sources need a checked package tree')
-        members = checked[1]
-        _machine[key] = shared_modules(root, members, ('atlas_shared.machine.resources_monitor',
-                                                        'atlas_shared.machine.resources_gate'))
+        _machine[key] = shared_modules(root, ('atlas_shared.machine.resources_monitor',
+                                              'atlas_shared.machine.resources_gate'))
     return _machine[key]
 
 
@@ -1458,46 +1449,27 @@ def check3_ordinary_file(path):
 
 
 def profile_source_selection(config, profile):
-    """Resolve the native root and authenticated module inventory for this profile."""
+    """Resolve the workspace and the native root for this profile."""
     require(type(profile.get('workspace')) is str and Path(profile['workspace']).is_absolute(),
             'CHECK3 requires the absolute selected workspace')
     workspace = Path(os.path.abspath(profile['workspace']))
     native = Path(os.path.abspath(workspace / profile['native_root']))
     require(same_path(native, config['package']['root']) and inside(native, workspace),
             'CHECK3 native root differs from selected installed package/workspace')
-    manifest_ref = profile.get('source_manifest')
-    pinned(manifest_ref, 'CHECK3 profile source manifest')
-    manifest_path = check3_ordinary_file(workspace / manifest_ref['path'])
-    require(inside(manifest_path, workspace), 'CHECK3 source manifest lies outside selected workspace')
-    manifest, manifest_sha = read_json(manifest_path, manifest_ref['sha256'])
-    return workspace, native, manifest_path, manifest_sha, manifest
+    return workspace, native
 
 
 def check3_bindings(config, profile, *, source_selection=None):
-    """Independent profile/manifest/runtime selection, never authority copied from a journal."""
+    """Independent profile/runtime selection, never authority copied from a journal."""
     part = check3_config(config)
     if source_selection is None:
         source_selection = profile_source_selection(config, profile)
-    workspace, native, manifest_path, manifest_sha, manifest = source_selection
-    sources = manifest.get('source_hashes')
-    files = manifest.get('files')
-    require(type(sources) is dict and sources and type(files) is dict and files,
-            'CHECK3 complete native/import source maps required')
-    require(all(type(name) is str and ':' not in name and name.endswith('.py')
-                and relative(native / name, native) == name and is_sha(pin)
-                for name, pin in sources.items()), 'CHECK3 native source inventory malformed')
-    # FreshSources.verify hashes exactly this canonical complete source_hashes map.
-    native_digest = hashlib.sha256(json.dumps(sources, sort_keys=True, separators=(',', ':'),
-                                             allow_nan=False).encode()).hexdigest()
+    _, native = source_selection
 
     def selected(member):
         path = check3_ordinary_file(native / member)
         require(inside(path, native), 'CHECK3 selected source escapes native root')
-        pin = sources.get(member)
-        require(is_sha(pin) and files.get(relative(path, workspace)) == pin,
-                f'CHECK3 source absent from complete native/import closure: {member}')
-        require(sha_file(path) == pin, f'CHECK3 selected native source changed: {member}')
-        return {'path': str(path), 'sha256': pin}
+        return {'path': str(path), 'sha256': sha_file(path)}
 
     recorder = selected(part['recorder_member'])
     guard_source = selected(part['guard_member'])
@@ -1506,8 +1478,7 @@ def check3_bindings(config, profile, *, source_selection=None):
             'CHECK3 selected reached sources repeat a path')
     reader_path = check3_ordinary_file(part['reader']['path'])
     require(sha_file(reader_path) == part['reader']['sha256'], 'CHECK3 accepted reader source changed')
-    return {'source_manifest': {'path': str(manifest_path), 'sha256': manifest_sha},
-            'native_source_digest': native_digest, 'recorder': recorder, 'guard_source': guard_source,
+    return {'recorder': recorder, 'guard_source': guard_source,
             'sources': {row['path']: row['sha256'] for row in reached},
             'heat_phases': part['heat_phases'], 'clock': part['clock'],
             'reader': {'path': str(reader_path), 'sha256': part['reader']['sha256']}}
@@ -1530,15 +1501,12 @@ def guard_within_receipt(config, guard, receipt):
             'CHECK3 guard weakens the resource policy its receipt records')
 
 
-def receive_check3(config, binding, profile_sha, receipt_path, receipt, captured):
+def receive_check3(config, binding, profile_sha, receipt_path, receipt, captured, *, execution_identity):
     """Authenticate the actual final producer/guard records, then cross the accepted reader boundary."""
-    expected_proof = {'source_manifest_sha256': binding['source_manifest']['sha256'],
-                      'native_source_digest': binding['native_source_digest']}
-    proof, identities = receipt.get('source_proof'), receipt.get('identities')
-    require(type(proof) is dict and all(proof.get(k) == v for k, v in expected_proof.items())
-            and type(identities) is dict and identities.get('producer_identity') == profile_sha
-            and identities.get('runtime_identity') == binding['native_source_digest'],
-            'CHECK3 producer does not bind selected profile/manifest/native source inventory')
+    identities = receipt.get('identities')
+    require(type(identities) is dict and identities.get('producer_identity') == profile_sha
+            and identities.get('runtime_identity') == execution_identity,
+            'CHECK3 producer does not bind selected profile and execution identity')
     path = check3_ordinary_file(receipt_path)
     producer_pin = captured.get(str(Path(receipt_path)))
     require(is_sha(producer_pin), 'CHECK3 producer receipt changed after capture')
@@ -1761,25 +1729,15 @@ class Chain:
         package = Path(self.config['package']['root'])
         native = Path(self.profile['workspace']) / self.profile['native_root']
         require(same_path(native, package), 'identity override requires the same installed native root')
-        manifests = []
         for profile in (previous_profile, self.profile):
-            ref = profile['source_manifest']
-            path = check3_ordinary_file(Path(profile['workspace'])/ref['path'])
-            require(inside(path, profile['workspace']), 'identity override manifest escapes its workspace')
-            manifest, _ = read_json(path, ref['sha256'])
-            require(member(manifest, 'installed_binding', 'qualification_status') == DIAGNOSTIC,
-                    'identity override requires diagnostic source declarations')
-            manifests.append(manifest)
-        before, after = manifests
-        generated = {'atlas_tectonics/_application_sources.json', 'atlas_tectonics/_application_sources.sha256'}
-        shared = {}
+            require(diagnostic_profile(profile), 'identity override requires diagnostic profiles')
+        shared = set()
         dependencies = {'atlas_shared/__init__.py', 'atlas_shared/machine/__init__.py',
                         'atlas_shared/machine/resources_monitor.py', 'atlas_shared/machine/resources_gate.py'}
         independent = change['retained_root_independent_members']
         for row in change['files']:
             name = row['path']
-            if name in generated or re.fullmatch(r'[^/]+\.dist-info/RECORD', name):
-                generated.add(name)
+            if re.fullmatch(r'[^/]+\.dist-info/RECORD', name):
                 continue
             parts = name.split('/')
             require(len(parts) > 1 and parts[0] == 'atlas_shared' and parts[1] != '_private'
@@ -1788,21 +1746,8 @@ class Chain:
                     and is_sha(row['old_sha256']) and is_sha(row['new_sha256']),
                     'identity override changes a finished-root dependency or exceeds the approved prefix: '+name)
             require(name in independent, 'identity override lacks reviewed finished-root dependency proof: '+name)
-            shared[name] = (row['old_sha256'], row['new_sha256'])
+            shared.add(name)
         require(shared, 'identity override has no changed ordinary shared member')
-        prefix = self.profile['native_root'] + '/'
-        ignored = {prefix+name for name in generated}
-        edited = {prefix+name for name in shared}
-        require(all(before['files'].get(prefix+name) == old_pin and after['files'].get(prefix+name) == new_pin
-                    for name, (old_pin, new_pin) in shared.items()),
-                'identity override manifest rows differ from the checked shared edit')
-        for field, exceptions in (('files', edited), ('data_only', ignored)):
-            require({k: v for k, v in before[field].items() if k not in exceptions} ==
-                    {k: v for k, v in after[field].items() if k not in exceptions},
-                    'identity override changes other manifest inputs: '+field)
-        require(all(before.get(field) == after.get(field) for field in (
-            'source_hashes', 'fixture_source_map', 'composition', 'completed_query_store')),
-            'identity override changes the retained root source, fixture or store bindings')
         self.root_producers = self.finished_root_producers(steps[:4])
         change['execution_identity'] = {'previous': previous, 'current': current}
         self.reusable = {step['step']: step for step in steps[:4]}
@@ -1835,15 +1780,12 @@ class Chain:
             require(words.count('--profile') == 1 and words.count('--profile-sha256') == 1,
                     'retained root producer has no unique profile: '+name)
             profile_path = words[words.index('--profile')+1]
-            manifest = member(pre, 'check3_selection', 'source_manifest', 'sha256')
-            native = member(pre, 'check3_selection', 'native_source_digest')
             identity = member(pre, 'execution_identity', 'execution_identity')
             require(profile_words(words, profile_path, profile_pin) is not None
-                    and all(is_sha(pin) for pin in (profile_pin, manifest, native, identity))
+                    and all(is_sha(pin) for pin in (profile_pin, identity))
                     and member(pre, 'execution_identity', 'execution_mode') == 'strict',
                     'retained root lacks the original strict producer proof: '+name)
             producers[name] = {'profile': {'path': profile_path, 'sha256': profile_pin},
-                               'proof': {'source_manifest_sha256': manifest, 'native_source_digest': native},
                                'identity': identity, 'journal_sha256': origin}
         return producers
 
@@ -1908,19 +1850,14 @@ class Chain:
                 'package change P-2: the earlier profile file is not the one the earlier journal recorded')
         earlier_profile, _ = read_json(profile['path'], profile['sha256'])
         require(type(earlier_profile) is dict and
-                {k: v for k, v in earlier_profile.items() if k != 'source_manifest'} ==
-                {k: v for k, v in self.profile.items() if k != 'source_manifest'},
-                'package change P-2: the profiles differ in a member besides source_manifest')
-        proof = (member(old, 'check3_selection', 'source_manifest', 'sha256'),     # K43: the start values only
-                 member(old, 'check3_selection', 'native_source_digest'))
-        require(all(is_sha(value) for value in proof),
-                'package change: the earlier journal holds no check3_selection (manifest hash and native digest)')
-        require(member(earlier_profile, 'source_manifest', 'sha256') == proof[0],
-                'package change P-2: the earlier profile names another source manifest than the earlier journal recorded')
+                earlier_profile == self.profile,
+                'package change P-2: the profiles differ')
+        earlier_identity = member(old, 'execution_identity', 'execution_identity')    # K43: the start value only
+        require(is_sha(earlier_identity), 'package change: the earlier journal holds no execution identity')
         return {'record_sha256': record_sha, 'reviewed': record.get('status') == REVIEWED,
                 'files': files, 'earlier_tree_sha256': then_tree, 'earlier_profile': profile,
                 'retained_root_independent_members': independent,
-                'manifest_sha256': proof[0], 'native_source_digest': proof[1], 'reader_files_only': only,
+                'runtime_identity': earlier_identity, 'reader_files_only': only,
                 'keeps_queries': keeps, 'keeps_queries_reason': reason if keeps else None,       # KQ
                 'keeps_measurements': keeps_m, 'keeps_measurements_reason': reason_m if keeps_m else None}   # S-1
 
@@ -2431,19 +2368,10 @@ class Chain:
             return
         identity = self.journal['pre_checks']['execution_identity']['execution_identity']
         mixed = self.mixed_restart
-        if mixed is not None:
-            manifest = native = None                    # each step selects its actual producer below
-        elif self.root_producers:
-            binding = self.journal['pre_checks']['check3_selection']
-            manifest, native = binding['source_manifest']['sha256'], binding['native_source_digest']
-        else:
-            manifest, native = current_proof(self.config, self.profile)
-        producer = self.profile_sha
-        if mixed is None and self.package_change is not None:   # P-4: the earlier journal's proof and profile (R-2)
-            manifest, native = self.package_change['manifest_sha256'], self.package_change['native_source_digest']
-            producer = self.package_change['earlier_profile']['sha256']
-        default = {'source_manifest_sha256': manifest, 'native_source_digest': native,
-                   'producer_identity': producer, 'runtime_identity': native}
+        producer, runtime = self.profile_sha, identity      # mixed: each step selects its actual producer below
+        if mixed is None and self.package_change is not None:   # P-4: the earlier journal's identity and profile (R-2)
+            runtime, producer = self.package_change['runtime_identity'], self.package_change['earlier_profile']['sha256']
+        default = {'producer_identity': producer, 'runtime_identity': runtime}
         seen, roots = dict.fromkeys(default, 0), 0
         for step in reused:
             expected = default
@@ -2452,8 +2380,7 @@ class Chain:
             elif step['step'] in self.root_producers:
                 original = self.root_producers[step['step']]
                 identity = original['identity']
-                expected = {**original['proof'], 'producer_identity': original['profile']['sha256'],
-                            'runtime_identity': original['proof']['native_source_digest']}
+                expected = {'producer_identity': original['profile']['sha256'], 'runtime_identity': original['identity']}
             if step['step'] == '1-root-producer':
                 expected = dict(expected, execution_identity=expected.get('execution_identity', identity))
                 identity = expected['execution_identity']
@@ -2468,8 +2395,7 @@ class Chain:
                 for key in seen:
                     seen[key] += counts.get(key, 0)
                 roots += counts.get('execution_identity', 0)
-        require(seen['source_manifest_sha256'] and seen['native_source_digest'],
-                'F4: no retained receipt carries a source proof')
+        require(seen['runtime_identity'], 'F4: no retained receipt carries a runtime identity')
         require(roots or all(step['step'] != '1-root-producer' for step in reused),
                 'F2: the retained root receipts name no execution identity')
         self.journal['retained_checks'] = {'identity': identity, 'root_identities': roots, 'proof_fields': seen}
@@ -2544,14 +2470,11 @@ class Chain:
         require(self.journal['resume']['reused'] == list(RETAINED[:4]),
                 'identity override requires every finished root step')
         original = self.root_producers['1-root-producer']
-        pre = self.journal['pre_checks']
         outputs = self.journal['steps'][0]['outputs']
         path = self.journal_dir/'retained-root.json'
         runner_sha = outputs[str(self.store/'runner-record-interval-0000.json')]
-        proof = {'source_manifest_sha256': member(pre, 'check3_selection', 'source_manifest', 'sha256'),
-                 'native_source_digest': member(pre, 'check3_selection', 'native_source_digest')}
         claim = {'schema': 'atlas.diagnostic-retained-root.v1', 'profile_sha256': self.profile_sha,
-                 'source_proof': proof, 'producer': original, 'root_runner_sha256': runner_sha,
+                 'producer': original, 'root_runner_sha256': runner_sha,
                  'root_receipt_sha256': receipt_sha,
                  'execution_identity': self.package_change['execution_identity']['current']}
         raw = json.dumps(claim, sort_keys=True, separators=(',', ':')).encode()
@@ -2708,7 +2631,8 @@ class Chain:
                 try:
                     checked = receive_check3(self.config, self.journal['pre_checks']['check3_selection'],
                                              self.profile_sha, receipt_path,
-                                             receipt, entry['outputs'])
+                                             receipt, entry['outputs'],
+                                             execution_identity=self.journal['pre_checks']['execution_identity']['execution_identity'])
                 except Exception as error:
                     entry['check3'] = {'status': 'INVALID_EVIDENCE', 'error': type(error).__name__+': '+str(error)}
                     self.save()
@@ -2939,7 +2863,6 @@ class Chain:
         require(not self.journal_dir.exists(), f'journal directory exists: {self.journal_dir}')
         self.journal_dir.mkdir(parents=True)
         try:
-            # The selected manifest is also the source of the ordinary CHECK3 selection.
             try:
                 if self.source_selection is None:
                     self.source_selection = profile_source_selection(self.config, self.profile)
@@ -3112,34 +3035,31 @@ def load_pinned(name, path, pin):
     return module
 
 
-_shared_bootstrap = {}
-_SHARED_BOOTSTRAP = 'atlas_tectonics/integration/parallel/worker_bootstrap.py'
+def load_module(name, path):
+    """Execute the file's bytes as module `name` without importing its package."""
+    path = Path(path)
+    module = types.ModuleType(name)
+    module.__file__ = str(path)
+    sys.modules[name] = module
+    exec(compile(path.read_bytes(), str(path), 'exec'), module.__dict__)
+    return module
 
 
-def shared_modules(native, pins, names, *, workspace=None):
-    """Use the issued runtime's checked finder without importing tectonics."""
+def shared_modules(native, names):
+    """Import the shared package from the installed native root (a checkout: its shared/src), without tectonics."""
     native = Path(native)
-    workspace = native if workspace is None else workspace
-    source = native / _SHARED_BOOTSTRAP
-    pin = pins.get(source.relative_to(workspace).as_posix())
-    require(is_sha(pin), 'shared startup helper missing from selected sources')
-    key = (source, pin)
-    if key not in _shared_bootstrap:
-        _shared_bootstrap[key] = load_pinned('_chain_shared_bootstrap', source, pin)
-    finder = _shared_bootstrap[key].application_shared_finder(native, pins, workspace=workspace)
+    shared = native.parent.parent/'shared'/'src' if (native.name, native.parent.name) == ('src', 'tectonics') else native
     before = list(sys.path)
-    sys.path.insert(0, str(native))
-    sys.meta_path.insert(0, finder)
+    sys.path.insert(0, str(shared))
     try:
         return tuple(importlib.import_module(name) for name in names)
     finally:
-        sys.meta_path.remove(finder)
         sys.path[:] = before
 
 
 def selected_diagnostic(source_selection, name):
-    workspace, native, _, _, manifest = source_selection
-    module, = shared_modules(native, manifest['files'], ('atlas_shared.execution.' + name,), workspace=workspace)
+    _, native = source_selection
+    module, = shared_modules(native, ('atlas_shared.execution.' + name,))
     return module
 
 
@@ -3151,16 +3071,18 @@ def overlap_modules(config):
     if checked is None:
         binding = config['profile']
         profile, _ = read_json(binding['path'], binding['sha256'])
-        workspace, native, _, _, manifest = profile_source_selection(config, profile)
-        members = manifest['files']
+        _, native = profile_source_selection(config, profile)
+        digest, _, _, members = tree_digest(native)
+        _package_tree[package['root']] = (digest, members)        # hashed once per run, as package_checks does
+        require(digest == package['tree_sha256'], 'overlap sources need the selected package tree')
     else:
         require(checked[0] == package['tree_sha256'], 'overlap sources need the selected package tree')
-        workspace, members = native, checked[1]
+        members = checked[1]
     private = native/'atlas_tectonics'/'_private'/'integration'/'geometry'
-    shas = {name: members.get(relative(private/(name+'.py'), workspace))
+    shas = {name: members.get(relative(private/(name+'.py'), native))   # tree_digest keys are native-relative
             for name in ('reader_overlap_gate', 'overlap_reader')}
     require(all(is_sha(pin) for pin in shas.values()), 'overlap gate and reader must be selected sources')
-    shared_modules(native, members, ('atlas_shared.errors',), workspace=workspace)
+    shared_modules(native, ('atlas_shared.errors',))
     OG = load_pinned('reader_overlap_gate', private/'reader_overlap_gate.py', shas['reader_overlap_gate'])
     geometry = 'atlas_tectonics._private.integration.geometry'
     stubs = {name: types.ModuleType(name) for name in
@@ -3327,10 +3249,9 @@ def load_config(path, pin):
 def load_home_owner(config):
     profile, _ = read_json(config['profile']['path'], config['profile']['sha256'])
     selection = profile_source_selection(config, profile)
-    workspace, native, _, _, manifest = selection
+    _, native = selection
     path = check3_ordinary_file(native/'atlas_tectonics/_private/integration/interval_admission.py')
-    key = path.relative_to(workspace).as_posix()
-    module = load_pinned('_r39_interval_admission', path, manifest['files'][key])
+    module = load_module('_r39_interval_admission', path)
     return module, profile, selection
 
 
@@ -3395,8 +3316,7 @@ def changed_admission_steps(change):
         return affected
     require(change['reviewed'] and not change['reader_files_only'],
             'a shared resource admission edit requires a reviewed change covering its actual callers')
-    generated = {'atlas_tectonics/_application_sources.json', 'atlas_tectonics/_application_sources.sha256'}
-    unclassified = sorted(path for path in paths - dependencies.keys() - generated
+    unclassified = sorted(path for path in paths - dependencies.keys()
                           if re.fullmatch(r'[^/]+\.dist-info/RECORD', path) is None)
     require(not unclassified, f'no retained-step dependency proof for combined admission edit: {unclassified}')
     return affected
@@ -3417,18 +3337,13 @@ class MixedRestart:
         produced = old.get('producer_journal_sha256', old.get('reused_from', from_pin))
         root = c.root_producers.get(name)
         if root is not None:
-            manifest, native = (root['proof'][field] for field in ('source_manifest_sha256', 'native_source_digest'))
             producer, identity = root['profile']['sha256'], root['identity']
         elif produced == self.origin['sha256']:
             change = c.package_change
-            manifest, native = change['manifest_sha256'], change['native_source_digest']
             producer, identity = change['earlier_profile']['sha256'], self.original_identity
         else:
-            binding = pre['check3_selection']
-            manifest, native = binding['source_manifest']['sha256'], binding['native_source_digest']
             producer, identity = c.profile_sha, pre['execution_identity']['execution_identity']
-        expected = {'source_manifest_sha256': manifest, 'native_source_digest': native,
-                    'producer_identity': producer, 'runtime_identity': native}
+        expected = {'producer_identity': producer, 'runtime_identity': identity}
         if name == '1-root-producer':
             require(is_sha(identity), 'F2: retained root has no pinned producer execution identity')
             expected['execution_identity'] = identity
@@ -3651,8 +3566,8 @@ def checkpoint_attempt(step):
 
 class ProtectedTransitionOwner:
     """Run the interval owner's checked operation inside r39's exclusive admission."""
-    def __init__(self, config, profile, manifest):
-        self.config, self.profile, self.manifest = config, profile, manifest
+    def __init__(self, config, profile):
+        self.config, self.profile = config, profile
         self.trees = protected_trees(profile)
         self.engine = None
         self._assigned = None
@@ -3667,9 +3582,8 @@ class ProtectedTransitionOwner:
             self._assigned = False
             return False
         require(issue.get('status') == REVIEWED and type(assignment) is dict and
-                set(assignment) == {'trees', 'source_manifest_sha256', 'exclusive_handback'} and
+                set(assignment) == {'trees', 'exclusive_handback'} and
                 assignment['trees'] == self.trees and
-                assignment['source_manifest_sha256'] == self.profile['source_manifest']['sha256'] and
                 type(assignment['exclusive_handback']) is str and assignment['exclusive_handback'].strip(),
                 'protected home has no reviewed assignment and exclusive handback for the selected clients')
         roots = tuple(self.trees.values())
@@ -3683,7 +3597,7 @@ class ProtectedTransitionOwner:
         if self.engine is None:
             workspace = Path(self.profile['workspace']).resolve(strict=True)
             path = check3_ordinary_file(workspace/self.profile['native_root']/'atlas_runtime.py')
-            runtime = load_pinned('_r39_transition_runtime', path, self.manifest['files'][path.relative_to(workspace).as_posix()])
+            runtime = load_module('_r39_transition_runtime', path)
             profile = self.config['profile']
             self.engine = runtime._load_engine('reopen_fresh_restart', profile['path'], profile['sha256'])
         return self.engine
@@ -3898,7 +3812,7 @@ def main(argv=None):
         admission, profile, source_selection = load_home_owner(config)
         with admission.driver_claim(profile['store_directory']):
             home = DriverHomeAdmission(admission, profile['store_directory'],
-                                       ProtectedTransitionOwner(config, profile, source_selection[4]))
+                                       ProtectedTransitionOwner(config, profile))
             recovery = home.recover(config)
             try:
                 if recovery is not None and config['resume_from'] is not None and same_path(recovery[0], config['resume_from']['path']):

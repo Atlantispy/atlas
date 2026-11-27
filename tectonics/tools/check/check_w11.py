@@ -81,12 +81,9 @@ def scale_evidence(path, inventory):
     if native != saved_native:
         raise ValueError('scale production binding changed')
 
-    from atlas_runtime import _application_declaration
-    declaration = _application_declaration(ROOT/'src')
-    if declaration is None:
-        raise ValueError('scale shared production binding unavailable')
-    shared = {name: pin for name, pin in declaration[1]['source_hashes'].items()
-              if name.startswith('atlas_shared/') and name.endswith('.py')}
+    shared_root = ROOT.parent/'shared/src'
+    shared = {path.relative_to(shared_root).as_posix(): digest(path)
+              for path in sorted((shared_root/'atlas_shared').rglob('*.py')) if '__pycache__' not in path.parts}
     saved_shared = {name: pin for name, pin in saved.items() if name.startswith('atlas_shared/')}
     if shared != saved_shared:
         raise ValueError('scale shared production binding changed')

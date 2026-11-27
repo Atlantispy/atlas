@@ -28,7 +28,7 @@ def main():
     sys.path[:0] = [str(root), str(root/'src'), str(root/'tests'), str(root/'tools')]
     from verify import source_inventory
     from tectonics.tools.check.check_w10 import Measurements
-    modules = ['test_source_inventory', 'test_source_verification_r4_4',
+    modules = ['test_source_verification_r4_4',
                'test_execution_reuse.IdentityTests', 'test_foundations',
                'test_w01_workflow.RegionalWorkflowTests.test_cold_restore_and_continuation_match_without_resampling',
                'test_w01_workflow.RegionalWorkflowTests.test_loaded_workflow_implementation_change_invalidates_plan_and_resume',

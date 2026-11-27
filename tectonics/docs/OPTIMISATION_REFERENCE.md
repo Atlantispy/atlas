@@ -417,7 +417,7 @@ replacement token tuple. A no-defaults (`None`) path avoids needless recursive
 normalisation. Every mutable default and native option is still normalised each
 time; registered constants are still canonically encoded and compared each time.
 No acceptance cache, source mtime shortcut, delayed check or skipped nested check
-is introduced. `_source_bytes`, `_runtime_record` and the normaliser are unchanged.
+is introduced. `_runtime_record` and the normaliser are unchanged.
 
 Each verification consumes a PRIVATE shallow copy of the expected-key table.
 It neither changes the retained baseline nor shares scratch across concurrent

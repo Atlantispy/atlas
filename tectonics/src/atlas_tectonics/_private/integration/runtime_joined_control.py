@@ -14,7 +14,7 @@ import os
 
 import numpy as np
 
-from i04_differential_modes import ORIGINAL_CONTROL
+from atlas_tectonics._fixtures.tests.i04_differential_modes import ORIGINAL_CONTROL
 
 from atlas_tectonics._private.integration.runtime_global_accounts import check_global_accounts, operations
 

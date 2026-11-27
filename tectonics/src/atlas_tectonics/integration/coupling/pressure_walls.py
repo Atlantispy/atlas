@@ -529,7 +529,7 @@ def _check_result(result, reservoirs):
     return result
 
 
-def batch_worker(directory, process, binding_bytes, requests, record=None):
+def batch_worker(directory, process, binding_bytes, requests):
     """integration_parallel_dispatch._batch_worker for pressure walls (worker process only).
 
     Every input chunk is read mapped and checked against its digest, the shared inputs
@@ -560,7 +560,7 @@ def batch_worker(directory, process, binding_bytes, requests, record=None):
         inputs[identity] = raw
     observed = dict(body=0.0, peak=0)
     decoded = _decoded_bound(b''.join(inputs[identity] for identity in ids))
-    with ExecutionContext.adopted('reference') as context:
+    with ExecutionContext('reference') as context:
         def run(new_ledger):
             with ExitStack() as holds:
                 return _answer(new_ledger, holds)
@@ -606,7 +606,7 @@ def batch_worker(directory, process, binding_bytes, requests, record=None):
                 observed['peak'] = max(observed['peak'], ledger.statistics()['peak_reserved_bytes'])
             return answers
         receipt = batch_worker_complete(binding_bytes, context=context,
-            read_bindings=lambda: D._inventory(inputs, context, binding_bytes, record), requests=requests, run=run)
+            requests=requests, run=run)
         if len(receipt) > D.MAX_RECEIPT:
             raise ValueError('receipt exceeds optional wire envelope')
         with (directory/'result.json').open('xb') as stream:

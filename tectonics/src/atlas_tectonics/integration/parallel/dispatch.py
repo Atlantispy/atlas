@@ -64,26 +64,6 @@ BATCH_LOG = 32                # finished batches named in a session's report
 SURVEY = 0.25                 # seconds between two system-wide process surveys of one batch child
 
 
-def _inventory(inputs, context=None, binding_bytes=None, binding_record=None, *, input_digests=None):
-    if getattr(context, '_adopted', False):  # W-3 E-5: the parent proved these; it compares the binding handed back
-        # S-2: the caller's own decode of these bytes, where it has one
-        record = json.loads(binding_bytes) if binding_record is None else binding_record
-        result = {name: digest for name, digest in record['source_bindings'].items()
-                  if not name.startswith('input:')}
-    else:
-        from atlas_tectonics.integration.reuse import _fixture_identity_sources
-        if context is None:
-            selected = _fixture_identity_sources()
-            rows = () if selected is None else selected.source_rows
-        else:
-            rows = context._source_rows
-        result = {'src/atlas_tectonics/'+name: pin for name, pin in rows}
-    if input_digests is None:
-        input_digests = {name: hashlib.sha256(raw).hexdigest() for name, raw in inputs.items()}
-    result.update({'input:'+name: digest for name, digest in input_digests.items()})
-    return result
-
-
 def _request(support, key, name, pair, width, leaves):
     header_owner = support_header(support)
     record = header_owner.value
@@ -129,8 +109,8 @@ def _wall_request(support, key, axis, pair, width, leaves):
 
 
 def _support(raw, identity, budget):
-    # Private transport of a parent's issued object, not a public restore. identity None: the batch's first live
-    # check has bound these copied bytes to the binding's digest; the one-job route hashes them here.
+    # Private transport of a parent's issued object, not a public restore. identity None: the batch route, whose
+    # parent wrote these bytes in this run under their digest name; the one-job route hashes them here.
     if not 0 < len(raw) <= MAX_INPUT or identity is not None and hashlib.sha256(raw).hexdigest() != identity:
         raise ValueError('complete issued support bytes differ')
     value = G._issue(G.DifferentialSupport, json.loads(raw), budget)
@@ -254,11 +234,7 @@ def worker_main(directory):
     supports = [_support(inputs['support'], request['support_id'], child_budget)]
     other = None if 'other' not in inputs else _support(inputs['other'], request['other_support_id'], child_budget)
     body = []
-    input_digests = {'support': request['support_id']}
-    if other is not None:
-        input_digests['other'] = request['other_support_id']
-    with ExecutionContext.adopted('reference') as context:
-        sources = _inventory(inputs, context, binding_bytes, record, input_digests=input_digests)
+    with ExecutionContext('reference') as context:
         def run(actual_budget):
             begun = time.perf_counter()
             result = _call(supports[0], other, request, actual_budget)
@@ -267,7 +243,7 @@ def worker_main(directory):
                 raise ValueError('result exceeds optional wire envelope')
             return result._json
         receipt = _worker_complete(binding, context=context,
-            read_bindings=lambda: sources, request=request,
+            request=request,
             child_budget=child_budget, run=run, record=record)
         if len(receipt) > MAX_RECEIPT:
             raise ValueError('receipt exceeds optional wire envelope')
@@ -316,10 +292,10 @@ def _batch_body(directory, process, binding, record):
     if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
         # Pressure P1: pressure walls load and answer their own digest-checked inputs.
         from atlas_tectonics.integration.coupling.pressure_walls import batch_worker
-        return batch_worker(directory, process, binding_bytes, requests, record)
+        return batch_worker(directory, process, binding_bytes, requests)
     inputs = _read_inputs(directory, requests)
     observed = dict(body=0.0, peak=0)
-    with ExecutionContext.adopted('reference') as context:
+    with ExecutionContext('reference') as context:
         _complete(directory, binding_bytes, requests, inputs, context, observed,
                   batch_seconds=record.get('batch_seconds'), _binding=binding, _record=record)
     try:
@@ -403,10 +379,10 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
 
     if _binding is None:
         receipt = batch_worker_complete(binding_bytes, context=context,
-            read_bindings=lambda: _inventory(inputs, context, binding_bytes), requests=requests, run=run)
+            requests=requests, run=run)
     else:
         receipt = _bound_batch_complete(_binding, _record, context=context,
-            read_bindings=lambda: _inventory(inputs, context, binding_bytes, _record), requests=requests, run=run)
+            requests=requests, run=run)
     if len(receipt) > MAX_RECEIPT:
         raise ValueError('receipt exceeds optional wire envelope')
     with (directory/'result.json').open('xb') as stream:
@@ -424,7 +400,7 @@ def _kept_worker(home, process):
     exits non-zero. The context's closing check runs once, at the end.
     """
     from atlas_tectonics.integration.reuse import ExecutionContext
-    with ExecutionContext.adopted('reference') as context:
+    with ExecutionContext('reference') as context:
         for line in sys.stdin.buffer:          # end of input: the parent has finished with this worker, or is gone
             directory = Path(line.rstrip(b'\r\n').decode('utf8')).resolve()
             gc.collect()
@@ -645,14 +621,12 @@ class _Child:
             self._surveyed = time.monotonic()
         return live, True
 
-    def run(self, binding_bytes, *, execution_identity=None):
+    def run(self, binding_bytes):
         # OwnedDispatch supplies exactly its bound bytes. Never attach a
         # foreign Future or accept an arbitrary completion file.
         if (self.directory/'binding.json').read_bytes() != binding_bytes:
             raise ValueError('dispatch file changed before launch')
-        if execution_identity is None:
-            execution_identity = json.loads(binding_bytes)['execution_identity']
-        command, env = _worker_launch(self.directory, execution_identity)
+        command, env = _worker_launch(self.directory)
         started = time.monotonic()
         launched = time.perf_counter()
         process = self._popen(command, env, subprocess.DEVNULL)
@@ -722,7 +696,7 @@ class _Child:
         self.body_seconds = self.ledger_peak = None
         try:
             if self.process is None:
-                command, env = _worker_launch(self.directory, json.loads(binding_bytes)['execution_identity'])
+                command, env = _worker_launch(self.directory)
                 self._popen(command, env, subprocess.PIPE)
             process = self.process
             with self.lock:
@@ -1073,8 +1047,7 @@ class InterfaceParallelSession:
                 if other is not None:
                     inputs.add('other', other)
                     input_digests['other'] = other.support_id
-                sources = _inventory(inputs, self.context, input_digests=input_digests)
-                binding = JobBinding.create(request=request, source_bindings=sources, context=self.context,
+                binding = JobBinding.create(request=request, context=self.context,
                     child_bytes=self.child_bytes, predicate_units=self.units)
                 hint = MeasureHint(slot, max_payload=MAX_RESULT, request=request,
                     binding=binding.record(), fit=fit)
@@ -1084,7 +1057,7 @@ class InterfaceParallelSession:
                 # Multiple workers map the same read-only pages; each still
                 # owns its JSON decoding. No whole-world input copy is made.
                 for name, raw in inputs.items():
-                    input_path = Path(self.directory.name)/'inputs'/(sources['input:'+name]+'.json')
+                    input_path = Path(self.directory.name)/'inputs'/(input_digests[name]+'.json')
                     try:
                         with input_path.open('xb') as stream:
                             stream.write(raw)
@@ -1098,11 +1071,11 @@ class InterfaceParallelSession:
                 if token in self.jobs:
                     raise ValueError('duplicate optional interface request')
                 job = dict(fit=fit, baseline=baseline, hint=hint, dispatch=dispatch,
-                    child=child, sources=sources, binding=binding, request=request)
+                    child=child, binding=binding, request=request)
                 self.jobs[token] = job
                 if self.pool is None:
                     self.pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix='atlas-interface')
-                dispatch.submit(self.pool, child.run, execution_identity=binding._execution_identity)
+                dispatch.submit(self.pool, child.run)
                 dispatch._future.add_done_callback(lambda _future, event=child.done: event.set())
                 self.stats['started'] += 1
                 job['dispatch_seconds'] = time.perf_counter()-begun
@@ -1182,7 +1155,7 @@ class InterfaceParallelSession:
         try:
             dispatch, binding, child = job['dispatch'], job['binding'], job['child']
             raw = dispatch.result(timeout=self.timeout+15, request=request,
-                source_bindings=job['sources'], context=self.context,
+                context=self.context,
                 child_bytes=self.child_bytes, predicate_units=self.units)
             if not child.exited:
                 raise RuntimeError('worker exit not confirmed before adoption')
@@ -1629,8 +1602,7 @@ class BatchParallelSession(InterfaceParallelSession):
             # Volume/initial/pressure subclasses and walls retain the raw validating factory.
             factory = (BatchBinding._create_owned if type(self) is BatchParallelSession and
                        not self.wall and self.batch_seconds is not None else BatchBinding.create)
-            sources = _inventory(inputs, self.context)
-            binding = factory(requests=requests, source_bindings=sources,
+            binding = factory(requests=requests,
                 context=self.context, child_bytes=self.child_bytes, predicate_units=self.units,
                 batch_seconds=self.batch_seconds)
             path = Path(self.directory.name)/('batch-%d' % self.stats['started'])
@@ -1657,7 +1629,7 @@ class BatchParallelSession(InterfaceParallelSession):
                 worker.deadline = timeout
                 child = _Served(worker, path)
             batch = dict(index=self.stats['started'], fit=fit, baseline=baseline, child=child,
-                dispatch=OwnedBatchDispatch(binding), inputs=inputs, sources=sources, requests=requests, tokens=tokens,
+                dispatch=OwnedBatchDispatch(binding), inputs=inputs, requests=requests, tokens=tokens,
                 binding=binding, digest=hashlib.sha256(binding.encoded).hexdigest(), path=str(path),
                 timeout=timeout, answers=None, left=len(requests), failed=False, results=0, decided=0,
                 adopted=0, declined=0, clock=[0.0])
@@ -1783,7 +1755,6 @@ class BatchParallelSession(InterfaceParallelSession):
             receiver = dispatch._interface_result if interface else dispatch.result
             args = (batch['tokens'], batch['digest']) if interface else ()
             answers = receiver(*args, timeout=batch['timeout']+15, requests=batch['requests'],
-                source_bindings=batch['sources'] if 'sources' in batch else _inventory(batch['inputs'], self.context),
                 context=self.context,
                 child_bytes=self.child_bytes, predicate_units=self.units, batch_seconds=self.batch_seconds)
             if not (child.exited or child.served):

@@ -353,7 +353,7 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
     from atlas_tectonics.integration.endpoint_checkpoints import EndpointCheckpoints
     from atlas_tectonics.integration.geometry import differential_geometry as G
     from atlas_tectonics.integration.parallel import profile as PF
-    from i04_differential_modes import ACTUATED_CONTROL
+    from atlas_tectonics._fixtures.tests.i04_differential_modes import ACTUATED_CONTROL
     from threadpoolctl import threadpool_limits
 
     budget = case['budget']

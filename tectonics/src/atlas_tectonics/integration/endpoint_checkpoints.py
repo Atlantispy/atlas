@@ -151,7 +151,6 @@ class EndpointCheckpoints:
         self._last_completed = None
         self._used = self._entries = 0
         self.hits = self.misses = self.written = self.incomplete = 0
-        self._durable = context._declared_build
         self.full_checks = self.cached_checks = 0
         self.hits_restart = self.hits_after_write = self.hits_warm = 0
         # Key prefix -> False (written in this open, not hit yet) or True (hit in this open).
@@ -181,9 +180,6 @@ class EndpointCheckpoints:
             self.full_checks = 1
             if len(self._runtime) > MAX_BINDING//2:
                 raise CheckpointRefused('execution identity metadata exceeds bounded owner')
-            if not self._durable:
-                self._active = True
-                return self
             self.directory = _plain_path(self.directory, directory=True)
             lock = self.directory / 'owner.lock'
             if lock.exists():
@@ -346,9 +342,6 @@ class EndpointCheckpoints:
         if key in self._held:
             self.flush()
         self._pending = (binding, key, False)
-        if not self._durable:
-            self.misses += 1
-            return None
         with _QueryArena(budget) as arena:
             payload = (None if self._compact is None else
                        self._compact.read(binding, key, arena))
@@ -424,10 +417,6 @@ class EndpointCheckpoints:
         binding, key, hit = self._pending
         if hit:
             self._last_completed = (key, True)
-            self._pending = None
-            return
-        if not self._durable:
-            self._last_completed = (key, False)
             self._pending = None
             return
         payload = result._json

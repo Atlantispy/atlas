@@ -37,64 +37,9 @@ import subprocess
 import sys
 
 
-def _prepare_packaged_script(argv):
-    """Authenticate the stdlib bootstrap before a direct installed-script import.
-
-    As the runners do, with this reader's own sibling import. Returns the
-    package and the (profile, pin) authenticated here, which main() requires.
-    """
-    def argument(flag):
-        if argv.count(flag) != 1:
-            raise ValueError('one explicit '+flag+' required for installed startup')
-        index = argv.index(flag)
-        if index + 1 >= len(argv):
-            raise ValueError('missing installed startup argument')
-        return argv[index + 1]
-
-    # Only the two exact spellings: argparse would also take '--profile=...' or an
-    # abbreviation such as '--profile-sha', and so read a profile not authenticated here.
-    for token in argv:
-        name = token.split('=', 1)[0]
-        if (token.startswith('--') and len(name) > 2 and '--profile-sha256'.startswith(name)
-                and token not in ('--profile', '--profile-sha256')):
-            raise ValueError('installed startup takes only --profile and --profile-sha256, spelt out: '+token)
-    profile_path, profile_pin = argument('--profile'), argument('--profile-sha256')
-    raw = Path(profile_path).read_bytes()
-    if sha256(raw).hexdigest() != profile_pin:
-        raise ValueError('installed startup profile pin differs')
-    profile = json.loads(raw)
-    workspace = Path(profile['workspace']).resolve()
-    def contained(name):
-        if (type(name) is not str or not name or '\\' in name or ':' in name
-                or Path(name).is_absolute() or '..' in Path(name).parts):
-            raise ValueError('noncanonical installed startup path')
-        path = (workspace/name).resolve()
-        if not path.is_relative_to(workspace):
-            raise ValueError('installed startup path escaped workspace')
-        return path
-    binding = profile['source_manifest']
-    manifest_raw = contained(binding['path']).read_bytes()
-    if sha256(manifest_raw).hexdigest() != binding['sha256']:
-        raise ValueError('installed startup manifest pin differs')
-    manifest = json.loads(manifest_raw)
-    bootstrap = contained(profile['native_root'])/'atlas_tectonics/integration/parallel/worker_bootstrap.py'
-    bootstrap = bootstrap.resolve()
-    relative = bootstrap.relative_to(workspace).as_posix()
-    raw = bootstrap.read_bytes()
-    if sha256(raw).hexdigest() != manifest['files'].get(relative):
-        raise ValueError('installed startup bootstrap pin differs')
-    import types
-    helper = types.ModuleType('_installed_runner_bootstrap')
-    helper.__file__ = str(bootstrap)
-    exec(compile(raw, str(bootstrap), 'exec', dont_inherit=True), helper.__dict__)
-    package = helper.prepare_installed_runner(profile_path, profile_pin, __file__,
-                                              runner_modules=('run_prepared_restart',))
-    return package, (profile_path, profile_pin)
-
-
-_PACKAGED_STARTUP = None        # (profile, pin) of an installed startup
-if (__name__ == '__main__' and Path(__file__).resolve().parent.parts[-3:] == ('atlas_tectonics', '_private', 'integration')):
-    __package__, _PACKAGED_STARTUP = _prepare_packaged_script(sys.argv[1:])
+if __name__ == '__main__' and Path(__file__).resolve().parent.parts[-3:] == ('atlas_tectonics', '_private', 'integration'):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    __package__ = 'atlas_tectonics._private.integration'
 
 
 from atlas_shared.errors import AtlasError
@@ -908,7 +853,6 @@ def producer_inputs(profile, *, sources, receipt_sha256, mode, consumer_pid):
     expected = validate_producer_receipt(receipt, profile=profile, receipt_sha256=receipt_sha256,
         guard_receipt=guard, guard_control=control, checkpoint_sha_now=RUN.file_hash(checkpoint),
         consumer_pid=consumer_pid, mode=mode, production_policy=RUN.producer_policy(receipt, sources, expected_route='prepared'))
-    require(receipt.get('source_proof') == sources.verify(), 'producer source proof differs from the selected sources')
     return expected
 
 
@@ -926,18 +870,7 @@ def reader_output(profile, sources, value, *, exists):
     return path
 
 
-def _own_pin(sources):
-    own = Path(__file__).resolve()
-    require(own.is_relative_to(sources.workspace) and
-            sources.files().get(own.relative_to(sources.workspace).as_posix()) == RUN.file_hash(own),
-            'independent reader itself must be pinned')
-    return own
-
-
 def gate_key(profile, python, *, producer_receipt_sha256, mode, store_route):
-    sources = RUN.RestartSources(profile)
-    sources.verify()
-    _own_pin(sources)
     return RG.command_key(profile, python, entry=__file__, step='reader',
                           producer_receipt_sha256=producer_receipt_sha256, mode=mode, store_route=store_route)
 
@@ -958,7 +891,7 @@ def command(profile, python, *, producer_receipt_sha256, output_directory, mode=
         size += sum(member['nbytes'] for member in producer['compact_storage']['files'])
     require(shutil.disk_usage(output.parent).free >= size + staging,
             'insufficient disk headroom for the reader checkpoint copy and staging')
-    own = _own_pin(sources)
+    own = Path(__file__).resolve()
     guard = sources.path(profile.record()['modules']['private_heat_continuation_guard_r3'])
     python = str(RUN.ordinary(python))
     return [python, '-B', str(guard), '--launch', '--output', str(output/'reopen.json'), '--',
@@ -1071,9 +1004,9 @@ def _successor(workflow, store, base, producer, root, *, D, W):
 
 def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, mode, store_route='readonly',
                             start_gate=None):
-    """Fresh-process reader core; call under sources.selected() and the live guard."""
+    """Fresh-process reader core; call under the live guard."""
     require(type(profile) is RUN.RestartProfile and type(sources) is RUN.RestartSources and
-            sources.profile is profile and sources.selected_now, 'actual selected pinned sources required')
+            sources.profile is profile, 'sources of this profile required')
     require(mode in MODES and store_route in STORE_ROUTES and type(producer) is dict and
             producer.get('mode') == mode, 'validated producer expectation for this mode required')
     available = MONITOR.free_memory()
@@ -1092,7 +1025,6 @@ def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, 
     D = bound['heat_interval_r9_spec']
     control = bound['i04_differential_modes'].ACTUATED_CONTROL
     from atlas_tectonics._private.integration import runtime_global_accounts as FLOW
-    _own_pin(sources)
     require(hasattr(CollarWorkflow, 'open_migrated') and 'working_store' in inspect.signature(M.materialise).parameters,
             'composed migrated-root reader and store-aware materialisation required')
     require_strict_execution()
@@ -1104,7 +1036,7 @@ def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, 
     RUN._guard_boundary(sources, guard, budget, limits=selected_limits)
     check = lambda: guard.check(force=True)
     record.update(guard_limits=selected_limits, start_gate=admitted,
-        memory_at_start=dict(available_bytes=available), source_proof=sources.verify(),
+        memory_at_start=dict(available_bytes=available),
         launch_environment={name: os.environ.get(name) for name in sorted(RUN.LAUNCH_ENV)},
         production_acceptance=False)
     limits, compression = StoreLimits(**row['store_limits']), Compression(**row['compression'])
@@ -1215,8 +1147,6 @@ def reopen_prepared_restart(profile, *, sources, guard, record, save, producer, 
                         del base, workflow
                 del admission
             execution.verify_boundary()
-        sources.check_imported()
-        sources.verify()
         require(RUN.file_hash(copy, check) == producer['checkpoint_sha256'] == RUN.file_hash(source, check),
                 'reader copy or producer checkpoint changed')
         if compact is not None:
@@ -1267,49 +1197,46 @@ def _workload(profile, *, producer_receipt_sha256, output_directory, mode, store
     # The supervisor has already claimed sidecars. Receipt creation is exclusive.
     with output.open('x', encoding='utf8') as stream:
         json.dump(record, stream)
-    with sources.selected():
-        G = sources.module('private_heat_continuation_guard_r3')
-        save = lambda: G._write(output, record)
+    G = sources.module('private_heat_continuation_guard_r3')
+    save = lambda: G._write(output, record)
+    try:
+        guard = G.ContinuationGuard(output, record, save, **SG.guardian_limits(admitted))
+        producer = producer_inputs(profile, sources=sources, receipt_sha256=producer_receipt_sha256,
+                                   mode=mode, consumer_pid=os.getpid())
+        budget = reopen_prepared_restart(profile, sources=sources, guard=guard, record=record, save=save,
+                                         producer=producer, mode=mode, store_route=store_route, start_gate=start_gate)
+        del producer
+        record['status'] = 'VERIFYING_FINALISATION'
+    except BaseException as error:
+        record['status'] = 'FAILED'
+        record['errors'].append(dict(type=type(error).__name__, message=str(error)))
+        if guard is not None and guard.budget is not None:
+            record['logical_budget_at_failure'] = guard.budget.statistics()
+        save()
+    finally:
+        gc.collect()
+        budget = budget if budget is not None else getattr(guard, 'budget', None)
+        if budget is not None:
+            record['final_reserved_bytes'] = budget.reserved_bytes
+            statistics = budget.statistics()
+            record['logical_budget_final'] = dict(peak_reserved_bytes=statistics['peak_reserved_bytes'],
+                category_peaks=statistics['category_peaks'])
+            if budget.reserved_bytes:
+                record['errors'].append(dict(type='RetainedReservations', message=str(budget.reserved_bytes)))
+        times = os.times()
+        record['parent_cpu_seconds'] = dict(user=times.user, system=times.system)
         try:
-            guard = G.ContinuationGuard(output, record, save, **SG.guardian_limits(admitted))
-            producer = producer_inputs(profile, sources=sources, receipt_sha256=producer_receipt_sha256,
-                                       mode=mode, consumer_pid=os.getpid())
-            budget = reopen_prepared_restart(profile, sources=sources, guard=guard, record=record, save=save,
-                                             producer=producer, mode=mode, store_route=store_route, start_gate=start_gate)
-            del producer
-            record['status'] = 'VERIFYING_FINALISATION'
+            import psutil
+            children = psutil.Process().children(recursive=True)
+            record['remaining_children'] = [child.pid for child in children]
+            require(not children, 'reader worker processes remain after the reopen')
+            if guard is not None:
+                guard.check(force=True)
+                guard.close()
         except BaseException as error:
-            record['status'] = 'FAILED'
             record['errors'].append(dict(type=type(error).__name__, message=str(error)))
-            if guard is not None and guard.budget is not None:
-                record['logical_budget_at_failure'] = guard.budget.statistics()
-            save()
-        finally:
-            gc.collect()
-            budget = budget if budget is not None else getattr(guard, 'budget', None)
-            if budget is not None:
-                record['final_reserved_bytes'] = budget.reserved_bytes
-                statistics = budget.statistics()
-                record['logical_budget_final'] = dict(peak_reserved_bytes=statistics['peak_reserved_bytes'],
-                    category_peaks=statistics['category_peaks'])
-                if budget.reserved_bytes:
-                    record['errors'].append(dict(type='RetainedReservations', message=str(budget.reserved_bytes)))
-            times = os.times()
-            record['parent_cpu_seconds'] = dict(user=times.user, system=times.system)
-            try:
-                import psutil
-                children = psutil.Process().children(recursive=True)
-                record['remaining_children'] = [child.pid for child in children]
-                require(not children, 'reader worker processes remain after the reopen')
-                sources.check_imported()
-                sources.verify()
-                if guard is not None:
-                    guard.check(force=True)
-                    guard.close()
-            except BaseException as error:
-                record['errors'].append(dict(type=type(error).__name__, message=str(error)))
-            record['status'] = 'FAILED' if record['errors'] else WORKLOAD_STATUS[mode]
-            save()
+        record['status'] = 'FAILED' if record['errors'] else WORKLOAD_STATUS[mode]
+        save()
     return 0 if not record['errors'] else 1
 
 
@@ -1369,7 +1296,6 @@ def finalise(profile, *, producer_receipt_sha256, output_directory, mode, store_
     require(not final.exists(), 'reader final record already exists')
     errors, gate_evidence = [], None
     try:
-        proof = sources.verify()
         producer = producer_inputs(profile, sources=sources, receipt_sha256=producer_receipt_sha256,
                                    mode=mode, consumer_pid=os.getpid())
         snapshots = {name: RG.read_snapshot(path) for name, path in {
@@ -1383,7 +1309,6 @@ def finalise(profile, *, producer_receipt_sha256, output_directory, mode, store_
         validate_reopen_receipt(reopen, guard_receipt=snapshots['guard'][0],
             guard_control=snapshots['control'][0], profile=profile, producer=producer,
             mode=mode, store_route=store_route, output=output)
-        require(reopen.get('source_proof') == proof, 'reader source proof differs from the selected sources')
         if 'compact_storage' in producer:
             verify_storage(reopen['compact_storage'])
         else:
@@ -1429,9 +1354,6 @@ def main(argv=None):
         basis_help='explicit source/basis of that booking',
     )
     args = parser.parse_args(argv)
-    require(_PACKAGED_STARTUP is None or (Path(_PACKAGED_STARTUP[0]) == args.profile
-                                          and _PACKAGED_STARTUP[1] == args.profile_sha256),
-            'the installed startup authenticated another profile')
     require(args.start_gate is None or args.workload, '--start-gate is reserved for --workload')
     require(args.launch or not (args.peak_records or args.booking_bytes is not None or args.booking_basis is not None),
             'measurement/booking arguments belong to --launch')

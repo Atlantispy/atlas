@@ -339,18 +339,13 @@ measured end-to-end improvement.
 ### Cache an identified request, not a plausible-looking file
 
 [Reuse services](../../src/atlas_tectonics/reuse.py) bind inputs, parameters,
-backend, source membership/bytes, loaded instructions and selected runtime
-identities. The loaded instructions cover every module in the package's source
-membership, including the numba kernels whenever they import, together with each
-module's upper-case data tables and numerical constants. Until 30 September
-2026 a fixed list omitted 25 modules (3D, integration, assembly, workflow ports,
-plate reference and, outside numba, the kernels), so a long-lived process running
-stale code of those modules received the identity of the fresh source. The set
-is derived from file membership, not from whatever happens to be imported, so the
-identity does not depend on import history. Prepared immutable inputs can retain their data digest. Source
-verification still streams every current source file; cheaper file-status work
-does not replace those reads with timestamps. The current inventory admits
-512 files while retaining a 2 MiB digest-record bound.
+backend, the selected runtime and the package version. The execution identity is
+the digest of the backend, the runtime record (interpreter, numerical library
+versions and mapped native files) and the package version; our own source files
+are trusted and are not read or hashed to form it. Modules are found by plain
+imports, with no list file of package sources. A new build carries a new version,
+so its identity differs; an edit of the source within one version does not change
+the identity. Prepared immutable inputs can retain their data digest.
 
 The source checkout keeps these strict checks on each operation. A packaged
 desktop payload can use a separate release policy: capture each backend once,
@@ -358,8 +353,9 @@ then check fully again before saves, on reopen and on cache reads. The calculati
 is identical; only the frequency of checking whether code changed is different.
 A packaging marker and matching interpreter/command paths select this policy,
 not a user environment setting. The scientific identity stays the same between
-modes; saves record the producer mode separately. Source changes still invalidate
-reuse, and evidence tools cannot turn a release run into a strict pass.
+modes; saves record the producer mode separately. A different backend, runtime or
+version invalidates reuse, and evidence tools cannot turn a release run into a
+strict pass.
 
 Within strict checks, deeply immutable constants can reuse their normalised
 representation while mutable constants, defaults and function bindings are
@@ -651,25 +647,24 @@ external scientific literature was consulted for the repair.
 The working snapshot uses the shared machine monitor to read CPU load and physical
 memory. The resource gate uses that reading with the existing limits to decide which
 work can start. An issued process loads these two sources from the `atlas_shared`
-package beside `atlas_tectonics`. The source binding covers both, and the computation
-identity excludes the monitor and gate because neither supplies a numerical input.
+package beside `atlas_tectonics`. The computation identity excludes the monitor and
+gate because neither supplies a numerical input.
 
 Tectonics chooses exact arithmetic when the first consumer requests it. The shared
 selector uses the existing GMP version and loader checks. It keeps Fraction arithmetic
 available through automatic fallback or an explicit Python selection. Geometry and heat
 workers use the same selected library object in each process and compare the complete
-runtime record across processes. The backend source and the selected route bind the full
+runtime record across processes. The backend and the selected route bind the full
 computation identity. The runtime record binds the mapped native files.
 
-The store uses a computation-specific execution key for the named cooling,
-compaction, loading, flexure and transport operations. Its key includes the
-native implementation, runtime, selected shared dependencies and invocation
-inputs. An unclassified shared source or an unknown operation uses the full
-execution identity. A projected snapshot keeps the first producer's full
-invocation and shared-source fingerprint with its result. A competing publisher
-can use that snapshot after verifying the result's shape, dtype and exact bytes.
-An older full-key snapshot can be reused when the current verified capture
-authenticates the exact old key.
+Modules are found by plain imports; no run-time list of Atlas's own source files
+is read or hashed. The execution identity is the SHA-256 of a canonical record of
+the schema (`atlas.kernel-execution.v7`), the backend, the runtime record and the
+package version. A worker child started from the parent's `startup.json` computes
+the same identity itself; the record does not carry it. The store keys the named
+cooling, compaction, loading, flexure and transport operations by that identity,
+the backend and the invocation inputs. A stored result is reused only when its
+recorded identity equals the current one; otherwise it is recomputed.
 
 A Debug restart can explicitly reuse a finished root after a reviewed shared
 source edit. The driver checks the earlier live provider issue and grid, then

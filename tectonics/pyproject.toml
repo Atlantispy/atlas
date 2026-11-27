@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "atlas-tectonics"
-version = "0.1.0.dev53"
+version = "0.1.0.dev54"
 license = {file = "LICENSE"}
 description = "Isolated, mathematically verified foundations for Atlas tectonics"
 requires-python = ">=3.12,<3.14"
@@ -23,7 +23,7 @@ where = ["src"]
 namespaces = false
 
 [tool.setuptools.package-data]
-atlas_tectonics = ["_application_sources.json", "_application_sources.sha256", "_fixtures/tests/*.py", "_fixtures/cases/*.json", "_fixtures/docs/*.md", "plates/plate_reference_use_policy.json", "_private/_derived_pins/*.txt"]
+atlas_tectonics = ["_fixtures/tests/*.py", "_fixtures/cases/*.json", "_fixtures/docs/*.md", "plates/plate_reference_use_policy.json", "_private/_derived_pins/*.txt"]
 
 [project.optional-dependencies]
 # Retained compatibility extras; optimised backends are normal requirements.

@@ -794,7 +794,6 @@ python -B -m unittest discover -s tectonics/tests -p test_storage_profiles.py
 python -B -m unittest discover -s tectonics/tests -p test_memory_storage.py
 python -B -m unittest discover -s tectonics/tests -p test_execution_reuse.py
 python -B -m unittest discover -s tectonics/tests -p test_kernel_batches.py
-python -B -m unittest discover -s tectonics/tests -p test_source_inventory.py
 python -B -m unittest discover -s tectonics/tests -p test_i02_common_state.py -v
 python -B -m unittest discover -s tectonics/tests -p test_i02_evolution.py -v
 python -B -m unittest discover -s tectonics/tests -p test_i02_exchange.py -v

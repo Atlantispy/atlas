@@ -1,6 +1,6 @@
 from fractions import Fraction
 
-import i03_fixtures as F
+from atlas_tectonics._fixtures.tests import i03_fixtures as F
 
 from atlas_tectonics.integration.geometry import sphere as S
 from atlas_tectonics.integration import material as M

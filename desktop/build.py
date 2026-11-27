@@ -5,6 +5,7 @@ import json
 from pathlib import Path, PurePosixPath
 import shutil
 import stat
+import subprocess
 import zipfile
 
 ELECTRON_SHA256 = '11c395820a5aaa8ebcc0686b476d0ac98a730274ebfbdc8cf5538a7c2815cb5d'
@@ -18,8 +19,6 @@ job-manager.mjs view-reader.mjs new-world-bridge.mjs world-manager.mjs
 evolution-manager.mjs native-launch.mjs bundle-data.mjs'''.split()
 UI_PIN = ROOT / 'desktop' / 'ui-snapshot.json'      # tracked name -> SHA-256 pin of the UI owner's snapshot
 UI_PIN_SCHEMA = 'atlas.desktop-ui-snapshot.v1'
-PORTABLE_MANIFEST = 'atlas_tectonics/_application_sources.json'
-PORTABLE_PIN = 'atlas_tectonics/_application_sources.sha256'
 W12_EXAMPLE = 'tectonics/examples/w12_column_case.py'
 
 
@@ -77,33 +76,14 @@ def ui_snapshot(ui, pin=UI_PIN):
 
 
 def portable_sources(root):
-    native = root / 'tectonics/src'
-    declaration = plain_path(native / PORTABLE_MANIFEST).read_bytes()
-    pin = plain_path(native / PORTABLE_PIN).read_bytes()
-    declaration_sha = hashlib.sha256(declaration).hexdigest()
-    if pin != declaration_sha.encode() + b'\n':
-        raise ValueError('Portable source declaration fingerprint differs.')
-    app = json.loads(declaration)
-    files, data, adapter = app['files'], app['data_only'], app['application_files']
-    if (app['schema'] != 'atlas.application-sources.v1' or files != app['source_hashes']
-            or set(adapter) != {'atlas_runtime.py'} or files.keys() & data.keys()
-            or adapter.keys() & (files.keys() | data.keys())
-            or any(not name.endswith('.py') for name in files)
-            or any(not name.startswith('atlas_tectonics/') or PurePosixPath(name).suffix not in ('.json', '.md', '.txt')
-                   for name in data)):
-        raise ValueError('Invalid portable source declaration.')
-    members = files | data | adapter | {PORTABLE_MANIFEST: declaration_sha,
-                                        PORTABLE_PIN: hashlib.sha256(pin).hexdigest()}
-    payload = {}
-    for name, sha in members.items():
-        path = PurePosixPath(name)
-        if (not path.parts or path.is_absolute() or '..' in path.parts or path.as_posix() != name
-                or ':' in name or '\\' in name
-                or (name != 'atlas_runtime.py' and path.parts[0] not in ('atlas_tectonics', 'atlas_shared'))):
-            raise ValueError(f'Invalid portable source path: {name}')
-        prefix = 'shared/src' if path.parts[0] == 'atlas_shared' else 'tectonics/src'
-        relative = f'{prefix}/{name}'
-        payload[relative] = (plain_path(root / relative), sha)
+    """Every git-tracked file of the application packages, as repository-relative name -> source path."""
+    roots = ['tectonics/src/atlas_tectonics', 'tectonics/src/atlas_runtime.py', 'shared/src/atlas_shared']
+    listed = subprocess.run(['git', '-C', str(root), 'ls-files', '-z', '--', *roots],
+                            check=True, capture_output=True).stdout.decode('utf-8').split(chr(0))
+    payload = {name: plain_path(root / name) for name in listed
+               if name and '__pycache__' not in PurePosixPath(name).parts}
+    if not payload:
+        raise ValueError('No tracked application sources.')
     return payload
 
 
@@ -126,7 +106,7 @@ def seal_totals(output, expected=None):
             files[path.relative_to(output).as_posix()] = digest(path)
             size += entry.st_size
     if expected and any(files.get(name) != sha for name, sha in expected.items()):
-        raise ValueError('Copied UI or portable sources differ from their pins.')
+        raise ValueError('Copied UI files differ from their pins.')
     manifest = {'schema': 'atlas.desktop-build.v1', 'electron': '44.4.5',
                 'status': 'WORKING NON-CANON', 'scientific_acceptance': False, 'files': files}
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
@@ -142,7 +122,7 @@ def release_marker(native):
 
 
 def copy_native_payload(root, native, payload):
-    for name, (source, _) in payload.items():
+    for name, source in payload.items():
         copy_file(source, native / name)
     copy_tree(root / 'tectonics/tools', native / 'tectonics/tools', lambda p: p.suffix == '.py')
     copy_file(plain_path(root / W12_EXAMPLE), native / W12_EXAMPLE)
@@ -211,7 +191,6 @@ def main():
     release_marker(native)
     # Bind this build's actual delivered bytes; no historical receipt is repinned.
     expected = {f'resources/app/ui/{name}': sha for name, sha in pinned_ui.items()}
-    expected.update({f'resources/atlas/{name}': sha for name, (_, sha) in payload.items()})
     count, size = seal_totals(args.output, expected)
     print(json.dumps({'status': 'built', 'files': count,
                       'bytes': size,

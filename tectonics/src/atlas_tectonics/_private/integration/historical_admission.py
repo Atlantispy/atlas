@@ -644,9 +644,6 @@ def _admit(store, *, root, review, budget, check, historical_inputs=None):
                 _require(_hash_file(path, MAX_DATABASE if path == original else MAX_EVIDENCE, check) == pin,
                          'historical binding changed during admission')
             _require(store.change_token() == live_token, 'original store changed during admission')
-            _require(_hash_file(__file__, MAX_EVIDENCE, check) == _SELF_SHA and
-                     _hash_file(W.__file__, MAX_EVIDENCE, check) == helper_sources[Path(W.__file__).name],
-                     'admission helper source changed')
             check()
             result = object.__new__(W.HistoricalEndpointAdmission)
             object.__setattr__(result, '_record', _OwnedBytes(raw, owner))
@@ -781,36 +778,10 @@ def derive_historical_plan_graph(actual_current_graph, admission):
     return graph
 
 
-HISTORICAL_INPUTS_API_SHA256 = 'e0c2879dc1290cabb4e9c86e0bed21113851988ad21fc81f51e88e7b84886f86'
-
-
 def _historical_inputs_api():
-    """Execute only the independently pinned sibling metadata library."""
-    import importlib.util
-    import sys
-    path = _ordinary(Path(__file__).with_name('historical_input_contract.py'))
-    raw = path.read_bytes()
-    _require(sha256(raw).hexdigest() == HISTORICAL_INPUTS_API_SHA256,
-            'historical input API source changed')
-    name = (__package__ + '.historical_input_contract'
-            if __package__ == 'atlas_tectonics._private.integration' else 'historical_input_contract')
-    present = sys.modules.get(name)
-    if present is not None:
-        _require(_ordinary(present.__file__) == path, 'historical input API module shadowed')
-        return present
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    try:
-        exec(compile(raw, str(path), 'exec', dont_inherit=True), module.__dict__)
-        if __package__ == 'atlas_tectonics._private.integration':
-            from atlas_tectonics.integration.parallel.worker_bootstrap import record_installed_module
-            record_installed_module(module, path, HISTORICAL_INPUTS_API_SHA256)
-    except BaseException:
-        if sys.modules.get(name) is module:
-            del sys.modules[name]
-        raise
-    return module
+    from atlas_tectonics._private.integration import historical_input_contract
+    return historical_input_contract
+
 
 def _historical_inputs(value):
     api = _historical_inputs_api()
