@@ -48,16 +48,24 @@ def _ordered(a,b,J):
     raise _Branch()
 
 
-def _roots(a,b,r2,J):
-    """Return ordered infinite-line intersections, or None if no crossings."""
-    d=tuple(J.sub(y,x) for x,y in zip(a,b))
-    A=_dot(d,d,J)
+def _roots(a,b,r2,J,edge,dot_a,dot_b):
+    """Return ordered infinite-line intersections, or None if no crossings.
+
+    ``edge`` is this edge's radius-free [d, A, B] table, filled on first use;
+    ``dot_a``/``dot_b`` return the endpoints' cached squared lengths.
+    """
+    if not edge:
+        d=tuple(J.sub(y,x) for x,y in zip(a,b))
+        edge+=(d,_dot(d,d,J))
+    d,A=edge[:2]
     if A==J.z:
         return None
     if A[0][0]<=0:
         raise _Branch()
-    B=J.scale(_dot(a,d,J),2)
-    C=J.sub(_dot(a,a,J),J.constant(r2))
+    if len(edge)==2:
+        edge.append(J.scale(_dot(a,d,J),2))
+    B=edge[2]
+    C=J.sub(dot_a(),J.constant(r2))
     D=J.sub(J.mul(B,B),J.scale(J.mul(A,C),4))
     if D==J.z or D[0][1]<0:
         return None  # Tangency changes no two-dimensional first moment.
@@ -66,7 +74,7 @@ def _roots(a,b,r2,J):
     # Exact endpoint roots must not be re-created by cancelling rounded roots.
     if C==J.z:
         return _ordered(J.z,J.div(J.neg(B),A),J)
-    if J.sub(_dot(b,b,J),J.constant(r2))==J.z:
+    if J.sub(dot_b(),J.constant(r2))==J.z:
         return _ordered(J.constant(1),J.div(C,A),J)
     root=_sqrt(D,J);denominator=J.scale(A,2)
     return J.div(J.sub(J.neg(B),root),denominator),J.div(J.add(J.neg(B),root),denominator)
@@ -195,91 +203,130 @@ def _rectangle_coordinate_jets(polygon,coordinates,J,arena):
         yield tuple(result)
 
 
-def first_moments(polygon,radius_squared,J,arena,*,fixed_axis_coordinates=None):
-    """Return jets of integral (x,y) dA on disk intersection with a CCW polygon.
+def annular_first_moments(polygon,outer_r2,inner_r2,J,arena,*,fixed_axis_coordinates=None):
+    """Return (outer, inner): jets of integral (x,y) dA on each disk intersection.
 
-    ``polygon`` contains pairs of coordinate jets. Optional issued rectangle
-    tags may use exact ``fixed_axis_coordinates`` in this centred chart; all
-    other incidence tags are ignored. The caller proves simplicity/orientation and
-    performs time integration, including its original error/leaf ceilings.
-    The first moment of a full circle is zero, so each exterior edge portion
-    may use its oriented radial-projection arc without an atan or winding
-    branch. Annular moments are the difference of two calls, not disk area.
+    ``polygon`` contains pairs of coordinate jets of a CCW polygon. Optional
+    issued rectangle tags may use exact ``fixed_axis_coordinates`` in this
+    centred chart; all other incidence tags are ignored. The caller proves
+    simplicity/orientation and performs time integration, including its
+    original error/leaf ceilings. The first moment of a full circle is zero,
+    so each exterior edge portion may use its oriented radial-projection arc
+    without an atan or winding branch. Annular moments are outer-inner, not
+    disk area.
+
+    One pass serves both radii. The polygon is tightened once; radius-free
+    vertex lengths, their roots and edge (d, A, B) products are kept in
+    tables filled on first use. Each radius runs the single-disk edge loop
+    with its own charges, and the skipped second tightening's work units are
+    charged where that tightening ran.
     """
-    source_digest();r2=Q(radius_squared)
-    if r2<=0 or len(polygon)<3:
-        return J.z,J.z
+    source_digest();radii=(Q(outer_r2),Q(inner_r2))
+    if len(polygon)<3 or all(r2<=0 for r2 in radii):
+        return (J.z,J.z),(J.z,J.z)
     order=len(J.z)-1
+    results=[];ran=False;before=arena.work_units
     with _rectangle_coordinate_jets(polygon,fixed_axis_coordinates,J,arena) as polygon, \
             arena.resource.reserve(65536+384*(order+1)**2,category='circular-first-moment-jets'):
-        radius=_sqrt(J.constant(r2),J)
-        total=[J.z,J.z]
+        tightening=arena.work_units-before
+        points=tuple(raw[:2] for raw in polygon)
+        dots=[None]*len(points);norms=[None]*len(points);edges=[[] for _ in points]
 
-        def add(values):
-            for i,value in enumerate(values):
-                total[i]=J.add(total[i],value)
+        def dot(i):
+            if dots[i] is None:
+                dots[i]=_dot(points[i],points[i],J)
+            return dots[i]
 
-        def project(point,on_circle):
-            if on_circle:
-                return point
-            scale=J.div(radius,_sqrt(_dot(point,point,J),J))
-            return tuple(J.mul(q,scale) for q in point)
+        def norm(i):
+            if norms[i] is None:
+                norms[i]=_sqrt(dot(i),J)
+            return norms[i]
 
-        def arc(a,b,a_circle=False,b_circle=False):
-            a,b=project(a,a_circle),project(b,b_circle)
-            add((J.scale(J.sub(b[1],a[1]),r2/3),J.scale(J.sub(a[0],b[0]),r2/3)))
-
-        def line(a,b):
-            cross=J.sub(J.mul(a[0],b[1]),J.mul(a[1],b[0]))
-            add(tuple(J.scale(J.mul(cross,J.add(x,y)),Q(1,6)) for x,y in zip(a,b)))
-
-        for raw_a,raw_b in zip(polygon,(*polygon[1:],polygon[0])):
-            arena.work(128*(order+1)**2)
-            a,b=raw_a[:2],raw_b[:2]
-            if a==b:
+        for r2 in radii:
+            if r2<=0:
+                results.append((J.z,J.z))
                 continue
-            # A disk is convex: complete endpoint enclosures inside the
-            # closed disk certify the complete segment, even if its length
-            # vanishes or two exact-equal endpoints have distinct interval
-            # representations. Retain both representations and their line
-            # integral; do not infer equality or attempt unnecessary roots.
-            if (_dot(a,a,J)[0][1] <= r2 and _dot(b,b,J)[0][1] <= r2):
-                line(a,b)
-                continue
-            # A short/collapsing exterior edge needs no line-circle roots.
-            # Prove complete chord separation, not merely outside endpoints;
-            # keep its directed arc and all distinct endpoint jets unchanged.
-            if _segment_box_outside(a,b,r2,arena):
-                arc(a,b)
-                continue
-            roots=_roots(a,b,r2,J)
-            if roots is None:
-                arc(a,b)
-                continue
-            try:
-                lo,lo_circle=_clamp_root(roots[0],J)
-                hi,hi_circle=_clamp_root(roots[1],J)
-            except _Branch:
-                arena.work(32*(order+1)**2)
-                positions=_endpoint_root_positions(a,b,r2,roots,J)
-                if positions is None:
-                    raise
-                lo,lo_circle,hi,hi_circle=positions
-            if lo==hi:
-                arc(a,b)
-                continue
-            delta=tuple(J.sub(y,x) for x,y in zip(a,b))
-            def point(t):
-                if t==J.z:
-                    return a
-                if t==J.constant(1):
-                    return b
-                return tuple(J.add(x,J.mul(t,d)) for x,d in zip(a,delta))
-            start,end=point(lo),point(hi)
-            if lo!=J.z:
-                arc(a,start,b_circle=lo_circle)
-            line(start,end)
-            if hi!=J.constant(1):
-                arc(end,b,a_circle=hi_circle)
+            if ran and tightening:
+                arena.work(tightening)  # the second tightening this pass skips
+            ran=True
+            results.append(_disk_first_moments(points,r2,J,arena,order,dot,norm,edges))
     source_digest()
+    return tuple(results)
+
+
+def _disk_first_moments(points,r2,J,arena,order,dot,norm,edges):
+    """One disk's edge loop over the shared vertex/edge tables."""
+    radius=_sqrt(J.constant(r2),J)
+    total=[J.z,J.z]
+    n=len(points)
+
+    def add(values):
+        for i,value in enumerate(values):
+            total[i]=J.add(total[i],value)
+
+    def project(point,on_circle,index):
+        if on_circle:
+            return point
+        length=_sqrt(_dot(point,point,J),J) if index is None else norm(index)
+        scale=J.div(radius,length)
+        return tuple(J.mul(q,scale) for q in point)
+
+    def arc(a,b,ia,ib,a_circle=False,b_circle=False):
+        a,b=project(a,a_circle,ia),project(b,b_circle,ib)
+        add((J.scale(J.sub(b[1],a[1]),r2/3),J.scale(J.sub(a[0],b[0]),r2/3)))
+
+    def line(a,b):
+        cross=J.sub(J.mul(a[0],b[1]),J.mul(a[1],b[0]))
+        add(tuple(J.scale(J.mul(cross,J.add(x,y)),Q(1,6)) for x,y in zip(a,b)))
+
+    for i in range(n):
+        j=(i+1)%n
+        arena.work(128*(order+1)**2)
+        a,b=points[i],points[j]
+        if a==b:
+            continue
+        # A disk is convex: complete endpoint enclosures inside the
+        # closed disk certify the complete segment, even if its length
+        # vanishes or two exact-equal endpoints have distinct interval
+        # representations. Retain both representations and their line
+        # integral; do not infer equality or attempt unnecessary roots.
+        if (dot(i)[0][1] <= r2 and dot(j)[0][1] <= r2):
+            line(a,b)
+            continue
+        # A short/collapsing exterior edge needs no line-circle roots.
+        # Prove complete chord separation, not merely outside endpoints;
+        # keep its directed arc and all distinct endpoint jets unchanged.
+        if _segment_box_outside(a,b,r2,arena):
+            arc(a,b,i,j)
+            continue
+        roots=_roots(a,b,r2,J,edges[i],lambda:dot(i),lambda:dot(j))
+        if roots is None:
+            arc(a,b,i,j)
+            continue
+        try:
+            lo,lo_circle=_clamp_root(roots[0],J)
+            hi,hi_circle=_clamp_root(roots[1],J)
+        except _Branch:
+            arena.work(32*(order+1)**2)
+            positions=_endpoint_root_positions(a,b,r2,roots,J)
+            if positions is None:
+                raise
+            lo,lo_circle,hi,hi_circle=positions
+        if lo==hi:
+            arc(a,b,i,j)
+            continue
+        delta=edges[i][0]  # _roots filled it: the same b-a jets
+
+        def point(t):
+            if t==J.z:
+                return a,i
+            if t==J.constant(1):
+                return b,j
+            return tuple(J.add(x,J.mul(t,d)) for x,d in zip(a,delta)),None
+        (start,i_start),(end,i_end)=point(lo),point(hi)
+        if lo!=J.z:
+            arc(a,start,i,i_start,b_circle=lo_circle)
+        line(start,end)
+        if hi!=J.constant(1):
+            arc(end,b,i_end,j,a_circle=hi_circle)
     return tuple(total)

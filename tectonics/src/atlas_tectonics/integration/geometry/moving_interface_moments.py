@@ -1360,9 +1360,8 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
             result = []
             for sign in (-1, 1):
                 clipped = clip(polygon, ('flow', sign))
-                outer = C.first_moments(clipped, radius**2, J, arena, fixed_axis_coordinates=rectangle)
-                inner = C.first_moments(clipped, layer.bottom_radius_m**2, J, arena,
-                                        fixed_axis_coordinates=rectangle)
+                outer, inner = C.annular_first_moments(clipped, radius**2, layer.bottom_radius_m**2, J,
+                                                       arena, fixed_axis_coordinates=rectangle)
                 result.append(J.scale(J.add(*(J.mul(velocity[i], J.sub(outer[i], inner[i]))
                     for i in range(2))), sign))
             return tuple(result)

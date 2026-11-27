@@ -203,6 +203,15 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev71](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev71) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- The moments of a polygon over an annulus are now taken over both disks in one pass that shares the polygon's
+  vertex and edge tables, instead of one full pass per disk. The results are the same intervals as before.
+
 ## [0.1.0.dev70](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev70) - 2026-11-27
 
 ### Optimisations

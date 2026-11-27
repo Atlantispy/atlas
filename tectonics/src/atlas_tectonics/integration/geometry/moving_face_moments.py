@@ -1770,10 +1770,8 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
                                   J.add(point[1], J.constant(shift[1])), point[2]) for point in clipped)
                 with V._work((*shift,*(q for pair in face[4] for q in pair)),arena.resource,pairs=4, convert_values=False):
                     fixed_axes=tuple(tuple(q+shift[axis] for q in pair) for axis,pair in enumerate(face[4]))
-                    outer = C.first_moments(centred, disk_radii_squared[0], J, arena,
-                        fixed_axis_coordinates=fixed_axes)
-                    inner = C.first_moments(centred, disk_radii_squared[1], J, arena,
-                        fixed_axis_coordinates=fixed_axes)
+                    outer, inner = C.annular_first_moments(centred, disk_radii_squared[0],
+                        disk_radii_squared[1], J, arena, fixed_axis_coordinates=fixed_axes)
                 result.append(J.add(*(J.scale(J.sub(outer[j], inner[j]), sign*velocity[j])
                                       for j in range(2))))
             else:
