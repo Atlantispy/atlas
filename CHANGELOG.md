@@ -203,6 +203,20 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev73](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev73) - 2026-11-27
+
+### Optimisations
+
+#### Dispatch and execution
+
+- Budget admission builds each budget's ancestor chain once, when the budget is made, instead of walking and
+  sorting it on every reservation. The cyclic-ancestry check that this walk carried is removed, because a
+  budget's parent is fixed at creation.
+
+#### Geometry and transport
+
+- Cell geometry is read once per volume certificate instead of once per literal.
+
 ## [0.1.0.dev72](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev72) - 2026-11-27
 
 ### Optimisations

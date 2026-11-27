@@ -5566,6 +5566,7 @@ def _component_volume_certificate(layer, cell, literals, constraints, time, leve
         return (Q(0), Q(0)), None, mask, Q(0)
     zero_volume = False
     posed = {}
+    geometry = cell._geometry()
     for index, (name, sign) in enumerate(literals):
         if mask & (1 << index):
             continue
@@ -5574,7 +5575,7 @@ def _component_volume_certificate(layer, cell, literals, constraints, time, leve
         if error:
             continue  # D1: item 15 off (no padded containment for inexact poses, as r7)
         clipping.work(64)
-        with V._work((*normal, offset, *cell._geometry()), clipping.resource, convert_values=False):
+        with V._work((*normal, offset, *geometry), clipping.resource, convert_values=False):
             # The literal means (-sign*n).x <= -sign*offset. Maximise this
             # linear functional over the Cartesian box in its exact frame.
             n = tuple(-sign*q for q in normal)

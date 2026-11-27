@@ -63,6 +63,20 @@ class SharedBudgetTests(unittest.TestCase):
             self.assertEqual(b.reserved_bytes,40)
         self.assertEqual(root.reserved_bytes,0)
 
+    def test_ancestor_chain_made_once_matches_the_walk(self):
+        def walk(budget):  # the per-admission walk the chain made at construction replaced
+            unique,node={},budget
+            while node is not None: unique[id(node)]=node; node=node._parent
+            return sorted(unique.values(),key=id)
+        root=WorkBudget(100); child=WorkBudget(80,parent=root); grandchild=WorkBudget(60,parent=child)
+        for budget in (root,child,grandchild):
+            self.assertEqual(list(budget._ordered),walk(budget))
+        with grandchild.reserve(25,category='chain'):
+            self.assertEqual([x.reserved_bytes for x in (root,child,grandchild)],[25,25,25])
+        with reserve_budgets(10,grandchild,child,root):
+            self.assertEqual([x.reserved_bytes for x in (root,child,grandchild)],[10,10,10])
+        self.assertEqual([x.reserved_bytes for x in (root,child,grandchild)],[0,0,0])
+
     def test_refusal_is_atomic_across_siblings(self):
         root=WorkBudget(100); a=WorkBudget(20,parent=root); b=WorkBudget(100,parent=root)
         with self.assertRaises(MemoryLimitError):

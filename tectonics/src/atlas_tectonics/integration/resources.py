@@ -286,6 +286,8 @@ class WorkBudget:
                        parent=None if parent is None else parent._predicate_work))
         self._max_bytes = max_bytes
         self._parent = parent
+        # The parent is fixed here, so the id-ordered ancestry is made once (no cycle can form).
+        self._ordered = tuple(sorted((self, *(() if parent is None else parent._ordered)), key=id))
         self._used = 0
         self._peak = 0
         self._refusals = 0
@@ -439,7 +441,7 @@ def _admit_budgets(count: int, *budgets: WorkBudget, category: str = 'work', _op
         raise ValueError("reservation must be a nonnegative integer")
     if type(category) is not str or not category or len(category) > 64:
         raise ValueError("category must be a nonempty string of at most 64 characters")
-    unique = {}
+    chains = []
     for budget in budgets:
         if not isinstance(budget, WorkBudget):
             raise TypeError("budgets must be WorkBudget instances")
@@ -448,16 +450,11 @@ def _admit_budgets(count: int, *budgets: WorkBudget, category: str = 'work', _op
             budget = scope.admit(budget, count, category)
             if type(budget) is not WorkBudget:
                 raise TypeError("an admission scope must name a WorkBudget")
-        node = budget
-        seen = set()
-        while node is not None:
-            if id(node) in seen:
-                raise ValueError("cyclic budget ancestry")
-            seen.add(id(node)); unique[id(node)] = node
-            node = node._parent
-    if not unique:
+        chains.append(budget._ordered)
+    if not chains:
         raise ValueError("at least one budget required")
-    ordered = sorted(unique.values(), key=id)
+    ordered = chains[0] if len(chains) == 1 else sorted(
+        {id(node): node for chain in chains for node in chain}.values(), key=id)
     attempted = False
     while True:
         revoker = None
