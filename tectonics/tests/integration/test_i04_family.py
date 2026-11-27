@@ -5,11 +5,12 @@ RequestValidation and NamedRefusals: refusals that need no generated world. Edge
 bounds (slerp and the bisector-pole rotation) checked in exact rational arithmetic. AreaMoment: the closed-form first
 area moment against analytic shapes, at the existing algebra_relative gate. MinoritySites: the exact n_a rule (review
 family-05). Containment: the float prefilter decides nothing (review family-06).
-PredeclaredControls: the approved criteria C-7, C-8 (amended bound, ruling B2) and C-9 (ruling B3), on the development
-worlds and on the declared review family-04 worlds (N = 4 with long rotation-built edges, N = 52, f > 0.5), and the
-non-numerical expectations (reproducibility, stream independence, the seed-41 repeat, land unknown, the opt-in wide
+PredeclaredControls: the approved criteria C-7, C-8 (amended bound, ruling B2) and C-9 (ruling B3) on the development
+worlds, and the non-numerical expectations (reproducibility, stream independence, the seed-41 repeat, land unknown, the opt-in wide
 range, refusals, F6' sites, kinds and slabs, derived suture sites, column and slab bounds, P1 family columns under a
-Datum). Select a class with -k ClassName.
+Datum). ReviewWorld_*: the same criteria on each declared review family-04 world (N = 4 with long rotation-built
+edges, N = 52, f > 0.5), one class per world so the runner spreads them; ReviewWorldsLongEdge: the list's own
+adequacy check. Select a class with -k ClassName.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction
@@ -18,6 +19,7 @@ import json
 import math
 from pathlib import Path
 import sys
+from typing import TYPE_CHECKING
 import unittest
 from unittest import mock
 
@@ -426,8 +428,14 @@ def _c7_m2(rings, area, radius):
     return min((bound*radius)*radius, ceiling)
 
 
-class PredeclaredControls(unittest.TestCase):
-    """The approved criteria and expectations (decisions proposal section 6 with rulings B, C, F6', P6)."""
+def _rotation_degrees(geometry):
+    return [math.degrees(float(a)) for a, c in zip(geometry.edge_angles_rad, geometry.edge_constructions)
+            if c == 'rotation']
+
+
+class _FamilyChecks(unittest.TestCase if TYPE_CHECKING else object):
+    """C-7, C-8 and C-9 on families, shared by PredeclaredControls and the review-world classes (a mixin, so the
+    loader collects nothing from it)."""
 
     levels = tuple(FAMILY['resolution_levels'])
 
@@ -486,6 +494,10 @@ class PredeclaredControls(unittest.TestCase):
         self.assertLessEqual(error, allowed)
         return error, allowed
 
+
+class PredeclaredControls(_FamilyChecks, unittest.TestCase):
+    """The approved criteria and expectations (decisions proposal section 6 with rulings B, C, F6', P6)."""
+
     def test_c7_declared_geometry_bitwise_across_levels(self):
         for seed, rng in _development():
             with self.subTest(seed=seed, range=rng):
@@ -527,32 +539,6 @@ class PredeclaredControls(unittest.TestCase):
         self.assertGreater(built, 0)
         print('\nC-9 at f = %.2f: largest |f_realised - f| %.3e (its bound %.3e), %d worlds' % (
             SWAP_FRACTION, *worst, built), file=sys.stderr)
-
-    def test_c7_c8_c9_on_declared_review_worlds(self):
-        """Review family-04: N = 4 worlds with rotation-built edges over 160 deg, N = 52 and f > 0.5 worlds."""
-        long_edges, worst_c8, worst_c9, lines = 0, 0., (0., 0.), []
-        for seed, count, fraction, rng in LONG_EDGE_WORLDS+SIZE_WORLDS:
-            with self.subTest(seed=seed, count=count, fraction=fraction, range=rng):
-                pair = self.pair(seed, rng, count, fraction)
-                if pair is None:
-                    lines.append('seed %d N %d f %.2f %s: REFUSED %s' % (
-                        seed, count, fraction, rng, _family(seed, count, fraction, self.levels[0], rng)))
-                    continue
-                g = pair[0].geometry
-                rotation = [math.degrees(float(a)) for a, c in zip(g.edge_angles_rad, g.edge_constructions)
-                            if c == 'rotation']
-                long_edges += count == 4 and any(a > 160 for a in rotation)
-                self.check_c7(pair)
-                ratio = self.check_c8(pair)
-                worst_c8 = max(worst_c8, ratio)
-                for family in pair:
-                    worst_c9 = max(worst_c9, self.check_c9(family, count, fraction))
-                lines.append('seed %d N %d f %.2f %s: rotation edges %d (longest %.1f deg); C-8 ratio %.3e' % (
-                    seed, count, fraction, rng, len(rotation), max(rotation, default=0.), ratio))
-        print('\n'+'\n'.join(lines)+'\nreview worlds: N = 4 worlds with a rotation edge over 160 deg: %d; largest '
-              'C-8 ratio %.3e; largest C-9 error %.3e (bound %.3e)' % (long_edges, worst_c8, *worst_c9),
-              file=sys.stderr)
-        self.assertGreater(long_edges, 0)
 
     def test_refusal_rates_and_kind_shares_reported(self):
         count, fraction = FAMILY['development_plate_count'], FAMILY['development_continental_fraction']
@@ -929,6 +915,50 @@ class PredeclaredControls(unittest.TestCase):
         with self.assertRaises(P.PortRefused) as caught:
             F.family_columns(family, support, header(), D.datum_id(datum))
         self.assertEqual((caught.exception.code, caught.exception.detail), (P.MISSING_VALUE, 'datum'))
+
+
+class ReviewWorld(_FamilyChecks):
+    """Review family-04: C-7, C-8 and C-9 on one declared review world (``world``); a class per world below."""
+
+    world = None
+
+    def test_c7_c8_c9_on_the_review_world(self):
+        seed, count, fraction, rng = self.world
+        pair = self.pair(seed, rng, count, fraction)
+        if pair is None:
+            print('\nseed %d N %d f %.2f %s: REFUSED %s' % (
+                seed, count, fraction, rng, _family(seed, count, fraction, self.levels[0], rng)), file=sys.stderr)
+            return
+        rotation = _rotation_degrees(pair[0].geometry)
+        self.check_c7(pair)
+        ratio = self.check_c8(pair)
+        errors = [self.check_c9(family, count, fraction) for family in pair]
+        print('\nseed %d N %d f %.2f %s: rotation edges %d (longest %.1f deg); C-8 ratio %.3e; largest C-9 error '
+              '%.3e (bound %.3e)' % (seed, count, fraction, rng, len(rotation), max(rotation, default=0.), ratio,
+                                     *max(errors)), file=sys.stderr)
+
+
+for _world in LONG_EDGE_WORLDS+SIZE_WORLDS:
+    _name = 'ReviewWorld_s%d_n%d_f%03d_%s' % (_world[0], _world[1], round(_world[2]*100), _world[3])
+    assert _name not in globals(), _name
+    globals()[_name] = type(_name, (ReviewWorld, unittest.TestCase), dict(world=_world, __module__=__name__,
+                                                                            __qualname__=_name))
+
+
+class ReviewWorldsLongEdge(_FamilyChecks, unittest.TestCase):
+    """Review family-04: at least one N = 4 world has a rotation-built edge over 160 degrees, or the declared list is
+    inadequate. A world where either level refuses is skipped, as the per-world classes report it."""
+
+    def test_an_n4_review_world_has_a_rotation_edge_over_160_degrees(self):
+        for seed, count, fraction, rng in LONG_EDGE_WORLDS:
+            first, second = (_family(seed, count, fraction, level, rng) for level in self.levels)
+            if isinstance(first, F.FamilyRefused) or isinstance(second, F.FamilyRefused):
+                continue
+            if any(a > 160 for a in _rotation_degrees(first.geometry)):
+                print('\nreview worlds: first N = 4 world with a rotation edge over 160 deg: seed %d f %.2f %s' % (
+                    seed, fraction, rng), file=sys.stderr)
+                return
+        self.fail('no N = 4 review world has a rotation-built edge over 160 degrees')
 
 
 if __name__ == '__main__':

@@ -2,10 +2,13 @@
 time oracle and the coupled time refinement, reopen parity on an I02 ledger, and the lune/zigzag fixtures with their
 predeclared refusals. Criteria are tectonics/cases/i04_controls_v1.json part_b, fixed before running; numbers are
 written to the JSON file named by ATLAS_I04_CONTROLS_REPORT when that variable is set (they are not acceptance).
+Make that report with one process (the runner's --serial): each process merges its keys at exit, and parallel workers
+all exit together at the end of a run, so their keys can be lost.
 Executed in the scratch candidate on Windows/CPython 3.12.14 (candidate controls, not acceptance). Heavy: several
 minutes; not part of a quick profile.
 SPDX-License-Identifier: AGPL-3.0-only
 """
+import atexit
 import hashlib
 import json
 import math
@@ -38,10 +41,18 @@ RIDGE, TRENCH = 'boundary-m00', 'boundary-m04'
 ORACLE_T_MYR, COUPLED_T_MYR, LEVELS = .2, .4, (4, 8, 16)
 
 
-def tearDownModule():
-    path = os.environ.get('ATLAS_I04_CONTROLS_REPORT')
-    if path:
-        Path(path).write_bytes((json.dumps(B._plain(REPORT), indent=2, sort_keys=True)+'\n').encode('utf-8'))
+def _write_report(path):
+    # At process exit, not tearDownModule: a module fixture would make the whole module one runner unit.
+    path = Path(path)
+    found = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
+    found.update(B._plain(REPORT))
+    partial = path.with_name(path.name+'.partial')
+    partial.write_bytes((json.dumps(found, indent=2, sort_keys=True)+'\n').encode('utf-8'))
+    os.replace(partial, path)
+
+
+if os.environ.get('ATLAS_I04_CONTROLS_REPORT'):
+    atexit.register(_write_report, os.environ['ATLAS_I04_CONTROLS_REPORT'])
 
 
 def v_rel(omega):
@@ -281,8 +292,8 @@ def orders(errors):
     return [math.log2(errors[i]/errors[i+1]) for i in range(len(errors)-1)]
 
 
-class TimeRefinement(unittest.TestCase):
-    """The rulings' replacement time criterion (C3), with the one-sided carrier belt (mid-build ruling)."""
+class TimeRefinementOracle(unittest.TestCase):
+    """The rulings' replacement time criterion (C3): the oracle control."""
 
     def test_the_oracle_control_is_first_order(self):
         state, equator = oracle_world()
@@ -325,6 +336,10 @@ class TimeRefinement(unittest.TestCase):
         for key, values in observed.items():
             for value in values:
                 self.assertTrue(window[0] <= value <= window[1], (key, observed))
+
+
+class TimeRefinementCoupled(unittest.TestCase):
+    """The rulings' replacement time criterion (C3), with the one-sided carrier belt (mid-build ruling)."""
 
     def test_the_coupled_layered_feedback_resolves_under_step_halving(self):
         network = Z.one_sided()

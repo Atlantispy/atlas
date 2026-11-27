@@ -50,6 +50,11 @@ SLOW_TESTS = MappingProxyType({
     'tests.integration.test_i02_workflow.LifecycleTests.test_create_advance_inspect_save_load_and_continue_the_real_route': 54.4,
     # ED-7, 5 October 2026: one measured run of this single-test class, kept in full discovery.
     'tests.integration.test_i04_controls.ResolvedCaseB': 2760.8,
+    # Measured in q1246 at 0726e3e, under the impact recorder (ids after the class split).
+    'tests.integration.test_i04_controls.CaseB.test_a_longer_length_widens_the_increment_profile': 102.4,
+    'tests.integration.test_i04_controls.ReopenParity.test_a_reopened_history_continues_to_the_same_head': 377.9,
+    'tests.integration.test_i04_controls.TimeRefinementCoupled.test_the_coupled_layered_feedback_resolves_under_step_halving': 503.5,
+    'tests.integration.test_i04_controls.TimeRefinementOracle.test_the_oracle_control_is_first_order': 264.9,
     'tests.integration.test_r3_delivery_contracts.VisualDataTests': 81.1,
     'tests.regional.test_regional_evolution3d.DeclaredStartTests.test_force_driven_result_is_independent_of_earlier_solves': 35.1,
     'tests.regional.test_regional_evolution3d.DeclaredStartTests.test_restarted_interval_on_a_new_plan_reproduces_the_continuous_run': 56.8,
