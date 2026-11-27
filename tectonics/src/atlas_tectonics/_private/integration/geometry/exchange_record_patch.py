@@ -10,7 +10,7 @@ import json
 from atlas_tectonics._private.codecs.compact_contracts import ContractError
 from atlas_tectonics._private.codecs.content_cache import RetainedScope
 from atlas_tectonics._private.integration import live_composite as LIVE_COMPOSITE
-from atlas_tectonics._private.codecs.record_tables import RecordCodec
+from atlas_tectonics._private.codecs.record_tables import RecordCodec, canonical
 from atlas_tectonics._private.codecs.record_views import CompactRecord, LogicalExchange
 
 
@@ -58,11 +58,21 @@ def build_advance(advance_type, state, exchange, transport, heat, *, scope, chec
     packed = LIVE_COMPOSITE.compose_record(exchange, record_schema=BODY_SCHEMA, scope=scope,
                                            check=check, eager_identity=False)
     if packed is None:
-        packed = RecordCodec().pack_record(exchange, record_schema=BODY_SCHEMA,
-                                          scope=scope, check=check)
+        packed = _pack_with_composite(exchange, state.state_id, scope, check)
     result = advance_type(state, packed, transport, heat)
     check()
     return result
+
+
+def _pack_with_composite(exchange, state_id, scope, check):
+    """Pack the body and hash its composite identity in the same pass, so
+    initialise need not stream the body again."""
+    also = sha256(b'{"exchange":')
+    packed = RecordCodec().pack_record(exchange, record_schema=BODY_SCHEMA,
+                                      scope=scope, check=check, also=also)
+    also.update(b',"state_id":'+canonical(state_id)+b'}')
+    packed._composite = (state_id, also.hexdigest())
+    return packed
 
 
 def _compact(record):
@@ -74,6 +84,10 @@ def initialise(holder):
     if _compact(holder._record):
         if holder._record.scope.run_budget is not holder.state._budget:
             raise ContractError('exchange holder has a foreign resource owner')
+        composite = getattr(holder._record, '_composite', None)
+        if composite is not None and composite[0] == holder.state.state_id:
+            object.__setattr__(holder, '_result_id', composite[1])
+            return
         body = (LogicalExchange(holder._record, holder._record._root)
                 if isinstance(holder._record, CompactRecord) else holder._record.root())
         try:

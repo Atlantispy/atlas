@@ -203,6 +203,18 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev58](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev58) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- Hashed the exchange record's composite identity in the same pass that packs it, so initialisation reuses
+  that id instead of streaming the record body again. A record naming another state still gets the computed id.
+- Collected the packed bytes in one 64 KiB block and ran the cancel check and the hashes once a block instead
+  of once a token. The bytes hashed are unchanged; each pack books 64 KiB more at its peak. The saving is not
+  yet measured.
+
 ## [0.1.0.dev57](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev57) - 2026-11-27
 
 ### Optimisations

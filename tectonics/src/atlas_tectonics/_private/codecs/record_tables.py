@@ -677,6 +677,10 @@ class _Spill:
             self.live.give(booked)
 
 
+# Emitted bytes are hashed, and the cancel check run, once a block.
+_HASH_BLOCK = 65536
+
+
 class _Builder:
     def __init__(self, scope, check):
         self.scope, self.check = scope, check
@@ -720,6 +724,9 @@ class _Builder:
         self.n = self.e = self.tokens = self.integers = self.floats = 0
         self.ids = self.shapes = self.pairs = self.shape_key_count = 0
         self.digest, self.length = sha256(), 0
+        self.also = None  # optional second hash fed the same logical bytes
+        self.live.take(_BYTEARRAY_OBJECT+_HASH_BLOCK)
+        self._block, self._block_at = bytearray(_HASH_BLOCK), 0
         self._build_token = object()
         self._referenced = set()
         self._closed = False
@@ -743,10 +750,29 @@ class _Builder:
             self.live.take((levels-self._stack_levels)*_STACK_LEVEL)
             self._stack_levels = levels
 
-    def emit(self, part):
+    def _hash(self, data):
         self.check()
-        self.digest.update(part)
-        self.length += len(part)
+        self.digest.update(data)
+        if self.also is not None:
+            self.also.update(data)
+
+    def _flush(self):
+        """Hash the pending block; every reader of the digest calls this first."""
+        if self._block_at:
+            with memoryview(self._block) as view:
+                self._hash(view[:self._block_at])
+            self._block_at = 0
+
+    def emit(self, part):
+        size = len(part)
+        if self._block_at+size > _HASH_BLOCK:
+            self._flush()
+        if size >= _HASH_BLOCK:
+            self._hash(part)
+        else:
+            self._block[self._block_at:self._block_at+size] = part
+            self._block_at += size
+        self.length += size
         require(self.length <= UINT64_MAX, 'logical byte count overflow')
         if self._capturing:
             end = self._capture_at+len(part)
@@ -1607,6 +1633,7 @@ class _Builder:
         return arrays
 
     def _metadata(self, root, record_schema, arrays):
+        self._flush()
         identity = LogicalIdentity(record_schema, self.digest.hexdigest(), self.length)
         metadata = dict(schema=SCHEMA, profile=PROFILE, features=[], root=root,
                         identity=identity.to_wire(), arrays={})
@@ -1677,12 +1704,13 @@ class _Builder:
 
 class RecordCodec:
     def pack_record(self, value, *, record_schema, scope, check,
-                    id_pool=None, shape_pool=None, profile=PROFILE):
+                    id_pool=None, shape_pool=None, profile=PROFILE, also=None):
         require(profile == PROFILE, 'unknown canonicalisation profile')
         require(id_pool is None and shape_pool is None,
                 'parent pool seeding disabled pending measured benefit gate')
         LogicalIdentity(record_schema, '0'*64, 0)
         builder = _Builder(scope, check)
+        builder.also = also
         try:
             root = builder.add(value)
             record = builder.finish_record(root, record_schema)
