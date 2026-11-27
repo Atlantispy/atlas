@@ -203,6 +203,16 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev66](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev66) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- The exact 3D clip finds the largest and least row while it makes the rows, in place of two more passes:
+  1.4% less clip time on 4,000 captured clips. Whole-faces-first and points-by-number orderings were timed
+  4% to 6% slower and were not landed.
+
 ## [0.1.0.dev65](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev65) - 2026-11-27
 
 ### Bugfixes

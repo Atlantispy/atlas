@@ -632,10 +632,16 @@ def _clip(poly, plane, arena):
         # Every plane entry is an exact int/Fraction with positive denominator,
         # so common is positive. It cancels from both edge-plane distances in
         # t = na*db/(na*db-nb*da). Keep the OLD scaled-width guard below.
-        rows = {point: (num, den) for point, (num, den) in zip(points, _numerators(points, coeff))}
-        if max(row[0] for row in rows.values()) <= 0:
+        rows, high, low = {}, 0, 0
+        for point, (num, den) in zip(points, _numerators(points, coeff)):
+            rows[point] = num, den
+            if num > high:
+                high = num
+            elif num < low:
+                low = num
+        if high <= 0:
             return poly
-        if min(row[0] for row in rows.values()) >= 0:
+        if low >= 0:
             return ()
         row_bytes = 256*len(rows)+4*sum((n.bit_length()+(common*d).bit_length()+7)//8
                                       for n, d in rows.values())
