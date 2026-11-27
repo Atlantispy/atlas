@@ -568,7 +568,10 @@ graph, partition, owner, funding, bounds and geometry identifiers are each the
 digest of the record's content form, no longer of its bytes or of the code that
 wrote it, so a code change that moves no value moves no identifier. Two things
 still tie a result to its code. A stored record's byte digest is checked against
-its bytes on load, so a changed file is refused. A continued state and a solver's
+its bytes on load, so a changed file is refused. A spatial record stored as a
+recipe of shared segments takes its identity from the original record when it is
+written, without being rebuilt and compared then; a proving read rebuilds it from
+the stored segments and refuses it unless that identity matches. A continued state and a solver's
 starting guess carry the code that made them, outside their identifiers, so a
 run resumed or warm-started under changed code is refused. The identifiers move
 once, at this version: the graph and partition identifiers and every identifier

@@ -268,18 +268,20 @@ def stream_identity(value, check, feed=None):
     return {'bytes': length, 'sha256': digest.hexdigest()}
 
 
-def value_identity(value, *, scope, check, record_schema='atlas.spatial-record-row.v1'):
-    """Independent identity of an original row value, by its own objects."""
+def value_identity(value, *, scope, check, record_schema='atlas.spatial-record-row.v1', feed=None):
+    """Independent identity of an original row value, by its own objects; `feed` sees its bytes once."""
     if isinstance(value, RecordRef):
-        return stream_identity(value, check)
+        return stream_identity(value, check, feed)
     from atlas_tectonics._private.integration import live_composite as LIVE
     composed = LIVE.compose_record(value, record_schema=record_schema, scope=scope, check=check)
     if composed is None:
         raw = canonical(value)
+        if feed is not None:
+            feed(raw)
         return {'bytes': len(raw), 'sha256': sha256(raw).hexdigest()}
     try:
         with composed.root() as root:
-            return stream_identity(root, check)
+            return stream_identity(root, check, feed)
     finally:
         composed.close()
 

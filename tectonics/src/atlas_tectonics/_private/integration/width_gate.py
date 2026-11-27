@@ -323,7 +323,8 @@ class Proofs:
     """What the reader's own block proved on one store object: identity and widths per whole descriptor.
 
     The key is the canonical JSON of the whole descriptor, so a different segment, recipe or identity misses.
-    Only a stream that passed its descriptor comparison enters, and only with its scan on.
+    Only a stream that passed its descriptor comparison enters, and only with its scan on. The one exception is a
+    recipe row at publish: it enters from the original's own stream, with no comparison (our own write, C05430).
     """
 
     def __init__(self, store):

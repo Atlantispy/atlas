@@ -203,6 +203,16 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev64](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev64) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- Removed the publish-time rebuild and comparison of spatial record recipes. One stream of the original
+  record now gives its identity and width scan; a proving read still rebuilds the record from its stored
+  segments and checks it.
+
 ## [0.1.0.dev63](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev63) - 2026-11-27
 
 ### Optimisations
