@@ -385,10 +385,10 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
     require(type(receipt) is dict and mode in F.MODES and receipt.get('mode') == mode,
             'producer receipt mode differs from the expected fresh route')
     require(reuse is None or 'production_release' not in receipt, 'reuse-previous-run reads a diagnostic producer only')
-    stored = receipt.get('identities')
-    require(reuse is None or reuse['record']['identity_override'] or
-            type(stored) is dict and stored.get('runtime_identity') == reuse['execution_identity'],
-            'reuse-previous-run refused: the previous run was computed under another execution identity; recompute')
+    if reuse is not None:
+        reuse['record']['miss'] = reuse['record']['miss'] or REUSE.identity_miss(reuse, receipt.get('identities'))
+        if reuse['record']['miss']:
+            return None     # nothing more of the previous run is read; the caller reports the miss
     require(reuse is None or not reuse['record']['identity_override'] or receipt.get('open_proofs') is not True,
             'the identity override is refused for a proof-mode producer (--open-proofs)')
     guard, guard_pin = OR.read_json(RUN.ordinary(output/'run.guard.json'), limit=RUN.MAX_CONFIG)
@@ -591,7 +591,12 @@ def _read_store(row, reuse):
 
 
 def _reader_status(errors, mode, reuse):
-    return 'FAILED' if errors else WORKLOAD_STATUS[mode] if reuse is None else REUSE.STATUS
+    return ('FAILED' if errors else WORKLOAD_STATUS[mode] if reuse is None else
+            REUSE.MISS_STATUS if reuse['record']['miss'] else REUSE.STATUS)
+
+
+def _missed(reuse):
+    return reuse is not None and reuse['record']['miss'] is not None
 
 
 def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mode, start_gate=None,
@@ -858,6 +863,8 @@ def command(profile, python, *, mode, producer_receipt_sha256, review=False, sta
     sources = F.FreshSources(profile)
     recorded = _recording(sources, record_failed_prior)
     reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous, previous=_previous)
+    if _missed(reuse):
+        return REUSE.miss_exit(reuse)
     overlap_spec = _reader_options(profile, mode=mode, interval=interval,
         producer_receipt_sha256=producer_receipt_sha256, review=review, overlap_spec=overlap_spec,
         fallback=fallback, fallback_claim_sha256=fallback_claim_sha256)
@@ -865,6 +872,8 @@ def command(profile, python, *, mode, producer_receipt_sha256, review=False, sta
         _producer_inputs_retry(profile if reuse is None else reuse['previous'], sources=sources, mode=mode,
                                receipt_sha256=producer_receipt_sha256, consumer_pid=os.getpid(), review=review,
                                interval=interval, reuse=reuse, recorded=recorded)
+        if _missed(reuse):
+            return REUSE.miss_exit(reuse)
     row = profile.record()
     if fallback:
         _fallback_binding(row, mode, interval, fallback_claim_sha256)
@@ -925,6 +934,8 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
     sources = F.FreshSources(profile)
     recorded = _recording(sources, record_failed_prior)
     reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous, previous=_previous)
+    if _missed(reuse):
+        return REUSE.miss_exit(reuse)
     overlap_spec = _reader_options(profile, mode=mode, interval=interval,
         producer_receipt_sha256=producer_receipt_sha256, review=review, overlap_spec=overlap_spec,
         fallback=fallback, fallback_claim_sha256=fallback_claim_sha256)
@@ -958,6 +969,8 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
                     _producer_inputs_retry(profile if reuse is None else reuse['previous'], sources=sources,
                         mode=mode, receipt_sha256=producer_receipt_sha256, consumer_pid=os.getpid(),
                         review=review, interval=interval, reuse=reuse, recorded=recorded))
+        if _missed(reuse):   # met only when run without its command's preflight; the finally records the miss
+            return REUSE.miss_exit(reuse)
         if recorded:  # what this reader accepted of how its producer ended
             record['recorded'] = recorded
             save()
@@ -1156,12 +1169,16 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
     try:
         recorded = _recording(sources, record_failed_prior)
         reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous, previous=_previous)
+        if _missed(reuse):
+            return REUSE.miss_exit(reuse)
         then = profile if reuse is None else reuse['previous']
         reopen, _ = OR.read_json(output/'reopen.json', pin=reopen_receipt_sha256, limit=RO.MAX_RECEIPT)
         core = reopen.get('reader_core', 'full') if type(reopen) is dict else None
         producer = _producer_inputs_retry(then, sources=sources, mode=mode, receipt_sha256=producer_receipt_sha256,
                                           consumer_pid=os.getpid(), review=review, interval=interval,
                                           reuse=reuse, recorded=recorded)
+        if _missed(reuse):
+            return REUSE.miss_exit(reuse)
         require(not (output/'reopen.guard-abort.json').exists() and not (output/'reopen.cancel').exists(),
                 'reader was aborted or cancelled')
         reader_guard, _ = OR.read_json(output/'reopen.guard.json', pin=guard_receipt_sha256)
@@ -1596,6 +1613,8 @@ def main(argv=None):
                        review=args.review, start_gate=gate, interval=args.interval, overlap_spec=args.overlap_spec,
                        fallback=args.reader_fallback, fallback_claim_sha256=args.fallback_claim_sha256,
                        reuse_previous=reuse_previous, _previous=previous, record_failed_prior=args.record_failed_prior, run_profile=run_profile)
+        if argv == REUSE.REUSE_MISS_EXIT:   # a reuse miss, already printed: nothing is launched
+            return argv
         print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                           'production_acceptance': False}), flush=True)
         if not args.launch:

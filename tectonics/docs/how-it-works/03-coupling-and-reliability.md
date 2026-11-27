@@ -582,6 +582,37 @@ resumed against a stopped run, so the identity check itself was not reached by
 a run; its guard tests cover it. Admission of a store written by an older
 version is not proven by a run. None of this is scientific acceptance.
 
+A diagnostic reader can be asked to reuse a previous run's producer instead of
+running its own. When the two code trees differ in a control case file, or the
+previous run was computed under another execution identity (and no identity
+override was given), that is a miss, not a refusal: the reader opens nothing
+more of the previous run, writes nothing at its own paths, prints one line with
+status `REUSE_MISS_RECOMPUTE` and the reason, and exits with code 76. The
+caller then runs this tree's producer and recomputes, and the ordinary reader
+that follows finds its paths free. Differences that would make the reuse
+unsound in any tree (a release receipt, another query-store setting, the
+override on a proof-mode producer) still refuse. The
+[case-file tests](../../tests/integration/test_reuse_previous_run_cases.py),
+[override tests](../../tests/integration/test_reuse_override_proof_r1.py) and
+[miss tests](../../tests/integration/test_reuse_miss_r1.py) check this at the
+plan, the producer check and the three reader entry points; no run has
+exercised a miss.
+
+The interval-1 producer can likewise be seeded with run A's initial
+measurements. In a diagnostic tree a seed that fails (another store pin, an
+unreadable receipt, a failed copy) is also a miss: any measurement store and
+its journal files already at the copy target are first renamed together under
+a dated `.aside-` name (never deleted; if one rename fails, all are put back
+and the run refuses), the partial copy is removed, and run B starts unseeded
+and measures everything. Its record has status `MISS_UNSEEDED` and still names
+run A's receipt, verdict and adoption, so interval 2's gate checks the same
+anchors as for a seeded run; it refuses a miss without them, outside a
+diagnostic tree, or when interval 1 ended with errors. A cancel or guard abort
+still stops, and outside a diagnostic tree every seed failure is still refused
+before admission. The [seed-miss tests](../../tests/integration/test_seed_miss_r1.py)
+check the move-aside, the miss record, the refusals and the gate; no run has
+exercised a seed miss.
+
 The runtime cleanup after dev44 moves repeated work within those existing
 checks. Moving-face and belt geometry reuse data already decoded or assembled
 for the same support. Exact circulation carries each selected face's encoded

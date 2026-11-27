@@ -7,7 +7,7 @@ from unittest.mock import patch
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.regional.geology import bind_regional_geology
 from atlas_tectonics.integration.resources import MemoryLimitError, WorkBudget
-from atlas_tectonics.integration.reuse import ExecutionContext
+from atlas_tectonics.integration.reuse import ExecutionContext, content_record
 from atlas_tectonics.integration.workflows.regional_mechanics_workflow import PreparedW07Workflow, _cancel, _hash
 from tests.regional.test_w07_geology import geology_fixture
 import tests.integration.test_w07_workflow as fixture
@@ -22,7 +22,7 @@ class FreshGeologyVerificationWorkflow(PreparedW07Workflow):
         _cancel(cancel)
         self._context.verify()
         self.geology.verify(cancel=cancel)
-        if _hash(self._definition) != self.plan_id:
+        if _hash(content_record(self._definition)) != self.plan_id:
             raise TectonicsError('W07 source/policy changed; prepare a new workflow')
 
 

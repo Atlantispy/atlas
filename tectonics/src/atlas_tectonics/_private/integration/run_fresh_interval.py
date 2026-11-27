@@ -109,7 +109,10 @@ REVIEW_ADOPTION = ('never automatic: the reader PASS on this file, a written dia
 # before its admission. A hit re-checks each stored field's consistency with its request
 # (integration_dual_geometry.cached_initial_component); ROOT_IDENTITY still compares the
 # re-derived admission with run A's root. The independent reader always admits with a fresh
-# store and refuses any seed. Every seed refusal stops before the admission; no fallback.
+# store and refuses any seed. Outside a diagnostic tree every seed refusal stops before the
+# admission. In a diagnostic tree it is a miss: run B starts unseeded and measures everything
+# (MISS_UNSEEDED, still anchored to run A's verdict and adoption), and files already at the copy
+# target are moved aside under a dated name, never deleted (REUSE-MISS-SEED-ROUTE-PLAN-r1, S-1).
 MEASUREMENT_STORE = 'initial-measurements.sqlite'
 MEASUREMENT_RECORD = 'initial-measurements.json'
 MEASUREMENT_SIDECARS = ('-wal', '-journal', '-shm')
@@ -481,6 +484,7 @@ def _record_sha(value):
 
 WIDTH_GATE_V1, WIDTH_GATE_V2 = 'atlas.exact-width-gate.v1', 'atlas.exact-width-gate.v2'
 SEED_REUSED = ('FULL_REUSE', 'MISSES_MEASURED')
+SEED_MISS = 'MISS_UNSEEDED'
 
 
 def width_gate_passed(gate, k):
@@ -535,7 +539,8 @@ def root_anchor(chain, interval_one, recorded=None):
     adopted(1) (explicitly pinned) -> verdict(1).producer_receipt_sha256 -> interval 1's run.json,
     which must bind interval 1's runner and sealed records and be an ordinary completed producer
     (seed FULL_REUSE or MISSES_MEASURED, counts agreeing) or an approved review producer (seed
-    still COPIED_BEFORE_ADMISSION). Its seed capture names run A's receipt and both root files'
+    still COPIED_BEFORE_ADMISSION), or in a diagnostic tree a seed miss (MISS_UNSEEDED: interval 1 measured
+    everything, status and errors still tested). Its seed capture names run A's receipt and both root files'
     canonical SHA-256s. Without that capture (an unseeded interval 1) interval 2 refuses: today's
     root files are no anchor for themselves. The receipt is read again by every interval-2 gate,
     the reader's and finalise's included, so it must outlive interval 2's adoption.
@@ -556,19 +561,20 @@ def root_anchor(chain, interval_one, recorded=None):
     reused, errors = receipt.get('reused_initial_cache'), receipt.get('errors')
     require(type(reused) is dict and reused.get('schema') == SEED_SCHEMA,
             'interval 1 recorded no seeded root capture: an unseeded interval 1 cannot continue to interval 2')
+    missed = interval_one['diagnostic'] is True and reused.get('status') == SEED_MISS   # anchored, unseeded
     if 'review_approval_sha256' in first['adopted']:
         state = receipt.get('review_only')
         outcome = (receipt.get('status') == REVIEW_STATUS and type(errors) is list and
                    [type(e) is dict and e.get('type') for e in errors] == ['PresealSealedForReview'] and
                    type(state) is dict and state.get('state') == REVIEW_STATUS and
-                   reused.get('status') == 'COPIED_BEFORE_ADMISSION')
+                   (missed or reused.get('status') == 'COPIED_BEFORE_ADMISSION'))
     else:
         _prior(receipt.get('status') == SEALED_STATUS['interval'], 'interval 1 is neither a completed nor an approved review producer with a valid seed capture',
                recorded, 'status %r' % (receipt.get('status'),))
         _prior(errors == [], 'interval 1 is neither a completed nor an approved review producer with a valid seed capture', recorded, 'errors '+_errors_text(errors))
-        outcome = reused.get('status') in SEED_REUSED and reused.get('counts_agree_with_bytes') is True
+        outcome = missed or reused.get('status') in SEED_REUSED and reused.get('counts_agree_with_bytes') is True
     require(outcome, 'interval 1 is neither a completed nor an approved review producer with a valid seed capture')
-    require((reused.get('composition_equal') is True or                       # D-3: or across a recorded change
+    require((missed or reused.get('composition_equal') is True or             # D-3: or across a recorded change
              interval_one['diagnostic'] is True and type(reused.get('across_change')) is dict) and
             _pin_sha(reused.get('receipt')) == root['verdict'].get('producer_receipt_sha256') and
             reused.get('verdict_sha256') == root['link']['verdict_sha256'] and
@@ -809,12 +815,7 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     earlier = seed.get(SEED_ACROSS)                                     # D-3: across a recorded change
     expected_profile = profile_sha256 if earlier is None else earlier['sha256']
     receipt_sha256, pin = RUN._sha(seed['receipt_sha256']), RUN._sha(seed['store_sha256'])
-    if _promoted is None:
-        root_sha = sha256(canonical(root_runner)).hexdigest()
-        verdict = read_record(verdict_path(store_directory, 0), schema=VERDICT_SCHEMA)
-    else:
-        root_sha, verdict = _promoted
-    adopted = read_record(Path(store_directory)/record_name('adopted', 0), schema=ADOPTED_SCHEMA)
+    root_sha, verdict, adopted = _root_capture(store_directory, root_runner, _promoted)
     verdict_sha = sha256(canonical(verdict)).hexdigest()
     require((_promoted is not None or verdict['status'] == READER_PASS['root'] and
              verdict['runner_record_sha256'] == root_sha) and verdict['interval'] == 0 and
@@ -850,12 +851,67 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     size = _copy_pinned(source, target, pin, check)
     return {'schema': SEED_SCHEMA, 'status': 'COPIED_BEFORE_ADMISSION', 'source': str(source), 'target': str(target),
             'pinned_sha256': pin, 'bytes': size, 'copy_seconds': time.monotonic()-started,
-            'receipt': {'path': str(receipt_path), 'sha256': receipt_sha256}, 'verdict_sha256': verdict_sha,
-            'adopted_sha256': sha256(canonical(adopted)).hexdigest(),
+            **_anchor(receipt_path, receipt_sha256, verdict, adopted),
             'composition_equal': across is None or not across['differences'],
             **({} if across is None else {SEED_ACROSS: across}),
             'seed_snapshots': stored['statistics']['snapshots'],
             'seed_initial_component_queries': stored.get('initial_component_queries')}
+
+
+def _root_capture(store_directory, root_runner, _promoted=None):
+    """Run A's root runner SHA-256, reader verdict and adoption record: none of them depends on the seed."""
+    if _promoted is None:
+        root_sha = sha256(canonical(root_runner)).hexdigest()
+        verdict = read_record(verdict_path(store_directory, 0), schema=VERDICT_SCHEMA)
+    else:
+        root_sha, verdict = _promoted
+    return root_sha, verdict, read_record(Path(store_directory)/record_name('adopted', 0), schema=ADOPTED_SCHEMA)
+
+
+def _anchor(receipt_path, receipt_sha256, verdict, adopted):
+    """What interval 2's gate compares with run A's records (root_anchor), seeded or missed."""
+    return {'receipt': {'path': str(receipt_path), 'sha256': receipt_sha256},
+            'verdict_sha256': sha256(canonical(verdict)).hexdigest(),
+            'adopted_sha256': sha256(canonical(adopted)).hexdigest()}
+
+
+def _move_aside(target):
+    """S-1: the copy target and its side files, renamed together under one dated name; nothing is deleted.
+    A rename that fails puts back the ones done and refuses (review C-1: never a store beside a stale WAL)."""
+    found = [path for path in (Path(target), *(Path(str(target)+s) for s in MEASUREMENT_SIDECARS)) if path.exists()]
+    stamp, count = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime()), 0
+    aside = lambda path: path.with_name(path.name+'.aside-'+stamp+('' if count == 0 else f'-{count}'))
+    while any(aside(path).exists() for path in found):
+        count += 1
+    done = []
+    try:
+        for path in found:
+            os.replace(path, aside(path))
+            done.append(path)
+    except OSError as error:
+        for path in reversed(done):
+            os.replace(aside(path), path)
+        require(False, 'the seed target could not be moved aside: '+str(error))
+    return [{'from': str(path), 'to': str(aside(path))} for path in found]
+
+
+def _seed_failure(seed, error, diagnostic, target, *, receipt_path, store_directory, root_runner, _promoted=None):
+    """The record of a failed seed. A cancel or guard abort (CancelledError), or any failure outside a diagnostic
+    tree, is the refusal it always was. A diagnostic failure is S1's miss: our partial copy goes (the target was
+    moved aside before the call, so a file there now is ours) and run B starts unseeded, anchored when run A's
+    records can be read."""
+    if isinstance(error, CancelledError) or not diagnostic:
+        return {'schema': SEED_SCHEMA, 'status': 'REFUSED_BEFORE_ADMISSION', 'requested': seed, 'refusal': _error(error)}
+    Path(target).unlink(missing_ok=True)
+    record = {'schema': SEED_SCHEMA, 'status': SEED_MISS, 'requested': seed, 'miss': _error(error)}
+    try:
+        _, verdict, adopted = _root_capture(store_directory, root_runner, _promoted)
+        record.update(_anchor(receipt_path, RUN._sha(seed['receipt_sha256']), verdict, adopted))
+    except Exception as anchor_error:  # noqa: BLE001 - recorded; interval 2 then refuses for run A's records
+        if isinstance(anchor_error, CancelledError):
+            raise
+        record['anchor_missing'] = _error(anchor_error)
+    return record
 
 
 def _across_change(theirs, binding, earlier_sha256):
@@ -1109,8 +1165,10 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     number = interval_number(mode, interval)
     parent_adopted_sha256 = parent_pin(number, parent_adopted_sha256)
     require(not stop_before_advance or number == 1, 'interval N >= 2 runs no smoke: stop-before-advance is interval 1 only')
-    require(SEED_ENVIRONMENT not in os.environ,
+    require(SEED_ENVIRONMENT not in os.environ or diagnostic_tree(sources),
             'measurement seeds are explicit arguments only: '+SEED_ENVIRONMENT+' is refused')
+    if SEED_ENVIRONMENT in os.environ:   # a diagnostic tree reports it and carries on: it is never read
+        print(SEED_ENVIRONMENT+' is set and ignored: measurement seeds are explicit arguments only', flush=True)
     row = profile.record()
     bound = {name: sources.module(name) for name in (DRIVER, *FRESH_MODULES)}
     FRESH, CRS, PRESEAL = bound[DRIVER], bound['compact_restart_store'], bound['bounded_preseal']
@@ -1237,18 +1295,27 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                 reused = None
                 if seed is not None:
                     guard.phase('seed-initial-measurements')
+                    diagnostic = diagnostic_tree(sources)
+                    if diagnostic and (moved := _move_aside(output/MEASUREMENT_STORE)):
+                        record['moved_aside'] = moved
+                        save()
+                        print('seed target moved aside: '+', '.join(m['from']+' -> '+m['to'] for m in moved), flush=True)
                     try:
                         reused = seed_initial_measurements(seed, profile_sha256=profile.sha256,
                             root_runner=root_runner, store_directory=store_directory,
                             root_output=mode_output(row, 'root'), artifacts=output, binding=binding, check=check,
                             recorded=recorded, _promoted=promoted)
-                    except Exception as error:  # recorded with its refusal, then raised: no fallback
-                        record['reused_initial_cache'] = {'schema': SEED_SCHEMA, 'status': 'REFUSED_BEFORE_ADMISSION',
-                                                          'requested': seed, 'refusal': _error(error)}
+                    except Exception as error:  # noqa: BLE001 - recorded; a diagnostic one is a miss (S1)
+                        record['reused_initial_cache'] = _seed_failure(seed, error, diagnostic, output/MEASUREMENT_STORE,
+                            receipt_path=mode_output(row, 'root')/'run.json', store_directory=store_directory,
+                            root_runner=root_runner, _promoted=promoted)
                         save()
-                        raise
-                    record['reused_initial_cache'] = reused
-                    save()
+                        if record['reused_initial_cache']['status'] != SEED_MISS:
+                            raise
+                        print('seed miss: '+str(error)+'; starting unseeded (recompute)', flush=True)
+                    else:
+                        record['reused_initial_cache'] = reused
+                        save()
                 if stop_before_advance:
                     # The smoke: run B's chain, catalog and admission, then the adopted root
                     # reopened and compared. No candidate is begun; nothing of interval 1 runs.

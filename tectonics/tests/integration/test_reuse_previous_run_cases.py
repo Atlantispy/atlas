@@ -34,13 +34,14 @@ class ReusePreviousRunCaseFileTests(unittest.TestCase):
             return REUSE.plan(new, None, 'previous.json', old.sha256, previous=old)
 
     def test_equal_case_files_pass(self):
-        self.assertEqual(self.plan()['execution_identity'], '3'*64)
+        reuse = self.plan()
+        self.assertEqual(reuse['execution_identity'], '3'*64)
+        self.assertIsNone(reuse['record']['miss'])
 
-    def test_one_changed_byte_refuses_and_names_the_file(self):
+    def test_one_changed_byte_is_a_miss_naming_the_file(self):   # a miss, never a refusal
         path = Path(self.workspace)/'new'/'atlas_tectonics'/'_fixtures'/'cases'/'b.json'
         path.write_bytes(path.read_bytes()[:-1] + b']')
-        with self.assertRaisesRegex(Exception, r'differ in control case files: b\.json$'):
-            self.plan()
+        self.assertEqual(self.plan()['record']['miss'], 'control case files differ: b.json')
 
     def test_same_root_does_not_hash(self):
         with mock.patch.object(REUSE, '_case_files', side_effect=AssertionError('hashed')):

@@ -203,6 +203,16 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev55](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev55) - 2026-11-27
+
+### Tectonics
+
+- Reusing a previous run is now a miss and recompute, not a refusal, when the two trees differ in a
+  control case file or the previous run has another execution identity. The reader prints the reason,
+  writes nothing and exits with code 76, so this run's producer runs instead.
+- In a diagnostic tree a failed measurement seed is now a miss: files at the copy target are moved aside,
+  never deleted, and run B starts unseeded, still anchored to run A's verdict and adoption for interval 2.
+
 ## [0.1.0.dev54](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev54) - 2026-11-27
 
 ### Optimisations

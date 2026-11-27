@@ -2,6 +2,7 @@
 import json
 import math
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -15,7 +16,7 @@ from atlas_tectonics.planet.spherical_geometry import SphericalChart
 
 
 CONTROL = json.loads((F.CASES/'i03_controls_v4.json').read_text(encoding='utf-8'))['controls']['junction_path_contract']
-C1 = json.loads((F.CASES/'i01_transitions_v1.json').read_text(encoding='utf-8'))['control_policy']['algebra_relative']
+C1 = json.loads((Path(__file__).resolve().parents[2]/'cases'/'i01_transitions_v1.json').read_text(encoding='utf-8'))['control_policy']['algebra_relative']
 
 
 class JunctionPathContractTests(unittest.TestCase):
