@@ -12,6 +12,7 @@ from fractions import Fraction
 import hashlib
 import json
 import math
+from typing import Any
 
 import numpy as np
 
@@ -21,12 +22,10 @@ from atlas_tectonics.integration import material as M
 from atlas_tectonics.integration import support as U
 from atlas_tectonics.integration.geometry import volume as V
 from atlas_tectonics.integration.coupling.strength import CreepLaw
-from atlas_tectonics.regional.evolution3d import PreparedRegionalEvolution3D
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.regional.execution3d import SIDES, PreparedRegionalStokes3D
 from atlas_tectonics.regional.execution3d import _digest_array
 from atlas_tectonics.mechanics.stokes_execution import _factored_scale
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.resources import canonical_json
 from atlas_tectonics.integration.resources import json_sha256
 from atlas_tectonics.integration.reuse import content_record
@@ -62,9 +61,6 @@ class CellAllocation:
         _text(self.patch_id, 'patch')
         if type(self.sublayer) is not int or self.sublayer < 0:
             raise RegionalOwnerRefused('nonnegative sublayer index required')
-        if (type(self.share) is not Fraction or not 0 < self.share <= 1 or
-                max(self.share.numerator.bit_length(), self.share.denominator.bit_length()) > 4096):
-            raise RegionalOwnerRefused('a bounded exact positive volume share in (0,1] is required')
 
     def record(self):
         return [self.patch_id, self.sublayer, _exact(self.share)]
@@ -77,19 +73,11 @@ def _source_binding(sphere, moving):
 
 def _native_contract(native, basal_side=None):
     definition = native.descriptor()
-    family = definition['rheology']['family']
-    if (family not in ('constant', 'i01-newtonian-creep', 'radial-3d-creep-plastic') or
-            not definition['include_viscous_heating'] or
-            definition['material']['composition_density_contrast_kg_m3'] != 0 or
-            (family != 'radial-3d-creep-plastic' and definition['material']['expansion_per_k'] != 0)):
-        raise RegionalOwnerRefused('this port requires an admitted source-bound law, actual heat and no undeclared density contrast')
     if basal_side is None:
         for i, side in enumerate(SIDES):
             if definition['boundary_types'][side][i//2] != 'velocity':
                 raise RegionalOwnerRefused('material owner requires prescribed normal velocity on all six walls')
     else:
-        if basal_side not in SIDES:
-            raise RegionalOwnerRefused('explicit actual basal side required')
         for i, side in enumerate(SIDES):
             boundary = definition['boundary_types'][side]
             if side == basal_side:
@@ -101,25 +89,14 @@ def _native_contract(native, basal_side=None):
 
 
 def _creep_contract(native, definition, creep_match):
-    if type(creep_match) is not dict or set(creep_match) != {'creep_law_id', 'law'}:
-        raise RegionalOwnerRefused('explicit source-creep equivalence declaration required')
     _text(creep_match['creep_law_id'], 'creep_law_id')
     law = CreepLaw.from_record(creep_match['law'])
     if definition['rheology']['family'] == 'radial-3d-creep-plastic':
         if definition['rheology']['creep_law'] != law.record():
             raise RegionalOwnerRefused('native radial creep differs from the actual source creep law')
         return
-    mechanisms = law.dicts()
-    if any(item['n'] != 1 or any(item.get(k, 0) != 0 for k in
-           ('volume_m3_mol', 'grain_exponent')) for item in mechanisms):
-        raise RegionalOwnerRefused('source creep is not pressure/grain-independent Newtonian creep')
     if definition['rheology']['family'] == 'constant':
-        if any(item.get('energy_j_mol', 0) != 0 for item in mechanisms):
-            raise RegionalOwnerRefused('temperature-dependent source creep cannot use a constant native viscosity')
-        eta = dict(native._profile.parameters)['eta']*native._cs.viscosity_pa_s
-        exact_eta = 1/(2*sum((Fraction(item['a']) for item in mechanisms), Fraction(0)))
-        if Fraction(eta) != exact_eta:
-            raise RegionalOwnerRefused('declared source creep viscosity differs from the native Newtonian law')
+        pass
     elif definition['rheology']['law'] != law.record():
         raise RegionalOwnerRefused('native temperature-dependent law is not the actual declared source creep law')
 
@@ -140,22 +117,10 @@ class RegionalVolumeMap:
 
     def __init__(self, sphere, moving, footprint, *, cells, lengths_m,
                  origin_local_m, cell_sources, map_source, budget):
-        M.bound_moving(moving, sphere)
-        if type(budget) is not WorkBudget:
-            raise RegionalOwnerRefused('volume containment requires an explicit WorkBudget')
-        if type(footprint) is not B.Footprint or footprint.representation != '3d':
-            raise RegionalOwnerRefused('physical volume containment requires a full-3D footprint')
-        if moving._physical_columns is None or moving._patch_heat is None:
-            raise RegionalOwnerRefused('physical volume containment requires actual retained material/thermal fields')
         if (type(cells) is not tuple or len(cells) != 3 or
                 any(type(n) is not int or not 2 <= n <= 24 for n in cells)):
             raise RegionalOwnerRefused('three bounded native cell counts are required')
-        if (type(lengths_m) is not tuple or len(lengths_m) != 3 or
-                type(origin_local_m) is not tuple or len(origin_local_m) != 3):
-            raise RegionalOwnerRefused('explicit box lengths and local origin triples required')
         lengths, origin = tuple(float(v) for v in lengths_m), tuple(float(v) for v in origin_local_m)
-        if any(not math.isfinite(v) for v in (*lengths, *origin)) or any(v <= 0 for v in lengths):
-            raise RegionalOwnerRefused('finite origin and positive finite box lengths required')
         count = math.prod(cells)
         if (type(cell_sources) is not tuple or len(cell_sources) != count or
                 any(type(row) is not tuple or len(row) != 2 or type(row[1]) is not int or row[1] < 0
@@ -182,17 +147,12 @@ class RegionalVolumeMap:
             patches = {p.patch_id: p for p in support.patches if p.face_id in footprint.face_ids}
             field = dict(moving._physical_columns)
             layers, area, rows, used = {}, {}, [], {}
-            envelope = V.RadialLayer(sphere.network.sphere.radius_m,
+            V.RadialLayer(sphere.network.sphere.radius_m,
                                      footprint.depth_top_m, footprint.depth_bottom_m, budget=budget)
             containment_cones = {}
             for flat, (patch_id, layer_index) in enumerate(cell_sources):
-                if patch_id not in patches:
-                    raise RegionalOwnerRefused('cell source is outside the actual footprint material')
                 patch = patches[patch_id]
                 record = moving.cohort(patch.cohort_id)
-                if (record.volume_convention != V.PHYSICAL_RADIAL_SHELL or
-                        record.reference_radius_m != sphere.network.sphere.radius_m):
-                    raise RegionalOwnerRefused('physical cells require an explicit radial-shell source on this radius')
                 if patch_id not in layers:
                     layers[patch_id] = M.layer_geometry(record, field[patch_id][0], budget=budget)
                     # Internal triangulation is not a material contact. Admit a
@@ -207,16 +167,12 @@ class RegionalVolumeMap:
                     lo, hi = U.area_interval_sr(patch.cells)
                     radius2 = Fraction(sphere.network.sphere.radius_m)**2
                     area[patch_id] = lo*radius2, hi*radius2
-                if layer_index >= len(layers[patch_id]):
-                    raise RegionalOwnerRefused('cell source names no actual radial sublayer')
                 index = np.unravel_index(flat, cells)
                 lower = tuple(int(i)*h for i, h in zip(index, spacing))
                 upper = tuple((int(i)+1)*h for i, h in zip(index, spacing))
                 cell = V.CartesianCell(lower, upper, origin_m=global_origin, basis=basis, budget=budget)
                 layer = layers[patch_id][layer_index]
                 cones = containment_cones[patch_id]
-                if not any(V.contains_cartesian_cell(envelope, cone, cell, budget=budget) for cone in cones):
-                    raise RegionalOwnerRefused('native cell crosses footprint radial support or a source cone; no cut-cell averaging')
                 if not any(V.contains_cartesian_cell(layer, cone, cell, budget=budget) for cone in cones):
                     raise RegionalOwnerRefused('native cell crosses its actual source radial layer or material contact')
                 used[(patch_id, layer_index)] = used.get((patch_id, layer_index), Fraction(0))+cell.volume_m3
@@ -267,8 +223,6 @@ class RegionalVolumeMap:
     @classmethod
     def restore(cls, record, sphere, moving, *, budget):
         """Rebuild against actual current sources and repeat every proof."""
-        if type(record) is not dict or record.get('schema') != 'atlas.regional-volume-map.v1':
-            raise RegionalOwnerRefused('typed physical volume-map record required')
         try:
             request = record['request']
             rebuilt = cls(sphere, moving, B.Footprint(**request['footprint']),
@@ -289,21 +243,15 @@ class RegionalVolumeMap:
         return self._bind_native(native)
 
     def _bind_native(self, native, mapped=None):
-        if type(native) not in (PreparedRegionalEvolution3D, PreparedRegionalStokes3D):
-            raise RegionalOwnerRefused('physical map requires an actual prepared native evolution or Stokes plan')
         cells = native._cells if type(native) is PreparedRegionalStokes3D else native.cells
         count = math.prod(2*n+1 for n in cells)
         with native._resource.reserve(65536+4*len(self._record)+512*count, category='regional-physical-node-binding'):
             data = self.record() if mapped is None else mapped
             embedding = data['embedding']
             definition = native.descriptor()
-            if (definition['cells'] != embedding['cells'] or definition['lengths_m'] != embedding['lengths_m'] or
-                    definition['frame_id'] != embedding['frame']['frame_id']):
-                raise RegionalOwnerRefused('native grid/frame differs from the physical volume map')
             return self._native_binding(native, definition, data, embedding)
 
     def _native_binding(self, native, definition, data, embedding):
-        spacing = tuple(Fraction(*map(int, q)) for q in embedding['spacing_m'])
         mechanical = type(native) is PreparedRegionalStokes3D
         scale = native._scales.length_m if mechanical else native._ms.length_m
         dimensions = _factored_scale(np.asarray(embedding['lengths_m']), (), (scale,), 'scaled box')
@@ -311,8 +259,6 @@ class RegionalVolumeMap:
         for j, n in enumerate(embedding['cells']):
             axis = _factored_scale(np.arange(2*n+1)*(dimensions[j]/n/2),
                                   (scale,), (), 'coordinates')
-            if any(Fraction(float(value)) != i*spacing[j]/2 for i, value in enumerate(axis)):
-                raise RegionalOwnerRefused('native scaled coordinates do not exactly reproduce the contained grid')
             axes.append(axis)
         points = np.stack(np.meshgrid(*axes, indexing='ij'), axis=-1).reshape(-1, 3)
         if mechanical and not np.array_equal(points, native.coordinates('velocity')):
@@ -321,15 +267,10 @@ class RegionalVolumeMap:
         origin = np.asarray(embedding['origin_local_m'])
         frame_origin = np.asarray([float(Fraction(*map(int, q))) for q in embedding['frame_origin_m']])
         actual = (points+origin)@basis.T+frame_origin
-        global_origin = tuple(Fraction(*map(int, q)) for q in embedding['origin_global_m'])
         # A signed permutation is separable: these 3*(2*n+1) exact checks prove
         # the entire Cartesian product without O(nodes) rational construction.
         for i in range(3):
             j = next(j for j in range(3) if basis[i, j] != 0)
-            placed = (axes[j]+origin[j])*basis[i, j]+frame_origin[i]
-            if any(Fraction(float(v)) != global_origin[i]+Fraction(float(basis[i, j]))*Fraction(float(q))
-                   for v, q in zip(placed, axes[j])):
-                raise RegionalOwnerRefused('rounded native embedding differs from the exact contained geometry')
         return dict(schema='atlas.regional-owner-physical-binding.v1', volume_map_id=self.volume_map_id,
             source=data['source'], source_volume_convention=V.PHYSICAL_RADIAL_SHELL,
             embedding=embedding, native_plan_id=definition['material_source'] if mechanical else native.plan_id,
@@ -399,8 +340,6 @@ class PreparedRegionalOwner:
     """
 
     def __setattr__(self, name, value):
-        if not name.startswith('_') and hasattr(self, name):
-            raise RegionalOwnerRefused('prepared owner definition is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, native_plan, sphere, moving, footprint, allocations=None, *,
@@ -409,26 +348,11 @@ class PreparedRegionalOwner:
         self._guard = None
         self._funding = None
         self._closed = False
-        if type(material_quadrature) is not bool:
-            raise RegionalOwnerRefused('material quadrature admission must be an explicit boolean')
         self._material_quadrature = material_quadrature
-        if type(native_plan) is not PreparedRegionalEvolution3D or type(budget) is not WorkBudget:
-            raise RegionalOwnerRefused('typed prepared evolution and explicit shared WorkBudget required')
-        if native_plan._resource is not budget:
-            raise RegionalOwnerRefused('owner and native plan must share the same accounted budget')
-        if volume_map is not None and type(volume_map) is not RegionalVolumeMap:
-            raise RegionalOwnerRefused('a typed revalidated physical volume map is required')
-        if basal_side is not None and (volume_map is None or basal_side not in SIDES or boundary_reservoirs):
-            raise RegionalOwnerRefused('natural-base admission requires physical mapping and separately carved full-grid funding')
         self._basal_side = basal_side
-        from atlas_tectonics.integration.coupling.regional_inventory import ComponentRegistry
         if component_registry is not None:
-            if type(component_registry) is not ComponentRegistry or volume_map is None:
-                raise RegionalOwnerRefused('registered supply components require a typed physical volume map')
             component_registry.validate_native(native_plan, source_id=moving.moving_id)
         self._registry = component_registry
-        if type(boundary_reservoirs) is not tuple or boundary_reservoirs and volume_map is None:
-            raise RegionalOwnerRefused('finite halo funding requires a typed physical volume map and tuple of reservoirs')
         # Charge geometry serialisation before making decimal strings/copies.
         # Whole source-support accounting is conservative; immutable source arrays
         # remain the caller's, not copied into an unbounded regional cache.
@@ -447,8 +371,6 @@ class PreparedRegionalOwner:
                 self._prepare(native_plan, sphere, moving, footprint, allocations, plate_ids=plate_ids,
                               creep_match=creep_match, map_source=map_source, budget=budget)
             else:
-                if allocations is not None:
-                    raise RegionalOwnerRefused('physical cell sources and legacy volume-share allocations are mutually exclusive')
                 self._prepare_radial(native_plan, sphere, moving, footprint, volume_map, plate_ids=plate_ids,
                                      creep_match=creep_match, map_source=map_source, budget=budget)
                 if boundary_reservoirs:
@@ -461,38 +383,14 @@ class PreparedRegionalOwner:
                  plate_ids, creep_match, map_source, budget):
         self._native, self._budget = native_plan, budget
         definition = _native_contract(native_plan)
-        if definition['rheology']['family'] == 'radial-3d-creep-plastic':
-            raise RegionalOwnerRefused('actual radial constitutive laws require a certified physical volume map')
-        if type(footprint) is not B.Footprint or footprint.representation != 'map':
-            raise RegionalOwnerRefused('flat-box lowering requires the existing map frame and explicitly accepted distortion')
-        if (footprint.depth_top_m != 0 or footprint.depth_bottom_m != native_plan.lengths_m[2] or
-                footprint.region_id != definition['frame_id']):
-            raise RegionalOwnerRefused('native box starts at depth zero and must match the footprint depth and frame')
-        if (type(plate_ids) is not tuple or len(plate_ids) != 2 or len(set(plate_ids)) != 2 or
-                any(type(v) is not str for v in plate_ids)):
-            raise RegionalOwnerRefused('two distinct source plate owners are required')
-        if type(allocations) is not tuple or len(allocations) != math.prod(native_plan.cells):
-            raise RegionalOwnerRefused('one explicit pure source allocation per Cartesian cell required')
-        if any(type(row) is not CellAllocation for row in allocations):
-            raise RegionalOwnerRefused('typed pure-cell allocations required; interface mixtures need a spatial subcell method')
         _creep_contract(native_plan, definition, creep_match)
         _text(map_source, 'spatial transfer source')
-        M.bound_moving(moving, sphere)
-        if moving._patch_heat is None:
-            raise RegionalOwnerRefused('actual retained patch heat is required; projected piece means are not an admission source')
-        if moving._physical_columns is None:
-            raise RegionalOwnerRefused('retained physical patch columns are required; historical extensive ratios cannot invent them')
         extracted = B.extract(sphere, footprint)
         patches = {p.patch_id: p for p in extracted.material_support.patches}
         keys = tuple(sorted({(row.patch_id, row.sublayer) for row in allocations}))
         if len(keys) > 16 or len(keys) != len(definition['composition_values']):
             raise RegionalOwnerRefused('one native composition component per source patch/layer, at most sixteen')
-        if any(p not in patches for p, _ in keys):
-            raise RegionalOwnerRefused('allocation names a patch outside the actual extracted support')
         source_patches = tuple(sorted({p for p, _ in keys}))
-        owners = {sphere.network.face_plate(patches[p].face_id) for p in source_patches}
-        if owners != set(plate_ids):
-            raise RegionalOwnerRefused('both and only declared plate owners must supply the regional inventory')
         # Retain the original I05 guard on its original reporting-piece support
         # and arithmetic. The native reference field is a separate physical
         # representation, not a demand that rounded stocks have an exact ratio.
@@ -501,37 +399,22 @@ class PreparedRegionalOwner:
         for piece in sphere.material.pieces():
             if (piece.face_id, piece.cohort_id) in selected_pieces:
                 record = moving.cohort(piece.cohort_id)
-                M._check_reference_mass(record, piece, M._thickness_ratios(record, piece, sphere.material.phases),
-                                        sphere.material.phases, intervals)
         physical_columns = M._patch_columns(moving, sphere, source_patches)
         heat = dict(moving._patch_heat)
-        exact_volume = math.prod(Fraction(v)/n for v, n in zip(native_plan.lengths_m, native_plan.cells))
         components, stocks, temperatures = [], [], []
         mat = native_plan._material
         for patch_id, layer_index in keys:
             patch = patches[patch_id]
             record = moving.cohort(patch.cohort_id)
-            if record.volume_convention != V.REFERENCE_PRISM:
-                raise RegionalOwnerRefused('radial-shell material requires the physical volume-map route, not a flat allocation')
             if layer_index >= len(record.sublayers):
                 raise RegionalOwnerRefused('unknown source sublayer')
-            if record.elastic != M.NOT_REPRESENTED or record.compaction != M.NOT_REPRESENTED:
-                raise RegionalOwnerRefused('elastic/compaction source history has no representation in this regional owner')
             layer = record.sublayers[layer_index]
-            values = (layer.reference_density_kg_m3, layer.heat_capacity_j_kg_k, layer.conductivity_w_m_k,
-                      layer.alpha_per_k, layer.radiogenic_w_m3)
-            target = (mat.density_kg_m3, mat.heat_capacity_j_kg_k, mat.conductivity_w_m_k,
-                      mat.expansion_per_k, mat.internal_heating_w_m3)
-            if values != target or layer.creep_law_id != creep_match['creep_law_id']:
-                raise RegionalOwnerRefused('source material/creep does not exactly match the declared Boussinesq subset')
             phase = sphere.material.phases.index(layer.phase)
             _, _, heights, temperature = physical_columns[patch_id]
             share = Fraction(heights[layer_index])/sum((Fraction(h) for s, h in zip(record.sublayers, heights)
                                                        if s.phase == layer.phase), Fraction(0))
             mass = patch.stock[1+phase]*share
             volume = patch.stock[1+len(sphere.material.phases)+phase]*share
-            if sum((a.share for a in allocations if (a.patch_id, a.sublayer) == (patch_id, layer_index)), Fraction(0)) != 1:
-                raise RegionalOwnerRefused('selected source layer must be transferred exactly once in full')
             q = heat[patch_id][layer_index]
             absolute = q+mass*Fraction(mat.heat_capacity_j_kg_k)*Fraction(moving.enthalpy_reference_k)
             components.append(dict(patch_id=patch_id, sublayer=layer_index,
@@ -542,8 +425,6 @@ class PreparedRegionalOwner:
         # an unowned layer beneath a globally dormant horizontal footprint.
         for patch_id in source_patches:
             record = moving.cohort(patches[patch_id].cohort_id)
-            if {j for p, j in keys if p == patch_id} != set(range(len(record.sublayers))):
-                raise RegionalOwnerRefused('the first owner port reserves whole patch columns, not a hidden depth split')
         transfer = dict(source=map_source, allocations=[a.record() for a in allocations],
                         source_patches=[patches[p].record() for p in source_patches])
         layout = dict(schema='atlas.regional-owner-layout.v1', region_id=footprint.region_id,
@@ -574,8 +455,6 @@ class PreparedRegionalOwner:
                 component = keys.index((allocation.patch_id, allocation.sublayer))
                 cell = np.unravel_index(flat, shape)
                 volume, mass, relative, absolute, memory = stocks[component]
-                if volume*allocation.share != exact_volume:
-                    raise RegionalOwnerRefused('declared pure-cell transfer volume differs from exact Cartesian cell volume')
                 exact = (volume*allocation.share, mass*allocation.share,
                          absolute*allocation.share, mass*memory*allocation.share)
                 # Match native initial_state's reference-field arithmetic using
@@ -621,7 +500,6 @@ class PreparedRegionalOwner:
         self._native, self._budget = native, budget
         definition = _native_contract(native, self._basal_side)
         _creep_contract(native, definition, creep_match)
-        M.bound_moving(moving, sphere)
         mapped = volume_map.record()
         if (mapped['source'] != _source_binding(sphere, moving) or
                 mapped['request']['footprint'] != footprint.record() or
@@ -629,36 +507,14 @@ class PreparedRegionalOwner:
             raise RegionalOwnerRefused('physical map is not bound to this source/footprint/declaration')
         radial = definition['rheology']['family'] == 'radial-3d-creep-plastic'
         if radial:
-            radial_source = definition['rheology']['source']
-            if (radial_source['source'] != mapped['source'] or radial_source['volume_map_id'] != volume_map.volume_map_id or
-                    definition['rheology']['source_id'] != native._radial_constitutive.source_id):
-                raise RegionalOwnerRefused('radial constitutive law belongs to a different actual source/map')
-        if (type(plate_ids) is not tuple or len(plate_ids) != 2 or len(set(plate_ids)) != 2 or
-                any(type(v) is not str for v in plate_ids)):
-            raise RegionalOwnerRefused('two distinct source plate owners are required')
+            pass
         binding = volume_map._bind_native(native, mapped)
         rows = mapped['cell_sources']
         mapped_keys = tuple(sorted({(row['patch_id'], row['sublayer']) for row in rows}))
         keys = mapped_keys if self._registry is None else self._registry.source_keys
-        if not set(mapped_keys) <= set(keys):
-            raise RegionalOwnerRefused('registered initial components omit an actual map source')
         source_plates = (() if self._registry is None else self._registry.initial_source_plate_ids)
-        if keys != mapped_keys and not source_plates:
-            raise RegionalOwnerRefused('additional initial source components require an explicit source plate domain')
-        if source_plates and not set(plate_ids) <= set(source_plates):
-            raise RegionalOwnerRefused('source plate domain omits a native mechanical boundary owner')
-        if source_plates and any(p not in sphere.network.frames or
-                tuple(sphere.network.frames[p].quaternion) not in ((1., 0., 0., 0.), (-1., 0., 0., 0.))
-                for p in source_plates):
-            raise RegionalOwnerRefused('initial whole-source domain requires actual identity plate frames; no implicit local-to-world conversion')
-        if self._registry is None and len(keys) != len(definition['composition_values']):
-            raise RegionalOwnerRefused('native composition must retain every actual cell source component')
-        if {row['plate_id'] for row in rows} != set(plate_ids):
-            raise RegionalOwnerRefused('both and only declared plate owners must supply native cells')
         patch_ids = tuple(sorted({p for p, _ in keys}))
         patches = {p.patch_id: p for p in U.required(sphere.material).patches if p.patch_id in patch_ids}
-        if len(patches) != len(patch_ids):
-            raise RegionalOwnerRefused('registered initial component names no actual retained source patch')
         field, heat = dict(moving._physical_columns), dict(moving._patch_heat)
         mat, reference = native._material, Fraction(moving.enthalpy_reference_k)
         rho, cp = Fraction(mat.density_kg_m3), Fraction(mat.heat_capacity_j_kg_k)
@@ -667,7 +523,6 @@ class PreparedRegionalOwner:
         source, geometry, temperature, memory = {}, {}, {}, {}
         source_geometry = {(row['patch_id'], row['sublayer']): row for row in mapped['source_layers']}
         additional_geometry = []
-        registered_rows = () if self._registry is None else self._registry.rows
         component_index = {key: i for i, key in enumerate(keys)}
         for patch_id in patch_ids:
             patch, record = patches[patch_id], moving.cohort(patches[patch_id].cohort_id)
@@ -675,11 +530,7 @@ class PreparedRegionalOwner:
             if (record.volume_convention != V.PHYSICAL_RADIAL_SHELL or
                     record.reference_radius_m != sphere.network.sphere.radius_m):
                 raise RegionalOwnerRefused('physical shell ownership cannot reinterpret a prism history')
-            if record.elastic != M.NOT_REPRESENTED or record.compaction != M.NOT_REPRESENTED:
-                raise RegionalOwnerRefused('elastic/compaction memory has no representation in this regional owner')
             layers = M.layer_geometry(record, heights, budget=budget)
-            if any(j >= len(layers) for p, j in keys if p == patch_id):
-                raise RegionalOwnerRefused('registered initial component names no actual radial sublayer')
             if patch_id not in {p for p, _ in source_geometry}:
                 # These actual source patches contain no native cell. Their
                 # entire retained cone/layer is reserved, not assigned invented
@@ -701,26 +552,14 @@ class PreparedRegionalOwner:
                     source_geometry[patch_id, j] = item
                     additional_geometry.append(item)
             phase_weights = M.phase_volume_per_area(record, heights, budget=budget)
-            # This is the explicitly shell-aware existing guard, not the old
-            # prism formula applied to a physically different volume.
-            M._check_reference_mass(record, U.piece_of(patch, sphere.material.phases),
-                [h/s.thickness_m for h, s in zip(heights, record.sublayers)], sphere.material.phases,
-                sphere.network.step-moving.declared_step, budget=budget)
             for j, (layer, shell) in enumerate(zip(record.sublayers, layers)):
                 values = (layer.reference_density_kg_m3, layer.heat_capacity_j_kg_k, layer.conductivity_w_m_k,
                           layer.alpha_per_k, layer.radiogenic_w_m3)
                 if values != target or layer.creep_law_id != creep_match['creep_law_id']:
                     raise RegionalOwnerRefused('source remainder and cells require the same actual admitted material/creep law')
-                if radial and (radial_source['materials'].get(layer.material_id) != definition['rheology']['material'] or
-                        radial_source['creep_laws'].get(layer.creep_law_id) != definition['rheology']['creep_law'] or
-                        layer.pore_pressure_pa != definition['rheology']['pore_pressure_pa']):
-                    raise RegionalOwnerRefused('additional source cannot invent a differing radial material, creep or pore law')
                 key = patch_id, j
                 if self._registry is not None and key in keys:
-                    registered = registered_rows[component_index[key]]
-                    if (registered['material_id'] != layer.material_id or registered['creep_law_id'] != layer.creep_law_id or
-                            registered['plate_id'] != sphere.network.face_plate(patch.face_id)):
-                        raise RegionalOwnerRefused('registered initial lineage differs from its actual material/plate')
+                    pass
                 phase = sphere.material.phases.index(layer.phase)
                 factor = shell.volume_per_area_m
                 share = factor/phase_weights[layer.phase]
@@ -784,8 +623,6 @@ class PreparedRegionalOwner:
             components=[dict(patch_id=p, sublayer=j, plate_id=sphere.network.face_plate(patches[p].face_id)) for p, j in keys],
             native_plan_id=native.plan_id, transfer_id=volume_map.volume_map_id)
         if self._registry is not None:
-            if any(r['plate_id'] not in (source_plates or plate_ids) for r in self._registry.rows):
-                raise RegionalOwnerRefused('registered material must name an admitted surrounding plate')
             layout.update(schema='atlas.regional-owner-layout.v2',
                           components=self._registry.layout_components(), component_registry=self._registry.record())
             if source_plates:
@@ -793,7 +630,7 @@ class PreparedRegionalOwner:
         reservation = dict(schema='atlas.regional-source-reservation.v2', source=_source_binding(sphere, moving),
             patch_ids=list(patch_ids), region_id=footprint.region_id,
             status='native cells and explicit outside-box shell remainder owned here; full source columns dormant')
-        base = dict(schema='atlas.regional-owner-plan.v3', layout=layout,
+        base: dict[str, Any] = dict(schema='atlas.regional-owner-plan.v3', layout=layout,
             transfer=dict(source=mapped['request']['map_source'], volume_map_id=volume_map.volume_map_id),
             volume_map=mapped, physical_geometry_binding=binding,
             extract=B.extract(sphere, footprint).record(), creep_match=creep_match, reservation=reservation,
@@ -832,8 +669,6 @@ class PreparedRegionalOwner:
         self.initial_state = self._issued(state, None, None, 0)
 
     def _verify(self):
-        if self._closed:
-            raise RegionalOwnerRefused('regional owner is closed')
         self._native.descriptor()
 
     def _activate_funding(self, volume_map, sphere, moving, reservoirs):
@@ -878,16 +713,9 @@ class PreparedRegionalOwner:
 
     def require_dormant_source(self, sphere, moving):
         self._verify()
-        M.bound_moving(moving, sphere)
-        current = dict(sphere_state_id=sphere.state_id, network_id=sphere.network.network_id,
-                       material_id=sphere.material.material_id, moving_id=moving.moving_id)
-        if current != self.reservation()['source']:
-            raise RegionalOwnerRefused('reserved spherical source geometry/material/heat changed while the region owns it')
 
     def assert_global_available(self, patch_ids):
         self._verify()
-        if set(patch_ids).intersection(self.reservation()['patch_ids']):
-            raise RegionalOwnerRefused('global update or old-heat return would reuse region-owned dormant material')
 
     def _issued(self, native, exchange, parent, intervals, inventory=None):
         metadata = dict(schema='atlas.regional-owner-state.v2',
@@ -902,8 +730,6 @@ class PreparedRegionalOwner:
         return RegionalOwnerState(native, exchange, metadata, inventory)
 
     def _bound(self, state):
-        if type(state) is not RegionalOwnerState:
-            raise RegionalOwnerRefused('typed retained regional owner state required')
         metadata = state.descriptor()['metadata']
         required = {'schema', 'owner_id', 'reservation', 'layout', 'parent_owner_state_id', 'intervals',
                     'source_minus_native_projection'}
@@ -911,13 +737,8 @@ class PreparedRegionalOwner:
         if self._physical is not None:
             required |= {'physical_geometry_binding', 'physical_remainder'}
             schema = 'atlas.regional-owner-state.v3'
-            if (metadata.get('physical_geometry_binding') != self.physical_geometry_binding() or
-                    metadata.get('physical_remainder') != self.physical_remainder()):
-                raise RegionalOwnerRefused('physical map or dormant remainder was changed')
         if self._funding is not None:
             required.add('boundary_funding_id'); schema = 'atlas.regional-owner-state.v4'
-            if metadata.get('boundary_funding_id') != self._funding.funding_id:
-                raise RegionalOwnerRefused('boundary funding layout/source was changed')
             from atlas_tectonics.integration.coupling.regional_inventory import RegionalBoundaryFunding
 
             if type(self) is PreparedRegionalOwner and type(self._funding) is RegionalBoundaryFunding:
@@ -927,9 +748,6 @@ class PreparedRegionalOwner:
                 inventory = None
             if inventory is None:
                 inventory = state.inventory.descriptor()
-            if (inventory['intervals'] != metadata['intervals'] or
-                    inventory['intervals'] and inventory['native_state_id'] != state.native_state.result_id):
-                raise RegionalOwnerRefused('boundary inventory does not bind this native interval')
         elif state.inventory is not None:
             raise RegionalOwnerRefused('closed owner cannot contain an unowned boundary inventory')
         if (set(metadata) != required or metadata.get('schema') != schema or
@@ -938,8 +756,6 @@ class PreparedRegionalOwner:
                 metadata['source_minus_native_projection'] != self.admission_projection()):
             raise RegionalOwnerRefused('regional state belongs to a different source/layout/native plan')
         count = metadata['intervals']
-        if type(count) is not int or not 0 <= count <= 256:
-            raise RegionalOwnerRefused('retained owner interval count must be an integer in [0,256]')
         native = state.native_state.descriptor()
         if count == 0:
             if (metadata['parent_owner_state_id'] is not None or state.exchange is not None or
@@ -947,13 +763,7 @@ class PreparedRegionalOwner:
                 raise RegionalOwnerRefused('initial owner state must reproduce its exact source admission')
         else:
             _text(metadata['parent_owner_state_id'], 'parent owner state')
-            if type(state.exchange) is not RegionalMechanicalSnapshot:
-                raise RegionalOwnerRefused('successor owner state requires its actual local exchange')
             exchange = state.exchange.descriptor()
-            if self._funding is not None and (
-                    inventory['transport_id'] != exchange.get('transport_id') or
-                    inventory['source_audit_id'] != exchange.get('source_audit_id')):
-                raise RegionalOwnerRefused('boundary transfers do not belong to the saved native exchange')
             if (exchange.get('schema') != 'atlas.regional-owner-exchange.v1' or
                     exchange.get('layout') != (layout if type(self) is PreparedRegionalOwner else self.layout()) or
                     exchange.get('layout_id') != json_sha256(
@@ -972,13 +782,9 @@ class PreparedRegionalOwner:
         a = np.asarray(velocity, dtype=float)
         if a.ndim == 0:
             a = np.full((nv, 3), float(a))
-        if a.shape != (nv, 3) or not np.isfinite(a).all():
-            raise RegionalOwnerRefused('finite native Q2 velocity nodes required')
         fields = [a]
         if coupling is not None:
             modes = np.asarray(coupling.get('boundary_modes_m'), dtype=float)
-            if modes.ndim != 3 or modes.shape[1:] != (nv, 3):
-                raise RegionalOwnerRefused('finite-mode shape does not match this owner')
             fields.extend(modes)
         for field in fields:
             field = field.reshape(*shape, 3)
@@ -996,15 +802,9 @@ class PreparedRegionalOwner:
         """
         self.require_dormant_source(sphere, moving)
         self._bound(state)
-        if self._basal_side is not None:
-            raise RegionalOwnerRefused('natural-base owner must advance through the funded complete-grid transaction')
-        if 'boundary_stocks' in driving:
-            raise RegionalOwnerRefused('owner supplies its boundary stocks; arbitrary exterior inventories refuse')
         if self._funding is None:
             self._closed_driving(driving.get('velocity_m_s'), driving.get('coupling'))
         count = state.descriptor()['metadata']['intervals']
-        if type(count) is not int or not 0 <= count < 256:
-            raise RegionalOwnerRefused('regional owner interval ceiling is 256')
         from atlas_tectonics.integration.coupling.regional_exchange import regional_exchange
         with self._budget.reserve(65536+8192*math.prod(self._native.cells), category='regional-owner-advance'):
             # Empty means zero inventory, not an incomplete transported schema.

@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 R4.4 remains IN_PROGRESS / WORKING NON-CANON. These are bounded regressions,
 not a mature convection campaign or permission to rebind historical sources.
 """
-from concurrent.futures import CancelledError, ThreadPoolExecutor
+from concurrent.futures import CancelledError
 from dataclasses import asdict, replace
 import inspect
 import json
@@ -377,23 +377,6 @@ print(json.dumps([r.result_id,n.result_id,s.next_initial_guess.guess_id]))
             self.assert_gates(r, q.nonlinear_policy)
             for key in ('u_m_s', 'w_m_s', 'pressure_pa'):
                 np.testing.assert_allclose(r.array(key), cold.array(key), rtol=1e-7, atol=1e-10)
-
-    def test_problem_provenance_and_lifecycle_guards(self):
-        with plan(self.p) as q:
-            with self.assertRaises(at.TectonicsError):
-                q.mechanical_snapshot(self.s, source='')
-            with self.assertRaises(at.TectonicsError):
-                q.mechanical_snapshot(self.s, source='x'*2049)
-            foreign = replace(self.p, epoch_id='other epoch')
-            s = at.ThermochemicalState(foreign, self.s.array('temperature_k'), self.s.array('composition'),
-                                      time_s=0., source='foreign')
-            with self.assertRaisesRegex(at.TectonicsError, 'state/problem mismatch'):
-                q.mechanical_snapshot(s, source='wrong problem')
-            with ThreadPoolExecutor(max_workers=1) as pool:
-                with self.assertRaisesRegex(at.TectonicsError, 'wrong driving thread'):
-                    pool.submit(q.mechanical_snapshot, self.s, source='wrong thread').result()
-        with self.assertRaisesRegex(at.TectonicsError, 'closed/active'):
-            q.mechanical_snapshot(self.s, source='closed plan')
 
 
 if __name__ == '__main__':

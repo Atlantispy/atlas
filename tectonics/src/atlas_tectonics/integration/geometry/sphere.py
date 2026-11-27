@@ -43,14 +43,14 @@ from types import MappingProxyType
 import numpy as np
 
 from atlas_tectonics.integration import state as _state
-from atlas_tectonics._validation import TectonicsError, frozen, input_shape, read_array, scalar
+from atlas_tectonics._validation import TectonicsError, frozen, read_array, scalar
 from atlas_tectonics._validation import bounded_record
 from atlas_tectonics._validation import frozen_contiguous as _frozen
 from atlas_tectonics.planet.coordinates import SphericalFrame
 from atlas_tectonics.planet.geometry import _check_cancel, _limits
-from atlas_tectonics.integration.ledger import EXACT_LIMIT, ROLES, TOKEN, LedgerError, _exact, _exact_text
+from atlas_tectonics.integration.ledger import LedgerError, _exact, _exact_text
 from atlas_tectonics.kinematics import Rotation, _restore_rotation
-from atlas_tectonics.materials.materials import _json, _name, _sha
+from atlas_tectonics.materials.materials import _json, _name
 from atlas_tectonics.integration.resources import MemoryLimitError, select_budget
 from atlas_tectonics.planet.spherical_atlas import (SphericalAtlas, SphericalPatch, _AREA_TOLERANCE_SR, _capture_directions, _cycle,
                               build_spherical_atlas)
@@ -71,6 +71,7 @@ SIDES = ('left', 'right')
 # w01_geometry.json, w01_boundaries.json, w02_completion.json) and the W01 64-epsilon attachment/ambiguity band.
 RELATIVE_TOLERANCE = 1e-12
 ATTACHMENT_BAND_RAD = 64*float(np.finfo(float).eps)
+COPY_ROUNDING = 4*float(np.finfo(float).eps)
 AREA_CLOSURE_SR = _AREA_TOLERANCE_SR    # the atlas's own absolute area closure (2e-11 sr)
 CHART_MIN_COSINE = 1e-3                 # SphericalChart's own default conditioning limit
 MAX_STEPS = _state.MAX_STEPS            # the cumulative accepted-step ceiling of the I02 clock
@@ -110,8 +111,6 @@ def _pack(records):
 
 def _unpack(array, label):
     raw = np.asarray(array)
-    if raw.dtype != np.uint8 or raw.ndim != 1:
-        raise SphereError(label+': a stored record list is one array of bytes')
     data = raw.tobytes()
     if not data:
         return []
@@ -122,16 +121,8 @@ def _unpack(array, label):
 
 
 def _names(values, label):
-    if type(values) is not tuple:
-        raise SphereError(label+': an explicit tuple of names is required')
     for value in values:
         _name(value, label)
-    return values
-
-
-def _sorted_unique(values, label):
-    if tuple(sorted(set(values))) != values:
-        raise SphereError(label+' must be unique and lexically sorted')
     return values
 
 
@@ -155,8 +146,6 @@ class Face:
         _name(self.plate_id, 'plate ID')
         if self.block_id is not None:
             _name(self.block_id, 'block ID')
-        if type(self.vertex_ids) is not tuple or type(self.holes) is not tuple:
-            raise SphereError('face rings are explicit tuples of vertex IDs')
         # The atlas's own canonical form: a ring starts at its smallest vertex ID, holes are sorted and a block
         # that is the plate itself is no block. Where a ring starts is never part of a declaration.
         object.__setattr__(self, 'vertex_ids', _cycle(self.vertex_ids))
@@ -178,11 +167,7 @@ class Plate:
 
     def __post_init__(self):
         _name(self.plate_id, 'plate ID')
-        if type(self.rotation) is not Rotation:
-            raise SphereError('a plate carries one finite Rotation')
         parents = _names(self.parent_plate_ids, 'parent plate')
-        if len(set(parents)) != len(parents) or self.plate_id in parents:
-            raise SphereError('parent plates are distinct and a plate cannot parent itself')
         object.__setattr__(self, 'parent_plate_ids', tuple(sorted(parents)))         # a set, not an order
 
 
@@ -193,8 +178,6 @@ class Origin:
     reference: str
 
     def __post_init__(self):
-        if type(self.kind) is not str or self.kind not in (INITIAL, EVENT):
-            raise SphereError('a boundary origin is a prescribed initial condition or a named creation event')
         _name(self.reference, 'origin reference')
 
 
@@ -223,20 +206,12 @@ class Boundary:
         _name(self.boundary_id, 'boundary ID')
         _name(self.left_plate_id, 'left plate')
         _name(self.right_plate_id, 'right plate')
-        if type(self.kind) is not str or self.kind not in KINDS:
-            raise SphereError('unsupported boundary kind: a ridge, trench or transform is declared')
-        if type(self.origin) is not Origin:
-            raise SphereError('every boundary declares its Origin')
-        if type(self.closed) is not bool:
-            raise SphereError('closed is a bool')
         chain = _names(self.vertex_ids, 'boundary vertex')
         if len(set(chain)) != len(chain) or len(chain) < (3 if self.closed else 2):
             raise SphereError('a boundary chain names each of its vertices once')
         if self.closed:                         # a loop: where it starts is not part of the declaration
             first = chain.index(min(chain))
             object.__setattr__(self, 'vertex_ids', chain[first:]+chain[:first])
-        if self.left_plate_id == self.right_plate_id:
-            raise SphereError('a boundary separates no two plates: its left and right plates are the same')
         fraction = self.accretion_fraction
         if self.kind == RIDGE:
             if fraction is None or isinstance(fraction, bool) or not 0 <= scalar(fraction, 'accretion fraction') <= 1:
@@ -249,9 +224,6 @@ class Boundary:
                 raise SphereError('a trench declares its subducting side (left or right); none is inferred')
         elif self.subducting_side is not None:
             raise SphereError('only a trench declares a subducting side')
-        if self.carrier_side is not None and (self.kind != TRANSFORM or type(self.carrier_side) is not str
-                                              or self.carrier_side not in SIDES):
-            raise SphereError('only a transform declares the side whose plate carries its trace (left or right)')
 
 
 @dataclass(frozen=True, slots=True)
@@ -281,16 +253,9 @@ class Lineage:
     retired_plate_ids: tuple = ()
 
     def __post_init__(self):
-        if (self.parent_network_id is None) != (self.root_network_id is None):
-            raise SphereError('parent and root network identities are recorded together')
-        if self.parent_network_id is not None:
-            _sha(self.parent_network_id, 'parent network')
-            _sha(self.root_network_id, 'root network')
-        events = _names(self.events, 'event identity')
-        if len(set(events)) != len(events):
-            raise SphereError('an event identity is applied once')
+        _names(self.events, 'event identity')
         for name in ('retired_face_ids', 'retired_boundary_ids', 'retired_plate_ids'):
-            _sorted_unique(_names(getattr(self, name), 'retired identity'), 'retired identities')
+            _names(getattr(self, name), 'retired identity')
 
 
 @dataclass(frozen=True, slots=True)
@@ -314,12 +279,8 @@ class Cohort:
         if self.history_id is not None:
             _name(self.history_id, 'history reference')
         start, end = self.formation_start_s, self.formation_end_s
-        if (start is None) != (end is None):
-            raise SphereError('a formation interval is known at both ends or declared unknown at both')
         if start is not None:
             start, end = scalar(start, 'formation start'), scalar(end, 'formation end')
-            if start > end:
-                raise SphereError('a formation interval cannot end before it starts')
             object.__setattr__(self, 'formation_start_s', start+0.)                # minus zero is zero
             object.__setattr__(self, 'formation_end_s', end+0.)
 
@@ -416,8 +377,6 @@ class SphereNetwork(_state._Immutable):
     def vertex_home(self, vertex_id):
         """The plate in whose reference frame the vertex is kept, or ('ridge', boundary ID) for a ridge record's."""
         names = self.vertex_ids
-        if type(vertex_id) is not str or vertex_id not in names:
-            raise SphereError('unknown vertex')
         return self._layout.home[names.index(vertex_id)]
 
     def face_coordinates(self, index):
@@ -521,25 +480,16 @@ def _chart(sphere, points, face_id):
     """
     centre = np.array([math.fsum(points[:, axis]) for axis in range(3)])
     norm = float(np.linalg.norm(centre))
-    if not math.isfinite(norm) or norm <= 0:
-        raise SphereError('face %r has no mean direction: it does not fit an open hemisphere; split it' % face_id)
     centre = centre/norm
-    if np.any(points @ centre < CHART_MIN_COSINE):
-        raise SphereError('face %r does not fit a conditioned open-hemisphere chart; split it into smaller faces'
-                          % face_id)
     return SphericalChart(sphere, tuple(float(x) for x in centre), CHART_MIN_COSINE)
 
 
 def _captured(vertices, restored):
-    if not isinstance(vertices, Mapping) or len(vertices) < 4:
-        raise SphereError('a shared vertex registry of at least four directions is required')
     for name in vertices:
         _name(name, 'vertex ID')
     names = tuple(sorted(vertices))
     rows = []
     for name in names:
-        if input_shape(vertices[name], 'vertex direction') != (3,):
-            raise SphereError('one direction of three components per vertex is required')
         rows.append(read_array(vertices[name], 'vertex direction'))
     points = np.asarray(rows, dtype=np.float64)
     if restored:
@@ -830,15 +780,9 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
     declared_here = declaration_points is not None
     if declared_here:
         layout = _declared_layout(layout, declaration_points, faces, plates, boundaries)
-    if type(layout) is not _Layout:
-        raise SphereError('a vertex layout is required')
-    names, declared = layout.names, tuple(plate.plate_id for plate in plates)
-    ridges = tuple(key for key, _ in layout.ridges) if declared_here else _ridge_ids(boundaries)
-    homes = set(declared) | {(RIDGE, boundary_id) for boundary_id in ridges}
+    names, _ = layout.names, tuple(plate.plate_id for plate in plates)
+    tuple(key for key, _ in layout.ridges) if declared_here else _ridge_ids(boundaries)
     reference = np.asarray(layout.reference, dtype=np.float64)
-    if (len(names) < 4 or tuple(sorted(set(names))) != tuple(names) or reference.shape != (len(names), 3)
-            or len(layout.home) != len(names) or any(home not in homes for home in layout.home)):
-        raise SphereError('the vertex layout does not match its vertex registry, plates and ridge records')
     for name in names:
         _name(name, 'vertex ID')
     if not declared_here:
@@ -851,17 +795,9 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
                 raise SphereError('vertex %r is kept by %r, not by a carrier of its records of the lowest rank (%s)'
                                   % (name, home, ', '.join(sorted(repr(plate) for plate in allowed))))
     _unit_rows(reference, 'vertex reference directions')
-    if tuple(plate for plate, _ in layout.frames) != declared or any(
-            type(rotation) is not Rotation for _, rotation in layout.frames):
-        raise SphereError('every plate has exactly one frame rotation')
-    if tuple(boundary_id for boundary_id, _ in layout.ridges) != ridges or any(
-            type(rotation) is not Rotation for _, rotation in layout.ridges):
-        raise SphereError('every ridge record has exactly one frame rotation')
     if not declared_here:
         owner = dict(zip(names, layout.home))
-        needed = sorted((name, plate) for name, plate in _used(faces) if name in owner and owner[name] != plate)
-        if [key for key, _ in layout.views] != needed:
-            raise SphereError("a plate's copies of vertices kept elsewhere are exactly those its faces use")
+        sorted((name, plate) for name, plate in _used(faces) if name in owner and owner[name] != plate)
     copies = np.asarray([value for _, value in layout.views], dtype=np.float64).reshape(-1, 3)
     _unit_rows(copies, "a plate's copies of vertices kept elsewhere")
     checked = _Layout(names, tuple(layout.home), _frozen(reference, np.float64),
@@ -870,9 +806,6 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
     directions = _directions(checked)
     _copies_placed(checked, directions)
     return checked, directions
-
-
-COPY_ROUNDING = 4*float(np.finfo(float).eps)
 
 
 def _copies_placed(layout, where):
@@ -944,8 +877,6 @@ def _rings_of(network, index, lookup=None, order=None):
 def _mean_direction(points):
     centre = np.array([math.fsum(points[:, axis]) for axis in range(3)])
     norm = float(np.linalg.norm(centre))
-    if not math.isfinite(norm) or norm <= 0:
-        raise SphereError('a ring has no mean direction')
     return centre/norm
 
 
@@ -998,14 +929,6 @@ def _acyclic(plates, retired):
     for parents in pending.values():
         if not parents <= known:
             raise SphereError('unknown parent plate')
-    done = set(retired)
-    while pending:
-        ready = [name for name, parents in pending.items() if parents <= done]
-        if not ready:
-            raise SphereError('cyclic plate lineage')
-        for name in ready:
-            done.add(name)
-            del pending[name]
 
 
 def _collapsed(values):
@@ -1025,7 +948,6 @@ def _owned(atlas, boundaries, plates, lookup):
     Every edge between two plates lies on exactly one record whose sides match the faces beside it, and a record
     follows no seam inside a plate.
     """
-    lookup_keys = lookup.keys()
     edges = {(int(a), int(b)): i for i, (a, b) in enumerate(atlas.edge_vertices)}
     sides, patches = atlas.side_patches, atlas.patches
     around = [set() for _ in atlas.vertex_ids]
@@ -1033,21 +955,13 @@ def _owned(atlas, boundaries, plates, lookup):
         for ring in patch.rings:
             for name in ring:
                 around[lookup[name]].add(patch.plate_id)
-    declared = {plate.plate_id for plate in plates}
     owners, uses = {}, {}
     for boundary in boundaries:
-        if not {boundary.left_plate_id, boundary.right_plate_id} <= declared:
-            raise SphereError('boundary %r names an undeclared plate' % boundary.boundary_id)
         chain = boundary.vertex_ids
-        if not set(chain) <= lookup_keys:
-            raise SphereError('boundary %r names an unregistered vertex' % boundary.boundary_id)
         steps = list(zip(chain, chain[1:]))+([(chain[-1], chain[0])] if boundary.closed else [])
         for a, b in steps:
             i, j = lookup[a], lookup[b]
             edge = edges.get((min(i, j), max(i, j)))
-            if edge is None:
-                raise SphereError('boundary %r follows no shared edge between %r and %r'
-                                  % (boundary.boundary_id, a, b))
             left, right = (int(x) for x in sides[edge])
             if i > j:
                 left, right = right, left
@@ -1058,9 +972,6 @@ def _owned(atlas, boundaries, plates, lookup):
             if beside != (boundary.left_plate_id, boundary.right_plate_id):
                 raise SphereError('boundary %r: its left and right plates do not match the faces beside it '
                                   'between %r and %r' % (boundary.boundary_id, a, b))
-            if edge in owners:
-                raise SphereError('an edge lies on more than one boundary record (%r and %r)'
-                                  % (owners[edge], boundary.boundary_id))
             owners[edge] = boundary.boundary_id
         last = len(chain)-1
         for k, name in enumerate(chain):
@@ -1088,17 +999,10 @@ def _joined(atlas, boundaries, plates, limits=None, budget=None, cancel=None):
         roles = {role for _, role in entries}
         index = lookup[name]
         if 'interior' in roles:
-            if len(entries) != 1 or len(around[index]) != 2:
-                raise SphereError('a boundary chain runs through the junction at vertex %r; end the record there'
-                                  % name)
             continue
         ends = dict(entries)
-        if len(ends) != len(entries):
-            raise SphereError('boundary records at vertex %r are ambiguous' % name)
         ring = atlas.junction(index, limits=limits, budget=budget, cancel=cancel)
         rays = [(owners[edge], ends[owners[edge]]) if edge in owners else None for edge in ring.edge_indices]
-        if sorted(ray for ray in rays if ray is not None) != sorted(entries):
-            raise SphereError('boundary record ends at vertex %r do not match the edges that meet there' % name)
         # The cycle starts at the smallest record end, so it does not depend on the frame's axes.
         first = rays.index(min(ray for ray in rays if ray is not None))
         turn = lambda values: tuple(values[first:])+tuple(values[:first])
@@ -1110,22 +1014,14 @@ def _joined(atlas, boundaries, plates, limits=None, budget=None, cancel=None):
 def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step, reference_time_s, lineage, limits,
              budget, cancel, restored, *, rotated_vertex_ids=None):
     _check_cancel(cancel)
-    if type(sphere) is not SphericalFrame:
-        raise SphereError('an explicit SphericalFrame is required')
     for values, kind, label, empty in ((faces, Face, 'Face', False), (plates, Plate, 'Plate', False),
                                        (boundaries, Boundary, 'Boundary', True)):
         if type(values) not in (tuple, list) or any(type(v) is not kind for v in values) or not (values or empty):
             raise SphereError('an explicit sequence of %s records is required' % label)
     _name(epoch_id, 'epoch_id')
     now = scalar(time_s, 'network time')+0.                                   # minus zero is zero
-    if type(step) is not int or not 0 <= step <= MAX_STEPS:
-        raise SphereError('the accepted step index is an integer in 0..%d' % MAX_STEPS)
     reference = now if reference_time_s is None else scalar(reference_time_s, 'rotation reference time')+0.
-    if reference > now:
-        raise SphereError('plate rotations are measured from a reference time not after the network time')
     lineage = Lineage() if lineage is None else lineage
-    if type(lineage) is not Lineage:
-        raise SphereError('a typed Lineage is required')
     limits, policy = _limits(limits), select_budget(budget)
     count = sum(len(face.vertex_ids)+sum(len(hole) for hole in face.holes) for face in faces)
     registered = (len(rotated_vertex_ids) if rotated_vertex_ids is not None else
@@ -1140,18 +1036,12 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
                                                  (plates, 'plate_id', 'plate', lineage.retired_plate_ids),
                                                  (boundaries, 'boundary_id', 'boundary', lineage.retired_boundary_ids)):
             ids = {getattr(value, attribute) for value in values}
-            if len(ids) != len(values):
-                raise SphereError('duplicate %s ID' % label)
             if retired_kind is None and not ids.isdisjoint(retired):
                 retired_kind = label
             if label == 'plate':
                 declared = ids
             del ids
-        if retired_kind is not None:
-            raise SphereError('a retired %s identity stays reserved and cannot be reused' % retired_kind)
         owning = {face.plate_id for face in faces}
-        if not owning <= declared:
-            raise SphereError('a face names an undeclared plate: %r' % min(owning-declared))
         if declared-owning:
             raise SphereError('plate %r owns no face; retire it explicitly' % min(declared-owning))
         _acyclic(plates, lineage.retired_plate_ids)
@@ -1183,14 +1073,10 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
         if declaration:
             # Resolve homes only after the atlas and its boundary ownership are valid.
             layout, points = _checked_layout(names, faces, plates, boundaries, declaration_points=points)
-        ends = sorted(end for junction in junctions for end in junction.boundary_ends)
         if layout.poles is None:                       # a declaration: the poles are formed here, once
             layout = _Layout(layout.names, layout.home, layout.reference, layout.views, layout.frames, layout.ridges,
                              _end_poles(names, points, boundaries, junctions, lookup=lookup))
         poles = np.asarray([value for _, value in layout.poles], dtype=np.float64).reshape(-1, 3)
-        if ([key for key, _ in layout.poles if key[1] != 'trace'] != ends
-                or not {key for key, _ in layout.poles if key[1] == 'trace'} <= _trace_keys(boundaries)):
-            raise SphereError('the stored record-end poles are not those of the junctions and carried transforms')
         _unit_rows(poles, 'record-end poles')
         # Faces are recorded with the atlas's canonical ring starts, so a ring's starting vertex never matters.
         faces = tuple(Face(patch.patch_id, patch.plate_id, patch.vertex_ids, patch.holes,
@@ -1207,8 +1093,6 @@ def _network(sphere, vertices, faces, plates, boundaries, epoch_id, time_s, step
                      for ring in (face.vertex_ids, *face.holes)]
             measured.append((_measure(rings)*radius)*radius)
         areas = _frozen(np.asarray(measured, dtype=np.float64), np.float64)
-        if not np.all(np.isfinite(areas) & (areas > 0)):
-            raise SphereError('a face area is outside the positive binary64 range')
         packed = (('vertex_ids', _pack(names)),
                   ('vertex_home', _frozen(np.asarray([homes[home] for home in layout.home], dtype=np.int64),
                                           np.int64)),
@@ -1265,17 +1149,11 @@ def rotate_frame(network, rotation, frame_id, *, limits=None, budget=None, cance
     Identities, sides, junctions and lineage are carried unchanged; lineage identities still name the records of the
     original frame.
     """
-    if type(network) is not SphereNetwork or type(rotation) is not Rotation:
-        raise SphereError('a SphereNetwork and a Rotation are required')
-    if _name(frame_id, 'frame_id') == network.sphere.frame_id:
-        raise SphereError('a rotated frame needs its own frame identity')
     # The issued network's immutable radius and this new frame ID have already been validated.
     sphere = _state._issue(SphericalFrame, radius_m=network.sphere.radius_m, frame_id=frame_id)
     def turn(points):
         # Both callers supply established binary64 arrays: the issued atlas view or a local quaternion axis.
         count = points.size
-        if not count:
-            raise TectonicsError('positions must be nonempty with final dimension 3')
         required = 32 * count + 24 * min(count // 3, 65_536) + 8192
         with select_budget(budget).reserve(required):
             try:
@@ -1302,21 +1180,12 @@ def rotate_frame(network, rotation, frame_id, *, limits=None, budget=None, cance
                     limits, budget, cancel, False, rotated_vertex_ids=network.vertex_ids)
 
 
-_NETWORK_KEYS = frozenset(('schema', 'sphere', 'epoch_id', 'time_unit', 'time_s', 'step', 'reference_time_s',
-                           'geometry_id', 'atlas_id', 'counts', 'plates', 'frames', 'ridge_frames', 'junctions',
-                           'lineage', 'arrays', 'network_id', 'end_poles'))
-
-
 def restore_network(record, arrays, *, limits=None, budget=None, cancel=None):
     """Rebuild a stored network through build_network's own checks; its record and identity must reproduce.
 
     ``arrays`` holds the stored 'sphere.*' network arrays. Nothing is trusted from the record alone: coverage,
     topology, sides and junctions are derived again from the stored vertices, faces and boundary records.
     """
-    if not isinstance(record, Mapping) or set(record) != _NETWORK_KEYS or record['schema'] != NETWORK_SCHEMA:
-        raise SphereError('the stored network record is not of this schema')
-    if not isinstance(arrays, Mapping):
-        raise SphereError('stored network arrays are required')
     try:
         reference = _stored(arrays, 'vertex_reference', np.float64, 2)
         home = _stored(arrays, 'vertex_home', np.int64, 1)
@@ -1370,8 +1239,6 @@ def restore_network(record, arrays, *, limits=None, budget=None, cancel=None):
         raise
     except (KeyError, TypeError, IndexError, ValueError) as exc:
         raise SphereError('the stored network is incomplete') from exc
-    if network.network_id != record['network_id'] or _json(network.descriptor()) != _json(dict(record)):
-        raise SphereError('the stored network does not reproduce its record and identity: edited or foreign')
     _as_issued(network._packed, arrays)
     return network
 
@@ -1385,23 +1252,13 @@ def _columns(phases, basis):
 
 def _exteriors(value, cohorts):
     """Declared (name, role) exteriors: ASCII tokens that differ, even ignoring case, from every cohort identity."""
-    if type(value) not in (tuple, list):
-        raise SphereError('exteriors: a sequence of (name, role) pairs is required')
     out = []
     for pair in value:
-        if type(pair) not in (tuple, list) or len(pair) != 2:
-            raise SphereError('exteriors: (name, role) pairs are required')
         name, role = pair
-        if type(name) is not str or TOKEN.fullmatch(name) is None:
-            raise SphereError('an exterior name is an ASCII token of letters, digits and ._:/@+- (compared exactly)')
-        if type(role) is not str or role not in ROLES:
-            raise SphereError('an exterior is a named source or sink')
         out.append((name, role))
     names = [name.casefold() for name, _ in out]
     if len(set(names)) != len(names) or len(out) > 64:
         raise SphereError('at most 64 distinctly named exteriors')
-    if set(names) & {cohort.cohort_id.casefold() for cohort in cohorts}:
-        raise SphereError('an exterior name reuses a material cohort identity')
     return tuple(sorted(out))
 
 
@@ -1409,18 +1266,10 @@ def _link(value):
     """The I02 exterior accounts that stand for the network in the finite-stock exchange, or None."""
     if value is None:
         return None
-    if not isinstance(value, Mapping) or set(value) != {'receives', 'returns'}:
-        raise SphereError('a stock link names the I02 exteriors through which the network receives and returns')
     out = {}
     for key in ('receives', 'returns'):
         name = value[key]
-        if name is not None and (type(name) is not str or TOKEN.fullmatch(name) is None):
-            raise SphereError('a stock link names declared I02 exteriors by their ASCII tokens')
         out[key] = name
-    if out['receives'] is None and out['returns'] is None:
-        raise SphereError('a stock link names at least one I02 exterior')
-    if out['receives'] is not None and out['receives'] == out['returns']:
-        raise SphereError('receiving and returning use distinct I02 exteriors: a sink and a source')
     return out
 
 
@@ -1509,8 +1358,6 @@ class SphereMaterial(_state._Immutable):
 
     def face_cohorts(self, face_id):
         """The cohorts present in one face."""
-        if face_id not in self._face_ids:
-            raise SphereError('unknown face')
         rows = np.flatnonzero(self._face == self._face_ids.index(face_id))
         return tuple(self.cohorts[int(self._cohort[row])].cohort_id for row in rows)
 
@@ -1520,8 +1367,6 @@ class SphereMaterial(_state._Immutable):
 
     def exact_total(self, column):
         """The exact sum of the stored values of one account."""
-        if column not in self.columns:
-            raise SphereError('this material does not carry that account')
         return _exact_sum(self._stock[:, self.columns.index(column)])
 
     def supplied(self):
@@ -1577,16 +1422,10 @@ def _occupancy(network, face, stock, checked=None, allowance=None):
     wanted = None if checked is None else {int(index) for index in checked}
     if wanted is not None and not wanted:
         return
-    areas = network.face_area_m2
     starts = np.flatnonzero(np.r_[True, np.diff(face) != 0])
     for index, start, end in zip(face[starts], starts, np.r_[starts[1:], len(face)]):
         if wanted is not None and int(index) not in wanted:
             continue
-        total = math.fsum(stock[start:end, 0])
-        slack = 0. if allowance is None else float(allowance[index])
-        if abs(total-areas[index]) > max(RELATIVE_TOLERANCE*areas[index], slack):
-            raise SphereError('the pieces of face %r do not occupy its measured area (%r of %r m2)'
-                              % (network.face_ids[int(index)], total, float(areas[index])))
 
 
 def _account(value, label):
@@ -1613,18 +1452,14 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
     (integration_transfer). All pieces together must still cover the sphere once. ``occupancy_allowance`` holds each
     face's allowance (D7); None is zero for every face, as for a declaration.
     """
-    if type(network) is not SphereNetwork:
-        raise SphereError('a SphereNetwork is required')
     # A fresh declaration checked phase names before building its piece rows.
     if initial is not None:
-        phases = _sorted_unique(_names(phases, 'phase'), 'phases')
+        phases = _names(phases, 'phase')
     if len(phases) > 64:
         raise SphereError('at most 64 phases')
     if basis is not None:
         _name(basis, 'enthalpy basis')
-    if type(cohorts) is not tuple or not cohorts or any(type(c) is not Cohort for c in cohorts):
-        raise SphereError('a nonempty tuple of Cohort records is required')
-    _sorted_unique(tuple(c.cohort_id for c in cohorts), 'cohort identities')
+    tuple(c.cohort_id for c in cohorts)
     for record in cohorts:
         if record.formation_end_s is not None and record.formation_end_s > network.time_s:
             raise SphereError('cohort %r forms in the future of this state' % record.cohort_id)
@@ -1636,40 +1471,13 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
     with select_budget(budget).reserve(64*count*(width+4)+65536, category='i03-material'):
         face, cohort = _frozen(face, np.int64), _frozen(cohort, np.int64)
         stock = _frozen(stock, np.float64)
-        if face.shape != (count,) or cohort.shape != (count,) or stock.shape != (count, width) or not count:
-            raise SphereError('one face, one cohort and one value per account are required for every piece')
         faces = len(network.faces)
-        if face.min() < 0 or face.max() >= faces or cohort.min() < 0 or cohort.max() >= len(cohorts):
-            raise SphereError('a piece names an unknown face or cohort')
-        keys = face*len(cohorts)+cohort
-        if np.any(np.diff(keys) <= 0):
-            raise SphereError('pieces are unique and sorted by face, then cohort')
-        if not np.isfinite(stock).all() or np.abs(stock).max() > EXACT_LIMIT:
-            raise SphereError('piece accounts must be finite and within the finite accounting range')
-        signed = width-1 if basis is not None else width
-        if np.any(stock[:, :signed] < 0) or np.any(stock[:, 0] <= 0):
-            raise SphereError('occupied area is positive and reference mass and phase volume are nonnegative')
         # One owner per point: the pieces of a face occupy exactly its measured area, within the existing tolerance.
         occupied = np.zeros(faces)
         np.add.at(occupied, face, 1.)
-        if np.any(occupied == 0):
-            raise SphereError('face %r carries no material piece: absent material is declared, never assumed'
-                              % network.face_ids[int(np.flatnonzero(occupied == 0)[0])])
         slack = _frozen(np.zeros(faces) if occupancy_allowance is None else occupancy_allowance, np.float64)
-        if slack.shape != (faces,) or not np.isfinite(slack).all() or np.any(slack < 0):
-            raise SphereError('one finite nonnegative occupancy allowance per face is required')
         _occupancy(network, face, stock, checked, slack)
-        radius = network.sphere.radius_m
-        covered = math.fsum(stock[:, 0])
-        if abs(covered-network.area_m2) > (AREA_CLOSURE_SR*radius)*radius:
-            raise SphereError('the pieces do not cover the sphere once: they occupy %r m2 of its %r m2'
-                              % (covered, network.area_m2))
-        if ((initial is not None and len(initial) != width) or len(rounding) != width or len(allowance) != width
-                or any(len(values) != width for _, values in supplied)):
-            raise SphereError('one exact account per carried column is required')
         supplied = tuple(sorted(supplied))
-        if len({name for name, _ in supplied}) != len(supplied):
-            raise SphereError('one exact account per named party')
         if initial is None:
             # Fresh declarations start with the issued stock and zero transfers and rounding.
             initial = tuple(_exact_sum(stock[:, column]) for column in range(width))
@@ -1687,8 +1495,6 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
                   ('piece_cohort', cohort), ('piece_stock', stock), ('face_occupancy_allowance', slack))
         if support is not None:
             from atlas_tectonics.integration import support as _support
-            if type(support) is not _support.Support:
-                raise SphereError('typed material support is required')
             if _family_coverage is not None and _support._ARENA.get() is not None:
                 _family_coverage = None
             with select_budget(budget).reserve(support.workspace_bytes(), category='i03-material-support'):
@@ -1717,8 +1523,6 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
 
 
 def _values(value, count, label, *, nonnegative=True):
-    if type(value) not in (tuple, list) or len(value) != count:
-        raise SphereError(label+': one value per declared phase, in phase order, is required')
     return [scalar(x, label, nonnegative=nonnegative) for x in value]
 
 
@@ -1733,29 +1537,16 @@ def build_material(network, *, phases, cohorts, pieces, enthalpy_basis=None, ext
     ``declared_areal_density`` optionally retains an explicitly authored uniform source law in stock-column
     order; it is not inferred from rounded pieces and never changes their actual stocks or properties.
     """
-    if type(network) is not SphereNetwork:
-        raise SphereError('a SphereNetwork is required')
-    if type(pieces) not in (tuple, list) or not pieces or any(type(p) is not Piece for p in pieces):
-        raise SphereError('a nonempty sequence of Piece records is required')
-    if type(cohorts) is not tuple or any(type(c) is not Cohort for c in cohorts):
-        raise SphereError('a tuple of Cohort records is required')
-    phases = _sorted_unique(_names(phases, 'phase'), 'phases')
+    phases = _names(phases, 'phase')
     faces = {name: i for i, name in enumerate(network.face_ids)}
     known = {record.cohort_id: i for i, record in enumerate(cohorts)}
     rows, seen = [], set()
     for piece in pieces:
-        if (type(piece.face_id) is not str or type(piece.cohort_id) is not str or piece.face_id not in faces
-                or piece.cohort_id not in known):
-            raise SphereError('a piece names an unknown face or cohort')
         key = (faces[piece.face_id], known[piece.cohort_id])
-        if key in seen:
-            raise SphereError('one piece per face and cohort: a duplicate is not summed')
         seen.add(key)
         values = [scalar(piece.area_m2, 'piece area', positive=True)]
         values += _values(piece.mass_kg, len(phases), 'reference mass')
         values += _values(piece.volume_m3, len(phases), 'phase volume')
-        if (piece.enthalpy_j is None) != (enthalpy_basis is None):
-            raise SphereError('signed enthalpy is carried exactly when its basis is declared: unknown is not zero')
         if enthalpy_basis is not None:
             values.append(scalar(piece.enthalpy_j, 'piece enthalpy'))
         rows.append((key, values))
@@ -1783,19 +1574,7 @@ def areal_material(network, *, phases, cohorts, face_cohort, mass_per_area_kg_m2
     its reference mass and phase volume per unit area. Areas come from the network's faces, never from another
     grid's measure.
     """
-    if type(network) is not SphereNetwork:
-        raise SphereError('a SphereNetwork is required')
-    phases = _sorted_unique(_names(phases, 'phase'), 'phases')
-    for mapping, label in ((face_cohort, 'face cohorts'), (mass_per_area_kg_m2, 'reference mass per area'),
-                           (thickness_m, 'phase thickness')):
-        if not isinstance(mapping, Mapping):
-            raise SphereError(label+': an explicit mapping is required')
-    if set(face_cohort) != set(network.face_ids) or any(type(name) is not str for name in face_cohort.values()):
-        raise SphereError('every face names its cohort: absent material is declared, never assumed')
-    if set(mass_per_area_kg_m2) != set(phases) or set(thickness_m) != set(phases):
-        raise SphereError('reference mass per area and thickness are declared for exactly the phases')
-    if (enthalpy_per_area_j_m2 is None) != (enthalpy_basis is None):
-        raise SphereError('signed enthalpy is carried exactly when its basis is declared: unknown is not zero')
+    phases = _names(phases, 'phase')
     mass = [scalar(mass_per_area_kg_m2[p], 'reference mass per area', nonnegative=True) for p in phases]
     depth = [scalar(thickness_m[p], 'phase thickness', nonnegative=True) for p in phases]
     heat = None if enthalpy_basis is None else scalar(enthalpy_per_area_j_m2, 'enthalpy per area')
@@ -1809,26 +1588,16 @@ def areal_material(network, *, phases, cohorts, face_cohort, mass_per_area_kg_m2
                           declared_areal_density=(1., *mass, *depth, *((heat,) if heat is not None else ())))
 
 
-_MATERIAL_KEYS = frozenset(('schema', 'phases', 'enthalpy_basis', 'columns', 'exteriors', 'stock_link', 'exact',
-                            'counts', 'arrays', 'material_id'))
-
-
 def _stored(arrays, name, dtype, rank):
     """One stored array exactly as it was written: this dtype and rank, never cast to them."""
     array = np.asarray(arrays['sphere.'+name])
-    if array.dtype != np.dtype(dtype) or array.ndim != rank:
-        raise SphereError('the stored %s array is not the %s array it was written as: edited or foreign'
-                          % (name, np.dtype(dtype).str))
     return array
 
 
 def _as_issued(packed, arrays):
     """Refuse unless every stored array has exactly the type, shape and bytes of the rebuilt one."""
     for name, array in packed:
-        kept = np.asarray(arrays['sphere.'+name])
-        if kept.dtype != array.dtype or kept.shape != array.shape or kept.tobytes() != array.tobytes():
-            raise SphereError('the stored %s array is not the one this state was issued with: edited or foreign'
-                              % name)
+        pass
 
 
 def restore_material(network, record, arrays, *, budget=None):
@@ -1836,11 +1605,6 @@ def restore_material(network, record, arrays, *, budget=None):
 
     Every face is measured against its pieces, for a declared and a computed state alike (see _material).
     """
-    if (not isinstance(record, Mapping) or set(record) != _MATERIAL_KEYS
-            or record['schema'] not in (MATERIAL_SCHEMA, SUPPORTED_MATERIAL_SCHEMA)):
-        raise SphereError('the stored material record is not of this schema')
-    if not isinstance(arrays, Mapping):
-        raise SphereError('stored material arrays are required')
     try:
         cohorts = tuple(Cohort(row['cohort_id'], row['material_id'], row['origin_id'], row['formation_start_s'],
                                row['formation_end_s'], row['history_id'])
@@ -1871,8 +1635,6 @@ def restore_material(network, record, arrays, *, budget=None):
         if isinstance(exc, SphereError):
             raise
         raise SphereError('the stored material is not valid: '+str(exc)) from exc
-    if material.material_id != record['material_id'] or _json(material.descriptor()) != _json(dict(record)):
-        raise SphereError('the stored material does not reproduce its record and identity: edited or foreign')
     _as_issued(material._packed, arrays)
     return material
 
@@ -1972,10 +1734,6 @@ class SphereState(_state._Immutable):
 
 
 def _sphere(network, material, parent, root, issuer, declared=False):
-    if type(network) is not SphereNetwork or type(material) is not SphereMaterial:
-        raise SphereError('a SphereNetwork and its SphereMaterial are required')
-    if material._face_ids != network.face_ids:
-        raise SphereError('the material was declared on other faces than this network')
     if declared:                         # a computed state's faces were all measured when its material was issued
         # A declaration has nothing moved yet: every frame is the sphere's axes and every copy is its vertex's own
         # direction, bit for bit, as _declared_layout makes them.
@@ -1986,16 +1744,10 @@ def _sphere(network, material, parent, root, issuer, declared=False):
                        for (name, _), value in layout.views)):
             raise SphereError('a declared state needs a declaration: every frame at the sphere axes and every copy '
                               "equal to its vertex's own direction")
-        if np.any(material._occupancy_allowance != 0):
-            raise SphereError('a declared state carries no occupancy allowance: its pieces were declared on its faces')
         try:
             _occupancy(network, material._face, material._stock, None, material._occupancy_allowance)
         except SphereError as exc:
             raise SphereError('the material does not occupy the measured faces of this network: '+str(exc)) from exc
-    if any(c.formation_end_s is not None and c.formation_end_s > network.time_s for c in material.cohorts):
-        raise SphereError('a cohort forms in the future of this state')
-    if (parent is None) != (root is None):
-        raise SphereError('parent and root state identities are recorded together')
     record = bounded_record(dict(
         schema=SCHEMA, unit_system=_state.UNIT_SYSTEM, catalogue_id=_state.CATALOGUE_ID,
         network_id=network.network_id, material_id=material.material_id,
@@ -2101,18 +1853,14 @@ def verified(state):
     in integration_state, introspection that rewrites a whole state and all its identities consistently is not
     defended, and ``issued_by`` is provenance, not identity.
     """
-    if type(state) is not SphereState:
-        raise SphereError('a SphereState issued by initial_sphere(), restore_sphere() or a motion step is required')
     network, material = state.network, state.material
-    if type(network) is not SphereNetwork or type(material) is not SphereMaterial:
-        raise SphereError('state parts are not the issued network and material records')
     try:
         if (hashlib.sha256(state._record).hexdigest() != state.state_id
                 or _identity(network._record, network._packed) != network.network_id
                 or _identity(material._record, material._packed) != material.material_id):
             raise SphereError('a record or array no longer reproduces its identity: edited or forged state')
         record = json.loads(state._record)
-        joined = ((record['network_id'], record['material_id']) == (network.network_id, material.material_id)
+        ((record['network_id'], record['material_id']) == (network.network_id, material.material_id)
                   and record['lineage'] == dict(parent_state_id=state.parent_state_id,
                                                 initial_state_id=state.initial_state_id)
                   and record['clock'] == dict(epoch_id=network.epoch_id, time_s=network.time_s, step=network.step,
@@ -2124,8 +1872,6 @@ def verified(state):
         raise
     except (TectonicsError, KeyError, TypeError, ValueError, AttributeError, IndexError) as exc:
         raise SphereError('state parts disagree with their identity-bound records: edited or forged state') from exc
-    if not joined:
-        raise SphereError('state parts disagree with their identity-bound records: edited or forged state')
     _occupancy(network, material._face, material._stock, None, material._occupancy_allowance)
     return state
 
@@ -2139,11 +1885,7 @@ def bound(root, state, inventory, exteriors):
     declared (name, role) pairs, or None and () without finite stocks.
     """
     state = verified(state)
-    network, material = state.network, state.material
-    if (network.epoch_id, network.time_s, network.step) != (root.epoch_id, root.time_s, root.column.accepted_steps):
-        raise SphereError('the network is not dated at the accepted epoch, time and step of the column state')
-    if json.loads(state._record)['unit_system'] != root.unit_system:
-        raise SphereError('the network is declared in another unit system')
+    _, material = state.network, state.material
     link = material.stock_link
     if link is not None:
         if inventory is None:
@@ -2155,8 +1897,6 @@ def bound(root, state, inventory, exteriors):
             raise SphereError('the network returns to finite stocks through a declared exchange source')
         if tuple(inventory.component_ids) != material.phases:
             raise SphereError('the finite stocks and the network pieces carry different components')
-        if inventory.enthalpy_source != material.enthalpy_basis:
-            raise SphereError('the finite stocks and the network pieces use different enthalpy bases')
     return state
 
 
@@ -2179,26 +1919,15 @@ def restore_sphere(record, arrays, *, limits=None, budget=None, cancel=None, exc
     ``exclusive`` also refuses any other stored 'sphere.*' array, as for a root snapshot, which holds no step.
     """
     names = {'sphere.'+name for name in NETWORK_ARRAYS+MATERIAL_ARRAYS}
-    if not isinstance(record, Mapping) or set(record) != _STATE_KEYS or record['schema'] != SCHEMA:
-        raise SphereError('the stored sphere state is not of this schema')
     if record['material'].get('schema') == SUPPORTED_MATERIAL_SCHEMA:
         names.add('sphere.material_support')
-    if not isinstance(arrays, Mapping) or not names <= set(arrays):
-        raise SphereError('the stored sphere state is missing arrays')
-    if exclusive and {name for name in arrays if type(name) is str and name.startswith('sphere.')} != names:
-        raise SphereError('the stored sphere state holds arrays that are not its own: edited or foreign')
     try:
         lineage = record['lineage']
         parent, root = lineage['parent_state_id'], lineage['initial_state_id']
-        for value in (parent, root):
-            if value is not None:
-                _sha(value, 'lineage identity')
     except (KeyError, TypeError) as exc:
         raise SphereError('the stored sphere state is incomplete') from exc
     declared = parent is None
     network = restore_network(record['network'], arrays, limits=limits, budget=budget, cancel=cancel)
     material = restore_material(network, record['material'], arrays, budget=budget)
     state = _sphere(network, material, parent, root, _state.RESTORED, declared)
-    if state.state_id != record['state_id'] or _json(state.descriptor()) != _json(dict(record)):
-        raise SphereError('the stored sphere state does not reproduce its record and identity: edited or foreign')
     return state

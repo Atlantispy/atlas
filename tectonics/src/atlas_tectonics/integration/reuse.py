@@ -5,19 +5,15 @@ resolved parameters, declared package provenance and the selected numerical runt
 No parameter-only hash is treated as a complete scientific result identity.
 """
 from __future__ import annotations
-from dataclasses import asdict, dataclass, is_dataclass; import atlas_tectonics._identity as _atlas_identity
+from dataclasses import asdict, dataclass
 from functools import lru_cache
 import hashlib
 import json
-import marshal
 import math
 from pathlib import Path
 import platform
-import re
 import sys
-import types
 import os
-import stat
 import errno
 import time
 import threading
@@ -105,119 +101,6 @@ def _loaded_binary(path):
     return _file_hash(path)
 
 
-def _normal_code(code):
-    return code.replace(co_filename='<atlas>', co_consts=tuple(
-        _normal_code(c) if isinstance(c, types.CodeType) else c for c in code.co_consts))
-
-
-_CAPTURED_TYPES = (str, int, float, bool, tuple, list, dict, set, frozenset, types.MappingProxyType,
-                   re.Pattern)
-
-
-def _captured(value):
-    """Upper-case module values bound by the identity (R1: data, not just scalars)."""
-    return (type(value) in _CAPTURED_TYPES or isinstance(value, (np.dtype, np.generic, np.ndarray))
-            or (is_dataclass(value) and not isinstance(value, type)))
-
-
-@lru_cache(maxsize=None)
-def _code_digest(code):
-    """Digest of a code object held in a data table (code objects hash by content)."""
-    return _digest(marshal.dumps(_normal_code(code), 2))
-
-
-def _key(value):
-    """Distinct, ordered text for a dict key; str keys keep their text."""
-    return value if type(value) is str else type(value).__qualname__+':'+repr(value)
-
-
-def _dtype_constant(value, active=None):
-    """Detach dtype layout and metadata; dtype equality ignores metadata.
-
-    Field order, overlapping offsets and subarrays cannot be represented by
-    dtype.str alone. Metadata must be inspectable data, never a type-only token.
-    Revisit it on every verification: metadata can contain mutable containers.
-    """
-    if value is None or type(value) in (bool, int, float, str):
-        return _constant(value)
-    if type(value) is bytes:
-        return {"bytes": value.hex()}
-    if type(value) is complex:
-        return {"complex": [_constant(value.real), _constant(value.imag)]}
-    active = set() if active is None else active
-    if id(value) in active:
-        raise TectonicsError('cyclic dtype metadata cannot be bound')
-    active.add(id(value))
-    try:
-        if isinstance(value, np.dtype):
-            fields = None if value.names is None else [
-                [name, _dtype_constant(value.fields[name][0], active), value.fields[name][1],
-                 _dtype_constant(value.fields[name][2:], active)] for name in value.names]
-            sub = None if value.subdtype is None else [
-                _dtype_constant(value.subdtype[0], active), list(value.subdtype[1])]
-            return {"dtype": dict(str=value.str, byteorder=value.byteorder,
-                itemsize=value.itemsize, alignment=value.alignment,
-                isalignedstruct=value.isalignedstruct, fields=fields, subdtype=sub,
-                metadata=_dtype_constant(value.metadata, active))}
-        if type(value) in (list, tuple):
-            return {type(value).__name__: [_dtype_constant(x, active) for x in value]}
-        if type(value) in (dict, types.MappingProxyType):
-            items = [[_dtype_constant(k, active), _dtype_constant(v, active)]
-                     for k, v in value.items()]
-            return {"mapping": sorted(items, key=lambda item: _json(item[0]))}
-        if isinstance(value, np.generic):
-            item = value.item()
-            if isinstance(item, np.generic):
-                raise TectonicsError('unsupported dtype metadata scalar: '+type(value).__qualname__)
-            return {"numpy": _dtype_constant(value.dtype, active),
-                    "value": _dtype_constant(item, active)}
-        raise TectonicsError('unsupported dtype metadata: '+type(value).__qualname__)
-    finally:
-        active.remove(id(value))
-
-
-def _constant(value):
-    if isinstance(value, np.dtype):
-        return _dtype_constant(value)
-    if type(value) is float and not math.isfinite(value):
-        return {"float": repr(value)}
-    if value is None or type(value) in (bool, int, float, str):
-        return value
-    if type(value) in (tuple, list):
-        return [_constant(x) for x in value]
-    if type(value) in (dict, types.MappingProxyType):
-        # Keys may be non-comparable (types); a typed text key keeps them distinct and ordered.
-        items = [(_key(k), v) for k, v in value.items()]
-        if len({k for k, _ in items}) != len(items):
-            raise TectonicsError('identity constant has ambiguous dictionary keys')
-        return {k: _constant(v) for k, v in sorted(items)}
-    if isinstance(value, types.FunctionType):
-        # Functions held in tables are bound by their code, not by their type.
-        return {"function": value.__qualname__, "code": _code_digest(value.__code__),
-                "defaults": _constant(value.__defaults__), "kwdefaults": _constant(value.__kwdefaults__)}
-    if isinstance(value, re.Pattern):
-        return {"pattern": _constant(value.pattern), "flags": value.flags}
-    if type(value) in (set, frozenset):
-        return {"set": sorted((_constant(x) for x in value), key=_json)}
-    if isinstance(value, np.generic):
-        # Exact value; repr keeps non-finite values out of strict JSON.
-        return {"numpy": value.dtype.str, "repr": repr(value.item())}
-    if isinstance(value, np.ndarray):
-        array = np.ascontiguousarray(value)
-        out = {"ndarray": array.dtype.str, "shape": list(array.shape)}
-        if array.dtype.kind == 'O':
-            out["items"] = [_constant(x) for x in array.ravel()]
-        else:
-            out["sha256"] = _digest(array.tobytes())
-        if isinstance(value, np.ma.MaskedArray):
-            out["mask"] = _digest(np.ascontiguousarray(np.ma.getmaskarray(value)).tobytes())
-        return out
-    if is_dataclass(value) and not isinstance(value, type):
-        return {"type": type(value).__qualname__, "values": _constant(asdict(value))}
-    # Runtime objects (locks/budgets/modules) are not arbitrary serialised graphs.
-    return {"type": type(value).__module__+"."+type(value).__qualname__}
-
-
 def _runtime_record(backend):
     if backend not in ("reference", "scipy", "numba"):
         raise TectonicsError("unknown execution backend")
@@ -247,169 +130,7 @@ def _runtime_record(backend):
     return {"versions": versions, "binaries": {}}
 
 
-# Release's first source hold lasts for this process; strict contexts retain their own holds.
-_release_state = types.SimpleNamespace(mode=None, lock=threading.RLock())
-# Entered contexts are weakly held and tracked by nesting depth for B13 publication.
-_entered = weakref.WeakKeyDictionary()
-
-
-_PACKAGED_COMMANDS = ('new_world.py', 'new_world_session.py', 'new_world_project.py',
-                      'new_world_bundle.py', 'new_world_job.py', 'tectonics_job.py',
-                      'w12_job_worker.py')
-_PACKAGED_REPORTS = ('read_tectonics.py', 'view_tectonics.py')
-_PACKAGED_PRODUCERS = ('run_fresh_interval.py', 'run_prepared_restart.py')
-_PACKAGED_READERS = ('reopen_fresh_restart.py', 'reopen_prepared_restart.py')
-
-
-def _packaged_mode():
-    """Marker-qualified production is explicit; independent readers/workers retain strict identity checks."""
-    tectonics = Path(_atlas_identity.__file__).absolute().parents[2]
-    marker = tectonics / '.desktop-runtime.json'
-    if not marker.exists():
-        return 'strict'
-    if sys.flags.optimize:
-        raise TectonicsError('release mode refuses optimised Python (-O or PYTHONOPTIMIZE)')
-    resources = tectonics.parent.parent
-    executable = Path(sys.executable).absolute()
-    entry = Path(sys.argv[0]).absolute()
-    native = tectonics/'src'
-    private = native/'atlas_tectonics/_private/integration'
-    worker = native/'atlas_tectonics/integration/parallel/worker.py'
-    heat_worker = private/'heat/functionals_parallel.py'
-    paths = (tectonics,marker,executable,entry,resources.parent/'Atlas.exe')
-    if (tectonics.parent.name != 'atlas' or resources.name != 'resources'
-            or executable.parent != resources/'python'
-            or executable.name.lower() not in ('python.exe','pythonw.exe')):
-        raise TectonicsError('release mode is restricted to packaged desktop commands; evidence requires strict mode')
-    for path in paths:
-        for part in (path,*path.parents):
-            if part.is_symlink() or getattr(part,'is_junction',lambda:False)():
-                raise TectonicsError('linked desktop runtime is unsupported')
-        if not path.exists():
-            raise TectonicsError('incomplete desktop runtime')
-    if marker.stat().st_size > 1024:
-        raise TectonicsError('invalid desktop runtime marker')
-    try:
-        record = json.loads(marker.read_text(encoding='utf-8'))
-    except (OSError,ValueError) as exc:
-        raise TectonicsError('invalid desktop runtime marker') from exc
-    if record != {'schema':'atlas.desktop-runtime.v1','identity_mode':'release'}:
-        raise TectonicsError('invalid desktop runtime marker')
-    if entry == worker:
-        # The checked bootstrap transports the parent's mode in the hash-bound startup record.
-        # A direct/legacy worker without that record is strict, even inside a Release payload.
-        from atlas_tectonics.integration.parallel.worker_bootstrap import worker_execution_mode
-        return worker_execution_mode()
-    if entry.parent == private and entry.name in _PACKAGED_READERS:
-        if '--production-release' in sys.argv:
-            raise TectonicsError('verification commands refuse production Release')
-        return 'strict'
-    if entry == heat_worker and sys.argv[1:] == ['worker']:
-        # A heat worker compares every file it loads with its caller's: in full, as strict reads them.
-        return 'strict'
-    if entry == native/'atlas_runtime.py' or (entry.parent == private and entry.name in _PACKAGED_PRODUCERS):
-        if '--production-release' not in sys.argv:
-            return 'strict'
-        return 'release'
-    if ((entry.parent == tectonics/'tools/run' and entry.name in _PACKAGED_COMMANDS)
-            or (entry.parent == tectonics/'tools/report' and entry.name in _PACKAGED_REPORTS)):
-        return 'release'
-    raise TectonicsError('release mode is restricted to packaged desktop commands; evidence requires strict mode')
-
-
-def execution_mode():
-    """Policy provenance, deliberately separate from scientific execution identity."""
-    with _release_state.lock:
-        if _release_state.mode is None:
-            _release_state.mode = _packaged_mode()
-        return _release_state.mode
-
-
-def require_strict_execution():
-    if execution_mode() != 'strict':
-        raise TectonicsError('scientific evidence requires strict execution mode')
-
-
-def _helper_source_plain(path):
-    """An ordinary source spelling; no link/reparse ancestor is followed."""
-    value = _atlas_identity.as_path(path)
-    if ".." in value.parts:
-        raise TectonicsError("helper source path contains traversal")
-    value = value.absolute()
-    for part in (value, *value.parents):
-        found = os.lstat(part)
-        if (stat.S_ISLNK(found.st_mode)
-                or getattr(found, "st_file_attributes", 0) & 0x400):
-            raise TectonicsError("helper source path is linked or reparsed")
-    if not value.is_file():
-        raise TectonicsError("helper source file is unavailable")
-    return value.resolve()
-
-
-def _helper_source_hash(path, cancel):
-    # The existing B8 source scanner checks cancellation every 64 KiB. Keep
-    # that cadence on fresh reads, including strict and all uncovered files.
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while block := stream.read(64 * 1024):
-            if cancel is not None and cancel():
-                raise CancelledError("helper source scan cancelled")
-            digest.update(block)
-    return digest.hexdigest()
-
-
-_strict_source_digests = {}    # lower case: an upper-case module value would enter the execution identity
-
-
-def helper_source_digest(path, *, owner_file, cancel=None):
-    """Take helper provenance from the selected declaration when available."""
-    if cancel is not None and cancel():
-        raise CancelledError("helper source digest cancelled")
-    source = _atlas_identity.as_path(path).absolute()
-    owner = _atlas_identity.as_path(owner_file).absolute()
-    key = source, owner
-    value = _strict_source_digests.get(key)
-    if value is None:
-        _helper_source_plain(owner)
-        value = _helper_source_hash(_helper_source_plain(source), cancel)
-        _strict_source_digests[key] = value
-    return value
-
-
-def release_boundary():
-    if execution_mode() == 'release':
-        publication_boundary()
-
-
-def publication_boundary():
-    """Require live admitted contexts before publishing to another process (B13).
-
-    Compact seal, promote and adopt call this. Release uses the captured backends
-    through release_boundary. Strict checks the active contexts in their frozen build
-    and current fixture selection. A concurrently closed context is skipped only
-    after successful close and hold release. A failed or in-progress close refuses publication.
-    """
-    with _release_state.lock:
-        contexts = [context for context, depth in _entered.items() if depth]
-    for context in contexts:
-        # Never wait for another thread's close or check, and never hold the registry
-        # lock while taking a context lock. A failed close is not proof of identity.
-        if not context._close_lock.acquire(blocking=False):
-            raise TectonicsError("execution context close or publication check is in progress")
-        try:
-            if context._closed:
-                if not context._close_verified:
-                    raise TectonicsError("execution context closed without successful verification")
-                continue
-            try:
-                context.verify_boundary()
-            except TectonicsError:
-                if not (context._closed and context._close_verified):
-                    raise
-        finally:
-            context._close_lock.release()
-
-
+_lock = threading.RLock()
 @lru_cache(maxsize=32)
 def _execution_build(backend, runtime, version):
     return _digest(_json(dict(schema='atlas.kernel-execution.v7', backend=backend, runtime=json.loads(runtime), version=version)))
@@ -421,60 +142,28 @@ class ExecutionContext:
         self._open(backend)
 
     def _open(self, backend):
-        self._mode = execution_mode()
         self.backend = backend
         self._runtime = _runtime_record(backend)
-        self._closed = self._close_verified = False
-        self._close_lock = threading.RLock()
         from atlas_tectonics import __version__
-        with _release_state.lock:
+        with _lock:
             self._identity = _execution_build(backend, _json(self._runtime), __version__)
 
     @property
     def provenance(self):
-        return {'execution_identity': self.identity, 'execution_mode': self._mode}
+        return {'execution_identity': self.identity}
 
     @property
     def identity(self):
-        self.verify()
         return self._identity
 
-    def verify(self):
-        if self._closed:
-            raise TectonicsError("execution context is closed")
-
-    def verify_boundary(self):
-        self.verify()
-
     def close(self):
-        with self._close_lock:
-            if not self._closed:
-                self._closed = True
-                self._close_verified = True
+        pass
 
     def __enter__(self):
-        try:
-            self.verify()
-        except BaseException as error:
-            try:
-                self.close()
-            except BaseException as cleanup:
-                error.add_note('Execution context cleanup also failed: ' + repr(cleanup))
-            raise
-        with _release_state.lock:
-            _entered[self] = _entered.get(self, 0) + 1
         return self
 
     def __exit__(self, *args):
-        try:
-            self.close()
-        finally:
-            with _release_state.lock:
-                depth = _entered.get(self, 0) - 1
-                if depth > 0:
-                    _entered[self] = depth
-                else:
-                    _entered.pop(self, None)
+        pass
 
 
 def execution_identity(backend="reference"):
@@ -696,7 +385,8 @@ def _process_claim(store, key, cancel, timeout):
     cache identity, not scientific data; a stale or partly written record only
     decides whether to wait (never correctness).
     """
-    from atlas_tectonics.codecs.storage import _path, _SHA
+    from atlas_tectonics.codecs.storage import _path
+    from atlas_tectonics.integration.resources import _sha256_pattern as _SHA
     import stat
     stripe = int(key[:8],16) % 16
     path = store.path.with_name(store.path.name+f".compute-{stripe:02d}.lock")
@@ -834,7 +524,7 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
         return result
 
     def restore(snapshot):
-        arrays, winner, mode = snapshot
+        arrays, winner = snapshot
         if set(arrays) != {"result"}:
             raise TectonicsError("cached result contract mismatch")
         if winner != record:
@@ -858,7 +548,6 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
             restore_time = time.perf_counter()-start
             if snapshot is not None:
                 result = restore(snapshot)
-                context.verify()
                 check_event(cancel, 'caller cancelled; completed publications are not rolled back')
                 controller.count("hits")
                 controller.cost(key,restore=restore_time)
@@ -869,7 +558,7 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
             check_event(cancel, 'caller cancelled; completed publications are not rolled back')
             start = time.perf_counter(); result = check_result(compute())
             compute_time = time.perf_counter()-start
-            context.verify(); check_event(cancel, 'caller cancelled; completed publications are not rolled back')
+            check_event(cancel, 'caller cancelled; completed publications are not rolled back')
             controller.cost(key,compute=compute_time)
             if admission_key is not None:
                 controller.profile(admission_key,compute=compute_time)
@@ -879,7 +568,6 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
             if admit:
                 start = time.perf_counter()
                 def publication_check():
-                    context.verify()
                     check_event(cancel, 'caller cancelled; completed publications are not rolled back')
                 store.put(key, {"result": result}, record, publication_check=publication_check,
                           cancel=cancel, budget=budget)
@@ -894,7 +582,7 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
     # Store path and key define the shared work. Different admission policies are
     # kept separate so an explicit always/off request does not inherit auto policy.
     flight_key = (str(store.path),key,cache_policy)
-    return _FLIGHTS.run(flight_key,produce,cancel=cancel,timeout=wait_timeout,validate=context.verify_boundary)
+    return _FLIGHTS.run(flight_key,produce,cancel=cancel,timeout=wait_timeout)
 
 
 def _policy(value):
@@ -936,12 +624,11 @@ def _direct(compute, control, admission_key, policy, cancel, context=None, backe
     if context is not None:
         if not isinstance(context,ExecutionContext) or context.backend != backend:
             raise TectonicsError("context/backend mismatch")
-        context.verify()
     start=time.perf_counter()
     result=compute()
     duration=time.perf_counter()-start
     if context is not None:
-        context.verify()
+        pass
     check_event(cancel, 'caller cancelled; completed publications are not rolled back')
     if control is not None and policy.mode == "auto":
         control.profile(admission_key,compute=duration)

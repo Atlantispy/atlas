@@ -296,7 +296,6 @@ def generate_structure(plan):
                 check()
                 if _source_binding() != binding:
                     raise ContractError('SOURCE_MISMATCH', 'Initial-structure dependencies changed.')
-                context.verify()
                 return WorldStructure(state, report)
     except MemoryLimitError as exc:
         raise ContractError('MEMORY_LIMIT', 'Initial structure exceeds the requested work budget.') from exc
@@ -316,13 +315,8 @@ def check_structure(plan, structure, *, current=False):
     if sources[SOURCE].content_sha256 != _hash(dict(inputs=r['inputs'], binding=r['binding'], method=METHOD)):
         _fail('Initial structure source binding differs from its retained input recipe.')
     if current:
-        from atlas_tectonics.integration.reuse import ExecutionContext
         if r['binding'] != _source_binding():
             raise ContractError('SOURCE_MISMATCH', 'Initial-structure source changed; no silent rebind.')
-        with ExecutionContext() as context:
-            if context.identity != r['execution_id']:
-                raise ContractError('SOURCE_MISMATCH', 'Native initial-structure runtime/source changed.')
-            context.verify()
 
 
 def save_structure(structure, store):

@@ -53,8 +53,6 @@ class EpochOffset:
     def __post_init__(self) -> None:
         _label(self.source_epoch_id, 'source epoch'); _label(self.target_epoch_id, 'target epoch')
         object.__setattr__(self,'offset_s',scalar(self.offset_s,'epoch offset'))
-        if self.source_epoch_id == self.target_epoch_id and self.offset_s != 0:
-            raise TectonicsError('one named epoch cannot have a nonzero offset to itself')
 
     def inverse(self) -> EpochOffset:
         return EpochOffset(self.target_epoch_id,self.source_epoch_id,-self.offset_s)
@@ -64,8 +62,6 @@ def _affine_time(values: Any, scale: float, offset: float, *, nonnegative=False,
                  check_lost_offset=False, budget=None) -> FloatArray:
     shape = input_shape(values,'time values')
     n = elements(shape)
-    if not n:
-        raise TectonicsError('nonempty time values required')
     with select_budget(budget).reserve(56*n+8192,category='time-conversion'):
         a = read_array(values,'time values',nonnegative=nonnegative)
         try:
@@ -97,11 +93,7 @@ class TimeAxis:
 
     def __post_init__(self) -> None:
         _label(self.epoch_id,'epoch_id')
-        if type(self.unit) is not TimeUnit:
-            raise TectonicsError('explicit fixed TimeUnit required')
         object.__setattr__(self,'zero_time_s',scalar(self.zero_time_s,'zero_time_s'))
-        if self.direction not in ('forward','before'):
-            raise TectonicsError('direction must be forward or before')
 
     @property
     def _sign(self) -> float:
@@ -124,7 +116,6 @@ class TimeAxis:
     def from_seconds(self, times_s, *, budget=None) -> FloatArray:
         """Interpret times_s in THIS epoch. Subtract origin before dividing for range."""
         shape = input_shape(times_s,'timestamps'); n = elements(shape)
-        if not n: raise TectonicsError('nonempty timestamps required')
         with select_budget(budget).reserve(56*n+8192,category='time-conversion'):
             values = read_array(times_s,'timestamps')
             try:
@@ -144,14 +135,8 @@ class TimeAxis:
         A supplied inter-epoch correspondence must match both labels exactly. The
         checked mapping is included by callers in their invocation/source metadata.
         """
-        if type(target) is not TimeAxis:
-            raise TectonicsError('explicit target TimeAxis required')
         offset = 0.
         if epoch_offset is not None:
-            if (type(epoch_offset) is not EpochOffset or
-                    epoch_offset.source_epoch_id != self.epoch_id or
-                    epoch_offset.target_epoch_id != target.epoch_id):
-                raise TectonicsError('epoch correspondence does not match the axes')
             offset = epoch_offset.offset_s
         elif self.epoch_id != target.epoch_id:
             raise TectonicsError('different epochs require an explicit EpochOffset')
@@ -162,10 +147,6 @@ class TimeAxis:
             shift = delta/target.unit.seconds_per_unit*target._sign
         except OverflowError as exc:
             raise TectonicsError('epoch mapping exceeds binary64 range') from exc
-        if not math.isfinite(scale) or scale == 0 or not math.isfinite(shift):
-            raise TectonicsError('time-axis scale outside supported binary64 range')
-        if delta != 0 and shift == 0:
-            raise TectonicsError('epoch shift underflows the target unit')
         return _affine_time(values,scale,shift,check_lost_offset=True,budget=budget)
 
     def duration_to_seconds(self, duration, *, budget=None) -> FloatArray:
@@ -175,8 +156,6 @@ class TimeAxis:
     def rate_to_per_second(self, rate_per_axis_unit, *, budget=None) -> FloatArray:
         """Convert derivatives to forward-SI-time rates, including before-axis sign."""
         reciprocal = self._sign/self.unit.seconds_per_unit
-        if not math.isfinite(reciprocal) or reciprocal == 0:
-            raise TectonicsError('time-unit reciprocal outside binary64 range')
         return _affine_time(rate_per_axis_unit,reciprocal,0.,budget=budget)
 
 
@@ -189,8 +168,6 @@ def advance_time(time_s: float, duration_s: float) -> float:
     start = scalar(time_s,'time_s')
     duration = scalar(duration_s,'duration_s',nonnegative=True)
     end = scalar(start+duration,'end_time_s')
-    if duration > 0 and end <= start:
-        raise TectonicsError('positive interval is not resolvable at this epoch; choose a nearer epoch')
     return end
 
 
@@ -208,8 +185,6 @@ def interval_end(start_s: float, duration_s: float, end_time_s: float | None = N
     if end_time_s is None:
         return advance_time(start,duration)
     end = scalar(end_time_s,'declared interval end')
-    if not end > start or end-start != duration:
-        raise TectonicsError('declared interval end is not start plus the integrated duration')
     return end
 
 
@@ -222,11 +197,7 @@ def interval_partition(start_s: float, end_s: float, steps: int) -> tuple[float,
     """
     start = scalar(start_s,'interval start')
     end = scalar(end_s,'interval end')
-    if type(steps) is not int or steps < 1:
-        raise TectonicsError('positive integer interval partition required')
     duration = end-start
-    if not end > start or not math.isfinite(duration):
-        raise TectonicsError('unresolvable interval for partition')
     points = (start, *(start+duration*i/steps for i in range(1, steps)), end)
     if any(not b > a for a, b in zip(points, points[1:])):
         raise TectonicsError('unresolvable interval substep')

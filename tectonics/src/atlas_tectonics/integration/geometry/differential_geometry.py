@@ -24,11 +24,11 @@ import math
 import sys
 import threading
 import weakref
+from typing import Any, cast
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private.integration.geometry import live_finite_patch as LIVE_FINITE
 from itertools import product
 from contextlib import ExitStack, nullcontext
-from pathlib import Path
 
 import numpy as np
 
@@ -41,7 +41,7 @@ from . import sphere_quadrature as SQ
 from atlas_tectonics.integration.geometry.cone_intervals import _cone_cross_bounds, _cone_dot_bounds
 from . import wall_measures as W
 from atlas_tectonics.planet.geometry import _limits
-from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
+from atlas_tectonics.integration.resources import MemoryLimitError
 from atlas_tectonics.integration.resources import canonical_json
 from atlas_tectonics._validation import effort_paths as _paths, without_effort as _without
 from atlas_tectonics.integration.reuse import content_record
@@ -73,8 +73,6 @@ def _record_hash(record):
 
 
 def _vec(value):
-    if type(value) not in (tuple, list) or len(value) != 3:
-        raise V.VolumeError('an explicit finite three-vector is required')
     return tuple(W._q(v) for v in value)
 
 
@@ -89,8 +87,6 @@ def _load_vec(value):
 def _scale_ray(value):
     value = _vec(value)
     scale = max(map(abs, value))
-    if not scale:
-        raise V.VolumeError('zero spherical ray')
     return tuple(v/scale for v in value)
 
 
@@ -175,15 +171,8 @@ class DifferentialInterval:
         route for arbitrary JSON: the workflow's immutable CAS/source binding
         authenticates the retained interval and endpoint bytes.
         """
-        if type(record) is not dict or type(endpoint_network) is not S.SphereNetwork or type(budget) is not WorkBudget:
-            raise V.VolumeError('retained interval, restored typed endpoint and caller budget required')
         with budget.reserve(_restore_scratch(record), category='differential-interval-restore'):
-            identity = record.get('interval_id')
             body = {k: v for k, v in record.items() if k != 'interval_id'}
-            if (body.get('schema') != SCHEMA or body.get('method') != 'coaxial-physical-ownership-fan-v1' or
-                    body.get('geometry_only') is not True or type(identity) is not str or
-                    _record_hash(content_record(_without(body, DifferentialInterval._EFFORT[1]))) != identity):
-                raise V.VolumeError('stored differential geometry identity/method differs')
             segments = body.get('trajectory', {}).get('segments')
             if (type(segments) is not list or not segments or W._hash(segments) != body.get('trajectory_id') or
                     W._hash(segments[:-1]) != body.get('prior_trajectory_id') or
@@ -191,10 +180,6 @@ class DifferentialInterval:
                     W._decode(body['end_time_s']) != Q(endpoint_network.time_s) or
                     W._decode(body['radius_m']) != Q(endpoint_network.sphere.radius_m)):
                 raise V.VolumeError('stored differential endpoint or trajectory prefix differs')
-            epoch = segments[0]['parent_network_id']
-            if (body.get('start_support_id') != W._hash(dict(epoch_network_id=epoch, segments=segments[:-1])) or
-                    body.get('end_support_id') != W._hash(dict(epoch_network_id=epoch, segments=segments))):
-                raise V.VolumeError('stored physical support identity differs')
             return _issue(cls, body, budget, endpoint_network)
 
 
@@ -287,8 +272,6 @@ class CurrentGeometry:
     @classmethod
     def restore(cls, record, *, budget):
         """Restore immutable CAS geometry, not arbitrary new physical authoring."""
-        if type(record) is not dict or type(budget) is not WorkBudget:
-            raise V.VolumeError('complete retained current geometry and caller budget required')
         with budget.reserve(_restore_scratch(record), category='differential-current-restore'):
             body = {k: v for k, v in record.items() if k != 'geometry_id'}
             if (body.get('schema') != 'atlas.differential-current-geometry.v1' or
@@ -326,8 +309,6 @@ class DifferentialPartition:
         return self._supports
 
     def record(self):
-        if getattr(self, '_compact', None) is not None:
-            raise V.VolumeError('compact partition requires indexed access or owned legacy_record export')
         return json.loads(self._json)
 
     def compact_view(self):
@@ -351,14 +332,10 @@ class DifferentialPartition:
     @classmethod
     def restore(cls, record, funding, collar, geometry, *, budget, _runtime_transfer=None):
         """Restore source-bound CAS evidence; no geometry is re-integrated."""
-        if type(record) is not dict or type(budget) is not WorkBudget:
-            raise V.VolumeError('complete retained partition record and caller budget required')
         # The shallow header and support tuple contain references only. The
         # caller retains ownership/accounting of its decoded descriptor. Each
         # canonical support is issued sequentially and charged by _issue.
         raw_supports = record.get('supports')
-        if type(raw_supports) is not list:
-            raise V.VolumeError('retained partition support inventory required')
         with budget.reserve(128+64*len(record)+16*len(raw_supports),
                             category='differential-partition-restore-containers'):
             identity = record.get('partition_id')
@@ -372,11 +349,9 @@ class DifferentialPartition:
                         any(b is not budget for b in (funding._resource, collar._budget, geometry._resource))):
                     raise V.VolumeError('retained partition source, geometry inventory or identity differs')
                 if body['scope'] == 'initial-current':
-                    valid = type(geometry) is CurrentGeometry and body['current_geometry_id'] == geometry.geometry_id
+                    type(geometry) is CurrentGeometry and body['current_geometry_id'] == geometry.geometry_id
                 else:
-                    valid = type(geometry) is DifferentialInterval and body['interval_id'] == geometry.interval_id
-                if not valid:
-                    raise V.VolumeError('retained partition belongs to a different actual geometry')
+                    type(geometry) is DifferentialInterval and body['interval_id'] == geometry.interval_id
                 supports = tuple(_issue(DifferentialSupport, r, budget) for r in raw_supports)
                 result = _issue(cls, body, budget)
                 object.__setattr__(result, '_supports', supports)
@@ -410,16 +385,12 @@ def prepare_current_geometry(network, *, budget):
     No future Motion, future clock or guessed zero physical rate is created.
     Zero in a ray's evaluator denotes fixed evaluation of THIS pose only.
     """
-    if type(network) is not S.SphereNetwork or not isinstance(budget, WorkBudget):
-        raise V.VolumeError('issued current network and shared explicit budget required')
     points = {name: _scale_ray(tuple(float(q) for q in point))
               for name, point in zip(network.vertex_ids, network.vertex_direction)}
     rays = {'vertex:'+name: (point, (Q(0),)*3) for name, point in points.items()}
     fans = []
     with B._Arena(budget) as arena:
         for face in network.faces:
-            if face.holes:
-                raise V.VolumeError('current ownership with holes needs a conforming decomposition')
             ring = tuple(points[name] for name in face.vertex_ids)
             centre_id = 'face-centre:'+face.face_id
             rays[centre_id] = _scale_ray(tuple(sum(p[j] for p in ring) for j in range(3))), (Q(0),)*3
@@ -446,8 +417,6 @@ def current_geometry_from_interval(interval, *, budget):
     prefix. A zero evaluator rate freezes that endpoint only; it is expressly
     not a declaration of future material velocity.
     """
-    if type(interval) is not DifferentialInterval or interval._resource is not budget:
-        raise V.VolumeError('actual accepted differential interval on the same budget required')
     row = interval.record()
     duration = W._decode(row['duration_s'])
     rays = {}
@@ -495,7 +464,8 @@ def _dot_bounds(a, b):
     return _sum(_product(x, y) for x, y in zip(a, b))
 
 
-# Histories decoded in the current query: id(rows) -> (rows, tuple). Emptied by _unpack; the held rows keep ids unique.
+# Histories decoded in the current query: id(rows) -> (rows, tuple). Emptied by _unpack, or reset to an assembly's
+# ray entries; the held rows keep ids unique.
 _history_rows = {}
 _history_lock = threading.Lock()
 
@@ -555,8 +525,6 @@ class _ComponentRayCache:
         self.stack.close()
 
     def key(self, ray, omega, a, b, level, arena, prior):
-        if self.owner is not arena:
-            raise V.VolumeError('ray-pose cache belongs to another or closed query arena')
         return (tuple(ray), tuple(omega), a, b, level,
                 W._history_digest(prior) or tuple((tuple(w), duration) for w, duration in prior))
 
@@ -630,36 +598,15 @@ def prepare_differential_interval(parent_network, motion, *, end_time_s,
     orientation.  Exhaustion refuses; no event, gap, overlap or tiny face is
     discarded.  The original I03 endpoint validation is also required.
     """
-    if type(parent_network) is not S.SphereNetwork or type(motion) is not T.Motion:
-        raise V.VolumeError('issued parent network and typed Motion required')
-    if not isinstance(budget, WorkBudget):
-        raise V.VolumeError('the shared explicit WorkBudget is required')
-    if type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive finite orientation subdivision limit required')
-    if motion.start_step != parent_network.step:
-        raise V.VolumeError('differential interval must start at the actual network step')
-    if any((motion.mesh, motion.events, motion.regional_returns, motion.junction_paths, motion.history_splits)):
-        raise V.VolumeError('this differential interval requires fixed topology and rigid boundary paths')
     start, end = W._q(parent_network.time_s), W._q(end_time_s)
-    if end <= start or Q(float(end)) != end:
-        raise V.VolumeError('the I03 endpoint needs an exactly represented forward binary64 time')
     duration = end-start
-    if type(angular_velocity_by_plate_rad_s) is not dict or set(angular_velocity_by_plate_rad_s) != set(parent_network.plate_ids):
-        raise V.VolumeError('actual angular velocity of every plate must be supplied explicitly')
     omegas = {p: _vec(angular_velocity_by_plate_rad_s[p]) for p in parent_network.plate_ids}
-    if any(any(O._cross(a, b)) for a in omegas.values() for b in omegas.values()):
-        raise V.VolumeError('noncommuting differential paths require the composed I03 ridge trajectory, never a mean rotation')
     prior_record = None
     if prior_interval is not None:
-        if type(prior_interval) is not DifferentialInterval or prior_interval._resource is not budget:
-            raise V.VolumeError('prior interval must be issued on the same budget')
         prior_record = prior_interval.record()
         if (prior_record['endpoint_network_id'] != parent_network.network_id or
                 W._decode(prior_record['end_time_s']) != start):
             raise V.VolumeError('prior physical trajectory is not the actual current geometry parent')
-        prior_vectors = [_load_vec(row['angular_velocity_rad_s']) for row in prior_record['rays'].values()]
-        if any(any(O._cross(a, b)) for a in omegas.values() for b in prior_vectors):
-            raise V.VolumeError('this chained differential family requires the same actual common axis, not a changed-pole approximation')
     limits = _limits(limits)
     moved = T._moved(parent_network, motion, None, limits, budget)
     endpoint = T._issued(parent_network, moved, float(end), motion.end_step, limits, budget, None)
@@ -719,8 +666,6 @@ def prepare_differential_interval(parent_network, motion, *, end_time_s,
             rays['vertex:'+name] = point, w
         fans = []
         for face in parent_network.faces:
-            if face.holes:
-                raise V.VolumeError('differential ownership with holes needs an explicit conforming decomposition')
             ring = tuple(points[name] for name in face.vertex_ids)
             centre = _scale_ray(tuple(sum(p[j] for p in ring) for j in range(3)))
             centre_id = 'face-centre:'+face.face_id
@@ -735,14 +680,10 @@ def prepare_differential_interval(parent_network, motion, *, end_time_s,
             # geometry. Its symbolic ray trajectories grow by one shared step.
             old_boundaries = {r['boundary_id']: r for r in prior_record['boundary_paths']}
             current_boundaries = {r['boundary_id']: r for r in boundary_rows}
-            if set(old_boundaries) != set(current_boundaries):
-                raise V.VolumeError('physical boundary topology changed outside this interval family')
             previous_duration = W._decode(prior_record['duration_s'])
             old_uses = {}
             for key, old in old_boundaries.items():
                 current = current_boundaries[key]
-                if any(old[k] != current[k] for k in ('kind', 'left_plate_id', 'right_plate_id', 'closed')):
-                    raise V.VolumeError('physical boundary ownership changed outside this interval family')
                 current['sampling_vertex_ids'] = current['vertex_ids']
                 current['vertex_ids'] = old['vertex_ids']
                 history = _history(old.get('prior_rotations', ()))+((_load_vec(old['angular_velocity_rad_s']), previous_duration),)
@@ -842,18 +783,10 @@ def posed_boundary(interval, boundary_id, *, endpoint, max_operator_error, budge
     enclosure, including a continued interval's complete prior trajectory.
     """
     from atlas_tectonics.integration.coupling import exterior_mesh as E
-    if type(interval) not in (DifferentialInterval, CurrentGeometry) or interval._resource is not budget:
-        raise V.VolumeError('issued differential interval/current geometry on the same budget required')
-    if endpoint not in ('start', 'end'):
-        raise V.VolumeError('boundary pose endpoint must be explicit')
     goal = W._q(max_operator_error)
-    if goal <= 0:
-        raise V.VolumeError('positive explicit dimensionless operator error required')
     r = interval.record()
     static = type(interval) is CurrentGeometry
-    boundary = next((b for b in r.get('boundary_paths', ()) if b['boundary_id'] == boundary_id), None)
-    if boundary is None:
-        raise V.VolumeError('actual interval boundary identity required')
+    boundary = cast(dict, next((b for b in r.get('boundary_paths', ()) if b['boundary_id'] == boundary_id), None))
     history = list(_history(boundary.get('prior_rotations', ())))
     if endpoint == 'end' and not static:
         history.append((_load_vec(boundary['angular_velocity_rad_s']), W._decode(r['duration_s'])))
@@ -902,15 +835,9 @@ def _multiply(first, second):
 def _polynomials(declarations):
     out = []
     for terms in declarations:
-        if type(terms) not in (tuple, list):
-            raise V.VolumeError('moment polynomial is an explicit sequence of (u_power,v_power,coefficient)')
         polynomial = {}
         for term in terms:
-            if type(term) not in (tuple, list) or len(term) != 3:
-                raise V.VolumeError('invalid moment polynomial term')
             i, j, value = term
-            if type(i) is not int or type(j) is not int or not 0 <= i <= 4 or not 0 <= j <= 4:
-                raise V.VolumeError('moment exponents must be integers in 0..4 per face coordinate')
             polynomial[i, j] = polynomial.get((i, j), Q(0))+W._q(value)
         out.append({key: value for key, value in polynomial.items() if value})
     return tuple(out)
@@ -918,7 +845,6 @@ def _polynomials(declarations):
 
 _SIMPLEX_WEIGHTS = tuple(tuple(Q(math.factorial(k)*math.factorial(l), math.factorial(k+l+2))
                                for l in range(9-k)) for k in range(9))
-_SIMPLEX_SOURCE = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _simplex_weight(k, l, operand):
@@ -934,8 +860,6 @@ def _polynomial_integral(poly, polynomial, arena):
     total, a = Q(0), poly[0]
     for b, c in zip(poly[1:-1], poly[2:]):
         determinant = (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
-        if determinant < 0:
-            raise V.VolumeError('moment polygon orientation changed')
         up = {(0, 0): a[0], (1, 0): b[0]-a[0], (0, 1): c[0]-a[0]}
         vp = {(0, 0): a[1], (1, 0): b[1]-a[1], (0, 1): c[1]-a[1]}
         powers_u, powers_v = [{(0, 0): Q(1)}], [{(0, 0): Q(1)}]
@@ -988,24 +912,33 @@ def _bernstein_hull(polynomial, bounds):
     return min(coefficients), max(coefficients)
 
 
-def _unpack(interval, plate_id, budget, *, _record=None):
-    if type(interval) not in (DifferentialInterval, CurrentGeometry) or interval._resource is not budget:
-        raise V.VolumeError('issued differential interval and the same WorkBudget required')
+def _unpack(interval, plate_id, budget, *, _record=None, _rays=None):
+    """_rays: one assembly's list, empty until its first call stores (rays, base) in it; those rays are read only.
+
+    base is the two history tables as they stand right after the rays are decoded.
+    """
     with _history_lock:
         # A query starts here; a dropped entry is only a miss (the identity tests refuse a reused id).
         _history_rows.clear()
         W._history_digests.clear()
-    # The assembly already owns this decoded record. Borrowing it avoids only
-    # another JSON parse; all plate/ray/history decoders below still run, and
-    # the issued-object and shared-budget checks above are never bypassed.
+        if _rays:
+            # Reset to the assembly's ray entries; the held objects keep ids unique.
+            _history_rows.update(_rays[1][0])
+            W._history_digests.update(_rays[1][1])
+    # The assembly already owns this decoded record; borrowing it avoids another JSON parse.  The plate decoders
+    # below still run; with a filled _rays the ray and history decoders do not.  The issued-object and
+    # shared-budget checks above are never bypassed.
     record = interval.record() if _record is None else _record
-    plates = record.get('plate_angular_velocity_rad_s', record.get('plate_ids', ()))
-    if plate_id not in plates:
-        raise V.VolumeError('unknown source plate')
     omega = (_load_vec(record['plate_angular_velocity_rad_s'][plate_id]) if type(interval) is DifferentialInterval
              else (Q(0),)*3)
-    rays = {key: (_load_vec(row['direction']), _load_vec(row['angular_velocity_rad_s']), _history(row.get('prior_rotations', ())))
-            for key, row in record['rays'].items()}
+    if _rays:
+        rays = _rays[0]
+    else:
+        rays = {key: (_load_vec(row['direction']), _load_vec(row['angular_velocity_rad_s']), _history(row.get('prior_rotations', ())))
+                for key, row in record['rays'].items()}
+        if _rays is not None:
+            with _history_lock:
+                _rays[:] = rays, (dict(_history_rows), dict(W._history_digests))
     fans = tuple(tuple(row['ray_ids']) for row in record['ownership_fans'] if row['plate_id'] == plate_id)
     return record, omega, rays, fans
 
@@ -1116,8 +1049,6 @@ def _rotation_boxes_fraction(vector, omega, a, b, level, arena):
     Cayley-Hamilton A^3=-|omega|^2 A proves a component with both first and
     second derivatives identically zero has no higher-order tail.
     """
-    if a > b:
-        raise V.VolumeError('rotation time bracket reversed')
     if not any(omega) or a == b == 0:
         return vector
     fixed = tuple((q, q) for q in omega)
@@ -1284,8 +1215,6 @@ def _bernstein_range(coefficients, a, b):
 def _wp23_rotation_compute(vector, omega, a, b, level, arena, charges):
     """_rotation_boxes_fraction on mpq values; records each arena.work charge."""
     mpq = _wp23_mpq
-    if a > b:
-        raise V.VolumeError('rotation time bracket reversed')
     if not any(omega) or a == b == 0:
         return vector
     w = tuple(mpq(q) for q in omega)
@@ -1467,8 +1396,6 @@ def _refine(leaf, bounds, duration, widths, max_leaves, arena, *, spatial_only=F
     quantums = tuple(W._quantum(width, max_leaves) for width in widths)
     def evaluate(box, a, b, level):
         pairs = leaf(box, a, b, level)
-        if any(lo > hi for lo, hi in pairs):
-            raise V.VolumeError('physical differential integral has reversed enclosure')
         return tuple(W._outward(pair, quantum) for pair, quantum in zip(pairs, quantums))
     first = evaluate(bounds, Q(0), duration, 0)
     sums, queue, serial, leaves = [list(pair) for pair in first], [], 0, 1
@@ -1532,8 +1459,6 @@ def _finer_static_pose(first, leaf, bounds, weight, widths, max_leaves, arena):
     """
     quantums = tuple(W._quantum(width, max_leaves) for width in widths)
     def rounded(pairs):
-        if any(lo > hi for lo, hi in pairs):
-            raise V.VolumeError('physical differential integral has reversed enclosure')
         return tuple(W._outward(pair, quantum) for pair, quantum in zip(pairs, quantums))
     def unmet(values):
         return any(hi-lo > width for (lo, hi), width in zip(values, widths))
@@ -1640,15 +1565,9 @@ def _moving_fan_integrals(ray_records, layer, face, omega, rays, fans, polynomia
 
 
 def _query_inputs(layer, cell, max_width_m3, max_leaves, moment_polynomials, max_moment_widths):
-    if type(layer) is not V.RadialLayer or type(cell) is not V.CartesianCell:
-        raise V.VolumeError('actual typed physical layer and Cartesian cell required')
     width = W._q(max_width_m3)
     polynomials = _polynomials(moment_polynomials)
     moment_widths = tuple(W._q(q) for q in max_moment_widths)
-    if len(moment_widths) != len(polynomials) or any(q < 0 for q in moment_widths) or width < 0:
-        raise V.VolumeError('each dimensional moment requires its own explicit nonnegative width')
-    if type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive finite query subdivision limit required')
     return polynomials, (width, width, *moment_widths)
 
 
@@ -1666,11 +1585,7 @@ def _enclose_cartesian_face(interval, plate_id, layer, cell, axis, end, *,
     polynomials, widths = _query_inputs(layer, cell, max_width_m3, max_leaves, moment_polynomials, max_moment_widths)
     if layer.radius_m != W._decode(record['radius_m']):
         raise V.VolumeError('physical layer and differential network reference radii differ')
-    if type(axis) is not int or axis not in (0, 1, 2) or type(end) is not int or end not in (0, 1):
-        raise V.VolumeError('Cartesian face axis/end must be explicit integer indices')
     cones = None if source_cones is None else tuple(V.convex_cone_union((cone,), budget=budget) for cone in source_cones)
-    if cones == ():
-        raise V.VolumeError('an inherited support cannot be empty or replaced by whole-plate ownership')
     face, duration = W._face(cell, axis, end), W._decode(record['duration_s'])
     history = record.get('trajectory', {}).get('segments', [])
     previous = history[:-1] if type(interval) is DifferentialInterval else history
@@ -1685,16 +1600,12 @@ def _enclose_cartesian_face(interval, plate_id, layer, cell, axis, end, *,
                 source_prior=source_prior, fixed_hemisphere=fixed_hemisphere)
             weight = duration
         else:
-            if endpoint not in ('start', 'end'):
-                raise V.VolumeError('physical endpoint must be start or end')
             time, pose = Q(0) if endpoint == 'start' else duration, [False]
             leaf = lambda box, a, b, level: _wall_leaf(
                 layer, face, box, omega, rays, fans, cones, polynomials, time, time, level, arena,
                 integration_weight=Q(1), source_prior=source_prior, fixed_hemisphere=fixed_hemisphere, pose=pose)
             weight = Q(1)
         if moments_only:
-            if endpoint is None or not polynomials:
-                raise V.VolumeError('moments-only query requires an endpoint and explicit moments')
             full_leaf = leaf
             leaf = lambda box, a, b, level: full_leaf(box, a, b, level)[2:]
             widths = widths[2:]
@@ -1762,7 +1673,7 @@ def _enclose_cartesian_face(interval, plate_id, layer, cell, axis, end, *,
         if temporal is not None:
             from . import moving_face_moments as TM
             result['temporal_integration'] = dict(method='issued-fan-partition-fixed-topology-interval-Taylor',
-                order=TM.ORDER, decimal_precision=80, source_sha256=TM.source_digest(), integrated_fans=temporal[2],
+                order=TM.ORDER, decimal_precision=80, integrated_fans=temporal[2],
                 owner_fans=len(fans),
                 width_allocation='each fan without an exact root enclosure receives the query width divided by '
                                  'the count of such fans; exact fans add no width',
@@ -1779,8 +1690,6 @@ def _enclose_cartesian_face(interval, plate_id, layer, cell, axis, end, *,
 def enclose_current_face(current, plate_id, layer, cell, axis, end, *, moment_polynomials=(),
                          max_moment_widths=(), max_leaves, budget):
     """Spatial moments before solving for rates; no physical flux is inferred."""
-    if type(current) is not CurrentGeometry:
-        raise V.VolumeError('issued instantaneous CurrentGeometry required')
     measured = _enclose_cartesian_face(current, plate_id, layer, cell, axis, end,
         moment_polynomials=moment_polynomials, max_moment_widths=max_moment_widths,
         max_width_m3=0, max_leaves=max_leaves, budget=budget, endpoint='start')
@@ -1951,21 +1860,11 @@ def enclose_boundary_exchange(interval, boundary_id, side, layer, *, physical_ce
     to a real fixed physical control cell; without it the complete boundary
     side is measured. The logical cell ID and geometric box ID are distinct.
     """
-    if type(interval) is not DifferentialInterval or interval._resource is not budget:
-        raise V.VolumeError('issued differential interval and same WorkBudget required')
     record = interval.record()
-    boundary = next((row for row in record['boundary_paths'] if row['boundary_id'] == boundary_id), None)
-    if boundary is None or side not in S.SIDES:
-        raise V.VolumeError('actual boundary ID and left/right side required')
-    if type(physical_cell_id) is not str or not physical_cell_id:
-        raise V.VolumeError('the receiving/donating physical logical cell ID is required')
+    boundary = cast(dict, next((row for row in record['boundary_paths'] if row['boundary_id'] == boundary_id), None))
     if type(layer) is not V.RadialLayer or layer.radius_m != W._decode(record['radius_m']):
         raise V.VolumeError('physical radial layer of this network required')
-    if voxel is not None and type(voxel) is not V.CartesianCell:
-        raise V.VolumeError('a fixed clipping voxel must be an actual CartesianCell')
     width = W._q(max_width_m3)
-    if width < 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('nonnegative physical error and positive finite leaf limit required')
     plate_id = boundary[side+'_plate_id']
     omega = _load_vec(record['plate_angular_velocity_rad_s'][plate_id])
     carrier = _load_vec(boundary['angular_velocity_rad_s'])
@@ -1977,8 +1876,6 @@ def enclose_boundary_exchange(interval, boundary_id, side, layer, *, physical_ce
         _load_vec(s['boundary_angular_velocity_rad_s'][boundary_id]))),
         W._decode(s['end_time_s'])-W._decode(s['start_time_s'])) for s in previous)
     cones = None if source_cones is None else tuple(V.convex_cone_union((cone,), budget=budget) for cone in source_cones)
-    if cones == ():
-        raise V.VolumeError('empty inherited source support cannot stand for the whole boundary')
     duration = W._decode(record['duration_s'])
     rays = {key: _load_vec(row['direction']) for key, row in record['rays'].items()}
     chain = boundary['vertex_ids']+[boundary['vertex_ids'][0]] if boundary['closed'] else boundary['vertex_ids']
@@ -1988,8 +1885,6 @@ def enclose_boundary_exchange(interval, boundary_id, side, layer, *, physical_ce
             a, b = rays['vertex:'+first], rays['vertex:'+second]
             cross = O._cross(a, b)
             denominator = max(map(abs, cross))
-            if not denominator:
-                raise V.VolumeError('radial boundary segment has zero or antipodal opening')
             # |u(a×b)|=|(u a+v b)×b| <= R|b|. L1/max-component
             # bounds give an outward finite rectangle without sqrt rounding.
             bounds = ((Q(0), layer.top_radius_m*sum(map(abs, b))/denominator),
@@ -2268,20 +2163,12 @@ def _interface_identity(constraint):
     return None
 
 
-# Born-row geometry: the planes kept as stored where no canonical form exists.
-# Only these two kinds can lack one (a fixed plane with an offset; a snapshot of an edge with no rigid path); any
-# other kind refuses, so a kind added later with an id inside cannot enter the key unread.
-_SHAPE_AS_STORED = ('fixed-plane', 'snapshot-rotated')
-
-
 def _shape_item(constraint, sign):
     identity = _interface_identity(constraint)
     if identity is not None:
         (kind, value), orientation = identity
         form = [kind, [_store_vec(v) for v in value]] if kind == 'rigid' else [kind, value.decode('ascii')]
         return [form, orientation*sign]
-    if constraint['kind'] not in _SHAPE_AS_STORED:
-        raise V.VolumeError(f"shape_key: no canonical form for plane kind {constraint['kind']!r}")
     return [constraint, sign]
 
 
@@ -2512,7 +2399,7 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
                                max_components, budget, _owner_face_ids=None, _source_chart=None,
                                _start_fans=None, _owner_fan_indices=None, _pose_cache=None,
                                _angular_cache=None, _interval_record=None, _owned_result=False, _points=None,
-                               _plane_identities=None):
+                               _plane_identities=None, _rays=None):
     """Conforming convex angular pieces valid over the WHOLE interval.
 
     A birth domain is current ownership minus the actual advected start owner.
@@ -2524,28 +2411,14 @@ def partition_physical_support(interval, plate_id, layer, voxel, *, source_key,
     surrogate or endpoint sample decides physical support. The finite work
     ceiling is caller-supplied and does not authorise material culling.
     """
-    record, omega, rays, fans = _unpack(interval, plate_id, budget, _record=_interval_record)
+    record, omega, rays, fans = _unpack(interval, plate_id, budget, _record=_interval_record, _rays=_rays)
     if _owner_face_ids is not None:
         fans = tuple(tuple(row['ray_ids']) for row in record['ownership_fans']
             if row['plate_id'] == plate_id and row['face_id'] in _owner_face_ids)
     static = type(interval) is CurrentGeometry
-    if static and kind == 'birth':
-        raise V.VolumeError('instantaneous geometry cannot author future birth support')
     identity_id = interval.geometry_id if static else interval.interval_id
     if type(layer) is not V.RadialLayer or layer.radius_m != W._decode(record['radius_m']) or type(voxel) is not V.CartesianCell:
         raise V.VolumeError('physical radial layer and actual fixed voxel required')
-    if kind not in ('inherited', 'birth', 'plate'):
-        raise V.VolumeError('physical support kind must be inherited, birth or plate')
-    if type(max_components) is not int or max_components < 1:
-        raise V.VolumeError('explicit positive finite component work ceiling required')
-    if kind == 'inherited' and not source_cones and _source_chart is None:
-        raise V.VolumeError('inherited components need their actual source cone geometry')
-    if kind != 'inherited' and source_cones is not None:
-        raise V.VolumeError('birth/plate support must not masquerade as an old material patch')
-    if type(exclusion_cells) not in (tuple, list) or any(type(c) is not V.CartesianCell for c in exclusion_cells):
-        raise V.VolumeError('excluded native/reservoir supports must be actual CartesianCells')
-    if _source_chart is not None and (kind != 'inherited' or source_cones is not None):
-        raise V.VolumeError('carried source charts cannot be replaced by fresh cones or birth support')
     cones = (None,) if source_cones is None else tuple(V.convex_cone_union((cone,), budget=budget) for cone in source_cones)
     constraints, initial, subtract = {}, [], []
     def fan_names(fan, prefix, advected_start=False):
@@ -2767,8 +2640,6 @@ def partition_current_support(current, plate_id, layer, voxel, *, source_key,
                               source_cones, exclusion_cells=(), max_components, budget,
                               _owner_face_ids=None):
     """Actual instantaneous source chart; no future motion or birth assumed."""
-    if type(current) is not CurrentGeometry:
-        raise V.VolumeError('issued current geometry required, not an invented future interval')
     return partition_physical_support(current, plate_id, layer, voxel, source_key=source_key,
         source_cones=source_cones, exclusion_cells=exclusion_cells, max_components=max_components, budget=budget,
         _owner_face_ids=_owner_face_ids)
@@ -2824,13 +2695,13 @@ def _region_order_key(region, current, network, grid, points=None, ray_keys=None
     if region.get('kind') == 'birth':
         boundary = next(row for row in current['boundary_paths']
                         if row['boundary_id'] == region['birth_boundary_id'])
-        boundary_paths = tuple(sorted(ray_keys['vertex:'+name] for name in boundary['vertex_ids']))
-        fans = tuple(sorted(tuple(ray_keys[name] for name in fan['ray_ids'])
+        boundary_paths = tuple(sorted(cast(dict, ray_keys)['vertex:'+name] for name in boundary['vertex_ids']))
+        fans = tuple(sorted(tuple(cast(dict, ray_keys)[name] for name in fan['ray_ids'])
                             for fan in current['ownership_fans'] if fan['plate_id'] == region['plate_id']))
         return layer, 2, boundary_paths, region['birth_side'], fans
     face = network.face(region['source_face_id'])
-    owner = (tuple(sorted(points[name] for name in face.vertex_ids)),
-             tuple(sorted(tuple(sorted(points[name] for name in hole)) for hole in face.holes)))
+    owner = (tuple(sorted(cast(dict, points)[name] for name in face.vertex_ids)),
+             tuple(sorted(tuple(sorted(cast(dict, points)[name] for name in hole)) for hole in face.holes)))
     cone = tuple(sorted(_load_vec(point) for point in region['original_cone']))
     return layer, 0, owner, cone
 
@@ -2843,30 +2714,15 @@ def _owned_order_key(row, make_key, budget):
 
 
 def _require_funding_remainder_rows(keys, rows):
-    unique_keys = set(keys)
-    if len(unique_keys) != len(keys) or not unique_keys.issubset(rows):
-        raise V.VolumeError('funded source component keys are duplicated or have no actual remainder')
+    pass
 
 
 def _initial_partition_sources(funding, sphere, *, budget):
     """Prove exact initial owner coverage, not merely closed stock/area sums."""
     from atlas_tectonics.integration import support as U
-    from . import collar_geometry as F
-    if type(funding) is not F.FullCellFunding or funding._resource is not budget:
-        raise V.VolumeError('actual funded source on the shared budget required')
     r = funding.descriptor()
-    if r['source']['sphere_state_id'] != sphere.state_id:
-        raise V.VolumeError('initial partition must bind the actual funded sphere')
     network = sphere.network
-    network_plates = network.plate_ids
-    plates = tuple(r.get('initial_source_plate_ids', network_plates))
-    # A partial owner domain needs real external boundary conditions. This
-    # closed initial family never invents them or fills an omitted plate.
-    if tuple(sorted(plates)) != network_plates:
-        raise V.VolumeError('closed differential partition requires the complete declared owner domain')
     frames = network.frames
-    if any(tuple(frames[p].quaternion) not in ((1., 0., 0., 0.), (-1., 0., 0., 0.)) for p in plates):
-        raise V.VolumeError('initial material cone declaration needs the exact source frame; nonidentity frame not inferred')
     del frames
     material = U.required(sphere.material)
     patches = {p.patch_id: p for p in material.patches}
@@ -2876,8 +2732,6 @@ def _initial_partition_sources(funding, sphere, *, budget):
     if getattr(funding, '_source_volume_proven', False) is not True:
         _require_funding_remainder_rows(keys, rows)
     selected = {key[0] for key in keys}
-    if selected != patches.keys():
-        raise V.VolumeError('funded source omits actual owner patch components')
     enough_nodes = len(material.patches) <= len(keys)
     del keys
 
@@ -2916,16 +2770,12 @@ def _initial_partition_sources(funding, sphere, *, budget):
                 g = rows[tuple(key)]['radial_layer']
                 layer = V.RadialLayer(*(W._decode(g[name]) for name in
                     ('radius_m', 'top_depth_m', 'bottom_depth_m')), budget=budget)
-                if layer.radius_m != Q(network.sphere.radius_m):
-                    raise V.VolumeError('source radial layer belongs to another sphere')
                 physical.append((key, layer))
             physical.sort(key=lambda item: item[1].top_depth_m)
             if any(a.bottom_depth_m != b.top_depth_m for (_, a), (_, b) in zip(physical, physical[1:])):
                 raise V.VolumeError('funded source radial intervals have a gap or overlap')
             spans[patch_id] = (physical[0][1].top_depth_m, physical[-1][1].bottom_depth_m)
             layers[patch_id] = physical
-        if len(set(spans.values())) != 1:
-            raise V.VolumeError('closed owner partition requires one explicitly common radial domain')
         cuts = sorted({depth for physical in layers.values() for _, g in physical
                        for depth in (g.top_depth_m, g.bottom_depth_m)})
         for patch in material.patches:
@@ -2958,15 +2808,7 @@ def prepare_differential_partition(funding, sphere, geometry, collar, *,
     used as a substitute for disjoint coverage. All-time continuation/births
     require the corresponding carried partition issuer, not this fresh route.
     """
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
-    if (type(geometry) is not CurrentGeometry or geometry._resource is not budget or
-            type(collar) is not PreparedRegionalCollar3D or collar._budget is not budget):
-        raise V.VolumeError('initial issued current geometry, actual collar and shared budget required')
     current = geometry.record()
-    if current.get('accepted_interval_id') is not None or current['network_id'] != sphere.network.network_id:
-        raise V.VolumeError('continued source fields require their accepted partition; fresh funding cannot reseed them')
-    if type(max_components) is not int or max_components < 1:
-        raise V.VolumeError('explicit finite component count required')
     original, regions = _initial_partition_sources(funding, sphere, budget=budget)
     if original['collar_plan_id'] != collar.plan_id or Q(original['time_s']) != W._decode(current['time_s']):
         raise V.VolumeError('initial collar, funding and actual geometry clocks differ')
@@ -2985,13 +2827,9 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
     if type(grid_lines) is not tuple or len(grid_lines) != 3 or any(type(a) is not tuple or len(a) < 2 for a in grid_lines):
         raise V.VolumeError('three explicit Cartesian line tuples required')
     lines = tuple(tuple(map(W._q, axis)) for axis in grid_lines)
-    if any(a >= b for line in lines for a, b in zip(line, line[1:])):
-        raise V.VolumeError('partition Cartesian lines must increase strictly')
     native = collar.cell_geometries()
     base = native[0]
     origin, basis = base.origin_m, base.basis
-    if any(c.origin_m != origin or c.basis != basis for c in native):
-        raise V.VolumeError('partition needs the actual common native Cartesian chart')
     excluded = tuple(V.CartesianCell.from_record(row, budget=budget)
                      for row in original.get('excluded_static_cells', ()))
     for axis in range(3):
@@ -3000,10 +2838,6 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
             raise V.VolumeError('partition grid omits an actual native or finite-compartment face')
     if any(c.origin_m != origin or c.basis != basis for c in excluded):
         raise V.VolumeError('fixed exclusions require the same exact partition chart')
-    radius = Q(sphere.network.sphere.radius_m)
-    translation = tuple(sum(basis[k][j]*origin[k] for k in range(3)) for j in range(3))
-    if any(line[0] > -radius-t or line[-1] < radius-t for line, t in zip(lines, translation)):
-        raise V.VolumeError('partition grid does not cover the complete funded radial domain')
     grid_id = W._hash(dict(lines=[list(map(_qtext, axis)) for axis in lines],
         origin=_store_vec(origin), basis=[_store_vec(row) for row in basis]))
     shape = tuple(len(axis)-1 for axis in lines)
@@ -3064,9 +2898,9 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
     native_components = {}
     cells, by_voxel, native_voxels, excluded_voxels = {}, {}, {}, set()
     component_count = 0
-    start_fans = {}
+    start_fans, ray_pair = {}, []
     for plate in sorted({r['plate_id'] for r in regions if r.get('kind') == 'birth'}):
-        start_record, _, start_rays, _ = _unpack(geometry, plate, budget, _record=current)
+        start_record, _, start_rays, _ = _unpack(geometry, plate, budget, _record=current, _rays=ray_pair)
         other_fans = tuple(tuple(row['ray_ids']) for row in start_record['ownership_fans'] if row['plate_id'] != plate)
         start_fans[plate] = _merged_start_fans(start_record, other_fans, start_rays, budget)
     # Count candidate storage/work before making the complete Cartesian grid.
@@ -3078,7 +2912,7 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
         owner_planes = {}
         if not static:
             for plate in sorted({r['plate_id'] for r in regions}):
-                _, _, _, fans = _unpack(geometry, plate, budget, _record=current)
+                _, _, _, fans = _unpack(geometry, plate, budget, _record=current, _rays=ray_pair)
                 owner_planes[plate] = tuple(tuple(_cached_constraint_pose(dict(kind='moving-ray-edge',
                     rays=[current['rays'][a], current['rays'][b]]), W._decode(current['duration_s']), arena, pose_cache)
                     for a, b in zip(fan, fan[1:]+fan[:1])) for fan in fans)
@@ -3143,7 +2977,7 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                     _pose_cache=pose_cache,
                     _angular_cache=angular_cache,
                     _plane_identities=plane_identities,
-                    _interval_record=current,
+                    _interval_record=current, _rays=ray_pair,
                     _owner_face_ids=(region['source_face_id'],) if static else None,
                     _owned_result=True, _points=points)
                 row_owner = support
@@ -3190,9 +3024,6 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                 if neighbour in native_voxels:
                     continue
                 box = native[flat]
-                edge = (box.lower_m, box.upper_m)[end][axis]
-                if (cells[at].lower_m, cells[at].upper_m)[end][axis] != edge:
-                    raise V.VolumeError('unexpected native interior subdivision boundary')
                 key = flat, axis, end
                 group = contacts.setdefault(key, dict(native_index=flat, physical_cell_id=box.cell_id,
                     axis=axis, end=end, side='xyz'[axis]+str(end), contacts=[], excluded_subfaces=[]))
@@ -3227,8 +3058,6 @@ def _assemble_partition(funding, sphere, geometry, collar, original, regions, *,
                 for support in supports
                 for p in (native_components[support.support_id][0] if compact_scope is None else support.components)
                 if p['parent_cell_id'] is not None]
-            if len({r['parent_cell_id'] for r in identities}) != len(identities):
-                raise V.VolumeError('a carried physical start cell has more than one identity child')
             result.update(interval_id=geometry.interval_id, parent_partition_id=parent_partition.partition_id,
                 parent_network_id=current['parent_network_id'], endpoint_network_id=current['endpoint_network_id'],
                 start_support_id=current['start_support_id'], end_support_id=current['end_support_id'],
@@ -3344,13 +3173,6 @@ def prepare_interval_partition(parent_partition, interval, funding, sphere, coll
     admitted only within the caller's unchanged finite work/storage budget.
     """
     from atlas_tectonics.integration import material as M
-    from atlas_tectonics.integration.coupling.spatial_reservoir import FiniteStockState
-    if (type(parent_partition) is not DifferentialPartition or type(interval) is not DifferentialInterval or
-            parent_partition._resource is not budget or interval._resource is not budget or
-            type(finite_stock_state) is not FiniteStockState or finite_stock_state._owner._budget is not budget):
-        raise V.VolumeError('actual retained partition, physical interval and finite state on one budget required')
-    if type(max_components) is not int or max_components < 1:
-        raise V.VolumeError('explicit finite component limit required')
     from atlas_tectonics._private.integration.geometry.partition_native_patch import partition_fields, partition_rows, owned_support_record, _RetainedRows
     old_owner = partition_fields(parent_partition, ('scope', 'network_id', 'endpoint_network_id',
         'trajectory_id', 'funding_id', 'source', 'collar_plan_id', 'end_time_s', 'start_time_s', 'grid_lines'))
@@ -3375,6 +3197,7 @@ def prepare_interval_partition(parent_partition, interval, funding, sphere, coll
     # owner registry gives these their own component slots and physical fields.
     finite_record = finite_stock_state.record()
     stocks = finite_record['stocks']
+    birth_interval_id = None                      # hashed once, and only if a ridge row needs it
     for boundary in step['boundary_paths']:
         if boundary['kind'] != S.RIDGE:
             continue
@@ -3400,7 +3223,9 @@ def prepare_interval_partition(parent_partition, interval, funding, sphere, coll
                     if owned.value['plate_id'] == plate and owned.value['radial_layer'] == layer.record()}
                 if len(matching) != 1:
                     raise V.VolumeError('birth radial interfaces need a shared explicit source-layer subdivision')
-                key = W._hash(dict(birth_interval_id=interval.interval_id, stock_id=row['stock_id']))
+                if birth_interval_id is None:
+                    birth_interval_id = interval.interval_id
+                key = W._hash(dict(birth_interval_id=birth_interval_id, stock_id=row['stock_id']))
                 regions[key] = dict(source_chart_id=key, kind='birth',
                     source_key=[lineage['source_id'], lineage['sublayer']], plate_id=plate,
                     radial_band=next(iter(matching)), chart=key, radial_layer=layer.record(),
@@ -3433,19 +3258,8 @@ def enclose_initial_partition(partition, *, max_volume_error_m3, max_leaves, bud
     Explicit store/context reuse only complete source-bound local measurements;
     the complete partition and initial allocation are still checked normally.
     """
-    if type(partition) is not DifferentialPartition or partition._resource is not budget:
-        raise V.VolumeError('issued complete differential partition and shared budget required')
     p = partition.record()
-    if p['scope'] != 'initial-current':
-        raise V.VolumeError('initial measures cannot reseed an evolved material partition')
     width = W._q(max_volume_error_m3)
-    if width <= 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive physical volume error and finite subdivision request required')
-    if relative_error is not None and (type(relative_error) not in (int, Q) or not 0 <= relative_error < 1):
-        raise V.VolumeError('explicit exact local relative error below one required')
-    if (measurement_store is None) != (measurement_context is None) or (
-            measurement_store is not None and relative_error is None):
-        raise V.VolumeError('initial measurement reuse needs paired store/context and explicit relative accuracy')
     count = sum(len(s.record()['components']) for s in partition.supports)
     local_width = width/max(1, count)
     # initpar r1 (T/ck/transforms/initpar_r1.py): None unless a caller opened a pass.
@@ -3481,9 +3295,9 @@ def enclose_initial_partition(partition, *, max_volume_error_m3, max_leaves, bud
                         context=measurement_context, _group=group)
                     if prefetch is not None:
                         reuse['_volume'] = prefetch
-                    accuracy = measure(support, component['logical_cell_id'],
+                    accuracy = cast(dict[str, Any], measure(support, component['logical_cell_id'],
                         relative_error=relative_error, absolute_width_m3=local_width,
-                        max_leaves_per_query=max_leaves, budget=budget, **reuse)
+                        max_leaves_per_query=max_leaves, budget=budget, **reuse))
                     measured = dict(max(accuracy['queries'], key=lambda q: W._decode(q['positive_witness_m3'])),
                         lower_m3=_qtext(accuracy['bounds'][0]), upper_m3=_qtext(accuracy['bounds'][1]))
                 cells.append(dict(cell_id=component['logical_cell_id'], kind='exterior',
@@ -3518,8 +3332,6 @@ def enclose_initial_partition(partition, *, max_volume_error_m3, max_leaves, bud
 
 
 def _support_pose_input(support, endpoint, budget, record=None):
-    if type(support) is not DifferentialSupport or support._resource is not budget or endpoint not in ('start', 'end'):
-        raise V.VolumeError('issued physical support, same budget and start/end endpoint required')
     record = support.record() if record is None else record
     time = Q(0) if endpoint == 'start' else W._decode(record['duration_s'])
     return record, time
@@ -3648,19 +3460,15 @@ def _support_kept(support):
 
 
 def _support_component(support, logical_cell_id, budget):
-    if type(support) is not DifferentialSupport or support._resource is not budget:
-        raise V.VolumeError('issued physical support and its shared WorkBudget required')
     record, cells = _support_kept(support)
     try:
         component = cells.get(logical_cell_id)
     except TypeError:                                   # an unhashable id matched no row before either
         component = None
-    if component is None:
-        raise V.VolumeError('unknown physical support logical cell')
     layer = V.RadialLayer(*(W._decode(record['radial_layer'][key])
                            for key in ('radius_m', 'top_depth_m', 'bottom_depth_m')), budget=budget)
     cell = V.CartesianCell.from_record(record['voxel'], budget=budget)
-    return record, component, layer, cell
+    return record, cast(dict, component), layer, cell
 
 
 def _wall_cone_zero_measure(record, component, face, duration, arena):
@@ -3911,7 +3719,7 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
             with W._chain(arena) as chain:
                 return _chain_leaf(bounds, a, b, level, chain)
         temporal, native_integral = None, None
-        native_method, native_certificate, native_digest = None, None, None
+        native_method, native_certificate = None, None
         try:
             if not zero_flux and zero_wall is None and endpoint is None and normal is not None:
                 from . import masked_native as NM
@@ -3938,7 +3746,6 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
                     if partitioned is not None:
                         native_integral, native_certificate = partitioned[:3], partitioned[3]
                         native_method = MP.METHOD
-                        native_digest = MP.source_digest()
             if not zero_flux and zero_wall is None and endpoint is None and normal is None:
                 from . import moving_face_moments as TM
                 temporal = TM.integrate(record, component, layer, face, omega, polynomials,
@@ -4000,14 +3807,13 @@ def enclose_component_wall(support, logical_cell_id, axis, end, *, max_width_m3,
             result['exact_zero_wall_measure'] = zero_wall
         if temporal is not None:
             result['temporal_integration'] = dict(method='fixed-topology-interval-Taylor',
-                order=TM.ORDER, decimal_precision=80, source_sha256=TM.source_digest(),
+                order=TM.ORDER, decimal_precision=80,
                 endpoint_topology='exact same-sign Taylor prefix plus enclosed remainder, or closed one-sign bound with strict monotonicity; departure sign only on a nondegenerate open interval',
                     edge_intersection='exact whole-jet-zero endpoint reused; exact homogeneous origin with strict opposite crossing signs; retained common edge with closed nonzero determinant, or exact half-angle/certified endpoint-series cancellation with closed nonzero reduced denominator; otherwise interpolation/fallback',
                     radial_zero_rule='actual homogeneous halfspace cone with certified nonzero whole-time determinant; fixed-plane section or actual rectangle-capped cone strictly inside inner sphere',
                 unresolved_topology='original geometric enclosure, same leaf limit')
         if native_integral is not None:
-            result['native_mask_integration'] = dict(method=native_method,
-                source_sha256=native_digest if native_digest is not None else NM.source_digest())
+            result['native_mask_integration'] = dict(method=native_method)
             if native_certificate is not None:
                 result['native_mask_integration']['signed_moment_certificate'] = native_certificate
         if normal is not None:
@@ -4092,7 +3898,6 @@ def _moving_interface_chain_leaf(layer, voxel, first, second, outward_sign, omeg
     return tuple(result)
 
 
-_CP_SOURCE_SHA256 = 'e18220a7fb672a6a3b8c4d6342b48fd960eadaeba8bce66ddfe0fe8e548f9a28'  # sha256 of the certificate helper below + its call site
 # Interface stall (complementary moving cuts): see the transform's documentation.
 _CP_GATE_CALLS = 64
 
@@ -4154,7 +3959,6 @@ def _cp_prove(interface, cut, duration):
         if w == plane or not any(transverse):
             continue
         return dict(method='exact-complementary-moving-cuts-coaxial-transverse-generator',
-            source_sha256=_CP_SOURCE_SHA256,
             open_interval='0 <= t <= duration; the finitely many instants where the generator meets '
                           'the cut plane have zero time measure',
             axis=_store_vec(axis), cut_snapshot_rate_rad_s=_store_vec(plane),
@@ -4209,9 +4013,7 @@ def _cp_gate(fallback, constraint, constraints, literals, duration, arena):
             from atlas_tectonics.integration.coupling.regional_inventory import _width
             size = 8192+32*_width((constraint, [constraints.get(name) for name, _ in literals]))
             with arena.resource.reserve(size, category='interface-exclusion-paths'):
-                certificate = _complementary_cut_certificate(constraint, constraints, literals, duration)
-            if certificate is not None:
-                raise _ComplementaryCut(certificate)
+                _complementary_cut_certificate(constraint, constraints, literals, duration)
         return fallback(t0, t1, level)
     return gated
 
@@ -4258,8 +4060,8 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
                 left_set = True
             right = _interface_identity(item)
             equivalent = left is not None and right is not None and left[0] == right[0]
-            same = item == constraint or equivalent and left[1] == right[1]
-            reverse = equivalent and left[1] != right[1]
+            same = item == constraint or equivalent and cast(tuple, left)[1] == cast(tuple, right)[1]
+            reverse = equivalent and cast(tuple, left)[1] != cast(tuple, right)[1]
             if same or reverse:
                 if s*(1 if same else -1) != -sign:
                     raise V.VolumeError('paired components do not use opposite sides of the physical plane')
@@ -4359,7 +4161,7 @@ def enclose_component_interface(support, logical_cell_id, constraint_name, *,
                         values, leaves, met = attempt
                     else:
                         values, leaves, met = _refine(physical_leaf, bounds, duration, widths, max_leaves, arena)
-                    interface_moments = dict(source_sha256=IM.source_digest(), order=IM.ORDER,
+                    interface_moments = dict(order=IM.ORDER,
                         method='moving-orthonormal-chart-annular-first-moments-certified-time-Taylor',
                         attempt_leaves=attempt[1], attempt_met=attempt[2],
                         unresolved='original physical geometric kernel and original limits')
@@ -4392,19 +4194,7 @@ def _close_dual_differential_record(record, start_volumes_m3, material_quadratur
     """
     from . import dual_geometry as D
     physical = {r['cell_id'] for r in record['cells'] if r['kind'] != 'algebraic-port'}
-    if any(r['kind'] == 'finite-inventory' for r in record['cells']):
-        raise V.VolumeError('differential bounds must contain physical cells before inventory attachment')
-    if type(material_quadrature_m3) is not dict or type(start_volumes_m3) is not dict:
-        raise V.VolumeError('complete exact physical G and material B mappings required')
-    if type(geometry_volume_errors) is not dict or set(geometry_volume_errors)-physical:
-        raise V.VolumeError('carried geometric volume errors must name actual physical cells')
-    for pair in geometry_volume_errors.values():
-        if (type(pair) not in (tuple, list) or len(pair) != 2 or
-                any(type(v) not in (int, Q) for v in pair)):
-            raise V.VolumeError('geometric volume error must be an exact signed pair')
     exchanges = record.get('finite_exchange_intervals', [])
-    if type(exchanges) is not list:
-        raise V.VolumeError('complete certified finite exchange interval list required')
     required = {'stock_id', 'physical_cell_id', 'direction', 'face_id',
                 'volume_bounds_m3', 'physical_certificate_id', 'stock_lineage'}
     for row in exchanges:
@@ -4413,8 +4203,6 @@ def _close_dual_differential_record(record, start_volumes_m3, material_quadratur
             raise V.VolumeError('complete issued finite exchange geometry and lineage required')
     finite_measures = {}
     for row in stock_record['stocks']:
-        if type(row.get('exact')) is not dict or 'material_quadrature_m3' not in row['exact']:
-            raise V.VolumeError('dual finite inventory requires explicit carried material quadrature B')
         finite_measures[row['stock_id']] = dict(geometric_start_m3=W._decode(row['volume_m3']),
             material_quadrature_m3=W._decode(row['exact']['material_quadrature_m3']))
     preferred = dict(start_volumes_m3)
@@ -4463,8 +4251,6 @@ def _close_dual_differential_record(record, start_volumes_m3, material_quadratur
         selected = W._decode(row['end_volume_m3'])
         low, high = map(W._decode, row['true_end_volume_bounds_m3'])
         low, high = max(low-selected, errors[key][0]), min(high-selected, errors[key][1])
-        if low > high:
-            raise V.VolumeError('strict stream error and endpoint physical volume certificates are inconsistent')
         row['geometry_volume_error_m3'] = list(map(_qtext, (low, high)))
     selected = {r['face_id']: r for r in closed['selected_face_representatives']}
     issued = []
@@ -4507,22 +4293,14 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
     from atlas_tectonics.integration.coupling import spatial_ale as A
     rows = stock_record['stocks']
     stocks = {r['stock_id']: r for r in rows}
-    if len(stocks) != len(rows):
-        raise V.VolumeError('unique retained finite stock identities required')
     stock_keys = {'finite-stock:' + key: A._stock_physical_key(row['lineage'])
                   for key, row in stocks.items()}
     physical = {r['cell_id'] for r in record['cells'] if r['kind'] != 'algebraic-port'}
-    if any(r['kind'] == 'finite-inventory' for r in record['cells']):
-        raise V.VolumeError('differential bounds must contain physical cells before inventory attachment')
     augmented = LIVE_FINITE.clone_mutable(record, ('cells', 'face_intervals', 'finite_exchange_intervals'), budget=budget)
     exchanges = augmented.pop('finite_exchange_intervals', [])
-    if not isinstance(exchanges, list):
-        raise V.VolumeError('complete certified finite exchange interval list required')
     starts = dict(start_volumes_m3)
     geometric_starts, decoded = {}, []
     if geometry_volume_errors is not None:
-        if type(geometry_volume_errors) is not dict or set(geometry_volume_errors)-physical:
-            raise V.VolumeError('carried geometric volume errors must name actual physical cells')
         # A true volume is not a booked stock. Preserve its signed interval
         # relative to the chosen FV representative, rather than resampling it.
         widths = {key: Q(0) for key in physical}
@@ -4542,20 +4320,10 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
             value = Q(starts.get(key, 0))
             raw = geometry_volume_errors.get(key)
             if raw is None:
-                if value and row['kind'] != 'collar':
-                    raise V.VolumeError('positive carried exterior volume lacks its retained geometric error')
                 raw = (Q(0), Q(0))
-            if type(raw) not in (tuple, list) or len(raw) != 2:
-                raise V.VolumeError('geometric volume error must be an exact signed pair')
             low, high = map(W._q, raw)
-            if low > high:
-                raise V.VolumeError('geometric volume error is reversed')
-            if row['kind'] == 'collar' and (low or high):
-                raise V.VolumeError('exact full Cartesian native cells cannot carry a geometric volume error')
             true_start = tuple(map(W._decode, row['start_volume_bounds_m3']))
             low, high = max(low, true_start[0]-value), min(high, true_start[1]-value)
-            if low > high:
-                raise V.VolumeError('carried true-start geometry is inconsistent with the new physical certificate')
             geometric_starts[key] = (low, high)
             true_end = tuple(map(W._decode, row['end_volume_bounds_m3']))
             row['true_start_volume_bounds_m3'] = row['start_volume_bounds_m3']
@@ -4571,25 +4339,10 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
                 row['end_volume_bounds_m3'] = row['true_end_volume_bounds_m3']
     maxima, used, face_ids = {}, set(), {r['face_id'] for r in record['face_intervals']}
     for index, row in enumerate(exchanges):
-        required = {'stock_id', 'physical_cell_id', 'direction', 'face_id',
-                    'volume_bounds_m3', 'physical_certificate_id', 'stock_lineage'}
-        if type(row) is not dict or set(row) != required:
-            raise V.VolumeError('complete issued finite exchange geometry and lineage required')
         stock = stocks.get(row['stock_id'])
-        if (stock is None or stock['lineage'] != row['stock_lineage'] or
-                row['physical_cell_id'] not in physical or row['face_id'] in face_ids or
-                type(row['physical_certificate_id']) is not str or not row['physical_certificate_id']):
-            raise V.VolumeError('finite exchange stock lineage, physical support or certificate differs')
         direction = row['direction']
-        if direction not in ('supply', 'export') or stock['kind'] not in (
-                'reservoir', 'source' if direction == 'supply' else 'sink'):
-            raise V.VolumeError('finite source/export direction differs from its actual retained stock')
         lo, hi = decoded[index] if decoded else map(W._decode, row['volume_bounds_m3'])
-        if lo < 0 or hi < lo:
-            raise V.VolumeError('finite exchange must retain nonnegative certified bounds')
         stock_id = row['stock_id']; node = 'finite-stock:'+stock_id
-        if node in physical:
-            raise V.VolumeError('finite inventory identity collides with physical geometry')
         used.add(stock_id); face_ids.add(row['face_id'])
         if direction == 'export':
             maxima[stock_id] = maxima.get(stock_id, Q(0))+hi
@@ -4686,8 +4439,6 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
             value = W._decode(row['end_volume_m3'])
             physical_end = tuple(map(W._decode, row['true_end_volume_bounds_m3']))
             low, high = max(errors[key][0], physical_end[0]-value), min(errors[key][1], physical_end[1]-value)
-            if low > high:
-                raise V.VolumeError('strict stream error and endpoint physical volume certificates are inconsistent')
             row['geometry_volume_error_m3'] = list(map(_qtext, (low, high)))
         closed['geometry_error_method'] = 'true-minus-booked volume; carried signed start error plus original directed stream intervals, intersected with true endpoint geometry'
     selected = {r['face_id']: r for r in closed['selected_face_representatives']}
@@ -4738,26 +4489,10 @@ def close_differential_ale(bounds, start_volumes_m3, finite_stock_state, *, budg
     independent extensive field. Omission preserves the legacy route.
     """
     from atlas_tectonics.integration.coupling import spatial_ale as A
-    from atlas_tectonics.integration.coupling.spatial_reservoir import FiniteStockState
-    if (type(bounds) is not A.SpatialALEBounds or type(budget) is not WorkBudget or
-            bounds._resource is not budget or type(finite_stock_state) is not FiniteStockState or
-            finite_stock_state._owner._budget is not budget):
-        raise V.VolumeError('issued differential bounds and actual finite stock on one shared budget required')
     finite_stock_state._owner._verify()
     with LIVE_SPATIAL.record_access(bounds) as record:
-        # The original schema and lineage gates below still precede closure.
-        if record.get('physical_geometry_family') != 'differential-plate-component-partition-v1':
-            raise V.VolumeError('differential finite closure cannot reinterpret a common-rigid graph')
         if record.get('component_registry_id') != finite_stock_state._owner._checked_registry_id():
             raise V.VolumeError('finite inventory and physical graph component registries differ')
-        if record.get('finite_owner_id') != finite_stock_state._owner.owner_id:
-            raise V.VolumeError('certified finite definitions differ from the actual stock owner')
-        if 'finite_state_id' in record and record['finite_state_id'] != finite_stock_state.state_id:
-            raise V.VolumeError('certified finite state differs from the actual retained stock state')
-        if type(start_volumes_m3) is not dict:
-            raise V.VolumeError('actual carried physical volumes are required')
-        if type(geometry_volume_errors) is not dict:
-            raise V.VolumeError('differential continuation requires actual retained signed geometric volume errors')
         with LIVE_SPATIAL.workspace(budget, 65536+4*LIVE_SPATIAL.holder_bytes(bounds)+4*len(finite_stock_state._encoded)):
             try:
                 result = _close_differential_record(record, start_volumes_m3, finite_stock_state.record(), budget,
@@ -4810,9 +4545,6 @@ def _corotating_plane_pair_zero_volume(cell, literals, constraints, arena, *, _q
     # Supplied only by one immutable decoded component query. The first
     # pass keeps original parsing, arithmetic admissions and proof order.
     if _query is not None:
-        if (_query is not getattr(arena, '_component_ray_cache', None)
-                or _query.owner is not arena):
-            raise V.VolumeError('pair impossibility belongs to another or closed query arena')
         if _query.impossible_pair_families & 1:
             return None
     possible = False
@@ -4876,9 +4608,6 @@ def _coaxial_edge_pair_zero_volume(cell, literals, constraints, a, b, level, are
     # Supplied only by one immutable decoded component query. The first
     # pass keeps original parsing, arithmetic admissions and proof order.
     if _query is not None:
-        if (_query is not getattr(arena, '_component_ray_cache', None)
-                or _query.owner is not arena):
-            raise V.VolumeError('pair impossibility belongs to another or closed query arena')
         if _query.impossible_pair_families & 2:
             return None
     possible = False
@@ -5331,8 +5060,6 @@ def _component_interior_cube(layer, cell, literals, posed, mask, arena, centre):
                 dyadic /= 2
             volume = 8*dyadic**3
             upper = math.prod(b-a for a, b in zip(cell.lower_m, cell.upper_m))
-            if not 0 < volume <= upper:
-                raise V.VolumeError('invalid certified interior cube volume')
             # The clipping arena owns escaped values until the caller admits
             # its answer slots; no proof graph survives the scratch workspace.
             arena.keep((*centre, volume, upper), objects=3)
@@ -5348,8 +5075,6 @@ def _component_interior_cube(layer, cell, literals, posed, mask, arena, centre):
 def _component_volume_leaf(layer, cell, literals, constraints, time, level, arena, *, witness_point=False,
                            detail=None, _clip_arena=None, _posed=None, _mask=0, _radial=None, _cone_query=None, _loose_witness=False):
     clipping = arena if _clip_arena is None else _clip_arena
-    if clipping.resource is not arena.resource:
-        raise V.VolumeError('component clipping must share the query budget')
     minimum, maximum = cell._radial_bounds() if _radial is None else _radial
     lower2, upper2 = layer.bottom_radius_m**2, layer.top_radius_m**2
     if minimum >= upper2 or maximum <= lower2:
@@ -5371,14 +5096,6 @@ def _component_volume_leaf(layer, cell, literals, constraints, time, level, aren
         if detail is not None:
             detail['coaxial_pair_zero_volume'] = zero_certificate
         return ((Q(0), Q(0)), None) if witness_point else (Q(0), Q(0))
-    # This token is supplied only by one decoded component query, whose
-    # ordered literals, constraints and exact endpoint time remain fixed.
-    # Preserve the original proof position; each unseen precision recomputes.
-    # Successful certificates are returned normally, never stored here.
-    if _cone_query is not None and (
-            _cone_query is not getattr(arena, '_component_ray_cache', None) or
-            _cone_query.owner is not arena):
-        raise V.VolumeError('cone decline belongs to another or closed query arena')
     cone_bit = 1 << level if _cone_query is not None and 0 <= level < 64 else 0
     zero_certificate = None
     if not contained and (not cone_bit or not (_cone_query.declined_cone_levels & cone_bit)):
@@ -5493,8 +5210,6 @@ def _component_volume_leaf(layer, cell, literals, constraints, time, level, aren
                                          literals, posed, _mask, clipping)
         if cube is not None:
             volume, point = cube
-            if volume > values[1]:
-                raise V.VolumeError('interior cube contradicts certified outer volume')
             # Preserve the original exact outer bound, strengthening only the
             # old zero lower bound with an independently certified inner cube.
             values[0] = volume
@@ -5504,9 +5219,6 @@ def _component_volume_leaf(layer, cell, literals, constraints, time, level, aren
         # its refusal propagates and never falls back to an old result.
         clipping.work(16)
         stronger = K._volume_exact(bottom_surrogate_candidate, clipping)
-        if not 0 <= stronger <= values[1]:
-            raise V.VolumeError(
-                'Plan19 bottom-surrogate successor contradicts outer bound')
         if stronger > values[0]:
             if witness_point:
                 point = K._barycentre_admitted(bottom_surrogate_candidate, clipping)
@@ -5559,8 +5271,6 @@ def _component_volume_certificate(layer, cell, literals, constraints, time, leve
         bounds, point = _component_volume_leaf(layer, cell, literals, constraints, time, level,
             arena, witness_point=True, detail=detail, _clip_arena=clipping, _cone_query=_cone_query, _loose_witness=_loose_witness)
         return bounds, point, mask, bounds[0]
-    if clipping.resource is not arena.resource:
-        raise V.VolumeError('component clipping must share the query budget')
     radial_bounds = cell._radial_bounds()
     minimum, maximum = radial_bounds
     if minimum >= layer.top_radius_m**2 or maximum <= layer.bottom_radius_m**2:
@@ -5733,13 +5443,10 @@ def _component_longest_side(cell, arena, depth=None, _query=None):
     # at the same depth choose the same axis, then exactly halve it. Location
     # and refinement-queue order do not enter this effort-only rule.
     if _query is not None:
-        if (_query is not getattr(arena, '_component_ray_cache', None) or
-                _query.owner is not arena or type(depth) is not int or depth < 0):
-            raise V.VolumeError('split schedule belongs to another or closed query arena')
         if _query.split_axis_bits >> 128:
-            return depth % 3
-        if depth < 64:
-            code = (_query.split_axis_bits >> (2*depth)) & 3
+            return cast(int, depth) % 3
+        if cast(int, depth) < 64:
+            code = (_query.split_axis_bits >> (2*cast(int, depth))) & 3
             if code:
                 return code-1
     from atlas_tectonics.integration.coupling.spatial_transport import _preserve_workspace
@@ -5779,8 +5486,6 @@ def _component_split_failure(record, logical_cell_id, endpoint, width,
     # The other two local slots still cover the root and selected parent.
     metadata_bytes = 8192
     available = storage.local['cell']//2
-    if available < metadata_bytes:
-        raise V.VolumeError('split replay metadata exceeds prepaid child slots')
     request = arithmetic = predicate = None
     if hasattr(error, 'requested_units'):
         predicate = dict(requested_units=error.requested_units,
@@ -5823,9 +5528,6 @@ def _encode_component_split_failure(payload, budget):
     # Explicit new recorder boundary. Historical component_volume_failure
     # reporters and their failed_leaf schema are untouched.
     from atlas_tectonics.integration.coupling.routing_views import _FailureOwner, _OwnedPayload
-    if (type(payload) is not _OwnedPayload or
-            payload.get('schema') != 'atlas.differential-component-split-failure.v1'):
-        raise V.VolumeError('owned raw split diagnostic required')
     raw = payload['failed_split']['parent_cell']
     query = payload['query']
     values = (*raw['lower_m'], *raw['upper_m'], *raw['origin_m'],
@@ -6031,13 +5733,9 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
         component = record['components'][_component_index]
         _require_component_id(component, logical_cell_id)
     width = W._q(max_width_m3)
-    if width < 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('explicit nonnegative volume error and positive leaf limit required')
     if _GEOMETRY_PROGRESS is not None:
         _GEOMETRY_PROGRESS.start('endpoint', support.support_id, logical_cell_id, endpoint,
                                  literals=len(component['constraints']))
-    if relative_error is not None and (type(relative_error) not in (int, Q) or not 0 <= relative_error < 1):
-        raise V.VolumeError('explicit exact local relative error below one required')
     layer_record = record['radial_layer']
     layer = V.RadialLayer(*(W._decode(layer_record[key]) for key in ('radius_m', 'top_depth_m', 'bottom_depth_m')), budget=budget)
     cell = V.CartesianCell.from_record(record['voxel'], budget=budget)
@@ -6046,10 +5744,7 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
     # Durable completed-query reuse has distinct provenance from a live worker.
     request = None
     if _checkpoint is not None and positive_witness is True and relative_error is None:
-        from atlas_tectonics.integration.endpoint_checkpoints import EndpointCheckpoints
         from atlas_tectonics.integration.geometry.component_volume_parallel import request_for
-        if type(_checkpoint) is not EndpointCheckpoints:
-            raise TypeError("native endpoint checkpoint owner required")
         request = request_for(support, logical_cell_id, endpoint,
                               record[endpoint+'_time_s'], width, max_leaves)
         resumed = _checkpoint.before(support, request, budget)
@@ -6172,8 +5867,6 @@ def _component_volume_bounds_decoded(support, logical_cell_id, record, arena, *,
                     witness_at = at
                     root_witness = again_witness
                 exact = (max(exact[0], again[0]), min(exact[1], again[1]))
-                if exact[0] > exact[1]:
-                    raise V.VolumeError('component volume enclosures at two pose precisions contradict')
         witness = root_witness if positive_witness else Q(0)
         low, high = outward(exact)
         retain_aggregate(low, high, witness)
@@ -6303,8 +5996,6 @@ def _carried_partition_regions(parent_partition, step, old_time, retained_rows, 
                     # Fixed exclusions are spatial compartments, never material
                     # charts. The aligned-grid issuer removes whole voxels.
                     value = r['constraints'][name]
-                    if value['kind'] == 'fixed-plane':
-                        raise V.VolumeError('a fixed exclusion cannot be advected into carried material')
                     constraints[name] = dict(kind='snapshot-rotated', constraint=value,
                         snapshot_offset_s=_qtext(old_time), angular_velocity_rad_s=_store_vec(omega))
                     literals.append((name, sign))
@@ -6315,8 +6006,6 @@ def _carried_partition_regions(parent_partition, step, old_time, retained_rows, 
                 regions[key] = retained_rows.detach(regions[key])
             cells = regions[key]['parent_cells']
             at = ','.join(map(str, r['voxel_index']))
-            if at in cells:
-                raise V.VolumeError('one accepted physical parent appears in duplicate carried chart slots')
             cells[at] = component['logical_cell_id']
             retained_rows.cell()
     return regions

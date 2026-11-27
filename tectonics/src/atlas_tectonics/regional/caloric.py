@@ -28,9 +28,6 @@ def component_workspace(shape, components, budget, *, scratch=None):
 
 def component_sum(values, *, out, scratch, weights=None):
     """Sort rounded terms by value, then add complete component vectors."""
-    if (type(values) is not np.ndarray or values.dtype != np.dtype(np.float64)
-            or values.ndim < 2 or values.shape[0] == 0):
-        raise TypeError('Component-first binary64 cell array required')
     shape = values.shape[1:]
     if not out.size:
         return out

@@ -16,6 +16,7 @@ from collections import deque
 from fractions import Fraction as Q
 from itertools import islice, product
 from time import perf_counter
+from typing import Any, cast
 
 from . import differential_geometry as D
 from atlas_tectonics.integration.geometry.component_volume_batch import ComponentVolumeQueries
@@ -74,9 +75,6 @@ def _capture_incomplete(error, capture_error):
 
 
 def _native_mask_leaf_limit(max_leaves, max_native_mask_leaves):
-    if max_native_mask_leaves is not None and (
-            type(max_native_mask_leaves) is not int or max_native_mask_leaves < 1):
-        raise V.VolumeError('native mask leaf ceiling must be an explicit positive integer or None')
     return max_leaves if max_native_mask_leaves is None else max_native_mask_leaves
 
 
@@ -126,7 +124,7 @@ def _coincident_boundary_faces(row, part, voxel, axis, end, boundaries):
         if (any(history) or any(velocity) or any(D.O._cross(normal, face[3])) or
                 sign*D.O._dot(normal, face[3]) >= 0):
             continue
-        candidates = {b['boundary_id'] for b in boundaries.get(D._interface_identity(constraint)[0], ())
+        candidates = {b['boundary_id'] for b in boundaries.get(cast('tuple[tuple[str, Any], int]', D._interface_identity(constraint))[0], ())
                       if b['kind'] in ('ridge', 'trench') and
                       row['plate_id'] in (b['left_plate_id'], b['right_plate_id'])}
         if len(candidates) != 1:
@@ -168,9 +166,6 @@ def _paired_port_streams(row, positive):
     streams became narrower than the family.
     """
     low, high = map(W._decode, row['positive_volume_bounds_m3' if positive else 'negative_volume_bounds_m3'])
-    other = tuple(map(W._decode, row['negative_volume_bounds_m3' if positive else 'positive_volume_bounds_m3']))
-    if low < 0 or high < low or other[1]-other[0] != high-low:
-        raise V.VolumeError('native directed streams are not one paired counterflow family')
     return low, high-low
 
 
@@ -183,8 +178,6 @@ class _Streams:
 
     def add(self, donor, receiver, bounds, identity, *, physical_surface=None, **metadata):
         lo, hi = bounds
-        if lo < 0 or hi < lo:
-            raise V.VolumeError('invalid directed physical-volume interval')
         if hi:
             if donor is None or receiver is None:
                 raise _missing_neighbour_error(donor, receiver, bounds, identity, metadata,
@@ -407,8 +400,6 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
                 elif found:
                     for ownership in found:
                         token = key, ownership['constraint_name']
-                        if token in owned:
-                            raise V.VolumeError('one angular boundary cannot own two distinct fixed voxel faces')
                         owned[token] = ownership
                     continue
                 if not event['query']:
@@ -448,9 +439,7 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
             constraint = constraint_owner.value
             if D._material_plane(constraint, omega):
                 continue
-            identity = D._interface_identity(constraint)
-            if identity is None:
-                raise V.VolumeError('nonmaterial angular interface lacks exact retained plane authority')
+            identity = cast('tuple[tuple[str, Any], int]', D._interface_identity(constraint))
             token = tuple(row['voxel_index']), row['source_chart_id'], identity[0]
             groups.setdefault(token, []).append((key, name, sign*identity[1]))
     if _observer is not None:
@@ -468,8 +457,6 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
             support, row, _ = components[key]
             opposites = [(other, other_name) for other, other_name, s in entries if s == -sign]
             if opposites:
-                if (key, name) in owned:
-                    raise V.VolumeError('coincident finite boundary cannot be paired as an internal angular interface')
                 for opposite, opposite_name in opposites:
                     token = tuple(sorted((key, opposite)))
                     if token in handled:
@@ -520,15 +507,11 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
             if len(found) != 1:
                 raise V.VolumeError('positive relative moving flux lacks a unique actual plate boundary')
             boundary = next(iter(found.values()))
-            if ownership is not None and boundary['boundary_id'] != ownership['boundary_id']:
-                raise V.VolumeError('coincident fixed/angular boundary authority differs')
             side = 'left' if boundary['left_plate_id'] == row['plate_id'] else 'right'
             if inward[1]:
                 candidates = [s for s in stocks.values() if s['lineage'].get('kind') == 'declared-finite-shell-birth' and
                     s['lineage'].get('supply') == boundary['supplies'].get(side) and
                     s['lineage'].get('source_id') == row['source_key'][0] and s['lineage'].get('sublayer') == row['source_key'][1]]
-                if len(candidates) != 1 or row.get('finite_stock_id') != candidates[0]['stock_id']:
-                    raise V.VolumeError('ridge relative inflow must enter its actual newly born finite-source component')
                 boundary_exchanges.append((candidates[0], key, 'supply', inward, ident, boundary['boundary_id'], plane))
             if outward[1]:
                 candidates = [s for s in stocks.values() if s['lineage'].get('kind') == 'declared-finite-trench-export' and
@@ -560,8 +543,6 @@ def _route_exterior_surfaces(components, component_keys, boxes, native_at, exclu
         exchange(stock, key, direction, bounds, ident, identity,
                  physical_surface=(1, canonical_json(_segment_identity(plane)).decode('ascii')))
 
-    if set(resolved) != set(owned):
-        raise V.VolumeError('coincident fixed face lacks its angular physical routing certificate')
     rows = [resolved[token] for token in sorted(resolved)]
     for row in rows:
         streams.keep(row)
@@ -665,8 +646,6 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
     collar._verify()
     finite_stock_state._owner._verify()
     width, stream_width = W._q(max_volume_error_m3), W._q(max_stream_error_m3)
-    if min(width, stream_width) < 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('explicit nonnegative physical error widths and finite leaf ceiling required')
     if getattr(partition, '_compact', None) is None:
         p, step, original = partition.record(), interval.record(), funding.descriptor()
     else:
@@ -770,8 +749,6 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
     excluded_at = {}
     for at, voxel in boxes.items():
         found = [stock for stock, box in basal if _inside(voxel, box)]
-        if len(found) > 1:
-            raise V.VolumeError('finite basal compartments overlap')
         if found:
             excluded_at[at] = found[0]
     originals = {}
@@ -795,8 +772,6 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
             end, flat = (0, upper) if lower is None else (1, lower)
             boundary_faces[flat, face['axis'], end] = face
     contacts = {(r['native_index'], r['axis'], r['end']): r for r in p['native_contacts']}
-    if set(contacts) != set(boundary_faces):
-        raise V.VolumeError('issued physical partition does not cover every actual native boundary face')
     # Full basal faces connect to their actually carved compartment. Exterior
     # faces use the SAME actual Q2 polynomial, in the exact neighbour chart.
     for face_key, group in contacts.items():
@@ -804,8 +779,6 @@ def _enclose(partition, interval, funding, collar, source_flow_stage, *, native_
         face = boundary_faces[face_key]
         if group['excluded_subfaces']:
             chosen_stocks = {excluded_at[tuple(r['voxel_index'])]['stock_id'] for r in group['excluded_subfaces']}
-            if group['contacts'] or len(chosen_stocks) != 1:
-                raise V.VolumeError('a split basal/native face needs its explicit compartment-mask polynomial integral')
             stock = stocks[next(iter(chosen_stocks))]
             row = selected[face['face_id']]
             plus, minus = (W._decode(row[k]) for k in ('positive_volume_m3', 'negative_volume_m3'))

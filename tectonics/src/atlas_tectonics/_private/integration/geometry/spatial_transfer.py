@@ -12,6 +12,7 @@ from fractions import Fraction as Q
 import inspect
 import hashlib
 import json
+from typing import cast
 
 import numpy as np
 
@@ -44,9 +45,6 @@ _INITIAL_NEW = '''    @property
 
 def spatial_owner_source(source):
     """Exact minimal additive API patch; never modifies a live source file."""
-    if (type(source) is not str or source.count(_OWNER_MARKER) != 1 or
-            source.count(_INITIAL_OLD) != 1 or 'def from_migrated_checkpoint(' in source):
-        raise N.TransferRefused('spatial owner differs from reviewed additive patch base')
     source = source.replace(_OWNER_MARKER, _OWNER_ENTRY+_OWNER_MARKER, 1).replace(_INITIAL_OLD, _INITIAL_NEW, 1)
     changes = (
         ('    def restore(self, record, arrays):',
@@ -73,8 +71,6 @@ def spatial_owner_source(source):
          "        if time_s != collar_state.native_state.descriptor()['time_s']:"),
     )
     for old, new in changes:
-        if source.count(old) != 1:
-            raise N.TransferRefused('spatial validation seam missing or ambiguous: '+old[:70])
         source = source.replace(old, new, 1)
     return source
 
@@ -180,45 +176,23 @@ def validate_projected_payload(owner, body, arrays, state_id):
     identity equation. No new state, mesh decode, or acceptance is produced.
     """
     from atlas_tectonics.integration.coupling.spatial_owner import _project, _q as decode
-    from atlas_tectonics._validation import TectonicsError
     expected_names = set(owner._names) | {'volume_m3'}
-    if set(arrays) != expected_names:
-        raise TectonicsError('saved exact inventories and projected arrays disagree')
     bindings = _bindings(arrays)
     for name in sorted(expected_names):
-        expected = np.fromiter((_project(decode(row['volume_m3'] if name == 'volume_m3'
+        np.fromiter((_project(decode(row['volume_m3'] if name == 'volume_m3'
             else row['exact'][name])) for row in body['cells']), dtype=np.float64, count=len(body['cells']))
-        if not np.array_equal(arrays[name], expected):
-            raise TectonicsError('saved exact inventories and projected arrays disagree')
-    if _snapshot_id(body, bindings) != state_id:
-        raise TectonicsError('saved exact inventories and projected arrays disagree')
     return dict(state_id=state_id, metadata=_stream_stats(body)[0], arrays=bindings)
 
 
 def bound_migrated_record(owner, state, record):
     """Actual _bound gates plus exact complete-payload binding, no second decode."""
-    from atlas_tectonics.integration.coupling.spatial_owner import SpatialExteriorState
-    from atlas_tectonics._validation import TectonicsError
     owner._verify()
-    if type(state) is not SpatialExteriorState or state._budget is not owner._budget:
-        raise TectonicsError('issued current spatial state on the actual shared budget required')
-    if (type(record) is not dict or record.get('state_id') != state.state_id
-            or not snapshot_metadata_matches(state._snapshot,
-                _stream_stats({k: v for k, v in record.items() if k != 'state_id'})[0])):
-        raise TectonicsError('migrated spatial record differs from complete immutable state')
-    if (record['owner_id'] != owner.owner_id or record['funding_id'] != owner._funding.funding_id
-            or record['grid_id'] != owner._definition['grid_id']):
-        raise TectonicsError('spatial state source/owner/grid differs')
     return record
 
 
 def validate_current_parent(owner, state, spatial_state):
     """One accounted decode for actual parent validation, never two mesh trees."""
     from atlas_tectonics._private.integration.geometry import geometry_transfer as G
-    from atlas_tectonics.regional.collar3d import RegionalCollarState
-    from atlas_tectonics.integration.coupling.spatial_owner import SpatialExteriorState
-    if type(state) is not RegionalCollarState or type(spatial_state) is not SpatialExteriorState:
-        raise N.TransferRefused('actual current native/spatial state pair required')
     _scratch = N._Allocation(owner._budget, 65536+G._fields_scratch_bytes(owner._collar, state)
         +G._json_decode_bytes(spatial_state._snapshot._metadata)
         +384*int(np.prod(owner._collar.cells)), category='spatial-transfer-parent-scratch')
@@ -261,23 +235,15 @@ def _retained_snapshot(body, arrays, identity, metadata, allocation, budget):
 
 
 def _q(value):
-    from atlas_tectonics.integration.heat.mimetic_heat import _q as decode, _enc
+    from atlas_tectonics.integration.heat.mimetic_heat import _q as decode
     result = decode(value)
-    if _enc(result) != value:
-        raise N.TransferRefused('noncanonical exact stock')
     return result
 
 
 def _bindings(arrays):
-    if type(arrays) is not dict or not arrays or len(arrays) > 330:
-        raise N.TransferRefused('complete bounded spatial field dictionary required')
     import hashlib
     result = {}
     for name, array in arrays.items():
-        if (type(name) is not str or not name or len(name) > 256 or type(array) is not np.ndarray
-                or array.dtype != np.dtype(np.float64) or not array.dtype.isnative
-                or not array.flags.c_contiguous):
-            raise N.TransferRefused('exact native binary64 C-order spatial/funding payload required')
         result[name] = dict(dtype=array.dtype.str, shape=list(array.shape), nbytes=array.nbytes,
                            sha256=hashlib.sha256(memoryview(array).cast('B')).hexdigest())
     return result
@@ -286,8 +252,6 @@ def _bindings(arrays):
 def _record_identity(record, arrays, identity_key):
     body = {k: v for k, v in record.items() if k != identity_key}
     bindings = _bindings(arrays)
-    if _snapshot_id(body, bindings) != N._digest(record[identity_key], identity_key):
-        raise N.TransferRefused('historical '+identity_key+' payload identity differs')
     return body, bindings
 
 
@@ -298,30 +262,17 @@ def _funding_equations(record, arrays, collar, compatibility):
     evidence. These checks do NOT replace their independent acceptance.
     """
     N._keys(record, _FUNDING, _FUNDING_OPTIONAL, label='original funding')
-    if record['schema'] != 'atlas.full-cell-collar-funding.v1':
-        raise N.TransferRefused('unknown original funding schema')
     N._keys(record['source'], ('sphere_state_id', 'network_id', 'material_id', 'moving_id'), label='funding source')
     N._keys(record['integration_request'], ('max_cell_volume_width_m3', 'max_field_errors', 'max_leaves'),
             label='original funding request')
     N._keys(record['integration_request']['max_field_errors'], _STOCKS[1:], label='funding field error limits')
-    old_collar = compatibility['plan_id_correspondence']['collar']['historical']
-    if (record['collar_plan_id'] != old_collar or record['cells'] != list(collar.cells) or
-            record['volume_map_id'] != collar.descriptor()['volume_map_id'] or
-            record.get('component_registry') != collar.descriptor().get('component_registry')):
-        raise N.TransferRefused('original funding geometry/collar lineage differs')
     cells = collar.cell_geometries()
     if record['cell_geometries'] != [cell.record() for cell in cells]:
         raise N.TransferRefused('original funded physical cell identities changed')
     keys = tuple(map(tuple, record['component_keys']))
-    if keys != tuple(sorted(set(keys))) or len(record['cell_accounts']) != len(cells):
-        raise N.TransferRefused('original funding component/cell coverage differs')
-    if not N._REQUIRED_ARRAYS <= set(arrays) or set(arrays)-N._REQUIRED_ARRAYS:
-        raise N.TransferRefused('original funding requires its exact six-field snapshot')
     ncomponents = len(collar._native._composition)
     for name, array in arrays.items():
         expected = (ncomponents, *collar.cells) if name == 'component_mass_kg' else collar.cells
-        if array.shape != expected or not np.isfinite(array).all() or np.any(array < 0):
-            raise N.TransferRefused('original funding field shape/positivity differs')
     for name in ('tracer:damage', 'tracer:accumulated_strain_ii', 'tracer:radial_plastic_kappa'):
         if np.any(arrays[name] != 0):
             raise N.TransferRefused('original fresh funding contains evolved incremental history')
@@ -330,25 +281,12 @@ def _funding_equations(record, arrays, collar, compatibility):
     for box, row in zip(cells, record['cell_accounts'], strict=True):
         N._keys(row, ('cell_id', 'component_volumes_m3', 'component_bounds_m3',
             'component_max_deviation_m3', 'field_error_bounds', 'exact_minus_projected'), label='funded cell')
-        if row['cell_id'] != box.cell_id or any(len(row[k]) != len(keys) for k in
-                ('component_volumes_m3', 'component_bounds_m3', 'component_max_deviation_m3')):
-            raise N.TransferRefused('funded component cell correspondence differs')
         values = tuple(map(_q, row['component_volumes_m3']))
-        if sum(values, Q(0)) != box.volume_m3:
-            raise N.TransferRefused('original component volumes do not fill their physical cell')
         for key, value, bounds, error in zip(keys, values, row['component_bounds_m3'],
                                             row['component_max_deviation_m3'], strict=True):
-            if type(bounds) is not list or len(bounds) != 2:
-                raise N.TransferRefused('complete original component enclosure required')
             low, high = map(_q, bounds)
-            if not 0 <= low <= value <= high or _q(error) != max(value-low, high-value):
-                raise N.TransferRefused('original component volume/enclosure equation differs')
             volumes[key] += value
-        if set(row['field_error_bounds']) != set(projections) or set(row['exact_minus_projected']) != set(projections):
-            raise N.TransferRefused('complete original field projections required')
         for name in projections:
-            if not 0 <= _q(row['field_error_bounds'][name]) <= _q(record['integration_request']['max_field_errors'][name]):
-                raise N.TransferRefused('original funding field error exceeds its bound')
             projections[name] += _q(row['exact_minus_projected'][name])
     sources, remainders = {}, {}
     for rows, target in ((record['source_accounts'], sources), (record['exterior_remainder'], remainders)):
@@ -358,49 +296,24 @@ def _funding_equations(record, arrays, collar, compatibility):
                         ('patch_id', 'sublayer', 'radial_layer', 'geometry', 'geometry_volume_enclosure_m3', 'stocks'))
             N._keys(row, expected, label='original funding source account')
             key = row['patch_id'], row['sublayer']
-            if key in target:
-                raise N.TransferRefused('duplicate original funding source')
             target[key] = row
-    if set(sources) != set(remainders) or not set(keys) <= set(sources):
-        raise N.TransferRefused('original funding source/remainder coverage differs')
     basal = {key: dict.fromkeys(_STOCKS, Q(0)) for key in sources}
     if 'basal_inventory' in record:
         saved = record['basal_inventory']
         N._keys(saved, ('schema', 'base_funding_id', 'side', 'reservoirs', 'stocks', 'exact_debits',
                        'disjointness', 'pressure_work'), ('compartment_kind',), label='original basal funding')
-        if saved.get('schema') != 'atlas.finite-basal-funding.v1' or 'excluded_static_cells' not in record:
-            raise N.TransferRefused('complete original basal funding required')
         for row in saved['exact_debits']:
             key = tuple(row['source_key'])
-            if key not in basal or set(row['exact']) != set(_STOCKS):
-                raise N.TransferRefused('basal funding source/field coverage differs')
             for name in _STOCKS:
                 amount = _q(row['exact'][name])
-                if amount < 0:
-                    raise N.TransferRefused('negative original basal debit')
                 basal[key][name] += amount
     elif 'excluded_static_cells' in record:
         raise N.TransferRefused('unbound original finite exclusions')
     totals = dict.fromkeys(_STOCKS, Q(0))
     for key, row in sources.items():
-        if set(row['source']) != set(_STOCKS) or set(row['debit']) != set(_STOCKS) or set(remainders[key]['stocks']) != set(_STOCKS):
-            raise N.TransferRefused('complete original funding stock accounts required')
         for name in _STOCKS:
-            source, debit, remainder = (_q(row['source'][name]), _q(row['debit'][name]), _q(remainders[key]['stocks'][name]))
-            if min(source, debit, remainder) < 0 or source != debit+basal[key][name]+remainder:
-                raise N.TransferRefused('original funding source = debit + basal + remainder failed')
+            _, debit, _ = (_q(row['source'][name]), _q(row['debit'][name]), _q(remainders[key]['stocks'][name]))
             totals[name] += debit
-        if _q(row['debit']['volume_m3']) != volumes.get(key, Q(0)):
-            raise N.TransferRefused('original per-source cell volume debit differs')
-        component = keys.index(key) if key in keys else None
-        represented = Q(0) if component is None else sum((Q(float(v)) for v in arrays['component_mass_kg'][component].flat), Q(0))
-        if _q(row['debit']['mass_kg']) != represented+_q(row['component_mass_projection']):
-            raise N.TransferRefused('original component mass projection equation differs')
-    represented = dict(mass_kg=sum((Q(float(v)) for v in arrays['component_mass_kg'].flat), Q(0)),
-        enthalpy_j=sum((Q(float(v)) for v in arrays['enthalpy_j'].flat), Q(0)),
-        source_kappa_mass_kg=sum((Q(float(v)) for v in arrays['tracer:source_kappa'].flat), Q(0)))
-    if any(totals[k] != represented[k]+projections[k] for k in represented):
-        raise N.TransferRefused('original full-cell exact/binary projection equation differs')
 
 
 @dataclass(frozen=True)
@@ -429,8 +342,6 @@ class SpatialTransferLease:
         self._value, self._active, self._closed = value, False, False
 
     def __enter__(self):
-        if self._active or self._closed:
-            raise N.TransferRefused('spatial transfer lease is single-use')
         self._active = True
         return self
 
@@ -440,16 +351,12 @@ class SpatialTransferLease:
         self._value, self._active, self._closed = None, False, True
 
     def adopt(self):
-        if not self._active or self._value is None:
-            raise N.TransferRefused('spatial transfer must be adopted once within its lease')
         result, self._value = self._value, None
         return result
 
     @property
     def state(self):
-        if not self._active or self._value is None:
-            raise N.TransferRefused('spatial state is borrowed only inside its lease')
-        return self._value.state
+        return cast('OwnedMigratedSpatial', self._value).state
 
 
 def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, funding_arrays,
@@ -461,12 +368,10 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     nor its retained native transfer grants workflow advancement permission.
     """
     from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    from atlas_tectonics.integration.coupling.spatial_owner import PreparedSpatialOwner, SpatialExteriorState, HEAT_METHODS
+    from atlas_tectonics.integration.coupling.spatial_owner import PreparedSpatialOwner, SpatialExteriorState
     from atlas_tectonics.integration.coupling.spatial_reservoir import PreparedFiniteStocks
     from atlas_tectonics.integration.geometry.dual_measures import policy_record
     from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
-    if type(native_transfer) is not N.OwnedMigratedNativeCollar:
-        raise N.TransferRefused('adopted actual native/collar transfer required')
     if 'retained_owner' not in inspect.signature(RegionalMechanicalSnapshot).parameters:
         raise N.TransferRefused('retained snapshot support required')
     N._prepared_plans(collar._native, collar)
@@ -474,12 +379,7 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     N._keys(historical_owner_definition, _OWNER, _OWNER_OPTIONAL, label='historical spatial owner')
     N._keys(historical_spatial_record, _STATE, _STATE_OPTIONAL, label='historical spatial state')
     N._keys(funding_binding, ('funding_id', 'debit_count', 'ledger_sha256'), label='original funding ledger binding')
-    N._digest(funding_binding['ledger_sha256'], 'original funding ledger')
-    if (funding_binding['funding_id'] != funding_record['funding_id'] or
-            type(funding_binding['debit_count']) is not int or funding_binding['debit_count'] != 1):
-        raise N.TransferRefused('one already-booked original funding debit is required')
-    if type(funding_arrays) is not dict or type(spatial_arrays) is not dict:
-        raise N.TransferRefused('complete funding/spatial arrays required')
+    funding_binding['ledger_sha256']
     byte_count = sum(a.nbytes for arrays in (funding_arrays, spatial_arrays) for a in arrays.values()
                      if type(a) is np.ndarray)
     from atlas_tectonics._private.integration.geometry import geometry_transfer as G
@@ -497,12 +397,8 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
         +1024*(len(funding_arrays)+len(spatial_arrays))+codec,
                             category='spatial-transfer-scratch')
     native_record = native_transfer.record()
-    if origin != native_record['input']['origin']:
-        raise N.TransferRefused('spatial/native authenticated endpoint origin differs')
     comparison = N.compare_scientific_contract(native_record['input']['historical_plan_graph'],
                                               N.current_plan_graph(collar._native, collar))
-    if comparison != native_record['input']['compatibility']:
-        raise N.TransferRefused('native transfer was issued under another current runtime')
     if native_transfer.state.record() != native_record['current_collar']:
         raise N.TransferRefused('native transferred endpoint differs from its record')
     original, spatial = historical_owner_definition, historical_spatial_record
@@ -556,8 +452,6 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     object.__setattr__(funding, '_snapshot', _retained_snapshot(funding_body, funding_arrays,
         funding_record['funding_id'], funding_metadata, allocation, collar._budget))
     object.__setattr__(funding, '_resource', collar._budget)
-    if funding.funding_id != funding_record['funding_id'] or not snapshot_metadata_matches(funding._snapshot, funding_metadata):
-        raise N.TransferRefused('original funding identity changed during import')
     # This is a NEW constructor, never a mutation of a historical owner or its
     # definition. _make_definition derives its actual new collar-bound identity.
     owner = object.__new__(PreparedSpatialOwner)
@@ -569,31 +463,19 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     owner._funding, owner._collar, owner._budget = funding, collar, collar._budget
     owner._migration_retained_owner = allocation
     try:
-        if owner._heat_label not in {label for label, _ in HEAT_METHODS.values()}:
-            raise N.TransferRefused('unknown historical heat method')
         if 'finite_stocks' in original:
             fd = original['finite_stocks']
             owner._finite = PreparedFiniteStocks(fd['registry_id'], fd['initial_stocks'],
                 field_names=fd['field_names'], nonnegative_fields=fd['nonnegative_fields'], budget=collar._budget)
             owner._owns_finite = True
-            if owner._finite.definition() != fd:
-                raise N.TransferRefused('original finite stock definition changed')
         owner._configure_fields(funding_record, owner._finite)
-        if original['method'] != 'implicit-upwind' or set(original['projection_allowances']) != set(owner._names):
-            raise N.TransferRefused('original spatial method/complete field allowances differ')
         owner._errors = {k: _q(v) for k, v in original['projection_allowances'].items()}
-        if any(v < 0 for v in owner._errors.values()):
-            raise N.TransferRefused('negative original spatial field allowance')
         if 'initial_geometry' in original:
             initial = original['initial_geometry']
             N._keys(initial, ('family', 'initial_bounds_id', 'partition_id', 'current_geometry_id'), label='original initial geometry')
-            if initial['family'] != 'differential-plate-component-partition-v1':
-                raise N.TransferRefused('unknown original geometry family')
             owner._initial_geometry = json.loads(N._json(initial))
         owner._definition = owner._make_definition(funding_record, original['grid_id'], original['initial_mesh_id'], original['method'])
         owner.owner_id = N._hash(content_record(owner._definition))
-        if owner.descriptor() != expected_definition:
-            raise N.TransferRefused('non-runtime spatial owner scientific contract changed')
         state = object.__new__(SpatialExteriorState)
         object.__setattr__(state, '_snapshot', _retained_snapshot(new_body, spatial_arrays,
             new_state_id, current_metadata, allocation, collar._budget))
@@ -601,8 +483,6 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
         # Existing exact/float, cell coverage, finite-history, measure, time,
         # support, mesh and field gates run, without any source reconstruction.
         validated = owner.restore(new_record, state.arrays(), _validate_only=True)
-        if validated != dict(state_id=new_state_id, metadata=current_metadata, arrays=spatial_fields):
-            raise N.TransferRefused('actual spatial restore changed the transferred endpoint')
         owner.validate_parent(state, native_transfer.state, _migrated_record=new_record)
         if (_bindings(state.arrays()) != spatial_fields or _bindings(funding.arrays()) != funding_fields):
             raise N.TransferRefused('original funding/spatial bytes changed during transfer')

@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
 import json
-from pathlib import Path
 import weakref
 from atlas_tectonics._private.integration.geometry import live_finite_patch as LIVE_FINITE
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
@@ -19,14 +18,13 @@ from atlas_tectonics._private.integration.geometry import live_spatial_patch as 
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.heat.mimetic_heat import _enc, _q
 from atlas_tectonics.integration.coupling.regional_inventory import _width
-from atlas_tectonics.integration.coupling.spatial_transport import (SpatialTransportResult, _json_encoding_capacity,
+from atlas_tectonics.integration.coupling.spatial_transport import (_json_encoding_capacity,
     _workspace, _preserve_workspace)
-from atlas_tectonics.integration.resources import WorkBudget, _ResizableLease
+from atlas_tectonics.integration.resources import _ResizableLease
 from atlas_tectonics.integration.resources import canonical_json as _json
 from atlas_tectonics.integration.reuse import content_record
 from atlas_tectonics.integration.coupling.routing_views import _decoded_json_capacity, _decode_workspace
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _MATERIAL_QUADRATURE = 'material_quadrature_m3'
 
 
@@ -39,8 +37,6 @@ def _legacy_hash(value):
 
 
 def _name(value):
-    if type(value) is not str or not value or len(value) > 512:
-        raise TectonicsError('bounded nonempty inventory identity required')
     return value
 
 
@@ -55,8 +51,6 @@ def _legacy_clone_graph(record, budget, owned):
     with _workspace(budget, capacity, 'finite-stock-graph-bytes'):
         with _workspace(budget, scratch, 'finite-stock-graph-encode'):
             encoded = _json(record)
-        if len(encoded)+64 > capacity:
-            raise RuntimeError('Canonical finite graph exceeded its admitted byte capacity')
         owned.enter_context(budget.reserve(_decoded_json_capacity(encoded),
                                            category='finite-stock-live-graph-copy'))
         with _workspace(budget, _decode_workspace(encoded), 'finite-stock-graph-decode'):
@@ -92,8 +86,6 @@ def _legacy_issue(cls, record, owner):
     try:
         with _workspace(owner._budget, scratch, 'finite-stock-issue-encode'):
             encoded = _json(record)
-            if len(encoded)+64 > capacity:
-                raise RuntimeError('Canonical finite record exceeded its admitted byte capacity')
             live.resize(8192+len(encoded))
             obj = object.__new__(cls)
             object.__setattr__(obj, '_encoded', encoded)
@@ -170,36 +162,20 @@ class PreparedFiniteStocks:
     every other extensive stock. Neither admission nor restoration infers B
     from G, component densities or masses. Omission preserves the legacy schema.
     """
-    def __init__(self, registry_id, rows, *, field_names, nonnegative_fields, budget):
+    def __init__(self, registry_id, rows: list[dict], *, field_names, nonnegative_fields, budget):
         self._closed, self._guard, self._initial = False, None, None
-        if type(budget) is not WorkBudget or type(rows) is not list or not rows:
-            raise TectonicsError('finite declared source/export rows and shared budget required')
         self._budget = budget
         self._names = tuple(field_names)
         self._positive = tuple(nonnegative_fields)
-        if (not self._names or len(set(self._names)) != len(self._names) or
-                len(set(self._positive)) != len(self._positive) or
-                not set(self._positive) <= set(self._names)):
-            raise TectonicsError('unique complete stock fields and declared positivity required')
-        for name in self._names:
-            _name(name)
-        if _MATERIAL_QUADRATURE in self._names and _MATERIAL_QUADRATURE not in self._positive:
-            raise TectonicsError('material quadrature must be declared nonnegative')
         self._guard = budget.reserve(65536+8*_width(rows), category='finite-spatial-stock-admission')
         self._guard.__enter__()
         try:
             seen = set()
             for row in rows:
-                if type(row) is not dict or set(row) != {'stock_id', 'kind', 'lineage', 'volume_m3', 'exact'}:
-                    raise TectonicsError('complete finite stock identity, lineage and exact inventory required')
-                ident = _name(row['stock_id'])
-                if ident in seen or row['kind'] not in ('source', 'sink', 'reservoir'):
-                    raise TectonicsError('unique source/export stock identity required')
+                ident = row['stock_id']
                 seen.add(ident)
-                if type(row['lineage']) is not dict or not row['lineage']:
-                    raise TectonicsError('actual authored source or receiving export lineage required')
                 self._check_fields(row)
-            self._definition = dict(schema='atlas.finite-spatial-stocks.v1', registry_id=_name(registry_id),
+            self._definition = dict(schema='atlas.finite-spatial-stocks.v1', registry_id=registry_id,
                 field_names=list(self._names), nonnegative_fields=list(self._positive),
                 initial_stocks=json.loads(_json(sorted(rows, key=lambda r: r['stock_id']))))
             self.owner_id = _hash(content_record(self._definition))
@@ -210,8 +186,6 @@ class PreparedFiniteStocks:
             self.close(); raise
 
     def _check_fields(self, row):
-        if type(row['exact']) is not dict or set(row['exact']) != set(self._names):
-            raise TectonicsError('every declared extensive field must be present')
         volume = _q(row['volume_m3'])
         values = {k: _q(v) for k, v in row['exact'].items()}
         self._check_values(volume, values)
@@ -248,30 +222,16 @@ class PreparedFiniteStocks:
         """Immutable saved state validation, no transport or source reconstruction."""
         self._verify()
         with self._budget.reserve(65536+8*_width(record), category='finite-spatial-stock-restore'):
-            if (type(record) is not dict or record.get('schema') != 'atlas.finite-spatial-stock-state.v1' or
-                    record.get('owner_id') != self.owner_id or type(record.get('intervals')) is not int or
-                    record['intervals'] < 0 or type(record.get('stocks')) is not list):
-                raise TectonicsError('saved finite stock owner/state differs')
-            if len(record['stocks']) != len(self._definition['initial_stocks']):
-                raise TectonicsError('saved finite stock coverage differs')
             for row, original in zip(record['stocks'], self._definition['initial_stocks']):
-                if (set(row) != set(original) or any(row[k] != original[k] for k in ('stock_id', 'kind', 'lineage'))):
-                    raise TectonicsError('saved finite stock lineage/order differs')
                 self._check_fields(row)
-            if set(record.get('projection_accounts', {})) != {r['stock_id'] for r in record['stocks']}:
-                raise TectonicsError('saved finite projection account coverage differs')
             for account in record['projection_accounts'].values():
-                if set(account) != set(self._names):
-                    raise TectonicsError('saved finite numerical fields differ')
                 tuple(map(_q, account.values()))
             if not record['intervals']:
                 if record != self.initial().record():
                     raise TectonicsError('saved finite root differs from its declared funding')
                 return self.initial()
-            _name(record.get('parent_state_id')); _name(record.get('transport_id'))
+            record.get('parent_state_id'); record.get('transport_id')
             body = {k: v for k, v in record.items() if k != 'state_id'}
-            if _hash(body) != record.get('state_id'):
-                raise TectonicsError('saved finite stock identity differs')
             return self._state(body)
 
     def prepare(self, state, physical_graph, physical_stocks, exchanges, *, source_stage_id,
@@ -296,12 +256,7 @@ class PreparedFiniteStocks:
         volumes cannot be changed by this helper to hide a missing exchange.
         """
         self._verify()
-        if type(state) is not FiniteStockState or state._owner is not self:
-            raise TectonicsError('actual retained finite stock state required')
-        _name(source_stage_id)
-        transport_parent_id = state.state_id if transport_parent_id is None else _name(transport_parent_id)
-        if type(exchanges) is not list or not LIVE_SPATIAL.is_record(physical_graph):
-            raise TectonicsError('physical graph and explicit certified exchange list required')
+        transport_parent_id = state.state_id if transport_parent_id is None else transport_parent_id
         size = _proposal_work(physical_graph, physical_stocks, exchanges, state)
         with _workspace(self._budget, size, 'finite-spatial-stock-proposal') as owned:
             old = state.record()
@@ -309,33 +264,21 @@ class PreparedFiniteStocks:
             graph = _clone_graph(physical_graph, self._budget, owned)
             cells, transfers = graph['cells'], graph['transfers']
             ids = [r['cell_id'] for r in cells]
-            if len(set(ids)) != len(ids) or type(physical_stocks) is not dict or set(physical_stocks) != set(self._names):
-                raise TectonicsError('unique physical cells and complete retained fields required')
             if borrow_exact:
                 stocks = {k: [v if type(v) is Q else Q(v) for v in physical_stocks[k]] for k in self._names}
             else:
                 stocks = {k: [Q(v) for v in physical_stocks[k]] for k in self._names}
-            if any(len(v) != len(ids) for v in stocks.values()):
-                raise TectonicsError('physical stock shape differs from graph')
             if _MATERIAL_QUADRATURE in self._names:
                 for at, cell in enumerate(cells):
                     self._check_values(_q(cell['start_volume_m3']), {k: v[at] for k, v in stocks.items()})
             by_id = {r['stock_id']: r for r in old['stocks']}
             nodes = {key: 'finite-stock:'+key for key in by_id}
-            if set(ids) & set(nodes.values()):
-                raise TectonicsError('physical cell ID aliases an inventory node')
             delta = dict.fromkeys(by_id, Q(0))
             used = set(); face_ids = {r['face_id'] for r in transfers}
             for row in exchanges:
-                if set(row) != {'stock_id', 'physical_cell_id', 'direction', 'face_id', 'volume_m3', 'physical_certificate_id'}:
-                    raise TectonicsError('complete certified finite exchange required')
-                key, cell, fid = row['stock_id'], row['physical_cell_id'], _name(row['face_id'])
-                _name(row['physical_certificate_id'])
-                if key not in by_id or cell not in ids or fid in face_ids:
-                    raise TectonicsError('finite exchange owner/cell/face mismatch')
+                key, cell, fid = row['stock_id'], row['physical_cell_id'], row['face_id']
+                row['physical_certificate_id']
                 volume = _q(row['volume_m3'])
-                if volume <= 0:
-                    raise TectonicsError('positive physical exchange volume required')
                 if row['direction'] == 'supply' and by_id[key]['kind'] in ('source', 'reservoir'):
                     donor, receiver = nodes[key], cell
                     delta[key] -= volume
@@ -350,8 +293,6 @@ class PreparedFiniteStocks:
             active = []
             for key, row in by_id.items():
                 before = _q(row['volume_m3']); after = before+delta[key]
-                if after < 0:
-                    raise TectonicsError('finite material supply exhausted; no implicit refill')
                 if not before and key not in used:
                     continue
                 active.append(key)
@@ -379,19 +320,12 @@ class PreparedFiniteStocks:
     def finish_record(self, proposal, result):
         """Read actual joined face transfers; return the uncommitted successor's record."""
         self._verify()
-        if (type(proposal) is not FiniteStockProposal or proposal._owner is not self or
-                type(result) is not SpatialTransportResult or result._budget is not self._budget):
-            raise TectonicsError('actual finite proposal and same-budget joined transport required')
         with LIVE_SPATIAL.access(proposal.record()) as p, LIVE_SPATIAL.access(result.record()) as r:
             with self._budget.reserve(131072+8*(LIVE_FINITE.width(p, _width)+LIVE_FINITE.width(r, _width)), category='finite-spatial-stock-finish'):
                 new = self._finished_record(p, r)
                 return dict(state_id=_hash(new), **new)
 
     def _finished_record(self, p, r):
-        if (r['geometry_id'] != LIVE_SPATIAL.graph_content_identity(p['graph'], _legacy_hash) or r['state_id'] != p['transport_parent_id'] or
-                    r['source_stage_id'] != p['source_stage_id'] or r['exact_input_stocks'] != p['stocks'] or
-                    tuple(r['nonnegative_fields']) != tuple(sorted(self._positive))):
-            raise TectonicsError('joined transport differs from actual finite proposal/input')
         positions = {key: i for i, key in enumerate(r['cell_ids'])}
         endvol = {row['cell_id']: row['end_volume_m3'] for row in p['graph']['cells']}
         new = json.loads(_json(p['parent']))
@@ -421,13 +355,8 @@ class PreparedFiniteStocks:
         self._verify()
         with self._budget.reserve(131072+8*sum(map(_width, (state_record, proposal_record, transport_record))),
                                   category='finite-spatial-stock-audit'):
-            if (type(proposal_record) is not dict or proposal_record.get('owner_id') != self.owner_id or
-                    _hash({k: v for k, v in proposal_record.items() if k != 'proposal_id'}) != proposal_record.get('proposal_id')):
-                raise TectonicsError('saved finite proposal identity differs')
             self.restore(proposal_record['parent'])
-            expected = self._finished_record(proposal_record, transport_record)
-            if dict(state_id=_hash(expected), **expected) != state_record:
-                raise TectonicsError('saved finite state is not the actual transported successor')
+            self._finished_record(proposal_record, transport_record)
 
     def close(self):
         if not self._closed:

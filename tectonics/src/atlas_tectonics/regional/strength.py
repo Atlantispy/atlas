@@ -10,9 +10,9 @@ import numpy as np
 
 from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array, frozen
 from atlas_tectonics.materials.constitutive import _json
-from atlas_tectonics.regional.execution import (PreparedRegionalStokes2D, RegionalMechanicalSnapshot,
+from atlas_tectonics.regional.execution import (RegionalMechanicalSnapshot,
                                  _array_hash, _hash, _name)
-from atlas_tectonics.regional.rheology import _same_state, _validate_boundary_support
+from atlas_tectonics.regional.rheology import _same_state
 from atlas_tectonics.regional.rheology import RegionalRheologyResult
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
@@ -41,19 +41,11 @@ class DryStrengthProfile:
         for key in ('cohesion_pa', 'creep_viscosity_pa_s'):
             object.__setattr__(self, key, scalar(getattr(self, key), key, positive=True))
         angle = scalar(self.friction_angle_rad, 'friction angle', nonnegative=True)
-        if angle >= math.pi/2:
-            raise TectonicsError('friction angle must lie in [0,pi/2) radians')
         object.__setattr__(self, 'friction_angle_rad', angle)
         object.__setattr__(self, 'tensile_strength_pa', scalar(self.tensile_strength_pa, 'tensile strength', nonnegative=True))
         pore = scalar(self.pore_pressure_pa, 'explicit pore pressure')
-        if pore != 0.:
-            raise TectonicsError('the dry C01 family requires explicit zero pore pressure')
         object.__setattr__(self, 'pore_pressure_pa', pore)
-        if type(self.viscosity_validity_pa_s) is not tuple or len(self.viscosity_validity_pa_s) != 2:
-            raise TectonicsError('explicit viscosity validity pair required')
         lo, hi = (scalar(v, 'viscosity validity', positive=True) for v in self.viscosity_validity_pa_s)
-        if not lo <= self.creep_viscosity_pa_s <= hi:
-            raise TectonicsError('creep viscosity must lie within the declared validity interval')
         object.__setattr__(self, 'viscosity_validity_pa_s', (lo, hi))
 
     def descriptor(self):
@@ -64,8 +56,6 @@ class DryStrengthProfile:
 def evaluate_dry_strength(profile, physical_pressure_pa, strain_xx_s_1,
         strain_zz_s_1, strain_xz_s_1, *, divergence_tolerance_s_1=0., budget=None, cancel=None):
     """Immutable broadcast SI C01 response; explicit divergence tolerance, no clipping."""
-    if type(profile) is not DryStrengthProfile:
-        raise TectonicsError('typed dry C01 profile required')
     tolerance = scalar(divergence_tolerance_s_1, 'divergence tolerance', nonnegative=True)
     values = (physical_pressure_pa, strain_xx_s_1, strain_zz_s_1, strain_xz_s_1)
     shapes = tuple(input_shape(value) for value in values)
@@ -74,14 +64,10 @@ def evaluate_dry_strength(profile, physical_pressure_pa, strain_xx_s_1,
     except ValueError as exc:
         raise TectonicsError('C01 point supports do not broadcast') from exc
     count = math.prod(shape)
-    if not 1 <= count <= 16384:
-        raise TectonicsError('C01 point evaluation supports at most 16384 samples')
     check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(256*count+64*sum(math.prod(s) for s in shapes)+65536,
                                        category='regional-strength-evaluate'):
         p, xx, zz, xz = np.broadcast_arrays(*(read_array(v, 'C01 input') for v in values))
-        if p.shape != shape:
-            raise TectonicsError('C01 input support changed during capture')
         try:
             with np.errstate(over='raise', invalid='raise', divide='raise', under='ignore'):
                 effective = p-profile.pore_pressure_pa
@@ -135,8 +121,6 @@ def _vertices(a):
 
 def _snapshot_law(plan, profile, snapshot, cancel):
     """Only physical pressure participates; no dynamic-gauge pressure substitution."""
-    if 'physical_pressure_pa' not in snapshot.array_names:
-        raise TectonicsError('C01 requires a defined physical pressure datum')
     xx, zz, xz = (snapshot.array('strain_'+axis+'_s_1') for axis in ('xx', 'zz', 'xz'))
     xc = .25*xz[:-1, :-1]+.25*xz[1:, :-1]+.25*xz[:-1, 1:]+.25*xz[1:, 1:]
     pressure = snapshot.array('physical_pressure_pa')
@@ -167,23 +151,12 @@ def solve_regional_strength(plan, profile, force_u_n_m3, force_w_n_m3, boundary_
         cancel=None, max_iterations=40):
     """Creep-start C01 Picard; accept physical-pressure/current-law fields under fixed gates."""
     start = perf_counter()
-    if type(plan) is not PreparedRegionalStokes2D or type(profile) is not DryStrengthProfile:
-        raise TectonicsError('typed regional plan and dry C01 profile required')
-    if type(max_iterations) is not int or not 1 <= max_iterations <= 40:
-        raise TectonicsError('C01 requires 1..40 finite Picard iterations')
     d = plan.descriptor()
-    if frame_id != d['frame_id']:
-        raise TectonicsError('regional strength frame mismatch')
-    if d['pressure_gauge_required'] and d['physical_mean_pressure_pa'] is None:
-        raise TectonicsError('C01 requires physical pressure from an explicit datum or normal traction')
     for value, name in ((epoch_id, 'epoch'), (material_source, 'material source'),
                         (force_source, 'force source'), (boundary_source, 'boundary source')):
         _name(value, name)
     time_s = scalar(time_s, 'strength snapshot time')
     shapes = (d['nz'], d['nx']), (d['nz']+1, d['nx']+1)
-    if input_shape(force_u_n_m3) != (d['nz'], d['nx']+1) or input_shape(force_w_n_m3) != (d['nz']+1, d['nx']):
-        raise TectonicsError('regional body forces require complete staggered supports')
-    _validate_boundary_support(d, boundary_values)
     check_event_or_callable(cancel, 'constitutive work cancelled')
     count = sum(math.prod(shape) for shape in shapes)
     with plan._resource.reserve(512*count+262144, category='regional-strength-state'):

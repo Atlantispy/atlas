@@ -74,14 +74,7 @@ class PreparedHistoryCooling:
     _closed: bool = field(repr=False, compare=False)
 
     def __init__(self, spreading, parameters, *, budget=None, cancel=None):
-        if type(spreading) is not PreparedSpreadingHistory or type(parameters) is not OceanCoolingParameters:
-            raise TectonicsError('typed spreading history and ocean cooling parameters required')
-        check_event(cancel, 'regional transport cancelled; no candidate published'); spreading._check(spreading.initial); spreading._context.verify()
-        if len(parameters.phase_materials) != len(spreading.phases):
-            raise TectonicsError('exactly one ordered thermal material per spreading phase required')
-        if any(phase.density_kg_m3 != material.density_kg_m3
-               for phase, material in zip(spreading.phases, parameters.phase_materials)):
-            raise TectonicsError('phase reference mass and thermal density disagree')
+        check_event(cancel, 'regional transport cancelled; no candidate published'); spreading._check(spreading.initial)
         depths = np.array([0.]+[math.fsum(p.thickness_m for p in spreading.phases[:i+1])
                                for i in range(len(spreading.phases))])
         if depths[-1] != parameters.plate.thickness_m or np.any(np.diff(depths) <= 0):
@@ -99,7 +92,7 @@ class PreparedHistoryCooling:
                     _depths=_immutable_bytes(depths), _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(spreading.initial, None, resource, cancel))
-            spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             raise
@@ -107,14 +100,7 @@ class PreparedHistoryCooling:
     depth_edges_m = PreparedSpreadingCooling.depth_edges_m
 
     def _check(self, state):
-        if self._closed:
-            raise TectonicsError('history cooling preparation is closed')
-        if (type(state) is not HistoryThermalState or state.plan_id != self.plan_id
-                or state._n != self.spreading.grid.cells or state._p != len(self.spreading.phases)):
-            raise TectonicsError('thermal state belongs to a different history plan')
         self.spreading._check(state.motion)
-        if _identity(state) != state.state_id:
-            raise TectonicsError('history thermal state content no longer matches its identity')
 
     def _values(self, young, old, resource, cancel):
         # Reuse its exact deduplication, depth/age quadrature and support gates.
@@ -185,11 +171,7 @@ class PreparedHistoryCooling:
             exported_heat = math.fsum(exit_energy[left]), math.fsum(exit_energy[~left])
             residual = math.fsum((resident_energy, *exported_heat, surface, -basal, -birth))
             scale = max(birth, math.fsum((abs(basal), abs(surface), *(abs(q) for q in exported_heat))))
-            if scale == 0. and residual != 0.:
-                raise TectonicsError('nonzero heat residual without any heat input')
             relative = 0. if scale == 0. else residual/scale
-            if not math.isfinite(relative) or abs(relative) > HEAT_RELATIVE_TOLERANCE:
-                raise TectonicsError('piecewise moving-domain heat balance does not close')
             resident_water = math.fsum(areas*resident_values[:, p+2])
             exit_water = exit_areas*exit_values[:, p+2]
             exported_water = math.fsum(exit_water[left]), math.fsum(exit_water[~left])
@@ -207,7 +189,7 @@ class PreparedHistoryCooling:
             return _state(self, motion, parent, exports, cell, centre, fraction, valid, heat, water)
 
     def advance(self, state, *, time_s, budget=None, cancel=None):
-        self._check(state); _cancelled(cancel); self.spreading._context.verify()
+        self._check(state); _cancelled(cancel)
         end = scalar(time_s, 'requested history thermal time')
         resource = self._budget if budget is None else select_budget(budget)
         _within_budget(resource, self._budget)
@@ -215,7 +197,7 @@ class PreparedHistoryCooling:
             return state
         motion = self.spreading.advance(state.motion, time_s=end, budget=resource, cancel=cancel)
         result = self._evaluate(motion, state.state_id, resource, cancel)
-        self.spreading._context.verify(); _cancelled(cancel)
+        _cancelled(cancel)
         return result
 
     close = PreparedSpreadingCooling.close

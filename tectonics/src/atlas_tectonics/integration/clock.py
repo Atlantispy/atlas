@@ -59,11 +59,7 @@ class Event:
     label: str
 
     def __post_init__(self):
-        if isinstance(self.time_s, bool):
-            raise ClockError('an event time is a real number')
         object.__setattr__(self, 'time_s', scalar(self.time_s, 'event time'))
-        _ledger._token(self.kind, 'event kind')
-        _ledger._token(self.label, 'event label')
 
 
 @dataclass(frozen=True, eq=False, init=False, slots=True)
@@ -98,8 +94,6 @@ def _cancelled(cancel):
     if cancel is None:
         return lambda: False
     if hasattr(cancel, 'is_set'):
-        if not callable(cancel.is_set):
-            raise ClockError('cancel is an event with is_set() or a callable')
         return cancel.is_set
     if callable(cancel):
         return cancel
@@ -129,12 +123,8 @@ class Clock:
     __slots__ = ('_ledger', '_head', '_state', '_run', '_stale', '_unsettled')
 
     def __init__(self, ledger, *, head=None, budget=None):
-        if type(ledger) is not _ledger.Ledger:
-            raise ClockError('a Ledger is required')
         accepted = ledger.head()
         head = accepted if head is None else ledger._own(head)
-        if head.key != accepted.key:
-            raise ClockError('a clock starts at the accepted head; an earlier commit cannot be continued or branched')
         state = ledger.state(head)
         settings = state.settings
         times = [advance_time(state.start_time_s, k*settings.step_s) for k in range(settings.steps+1)]
@@ -166,21 +156,15 @@ class Clock:
     def time_at(self, step):
         """Epoch time of global step ``step``, exactly as an accepted state records it."""
         settings = self._state.settings
-        if type(step) is not int or not 0 <= step <= settings.steps:
-            raise ClockError('a global step index of the fixed schedule is required')
         return advance_time(self._state.start_time_s, step*settings.step_s)
 
     def step_at(self, time_s, *, whole=True):
         """The last global step index not after ``time_s``; with ``whole`` the time must be that step exactly."""
-        if isinstance(time_s, bool):
-            raise ClockError('a requested time is a real number')
         try:
             time_s = scalar(time_s, 'requested time')
         except TectonicsError as exc:
             raise ClockError('a requested time is a finite real number of epoch seconds') from exc
         settings, start, last = self._state.settings, self._state.start_time_s, self._state.settings.steps
-        if time_s < start:
-            raise ClockError('requested time precedes the history start')
         if time_s >= self.time_at(last):
             step = last
         else:
@@ -189,8 +173,6 @@ class Clock:
                 step -= 1
             while step < last and self.time_at(step+1) <= time_s:
                 step += 1
-        if whole and self.time_at(step) != time_s:
-            raise ClockError('requested time is not a whole step of the fixed global schedule')
         return step
 
     def _calendar(self, events, current, target):
@@ -198,17 +180,11 @@ class Clock:
 
         The ledger's declared calendar always applies; a request adds savepoints only.
         """
-        if type(events) not in (tuple, list):
-            raise ClockError('events are a sequence of Event records')
         now, checked = self.time_at(current), []
         for item in events:
-            if type(item) is not Event:
-                raise ClockError('typed Event records required')
             if item.kind not in SUPPORTED_EVENTS:
                 raise ClockError('unsupported events are declared in the ledger calendar when the history is created, '
                                  'so every clock honours them; a request adds savepoints only')
-            if item.time_s < now:
-                raise ClockError('a declared event precedes the accepted head; the calendar cannot run backwards')
             checked.append(item)
         checked.extend(Event(*entry) for entry in self._ledger.calendar if entry[0] >= now)
         saves, stop, event = set(), target, None
@@ -264,25 +240,17 @@ class Clock:
 
     def _plan(self, steps, until_s, savepoint_steps, events, transfers, cancel, deadline):
         self._reconcile()
-        if self._stale:
-            raise ClockError('this clock was overtaken by another writer; open a new clock at the accepted head')
         settings = self._state.settings
         current = self._state.column.accepted_steps
-        if (steps is None) == (until_s is None):
-            raise ClockError('request either whole steps or a whole-step end time')
         if steps is not None:
             if type(steps) is not int or steps < 1:
                 raise ClockError('a request advances a positive integer number of whole steps')
             target = current+steps
         else:
             target = self.step_at(until_s)
-            if target <= current:
-                raise ClockError('the requested time is not after the accepted head')
         if target > settings.steps:
             raise ClockError('request exceeds the %d remaining whole steps of the fixed schedule; the cumulative '
                              'limit is never reset' % (settings.steps-current))
-        if savepoint_steps is not None and (type(savepoint_steps) is not int or savepoint_steps < 1):
-            raise ClockError('savepoints are every positive whole number of global steps')
         polled = _cancelled(cancel)
         deadline = _deadline(deadline)
         exchanges = self._exchanges(transfers, current, target)
@@ -362,22 +330,11 @@ class Clock:
         """Transfer proposals grouped by their declared interval: {end_step: (start_step, proposals)}."""
         if transfers is None:
             return {}
-        if type(transfers) not in (tuple, list) or any(not _ledger._proposal(p) for p in transfers):
-            raise ClockError('transfers are a sequence of Transfer proposals, each declaring its interval')
         groups = {}
         for proposal in transfers:
             start, end = proposal.start_step, proposal.end_step
-            if start < current:
-                raise ClockError('the interval (%d, %d] a transfer declares starts before the accepted head at global '
-                                 'step %d; an earlier commit splits it' % (start, end, current))
-            if end > target:
-                raise ClockError('the interval (%d, %d] a transfer declares ends after this request' % (start, end))
             groups.setdefault((start, end), []).append(proposal)
         spans = sorted(groups)
-        for (a, b), (c, d) in zip(spans, spans[1:]):
-            if c < b:
-                raise ClockError('the transfer intervals (%d, %d] and (%d, %d] overlap; each is committed whole, once'
-                                 % (a, b, c, d))
         return {end: (start, tuple(groups[start, end])) for start, end in spans}
 
     def _interval(self, done, exchanges):

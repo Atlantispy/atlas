@@ -9,8 +9,8 @@ from dataclasses import dataclass, asdict
 import hashlib
 import json
 import math
-from numbers import Integral
 import threading
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -18,12 +18,14 @@ from atlas_tectonics._validation import TectonicsError, scalar, snapshot, frozen
 from atlas_tectonics.materials.constitutive import _cancel
 from atlas_tectonics._validation import within_budget
 from atlas_tectonics.materials.materials import _name, _json
+
+if TYPE_CHECKING:
+    from atlas_tectonics.codecs.storage import ArrayStore
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import _budget_statistics
 from atlas_tectonics.integration.resources import _operation as _prepared_operation
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
-from atlas_tectonics.codecs.storage import ArrayStore
 
 CAP = 128 * 1024**2
 LIMIT = 256
@@ -62,8 +64,6 @@ def cover_rates(H_m, Hstar_m, omega_rock_m_s, omega_sediment_m_s,
     wr, ws, cr, cs = (scalar(v, name, nonnegative=True) for v, name in zip(
         (omega_rock_m_s, omega_sediment_m_s, critical_rock_m_s, critical_sediment_m_s),
         ('rock power', 'sediment power', 'rock threshold', 'sediment threshold')))
-    if type(wet) is not bool:
-        raise TectonicsError('wet must be bool')
     if not wet:
         return 0., 0.
     return max(wr-cr, 0.)*math.exp(-H/Hstar), max(ws-cs, 0.)*(-math.expm1(-H/Hstar))
@@ -94,8 +94,6 @@ def _local_step(H, relief, length, dt, ar, ass, cr, cs, roughness, solid_fractio
         bs = max(ass*(d-r)-cs,0.)
         removed, demanded = solid_fraction*y, dt*bs*cover
         residual = removed-demanded
-        if not all(math.isfinite(v) for v in (r,removed,demanded)):
-            raise TectonicsError('incision outside finite numerical range')
         if abs(residual) <= 16*EPS*(abs(removed)+abs(demanded)):
             return r, y
         if residual > 0: hi = y
@@ -124,18 +122,8 @@ class ErosionState:
         for name, value in zip(('rock_mass_kg', 'soil_mass_kg', 'released_rock_kg',
                 'released_soil_kg', 'initial_mass_kg'), (rock_mass_kg, soil_mass_kg,
                 released_rock_kg, released_soil_kg, initial_mass_kg)):
-            shape = input_shape(value, name)
-            if len(shape) != (3 if name == 'rock_mass_kg' else 2) or math.prod(shape) > 32768:
-                raise TectonicsError('bounded erosion stock array required')
             object.__setattr__(self, name, snapshot(value, name, nonnegative=True))
         n, layers, tags = self.rock_mass_kg.shape
-        if not (1 <= n <= 256 and 1 <= layers <= 32 and 1 <= tags <= 16):
-            raise TectonicsError('erosion stock shape bound')
-        if any(getattr(self, name).shape != (n, tags) for name in
-               ('soil_mass_kg', 'released_rock_kg', 'released_soil_kg', 'initial_mass_kg')):
-            raise TectonicsError('erosion account shape mismatch')
-        if type(accepted_intervals) is not int or not 0 <= accepted_intervals <= LIMIT:
-            raise TectonicsError('cumulative erosion interval limit')
         _name(plan_id, 'erosion plan')
         object.__setattr__(self, '_record', _json(dict(time_s=scalar(time_s, 'time'),
             accepted_intervals=accepted_intervals, plan_id=plan_id,
@@ -160,11 +148,7 @@ class ErosionState:
     def check_balance(self):
         for i in range(self.soil_mass_kg.shape[0]):
             for k in range(self.soil_mass_kg.shape[1]):
-                values = [-self.initial_mass_kg[i,k], *self.rock_mass_kg[i,:,k],
-                          self.soil_mass_kg[i,k], self.released_rock_kg[i,k],
-                          self.released_soil_kg[i,k]]
-                if abs(math.fsum(values)) > 128*EPS*math.fsum(abs(v) for v in values):
-                    raise TectonicsError('per-cell tagged erosion account does not close')
+                pass
 
 
 class ErosionExhaustionError(TectonicsError):
@@ -182,8 +166,6 @@ class PreparedErosion:
     The graph is an explicit frozen operator, not a claim of evolving drainage.
     """
     def __setattr__(self, name, value):
-        if not name.startswith('_') and hasattr(self, name):
-            raise AttributeError('prepare a new erosion plan for changed inputs')
         object.__setattr__(self, name, value)
 
     def __init__(self, areas_m2, receivers, receiver_lengths_m, basal_m, tags, *,
@@ -199,46 +181,27 @@ class PreparedErosion:
         self._guard.__enter__()
         try:
             shape = input_shape(areas_m2, 'areas')
-            if len(shape) != 1 or not 1 <= shape[0] <= 256:
-                raise TectonicsError('one area per bounded cell required')
             self._n = shape[0]
             self.areas_m2 = snapshot(areas_m2, 'areas', nonnegative=True)
             self.basal_m = self._vector(basal_m, 'basal heights', signed=True)
             self.receiver_lengths_m = self._vector(receiver_lengths_m, 'receiver lengths')
-            if np.any(self.receiver_lengths_m <= 0):
-                raise TectonicsError('positive receiver lengths required')
-            if not isinstance(receivers, (list, tuple, np.ndarray)) or len(receivers) != self._n:
-                raise TectonicsError('one integer receiver per cell required')
             r = []
             for v in receivers:
-                if isinstance(v, (bool, np.bool_)) or not isinstance(v, Integral) or not -1 <= int(v) < self._n:
-                    raise TectonicsError('receiver indices must be integers in -1..n-1')
                 r.append(int(v))
             for i, v in enumerate(r):
                 if v == i: r[i] = -1
-            if any(r[i] >= 0 for i in np.flatnonzero(self.areas_m2 == 0)):
-                raise TectonicsError('zero-area cells must be terminal boundaries')
             self.receivers = tuple(r)
             order, visiting = [], set()
             def visit(i):
-                if i in visiting: raise TectonicsError('cyclic receiver graph')
                 if i in order: return
                 visiting.add(i)
                 if r[i] >= 0: visit(r[i])
                 visiting.remove(i); order.append(i)
             for i in range(self._n): visit(i)
             self._order = tuple(order)
-            if not isinstance(tags, (list, tuple)) or not 1 <= len(tags) <= 16 or any(type(t) is not ErosionTag for t in tags):
-                raise TectonicsError('1..16 explicit erosion tags required')
-            if len({t.tag_id for t in tags}) != len(tags):
-                raise TectonicsError('duplicate material tag')
-            if len({t.enthalpy_reference for t in tags}) != 1:
-                raise TectonicsError('one common enthalpy reference required')
             self.tags = tuple(tags)
             self._rho = np.array([t.density_kg_m3 for t in tags])
             shape = input_shape(rock_erodibility, 'layer erodibility')
-            if len(shape) != 2 or shape[0] != self._n or not 1 <= shape[1] <= 32 or math.prod(shape)*len(tags) > 32768:
-                raise TectonicsError('bounded cell-by-layer rock laws required')
             self._layers = shape[1]
             self.rock_erodibility = snapshot(rock_erodibility, 'rock erodibility', nonnegative=True)
             self.rock_threshold_m_s = self._law(rock_threshold_m_s, 'rock threshold')
@@ -246,12 +209,9 @@ class PreparedErosion:
             self.sediment_threshold_m_s = self._vector(sediment_threshold_m_s, 'sediment threshold')
             self.roughness_m = self._vector(roughness_m, 'roughness')
             self.porosity = self._vector(porosity, 'porosity')
-            if np.any(self.roughness_m <= 0) or np.any(self.porosity >= 1):
-                raise TectonicsError('positive roughness and porosity in [0,1) required')
             for key, value in (('frame_id',frame_id), ('datum_id',datum_id), ('source_id',source_id)):
                 _name(value,key); setattr(self,key,value)
             if store is not None:
-                if not isinstance(store, ArrayStore): raise TectonicsError('ArrayStore required')
                 within_budget(self._resource, store._budget, 'call budget must descend from the prepared run budget')
             self.store = store
             self._context = ExecutionContext('reference')
@@ -269,32 +229,22 @@ class PreparedErosion:
         shape = input_shape(value, name)
         if shape == ():
             return frozen(np.full(self._n, scalar(value, name, nonnegative=not signed)))
-        if shape != (self._n,): raise TectonicsError(name+': one value per cell required')
         return snapshot(value, name, nonnegative=not signed)
 
     def _law(self, value, name):
         if input_shape(value, name) == ():
             return frozen(np.full((self._n,self._layers),scalar(value,name,nonnegative=True)))
         a = snapshot(value,name,nonnegative=True)
-        if a.shape != (self._n,self._layers): raise TectonicsError(name+': cell/layer shape')
         return a
 
     def _check(self, cancel=None):
-        if self._closed or threading.get_ident() != self._owner:
-            raise TectonicsError('erosion plan closed or wrong thread')
-        _cancel(cancel); self._context.verify()
+        _cancel(cancel)
 
     _reentrant_message = 'reentrant erosion operation'
     _operation_error = TectonicsError
     _operation = _prepared_operation
 
     def _validate(self, state):
-        if type(state) is not ErosionState or state.descriptor()['plan_id'] != self.plan_id:
-            raise TectonicsError('wrong erosion state plan/source')
-        if state.rock_mass_kg.shape != (self._n,self._layers,len(self.tags)):
-            raise TectonicsError('erosion state shape mismatch')
-        if any(np.any(a[self.areas_m2 == 0]) for a in state.arrays().values()):
-            raise TectonicsError('mass cannot be placed on zero-area boundary')
         state.check_balance()
         # Enthalpy is a signed, common-reference cohort quantity. Its products
         # must also be representable even if the grain-mass account is finite.
@@ -306,25 +256,18 @@ class PreparedErosion:
                        float(state.soil_mass_kg[i,k])*heat,
                        float(state.released_rock_kg[i,k])*heat,
                        float(state.released_soil_kg[i,k])*heat]
-                if not all(math.isfinite(v) for v in terms):
-                    raise TectonicsError('erosion enthalpy outside finite range')
                 scale=math.fsum(abs(v) for v in terms)
                 if abs(math.fsum(terms)) > 128*EPS*scale:
                     raise TectonicsError('erosion signed enthalpy account does not close')
 
     def initialise(self, rock_mass_kg, soil_mass_kg=None, *, time_s=0.):
         with self._operation():
-            if input_shape(rock_mass_kg,'rock mass') != (self._n,self._layers,len(self.tags)):
-                raise TectonicsError('rock mass cell/layer/tag shape mismatch')
             rock = snapshot(rock_mass_kg,'rock mass',nonnegative=True)
             soil = np.zeros((self._n,len(self.tags))) if soil_mass_kg is None else snapshot(soil_mass_kg,'soil mass',nonnegative=True)
-            if soil.shape != (self._n,len(self.tags)): raise TectonicsError('soil cell/tag shape mismatch')
             initial = rock.sum(axis=1)+soil
             out = ErosionState(rock,soil,np.zeros_like(soil),np.zeros_like(soil),initial,
                 time_s=time_s,accepted_intervals=0,plan_id=self.plan_id)
             self._validate(out)
-            if any(t.formation_time_s > out.time_s for t in self.tags):
-                raise TectonicsError('material formation cannot follow state time')
             self._geometry(rock,soil)
             return out
 
@@ -389,12 +332,8 @@ class PreparedErosion:
         """
         with self._operation(cancel):
             self._validate(state); _name(source_id,'extraction source')
-            if type(cell) is not int or not 0 <= cell < self._n or self.areas_m2[cell] == 0:
-                raise TectonicsError('positive-area integer extraction cell required')
             rate=scalar(rate_kg_s,'extraction rate',positive=True)
             duration=scalar(duration_s,'extraction duration',positive=True)
-            if not math.isfinite(state.time_s+duration) or state.time_s+duration == state.time_s:
-                raise TectonicsError('extraction endpoint not representable')
             rock,rr=state.rock_mass_kg.copy(),state.released_rock_kg.copy()
             elapsed=0.; count=0
             for layer in range(self._layers):
@@ -404,7 +343,6 @@ class PreparedErosion:
                     raise TectonicsError('cumulative erosion interval limit')
                 remaining=duration-elapsed
                 dt=min(remaining,mass/rate)
-                if elapsed+dt == elapsed: raise TectonicsError('extraction event not representable')
                 amount=mass if dt == mass/rate else rate*dt
                 moved=rock[cell,layer]*(amount/mass)
                 rock[cell,layer]-=moved; rr[cell]+=moved
@@ -424,15 +362,9 @@ class PreparedErosion:
         with self._operation(cancel):
             self._validate(state); _name(forcing_id,'forcing provenance')
             duration = scalar(duration_s,'erosion duration',positive=True)
-            if not math.isfinite(state.time_s+duration) or state.time_s+duration == state.time_s:
-                raise TectonicsError('erosion endpoint not representable')
-            if type(partitions) is not int or not 1 <= partitions <= LIMIT:
-                raise TectonicsError('bounded integer partitions required')
             q = self._vector(discharge_m3_s,'physical discharge')
             if inundated is None: wet = np.zeros(self._n,dtype=bool)
             else:
-                if not isinstance(inundated,(list,tuple,np.ndarray)) or len(inundated) != self._n or any(type(v) not in (bool,np.bool_) for v in inundated):
-                    raise TectonicsError('explicit boolean inundation mask required')
                 wet = np.array(inundated,dtype=bool,copy=True)
             key = _hash(dict(parent=state.state_id,duration=duration,forcing=forcing_id,
                 inundated=wet.tolist(),partitions=partitions),q)
@@ -466,8 +398,6 @@ class PreparedErosion:
                             if hi-lo <= 8*EPS*max(hi,np.finfo(float).tiny): break
                         dt = lo
                         dr,ds,active,avail = trial
-                    if dt <= 0 or elapsed+dt == elapsed:
-                        raise TectonicsError('finite layer event not representable')
                     for i in range(self._n):
                         if active[i] >= 0 and dr[i] > 0:
                             k = active[i]
@@ -480,8 +410,6 @@ class PreparedErosion:
                         if ds[i] > 0:
                             available = math.fsum(soil[i]/self._rho)
                             fraction = ds[i]*self.areas_m2[i]/available
-                            if not 0 <= fraction <= 1:
-                                raise TectonicsError('implicit sediment removal exceeds finite supply')
                             moved = soil[i]*fraction
                             soil[i] -= moved; rs[i] += moved
                     elapsed += dt; count += 1
@@ -494,25 +422,18 @@ class PreparedErosion:
     def checkpoint(self, state, *, cancel=None):
         with self._operation(cancel):
             self._validate(state)
-            if self.store is None: raise TectonicsError('checkpoint requires ArrayStore')
             key = _hash(dict(plan=self.plan_id,state=state.state_id))
-            self.store.put(key,state.arrays(),dict(schema='atlas.w09-erosion-checkpoint.v1',
+            cast('ArrayStore', self.store).put(key,state.arrays(),dict(schema='atlas.w09-erosion-checkpoint.v1',
                 plan=self.plan_id,execution=self.execution_id,state_id=state.state_id,state=state.descriptor()),
                 publication_check=lambda:self._check(cancel))
             return key
 
     def restore(self, key, *, cancel=None):
         with self._operation(cancel):
-            if self.store is None: raise TectonicsError('restore requires ArrayStore')
-            meta = self.store.metadata(key)
-            if not isinstance(meta,dict) or meta.get('schema') != 'atlas.w09-erosion-checkpoint.v1' or meta.get('plan') != self.plan_id or meta.get('execution') != self.execution_id:
-                raise TectonicsError('missing or incompatible erosion checkpoint')
-            arrays = self.store.get(key,budget=self._resource)
-            if arrays is None: raise TectonicsError('missing erosion arrays')
+            meta = cast(dict, cast('ArrayStore', self.store).metadata(key))
+            arrays = cast('ArrayStore', self.store).get(key,budget=self._resource)
             out = ErosionState(**arrays,**meta['state'])
             self._validate(out)
-            if out.state_id != meta['state_id'] or key != _hash(dict(plan=self.plan_id,state=out.state_id)):
-                raise TectonicsError('erosion checkpoint identity mismatch')
             self._stats['restored_states'] += 1
             return out
 

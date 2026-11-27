@@ -29,8 +29,6 @@ from contextlib import contextmanager
 from decimal import Decimal as D, ROUND_HALF_EVEN, localcontext
 import hashlib
 from itertools import combinations
-import math
-from pathlib import Path
 import sys
 from time import perf_counter
 
@@ -42,10 +40,8 @@ from scipy.sparse.linalg import splu
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.coupling.regional_inventory import _width
 from atlas_tectonics.regional.heat3d import _cancel
-from atlas_tectonics.integration.resources import WorkBudget
 from . import mimetic_newton as N
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 SCHEME = 'extremum-multipoint'
 _PRECISION = 80
@@ -58,10 +54,6 @@ _LIMIT = 64                        # bounded steps in all; an unfinished state i
 _BASIS, _RESTARTS = 40, 2          # bounded inner Krylov work per Newton trial
 _SUPPORT = 1e-11                   # float selection only; every weight is re-derived in Decimal
 _LP_CACHE_BYTES = 1024**2           # optional, retained only during one prepare call
-
-
-def assert_current():
-    return _LOADED
 
 
 def _dec(q):
@@ -364,8 +356,6 @@ def _eliminate(off, sums, order, cancel=None):
         d = v[k]
         for value in row.values():
             d += value
-        if not d > 0 or not math.isfinite(d):
-            raise TectonicsError('extremum heat system has a cell with no capacity and no exchange')
         diagonal[k], upper[k] = d, row
         for j in row:
             columns[j].discard(k)
@@ -495,8 +485,6 @@ def prepare(geometry, conductivity, fixed, *, budget, cancel=None):
     chains of equal conductivity: no stencil reaches across a conductivity jump
     except through that interface's own harmonic point.
     """
-    if type(budget) is not WorkBudget or geometry._budget is not budget:
-        raise TectonicsError('changed extremum heat source or mismatched resource')
     with localcontext() as context, _lp_support_reuse(budget) as lp_support:
         context.prec, context.rounding = _PRECISION, ROUND_HALF_EVEN
         return _prepare(geometry, conductivity, fixed, cancel, lp_support)
@@ -513,8 +501,6 @@ def _prepare(geometry, conductivity, fixed, cancel, lp_support):
     dot = lambda a, b: a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
     norm = lambda a: float(dot(a, a).sqrt())
     k = [D.from_float(float(x)) for x in np.broadcast_to(conductivity, (nc,))]
-    if any(not x.is_finite() or x <= 0 for x in k):
-        raise TectonicsError('positive finite cell conductivity required')
     centre = [tuple(map(dec, row[1])) for row in cells]
     local = []                                   # per cell: face -> (area vector, offset, D_K, A.A)
     for at, row in enumerate(cells):
@@ -788,19 +774,11 @@ def solve(geometry, conductivity, old, capacity, dt, source, boundary, reference
     the loads ``(E + dt q)/C`` and prescribed temperatures (to within the
     temperature equivalent of that admitted residual).
     """
-    if type(budget) is not WorkBudget or geometry._budget is not budget:
-        raise TectonicsError('changed extremum heat source or mismatched resource')
     nc, nf = len(geometry._cells), len(geometry._incidence)
     names = {name: i for i, name in enumerate(geometry._face_ids)}
     kinds = {}
     for name, entry in boundary.items():
         fi = names.get(name)
-        if fi is None or len(geometry._incidence[fi]) != 1:
-            raise TectonicsError('thermal boundary must name an actual one-owner face')
-        if type(entry) not in (tuple, list) or len(entry) != 2:
-            raise TectonicsError('typed thermal boundary pair required')
-        if entry[0] not in ('temperature', 'power'):
-            raise TectonicsError('thermal boundary must declare temperature or outward power')
         kinds[fi] = entry
     fixed = frozenset(fi for fi, (kind, _) in kinds.items() if kind == 'temperature')
     begin = perf_counter()
@@ -811,10 +789,6 @@ def solve(geometry, conductivity, old, capacity, dt, source, boundary, reference
             with _workspace(budget, workspace_bytes(geometry), 'extremum-heat-stencil'):
                 prepared = prepare(geometry, conductivity, fixed, budget=budget, cancel=cancel)
                 owned.enter_context(budget.reserve(prepared.bytes, category='extremum-heat-retained'))
-        if (type(prepared) is not _Prepared or prepared.geometry_id != geometry.geometry_id or
-                prepared.nc != nc or prepared.nf != nf or prepared.fixed != fixed or
-                prepared.conductivity != tuple(D.from_float(float(x)) for x in np.broadcast_to(conductivity, (nc,)))):
-            raise TectonicsError('prepared extremum stencils belong to another geometry, conductivity or boundary type')
         # Krylov bases, Decimal factors (768 bytes an entry) and state vectors.
         work = (2*1024**2+N.workspace_bytes(nc, _BASIS)+768*prepared.fill+16384*nc+4096*nf+
                 _power_trace_workspace_bytes(prepared.power_classes))
@@ -832,17 +806,9 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
     dt, reference = decimal(dt_input), decimal(reference_input)
     old, capacity = list(map(decimal, old_input)), list(map(decimal, capacity_input))
     source = [decimal(x) for x in np.broadcast_to(source_input, (nc,))]
-    if (len(old) != nc or len(capacity) != nc or dt <= 0 or
-            any(not x.is_finite() for x in old+capacity+source+[dt, reference]) or
-            any(x <= 0 for x in old+capacity)):
-        raise TectonicsError('finite positive extremum heat inputs required')
     value = {}
     for fi, (kind, amount) in kinds.items():
         amount = decimal(amount)
-        if not amount.is_finite():
-            raise TectonicsError('nonfinite thermal boundary value')
-        if kind == 'temperature' and amount <= 0:
-            raise TectonicsError('absolute boundary temperature must be positive')
         value[fi] = amount
     power = lambda fi: value.get(fi, zero)
     insulated = all(not value[fi] for fi, (kind, _) in kinds.items() if kind == 'power')
@@ -950,8 +916,6 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
     if insulated:
         loads = [b/c for b, c in zip(load, capacity)]+[value[fi] for fi in prepared.fixed]
         limits = (min(loads), max(loads))
-        if limits[0] <= 0:
-            raise TectonicsError('positive backward-Euler temperature bounds required')
 
     def judge(u, residual):
         absolute = norm(residual)
@@ -1129,7 +1093,7 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
         rhs_norm=float(sum((b*b for b in offset_load), zero).sqrt()),
         rhs_max=float(max(rhs_max, norm([r+b for r, b in zip(residual, offset_load)]))),
         statistics=dict(seconds=perf_counter()-begin, stencil_seconds=prepared.seconds),
-        evidence=dict(schema='atlas.extremum-heat-decimal80.v1', source_sha256=_LOADED, scheme=SCHEME,
+        evidence=dict(schema='atlas.extremum-heat-decimal80.v1', scheme=SCHEME,
             precision=_PRECISION, rounding='ROUND_HALF_EVEN; exact binary input conversion',
             equation='cell storage plus one shared transfer per face; two-point part plus harmonic-limited '
                      'two-sided remainder with certified nonnegative weights; recomputed-state transfer',

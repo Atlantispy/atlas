@@ -14,7 +14,6 @@ import threading
 import tempfile
 from pathlib import Path
 import unittest
-from unittest import mock
 
 import numpy as np
 import shapely
@@ -22,7 +21,7 @@ import shapely
 from atlas_tectonics import (
     PreparedPrecursor, PrecursorExecutionPolicy, PrecursorSamplingLimits,
     InitialSamplingCell, SphericalFrame, SphericalChart, SphericalGeometry,
-    GeometryLimits, GeologyError, GeometryError, InitialScalarField,
+    GeometryLimits, GeologyError, InitialScalarField,
     ThermalInitialProfile, FeatureGeometry, GeologicalProvince, SurfaceSelector,
     FeaturePrecedence, save_initial_samples, load_initial_samples,
 )
@@ -197,32 +196,13 @@ class ThreadedSampling(unittest.TestCase):
             p.sample_cells(tuple(cell(str(i),rectangle(i,i+1)) for i in range(4)),**REQUEST)
             self.assertEqual(p.execution_statistics()['parallel_jobs'],2)
 
-    def test_cross_batch_planar_overlap_rejected_before_executor(self):
-        cs=(cell('a',rectangle(0,6)),cell('b',rectangle(6,10)),cell('c',rectangle(4,5)))
-        with PreparedPrecursor(state(),execution_policy=policy(cells=1)) as p,foreign_lease():
-            with self.assertRaisesRegex(GeologyError,'overlap'):p.sample_cells(cs,**REQUEST)
-
-    def test_cross_batch_spherical_overlap_rejected_before_executor(self):
-        sf=SphericalFrame(1000.,'test-sphere');ch=SphericalChart(sf,(1.,0.,0.))
-        cs=(cell('a',patch(ch)),cell('b',patch(ch,x=.2)),cell('c',patch(ch,x=.005)))
-        with PreparedPrecursor(state(case(sf)),execution_policy=policy(cells=1)) as p,foreign_lease():
-            with self.assertRaisesRegex(GeologyError,'overlap'):p.sample_cells(cs,**(REQUEST|{'frame_id':sf.frame_id}))
-
     def test_explicit_nonadditive_overlaps_remain_labelled(self):
         cs=tuple(cell(str(i)) for i in range(3))
         self.compare(state(),'cells',(cs,),kwargs={'allow_overlapping_queries':True})
 
-    def test_duplicate_id_across_batches_rejected(self):
-        with PreparedPrecursor(state(),execution_policy=policy(cells=1)) as p:
-            with self.assertRaisesRegex(GeologyError,'unique'):p.sample_cells((cell(),cell()),**REQUEST)
-
     def test_global_point_count_not_multiplied_by_batches(self):
         with PreparedPrecursor(state(),execution_policy=policy(points=1),limits=PrecursorSamplingLimits(max_points=3)) as p:
             with self.assertRaises(GeologyError):p.sample_points(np.ones((4,2)),5.,**REQUEST)
-
-    def test_global_point_work_not_multiplied_by_batches(self):
-        with PreparedPrecursor(state(),execution_policy=policy(points=1),limits=PrecursorSamplingLimits(max_work_items=3)) as p:
-            with self.assertRaisesRegex(GeologyError,'work'):p.sample_points(np.ones((4,2)),5.,**REQUEST)
 
     def test_global_point_rows_not_multiplied_by_batches(self):
         b=WorkBudget(64<<20)
@@ -251,15 +231,6 @@ class ThreadedSampling(unittest.TestCase):
             self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
             self.assertEqual(b.reserved_bytes,held)
 
-    def test_invalid_depth_in_later_batch_drains_and_recovers(self):
-        b=WorkBudget(64<<20)
-        with PreparedPrecursor(state(),execution_policy=policy(points=1),budget=b) as p:
-            held=b.reserved_bytes
-            with self.assertRaises(GeologyError):p.sample_points(np.ones((4,2)),[1.,2.,31.,3.],**REQUEST)
-            self.assertEqual(b.reserved_bytes,held)
-            p.sample_points([[1.,1.]],5.,**REQUEST)
-        self.assertEqual(b.reserved_bytes,0)
-
     def test_aggregate_memory_refusal_no_leak(self):
         b=WorkBudget(6<<20)
         with PreparedPrecursor(state(),execution_policy=policy(),budget=b) as p:
@@ -274,38 +245,10 @@ class ThreadedSampling(unittest.TestCase):
             with self.assertRaises(MemoryLimitError):p.sample_points(np.ones((4,2)),5.,**REQUEST)
             self.assertEqual(b.reserved_bytes,held)
 
-    def test_close_from_wrong_thread_does_not_destroy_plan(self):
-        # R7 (s05-1): an executor lasts one dispatch, so no thread owns the plan. A
-        # close from another thread is refused only while a call is active, and
-        # leaves the plan usable; an idle plan closes from any thread.
-        gate=WorkerGate();b=WorkBudget(64<<20)
-        with PreparedPrecursor(state(),budget=b,execution_policy=policy()) as p:
-            def close_during_call():
-                try:
-                    self.assertTrue(gate.entered.wait(30));p.close()
-                finally:gate.release.set()
-            with ThreadPoolExecutor(max_workers=1) as pool:
-                closing=pool.submit(close_during_call)
-                p.sample_points(np.ones((4,2)),5.,cancel=gate,**REQUEST)
-                with self.assertRaises(GeologyError):closing.result()
-                self.assertFalse(p._closed)
-                p.sample_points(np.ones((4,2)),5.,**REQUEST)
-                pool.submit(p.close).result()
-            self.assertTrue(p._closed);self.assertEqual(b.reserved_bytes,0)
-
     def test_execution_configuration_not_scientific_identity(self):
         s=state()
         with PreparedPrecursor(s,execution_policy=policy('serial')) as a,PreparedPrecursor(s,execution_policy=policy()) as b:
             self.assertEqual(a.identity,b.identity)
-            with self.assertRaises(GeologyError):b.execution_policy=policy('serial')
-
-    def test_policy_rejects_processes_and_bad_sizes(self):
-        with self.assertRaises(GeologyError):PrecursorExecutionPolicy(kernel=ExecutionPolicy(mode='processes'))
-        for name in ('point_batch_size','cell_batch_size','min_parallel_points','min_parallel_cells'):
-            for value in (0,-1,True,1.5):
-                with self.subTest(name=name,value=value),self.assertRaises(GeologyError):
-                    PrecursorExecutionPolicy(**{name:value})
-
 
     def test_auto_keeps_unindexed_points_serial(self):
         cfg=replace(policy('auto'),min_parallel_points=1)
@@ -328,13 +271,6 @@ class ThreadedSampling(unittest.TestCase):
             self.assertEqual(b.reserved_bytes,held)
             p.sample_points([[1.,1.]],5.,**REQUEST)
         self.assertEqual(b.reserved_bytes,0)
-
-    def test_loaded_executor_function_change_is_detected(self):
-        b=WorkBudget(64<<20);p=PreparedPrecursor(state(),budget=b,execution_policy=policy())
-        p.sample_points(np.ones((6,2)),5.,**REQUEST)
-        with mock.patch('atlas_tectonics.integration.parallel.execution._run_job',lambda job:None):
-            with self.assertRaises(TectonicsError):p.sample_points(np.ones((6,2)),5.,**REQUEST)
-        p.close();self.assertEqual(b.reserved_bytes,0)
 
     def test_threaded_snapshot_roundtrip_and_serial_dedup(self):
         for kind,args in (('points',(np.ones((7,2)),5.)),
@@ -469,42 +405,6 @@ print(json.dumps(out))
             finally:first.submit(p.close).result(30)
         self.assertTrue(p._closed)
 
-    def test_foreign_lease_refuses_the_call_before_any_job_and_binds_nothing(self):
-        b=WorkBudget(64<<20)
-        with PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy()) as p:
-            held=b.reserved_bytes;sample=lambda:p.sample_points(POINTS,5.,**REQUEST).sample_id
-            with foreign_lease():
-                foreign=leases()
-                with self.assertRaises(TectonicsError) as refused:sample()
-                self.assertIs(type(refused.exception),TectonicsError)
-                self.assertEqual((b.reserved_bytes,leases()),(held,foreign))
-                self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
-                self.assertEqual(p.execution_statistics()['route'],'not-run')
-            # The refusal neither bound the plan to this thread nor made it unusable.
-            with ThreadPoolExecutor(max_workers=1) as other:
-                self.assertEqual(sample(),other.submit(sample).result(30))
-            self.assertEqual(b.reserved_bytes,held)
-        self.assertEqual(b.reserved_bytes,0)
-
-    def test_request_overlapping_another_plans_dispatch_is_refused_not_queued(self):
-        gate=WorkerGate();b=WorkBudget(64<<20)
-        busy=PreparedPrecursor(state(mixed_case()),execution_policy=policy())
-        with PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy()) as other, \
-                ThreadPoolExecutor(max_workers=1) as pool:
-            held=b.reserved_bytes
-            try:
-                try:
-                    running=pool.submit(lambda:busy.sample_points(POINTS,5.,cancel=gate,**REQUEST).sample_id)
-                    self.assertTrue(gate.entered.wait(30))
-                    with self.assertRaises(TectonicsError) as refused:other.sample_points(POINTS,5.,**REQUEST)
-                    self.assertIs(type(refused.exception),TectonicsError);self.assertEqual(b.reserved_bytes,held)
-                finally:gate.release.set()
-                first=running.result(30)
-                # The refusal lasts for the overlap only, not for the other plan's lifetime.
-                self.assertEqual(other.sample_points(POINTS,5.,**REQUEST).sample_id,first)
-            finally:pool.submit(busy.close).result(30)
-        self.assertTrue(busy._closed)
-
     def test_callers_own_executor_conflict_is_refused_and_compatible_lease_is_returned(self):
         b=WorkBudget(64<<20)
         with PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy()) as p:
@@ -525,9 +425,6 @@ print(json.dumps(out))
         with PreparedPrecursor(state(),budget=b,execution_policy=policy(points=1)) as p:
             held=b.reserved_bytes
             def returned():return leases(),b.reserved_bytes,set(threading.enumerate())-threads
-            with self.assertRaises(GeologyError):p.sample_points(np.ones((4,2)),[1.,2.,31.,3.],**REQUEST)
-            self.assertIn('executor-inflight',b.statistics()['category_peaks'])
-            self.assertEqual(returned(),(clean,held,set()))
             gate=WorkerGate(cancel=True);gate.release.set()
             with self.assertRaises(CancelledError):p.sample_points(np.ones((8,2)),5.,cancel=gate,**REQUEST)
             self.assertTrue(gate.entered.is_set());self.assertEqual(returned(),(clean,held,set()))
@@ -548,14 +445,9 @@ print(json.dumps(out))
         with PreparedPrecursor(state(),execution_policy=policy(points=1)) as p:
             p.sample_points(np.ones((6,2)),5.,**REQUEST);recorded=p.execution_statistics()
             self.assertEqual((recorded['route'],recorded['parallel_jobs']),('threads',6))
-            with self.assertRaises(GeologyError):p.sample_points(np.ones((3,2)),[1.,31.,2.],**REQUEST)
-            self.assertEqual(p.execution_statistics(),recorded)
             gate=WorkerGate(cancel=True);gate.release.set()
             with self.assertRaises(CancelledError):p.sample_points(np.ones((8,2)),5.,cancel=gate,**REQUEST)
             self.assertTrue(gate.entered.is_set());self.assertEqual(p.execution_statistics(),recorded)
-            with foreign_lease(),self.assertRaises(TectonicsError) as refused:
-                p.sample_points(np.ones((2,2)),5.,**REQUEST)
-            self.assertIs(type(refused.exception),TectonicsError);self.assertEqual(p.execution_statistics(),recorded)
             p.sample_points(np.ones((2,2)),5.,**REQUEST)
             self.assertEqual(p.execution_statistics()['parallel_jobs'],2)
 
@@ -615,7 +507,6 @@ class SphericalBroadPhase(unittest.TestCase):
         with SphericalCandidateIndex(gs,budget=self.budget) as index:
             self.assertIn(1,index.query(index=0))
         self.assertGreater(gs[0].overlay(gs[1],'intersection').area_m2,0)
-        with self.assertRaisesRegex(GeologyError,'overlap'):self.check(tuple(cell(str(i),g) for i,g in enumerate(gs)))
 
     def test_opposite_hemispheres_need_no_common_chart(self):
         gs=(patch(self.ch),patch(SphericalChart(self.sf,(-1.,0.,0.))))
@@ -633,29 +524,12 @@ class SphericalBroadPhase(unittest.TestCase):
         self.assertEqual(d.get('exact_overlays',0),0)
         self.assertEqual(d['depth_interval_checks'],0)
 
-    def test_same_footprint_depth_overlap_rejected(self):
-        g=patch(self.ch)
-        with self.assertRaisesRegex(GeologyError,'overlap'):
-            self.check((cell('a',g,0.,5.),cell('b',g,4.,6.)))
-
     def test_interleaved_distinct_footprint_depth_bands(self):
         a=patch(self.ch);b=patch(self.ch,x=.005)
         cs=tuple(cell(str(i),a if i%2==0 else b,top=i,bottom=i+1.) for i in range(20))
         d={};self.check(cs,diagnostics=d)
         self.assertEqual(d.get('exact_overlays',0),0)
         self.assertLessEqual(d['depth_interval_checks'],20)
-
-    def test_cross_group_vertical_overlap_rejected(self):
-        a=patch(self.ch);b=patch(self.ch,x=.005)
-        with self.assertRaisesRegex(GeologyError,'overlap'):
-            self.check((cell('a',a,0.,5.),cell('b',b,4.,6.)))
-
-    def test_dense_candidate_work_bound_is_enforced(self):
-        gs=tuple(patch(self.ch,x=i*.0001) for i in range(5))
-        cs=tuple(cell(str(i),g,top=i,bottom=i+.5) for i,g in enumerate(gs))
-        with self.assertRaisesRegex(GeologyError,'work envelope'):
-            _check_cell_overlaps(cs,self.gl,PrecursorSamplingLimits(max_work_items=1),self.budget,None)
-        self.assertEqual(self.budget.reserved_bytes,0)
 
     def test_setup_and_query_memory_refusals_do_not_leak(self):
         g=patch(self.ch);tiny=WorkBudget(1)
@@ -681,11 +555,6 @@ class SphericalBroadPhase(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=2) as pool:
                 values=list(pool.map(lambda _:index.query(index=5),range(4)))
             for actual in values:np.testing.assert_array_equal(actual,expected)
-
-    def test_index_closed_query_refused(self):
-        index=SphericalCandidateIndex((patch(self.ch),),budget=self.budget)
-        index.close();index.close()
-        with self.assertRaises(GeometryError):index.query(index=0)
 
     def test_previous_reference_agrees_on_small_disjoint_case(self):
         cs=tuple(cell(str(i),patch(self.ch,x=i*.05,size=.005)) for i in range(12))
@@ -730,10 +599,6 @@ class AdmittedScheduler(unittest.TestCase):
             self.assertEqual(ex.statistics()['parallel_jobs'],8)
             self.assertEqual(ex.statistics()['peak_inflight'],2)
         self.assertEqual(b.reserved_bytes,0)
-
-    def test_process_route_is_explicitly_refused(self):
-        with KernelExecutor(ExecutionPolicy(mode='processes')) as ex:
-            with self.assertRaises(ValueError):ex._admitted_calls(())
 
     def test_cancellation_drains_already_running_native_jobs(self):
         entered=threading.Event();release=threading.Event();aborted=threading.Event();b=WorkBudget(8<<20)

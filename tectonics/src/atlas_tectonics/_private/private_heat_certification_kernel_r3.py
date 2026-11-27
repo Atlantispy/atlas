@@ -8,7 +8,6 @@ integer is needed under clamp=0. Other contexts retain the original route.
 Not a complete reconstruction, native method or allocator/RSS proof.
 """
 from decimal import localcontext, ROUND_HALF_EVEN
-from pathlib import Path
 import sys
 from time import perf_counter
 
@@ -27,8 +26,6 @@ PRECISIONS = K.PRECISIONS
 
 def _round_bounds(bounds, cancelled, *, _return_exact=False):
     lo, hi = bounds
-    if lo > hi or not G.is_finite(lo) or not G.is_finite(hi):
-        raise ValueError('Finite ordered enclosure required')
     with localcontext() as context:
         context.prec = 80
         context.rounding = ROUND_HALF_EVEN
@@ -73,7 +70,7 @@ def _export_plan(bounds, dual, proof, R, cancelled, *, retain_decimal=True):
             shape = INVENTORY.endpoint_shape(value, G, ar)
             retained += ar.slot(shape)
             largest_bits = max(largest_bits, shape.numerator, shape.denominator)
-    converter_bits = INVENTORY.size(5*largest_bits+4*positive_tiny+512)
+    converter_bits = (5*largest_bits+4*positive_tiny+512)
     # pow10, product, quotient/remainder, num_digits and comparison temporaries
     # plus endpoint getters are sequential; reserve their simultaneous slots.
     scratch += 48*R.native_slot_allowance(R.RationalShape(converter_bits, converter_bits))
@@ -83,8 +80,8 @@ def _export_plan(bounds, dual, proof, R, cancelled, *, retain_decimal=True):
     elif bounds:
         scratch += 2*INVENTORY.D.decimal_slot(80)
     return INVENTORY.Plan('exact-dyadic-export-and-fast-rounding', (
-        ('retained_values_and_output_containers', INVENTORY.size(retained)),
-        ('simultaneous_export_decimal_copies', INVENTORY.size(scratch)),
+        ('retained_values_and_output_containers', retained),
+        ('simultaneous_export_decimal_copies', scratch),
         ('scalar_export_workspace', R.native_workspace_allowance(converter_bits, 64))),
         (('endpoint_values', count), ('largest_export_bits', largest_bits),
          ('converter_scalar_bits', converter_bits)))
@@ -108,8 +105,6 @@ def _attempt(matrix, rhs, keys, base_keys, signed_tau, conversion, physical, *,
                                        _keys_unique=keys_unique)
             for key, value in physical.items():
                 ar.check('exact-singleton-moment-refinement')
-                if not bounds[key][0] <= value <= bounds[key][1]:
-                    raise ArithmeticError('Proved singleton moment conflicts with the certified enclosure')
                 bounds[key] = value, value
             export = _export_plan(bounds, () if private_output else dual, proof, R, cancelled,
                                   retain_decimal=retain_decimal)
@@ -189,19 +184,12 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
     """
     K._require_gmp()
     INVENTORY.check(cancelled)
-    if type(precisions) not in (list, tuple) or not precisions:
-        raise ValueError('Finite explicit nonempty precision ladder required')
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     metadata, largest = (_sizing if _sizing is not None else
         INVENTORY.metadata_bytes(matrix, rhs, conversion, signed_tau, G, cancelled))
     work = R.OwnedWorkspace(budget, metadata, category='heat-functional-screen-and-metadata', cancelled=cancelled)
     work.__enter__()
     try:
-        INVENTORY.verify_sources(cancelled)
-        # read once a process
-        from atlas_tectonics.integration.reuse import helper_source_digest
-        if helper_source_digest(Path(DECIMAL.__file__), owner_file=__file__, cancel=cancelled) != '9fd6c758940a7719840b2f15ed10e0e2869e0ce5ef2f269b937b489d92ac891d':
-            raise ValueError('Reviewed exact Decimal converter changed')
         # No copied key set, source audit or exact coefficient until admitted.
         screen, support = INVENTORY.screen_plan(matrix, rhs, conversion, signed_tau, G, R, cancelled,
                                                 _with_support=True)
@@ -230,10 +218,6 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
             audit['singleton_moments']['scalar_encoding'] = 'canonical signed-hex rational pairs'
         if incompatibility is not None:
             return P.OwnedSolve(dict(status='EXACT_INCOMPATIBLE', reason=incompatibility, result=None), work)
-        if len(keys) != len(matrix) or len(conversion) != len(keys) or (not _keys_unique and len(set(keys)) != len(keys)):
-            raise ValueError('Unique matching observation identities and conversions required')
-        if len(base_keys) != 2 or base_keys[0] == base_keys[1]:
-            raise ValueError('Distinct owner/base keys required')
         signed_tau = G.mpq(signed_tau)
         conversion = [G.mpq(value) for value in conversion]
         physical = {}

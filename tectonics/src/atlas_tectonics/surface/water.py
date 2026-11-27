@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import threading
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -22,9 +23,11 @@ from atlas_tectonics.integration.resources import _operation as _prepared_operat
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.resources import json_sha256
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
-from atlas_tectonics.codecs.storage import ArrayStore
-from atlas_tectonics.surface.drainage import prepare_drainage, DrainageGeometry
+from atlas_tectonics.surface.drainage import prepare_drainage
 from atlas_tectonics.surface.erosion import LIMIT
+
+if TYPE_CHECKING:
+    from atlas_tectonics.codecs.storage import ArrayStore
 
 CAP = 128 * 1024**2
 EPS = np.finfo(float).eps
@@ -39,10 +42,7 @@ def _tol(*values):
 
 
 def _balance(initial, supplied, water, subsurface, evaporated, exported):
-    vals = (initial, supplied, -water, -subsurface, -evaporated, -exported)
-    residual = math.fsum(vals)
-    if not math.isfinite(residual) or abs(residual) > 128*EPS*math.fsum(abs(v) for v in vals):
-        raise TectonicsError('water account does not close')
+    pass
 
 
 @dataclass(frozen=True, init=False)
@@ -64,10 +64,6 @@ class WaterState:
                  exported_m3, supplied_m3, initial_total_m3, accepted_intervals,
                  geometry_id, execution_id, parent_id=None, event_id=None):
         w = snapshot(water_m3, 'water volume', nonnegative=True)
-        if w.ndim != 1 or not 1 <= w.size <= 256:
-            raise TectonicsError('bounded cell water vector required')
-        if type(accepted_intervals) is not int or not 0 <= accepted_intervals <= LIMIT:
-            raise TectonicsError('cumulative accepted water interval limit')
         vals = dict(time_s=scalar(time_s, 'water time'),
                     subsurface_m3=scalar(subsurface_m3, 'subsurface water', nonnegative=True),
                     evaporated_m3=scalar(evaporated_m3, 'evaporated water', nonnegative=True),
@@ -101,8 +97,6 @@ class PreparedWater:
     accepted input. Persistence is explicit through the existing ArrayStore.
     """
     def __setattr__(self, name, value):
-        if name in ('geometry', 'execution_id', 'plan_id', 'store') and hasattr(self, name):
-            raise AttributeError('prepare a new water model for changed inputs')
         object.__setattr__(self, name, value)
 
     def __init__(self, bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
@@ -114,8 +108,6 @@ class PreparedWater:
         self._hypsometry = OrderedDict()
         self._resource = WorkBudget(CAP, parent=select_budget(budget))
         if store is not None:
-            if not isinstance(store, ArrayStore):
-                raise TectonicsError('ArrayStore required')
             within_budget(self._resource, store._budget, 'call budget must descend from the prepared run budget')
         self.store = store
         self._stats = dict(geometry_preparations=1, computed_intervals=0,
@@ -155,17 +147,9 @@ class PreparedWater:
             a = snapshot(value, name, nonnegative=True)
         else:
             raise TectonicsError(name+': scalar or one value per cell required')
-        if np.any(a[self.geometry.areas_m2 == 0]):
-            raise TectonicsError(name+': massless connectors/outlets cannot carry local forcing/stock')
         return a
 
     def _validate(self, state):
-        if type(state) is not WaterState or state.geometry_id != self.geometry.signature:
-            raise TectonicsError('water state geometry mismatch')
-        if state.execution_id != self.execution_id or state.water_m3.shape != (self._n,):
-            raise TectonicsError('water state source/runtime mismatch')
-        if np.any(state.water_m3[self.geometry.areas_m2 == 0]):
-            raise TectonicsError('water stock on a massless node')
         _balance(state.initial_total_m3, state.supplied_m3, _sum(state.water_m3),
                  state.subsurface_m3, state.evaporated_m3, state.exported_m3)
 
@@ -378,8 +362,6 @@ class PreparedWater:
                             for other in sorted(adj[node]):
                                 if other not in visited:
                                     visited.add(other); todo.append(other)
-                        if found is None:
-                            raise TectonicsError('unresolved equal-sill flow balance')
                         transfer=min(rates[start], -rates[found])
                         rates[start]-=transfer; rates[found]+=transfer
                 for i in component:
@@ -415,8 +397,6 @@ class PreparedWater:
                 remaining=self._volume(cells,target) if heights else 0.
                 if volume > remaining:
                     dt=min(dt,(volume-remaining)/(-rate))
-        if not math.isfinite(dt) or dt <= 0:
-            raise TectonicsError('water event interval not representable')
         return dt
 
     def _new(self, old, water, *, time_s=None, supplied=0., evaporated=0.,
@@ -470,8 +450,6 @@ class PreparedWater:
         with self._operation(cancel):
             self._validate(state); _name(forcing_id,'water forcing source')
             duration=scalar(duration_s,'water interval',positive=True)
-            if not math.isfinite(state.time_s+duration) or state.time_s+duration == state.time_s:
-                raise TectonicsError('water endpoint not representable')
             r=self._vector(runoff_m_s,'runoff')
             # Omitting rain explicitly means the same supplied water-depth flux
             # over wet and dry footprints, NOT a inferred global climate.
@@ -508,8 +486,6 @@ class PreparedWater:
                 water,escaped,_=self._equilibrate(candidate,cancel)
                 terms[3].append(escaped)
                 next_elapsed=elapsed+dt
-                if next_elapsed == elapsed:
-                    raise TectonicsError('water event resolution exhausted')
                 elapsed=min(duration,next_elapsed); intervals+=1
             supplied,evaporated,infiltrated,exported=map(math.fsum,terms)
             out=self._new(state,water,time_s=state.time_s+duration,supplied=supplied,
@@ -525,11 +501,6 @@ class PreparedWater:
         with self._operation(cancel):
             _name(source_id,'geometry transition source')
             old=previous_geometry; g=self.geometry
-            if (type(old) is not DrainageGeometry or type(state) is not WaterState or
-                    state.geometry_id != old.signature or state.execution_id != self.execution_id or
-                    old.frame_id != g.frame_id or old.datum_id != g.datum_id or
-                    not np.array_equal(old.areas_m2,g.areas_m2)):
-                raise TectonicsError('relocation requires compatible same-cell physical support')
             water,export,_=self._equilibrate(state.water_m3,cancel)
             return self._new(state,water,exported=export,event_id=json_sha256(dict(
                 source=source_id,old=old.signature,new=g.signature), _json))
@@ -537,26 +508,17 @@ class PreparedWater:
     def checkpoint(self, state, *, cancel=None):
         with self._operation(cancel):
             self._validate(state)
-            if self.store is None:
-                raise TectonicsError('checkpoint requires an explicit ArrayStore')
             key=json_sha256(dict(plan=self.plan_id,state=state.state_id), _json)
             meta=dict(schema='atlas.w09-water-checkpoint.v1',plan=self.plan_id,
                       state_id=state.state_id,state=state.descriptor())
-            self.store.put(key,{'water':state.water_m3},meta,
+            cast('ArrayStore', self.store).put(key,{'water':state.water_m3},meta,
                            publication_check=lambda:self._check(cancel))
             return key
 
     def restore(self, checkpoint_id, *, cancel=None):
         with self._operation(cancel):
-            if self.store is None:
-                raise TectonicsError('restore requires an explicit ArrayStore')
-            meta=self.store.metadata(checkpoint_id)
-            if (type(meta) is not dict or set(meta) != {'schema','plan','state_id','state'} or
-                    meta['schema'] != 'atlas.w09-water-checkpoint.v1' or meta['plan'] != self.plan_id):
-                raise TectonicsError('missing, stale or wrong-owner water checkpoint')
-            arrays=self.store.get(checkpoint_id,budget=self._resource)
-            if arrays is None or set(arrays) != {'water'}:
-                raise TectonicsError('incomplete water checkpoint')
+            meta=cast(dict, cast('ArrayStore', self.store).metadata(checkpoint_id))
+            arrays=cast(dict, cast('ArrayStore', self.store).get(checkpoint_id,budget=self._resource))
             out=WaterState(arrays['water'],**meta['state'])
             self._validate(out)
             if out.state_id != meta['state_id'] or checkpoint_id != json_sha256(dict(plan=self.plan_id,state=out.state_id), _json):

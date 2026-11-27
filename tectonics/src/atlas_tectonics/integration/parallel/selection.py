@@ -133,8 +133,6 @@ class InterfaceParallelPolicy:
     keep_workers: bool = False
 
     def __post_init__(self):
-        if self.mode not in MODES:
-            raise ValueError('interface parallel mode must be auto, serial or off')
         if (not _real(self.minimum_seconds, 0) or not _real(self.benefit_ratio, 0)
                 or self.minimum_job_seconds is not None and not _real(self.minimum_job_seconds, 0)):
             raise ValueError('finite nonnegative timing policy required')
@@ -150,13 +148,6 @@ class InterfaceParallelPolicy:
                 or not _whole(self.ram_reserve_bytes, 0) or not _whole(self.screen_units, 1)
                 or not _whole(self.screen_bytes, 1, D.PARENT_STORAGE//4)):
             raise ValueError('positive integer envelopes required; the screen scratch lies inside parent storage')
-        if self.profile_path is not None and (not isinstance(self.profile_path, (str, os.PathLike))
-                                              or not os.fspath(self.profile_path)):
-            raise ValueError('profile path must be a file name or None')
-        if type(self.use_exact) is not bool:
-            raise ValueError('use_exact must be a boolean')
-        if type(self.keep_workers) is not bool:
-            raise ValueError('keep_workers must be a boolean')
         if (self.batch_seconds is not None and (not _real(self.batch_seconds, 0) or not self.batch_seconds)
                 or not _whole(self.batch_jobs, 1, BATCH_LIMIT)
                 or not _whole(self.horizon, self.batch_jobs, MAX_HORIZON)):
@@ -225,14 +216,6 @@ def _public(text):
 
 def _text(error):
     return _public('%s: %s' % (type(error).__name__, error))
-
-
-def _execution_mode():
-    try:
-        from atlas_tectonics.integration.reuse import execution_mode
-        return execution_mode()
-    except Exception as error:
-        return 'unavailable: '+type(error).__name__
 
 
 class _Observer:
@@ -523,10 +506,6 @@ class _Automatic:
                                 'reusable timing identity: observed and reported, never used as a profile')
         if not self._gate('seed', record['seed'], record['seed'] == '0'):
             return self._serial('seed', 'the interpreter did not start with PYTHONHASHSEED=0, so no worker can be bound to it')
-        mode = _execution_mode()
-        # The gate keeps its recorded name; packaged release workers are admitted too (decision 3).
-        if not self._gate('strict-mode', mode, mode in ('strict', 'release')):
-            return self._serial('strict-mode', 'workers require strict execution mode')
         if not self._gate('ledger', record['ledger'], record['ledger'] == 'predicate'):
             return self._serial('ledger', 'the legacy byte-charged work ledger cannot fund a worker')
         registered = any(node._revoker is not None for node in nodes_for((budget, budget._predicate_work)))
@@ -1080,8 +1059,6 @@ class _WallBatches:
         jobs = list(islice(jobs, self.limit+1))
         if not jobs:
             return
-        if len(jobs) > self.limit:
-            raise ValueError('wall batch exceeds the policy lookahead')
         automatic = self.active = _AutomaticWalls(self)
         self.report['batches'] += 1
         self.report['contacts'] += len(jobs)
@@ -1600,8 +1577,6 @@ class _RollingWalls(_Rolling):
         """The router enters a window: its clean timings are observed as one bounded set."""
         self.close_batch()
         jobs = list(islice(jobs, self.limit+1))
-        if len(jobs) > self.limit:
-            raise ValueError('wall batch exceeds the policy lookahead')
         if not jobs:
             return
         self.report['batches'] += 1

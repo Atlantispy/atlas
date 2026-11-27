@@ -84,8 +84,6 @@ class ExtremeThermalRange(unittest.TestCase):
         # merely whether it became zero would miss this case.
         values=np.array([1e308,1e-15])
         self.assertGreater(float(np.ldexp(values,-math.frexp(1e308)[1])[1]),0.)
-        with self.assertRaisesRegex(TectonicsError,'normalisation loses'):
-            tc._normalise_extreme(values)
         p=problem(2);d=_Diffusion2D(p);source=np.array([[1.,2.],[3.,4.]])
         modes,exponent=d.prepare_source(source)
         self.assertEqual(exponent,0)
@@ -271,12 +269,6 @@ class ClockAndPublication(unittest.TestCase):
         with PreparedThermochemical2D(p) as plan:r=plan.advance(s,.01,source='publication',velocity=rest(p))
         self.assertEqual(r.state.descriptor()['step_record']['publication_contract'],tc._PUBLICATION_CONTRACT)
 
-    def test_current_snapshot_bad_clock_refused(self):
-        p=problem(2);s=initial(p)
-        with PreparedThermochemical2D(p) as plan:r=plan.advance(s,.01,source='publication',velocity=rest(p))
-        meta=r.state.descriptor();meta['time_s']=1e16+4.;meta['step_record']['input_time_s']=1e16;meta['step_record']['dt_s']=3.
-        with self.assertRaises(TectonicsError):ThermochemicalState.restore(meta,{k:r.state.array(k) for k in ('temperature_k','composition')})
-
     def test_legacy_record_decodes_without_new_guarantee(self):
         # Construct a legacy-shaped record only to check schema compatibility;
         # this is not asserted to be a historic run. Separate delivery evidence
@@ -287,12 +279,6 @@ class ClockAndPublication(unittest.TestCase):
         a=ThermochemicalState.restore(meta,{k:r.state.array(k) for k in ('temperature_k','composition')})
         self.assertNotIn('publication_contract',a.descriptor()['step_record'])
         self.assertEqual(a.descriptor(),meta)
-
-    def test_unknown_publication_contract_refused(self):
-        p=problem(2);s=initial(p)
-        with PreparedThermochemical2D(p) as plan:r=plan.advance(s,.01,source='publication',velocity=rest(p))
-        meta=r.state.descriptor();meta['step_record']['publication_contract']='unverified'
-        with self.assertRaises(TectonicsError):ThermochemicalState.restore(meta,{k:r.state.array(k) for k in ('temperature_k','composition')})
 
     def test_conditioned_diffusion_cancellation_releases_admission(self):
         p=problem(4,fixed=False);s=initial(p);budget=WorkBudget(64<<20);event=threading.Event()

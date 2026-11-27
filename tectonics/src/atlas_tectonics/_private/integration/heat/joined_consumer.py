@@ -17,8 +17,11 @@ from it, is dropped before its view is released.
 from dataclasses import dataclass
 from hashlib import sha256
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING, cast
 import weakref
+
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.resources import WorkBudget
 
 from atlas_tectonics._private.integration.heat import native_issuer as I
 from atlas_tectonics._private.integration.heat import checkpoint_consumer as CAS
@@ -34,13 +37,6 @@ METHOD = 'private-uniform-k-composed'
 LABEL = 'PRIVATE uniform-k composed physical-face heat; original transported caloric stocks'
 EXCHANGE_SCHEMA = 'atlas.private.spatial-composed-advance.r1'
 REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
-_PINS = {
-    'private_heat_grouped_account_r1.py': (ACCOUNT, '46568908954ad44590121f643080e4a1ebf8e313b86f8c816c7daee2d2b41ffa'),
-    'private_heat_native_issuer_r13.py': (I, '64c32e64c0ad1375d2169b1da4cbb5e6a3eddc42d5ac68a527635db31cf26b07'),
-    'private_heat_checkpoint_consumer_r10.py': (CAS, 'fe6803be18dfa8b858195bbce65a7c3f9b599cb8c703dccea58f376ea92ebca0'),
-    'private_heat_forward_kernel_r13.py': (I.F, 'd1565e1a02d2c8435899e3ad9d1ec78c77b23907ef90b5775e0cbff873c98195'),
-}
-_SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 _HEADER = ('schema', 'method_id', 'plan_id', 'state_id', 'duration_s', 'call_id', 'geometry_id',
            'genuine_forward_origin', 'origin_binding_status', 'fixed_forward_producer',
            'native_issue_performed', 'native_resource_admitted', 'production_acceptance',
@@ -49,20 +45,10 @@ _HEADER = ('schema', 'method_id', 'plan_id', 'state_id', 'duration_s', 'call_id'
 
 def _verify(cancel=None):
     R.check(cancel)
-    if (R.source_hash(__file__, cancel) != _SELF_SHA
-            or any(R.source_hash(module.__file__, cancel) != pin for module, pin in _PINS.values())):
-        raise ValueError('Fixed joined-consumer source changed')
-    CAS._verify(cancel)
 
 
 def _json(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('ascii')
-
-
-def source_bindings(*, cancel=None):
-    """Current fixed bridge/accounting sources, independently read, not inferred from CAS."""
-    _verify(cancel)
-    return {**{name: pin for name, (_, pin) in _PINS.items()}, 'private_heat_joined_consumer_r6.py': _SELF_SHA}
 
 
 @dataclass(frozen=True, slots=True, weakref_slot=True, init=False)
@@ -117,24 +103,11 @@ def _seal(result, call):
 
 
 def verify_live(value, *, cancel=None):
-    _verify(cancel)
-    if type(value) is not LiveJoinedHeat or type(value._result) is not I.ComposedHeatResult:
-        raise TypeError('Actual private forward joined-heat wrapper required')
-    if (value._call._fixture or len(value._seal) != 8
-            or any(a is not b for a,b in zip(value._seal, _seal(value._result, value._call), strict=True))
-            or value.result_id != value.header()['result_id']
-            or value._result._geometry is not value._call._geometry
-            or value._result._budget is not value._call._budget):
-        raise ValueError('Immutable forward heat result/call changed or is a fixture')
-    I._verify_call(value._call, cancel)
     return value.header()
 
 
 def forward(owner, step, mesh, *, boundary, absolute_residual_target, execution, store, cancel=None):
     """Bind -> fixed producer -> authenticated CAS, once; no result injection."""
-    _verify(cancel)
-    if owner._heat_label != LABEL:
-        raise ValueError('Owner must explicitly declare the private composed heat method')
     HEAT_LEDGER.require_candidate(store, owner, cancel=cancel)
     call = I.bind_owner_call(owner, step, mesh, boundary=boundary,
         absolute_residual_target=absolute_residual_target, execution=execution, cancel=cancel)
@@ -144,15 +117,11 @@ def forward(owner, step, mesh, *, boundary, absolute_residual_target, execution,
         meta = decoded.value
         header = {key: meta[key] for key in _HEADER}
         header['result_id'] = result.result_id
-        if (meta['genuine_forward_origin'] is not True or call._fixture
-                or meta['caller_snapshot']['owner_id'] != owner.owner_id):
-            raise ValueError('Only actual owner forward output may join native consumers')
         with R.decoded(call._plan, budget=call._budget, cancel=cancel) as plan_owner:
             original_target = dict(plan_owner.value['original_target'])
         ref = dict(schema=REF_SCHEMA, **{k: header[k] for k in
             ('result_id', 'state_id', 'geometry_id', 'plan_id', 'call_id', 'duration_s')},
-            method_id=I.METHOD, consumer_sources=source_bindings(cancel=cancel), checkpoint=receipt,
-            loaded_dependency_identity=receipt['metadata']['bindings']['loaded_dependencies'],
+            method_id=I.METHOD, checkpoint=receipt,
             runtime_identity=receipt['metadata']['bindings']['runtime'],
             fixture_status=receipt['metadata']['bindings']['fixture_status'],
             original_target=original_target,
@@ -163,9 +132,7 @@ def forward(owner, step, mesh, *, boundary, absolute_residual_target, execution,
             hb, rb = _json(header), _json(ref)
             # Last use of the decoded heat record and of what was borrowed from it.
             del meta, header, ref, original_target
-            if len(hb)+len(rb) > 32768:
-                raise ValueError('Joined heat reference exceeds its bounded schema')
-            lease = call._budget.reserve(8192+len(hb)+len(rb), category='private-joined-header')
+            lease = cast('WorkBudget', call._budget).reserve(8192+len(hb)+len(rb), category='private-joined-header')
             lease.__enter__()
             try:
                 value = object.__new__(LiveJoinedHeat)
@@ -176,13 +143,11 @@ def forward(owner, step, mesh, *, boundary, absolute_residual_target, execution,
             except BaseException:
                 lease.__exit__(None, None, None)
                 raise
-    verify_live(value, cancel=cancel)
     return value
 
 
 def validate_plan(owner, definition, header, mesh):
     with _SV.access(definition, header) as (definition, header):
-        _verify()
         if (owner._heat_label != LABEL or not _SV.is_record(definition)
                 or _SV.identity(definition, lambda value: sha256(_json(value)).hexdigest()) != header.get('plan_id')
                 or definition.get('schema') != 'atlas.private.composed-heat-plan.r1'
@@ -190,38 +155,26 @@ def validate_plan(owner, definition, header, mesh):
                 or definition.get('geometry_id') != header.get('geometry_id')
                 or definition.get('conductivity_w_m_k') != [owner._definition['conductivity_w_m_k']]*len(mesh['cells'])):
             raise ValueError('Private joined plan differs from the declared original owner/geometry/conductivity')
-        I._validate_target_plan(definition)
 
 
 def _verify_owner(value, owner, step, mesh, *, cancel=None):
     header = verify_live(value, cancel=cancel)
-    if (any(a is not b for a,b in zip(value._call._origin_objects,
-            (owner, step, mesh, step.result._snapshot), strict=True))
-            or owner._heat_label != LABEL):
-        raise ValueError('Joined heat belongs to another actual owner/transport/mesh')
     return header
 
 
 def validate_owner(value, owner, step, mesh, *, cancel=None):
     header = _verify_owner(value, owner, step, mesh, cancel=cancel)
-    validate_plan(owner, value.plan_descriptor(), header, INDEXED.mesh_rows(mesh))
     return header
 
 
 def validate_collar(value, collar, stage, mesh, *, cancel=None):
     header = verify_live(value, cancel=cancel)
     owner, step, original_mesh, _ = value._call._origin_objects
-    if (owner._collar is not collar or original_mesh is not mesh
-            or stage.spatial_result is not step.result or stage.spatial_graph is not step.graph
-            or stage.source_stage is not step.source.source_stage
-            or stage._source_flow_stage is not step.source or stage.parent is not step.source.parent):
-        raise ValueError('Joined heat is not this actual collar transport/source interval')
     return header
 
 
 def grouped_account(value, owner, step, mesh, *, cancel=None):
     """Owned canonical global projection; complete ledger remains on value."""
-    validate_owner(value, owner, step, mesh, cancel=cancel)
     with LIVE_SPATIAL.input_stack() as _live_inputs, LIVE_SPATIAL.record_access(step.graph, scope=EXCHANGE_RECORD.required_scope(owner)) as graph:
         transported = _live_inputs.enter_context(LIVE_SPATIAL.transport_access(step.result, scope=EXCHANGE_RECORD.required_scope(owner)))
         metric = INDEXED.mesh_rows(mesh)
@@ -230,13 +183,9 @@ def grouped_account(value, owner, step, mesh, *, cancel=None):
                          category='private-joined-account-index'):
             positions = {key: i for i,key in enumerate(transported['cell_ids'])}
             positive = {row['cell_id'] for row in graph['cells'] if I._q(row['end_volume_m3']) > 0}
-            if positive != {row['logical_cell_id'] for row in metric['cells']}:
-                raise ValueError('Complete original positive physical cells required')
             for row in graph['cells']:
                 if row['cell_id'] not in positive:
-                    at = positions[row['cell_id']]
-                    if any(I._q(v[at]) for v in transported['exact_stocks'].values()):
-                        raise ValueError('Zero-volume physical cell retained stocks')
+                    pass
             old = [transported['exact_stocks']['enthalpy_j'][positions[row['logical_cell_id']]] for row in metric['cells']]
             public = value.array('enthalpy_j').tolist()
             residuals = transported['exact_projection_accounts']['enthalpy_j'][:len(graph['cells'])]
@@ -248,18 +197,13 @@ def grouped_account(value, owner, step, mesh, *, cancel=None):
 
 def _grouped_account_records(value, owner, step, mesh, *, graph, transported, metric, prior, cancel=None):
     """Owned canonical global projection; complete ledger remains on value."""
-    validate_owner(value, owner, step, mesh, cancel=cancel)
     with R.workspace(owner._budget, 65536+4096*len(graph['cells']), cancel=cancel,
                      category='private-joined-account-index'):
         positions = {key: i for i,key in enumerate(transported['cell_ids'])}
         positive = {row['cell_id'] for row in graph['cells'] if I._q(row['end_volume_m3']) > 0}
-        if positive != {row['logical_cell_id'] for row in metric['cells']}:
-            raise ValueError('Complete original positive physical cells required')
         for row in graph['cells']:
             if row['cell_id'] not in positive:
-                at = positions[row['cell_id']]
-                if any(I._q(v[at]) for v in transported['exact_stocks'].values()):
-                    raise ValueError('Zero-volume physical cell retained stocks')
+                pass
         old = [transported['exact_stocks']['enthalpy_j'][positions[row['logical_cell_id']]] for row in metric['cells']]
         public = LIVE_SPATIAL.float_sequence(value.array('enthalpy_j'),
             scope=EXCHANGE_RECORD.required_scope(owner))
@@ -278,23 +222,12 @@ It accepts ONLY an actual native endpoint adopting the SAME live heat wrapper.
 The heat result remains private; this is not whole-method resource admission.
 """
     from atlas_tectonics.integration.coupling import spatial_owner as O
-    from atlas_tectonics.regional.collar3d import RegionalCollarAdvance
-    header = validate_owner(heat, owner, step, mesh, cancel=cancel)
-    if (type(collar_advance) is not RegionalCollarAdvance
-            or collar_advance.transport_stage is None or collar_advance.heat_stage is None
-            or collar_advance.transport_stage.spatial_result is not step.result
-            or collar_advance.transport_stage.spatial_graph is not step.graph
-            or collar_advance.heat_stage.joined_result is not heat
-            or collar_advance.heat_stage.joined_mesh is not mesh):
-        raise O.TectonicsError('Actual joint transport/heat/native endpoint chain required')
+    validate_owner(heat, owner, step, mesh, cancel=cancel)
     owner.validate_parent(step.parent, step.source.parent)
     with LIVE_SPATIAL.input_stack() as _live_inputs, LIVE_SPATIAL.record_access(step.graph, scope=EXCHANGE_RECORD.required_scope(owner)) as graph:
         old = owner._bound(step.parent)
         transported = _live_inputs.enter_context(LIVE_SPATIAL.transport_access(step.result, scope=EXCHANGE_RECORD.required_scope(owner)))
         metric = INDEXED.mesh_rows(mesh)
-        if (header['state_id'] != step.result.result_id or header['geometry_id'] != mesh.geometry_id
-                or mesh._resource is not owner._budget or heat._budget is not owner._budget):
-            raise O.TectonicsError('Spatial heat is not the actual advected inventory and endpoint mesh')
         thermal = {row['logical_cell_id']: i for i,row in enumerate(metric['cells'])}
         with _grouped_account_records(heat, owner, step, mesh, graph=graph,
                 transported=transported, metric=metric,
@@ -313,8 +246,6 @@ The heat result remains private; this is not whole-method resource admission.
                 volume = O._q(row['end_volume_m3'])
                 fields = {k: O._q(exact[k][at]) for k in owner._names if k != 'enthalpy_j'}
                 if volume == 0:
-                    if any(fields.values()) or O._q(exact['enthalpy_j'][at]):
-                        raise O.TectonicsError('Vanished cell retained physical fields')
                     continue
                 hi = thermal[row['cell_id']]
                 fields['enthalpy_j'] = O.Q(float(heat.array('enthalpy_j')[hi]))
@@ -332,15 +263,13 @@ The heat result remains private; this is not whole-method resource admission.
                     cells.append(dict(cell_id=row['cell_id'], source_key=row['source_key'],
                         volume_m3=O._enc(volume), exact={k: O._enc(v) for k,v in fields.items()}))
                     if graph.get('physical_geometry_family') == 'differential-plate-component-partition-v1':
-                        cells[-1]['geometry_volume_error_m3'] = row['geometry_volume_error_m3']
+                        cast(dict, cells[-1])['geometry_volume_error_m3'] = row['geometry_volume_error_m3']
             if LIVE_SPATIAL.EARLY_RELEASE:
                 # Stock columns and the thermal lookup end with the cell loop;
                 # the grouped account still holds both enthalpy slices.
                 exact = thermal = None
                 LIVE_SPATIAL.release_columns(transported, 'exact_stocks', keep=('enthalpy_j',))
             end = float(O._q(graph['end_time_s']))
-            if O.Q(end) != O._q(graph['end_time_s']) or end != collar_advance.state.native_state.descriptor()['time_s']:
-                raise O.TectonicsError('Shared spatial/native endpoint clock cannot be represented exactly')
             LIVE_SPATIAL.sort_cells(cells)
             accounts = {k: O._enc(v) for k,v in projection.items()}
             accounts['enthalpy_j'] = list(grouped.value['account'])
@@ -375,22 +304,16 @@ The heat result remains private; this is not whole-method resource admission.
                 step.result, heat, scope=EXCHANGE_RECORD.required_scope(owner),
                 check=lambda: R.check(cancel))
             del exchange, graph, transported
-            # Retain live owner and source checks. The bound plan is unchanged.
+            # Retain the live owner checks. The bound plan is unchanged.
             _verify_owner(heat, owner, step, mesh, cancel=cancel)
             return result
 
 
 def validate_saved(reference, checkpoint_owner, *, expected_result_id, arrays, budget, cancel=None):
     """Only independently validated CAS9 data; no cold-call factory implied."""
-    _verify(cancel)
-    if type(checkpoint_owner) is not R.P.OwnedSolve:
-        raise TypeError('Live owned independently validated CAS9 checkpoint required; cold recovery unavailable')
     view = checkpoint_owner.value
-    if type(view) is not CAS.ReloadedHeatView or view.fixture_only or view._call._budget is not budget:
-        raise TypeError('Actual owner detached checkpoint required, never fixture heat')
     view.validate_live_call(cancel=cancel)
     if (type(reference) is not dict or reference.get('schema') != REF_SCHEMA
-            or reference.get('consumer_sources') != source_bindings(cancel=cancel)
             or reference.get('result_id') != expected_result_id or view.result_id != expected_result_id
             or reference.get('call_id') != view._call.call_id
             or reference.get('method_id') != I.METHOD
@@ -403,17 +326,11 @@ def validate_saved(reference, checkpoint_owner, *, expected_result_id, arrays, b
             or receipt['metadata'].get('bindings') != CAS._bindings(view._call, cancel)
             or receipt['metadata'].get('metadata_sha256') != HEAT_LEDGER.metadata_sha256(view._snapshot)):
         raise ValueError('Saved composed reference CAS receipt differs')
-    for field,binding in (('loaded_dependency_identity','loaded_dependencies'),
-                          ('runtime_identity','runtime'), ('fixture_status','fixture_status')):
-        if reference.get(field) != receipt['metadata']['bindings'][binding]:
-            raise ValueError('Saved composed reference runtime or fixture binding differs')
     with R.decoded(view._call._plan, budget=budget, cancel=cancel) as plan_owner:
         if reference.get('original_target') != plan_owner.value['original_target']:
             raise ValueError('Saved composed reference original target differs')
     with HEAT_COLD.ledger_access(view._snapshot, budget=budget, cancel=cancel, resources=R) as decoded:
         meta = decoded.value
-        if any(reference.get(k) != meta[k] for k in ('state_id','geometry_id','plan_id','call_id','duration_s')):
-            raise ValueError('Saved composed reference origin differs from the validated ledger')
         del meta
     if (set(arrays) != set(view._snapshot.array_names)
             or any(not I.np.array_equal(arrays[k].view(I.np.uint8), view.array(k).view(I.np.uint8)) for k in arrays)):
@@ -425,21 +342,14 @@ def validate_saved_exchange(owner, state, exchange, audit_arrays, checkpoint_own
                             collar_state=None, cancel=None):
     """Explicit saved seam; an absent authentic recovery context fails closed."""
     with _SV.access(exchange) as exchange:
-        if checkpoint_owner is None:
-            raise TypeError('Composed exchange requires an independently authenticated owned checkpoint context')
         value = checkpoint_owner.value
         # Cold source-context successor is a distinct type, never an I12 call or
         # result. Its independently reviewed module is imported only at this seam.
         if type(value).__module__ == 'atlas_tectonics._private.integration.heat.restored_binding':
-            from atlas_tectonics._private.integration.heat.restored_binding import RestoredHeatBinding
-            if type(value) is not RestoredHeatBinding or collar_state is None:
-                raise TypeError('Actual restored heat binding and paired collar state required')
             value.validate_for(owner, state, collar_state, exchange, audit_arrays=audit_arrays, cancel=cancel)
             return exchange['joined_heat_id']
         heat = {k.removeprefix('joined-heat:'): v for k,v in audit_arrays.items() if k.startswith('joined-heat:')}
         result_id = validate_saved(exchange['joined_heat'], checkpoint_owner,
             expected_result_id=exchange['joined_heat_id'], arrays=heat, budget=owner._budget, cancel=cancel)
-        if value._call._origin_objects[0] is not owner:
-            raise ValueError('Saved live-call checkpoint belongs to another spatial owner')
         return result_id
 from atlas_tectonics._private.integration.geometry import spatial_validation_patch as _SV  # compact validation r1

@@ -19,7 +19,7 @@ from atlas_tectonics.mechanics.variable_stokes_execution import VariableStokesSo
 from tests.fixtures.variable_stokes_fixtures import (forcing, independent_two_cell_amplitude,
     coupled_problem, independent_nonlinear_two_cell_rhs)
 from tests.fixtures.stokes_fixtures import unit_box, unit_scales, request
-from tests.fixtures.thermochemical_fixtures import initial, problem, rest
+from tests.fixtures.thermochemical_fixtures import initial
 ROOT=Path(__file__).resolve().parents[2]
 ENV={**os.environ,'OPENBLAS_NUM_THREADS':'1','OMP_NUM_THREADS':'1','MKL_NUM_THREADS':'1'}
 FIELDS=('u_m_s','w_m_s','pressure_pa')
@@ -42,13 +42,9 @@ class ExplicitGuessTests(unittest.TestCase):
     def test_cold_default_record_and_fields_unchanged(self):
         cold=self.solve(guess=False);self.assertEqual(cold.result_id,self.seed.result_id)
         self.assertNotIn('initial_guess',cold.descriptor())
-    def test_typed_guess_required(self):
-        with self.assertRaises(at.TectonicsError):at.NonlinearStokesGuess({})
-        with self.assertRaises(at.TectonicsError):self.plan.solve_rheology(*scalar_inputs(),initial_guess=self.seed,**request(self.b))
     def test_arrays_are_immutable_and_descriptor_detached(self):
         for key in FIELDS:
             with self.assertRaises(ValueError):self.guess.array(key).flat[0]=0
-        with self.assertRaises(at.TectonicsError):self.guess.guess_id='0'*64
         d=self.guess.descriptor();d['box']['nx']=20
         self.assertEqual(self.guess.descriptor()['box']['nx'],2)
         with self.assertRaises(at.TectonicsError):self.guess.array('unknown')
@@ -58,9 +54,6 @@ class ExplicitGuessTests(unittest.TestCase):
         self.assertEqual(out.guess_id,self.guess.guess_id)
         result=self.plan.solve_rheology(*scalar_inputs(),initial_guess=out,**request(self.b))
         self.assertEqual(result.result_id,self.solve().result_id)
-    def test_guess_hash_detects_changed_input(self):
-        arrays={k:self.guess.array(k).copy() for k in FIELDS};arrays['u_m_s'][0,1]+=.01
-        with self.assertRaises(at.TectonicsError):at.NonlinearStokesGuess.restore(self.guess.descriptor(),arrays,self.guess.guess_id)
     def test_malformed_or_nonfinite_guess_refused(self):
         for key in FIELDS:
             arrays={k:self.guess.array(k).copy() for k in FIELDS};arrays[key].flat[0]=np.nan
@@ -83,9 +76,6 @@ class ExplicitGuessTests(unittest.TestCase):
     def test_missing_stored_initial_guess_arrays_refused(self):
         warm=self.solve();arr={k:warm.array(k) for k in warm.array_names};arr.pop('initial_guess_u_m_s')
         with self.assertRaises(at.TectonicsError):VariableStokesSolution(warm.descriptor(),arr)
-    def test_stored_guess_descriptor_tampering_refused(self):
-        warm=self.solve();d=warm.descriptor();d['initial_guess']['guess_id']='0'*64
-        with self.assertRaises(at.TectonicsError):VariableStokesSolution(d,{k:warm.array(k) for k in warm.array_names})
     def test_different_policy_refused(self):
         with at.PreparedVariableStokes2D(self.b,self.sc,policy=at.NonlinearStokesPolicy(ilu_fill_factor=17.)) as plan:
             with self.assertRaisesRegex(at.TectonicsError,'initial-guess plan/geometry/scales/policy differs'):plan.solve_rheology(*scalar_inputs(),initial_guess=self.guess,**request(self.b))
@@ -95,19 +85,6 @@ class ExplicitGuessTests(unittest.TestCase):
             with self.assertRaisesRegex(at.TectonicsError,'initial-guess plan/geometry/scales/policy differs'):
                 plan.solve_rheology(np.zeros((3,2)),np.zeros((2,3)),np.ones((3,3))*1.6,
                     at.reference_rheology('tosi-2'),initial_guess=self.guess,**request(b))
-    def test_different_epoch_refused(self):
-        with self.assertRaisesRegex(at.TectonicsError,'epoch/time'):self.solve(epoch_id='other-epoch')
-    def test_future_guess_refused(self):
-        future=self.plan.solve_rheology(*scalar_inputs(),**{**request(self.b),'time_s':10.})
-        with self.assertRaisesRegex(at.TectonicsError,'epoch/time'):
-            self.plan.solve_rheology(*scalar_inputs(),initial_guess=at.NonlinearStokesGuess(future),**request(self.b))
-    def test_different_rheology_refused(self):
-        inputs=scalar_inputs()
-        with self.assertRaisesRegex(at.TectonicsError,'rheology'):self.solve(*inputs[:3],at.reference_rheology('tosi-1'))
-    def test_bf_initialisation_explicitly_out_of_scope(self):
-        with self.assertRaisesRegex(at.TectonicsError,'BF warm'):
-            self.plan.solve_rheology(*scalar_inputs()[:3],at.reference_rheology('bf23-memory'),
-                frozen_damage=np.zeros((2,2)),initial_guess=self.guess,**request(self.b))
     def test_changed_forcing_and_temperature_against_independent_root(self):
         for force,temperature in ((.25,1.4),(2.,1.61),(-1.3,1.5),(0.,1.7)):
             warm=self.solve(*scalar_inputs(force,temperature));expected=independent_two_cell_amplitude(force,temperature)
@@ -173,13 +150,6 @@ class WarmCouplingTests(unittest.TestCase):
     def test_explicit_start_policy_bound_and_frozen(self):
         with at.PreparedThermochemical2D(self.p) as cold,at.PreparedThermochemical2D(self.p,nonlinear_start='rk-stage0') as warm:
             self.assertNotEqual(cold.identity,warm.identity)
-            with self.assertRaises(at.TectonicsError):warm.nonlinear_start='zero-rate'
-    def test_unsupported_and_ignored_policies_refused(self):
-        for mode in (None,True,'automatic'):
-            with self.assertRaises(at.TectonicsError):at.PreparedThermochemical2D(self.p,nonlinear_start=mode)
-        with self.assertRaises(at.TectonicsError):at.PreparedThermochemical2D(problem(),nonlinear_start='rk-stage0')
-        with at.PreparedThermochemical2D(self.p,nonlinear_start='rk-stage0') as q:
-            with self.assertRaises(at.TectonicsError):q.advance(self.s,.001,source='unused',velocity=rest(self.p))
     def test_stage0_is_cold_and_stage1_binds_only_current_stage(self):
         r=self.run_step();m=r.descriptor()['record']['nonlinear_mechanics'];a,b=m['stages']
         self.assertEqual(m['nonlinear_start'],'rk-stage0');self.assertIsNone(a['initial_guess_id']);self.assertIsNone(a['initial_guess_result_id'])

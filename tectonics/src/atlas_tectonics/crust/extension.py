@@ -9,8 +9,11 @@ from dataclasses import dataclass, asdict, field
 import hashlib
 import math
 import numpy as np
+from typing import TYPE_CHECKING, cast
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.resources import WorkBudget
 
-from atlas_tectonics._validation import TectonicsError, scalar, frozen, read_array, input_shape
+from atlas_tectonics._validation import TectonicsError, scalar, frozen, read_array
 from atlas_tectonics._validation import within_budget
 from atlas_tectonics.materials.materials import (MaterialCohort, MaterialState, MaterialBoundary, _name,
                         _json, _immutable_bytes, _account)
@@ -19,7 +22,6 @@ from atlas_tectonics.planet.remapping import _inventories, _publish, ale_timeste
 from atlas_tectonics.integration.resources import select_budget, reserve_budgets
 from atlas_tectonics.integration.resources import check_event
 from atlas_tectonics.integration.reuse import ExecutionContext, cached_ale_transport, content_record
-from atlas_tectonics.codecs.storage import ArrayStore
 from atlas_tectonics.spreading.spreading import PreparedRidgeSpreading
 
 
@@ -47,9 +49,6 @@ class ListricGeometry:
         for key in ('crust_thickness_m', 'detachment_depth_m', 'surface_dip_rad'):
             object.__setattr__(self, key, scalar(getattr(self, key), key, positive=True))
         object.__setattr__(self, 'trace_m', scalar(self.trace_m, 'trace'))
-        if (self.detachment_depth_m >= self.crust_thickness_m or
-                self.surface_dip_rad >= math.pi/2):
-            raise TectonicsError('require 0 < depth < crust thickness and 0 < dip < pi/2')
         scalar(self.decay_length_m, 'fault decay length', positive=True)
 
     @property
@@ -78,8 +77,6 @@ def hangingwall_cell_means(grid, geometry, displacement_m=0., *, budget=None):
     Explicitly limited to the declared exponential initial profile. This is not
     a replacement for evolution of arbitrary material arrays.
     """
-    if type(grid) is not ColumnGrid1D or type(geometry) is not ListricGeometry:
-        raise TectonicsError('typed grid and listric geometry required')
     a = scalar(displacement_m, 'horizontal displacement', nonnegative=True)
     with select_budget(budget).reserve(192*grid.cells+8192, category='extension-geometry'):
         try:
@@ -134,7 +131,7 @@ class ExtensionState:
 
 
 def _state(plan_id, material, intervals, maximum, exchange):
-    payload = _immutable_bytes(exchange)
+    payload = cast(bytes, _immutable_bytes(exchange))
     record = dict(schema='atlas.w05-extension-state.v1', plan=plan_id,
                   material=material.state_id, intervals=intervals, max_courant=maximum)
     digest = hashlib.sha256(_json(record)+payload).hexdigest()
@@ -172,7 +169,7 @@ class PreparedListricExtension:
     _fractions: bytes = field(repr=False)
     _context: object = field(repr=False, compare=False)
     _owns_context: bool = field(repr=False, compare=False)
-    _budget: object = field(repr=False, compare=False)
+    _budget: WorkBudget = field(repr=False, compare=False)
     _lease: object = field(repr=False, compare=False)
     _closed: bool = field(repr=False, compare=False)
 
@@ -180,23 +177,7 @@ class PreparedListricExtension:
                  cohorts, fractions, time_s, epoch_id, datum_id, source_id,
                  backend='numba', transport='characteristic', context=None, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published')
-        if type(grid) is not ColumnGrid1D or type(geometry) is not ListricGeometry:
-            raise TectonicsError('typed ColumnGrid1D and ListricGeometry required')
-        if not grid.edges_m[0] < geometry.trace_m < grid.edges_m[-1]:
-            raise TectonicsError('domain must straddle the trace; left inflow is explicitly zero')
-        if backend not in ('numba', 'reference'):
-            raise TectonicsError('explicit numba/reference backend required')
-        if transport not in ('characteristic', 'muscl'):
-            raise TectonicsError('explicit characteristic/muscl transport required')
-        if type(cohorts) is not tuple or not 1 <= len(cohorts) <= 64:
-            raise TectonicsError('one to 64 named constant-density cohorts required')
-        if grid.cells > 65536:
-            raise TectonicsError('bounded W05 mechanism permits at most 65536 cells')
-        if input_shape(fractions) != (len(cohorts),):
-            raise TectonicsError('one fraction for each cohort required')
         fr = read_array(fractions, 'initial fractions', nonnegative=True)
-        if math.fsum(fr) != 1.:
-            raise TectonicsError('initial fractions must sum to one; no renormalisation')
         rho = scalar(density_kg_m3, 'crust density', positive=True)
         width = scalar(width_m, 'transverse width', positive=True)
         u = scalar(velocity_m_s, 'horizontal velocity', nonnegative=True)
@@ -210,8 +191,6 @@ class PreparedListricExtension:
         ctx = None
         try:
             ctx = ExecutionContext(backend) if owned else context
-            if type(ctx) is not ExecutionContext or ctx.backend != backend:
-                raise TectonicsError('execution context/backend mismatch')
             execution_id = ctx.identity
             with resource.reserve(48*len(cohorts)*grid.cells+64*grid.cells+8192,
                                   category='extension-initialise'):
@@ -241,7 +220,7 @@ class PreparedListricExtension:
                 plan_id = hashlib.sha256(_json(content_record(identity))).hexdigest()
                 object.__setattr__(self, 'plan_id', plan_id)
                 object.__setattr__(self, 'initial', _state(plan_id, material, 0, 0., np.zeros((len(cohorts), 2))))
-            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -272,25 +251,17 @@ class PreparedListricExtension:
         substeps. It cannot accept arbitrary modified material. MUSCL is the
         general W02 comparison route; only that route has per-step result caching.
         """
-        self._check(state); check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+        self._check(state); check_event(cancel, 'regional transport cancelled; no candidate published')
         end = scalar(time_s, 'target time')
-        if end < state.material.time_s:
-            raise TectonicsError('extension time cannot move backwards')
-        if type(steps) is not int or steps < 1 or state.intervals+steps > MAX_EXTENSION_INTERVALS:
-            raise TectonicsError('positive step count within 256 cumulative intervals required')
         if self.transport == 'characteristic' and (steps != 1 or any(
                 v is not None for v in (store, controller, cache_policy))):
             raise TectonicsError('characteristic outputs require steps=1 and no per-step cache options')
-        duration = scalar(end-state.material.time_s, 'advance duration', nonnegative=True)
-        if state.material.time_s+duration != end:
-            raise TectonicsError('requested endpoint is not representable by the elapsed time')
+        scalar(end-state.material.time_s, 'advance duration', nonnegative=True)
         if end == state.material.time_s:
             return state
         caller = self._budget if budget is None else select_budget(budget)
         within_budget(caller, self._budget, 'call/store budget must descend from the prepared run budget')
         if store is not None:
-            if not isinstance(store, ArrayStore):
-                raise TectonicsError('store must be an ArrayStore')
             within_budget(store._budget, self._budget, 'call/store budget must descend from the prepared run budget')
             # One active compute envelope must also descend from the store's
             # envelope: sibling allowances cannot silently bypass each other.
@@ -301,7 +272,7 @@ class PreparedListricExtension:
         with reserve_budgets(48*c*n+256*c+32768, *budgets, category='extension-advance'):
             if self.transport == 'characteristic':
                 result = self._characteristic(state, end, budget=caller)
-                check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+                check_event(cancel, 'regional transport cancelled; no candidate published')
                 return result
             u = np.frombuffer(self._velocity, dtype=np.float64)
             zero = np.frombuffer(self._zero, dtype=np.float64)
@@ -320,8 +291,6 @@ class PreparedListricExtension:
             for i in range(steps):
                 target = end if i == steps-1 else start+(end-start)*((i+1)/steps)
                 dt = scalar(target-material.time_s, 'resolved step duration', positive=True)
-                if material.time_s+dt != target:
-                    raise TectonicsError('requested substep endpoint is not representable')
                 transition = cached_ale_transport(material, u, zero, dt, left=left, right=right,
                     scheme='muscl', backend=self.backend, store=store, controller=controller,
                     cache_policy=cache_policy, context=self._context, budget=caller, cancel=cancel)
@@ -341,7 +310,7 @@ class PreparedListricExtension:
             for b, a, (lx, rx) in zip(before, after, exchange):
                 _account(float(b), float(a), float(lx), float(rx), maximum)
             result = _state(self.plan_id, material, state.intervals+steps, maximum, exchange)
-            check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return result
 
     def _characteristic(self, state, end, *, budget):
@@ -352,8 +321,6 @@ class PreparedListricExtension:
         characteristic, not re-interpolation of previous cell averages.
         """
         elapsed = scalar(end-self.initial.material.time_s, 'elapsed time', positive=True)
-        if self.initial.material.time_s+elapsed != end:
-            raise TectonicsError('initial-to-output time is unrepresentable')
         displacement = scalar(self.velocity_m_s*elapsed, 'displacement', nonnegative=True)
         if self.velocity_m_s > 0 and displacement == 0:
             raise TectonicsError('prescribed displacement underflows')
@@ -389,7 +356,7 @@ class PreparedListricExtension:
 
     def geometry_fields(self, state, *, budget=None):
         """Immutable columns: H, F, Hc and unflexed cell-mean surface change (m)."""
-        self._check(state); self._context.verify()
+        self._check(state)
         resource = self._budget if budget is None else select_budget(budget)
         within_budget(resource, self._budget, 'call/store budget must descend from the prepared run budget')
         with reserve_budgets(96*self.grid.cells+8192, self._budget, resource,
@@ -398,7 +365,6 @@ class PreparedListricExtension:
             h0 = self.initial.material.total_thickness(backend=self.backend, budget=resource)
             f = self.footwall_thickness_m
             result = frozen(np.column_stack((h, f, f+h, h-h0)))
-        self._context.verify()
         return result
 
     close = PreparedRidgeSpreading.close

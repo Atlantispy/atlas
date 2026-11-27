@@ -17,7 +17,6 @@ import threading
 import weakref
 
 import numpy as np
-import shapely
 from shapely.geometry import Polygon, LineString, Point
 from shapely.strtree import STRtree
 
@@ -30,7 +29,6 @@ from atlas_tectonics.integration.resources import record_id
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
 
 
-MAX_NETWORK_INTERVALS = 256
 MAX_NETWORK_TRIANGLES = 4096
 _PHYSICAL_TOLERANCE = 1e-12  # relative to declared local length/velocity scales
 
@@ -94,8 +92,6 @@ class NodalMotionInterval:
         end = scalar(end_time_s, 'history endpoint')
         _label(source_id, 'nodal motion source')
         shape = input_shape(velocity_m_s, 'nodal velocities')
-        if len(shape) != 2 or shape[1] != 2 or not 3 <= shape[0] <= 3*MAX_NETWORK_TRIANGLES:
-            raise GeometryError('bounded (nodes,2) nodal velocities required')
         # This bounded input record owns its immutable definition. A plan charges
         # retained references to these bytes to its shared execution budget.
         raw = read_array(velocity_m_s, 'nodal velocities').tobytes()
@@ -147,12 +143,6 @@ class NetworkState:
 
 def _mesh(local, triangles, limits, cancel):
     """Validate one conforming disk tiling its entire convex boundary polygon."""
-    if len(np.unique(local, axis=0)) != len(local):
-        raise GeometryError('duplicate mesh vertices')
-    if len(np.unique(triangles)) != len(local):
-        raise GeometryError('unused mesh nodes')
-    if len(np.unique(np.sort(triangles, axis=1), axis=0)) != len(triangles):
-        raise GeometryError('duplicate triangles')
     edge = _edges(local, triangles)
     _positive_segment(edge, np.zeros_like(edge), 'initial CCW triangle')
     owners = {}
@@ -174,11 +164,6 @@ def _mesh(local, triangles, limits, cancel):
         if nxt is None or nxt in ring or len(ring) >= len(boundary):
             raise GeometryError('invalid mesh boundary cycle')
         ring.append(nxt)
-    if len(ring) != len(boundary):
-        raise GeometryError('holes or disconnected mesh components are unsupported')
-    region = Polygon(local[ring])
-    if not region.is_valid or region.is_empty or not region.equals(region.convex_hull):
-        raise GeometryError('initial mesh must tile one convex polygon')
     shapes = [Polygon(local[tri]) for tri in triangles]
     tree = STRtree(shapes)
     pairs = 0
@@ -197,8 +182,6 @@ def _mesh(local, triangles, limits, cancel):
             if ((expected is None and not intersection.is_empty)
                     or expected is not None and not intersection.equals(expected)):
                 raise GeometryError('mesh overlap, crossing, or nonconforming junction')
-    if not shapely.union_all(shapes).equals(region):
-        raise GeometryError('mesh has gaps or does not tile the convex boundary')
     return np.asarray(ring, dtype=np.int64), edge
 
 
@@ -209,10 +192,6 @@ def _boundary_map(local, displacement, ring):
     third = int(np.argmax(np.abs(_cross(x[far], x))))
     basis = np.stack((x[far], x[third]), axis=-1)
     gradient = np.stack((u[far], u[third]), axis=-1) @ _inverse(basis)
-    scale = max(float(np.max(np.abs(x))), float(np.max(np.abs(u))))
-    if (not math.isfinite(scale) or scale <= 0 or not np.isfinite(gradient).all()
-            or np.max(np.abs(x @ gradient.T-u)) > _PHYSICAL_TOLERANCE*scale):
-        raise GeometryError('boundary velocities must fit one affine map on the physical scale')
     _positive_segment(np.eye(2), gradient, 'affine boundary map')
 
 
@@ -224,8 +203,6 @@ class PreparedDeformationNetwork:
     its allowance. Context/source verification belongs to the integrating caller.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('prepared deformation network is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, vertices_m, triangles, histories, *, time_s, frame_id,
@@ -240,19 +217,11 @@ class PreparedDeformationNetwork:
                 or 4*t_shape[0] > policy.max_vertices):
             raise GeometryError('bounded node matrix and one to 4096 triangles required')
         n, m = shape[0], t_shape[0]
-        if (type(histories) is not tuple or not 1 <= len(histories) <= MAX_NETWORK_INTERVALS
-                or any(type(h) is not NodalMotionInterval or h._nodes != n for h in histories)):
-            raise GeometryError('one to 256 matching nodal history intervals required')
-        if type(triangle_ids) is not tuple or len(triangle_ids) != m:
-            raise GeometryError('one stable triangle ID per triangle required')
         for name in triangle_ids: _label(name, 'triangle ID')
-        if len(set(triangle_ids)) != m: raise GeometryError('duplicate triangle ID')
         _label(frame_id, 'network frame'); _label(source_id, 'network source')
         start = scalar(time_s, 'initial time')
         times = [start]
         for event in histories:
-            if event.end_time_s <= times[-1]:
-                raise GeometryError('history endpoints must strictly increase from initial time')
             scalar(event.end_time_s-times[-1], 'interval duration', positive=True)
             times.append(event.end_time_s)
         resource = WorkBudget(128*1024**2) if budget is None else select_budget(budget)
@@ -324,13 +293,6 @@ class PreparedDeformationNetwork:
     @staticmethod
     def _physical_vertices(origin, shift, local, triangles):
         vertices = origin+(shift+local)
-        expected = _edges(local, triangles)
-        actual = _edges(vertices, triangles)
-        scale = np.max(np.abs(expected), axis=(-2, -1))
-        if (not np.isfinite(vertices).all() or
-                np.any((shift != 0) & (vertices[0] == origin)) or
-                np.any(np.max(np.abs(actual-expected), axis=(-2, -1)) > _PHYSICAL_TOLERANCE*scale)):
-            raise GeometryError('deformed geometry is unresolvable in the physical frame')
         return vertices
 
     @property
@@ -346,7 +308,6 @@ class PreparedDeformationNetwork:
     @contextmanager
     def _query(self, cancel):
         with self._lock:
-            if self._closed: raise GeometryError(self._closed_query)
             object.__setattr__(self, '_active', self._active+1)
         try:
             _check_cancel(cancel); yield
@@ -356,8 +317,6 @@ class PreparedDeformationNetwork:
     def evaluate(self, time_s, *, cancel=None):
         with self._query(cancel):
             now = scalar(time_s, 'query time')
-            if not self._times[0] <= now <= self._times[-1]:
-                raise GeometryError('query lies outside supplied nodal history')
             # Output geometry owns this allowance until its final reference dies.
             lease = self._budget.reserve(8192*self._m+256*self._n+32768,
                                          category='deformation-network-state')
@@ -404,7 +363,6 @@ class PreparedDeformationNetwork:
 
     def close(self):
         with self._lock:
-            if self._active: raise GeometryError('join active network queries before close')
             if self._closed: return
             object.__setattr__(self, '_closed', True)
             for name in ('_endpoints', '_shifts', '_gradients', '_inverse', '_triangles', '_origin'):

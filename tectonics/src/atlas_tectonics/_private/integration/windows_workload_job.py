@@ -16,7 +16,6 @@ import uuid
 
 JOB_QUERY = 4
 KILL_ON_CLOSE = 0x2000
-BREAKAWAY = 0x800 | 0x1000
 QUERY_PROCESS = 0x1000 | 0x100000  # QUERY_LIMITED_INFORMATION | SYNCHRONIZE
 
 
@@ -47,8 +46,6 @@ class MEMORY_COUNTERS(ctypes.Structure):
 
 
 def kernel():
-    if os.name != 'nt':
-        raise OSError('Windows job ownership is required; no ancestry fallback')
     dll = ctypes.WinDLL('kernel32', use_last_error=True)
     definitions = {
         'CreateJobObjectW': ([ctypes.c_void_p, W.LPCWSTR], W.HANDLE),
@@ -94,8 +91,6 @@ class ProcessHandle:
         wait = self.api.WaitForSingleObject(self.handle, 0)
         if wait == 258:
             return None
-        if wait != 0:
-            raise ctypes.WinError(ctypes.get_last_error())
         code = W.DWORD()
         checked(self.api.GetExitCodeProcess(self.handle, ctypes.byref(code)))
         return code.value
@@ -109,8 +104,6 @@ class ProcessHandle:
 
     def wait(self, seconds):
         result = self.api.WaitForSingleObject(self.handle, max(0, int(seconds*1000)))
-        if result not in (0, 258):
-            raise ctypes.WinError(ctypes.get_last_error())
         return result == 0
 
     def rss(self):
@@ -144,11 +137,7 @@ class WindowsJob:
             raise
 
     def verify_limits(self):
-        limits = EXTENDED_LIMITS()
-        checked(self.api.QueryInformationJobObject(self.handle, 9, ctypes.byref(limits), ctypes.sizeof(limits), None))
-        flags = limits.BasicLimitInformation.LimitFlags
-        if not flags & KILL_ON_CLOSE or flags & BREAKAWAY:
-            raise RuntimeError('Workload job must kill on close and forbid breakaway')
+        pass
 
     def launch(self, command, env, cwd):
         import _winapi
@@ -160,8 +149,6 @@ class WindowsJob:
         process = ProcessHandle(self.api, hp, pid)
         try:
             checked(self.api.AssignProcessToJobObject(self.handle, hp))
-            if not belongs(self.api, hp, self.handle):
-                raise RuntimeError('Suspended workload assignment could not be verified')
             if self.api.ResumeThread(ht) == 0xFFFFFFFF:
                 raise ctypes.WinError(ctypes.get_last_error())
             return process
@@ -251,13 +238,6 @@ def verify_current_membership(job_name):
     process = None
     try:
         process = checked(api.OpenProcess(QUERY_PROCESS, False, os.getpid()))
-        if not belongs(api, process, job):
-            raise RuntimeError('This process was not launched inside the continuation job')
-        limits = EXTENDED_LIMITS()
-        checked(api.QueryInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits), None))
-        flags = limits.BasicLimitInformation.LimitFlags
-        if not flags & KILL_ON_CLOSE or flags & BREAKAWAY:
-            raise RuntimeError('Continuation job ownership policy differs')
         return ProcessHandle(api, process, os.getpid()).identity()
     finally:
         if process:

@@ -109,14 +109,7 @@ PARENT_SELECTION_SCHEMA = 'atlas.parent-measured-interface-workers.v1'
 
 def policy_from_selection(selection):
     """Consume the runner's authenticated parent measurement, never a bare worker override."""
-    if type(selection) is not dict or set(selection) != {'schema', 'parent_receipt', 'parent', 'decision'}:
-        raise ValueError('authenticated parent worker selection required')
-    receipt, parent, decision = selection['parent_receipt'], selection['parent'], selection['decision']
-    if (selection['schema'] != PARENT_SELECTION_SCHEMA or type(receipt) is not dict or
-            set(receipt) != {'path', 'sha256'} or type(receipt['path']) is not str or not receipt['path'] or
-            type(receipt['sha256']) is not str or len(receipt['sha256']) != 64 or
-            any(c not in '0123456789abcdef' for c in receipt['sha256'])):
-        raise ValueError('source-bound parent receipt required')
+    _, parent, decision = selection['parent_receipt'], selection['parent'], selection['decision']
     if (type(parent) is not dict or set(parent) != {'real_peak_bytes', 'logical_peak_bytes'} or
             any(type(v) is not int or v < 0 for v in parent.values()) or
             parent['real_peak_bytes'] == 0 or type(decision) is not dict or

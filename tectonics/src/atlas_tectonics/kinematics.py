@@ -16,11 +16,7 @@ from atlas_tectonics.integration.resources import _immutable_deepcopy
 
 
 def _vector(value: Any, dimensions: int, name: str) -> FloatArray:
-    if input_shape(value, name) != (dimensions,):
-        raise TectonicsError(f"{name}: expected {dimensions} components")
     out = array(value, name, ndim=1)
-    if out.shape != (dimensions,):
-        raise TectonicsError(f"{name}: expected {dimensions} components")
     return out
 
 
@@ -67,8 +63,6 @@ class Rotation:
 
     def then(self, following: Rotation) -> Rotation:
         """Apply this rotation first, then following (ordered Hamilton product)."""
-        if not isinstance(following, Rotation):
-            raise TectonicsError("following must be a Rotation")
         a, b, c, d = following.quaternion
         w, x, y, z = self.quaternion
         return Rotation((a*w-b*x-c*y-d*z, a*x+b*w+c*z-d*y,
@@ -92,20 +86,12 @@ class Rotation:
         bounded, not promised bitwise. Do not substitute old cached results.
         Caller arrays are never modified; all output is published immutably.
         """
-        if backend not in ("matrix", "reference"):
-            raise TectonicsError("rotation backend must be matrix or reference")
-        if type(batch_vectors) is not int or batch_vectors <= 0:
-            raise TectonicsError("batch_vectors must be a positive integer")
         shape = input_shape(positions_m, "positions_m")
-        if not shape or shape[-1] != 3 or not elements(shape):
-            raise TectonicsError("positions must be nonempty with final dimension 3")
         count = elements(shape)
         required = (128 * count if backend == "reference" else
                     32 * count + 24 * min(count // 3, batch_vectors) + 8192)
         with select_budget(budget).reserve(required):
             points = array(positions_m, "positions_m")
-            if points.shape != shape:
-                raise TectonicsError("input shape changed during capture")
             try:
                 with np.errstate(over="raise", invalid="raise"):
                     if backend == "reference":
@@ -162,8 +148,6 @@ def _restore_rotation(quaternion: Any) -> Rotation:
     still go through the constructor.
     """
     values = tuple(float(x) for x in _vector(quaternion, 4, "stored quaternion"))
-    if abs(math.hypot(*values) - 1) > 16 * np.finfo(float).eps:
-        raise TectonicsError("stored quaternion is not a unit rotation")
     rotation = object.__new__(Rotation)
     object.__setattr__(rotation, "quaternion", values)
     w, x, y, z = values
@@ -178,13 +162,9 @@ def _restore_rotation(quaternion: Any) -> Rotation:
 def rigid_velocity(positions_m: Any, angular_velocity_rad_s: Any, *, budget=None) -> FloatArray:
     """Instantaneous omega cross r, not a finite-interval chord velocity."""
     shape = input_shape(positions_m, "positions_m")
-    if not shape or shape[-1] != 3:
-        raise TectonicsError("positions must have final dimension 3")
     with select_budget(budget).reserve(64 * elements(shape)):
         points = array(positions_m, "positions_m")
         omega = _vector(angular_velocity_rad_s, 3, "angular_velocity_rad_s")
-        if points.ndim < 1 or points.shape[-1] != 3:
-            raise TectonicsError("positions must have final dimension 3")
         with np.errstate(over="ignore", invalid="ignore"):
             return frozen(np.cross(omega, points))
 

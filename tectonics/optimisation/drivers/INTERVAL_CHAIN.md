@@ -23,7 +23,7 @@ old design-only statements about unbuilt work do not override later scoped
 implementation evidence, and a component PASS does not qualify a final runtime.
 
 [Fresh ROOT](#fresh-root-and-legacy-migration) · [Promotion](#independent-reader-before-atomic-promotion) ·
-[Lineage](#approved-lineage-and-release-b13-protection) · [Comparisons](#causal-quantity-and-field-specific-comparison) ·
+[Lineage](#approved-lineage-and-b13-protection) · [Comparisons](#causal-quantity-and-field-specific-comparison) ·
 [Widths](#width-gates-and-continuation-stop) · [Resources](#start-gate-by-need) ·
 [Reader overlap](#serial-reader-admission-overlap) · [Accounting](#reader-live-producer-accounting) ·
 [Evidence](#retained-evidence-and-completion-boundaries)
@@ -153,7 +153,7 @@ of those processes, not their sum. The later admission-overlap route below permi
 only the reader's independent store-free setup to overlap live production; it does
 not weaken the producer-exit boundary before pending-store access.
 
-## Approved lineage and Release B13 protection
+## Approved lineage and B13 protection
 
 For interval N >= 2, run_fresh_interval.sealed_lineage re-reads approved records
 for intervals 0..N−1 before admitting continuation. The explicit
@@ -179,7 +179,7 @@ interval 1 or have a separately designed lineage route. In the
 [working snapshot](../working-snapshot-20261113/README.md#the-restart-seed-across-intervals) (batch 2) a diagnostic tree may carry a
 seed recorded under an earlier profile, named by path and SHA-256: the compositions are compared member by
 member, the differences are recorded in the seed record, and the gate accepts that interval 1 only on a
-diagnostic tree. Proof, real and Release runs refuse such a seed.
+diagnostic tree. Proof and real runs refuse such a seed.
 
 The lineage record (atlas.fresh-interval-lineage.v1) contains interval, workflow,
 root/head keys, catalog digest/hash and per-link runner/verdict/adoption record
@@ -201,11 +201,10 @@ records carry REVIEW_STATUS; otherwise ordinary sealed status is mandatory.
 Record approval and diagnosis pins per link. A label or unpinned review note is
 insufficient.
 
-**Release B13:** compact seal/adopt is not assumed to establish a source/identity
+**B13:** compact seal/adopt is not assumed to establish a source/identity
 boundary. Recheck all record and opened-catalog bindings explicitly, including
-file hash before open and digest/head/workflow after open. This compensating
-lineage protection is mandatory; it does not claim to repair the independent
-Release-mode gap or qualify a packaged release.
+file hash before open and digest/head/workflow after open. This lineage
+protection is mandatory.
 
 ## Causal quantity and field-specific comparison
 

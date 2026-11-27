@@ -7,13 +7,10 @@ claim of high-order accuracy on skew cells. No alternative geometry is built.
 """
 from concurrent.futures import CancelledError
 from fractions import Fraction as Q
-import math
 
 
 def _binary(value):
     value = float(value)
-    if not math.isfinite(value):
-        raise ValueError('Finite represented scalar required')
     return Q(value)
 
 
@@ -23,33 +20,20 @@ def _check(cancel):
 
 
 def prepare_geometry(geometry, conductivity, boundary, *, cancel=None):
-    from atlas_tectonics.integration.heat.mimetic_heat import MimeticGeometry
     from atlas_tectonics._exact_runtime import selected
-    if type(geometry) is not MimeticGeometry:
-        raise TypeError('Actual issued native metric complex required')
     G = selected.library()
-    if G is None:
-        raise RuntimeError('The private LOW extraction requires the selected GMP backend')
     _check(cancel)
     count = len(geometry._cells)
     try:
         values = list(conductivity)
     except TypeError:
         values = [conductivity]*count
-    if len(values) != count:
-        raise ValueError('One positive scalar conductivity per actual cell required')
     k = list(map(_binary, values))
-    if any(value <= 0 for value in k):
-        raise ValueError('Conductivity must be strictly positive')
     face_ids, incidence = geometry._face_ids, geometry._incidence
     exposed = {fid for fid, linked in zip(face_ids, incidence, strict=True) if len(linked) == 1}
-    if not set(boundary) <= exposed:
-        raise ValueError('Boundary conditions must name actual exterior faces')
     normalised = {}
     for fid in exposed:
         kind, value = boundary.get(fid, ('power', 0.))
-        if kind not in ('temperature', 'power'):
-            raise ValueError('Only prescribed temperature or outward power is supported')
         normalised[fid] = (kind, float(_binary(value)))
     rows = []
     for fi, (fid, linked) in enumerate(zip(face_ids, incidence, strict=True)):
@@ -61,8 +45,6 @@ def prepare_geometry(geometry, conductivity, boundary, *, cancel=None):
         area_squared = sum(value*value for value in normal)
         distances = [geometry._cells[owner][6][geometry._cells[owner][2].index(fi)]
                      for owner, _ in linked]
-        if any(distance <= 0 for distance in distances):
-            raise ValueError('Strict positive owner-to-face normal distances required')
         if len(linked) == 2:
             j, _ = linked[1]
             conductance = area_squared/(distances[0]/k[i]+distances[1]/k[j])

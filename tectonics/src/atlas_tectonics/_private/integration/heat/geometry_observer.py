@@ -21,8 +21,6 @@ class _Observer:
         self.started = {fn.__code__: name for fn, name in stages}
         self.returned = {fn.__code__: name for fn, name in ticks}
         self.geometry_code = geometry.__code__
-        if self.geometry_code not in self.started:
-            raise ValueError('The actual geometry function needs its original phase marker')
         self.codes = set(self.started) | set(self.returned)
         self.active = False
         self.suspended = False
@@ -39,8 +37,6 @@ class _Observer:
 
     def install(self):
         monitoring, tool = self.monitoring, self.tool
-        if self.active or monitoring.get_tool(tool) is not None:
-            raise RuntimeError('Local monitoring slot already occupied; no foreign tool removed')
         monitoring.use_tool_id(tool, self.name)
         self.active = True
         try:
@@ -70,8 +66,6 @@ class _Observer:
 
     @contextmanager
     def geometry_scope(self):
-        if not self.active or self.suspended:
-            raise RuntimeError('One active, non-nested geometry observation scope required')
         # This is exactly the phase that PY_START would have recorded. Publish
         # it while the guardian and our ordinary observer are still active.
         self.guard.phase(self.started[self.geometry_code])
@@ -99,9 +93,6 @@ def observe(guard, stages, ticks, *, joined, geometry):
     including a private derivative when one is used. A separately imported
     public fixture has a different ContextVar and cannot scope that derivative.
     """
-    if (joined._advance_current_interval.__globals__.get('_ALE_COMPUTE_CONTEXT')
-            is not joined._ALE_COMPUTE_CONTEXT):
-        raise ValueError('Joined ALE context does not own the advancing function')
     observer = _Observer(guard, stages, ticks, geometry)
     observer.install()
     try:

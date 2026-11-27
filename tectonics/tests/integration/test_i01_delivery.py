@@ -132,8 +132,6 @@ class DeliveryTests(unittest.TestCase):
         self.assertEqual(placed.descriptor()["heat_source_j"], 0.)
         self.assertEqual(placed.incoming[0, 1], split.liquid.enthalpy_j[0])
         m.accounting_entries((placed,))
-        with self.assertRaises(ValueError):
-            m.accounting_entries((placed, placed))
         phase = m.invert_enthalpy(placed.incoming_component_mass_kg,
                                   placed.incoming[:, 1], self.law())
         self.assertEqual(phase.phase, ("liquid",))

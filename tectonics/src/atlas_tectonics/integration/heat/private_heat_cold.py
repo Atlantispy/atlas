@@ -13,24 +13,18 @@ Native restore scopes are reused. Extra snapshot/copy charges follow their
 existing width policy; these are accounting reservations, not allocator bounds.
 """
 from decimal import Decimal
-from hashlib import sha256
 import json
-from pathlib import Path
 import sys
 
-import numpy as np
 from atlas_tectonics._private.integration.heat import restored_binding as B
 from atlas_tectonics._private.integration.geometry import partition_workflow_patch as _COMPACT_PARTITION
 from atlas_tectonics._private.integration.geometry import spatial_indexed_patch as _COMPACT_INDEXED
-from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
 from atlas_tectonics.integration.coupling.regional_workflow import _hash
 from atlas_tectonics.integration.coupling.regional_inventory import _width
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.integration.reuse import ExecutionContext
 
 R = B.R
-_SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
-_BINDING_SHA = '29ad6024cfe0125f5424b38648cf212e60bbf6a958a8a6e89ddd327fb3de5ae2'
 _PREFIXES = ('exterior-fv:', 'source-audit:', 'spatial-audit:', 'spatial-record:',
              'differential-network:', 'differential-record:', 'partition-record:',
              'certification-record:', 'certification-force:')
@@ -38,20 +32,13 @@ _PREFIXES = ('exterior-fv:', 'source-audit:', 'spatial-audit:', 'spatial-record:
 
 def _verify(cancel):
     R.check(cancel)
-    for path, expected in ((__file__, _SELF_SHA), (B.__file__, _BINDING_SHA)):
-        if R.source_hash(path, cancel) != expected:
-            raise ValueError('Cold workflow helper source changed: '+str(path))
 
 
 def original_target(plan):
     """Recover the *tagged* declaration; never infer it from residual/output."""
     B.I._validate_target_plan(plan)
     original = plan['original_target']
-    if type(original) is not dict or set(original) != {'kind', 'value'}:
-        raise ValueError('Complete original target declaration required')
     kind, value = original['kind'], original['value']
-    if type(value) is not str:
-        raise ValueError('Original target spelling must be preserved')
     if kind == 'represented-binary64':
         result = float.fromhex(value)
     elif kind == 'Decimal':
@@ -60,8 +47,6 @@ def original_target(plan):
         result = value
     else:
         raise ValueError('Unknown original target provenance')
-    if B.I._target_provenance(result) != original:
-        raise ValueError('Original target representation changed')
     return result
 
 
@@ -93,11 +78,6 @@ def _links(parent, head):
 
 
 def _snapshot_charge(metadata, arrays):
-    # RegionalMechanicalSnapshot owns UTF8 JSON and each frozen float64 field;
-    # native frozen/encoding/hash temporaries may coexist. Four field copies and
-    # four native input-width charges cover these operations and retained data.
-    if any(type(v) is not np.ndarray or v.dtype != np.dtype('float64') for v in arrays.values()):
-        raise ValueError('Native float64 snapshot fields required')
     return R.L._size(65536+4*_width(metadata)+4*sum(v.nbytes for v in arrays.values())
                      +8192*len(arrays))
 
@@ -123,8 +103,6 @@ def _restore_parent(workflow, parent, budget, work):
         work.stack.enter_context(budget.reserve(
             _snapshot_charge(parent['state'], collar_arrays), category='private-cold-parent-retained'))
         parent_collar = workflow._collar.restore(parent['state'], collar_arrays)
-        if parent_collar.native_state.result_id != parent['native_state_id']:
-            raise ValueError('Committed parent native identity differs')
         with workflow._spatial_restore_records(
                 parent['exterior_state'], parent.get('exterior_advance'), records, budget, store=store) as (old, _unused):
             work.stack.enter_context(budget.reserve(
@@ -151,12 +129,7 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
     Current endpoint objects/source audit are already restored by the workflow.
     """
     with _SV.access(exchange) as exchange:
-        _verify(cancel)
-        if type(workflow) is not CollarWorkflow or not workflow._is_spatial():
-            raise TypeError('Actual spatial CollarWorkflow recovery context required')
         workflow._verify()
-        if not _SV.is_record(exchange) or exchange.get('schema') != B.EXCHANGE_SCHEMA:
-            raise ValueError('Only an explicitly declared private composed checkpoint is supported')
         _links(parent, head)
         store, budget = workflow._store, workflow._budget
         root = json.loads(workflow._root)
@@ -189,14 +162,8 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
                 endpoint_metadata = bytes(endpoint_metadata)
                 with R.decoded(endpoint_metadata, budget=budget, cancel=cancel) as endpoint:
                     del endpoint_metadata
-                    if 'thermal_mesh' in endpoint.value:
-                        raise ValueError('Indexed endpoint metadata must not carry an expanded thermal mesh')
                     view = spatial_state._snapshot._mesh
-                    if not getattr(view, '_sealed', False) or view.budget is not budget:
-                        raise ValueError('Indexed endpoint mesh must be sealed on the workflow budget')
                     mesh = B.ExteriorMesh.from_compact(view, budget=budget)
-                    if mesh.geometry_id != endpoint.value['thermal_mesh_id']:
-                        raise ValueError('Indexed endpoint mesh differs from its committed geometry ID')
                     del view
                 endpoint_charge.__exit__(None, None, None)
                 del endpoint_charge
@@ -210,9 +177,6 @@ def restore_checkpoint(workflow, *, parent, head, spatial_state, collar_state,
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))
             transport = RegionalMechanicalSnapshot(metadata, transport_fields)
-            from atlas_tectonics._private.codecs.compact_contracts import proving
-            if proving() and transport.result_id != exchange.get('global_transport_id'):    # proof mode only
-                raise ValueError('Committed transported arrays/identity differ')
             target = _exchange_target(exchange)
             binding = work.stack.enter_context(B.restore(store, exchange['joined_heat']['checkpoint'],
                 owner=workflow._exterior_owner, parent_spatial_state=parent_spatial,

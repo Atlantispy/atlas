@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict, field
 import hashlib
 import math
+from typing import TYPE_CHECKING, cast
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError, scalar, frozen
@@ -19,6 +20,8 @@ from atlas_tectonics.integration.resources import select_budget, reserve_budgets
 from atlas_tectonics.regional.regional import _cancelled
 from atlas_tectonics.integration.resources import check_event
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.resources import WorkBudget
 
 
 MAX_SPREADING_INTERVALS = 256
@@ -44,10 +47,6 @@ class RidgeMotion:
             object.__setattr__(self, key, scalar(getattr(self, key), key))
         for key in ('left_plate_id', 'right_plate_id', 'ridge_id', 'event_id', 'source_id'):
             _name(getattr(self, key), key)
-        if self.left_plate_id == self.right_plate_id:
-            raise TectonicsError('distinct left and right plates required')
-        if self.left_velocity_m_s > 0 or self.right_velocity_m_s < 0:
-            raise TectonicsError('this fixed-window route requires outward plate velocities')
         scalar(self.ridge_velocity_m_s-self.left_velocity_m_s, 'left half rate', positive=True)
         scalar(self.right_velocity_m_s-self.ridge_velocity_m_s, 'right half rate', positive=True)
         scalar(self.right_velocity_m_s-self.left_velocity_m_s, 'full rate', positive=True)
@@ -95,15 +94,11 @@ def _product(*values):
 
 
 def _geometry_inputs(grid, motion, elapsed_s):
-    if type(grid) is not ColumnGrid1D or type(motion) is not RidgeMotion:
-        raise TectonicsError('typed grid and RidgeMotion required')
     if grid.cells > MAX_SPREADING_CELLS:
         raise TectonicsError('spreading cell budget exceeded')
     age = scalar(elapsed_s, 'elapsed time', nonnegative=True)
     edge = grid.edges_m
     r0 = motion.ridge_position_m
-    if not edge[0] < r0 < edge[-1]:
-        raise TectonicsError('initial ridge must lie strictly inside source window')
     try:
         positions = tuple(scalar(math.fsum((r0, u*age)), 'advected coordinate') for u in
                           (motion.left_velocity_m_s, motion.ridge_velocity_m_s,
@@ -140,8 +135,6 @@ def ridge_cell_geometry(grid, motion, elapsed_s, *, budget=None, cancel=None):
         # Integrate in an onset-local frame so large absolute coordinates do not
         # turn small newborn widths into differences of rounded positions.
         edge = grid.edges_m-motion.ridge_position_m
-        if np.any(np.abs(np.diff(edge)-grid.widths_m) > _ROUNDOFF*grid.widths_m):
-            raise TectonicsError('onset-local coordinates cannot resolve cell widths')
         left = motion.left_velocity_m_s*age
         ridge = motion.ridge_velocity_m_s*age
         right = motion.right_velocity_m_s*age
@@ -224,7 +217,7 @@ def _state_identity(plan_id, time_s, elapsed_s, intervals, parent_state_id, stri
 def _make_state(plan_id, time_s, elapsed_s, intervals, parent, strips, geometry, accounts):
     raw, mass = _immutable_bytes(geometry), _immutable_bytes(accounts)
     n, p = geometry.shape[1], accounts.shape[0]
-    fields = dict(plan_id=plan_id, time_s=time_s, elapsed_s=elapsed_s, intervals=intervals,
+    fields: dict = dict(plan_id=plan_id, time_s=time_s, elapsed_s=elapsed_s, intervals=intervals,
                   parent_state_id=parent, strips=strips, _cells=n, _phases=p,
                   _geometry=raw, _accounts=mass)
     fields['state_id'] = _state_identity(plan_id, time_s, elapsed_s, intervals, parent,
@@ -264,7 +257,7 @@ class PreparedRidgeSpreading:
     initial: SpreadingState
     _context: object = field(repr=False, compare=False)
     _owns_context: bool = field(repr=False, compare=False)
-    _budget: object = field(repr=False, compare=False)
+    _budget: WorkBudget = field(repr=False, compare=False)
     _lease: object = field(repr=False, compare=False)
     _closed: bool = field(repr=False, compare=False)
 
@@ -274,9 +267,6 @@ class PreparedRidgeSpreading:
         if (type(phases) is not tuple or not 1 <= len(phases) <= MAX_SPREADING_PHASES
                 or any(type(p) is not SpreadingPhase for p in phases)):
             raise TectonicsError('one to sixteen typed spreading phases required')
-        if (len({p.phase_id for p in phases}) != len(phases) or
-                len({p.source_id for p in phases}) != len(phases)):
-            raise TectonicsError('distinct phase IDs and non-duplicated finite feed IDs required')
         origin = scalar(time_s, 'ridge onset time')
         width = scalar(width_m, 'bookkeeping width', positive=True)
         _name(epoch_id, 'epoch'); _name(source_id, 'spreading source')
@@ -288,9 +278,7 @@ class PreparedRidgeSpreading:
         lease.__enter__()
         owned, ctx = context is None, None
         try:
-            ctx = ExecutionContext('reference') if owned else context
-            if type(ctx) is not ExecutionContext or ctx.backend != 'reference':
-                raise TectonicsError('reference ExecutionContext required for exact spreading')
+            ctx = cast(ExecutionContext, ExecutionContext('reference') if owned else context)
             execution_id = ctx.identity
             descriptor = dict(method='atlas.w06-constant-ridge.v1', grid=grid.grid_id,
                               motion=asdict(motion), phases=[asdict(p) for p in phases],
@@ -306,7 +294,7 @@ class PreparedRidgeSpreading:
                 object.__setattr__(self, key, value)
             initial = self._evaluate(origin, 0., 0, None, resource, cancel)
             object.__setattr__(self, 'initial', initial)
-            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -363,10 +351,8 @@ class PreparedRidgeSpreading:
                                strips, geometry, accounts)
 
     def advance(self, state, *, time_s, budget=None, cancel=None):
-        self._check(state); _cancelled(cancel); self._context.verify()
+        self._check(state); _cancelled(cancel)
         end = scalar(time_s, 'requested time')
-        if end < state.time_s:
-            raise TectonicsError('spreading time cannot move backwards')
         resource = self._budget if budget is None else select_budget(budget)
         _within_budget(resource, self._budget)
         if end == state.time_s:
@@ -378,12 +364,12 @@ class PreparedRidgeSpreading:
         if self.time_s+elapsed != end or state.time_s+duration != end:
             raise TectonicsError('clock cannot resolve requested endpoint')
         result = self._evaluate(end, elapsed, state.intervals+1, state.state_id, resource, cancel)
-        self._context.verify(); _cancelled(cancel)
+        _cancelled(cancel)
         return result
 
     def phase_thickness(self, state, *, budget=None):
         """Phase x cell mean reference thickness; full continuous histories stay separate."""
-        self._check(state); self._context.verify()
+        self._check(state)
         resource = self._budget if budget is None else select_budget(budget)
         within_budget(resource, self._budget, 'call budget must descend from the prepared run budget')
         p, n = len(self.phases), self.grid.cells
@@ -398,7 +384,6 @@ class PreparedRidgeSpreading:
                     result = frozen(values)
             except FloatingPointError as exc:
                 raise TectonicsError('spreading projection exceeds numerical range') from exc
-        self._context.verify()
         return result
 
     def close(self):

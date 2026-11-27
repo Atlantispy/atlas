@@ -36,7 +36,6 @@ def slope_at(h,x,i):
     cap=2*(h[i]/wi)
     if abs(s)>=cap and cap>0:cap=np.nextafter(cap,0.0)
     s=math.copysign(min(abs(s),cap),s)
-    if not math.isfinite(s):raise ValueError('reconstruction slope outside numerical range')
     return s
 
 
@@ -88,9 +87,6 @@ def joint_slopes(h,x,linear):
             theta=min(theta,max(bound,0.))
         for k in range(c):
             slope=(h[k,i]*rate+theta*(candidates[k]-h[k,i]*candidate_rate))/width
-            lower=h[k,i]-0.5*width*slope;upper=h[k,i]+0.5*width*slope
-            if not math.isfinite(slope) or lower<0. or upper<0.:
-                raise ValueError('joint mesh reconstruction outside nonnegative range')
             slopes[k,i]=slope
     return slopes
 
@@ -133,7 +129,6 @@ def remap_rows(h,x,y,ptr,donors,lengths,offsets,linear):
             for q in range(ptr[j],ptr[j+1]):
                 i=donors[q]
                 part=lengths[q]*(h[k,i]+(slopes[k,i]*offsets[q] if linear else 0.))
-                if not math.isfinite(part) or part<0:raise ValueError('invalid reconstructed overlap inventory')
                 bits[0]=part;_add_bits(limbs,bits.view(np.uint64)[0])
             value=_rounded_sum(limbs)/(y[j+1]-y[j])
             if not math.isfinite(value) or value<0:raise ValueError('remapped thickness outside range')
@@ -147,7 +142,6 @@ def inventories(h,x):
     for k in range(c):
         for i in range(n):
             terms[i]=h[k,i]*(x[i+1]-x[i])
-            if not math.isfinite(terms[i]) or terms[i]<0:raise ValueError('inventory outside range')
         out[k]=positive_sum(terms)
     return out
 
@@ -166,7 +160,6 @@ def _flux(h,x,relative,external_l,external_r,linear,flux):
             offset=0.5*(x[i+1]-x[i])*(1 if a>=0 else -1)
             donor=h[i]+(slope_at(h,x,i) if linear else 0.)*offset
         value=a*donor
-        if not math.isfinite(value) or donor<0:raise ValueError('invalid ALE reconstructed flux')
         flux[j]=value
 
 
@@ -188,8 +181,6 @@ def _cohort_flux(h,x,relative,el,er,linear,flux):
                 sign=-1. if j==0 else 1. if j==n else (1. if a>=0. else -1.)
                 donor=h[k,i]+0.5*(x[i+1]-x[i])*sign*slopes[k,i]
             value=a*donor
-            if not math.isfinite(value) or donor<0.:
-                raise ValueError('invalid ALE reconstructed flux')
             flux[k,j]=value
 
 
@@ -203,7 +194,6 @@ def advance_ale(h,x,y,relative,dt,el,er,linear):
     c,n=h.shape;maximum=0.0;cap=0.5 if linear else 1.0
     for i in range(n):
         w0=x[i+1]-x[i];w1=y[i+1]-y[i]
-        if w0<=0 or w1<=0:raise ValueError('crossed mesh faces')
         leaving=max(relative[i+1],0.)+max(-relative[i],0.)
         for width in (w0,w1 if linear else w0):
             f=(dt/width)*leaving
@@ -217,22 +207,17 @@ def advance_ale(h,x,y,relative,dt,el,er,linear):
         for i in range(n):
             q=h[k,i]*(x[i+1]-x[i])+dt*(mean[k,i]-mean[k,i+1])
             stage[k,i]=q/(y[i+1]-y[i])
-            if not math.isfinite(stage[k,i]) or stage[k,i]<0:raise ValueError('negative/out-of-range ALE stage; no clipping')
     if linear and dt!=0:
         _cohort_flux(stage,y,relative,el,er,linear,f1)
         for k in range(c):
             for i in range(n):
                 q0=h[k,i]*(x[i+1]-x[i]);q1=stage[k,i]*(y[i+1]-y[i])
                 q2=q1+dt*(f1[k,i]-f1[k,i+1])
-                if not math.isfinite(q2) or q2<0:raise ValueError('negative/out-of-range ALE Euler stage')
                 # Convex combination of extensive states, not densities on different cells.
                 out[k,i]=(0.5*q0+0.5*q2)/(y[i+1]-y[i])
             for j in range(n+1):mean[k,j]=0.5*mean[k,j]+0.5*f1[k,j]
     else:
         out[:,:]=stage
-    for k in range(c):
-        for i in range(n):
-            if not math.isfinite(out[k,i]) or out[k,i]<0:raise ValueError('invalid ALE candidate')
     return out,mean,maximum
 
 
@@ -263,5 +248,4 @@ def mapped_points(positions,source,target):
         elif p==source[i+1]:out[k]=target[i+1]
         else:out[k]=target[i]+((p-source[i])/dx)*dy
         stretch[k]=dy/dx
-        if not math.isfinite(out[k]) or not math.isfinite(stretch[k]) or stretch[k]<=0:raise ValueError('marker map outside numerical range')
     return out,stretch

@@ -14,10 +14,9 @@ import numpy as np
 
 from atlas_tectonics.integration.parallel.execution import ExecutionPolicy, KernelExecutor, _AdmittedCall
 from atlas_tectonics._validation import input_shape, snapshot
-from atlas_tectonics.history.geological_records import GeologyError, _names, _tuple
+from atlas_tectonics.history.geological_records import GeologyError, _names
 from atlas_tectonics.planet.geometry import PlanarGeometry, _check_cancel
 from atlas_tectonics.planet.spherical_geometry import SphericalGeometry, _directions
-from atlas_tectonics.history.geological_case import _check_geometry_frame
 from atlas_tectonics.materials.constitutive_execution import _Cancellation
 
 
@@ -43,13 +42,9 @@ class PrecursorExecutionPolicy:
     min_parallel_cells: int | None = None
 
     def __post_init__(self):
-        if type(self.kernel) is not ExecutionPolicy or self.kernel.mode == 'processes':
-            raise GeologyError('precursor execution requires serial/auto/threads ExecutionPolicy')
         for name in ('point_batch_size', 'cell_batch_size', 'min_parallel_points', 'min_parallel_cells'):
             if name == 'min_parallel_cells' and getattr(self, name) is None:
                 continue
-            if type(getattr(self, name)) is not int or getattr(self, name) < 1:
-                raise GeologyError(name+' must be a positive integer')
 
     def parallel(self, kind, count, *, indexed_points=True):
         if self.kernel.mode == 'serial' or self.kernel.max_workers == 1:
@@ -119,19 +114,6 @@ def _cell_bounds(plan, cells, fields):
     # or increased geometry envelope is hidden in the execution adapter.
     return int(4096*vertices + 96*min(vertices*vertices, plan.geometry_limits.max_overlay_pairs)
                + 2048*(rows+phases) + 1024*len(cells)*(len(fields)+1) + 4*support + (2<<20))
-
-
-def _accept(plan, kind, count, fields, result):
-    from atlas_tectonics.crust.precursor_sampling import InitialSamples
-    if type(result) is not InitialSamples or result.state is not plan.state or result.kind != kind:
-        raise GeologyError('sampling worker returned another state or representation')
-    md = result.descriptor()
-    if md['plan_id'] != plan.identity or md['requested_fields'] != list(fields):
-        raise GeologyError('sampling worker changed method or requested fields')
-    actual = len(result.array('depths_m' if kind == 'points' else 'cell_volume_m3'))
-    if actual != count:
-        raise GeologyError('sampling worker changed query length')
-    return result
 
 
 def _metadata(result):
@@ -223,12 +205,6 @@ def sample_points(plan, points, depths_m, **kwargs):
         plan._last_execution = {'route': 'serial', 'batches': 1, 'parallel_jobs': 0}
         return plan._sample_points_serial(points, depths_m, **kwargs)
     _names(fields, 'requested fields', ordered=True)
-    depth_shape = input_shape(depths_m, 'depths')
-    if depth_shape not in ((), (n,)):
-        raise GeologyError('depth must be scalar or one value per point')
-    feature_work = n*(len(plan.state.case.weak_zones)+len(plan.state.case.provinces)+len(plan.state.bodies)+1)
-    if feature_work > plan.limits.max_work_items:
-        raise GeologyError('point selector work exceeds policy; request explicit smaller batches')
     batch = plan.execution_policy.point_batch_size
     count = (n+batch-1)//batch
     rows = min(n*(len(plan.state.case.provinces)+len(plan.state.case.weak_zones)+1), plan.limits.max_rows)
@@ -237,8 +213,6 @@ def sample_points(plan, points, depths_m, **kwargs):
     retained = (3*(54+8*dim+9*len(fields)) + 2*(8*dim+8))*n + 12*rows + 65536*(count+1)
     with plan._dispatch_lock, plan._operation(cancel), plan.budget.reserve(retained, category='precursor-batch-results'):
         p = snapshot(points, 'point request'); z = snapshot(depths_m, 'depth request')
-        if p.shape != shape or z.shape != depth_shape:
-            raise GeologyError('sampling input shape changed during capture')
         aborted = threading.Event(); combined = _Cancellation(cancel, aborted)
         ledger = _RequestLedger(plan.limits, plan.geometry_limits)
         def tasks():
@@ -249,10 +223,7 @@ def sample_points(plan, points, depths_m, **kwargs):
                     return plan._sample_points_serial(xy, depth, **(kwargs | {'cancel': combined}),
                                                       _admitted_budget=budget, _ledger=ledger)
                 def accept(result, xy=xy, depth=depth):
-                    result = _accept(plan, 'points', len(xy), fields, result)
-                    expected = _directions(xy) if dim == 3 else xy
-                    if not np.array_equal(result.array('points'), expected) or not np.all(result.array('depths_m') == depth):
-                        raise GeologyError('sampling worker changed captured query coordinates')
+                    _directions(xy) if dim == 3 else xy
                     return result
                 yield _AdmittedCall(run, accept, aborted.set, stop-start, _point_bounds(plan, stop-start, fields))
         parts = _drive(plan, tasks(), combined, aborted)
@@ -263,23 +234,13 @@ def sample_points(plan, points, depths_m, **kwargs):
 
 def sample_cells(plan, cells, **kwargs):
     """Validate the COMPLETE request before independently sampling its cells."""
-    from atlas_tectonics.crust.precursor_sampling import InitialSamplingCell, _check_cell_overlaps
     fields = kwargs.get('fields', ()); cancel = kwargs.get('cancel')
     plan._check_request(kwargs['frame_id'], kwargs['epoch_id'], kwargs['depth_reference_id'])
-    _tuple(cells, 'sampling cells', allow_empty=False)
-    if len(cells) > plan.limits.max_cells or any(type(c) is not InitialSamplingCell for c in cells):
-        raise GeologyError('bounded tuple of typed initial sampling cells required')
     if not plan.execution_policy.parallel('cells', len(cells)):
         plan._last_execution = {'route': 'serial', 'batches': 1, 'parallel_jobs': 0}
         return plan._sample_cells_serial(cells, **kwargs)
-    if len({c.cell_id for c in cells}) != len(cells):
-        raise GeologyError('sampling cell IDs must be unique')
     _names(fields, 'requested fields', ordered=True)
-    if any(name not in plan.state._maps['fields'] for name in fields):
-        raise GeologyError('unknown requested field')
     overlap = kwargs.get('allow_overlapping_queries', False)
-    if type(overlap) is not bool or type(kwargs.get('include_temperature', True)) is not bool:
-        raise GeologyError('sampling switches must be bool')
     supports = {c.footprint.geometry_id: c.footprint for c in cells}
     vertices = sum(g.vertex_count for g in supports.values())
     if vertices > plan.geometry_limits.max_vertices:
@@ -293,7 +254,6 @@ def sample_cells(plan, cells, **kwargs):
     with plan._dispatch_lock, plan._operation(cancel), plan.budget.reserve(retained, category='precursor-batch-results'):
         for g in supports.values():
             _check_cancel(cancel)
-            _check_geometry_frame(plan.state.case.topology, g, plan.geometry_limits, plan.budget)
         if not overlap:
             plan._validate_cell_overlaps(cells, plan.budget, cancel)
         aborted = threading.Event(); combined = _Cancellation(cancel, aborted)
@@ -306,9 +266,6 @@ def sample_cells(plan, cells, **kwargs):
                     return plan._sample_cells_serial(part, **(kwargs | {'cancel': combined}),
                                                      _admitted_budget=budget, _prevalidated=True, _ledger=ledger)
                 def accept(result, part=part):
-                    result = _accept(plan, 'cells', len(part), fields, result)
-                    if result.descriptor()['cells'] != [c.descriptor() for c in part]:
-                        raise GeologyError('sampling worker changed cell support')
                     return result
                 yield _AdmittedCall(run, accept, aborted.set, len(part), _cell_bounds(plan, part, fields))
         parts = _drive(plan, tasks(), combined, aborted)

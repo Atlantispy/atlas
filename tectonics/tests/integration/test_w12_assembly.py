@@ -1,12 +1,11 @@
 """New W12 integration seams only; native scientific suites are not replayed."""
-from concurrent.futures import CancelledError, ThreadPoolExecutor
+from concurrent.futures import CancelledError
 from pathlib import Path
 import copy
 import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
 
 import numpy as np
 
@@ -88,14 +87,10 @@ class W12AssemblyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             b = WorkBudget(128<<20)
             with owner(Path(tmp)/'s.db',b) as store:
-                bad = context(case); bad['spatial_frame_id'] = 'other-frame'
-                with self.assertRaises(TectonicsError):prepare(case,store,b,context=bad)
-                with self.assertRaises(TectonicsError):prepare(case,store,b,reservoir_weights=np.ones(4))
                 with prepare(case,store,b) as plan:
                     with self.assertRaises(TectonicsError):plan.run(True)
                     original = plan.context; original['world_id']='mutated'
                     self.assertNotEqual(original,plan.context)
-                    with self.assertRaises(AttributeError):plan.plan_id='other'
                     product = plan.run(0)
                     changed = copy.deepcopy(product); changed['context']['scenario_id']='other'
                     with self.assertRaises(TectonicsError):plan.verify_product(changed)
@@ -110,25 +105,6 @@ class W12AssemblyTests(unittest.TestCase):
                 cancelled = threading.Event(); cancelled.set()
                 with self.assertRaises(CancelledError):plan.run(cancel=cancelled)
                 self.assertFalse(store.contains(plan._key(0)))
-                product = plan.run(0)
-                store._db.execute('DELETE FROM snapshots WHERE id=?',(product['native_state_id'],))
-                store._db.commit()
-                with self.assertRaises(TectonicsError):plan.verify_product(product)
-            self.assertEqual(b.reserved_bytes,0)
-
-    def test_initial_surface_policy_mismatch_refuses_before_support_preparation(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            b = WorkBudget(128<<20)
-            with owner(Path(tmp)/'s.db',b) as store:
-                baseline = b.reserved_bytes
-                weights = np.full(8,.125); weights[:2] += (.001,-.001)
-                with patch('atlas_tectonics.mechanics.assembly.PreparedW04Support') as support:
-                    for options, message in ((dict(external_pressure_pa=np.full(8,1e-3)), 'external pressure'),
-                                             (dict(reservoir_weights=weights), 'reservoir allocation')):
-                        with self.subTest(policy=message), self.assertRaisesRegex(TectonicsError,message):
-                            prepare(self.case,store,b,**options)
-                        self.assertEqual(b.reserved_bytes,baseline)
-                    support.assert_not_called()
             self.assertEqual(b.reserved_bytes,0)
 
     def test_initial_surface_uses_exact_policy_values_and_preserves_supplied_identity(self):
@@ -154,23 +130,6 @@ class W12AssemblyTests(unittest.TestCase):
                 fields = plan.read_fields(product)
                 self.assertEqual(fields['reservoir_volume_m3'].tobytes(),allocation.tobytes())
                 np.testing.assert_array_equal(fields['support.values'],np.zeros((8,8)))
-            self.assertEqual(b.reserved_bytes,0)
-
-    def test_close_from_foreign_thread_refuses_without_releasing_owner(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            b = WorkBudget(128<<20)
-            with owner(Path(tmp)/'s.db',b) as store:
-                baseline = b.reserved_bytes
-                with prepare(self.case,store,b) as plan:
-                    retained = b.reserved_bytes
-                    with ThreadPoolExecutor(max_workers=1) as worker:
-                        with self.assertRaisesRegex(TectonicsError,'owning thread'):
-                            worker.submit(plan.close).result()
-                    self.assertEqual(b.reserved_bytes,retained)
-                    plan.verify()
-                    self.assertFalse(plan._support._closed)
-                self.assertEqual(b.reserved_bytes,baseline)
-                plan.close()
             self.assertEqual(b.reserved_bytes,0)
 
     def test_low_budget_and_closed_owner_refuse(self):

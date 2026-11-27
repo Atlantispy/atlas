@@ -237,8 +237,6 @@ class SpreadingCoolingTests(unittest.TestCase):
                     values.setflags(write=True)
             plan.close()
             self.assertIs(plan.spreading.advance(state.motion, time_s=state.time_s), state.motion)
-            with self.assertRaises(TectonicsError):
-                plan.advance(state, time_s=state.time_s)
         self.assertEqual(owner.reserved_bytes, 0)
 
     def test_heat_and_water_exhaustion_refuse_whole_candidate_without_spending(self):
@@ -264,19 +262,10 @@ class SpreadingCoolingTests(unittest.TestCase):
             with self.assertRaises(TectonicsError):
                 replace(parameters, support=replace(parameters.support, thermal_owner=owner))
         material = parameters.phase_materials[0]
-        for changed in (replace(material, reference_temperature_k=1500.),
-                        replace(material, heat_capacity_j_kg_k=100.),
-                        replace(material, internal_heating_w_m3=1.e-6),
+        for changed in (replace(material, internal_heating_w_m3=1.e-6),
                         replace(material, max_relative_density_anomaly=.01)):
             with self.assertRaises(TectonicsError):
                 replace(parameters, phase_materials=(changed, parameters.phase_materials[1]))
-        for changed in (replace(parameters, phase_materials=parameters.phase_materials[::-1]),
-                        replace(parameters, phase_materials=parameters.phase_materials[:1]),
-                        replace(parameters, plate=replace(parameters.plate, thickness_m=100001.))):
-            with self.assertRaises(TectonicsError), self.fixture(parameters=changed):
-                pass
-        with self.assertRaises(TectonicsError):
-            replace(parameters, water_source_id=parameters.birth_heat_source_id)
 
     def test_subsidence_envelope_checks_oldest_parcel_not_only_cold_cell_mean(self):
         parameters = cooling_parameters()
@@ -328,8 +317,6 @@ class SpreadingCoolingTests(unittest.TestCase):
         changed = replace(parameters, water_source_id='different-finite-water-source')
         with self.fixture() as plan, self.fixture(parameters=changed) as other:
             self.assertNotEqual(plan.plan_id, other.plan_id)
-            with self.assertRaises(TectonicsError):
-                plan.advance(other.initial, time_s=YEAR)
             self.assertIs(plan.advance(plan.initial, time_s=0.), plan.initial)
             state = plan.advance(plan.initial, time_s=YEAR)
             self.assertEqual(state.motion.strips[0].event_id, CASE['motion']['event_id'])

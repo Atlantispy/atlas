@@ -18,8 +18,6 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
     from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     G = selected.library()
-    if G is None:
-        raise RuntimeError('Selected GMP backend required')
     work = R.OwnedWorkspace(budget, 262144, category=category, cancelled=cancelled)
     work.__enter__()
     try:
@@ -27,9 +25,7 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
         def visit(value, depth=0):
             nonlocal total
             I.check(cancelled)
-            if depth > 64:
-                raise ValueError('Unexpected retained result nesting')
-            total = I.size(total+I.D.CONTAINER_UNIT+sys.getsizeof(value))
+            total = (total+I.D.CONTAINER_UNIT+sys.getsizeof(value))
             if type(value) in (dict, list, tuple):
                 if type(value) is dict:
                     for key, item in value.items():
@@ -39,7 +35,7 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
                     for item in value:
                         visit(item, depth+1)
             elif type(value) in (G.mpq, Fraction):
-                total = I.size(total+R.native_slot_allowance(R.RationalShape(
+                total = (total+R.native_slot_allowance(R.RationalShape(
                     max(1, value.numerator.bit_length()), value.denominator.bit_length())))
             elif type(value) not in (str, int, bool, float, Decimal, type(None)):
                 raise TypeError('Unsupported retained result object '+type(value).__name__)

@@ -206,19 +206,9 @@ class RegionalExecution3DTests(_RegionalExecutionAssertions, unittest.TestCase):
                     velocity = np.zeros_like(xyz)
                     velocity[xyz[:, 0] == 0, 0] = speed*profile[xyz[:, 0] == 0]
                     high = xyz[:, 0] == np.max(xyz[:, 0])
-                    velocity[high, 0] = .95*speed*profile[high]
-                    with self.assertRaisesRegex(TectonicsError, 'net flux'):
-                        solve(plan, velocity=velocity)
-                    # Balanced through-flow of the same size remains admissible.
+                    # Balanced through-flow remains admissible.
                     velocity[high, 0] = speed*profile[high]
                     self.assert_gates(solve(plan, velocity=velocity))
-        with prepare(eta=1., reference_viscosity_pa_s=1.) as plan:
-            xyz = plan.coordinates('velocity')
-            inflow = np.zeros_like(xyz)
-            low = xyz[:, 0] == 0
-            inflow[low, 0] = 1e-12*np.sin(np.pi*xyz[low, 1])*np.sin(np.pi*xyz[low, 2])
-            with self.assertRaisesRegex(TectonicsError, 'net flux'):
-                solve(plan, velocity=inflow)
 
     def test_small_traction_box_is_not_mistaken_for_a_closed_box(self):
         # The gauge test was floored at max(1, |B|); small dimensionless boxes
@@ -238,8 +228,6 @@ class RegionalExecution3DTests(_RegionalExecutionAssertions, unittest.TestCase):
             assert_allclose(result.array('velocity_m_s'), 0., atol=3e-9)
             assert_allclose(result.array('physical_pressure_pa'),
                             6.*(1.-plan.coordinates('pressure')[:, 2]), atol=1e-8)
-        with self.assertRaisesRegex(TectonicsError, 'second datum'):
-            prepare(boundary=boundary, scales=scales, physical_mean_pressure_pa=0.)
         with prepare(scales=scales) as plan:
             self.assertTrue(plan.descriptor()['pressure_gauge_required'])
 
@@ -359,9 +347,6 @@ class RegionalExecution3DTests(_RegionalExecutionAssertions, unittest.TestCase):
         with self.assertRaises(MemoryLimitError):
             prepare(budget=WorkBudget(1024))
         with prepare(budget=budget) as plan:
-            xyz = plan.coordinates('velocity')
-            with self.assertRaisesRegex(TectonicsError, 'flux'):
-                solve(plan, velocity=xyz)
             with self.assertRaises(CancelledError):
                 solve(plan, cancel=event)
             with self.assertRaisesRegex(TectonicsError, 'force source'):

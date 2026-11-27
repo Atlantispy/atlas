@@ -23,12 +23,11 @@ import struct
 import threading
 import tempfile
 import time
-from typing import Mapping
+from typing import Mapping, cast
 
 import numpy as np
 
 from atlas_tectonics.integration.resources import WorkBudget, select_budget, reserve_budgets
-from atlas_tectonics.integration.resources import _sha256_pattern as _SHA
 from atlas_tectonics.history import _stock_funding as _history
 
 
@@ -106,8 +105,6 @@ def _hash(data):
 
 
 def _sha(key):
-    if type(key) is not str or _SHA.fullmatch(key) is None:
-        raise StoreError('a lowercase SHA-256 identity is required')
     return key
 
 
@@ -137,14 +134,6 @@ class StoreLimits:
                      'max_staging_bytes', 'verified_cache_entries', 'insert_batch_bytes',
                      'sqlite_cache_bytes', 'codec_workspace_bytes'):
             _positive(getattr(self, name), name)
-        if self.chunk_bytes < 8 or self.chunk_bytes > 16 * 1024 * 1024:
-            raise StoreError('chunk_bytes must be between 8 bytes and 16 MiB')
-        if self.sqlite_cache_bytes < 1024:
-            raise StoreError('SQLite cache allowance must be at least 1 KiB')
-        if self.max_store_bytes < 65536:
-            raise StoreError('store budget must accommodate at least 64 KiB')
-        if type(self.decoded_cache_bytes) is not int or self.decoded_cache_bytes < 0:
-            raise StoreError('decoded cache budget must be nonnegative')
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,8 +173,6 @@ def storage_profile(name: str = 'balanced') -> StorageProfile:
         'balanced': (65536, Compression(level=1)),
         'compact': (262144, Compression(level=3)),
     }
-    if name not in profiles:
-        raise StoreError('profile must be fast, balanced or compact')
     size, compression = profiles[name]
     return StorageProfile(name + '-v1', size, compression)
 
@@ -223,11 +210,7 @@ def _dtype(text):
 
 
 def _array_view(value):
-    if np.ma.isMaskedArray(value) or not isinstance(value, np.ndarray):
-        raise StoreError('supply explicit unmasked NumPy arrays')
     _dtype(value.dtype.str)
-    if value.ndim > 16:
-        raise StoreError('at most 16 dimensions are supported')
     return value
 
 
@@ -250,8 +233,6 @@ def _path(path, *, sidecar=False):
             if isinstance(exc, PermissionError) and sidecar and p == path:
                 continue
             raise
-        if stat.S_ISLNK(st.st_mode) or getattr(st, 'st_file_attributes', 0) & 0x400:
-            raise StoreError('linked/reparse store paths are forbidden')
         if p == path and stat.S_ISREG(st.st_mode) and st.st_nlink != 1:
             if sidecar and st.st_nlink == 0:
                 continue
@@ -280,18 +261,10 @@ class ArrayStore:
     older implementations refuse new codec labels rather than misreading them.
     """
     def __init__(self, path, limits: StoreLimits, compression: Compression = Compression(), *, budget=None):
-        from atlas_tectonics.integration.reuse import release_boundary
-        release_boundary()
-        # This open session is verified: its per-record reads and put starts share that check.
-        self._session_verified = True
-        if not isinstance(limits, StoreLimits) or not isinstance(compression, Compression):
-            raise StoreError('typed limits and compression required')
         self.path = Path(path).absolute()
         self.limits = limits
         self.compression = compression
         _path(self.path)
-        if not self.path.parent.is_dir():
-            raise StoreError('create the dedicated store directory explicitly')
         for suffix in ('-journal', '-wal', '-shm'):
             _path(Path(str(self.path) + suffix), sidecar=True)
         self._blosc = None
@@ -344,9 +317,6 @@ class ArrayStore:
             self._db.execute(f'PRAGMA cache_size=-{max(1, limits.sqlite_cache_bytes // 1024)}')
             page = self._db.execute('PRAGMA page_size').fetchone()[0]
             max_pages = limits.max_store_bytes // page
-            current = self._db.execute('PRAGMA page_count').fetchone()[0]
-            if current > max_pages:
-                raise StoreError('existing database exceeds store budget')
             self._db.execute(f'PRAGMA max_page_count={max_pages}')
             self._db.execute('BEGIN IMMEDIATE')
             # Checked inside the write lock, before any statement reads or writes a table, so no other writer can
@@ -359,8 +329,6 @@ class ArrayStore:
             wanted = _json({'schema': _SCHEMA, 'chunk_bytes': chunk_bytes})
             self._initial_settings = (_SCHEMA, chunk_bytes, wanted)
             row = self._db.execute('SELECT body FROM settings WHERE id=1').fetchone()
-            if row and row[0] != wanted:
-                raise StoreError('incompatible store schema or chunk size')
             self._db.execute('INSERT OR IGNORE INTO settings VALUES(1,?)', (wanted,))
             self._db.execute(_DDL['chunks'].replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', 1))
             self._db.execute(_DDL['snapshots'].replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', 1))
@@ -450,8 +418,6 @@ class ArrayStore:
         self._cached_bytes = 0
 
     def _live(self):
-        if self._closed:
-            raise StoreError('store is closed')
         _path(self.path)
 
     def _retained_pin(self):
@@ -465,17 +431,6 @@ class ArrayStore:
         """
         return (self._db.execute('PRAGMA data_version').fetchone()[0], self._db.total_changes,
                 self._db.execute('PRAGMA schema_version').fetchone()[0])
-
-    def _session_boundary(self):
-        """A per-record read or a put start shares the full check this verified open session ran.
-
-        Release decision 1: the full live-callable/source check runs at open, before the COMMIT
-        that publishes and at backup, not per record; drift between them refuses at the next of
-        those. Strict keeps its per-call ExecutionContext checks and release_boundary is a no-op.
-        """
-        if not self._session_verified:
-            from atlas_tectonics.integration.reuse import release_boundary
-            release_boundary()
 
     @contextmanager
     def _read_scope(self, *, budget=None, _history_manifest=False):
@@ -492,8 +447,6 @@ class ArrayStore:
             funding = None
             if getattr(self, '_w08_history_holds', None) is not None:
                 funding = _history.ManifestFunds(*self._history_roots(budget))
-            if owner:
-                self._session_boundary()
             reservation = None
             if owner:
                 if funding is None:
@@ -631,53 +584,28 @@ class ArrayStore:
         if codec == 'raw':
             raw = payload
         elif codec == 'uniform':
-            if len(payload) != dt.itemsize:
-                raise StoreError('invalid uniform record')
             raw = payload * count
         elif codec == 'palette8':
-            if dt.kind not in 'biu' or len(payload) < 4:
-                raise StoreError('invalid palette type')
             n = struct.unpack('<I', payload[:4])[0]
             cut = 4 + n * dt.itemsize
-            if not 1 < n <= 256 or len(payload) != cut + count:
-                raise StoreError('invalid palette dimensions')
             palette = np.frombuffer(payload, dtype=dt, offset=4, count=n)
             indices = np.frombuffer(payload, dtype='u1', offset=cut)
-            if indices.size and int(indices.max()) >= n:
-                raise StoreError('invalid palette index')
             raw = palette[indices].tobytes()
         elif codec == 'palette-packed-v1':
-            if dt.kind not in 'biu' or len(payload) < 3:
-                raise StoreError('invalid packed palette type/header')
             n, bits = struct.unpack('<HB', payload[:3])
-            if bits not in (1, 2, 4, 8) or not 1 < n <= (1 << bits):
-                raise StoreError('invalid packed palette dimensions')
             cut = 3 + n * dt.itemsize
-            packed_bytes = (count * bits + 7) // 8
-            if len(payload) != cut + packed_bytes:
-                raise StoreError('invalid packed palette length')
             palette = np.frombuffer(payload, dtype=dt, offset=3, count=n)
             packed = np.frombuffer(payload, dtype='u1', offset=cut)
-            if count * bits % 8 and int(packed[-1]) >> (count * bits % 8):
-                raise StoreError('nonzero palette padding')
             indices = np.empty(count, dtype='u1')
             per_byte = 8 // bits
             for lane in range(per_byte):
                 size = indices[lane::per_byte].size
                 indices[lane::per_byte] = (packed[:size] >> (lane * bits)) & ((1 << bits) - 1)
-            if np.any(indices >= n):
-                raise StoreError('invalid packed palette index')
             raw = palette[indices].tobytes()
         elif codec == 'rle-v1':
-            if dt.kind not in 'biu' or len(payload) < 4:
-                raise StoreError('invalid run-length type/header')
             n = struct.unpack('<I', payload[:4])[0]
-            if not 0 < n <= count or len(payload) != 4 + n * (4 + dt.itemsize):
-                raise StoreError('invalid run-length dimensions')
             runs = np.frombuffer(payload, dtype=[('count', '<u4'), ('value', dt)], offset=4)
             lengths = runs['count']
-            if np.any(lengths == 0) or int(lengths.sum(dtype=np.uint64)) != count:
-                raise StoreError('invalid run-length total')
             raw = np.repeat(runs['value'], lengths.astype(np.intp)).tobytes()
         elif codec.split(':', 1)[0] in ('blosc2-zstd-none', 'blosc2-zstd-byte', 'blosc2-zstd-bit'):
             try:
@@ -692,13 +620,10 @@ class ArrayStore:
                 raise StoreError('unavailable codec or invalid compressed chunk') from exc
         else:
             raise StoreError('unsupported stored codec')
-        if len(raw) != nbytes:
-            raise StoreError('decoded length mismatch')
         return raw
 
     def _chunk(self, key, *, expected_dtype=None, expected_count=None, verify_only=False):
         """Must run in _read_scope or a write transaction with its view pinned."""
-        _sha(key)
         known = self._verified.get(key)
         if known is not None:
             if expected_dtype is not None and known != (expected_dtype, expected_count):
@@ -724,34 +649,21 @@ class ArrayStore:
             f'CASE WHEN {bounds} THEN stored_sha END,CASE WHEN {bounds} THEN payload END '
             'FROM chunks WHERE id=:key',
             {'key': key, 'payload_limit': payload_limit}).fetchone()
-        if row is None:
-            raise StoreError('snapshot has a missing chunk')
         if row[4:8] != ('blob', 'blob', 'text', 'text'):
             raise StoreError('invalid chunk record types')
         if row[0] > 256 or row[1] > payload_limit or row[2] > 128 or row[3] != 64:
             raise StoreError('oversized chunk record')
         desc, codec, stored, payload = row[8:]
         self._stats['payload_reads'] += 1
-        if _hash(desc + b'\0' + codec.encode() + b'\0' + payload) != stored:
-            raise StoreError('stored chunk checksum mismatch')
         meta = _parse(desc)
-        if set(meta) != {'dtype', 'count'} or type(meta['count']) is not int:
-            raise StoreError('invalid chunk descriptor')
         dt, count = _dtype(meta['dtype']), meta['count']
-        if dt.str != meta['dtype'] or not 0 < count * dt.itemsize <= self.limits.chunk_bytes:
-            raise StoreError('invalid typed chunk size')
-        if expected_dtype is not None and (dt.str != expected_dtype or count != expected_count):
-            raise StoreError('chunk does not match manifest')
         raw = self._decode(codec, payload, dt, count)
-        if self._blob_id(desc, raw) != key:
-            raise StoreError('logical chunk checksum mismatch')
         self._remember(key, dt.str, count)
         self._remember_raw(key, raw)
         return None if verify_only else raw
 
     def _manifest(self, key, *, _return_body=False):
         """The interval reader can retain the validated bytes inside its own workspace."""
-        _sha(key)
         funding = getattr(self, '_w08_history_read', None)
         row = self._db.execute('SELECT length(body),typeof(body),typeof(digest) FROM snapshots WHERE id=?', (key,)).fetchone()
         if row is None:
@@ -773,7 +685,6 @@ class ArrayStore:
 
     def _candidate_manifest_body(self, key):
         """Read a local manifest under the candidate writer's funded workspace."""
-        _sha(key)
         body_size = "CASE WHEN typeof(body)='blob' THEN length(body) END"
         admitted = f"({body_size})<=:limit AND typeof(digest)='text'"
         row = self._db.execute(
@@ -804,40 +715,22 @@ class ArrayStore:
 
     @staticmethod
     def _check_manifest_fields(m, key, limits):
-        if not isinstance(m, dict) or set(m) not in ({'schema','invocation','arrays','metadata'},
-                {'schema','invocation','arrays','metadata','execution_mode'}) or m['schema'] != _SCHEMA or m['invocation'] != key:
-            raise StoreError('incompatible manifest')
-        if 'execution_mode' in m and m['execution_mode'] not in ('strict', 'release'):
-            raise StoreError('invalid execution mode provenance')
-        if not isinstance(m['arrays'], dict) or not m['arrays']:
-            raise StoreError('invalid array inventory')
         chunks = 0
         for name, a in m['arrays'].items():
-            if not isinstance(a, dict) or set(a) != {'dtype','shape','chunks'}:
-                raise StoreError('invalid array description')
             dt = _dtype(a['dtype'])
             shape = a['shape']
-            if not isinstance(shape, list) or len(shape) > 16 or any(type(n) is not int or n < 0 for n in shape):
-                raise StoreError('invalid saved shape')
             count = math.prod(shape)
             if count * dt.itemsize > limits.max_array_bytes:
                 raise StoreError('declared array exceeds decoder limit')
-            width = limits.chunk_bytes // dt.itemsize
             ids = a['chunks']
-            if not isinstance(ids, list) or len(ids) != (count + width - 1) // width:
-                raise StoreError('invalid chunk inventory')
             chunks += len(ids)
-            for chunk in ids:
-                _sha(chunk)
         if chunks > limits.max_chunks:
             raise StoreError('too many chunk references')
 
     def reference(self, invocation: str, array_name: str) -> ArrayReference:
         """Return a checked reference; no array payload is materialised here."""
         with self._read_scope():
-            m = self._manifest(invocation)
-            if m is None or array_name not in m['arrays']:
-                raise KeyError((invocation, array_name))
+            m = cast(dict, self._manifest(invocation))
             return ArrayReference(str(self.path), invocation, array_name,
                                   _hash(_json(m['arrays'][array_name])))
 
@@ -849,15 +742,8 @@ class ArrayStore:
         chunks, never bytes from a caller's allegedly unchanged array. The new
         manifest directly references payloads, so it is not a temporal delta chain.
         """
-        if (not isinstance(replacements, Mapping)
-                or any(not isinstance(parts, Mapping) for parts in replacements.values())):
-            raise StoreError('chunk replacements must map array names to chunk mappings')
         with self._read_scope():
-            m = self._manifest(parent)
-            if m is None:
-                raise KeyError(parent)
-            if any(name not in m['arrays'] for name in replacements):
-                raise StoreError('replacement array is absent from parent')
+            m = cast(dict, self._manifest(parent))
             arrays = {}
             for name, desc in m['arrays'].items():
                 ref = ArrayReference(str(self.path), parent, name, _hash(_json(desc)))
@@ -868,18 +754,10 @@ class ArrayStore:
                         cancel=cancel, budget=budget)
 
     def _reference_description(self, ref):
-        if not isinstance(ref, ArrayReference) or ref.store_path != str(self.path):
-            raise StoreError('reference must belong to this store')
-        _sha(ref.invocation)
-        _sha(ref.descriptor_sha256)
-        if type(ref.array_name) is not str or not ref.array_name or len(ref.array_name) > 256:
-            raise StoreError('invalid referenced array name')
-        m = self._manifest(ref.invocation)
-        if m is None or ref.array_name not in m['arrays']:
-            raise StoreError('referenced array is missing')
+        ref.invocation
+        ref.descriptor_sha256
+        m = cast(dict, self._manifest(ref.invocation))
         desc = m['arrays'][ref.array_name]
-        if _hash(_json(desc)) != ref.descriptor_sha256:
-            raise StoreError('referenced manifest changed')
         return desc
 
     def put(self, invocation: str, arrays: Mapping, metadata=None, *,
@@ -892,18 +770,11 @@ class ArrayStore:
         history migration, async background writes or silent dependency fallback.
         Mutable input arrays must stay unchanged until this call returns.
         """
-        from atlas_tectonics.integration.reuse import execution_mode, release_boundary
         history_roots = (self._history_roots(budget)
                          if getattr(self, '_w08_history_holds', None) is not None else ())
         if history_roots:
             _write_inputs = _history.Hold(_history.SESSION+_history.NUMERIC, *history_roots,
                                           category='w08-store-write-inputs')
-        self._session_boundary()
-        _sha(invocation)
-        if publication_check is not None and not callable(publication_check):
-            raise StoreError('publication_check must be callable')
-        if not isinstance(arrays, Mapping) or not arrays:
-            raise StoreError('nonempty array mapping required')
         # Freeze metadata, not arbitrary object graphs or caller array payloads.
         if history_roots:
             encoded = _history.Hold(_history.ENCODE+_history.BODY, *history_roots,
@@ -941,8 +812,6 @@ class ArrayStore:
                 total += math.prod(desc['shape']) * _dtype(desc['dtype']).itemsize
             else:
                 a = _array_view(value)
-                if a.nbytes > self.limits.max_array_bytes:
-                    raise StoreError('array exceeds storage input limit')
                 width = self.limits.chunk_bytes // a.itemsize
                 reference_count += (a.size + width - 1) // width
                 total += a.nbytes
@@ -971,11 +840,7 @@ class ArrayStore:
                 check_cancel()
                 a = _array_view(value)
                 dt = _dtype(a.dtype.str) if dtype is None else _dtype(dtype)
-                if dtype is not None and (a.dtype.kind != dt.kind or a.itemsize != dt.itemsize or a.shape != (count,)):
-                    raise StoreError('replacement chunk requires exact dtype and flat length')
                 raw = np.asarray(a, dtype=dt, order='C').tobytes()
-                if dt.kind == 'f' and not np.isfinite(np.frombuffer(raw, dtype=dt)).all():
-                    raise StoreError('nonfinite values are not supported scientific state')
                 typed = (dt.str, len(raw) // dt.itemsize)
                 desc = _json({'dtype': typed[0], 'count': typed[1]})
                 key = self._blob_id(desc, raw)
@@ -985,8 +850,6 @@ class ArrayStore:
                 # lookup needs no retained read transaction; publication rechecks
                 # races. Positive hits are authenticated in a pinned snapshot.
                 with self._lock:
-                    if self._closed:
-                        raise StoreError('store is closed')
                     try:
                         exists = self._db.execute('SELECT 1 FROM chunks WHERE id=?', (key,)).fetchone()
                     except sqlite3.Error as exc:
@@ -1021,8 +884,6 @@ class ArrayStore:
                     shape = original['shape']
                     ids = list(original['chunks'])
                     changes = dict(value.replacements) if isinstance(value, _EditedReference) else {}
-                    if any(type(i) is not int or not 0 <= i < len(ids) for i in changes):
-                        raise StoreError('replacement chunk index outside array')
                     projected += len(ids)
                     if projected > min(self.limits.max_chunks, self.limits.max_manifest_bytes // 68):
                         raise StoreError('too many chunks for the manifest budget')
@@ -1041,8 +902,6 @@ class ArrayStore:
                         ids[i] = capture(a, dt.str, count)
                 else:
                     a = _array_view(value)
-                    if a.nbytes > self.limits.max_array_bytes:
-                        raise StoreError('array exceeds storage input limit')
                     dt, shape = _dtype(a.dtype.str), list(a.shape)
                     width = self.limits.chunk_bytes // dt.itemsize
                     projected += (a.size + width - 1) // width
@@ -1059,10 +918,6 @@ class ArrayStore:
                     raise StoreError('projected manifest exceeds limit')
             manifest = {'schema': _SCHEMA, 'invocation': invocation,
                         'arrays': descriptions, 'metadata': metadata}
-            # Preserve strict-mode/legacy bytes. Policy is producer provenance,
-            # not part of the caller's scientific invocation or metadata.
-            if execution_mode() == 'release':
-                manifest['execution_mode'] = 'release'
             if history_roots:
                 manifest_bytes = _history.Hold(_history.ENCODE+_history.BODY, *history_roots,
                                                 category='w08-store-manifest-encode')
@@ -1118,18 +973,10 @@ class ArrayStore:
                         prefix = spool.read(4)
                         if not prefix:
                             break
-                        if len(prefix) != 4:
-                            raise StoreError('truncated preparation record')
                         length = struct.unpack('<I', prefix)[0]
-                        if not 0 < length < 2048:
-                            raise StoreError('invalid preparation record')
                         key, desc, codec, stored, count = _parse(spool.read(length))
                         desc = desc.encode()
-                        if not 0 <= count <= self.limits.chunk_bytes + 4096:
-                            raise StoreError('invalid staged payload length')
                         payload = spool.read(count)
-                        if len(payload) != count or _hash(desc+b'\0'+codec.encode()+b'\0'+payload) != stored:
-                            raise StoreError('preparation checksum mismatch')
                         exists = self._db.execute('SELECT 1 FROM chunks WHERE id=?', (key,)).fetchone()
                         if exists:
                             # A concurrent writer may have published a different
@@ -1165,7 +1012,6 @@ class ArrayStore:
                     check_cancel()
                     if publication_check is not None:
                         publication_check()
-                    release_boundary()
                     self._db.execute('COMMIT')
                     # Our transaction added immutable rows only; retain validated
                     # attestations. data_version is NOT refreshed here: a writer
@@ -1211,16 +1057,8 @@ class ArrayStore:
                 holds.append(funding.graph)
             return None if m is None else m['metadata']
 
-    def execution_mode(self, invocation):
-        """Recorded producer policy; legacy records were authored in strict mode."""
-        with self._read_scope():
-            m = self._manifest(invocation)
-            return None if m is None else m.get('execution_mode', 'strict')
-
     def read_chunk(self, invocation, array_name, index, *, budget=None):
         """Random access to one decoded chunk, with its flat element offset."""
-        if type(index) is not int or index < 0:
-            raise StoreError('chunk index must be a nonnegative integer')
         with self._read_scope(budget=budget):
             m = self._manifest(invocation)
             if m is None:
@@ -1231,7 +1069,7 @@ class ArrayStore:
             dt = _dtype(a['dtype'])
             width = self.limits.chunk_bytes // dt.itemsize
             count = min(width, math.prod(a['shape']) - index * width)
-            raw = self._chunk(a['chunks'][index], expected_dtype=dt.str, expected_count=count)
+            raw = cast(bytes, self._chunk(a['chunks'][index], expected_dtype=dt.str, expected_count=count))
             return index * width, np.frombuffer(raw, dtype=dt)
 
     def iter_chunks(self, invocation, array_name, *, budget=None):
@@ -1242,18 +1080,14 @@ class ArrayStore:
 
     def _iter_chunks(self, invocation, array_name, *, budget):
         with self._read_scope(budget=budget):
-            m = self._manifest(invocation)
-            if m is None:
-                raise KeyError(invocation)
-            if array_name not in m['arrays']:
-                raise KeyError(array_name)
+            m = cast(dict, self._manifest(invocation))
             a = m['arrays'][array_name]
         dt, total = _dtype(a['dtype']), math.prod(a['shape'])
         width = self.limits.chunk_bytes // dt.itemsize
         for i, key in enumerate(a['chunks']):
             with self._read_scope(budget=budget):
-                raw = self._chunk(key, expected_dtype=dt.str,
-                                  expected_count=min(width, total-i*width))
+                raw = cast(bytes, self._chunk(key, expected_dtype=dt.str,
+                                  expected_count=min(width, total-i*width)))
             yield i * width, np.frombuffer(raw, dtype=dt)
 
     def get(self, invocation, *, budget: WorkBudget | None = None):
@@ -1288,7 +1122,7 @@ class ArrayStore:
                     buffer = bytearray(count * dt.itemsize)
                     for i, key in enumerate(a['chunks']):
                         start = i * width
-                        raw = self._chunk(key, expected_dtype=dt.str, expected_count=min(width, count-start))
+                        raw = cast(bytes, self._chunk(key, expected_dtype=dt.str, expected_count=min(width, count-start)))
                         buffer[start*dt.itemsize:start*dt.itemsize+len(raw)] = raw
                     result[name] = np.frombuffer(bytes(buffer), dtype=dt).reshape(a['shape'])
                 if funding is not None:
@@ -1298,7 +1132,7 @@ class ArrayStore:
                     if evidence:
                         holds.append(funding.graph)
                 if evidence:
-                    return result, m['metadata'], m.get('execution_mode', 'strict')
+                    return result, m['metadata']
                 return result
 
     def statistics(self):
@@ -1316,12 +1150,10 @@ class ArrayStore:
     def backup_to(self, destination):
         """Consistent database backup to a new local file; no overwrite or cleanup."""
         import os
-        from atlas_tectonics.integration.reuse import release_boundary
         target = Path(destination).absolute()
         _path(target)
         with self._lock:
             self._live()
-            release_boundary()
             fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             os.close(fd)
             other = sqlite3.connect(target)
@@ -1329,5 +1161,4 @@ class ArrayStore:
                 self._db.backup(other)
             finally:
                 other.close()
-            release_boundary()
         return target

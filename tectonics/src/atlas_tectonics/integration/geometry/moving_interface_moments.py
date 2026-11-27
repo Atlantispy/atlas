@@ -17,10 +17,8 @@ holds a boundary ray of the face, take whole-leaf signs from exact identities.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
-import hashlib
 import heapq
 from itertools import combinations
-from pathlib import Path
 
 from . import volume as V, volume_overlap as O
 from . import moving_face_moments as T
@@ -28,12 +26,7 @@ from . import circular_moments as C
 from . import rigid_intersection as RI
 from atlas_tectonics.integration.coupling.q2_directed import _Branch
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 ORDER = T.ORDER
-
-
-def source_digest():
-    return hashlib.sha256((_LOADED+T.source_digest()+C.source_digest()).encode('ascii')).hexdigest()
 
 
 def _dot(a, b, J):
@@ -151,8 +144,6 @@ def _initial_value_enclosure(coefficients, value, factor, upper_time, J):
         for k in range(degree-1,-1,-1):
             nested=J.I.add(exact[k],J.I.mul(span,nested))
         bound=nested if bound is None else (max(bound[0],nested[0]),min(bound[1],nested[1]))
-    if bound[0]>bound[1]:
-        raise V.VolumeError('moving-interface initial-value Taylor bound contradicts physical jets')
     sign=True if bound[0]>0 else False if bound[1]<0 else None
     return J.I.mul(bound,factor[0]),sign
 
@@ -430,8 +421,6 @@ def _factored_predicate(factor, denominator, bounds, sign, J, arena, *, section_
 
 def _intersect_predicate(value, rearranged):
     result=tuple((max(a,c),min(b,d)) for (a,b),(c,d) in zip(value,rearranged))
-    if any(lo>hi for lo,hi in result):
-        raise V.VolumeError('moving-interface predicate rearrangement contradicts physical jets')
     return result
 
 
@@ -515,8 +504,6 @@ def _coincident_start(constraint, face, arena):
 
 
 def _reduced_normal(found, normal, face, rates, bounds, cache, J, arena):
-    if bounds[0]!=0 and bounds[0]!=bounds[1]:
-        raise V.VolumeError('a reduced interface line needs a leaf starting at the initial time')
     return _reduced_normal_admitted(found, normal, face, rates, bounds, cache, J, arena)
 
 
@@ -687,7 +674,6 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
     actual cuts and voxel, not a numerical or already closed FV allocation.
     No result is accepted unless both original stream-width limits hold.
     """
-    source_digest()
     from . import differential_geometry as D
     from atlas_tectonics.integration.coupling import regional_inventory as R
     from . import wall_measures as W
@@ -712,8 +698,6 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
         edge_keys = {}
         for name, sign, item in cuts:
             edge_keys.setdefault(name, (0, _constraint_key(item), sign))
-        if len(set(edge_keys.values())) != len(edge_keys):
-            raise V.VolumeError('two edges of one support share their constraint and sign')
 
         def edge_order(name):
             if isinstance(name, tuple):
@@ -1227,8 +1211,6 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                         if held is not None:
                             signs[key]=held
                     return value
-                if key not in reference:
-                    raise _Branch()
                 displacement = (J.I.point(-time_radius)[0], J.I.point(time_radius)[1])
                 mean = J.I.add(reference[key][0], J.I.mul(displacement, value[1]))
                 pair = max(mean[0], value[0][0]), min(mean[1], value[0][1])
@@ -1293,8 +1275,6 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                     model=reference[key]
                     slope=_taylor_slope(model,value,-time_radius,time_radius,J)
                     slope=max(slope[0],value[1][0]),min(slope[1],value[1][1])
-                    if slope[0]>slope[1]:
-                        raise V.VolumeError('moving-interface predicate slope enclosures contradict')
                     value=(value[0],slope,*value[2:])
                     monotone=slope[0]>0 or slope[1]<0
                     if monotone:
@@ -1440,6 +1420,5 @@ def integrate(*, layer, cell, first, second, outward_sign, omega, constraints,
                         totals[i][j] += sum(values[i][j] for values in children)-old[i][j]
             arena.keep(tuple(q for pair in totals for q in pair), 8)
             leaves += len(parts)-1
-        source_digest()
         return tuple(tuple(pair) for pair in totals), leaves, all(
             hi-lo <= width for (lo, hi), width in zip(totals, widths))

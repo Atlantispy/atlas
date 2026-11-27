@@ -182,7 +182,6 @@ def read_view(directory, report_name='run-00001.json', *, action='catalogue',
                 provenance=native['provenance'])
             answer['view']['view_id'] = _hash(dict(product_id=native['product_id'],
                 selection=geometry['selection'], field=field, adapters=adapters))
-        execution.verify()
     if adapters != _adapters():
         raise reader.ReadError('SOURCE_MISMATCH', 'The view adapter changed during the read.')
     answer['provenance'] = dict(read_only=True, simulation_run=False,

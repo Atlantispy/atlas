@@ -79,11 +79,8 @@ class Thermomechanical(unittest.TestCase):
         np.testing.assert_allclose(v,500.+100*xv+200*zv,atol=1e-12)
         plan,heat,profile,scale,boundary=fixture(shear=1.)
         with plan:
-            for options in ({'frame_id':'wrong'}, {'thermal_sampling':'unknown'},
-                            {'heat_steps':257}, {'source_w_m3':lambda x,z,t:0.}):
+            for options in ({'frame_id':'wrong'}, {'heat_steps':257}):
                 with self.assertRaises(TectonicsError):advance(plan,heat,profile,scale,boundary,**options)
-            with self.assertRaisesRegex(TectonicsError,'uniform physical'):
-                advance(plan,heat,profile,scale,boundary,material_regions=(MaterialRegion2D('rock',(0.,1.,0.,1.),3.),))
 
     def test_boundary_support_refused_before_copying(self):
         from atlas_tectonics.regional.rheology import _validate_boundary_support

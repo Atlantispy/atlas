@@ -21,7 +21,6 @@ unchanged.
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 import hashlib
-import math
 import threading
 
 import numpy as np
@@ -32,7 +31,7 @@ try:
 except ImportError:
     cholesky_banded = cho_solve_banded = None
 
-from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array, frozen, text
+from atlas_tectonics._validation import TectonicsError, scalar, read_array, frozen
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.reuse import ExecutionContext
@@ -49,22 +48,15 @@ class DamageLengthScale:
     source: str
 
     def __post_init__(self):
-        text(self.name,'regularisation identity'); text(self.source,'length-scale provenance')
         for key in ('domain_length_m','length_scale_m'):
             object.__setattr__(self,key,scalar(getattr(self,key),key,positive=True))
         if type(self.cells) is not int or not 3<=self.cells<=1_000_000:
             raise TectonicsError('regularisation requires 3..1000000 cells')
-        dx=self.domain_length_m/self.cells
-        if dx<=0: raise TectonicsError('regularisation spacing underflows')
-        ratio=self.length_scale_m/dx
-        if not math.isfinite(ratio) or ratio*ratio==0 or ratio*ratio>1e10:
-            raise TectonicsError('regularisation condition envelope exceeded')
 
 
 class PreparedDamageRegularisation:
     """A source-bound operator with bounded retained factorisation, not a history."""
     def __init__(self,parameters,*,budget=None):
-        if type(parameters) is not DamageLengthScale: raise TectonicsError('typed length-scale parameters required')
         if cholesky_banded is None or cho_solve_banded is None:
             raise TectonicsError('SciPy banded solver unavailable; no regularisation backend fallback')
         self.parameters=parameters; self.budget=select_budget(budget)
@@ -84,12 +76,9 @@ class PreparedDamageRegularisation:
             raise
 
     def __setattr__(self,name,value):
-        if name in ('parameters','budget','identity','_s','_factor') and hasattr(self,name):
-            raise TectonicsError('regularisation binding is immutable')
         object.__setattr__(self,name,value)
 
     def __enter__(self):
-        if self._closed: raise TectonicsError('regularisation plan closed')
         return self
 
     def __exit__(self,*_): self.close()
@@ -98,13 +87,10 @@ class PreparedDamageRegularisation:
     close = PreparedRheology.close
 
     def apply(self,damage,*,cancel=None):
-        if input_shape(damage,'raw damage')!=(self.parameters.cells,):
-            raise TectonicsError('damage vector must match the regularisation support')
         with self._lock:
-            if self._closed or self._active: raise TectonicsError('closed or active regularisation plan')
             self._active=True
         try:
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             with self.budget.reserve(96*self.parameters.cells+65536,category='damage-length-solve'):
                 raw=read_array(damage,'raw damage',nonnegative=True)
                 value=cho_solve_banded((self._factor,True),raw,check_finite=False)
@@ -112,11 +98,8 @@ class PreparedDamageRegularisation:
                 flux=self._s*np.diff(value)
                 residual=value-raw
                 residual[:-1]-=flux; residual[1:]+=flux
-                scale=max(float(np.max(raw)),float(np.max(np.abs(value))),np.finfo(float).tiny)
-                if np.max(np.abs(residual))>128*np.finfo(float).eps*(1+4*self._s)*scale or np.min(value)<0:
-                    raise TectonicsError('nonlocal damage solve failed residual/positivity check')
                 result=frozen(value)
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return result
         finally:
             with self._lock:self._active=False

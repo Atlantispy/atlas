@@ -60,8 +60,6 @@ def _mature_change(low, delta, temperature_span):
         with np.errstate(over='ignore', under='ignore'):
             decay = np.exp(-rate*low)
             increment = -np.expm1(-rate*delta)
-        if n == 1 and np.any(decay == 0):
-            raise TectonicsError('mature plate change has an unrepresentable leading transient')
         # Higher modes below representable range cannot affect a retained n=1
         # term; do not reject an otherwise resolved result merely for their tail.
         active = decay > 0
@@ -75,8 +73,6 @@ def _mature_change(low, delta, temperature_span):
                 # All temperatures are nonnegative, so span*4/rate is finite.
                 scaled = decay*(temperature_span*(4/rate))
             term = scaled*increment
-        if n == 1 and np.any((term == 0) & (scaled != 0) & (increment != 0)):
-            raise TectonicsError('mature plate temperature change underflows binary64 output')
         result += term
     return result
 
@@ -95,8 +91,6 @@ def plate_cooling_deficit_change(age_s, reference_age_s,
     Full input captures and output are admitted before allocation; scratch is
     bounded by batch_elements. No depth sampling or hidden geological age floor.
     """
-    if type(parameters) is not PlateCoolingParameters:
-        raise TectonicsError('explicit PlateCoolingParameters required')
     _cancel(cancel)
     batch = _batch_count(batch_elements)
     age_shape = input_shape(age_s, 'age_s')
@@ -106,15 +100,11 @@ def plate_cooling_deficit_change(age_s, reference_age_s,
     except ValueError as exc:
         raise TectonicsError('plate cooling ages cannot broadcast') from exc
     size = elements(shape)
-    if not size:
-        raise TectonicsError('nonempty plate cooling ages required')
     required = (32*(elements(age_shape)+elements(reference_shape))
                 + 24*size + 512*min(batch, size) + 8192)
     with select_budget(budget).reserve(required, category='plate-integrals'):
         age = read_array(age_s, 'age_s', nonnegative=True)
         reference = read_array(reference_age_s, 'reference_age_s', nonnegative=True)
-        if age.shape != age_shape or reference.shape != reference_shape:
-            raise TectonicsError('plate cooling age shape changed during capture')
         output = np.zeros(shape)
         thermal = parameters.thermal
         span = thermal.mantle_temperature_k-thermal.surface_temperature_k

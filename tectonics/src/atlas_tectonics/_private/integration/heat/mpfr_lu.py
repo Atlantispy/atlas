@@ -26,11 +26,7 @@ def _mp(value):
 
 def factor(rows, *, precision=512, cancel=None, observe=None):
     """Return factors plus pivot sequence. All entries are retained, including fill."""
-    if type(precision) is not int or precision < 320:
-        raise ValueError('Explicit factor precision of at least320 bits required')
     n = len(rows)
-    if not n or n > 1024:
-        raise ValueError('This bounded private diagnostic admits1..1024 rows')
     began = perf_counter()
     with G.context(precision=precision):
         a = []
@@ -38,11 +34,7 @@ def factor(rows, *, precision=512, cancel=None, observe=None):
             _check(cancel)
             built = {}
             for j, value in row:
-                if type(j) is not int or not 0 <= j < n or j in built:
-                    raise ValueError('Unique in-range columns required')
                 v = _mp(value)
-                if not G.is_finite(v):
-                    raise ValueError('Finite coefficients required')
                 if v:
                     built[j] = v
             a.append(built)
@@ -51,8 +43,6 @@ def factor(rows, *, precision=512, cancel=None, observe=None):
         for k in range(n):
             _check(cancel)
             pivot = max(range(k, n), key=lambda i: abs(a[i].get(k, 0)))
-            if not a[pivot].get(k, 0):
-                raise ValueError('Exactly zero represented MPFR pivot; no regularisation permitted')
             pivots.append(pivot)
             if pivot != k:
                 a[k], a[pivot] = a[pivot], a[k]
@@ -81,8 +71,6 @@ def factor(rows, *, precision=512, cancel=None, observe=None):
 
 def solve(factors, rhs, *, cancel=None):
     a, pivots = factors['rows'], factors['pivots']
-    if len(rhs) != len(a):
-        raise ValueError('Original RHS coverage required')
     with G.context(precision=factors['precision']):
         b = list(map(_mp, rhs))
         for k, pivot in enumerate(pivots):

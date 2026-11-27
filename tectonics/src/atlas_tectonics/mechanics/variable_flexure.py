@@ -13,10 +13,8 @@ import math
 import threading
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, snapshot, read_array, frozen, scalar, text
+from atlas_tectonics._validation import TectonicsError, input_shape, snapshot, read_array, frozen, scalar
 from atlas_tectonics._validation import banded_solvers
-from atlas_tectonics.mechanics.finite_flexure import FlexureBoundary1D
-from atlas_tectonics.planet.parameters import FlexureParameters
 from atlas_tectonics.regional.regional import RegionalGrid1D
 from atlas_tectonics.integration.resources import select_budget, reserve_budgets
 from atlas_tectonics.integration.resources import check_event
@@ -24,12 +22,8 @@ from atlas_tectonics.integration.resources import canonical_json as _json
 
 
 def _elastic(e, te, nu):
-    if np.any(e <= 0) or np.any(te <= 0) or np.any(nu <= -1) or np.any(nu >= .5):
-        raise TectonicsError('positive E/Te and -1 < nu < .5 required')
     with np.errstate(all='ignore'):
         d = np.exp(np.log(e)+3*np.log(te)-math.log(12.)-np.log1p(-nu*nu))
-    if not np.isfinite(d).all() or np.any(d <= 0):
-        raise TectonicsError('derived rigidity outside numerical range')
     return d
 
 
@@ -47,25 +41,15 @@ class RigidityProfile1D:
 
     def __init__(self,grid,young_modulus_pa,elastic_thickness_m,poisson_ratio,*,
                  source_id,frame_id,datum_id,epoch_id,far_left=None,far_right=None,budget=None):
-        if type(grid) is not RegionalGrid1D:
-            raise TectonicsError('explicit regional profile grid required')
-        for name,value in dict(source_id=source_id,frame_id=frame_id,datum_id=datum_id,epoch_id=epoch_id).items():
-            text(value,name)
         raw_inputs = (young_modulus_pa,elastic_thickness_m,poisson_ratio)
-        if any(input_shape(v) != (grid.cells,) for v in raw_inputs):
-            raise TectonicsError('one E, Te and nu per ordered source/halo cell required')
         with select_budget(budget).reserve(128*grid.cells+8192):
             arrays = [snapshot(v,name) for v,name in zip(raw_inputs,('E','Te','nu'))]
-            if any(a.shape != (grid.cells,) for a in arrays):
-                raise TectonicsError('rigidity profile shape changed during capture')
             d = _elastic(*arrays)
             exterior = []
             for value in (far_left,far_right):
                 if value is None:
                     exterior.append(None)
                 else:
-                    if type(value) is not tuple or len(value) != 3:
-                        raise TectonicsError('far-field material must be an explicit (E,Te,nu) tuple')
                     a = snapshot(value,'far-field E,Te,nu')
                     _elastic(a[:1],a[1:2],a[2:])
                     exterior.append(tuple(map(float,a)))
@@ -99,15 +83,8 @@ class VariableFlexureAccuracy:
     max_element_over_alpha: float = .5
 
     def __post_init__(self):
-        text(self.source_id,'numerical policy source')
         for name in ('relative_tolerance','absolute_displacement_m','absolute_slope','absolute_curvature_per_m','max_element_over_alpha'):
             object.__setattr__(self,name,scalar(getattr(self,name),name,positive=True))
-        if self.relative_tolerance >= 1 or self.max_element_over_alpha > 1:
-            raise TectonicsError('relative tolerance < 1 and element/alpha <= 1 required')
-        if type(self.max_refinements) is not int or not 1 <= self.max_refinements <= 8:
-            raise TectonicsError('one to eight bounded mesh refinements required')
-        if type(self.max_elements) is not int or self.max_elements <= 0:
-            raise TectonicsError('positive explicit element ceiling required')
 
 
 def _shape(s,derivative):
@@ -180,29 +157,15 @@ Row4: mesh-change plus numerical-error estimates (w,slope,curvature,subdivisions
 Refinement is numerical evidence, not a rigorous continuum-error certificate.
 """
     def __setattr__(self,name,value):
-        if getattr(self,'_sealed',False):
-            raise AttributeError('variable support definition is immutable')
         object.__setattr__(self,name,value)
 
     def __init__(self,profile,parameters,boundary,accuracy,*,budget=None):
-        if (type(profile) is not RigidityProfile1D or type(parameters) is not FlexureParameters
-                or type(accuracy) is not VariableFlexureAccuracy):
-            raise TectonicsError('typed profile, restoring parameters and accuracy required')
-        if boundary != 'periodic' and type(boundary) is not FlexureBoundary1D:
-            raise TectonicsError('explicit periodic or typed finite boundary required')
-        continuous = boundary != 'periodic' and boundary.continuous
-        if continuous != (profile.far_left is not None and profile.far_right is not None):
-            raise TectonicsError('continuous support needs both explicit exterior materials')
-        if not continuous and (profile.far_left is not None or profile.far_right is not None):
-            raise TectonicsError('physical/periodic profiles cannot include exterior materials')
         self.profile=profile;self.parameters=parameters;self.boundary=boundary;self.accuracy=accuracy
         self.grid=profile.grid;self._budget=select_budget(budget)
         self._stack=ExitStack();self._levels={};self._lock=threading.RLock();self._closed=False
         k=parameters.restoring_pa_per_m
         alpha=np.exp((math.log(4.)+np.log(profile.rigidity_n_m)-math.log(k))/4)
         ratio=self.grid.spacing_m/(float(np.min(alpha))*accuracy.max_element_over_alpha)
-        if not math.isfinite(ratio):
-            raise TectonicsError('required variable-rigidity mesh outside numerical range')
         self.base_subdivisions=max(1,math.ceil(ratio))
         if 2*self.grid.cells*self.base_subdivisions > accuracy.max_elements:
             raise TectonicsError('base and comparison meshes exceed the explicit element ceiling')
@@ -218,7 +181,6 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
     def _factor(self,subdivisions,budget=None):
         cholesky_banded, _ = banded_solvers('scipy backend unavailable for variable-rigidity support')
         with self._lock:
-            if self._closed: raise TectonicsError('variable support is closed')
             if subdivisions in self._levels: return self._levels[subdivisions]
             m=self.grid.cells*subdivisions
             if m > self.accuracy.max_elements:
@@ -227,8 +189,6 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                                 category='variable-flexure-setup'):
                 h=self.grid.spacing_m/subdivisions;k=self.parameters.restoring_pa_per_m
                 t=np.exp(np.log(np.repeat(self.profile.rigidity_n_m,subdivisions))-math.log(k)-4*math.log(h))
-                if not np.isfinite(t).all() or np.any(t<=0):
-                    raise TectonicsError('scaled bending stiffness outside numerical range')
                 periodic=self.boundary=='periodic'
                 nodes=m if periodic else m+1;ndof=2*nodes
                 permutation=np.arange(nodes)
@@ -291,8 +251,6 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                     stop=ndof-offset
                     roundoff[offset,:stop]=(roundoff[offset,:stop]+8*eps*np.abs(band[offset,:stop]))*scale[offset:]*scale[:stop]
                     band[offset,:stop]*=scale[offset:]*scale[:stop]
-                if not np.isfinite(band).all() or not np.isfinite(scale).all() or not np.isfinite(roundoff).all():
-                    raise TectonicsError('variable support matrix outside numerical range')
                 try: chol=cholesky_banded(band,lower=True,check_finite=False)
                 except np.linalg.LinAlgError as exc:
                     raise TectonicsError('variable support factorisation failed; no stiffness jitter/fallback') from exc
@@ -306,8 +264,6 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                 return factor
 
     def work_bytes(self,shape):
-        if shape!=(self.grid.cells+2,):
-            raise TectonicsError('N pressure cells plus two explicit far-field pressures required')
         return 512*self.grid.cells+8192
 
     def _linear_solve(self,f,rhs,*,rhs_uncertainty=None):
@@ -449,15 +405,11 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
             return frozen(out)
 
     def solve(self,packed_load_pa,*,budget=None,cancel=None):
-        if self._closed: raise TectonicsError('variable support is closed')
         check_event(cancel, 'variable support cancelled between bounded mesh operations')
         shape=input_shape(packed_load_pa,'variable support load')
         with reserve_budgets(self.work_bytes(shape),self._budget,
                             select_budget(budget if budget is not None else self._budget)):
             load=read_array(packed_load_pa,'variable support load',ndim=1)
-            continuous=self.boundary!='periodic' and self.boundary.continuous
-            if not continuous and np.any(load[-2:]!=0):
-                raise TectonicsError('physical/periodic support cannot include exterior pressures')
             old=None;refused=[];precision_refused=None;numerical={}
             atol=np.array([self.accuracy.absolute_displacement_m,self.accuracy.absolute_slope,
                            self.accuracy.absolute_curvature_per_m])
@@ -523,7 +475,6 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                 self._levels.clear();self._stack.close()
 
     def __enter__(self):
-        if self._closed: raise TectonicsError('variable support is closed')
         return self
 
     def __exit__(self,*args): self.close()

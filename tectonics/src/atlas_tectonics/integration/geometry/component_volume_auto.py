@@ -49,8 +49,6 @@ class AutomaticEndpoints(S._Rolling):
         self.exact = False
 
     def prepare(self, supports):
-        if self.prepared or self.closed:
-            raise RuntimeError('one prepare per automatic endpoint pass')
         self.prepared = True
         # Read ahead by index, one support at a time, never all at once.
         self.supports = supports

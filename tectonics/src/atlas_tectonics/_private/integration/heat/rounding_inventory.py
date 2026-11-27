@@ -62,17 +62,6 @@ def conversion_growth(part_bits, maximum_part_bits, *, tie_part_bits=0,
     clamp=1 still uses the original giant-Decimal fallback; retain its legacy
     funding rather than changing behaviour. A2 always sets HALF_EVEN and p80.
     """
-    for name, value in (('part_bits', part_bits), ('maximum_part_bits', maximum_part_bits),
-                        ('precision', precision)):
-        if type(value) is not int or value <= 0:
-            raise ValueError('Positive integer '+name+' required')
-    if not maximum_part_bits <= part_bits <= 2*maximum_part_bits:
-        raise ValueError('Compatible rational part-width envelopes required')
-    if (type(tie_part_bits) is not int or type(tie_maximum_part_bits) is not int
-            or tie_part_bits < 0 or tie_maximum_part_bits < 0
-            or bool(tie_part_bits) != bool(tie_maximum_part_bits)
-            or tie_part_bits and not tie_maximum_part_bits <= tie_part_bits <= 2*tie_maximum_part_bits):
-        raise ValueError('Compatible nonnegative tie-branch widths required')
     return _derived_conversion_growth(part_bits, maximum_part_bits,
         tie_part_bits=tie_part_bits, tie_maximum_part_bits=tie_maximum_part_bits,
         precision=precision, context=context)
@@ -100,8 +89,6 @@ def _derived_conversion_growth(part_bits, maximum_part_bits, *, tie_part_bits,
     python += 4*(sys.getsizeof(())+pointer*digits)+4*digits*sys.getsizeof(0)
     if fallback:
         python = max(python, 16*512*max(1, (part_bits+1024+precision-1)//precision))
-    if exact > sys.maxsize or python > sys.maxsize:
-        raise OverflowError('Rounding inventory exceeds addressable storage')
     return ConversionGrowth(part_bits, maximum_part_bits, precision,
         maximum_part_bits+precision+2, power, maximum_part_bits+power,
         digits, expression, tie_part_bits, tie_maximum_part_bits, tie,

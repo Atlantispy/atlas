@@ -36,10 +36,7 @@ _DEFAULT_BUDGET = WorkBudget(128*1024**2, parent=DEFAULT_BUDGET)
 
 
 def _names(values, count, name):
-    if type(values) is not tuple or len(values) != count:
-        raise TectonicsError('one explicit '+name+' per geometry required')
     for value in values: _label(value, name)
-    if len(set(values)) != count: raise TectonicsError('duplicate '+name)
 
 
 def _area_shape(shape):
@@ -52,7 +49,6 @@ def _area_shape(shape):
         elif hasattr(part, 'geoms'):
             for child in part.geoms: visit(child)
     visit(shape)
-    if not polygons: raise GeometryError('positive overlap lacks occupied polygon area')
     return polygons[0] if len(polygons) == 1 else MultiPolygon(polygons)
 
 
@@ -81,9 +77,6 @@ def _map(shape, deformation, old_origin, new_origin, frame, budget, cancel):
         try: result = shapely.set_coordinates(shape, mapped)
         except GEOSException as exc: raise GeometryError('exchange map failed') from exc
         _validate_shape(result, DEFAULT_GEOMETRY_LIMITS, allow_empty=False)
-        expected = float(np.linalg.det(deformation))*float(shape.area)
-        if not math.isfinite(expected) or expected <= 0 or abs(result.area-expected) > MAP_ERROR*expected:
-            raise GeometryError('exchange mapped area disagrees with deformation')
         return PlanarGeometry._from_shape(result, frame)
 
 
@@ -149,22 +142,12 @@ def planar_exchange(start_polygons, end_polygons, deformation_between, extensive
         raise GeometryError('one to 64 corresponding start/end regions required')
     r = len(start_regions); size = r+1
     _names(parcel_ids, n, 'parcel ID'); _names(region_ids, r, 'region ID')
-    if exterior_id in region_ids: raise TectonicsError('exterior must have a distinct explicit ID')
     all_geometry = start_polygons+end_polygons+start_regions+end_regions
-    if any(type(g) is not PlanarGeometry for g in all_geometry):
-        raise GeometryError('explicit planar geometry required')
     frame = start_polygons[0].frame_id
-    if any(g.frame_id != frame for g in all_geometry): raise GeometryError('exchange frame mismatch')
-    if any(g.kind != 'Polygon' or g.is_empty or g.area_m2 <= 0 for g in start_polygons+end_polygons):
-        raise GeometryError('simple positive-area material polygons required')
     vertices = sum(g.vertex_count for g in all_geometry)
     if vertices > DEFAULT_GEOMETRY_LIMITS.max_vertices:
         raise GeometryError('exchange input vertex budget exceeded')
-    if input_shape(deformation_between) != (n, 2, 2):
-        raise TectonicsError('one full 2x2 deformation matrix per material polygon required')
     shape = input_shape(extensive)
-    if len(shape) != 2 or shape[0] < 1 or shape[1] != n:
-        raise TectonicsError('extensive stocks require (fields, parcels) shape')
     fields = shape[0]; resource = _DEFAULT_BUDGET if budget is None else select_budget(budget)
     with ExitStack() as leases:
         leases.enter_context(resource.reserve(48*fields*(n+size*size)+512*vertices
@@ -176,16 +159,10 @@ def planar_exchange(start_polygons, end_polygons, deformation_between, extensive
             _check_cancel(cancel)
             f = deformation[i]
             j = float(np.linalg.det(f))
-            if not math.isfinite(j) or j <= 0 or np.linalg.cond(f)*np.finfo(float).eps > MAP_ERROR:
-                raise GeometryError('inverted, singular or unresolved exchange deformation')
-            before, after = shapely.get_coordinates(start._geom), shapely.get_coordinates(end._geom)
-            if before.shape != after.shape:
-                raise GeometryError('corresponding ordered material vertices required')
+            _, after = shapely.get_coordinates(start._geom), shapely.get_coordinates(end._geom)
             origin = np.asarray(start._geom.exterior.coords[0]); endpoint = np.asarray(end._geom.exterior.coords[0])
             mapped = _map(start._geom, f, origin, endpoint, frame, resource, cancel)
             scale = max(math.sqrt(end.area_m2), float(np.max(np.ptp(after, axis=0))))
-            if np.max(np.abs(shapely.get_coordinates(mapped._geom)-after)) > MAP_ERROR*scale:
-                raise GeometryError('deformation disagrees with corresponding endpoint vertices')
             symmetric = _overlay(mapped._geom, end._geom, 'symmetric_difference', resource, cancel)
             if (abs(mapped.area_m2-end.area_m2) > MAP_ERROR*end.area_m2
                     or symmetric.area > MAP_ERROR*end.area_m2):
@@ -205,8 +182,6 @@ def planar_exchange(start_polygons, end_polygons, deformation_between, extensive
                 category='planar-exchange-pieces'))
             piece = PlanarGeometry._from_shape(shape, frame)
             fraction = float(shape.area)/start_polygons[donor].area_m2
-            if not math.isfinite(fraction) or fraction <= 0:
-                raise GeometryError('initial material-piece fraction is unresolvable')
             pieces.append(piece); donors.append(donor); origin_regions.append(region); piece_fraction.append(fraction)
         with PreparedPlanarProjection(start_polygons, start_regions, source_ids=parcel_ids,
                 target_ids=region_ids, source_id=source_id, budget=resource, cancel=cancel) as initial_plan:
@@ -295,7 +270,6 @@ def planar_exchange(start_polygons, end_polygons, deformation_between, extensive
             donors = np.asarray(donors, np.int64); origin_regions = np.asarray(origin_regions, np.int64)
             sparse_piece = np.asarray(sparse_piece, np.int64); destinations = np.asarray(destinations, np.int64)
             fractions = np.asarray(fractions)
-            if np.any(fractions <= 0): raise TectonicsError('exchange transfer fraction underflows')
             keys = origin_regions[sparse_piece]*size+destinations
             order = np.argsort(keys, kind='stable'); keys = keys[order]
             parcel = donors[sparse_piece[order]]; fractions = fractions[order]

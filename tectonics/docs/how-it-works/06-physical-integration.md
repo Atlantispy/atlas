@@ -196,6 +196,14 @@ directions and copy placement are checked on either path.
 Network construction uses the directions from that checked placement.
 The material declaration counts its pieces once and uses face order to find
 their supports. On a mixed face the declared footprints must cover it.
+A starting family writes a face's background as the face less its provinces,
+one province wedge at a time: within each fan triangle's wedge about the
+province centre, the part of the face beyond the outline edge. The region is
+the exact complement, and its cells grow with the triangles that reach the face.
+On a shared face the largest cohort takes the area the others leave, so the
+pieces add up to the face's measured area. A smaller province keeps the area
+of its clipped triangles; a smaller background is booked at the area of its
+own cells, so a thin background sliver closes against its geometry.
 The initial differential partition groups funded patches and components by
 face while keeping their declared traversal order.
 
@@ -1813,7 +1821,7 @@ any other hook, a cold call or an observed call recomputes every row.
 On the owned route the assembly does not check again the input rows that the owned
 derivation has already refused, and it builds its stage labels only when a step fails.
 The decimal core converts a boundary value once for each weight, and the pinned source
-hashes of the heat files are read once per process in strict mode, while each pin is
+hashes of the heat files are read once per process, while each pin is
 still compared on every call.
 
 The later [small-cell finite-volume heat rule](../../optimisation/working-snapshot-20261113/README.md#blend-high-order-heat-rows-by-cell-capacity)

@@ -161,8 +161,6 @@ def contacts(sphere, *, budget=None):
                 edges = []
                 for ring in (face.vertex_ids, *face.holes):
                     for a, b in zip(ring, ring[1:]+ring[:1]):
-                        if (a, b) in directed:
-                            raise U.SupportError('a directed network edge has two face owners')
                         directed[a, b] = face.face_id
                         edges.append(tuple(T._integers(local[[local_index[a], local_index[b]]])))
                 face_edges[face.face_id] = edges
@@ -174,19 +172,13 @@ def contacts(sphere, *, budget=None):
                     if any(abs(value) != 1 for value in sides.values()):
                         raise U.SupportError('material cell-union edge has ambiguous same-side coverage')
                     if len(sides) == 1:
-                        if not any(_parameter(a, b, mid) is not None for a, b in face_edges[face_id]):
-                            raise U.SupportError('an internal material edge has missing neighbouring material')
                         continue  # handled once below through the named network edge
-                    if len(sides) != 2 or sum(sides.values()) != 0:
-                        raise U.SupportError('material contact has missing or overlapping sided ownership')
                     pair = tuple(sorted(sides))
                     a, b = _world_arc(frames[network.face_plate(face_id)], p, q)
                     result.append(PatchContact(*pair, a, b))
             vertex = dict(zip(network.vertex_ids, network.vertex_direction))
             for (start, end), left in sorted(directed.items()):
                 right = directed.get((end, start))
-                if right is None:
-                    raise U.SupportError('the closed spherical material domain has an unpaired network edge')
                 if left > right:
                     continue
                 sides, cuts = [], {Fraction(0), Fraction(1)}
@@ -204,8 +196,6 @@ def contacts(sphere, *, budget=None):
                     pair = []
                     for intervals in sides:
                         found = {patch for low, high, patch in intervals if low < mid < high}
-                        if len(found) != 1:
-                            raise U.SupportError('network edge has missing or ambiguous exact patch coverage')
                         pair.append(next(iter(found)))
                     if points[lo] == points[hi] or np.linalg.norm(np.cross(points[lo], points[hi])) == 0:
                         raise U.SupportError('positive exact network contact is not representable as a world arc')

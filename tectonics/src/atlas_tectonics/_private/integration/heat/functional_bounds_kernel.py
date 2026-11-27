@@ -47,22 +47,15 @@ def _build(matrix, target, keys, base_keys, signed_tau, conversion, *, gradient,
     metadata, largest = I.metadata_bytes(matrix, target, conversion, signed_tau, G, cancelled)
     original_sizing = (metadata, largest)
     m, n = len(matrix), len(target)
-    if (len(keys) != m or len(set(keys)) != m or len(base_keys) != 2
-            or base_keys[0] == base_keys[1] or len(gradient) != n
-            or len(base_observations) != 2 or any(len(v) != n for v in base_observations)):
-        raise ValueError('Original matching unique keys, gradient and two owner vectors required')
     for row in (*base_observations, gradient):
         values = row if type(row) in (list, tuple) else (row,)
         for value in values:
-            if type(value) not in (int, G.mpq):
-                raise TypeError('Already owned GMP/int actions required')
             largest = max(largest, sys.getsizeof(value))
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     metadata += I.D.CONTAINER_UNIT*(8*m*n+32*m+64*n+256)
     work = R.OwnedWorkspace(budget, metadata, category='heat-functional-route', cancelled=cancelled)
     work.__enter__()
     try:
-        I.verify_sources(cancelled)
         arena = E.Arithmetic(work, G, scalar_slots=4*m*n+24*m+32*n+128,
             container_bytes=metadata, initial_bits=8*largest, cancelled=cancelled)
         audit = dict(exact_gram_constructed=False, exact_fallback=False, interval={})
@@ -130,8 +123,6 @@ def _build(matrix, target, keys, base_keys, signed_tau, conversion, *, gradient,
             zero = interval([[row[j] for j in active] for row in matrix], [target[j] for j in active], 'zero_column_interval')
             if zero['status'] == 'CERTIFIED':
                 return interval_row(zero['result'], len(active), 'literal-zero-original-columns-and-nonsingular-reduced-Gram', active)
-            if zero['status'] == 'EXACT_INCOMPATIBLE':
-                raise ArithmeticError('Literal-zero compatible restriction became exactly incompatible')
         audit['rank_reduction'], resources['rank'] = {}, {}
         reduced_owner = work.stack.enter_context(RANK.reduce_observations(matrix, target,
             budget=budget, cancelled=cancelled, evidence=audit['rank_reduction'], resource_evidence=resources['rank']))
@@ -154,8 +145,6 @@ def _build(matrix, target, keys, base_keys, signed_tau, conversion, *, gradient,
             smaller = interval(reduced['matrix'], reduced['target'], 'reduced_interval')
             if smaller['status'] == 'CERTIFIED':
                 return interval_row(smaller['result'], reduced['rank'], 'exact-original-column-certificate-and-nonsingular-reduced-Gram')
-            if smaller['status'] == 'EXACT_INCOMPATIBLE':
-                raise ArithmeticError('Exact compatible rank reduction became incompatible')
         resources['exact'] = {}
         exact_owner = work.stack.enter_context(EXACT.exact_face(matrix, target, keys, base_keys,
             signed_tau, conversion, gradient=gradient, base_observations=base_observations,

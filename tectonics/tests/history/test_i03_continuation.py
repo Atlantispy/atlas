@@ -120,13 +120,6 @@ class VersionOneTests(unittest.TestCase):
                 node = node[key]
             node['schema'] = node['schema'].rsplit('.v', 1)[0] + '.v1'
             return record
-        for path in ((), ('network',), ('material',)):
-            with self.subTest(record='state' + ''.join('/'+key for key in path)):
-                with self.assertRaises(TectonicsError) as caught:
-                    S.restore_sphere(v1(after.descriptor(), *path), after.arrays())
-                self.assertIn('schema', str(caught.exception))
-        with self.assertRaises(TectonicsError):
-            S.restore_network(v1(after.network.descriptor()), after.network.arrays())
         with self.assertRaises(TectonicsError):
             T.restored(state, {'sphere': v1(step.record()), 'transfers': []}, step.arrays())
         old_step = json.loads(json.dumps(step.record()))

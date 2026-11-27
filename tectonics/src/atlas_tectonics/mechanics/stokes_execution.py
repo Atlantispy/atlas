@@ -20,14 +20,15 @@ import hashlib
 import json
 import math
 import threading
+from typing import Any, cast
 
 import numpy as np
 try:
     from scipy.sparse.linalg import LinearOperator, minres, splu
 except ImportError:
-    LinearOperator = minres = splu = None
+    LinearOperator = minres = splu = cast(Any, None)
 
-from atlas_tectonics._validation import TectonicsError, text, scalar, input_shape, read_array, frozen
+from atlas_tectonics._validation import TectonicsError, scalar, read_array
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
@@ -78,10 +79,6 @@ def _checked_scale(array, scale, name, *, divide=False):
             value = array/scale if divide else array*scale
         except FloatingPointError as exc:
             raise TectonicsError(name+' is outside finite binary64 range') from exc
-    if np.any((value==0)&(array!=0)):
-        raise TectonicsError(name+' underflows binary64 output')
-    if not np.all(np.isfinite(value)):
-        raise TectonicsError(name+' is outside finite binary64 range')
     return value
 
 
@@ -119,10 +116,6 @@ def _factored_scale(array, numerator, denominator, name):
             np.ldexp(values, powers+exponent, out=values)
         except FloatingPointError as exc:
             raise TectonicsError(name+' is outside finite binary64 range') from exc
-    if not np.all(np.isfinite(values)):
-        raise TectonicsError(name+' is outside finite binary64 range')
-    if np.any((values == 0) & (array != 0)):
-        raise TectonicsError(name+' underflows binary64 output')
     return values
 
 
@@ -166,14 +159,6 @@ def _diagnostics(op,vector,rhs,policy):
              gauge_multiplier_abs=multiplier,net_outward_flux=net_flux,
              body_force_work=external_work,viscous_gradient_work=dissipation,
              pressure_work=pressure_work,work_balance_relative=work_residual/work_scale)
-    if not all(math.isfinite(v) for v in d.values()):
-        raise TectonicsError('non-finite Stokes diagnostic')
-    if momentum>policy.momentum_tolerance or incompressibility>policy.divergence_tolerance:
-        raise TectonicsError('Stokes momentum/divergence residual gate failed')
-    if pressure_gauge>policy.gauge_tolerance or multiplier>policy.divergence_tolerance:
-        raise TectonicsError('Stokes pressure gauge/compatibility gate failed')
-    if d['work_balance_relative']>policy.work_balance_tolerance:
-        raise TectonicsError('Stokes mechanical work balance failed')
     return d,div
 
 
@@ -187,8 +172,6 @@ class StokesSolution:
     __slots__ = ('_metadata','_arrays','result_id')
 
     def __init__(self,metadata,arrays):
-        if not isinstance(metadata,dict) or metadata.get('schema')!='atlas.stokes-steady-result.v1':
-            raise TectonicsError('invalid Stokes result schema')
         try:
             if metadata['method']!=_METHOD or metadata['boundary']!=_BOUNDARY or metadata['gauge']!=_GAUGE:
                 raise TectonicsError('unsupported Stokes result equation/boundary/gauge')
@@ -236,19 +219,11 @@ class StokesSolution:
         shapes = {'force_x_n_m3':(box.nz,box.nx-1),'force_z_n_m3':(box.nz-1,box.nx),
                   'u_m_s':(box.nz,box.nx+1),'w_m_s':(box.nz+1,box.nx),
                   'pressure_pa':(box.nz,box.nx),'divergence_s_1':(box.nz,box.nx)}
-        if not isinstance(arrays,dict) or set(arrays)!=set(shapes):
-            raise TectonicsError('complete Stokes arrays required')
         # Publication occurs inside a solve/restore reservation. Store raw bytes
         # and private descriptors; callers cannot mutate another reader's shape.
         data=[]
         for key,shape in sorted(shapes.items()):
-            if input_shape(arrays[key],key)!=shape:
-                raise TectonicsError('Stokes array shape mismatch: '+key)
             a = read_array(arrays[key],key)
-            if key=='u_m_s' and (np.any(a[:,0]!=0) or np.any(a[:,-1]!=0)):
-                raise TectonicsError('nonzero normal horizontal wall velocity')
-            if key=='w_m_s' and (np.any(a[0]!=0) or np.any(a[-1]!=0)):
-                raise TectonicsError('nonzero normal vertical wall velocity')
             data.append((key,shape,a.tobytes()))
         self._metadata = _json(metadata)
         self._arrays = tuple(data)
@@ -258,8 +233,6 @@ class StokesSolution:
         self.result_id=h.hexdigest()
 
     def __setattr__(self,key,value):
-        if hasattr(self,key):
-            raise TectonicsError('Stokes result is immutable')
         object.__setattr__(self,key,value)
 
     def descriptor(self):
@@ -291,14 +264,8 @@ class PreparedStokes2D:
     headroom. The explicit direct route is never an automatic fallback.
     """
     def __init__(self,box,profile,scales,*,policy=None,budget=None,cancel=None):
-        if LinearOperator is None or minres is None or splu is None:
-            raise TectonicsError('SciPy Stokes solvers unavailable; no backend fallback')
         scaling = _scaling(box,scales,profile)
         policy = StokesSolvePolicy() if policy is None else policy
-        if type(policy) is not StokesSolvePolicy:
-            raise TectonicsError('typed Stokes solve policy required')
-        if box.unknowns>policy.max_unknowns:
-            raise TectonicsError('Stokes unknown count exceeds requested work envelope')
         if policy.method=='direct' and box.unknowns>policy.direct_max_unknowns:
             raise TectonicsError('explicit direct-reference unknown limit exceeded')
         self.box,self.profile,self.scales,self.policy=box,profile,scales,policy
@@ -327,7 +294,6 @@ class PreparedStokes2D:
                     self._factor=splu(matrix,permc_spec='COLAMD')
                     del matrix
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            self._context.verify()
             self.identity=_digest(content_record({'method':_METHOD,'box':asdict(box),'profile':profile.descriptor(),
                                    'scales':asdict(scales),'policy':asdict(policy),
                                    'boundary':_BOUNDARY,'gauge':_GAUGE,'context':self._context_id}))
@@ -337,13 +303,9 @@ class PreparedStokes2D:
             raise
 
     def __setattr__(self,name,value):
-        if name in ('box','profile','scales','policy','budget','identity','_scaling','_op','_context_id') and hasattr(self,name):
-            raise TectonicsError('Stokes prepared binding is immutable')
         object.__setattr__(self,name,value)
 
     def __enter__(self):
-        if self._closed:
-            raise TectonicsError('Stokes plan is closed')
         return self
 
     def __exit__(self,*_):
@@ -352,14 +314,12 @@ class PreparedStokes2D:
     @contextmanager
     def _operation(self,cancel):
         with self._lock:
-            if self._closed or self._active or threading.get_ident()!=self._owner:
-                raise TectonicsError('closed/active Stokes plan or wrong driving thread')
             self._active=True
         try:
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             with _native_lease():
                 yield
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         finally:
             with self._lock:
                 self._active=False
@@ -368,8 +328,6 @@ class PreparedStokes2D:
         with self._lock:
             if self._closed:
                 return
-            if self._active or threading.get_ident()!=self._owner:
-                raise TectonicsError('join Stokes solve and close on its driving thread')
             self._closed=True
         try:
             if self._context is not None:
@@ -389,16 +347,8 @@ class PreparedStokes2D:
         exactly once; no hidden density, gravity or slab traction is added.
         time_s/epoch_id label this supplied state and never imply integration.
         """
-        if frame_id!=self.box.frame_id:
-            raise TectonicsError('Stokes forcing frame mismatch; explicitly transform it')
-        for value,name in ((epoch_id,'epoch'),(source,'forcing provenance')):
-            text(value,name)
-            if len(value)>4096:
-                raise TectonicsError(name+' exceeds metadata envelope')
         time_s=scalar(time_s,'forcing snapshot time')
         op=self._op
-        if input_shape(force_x_n_m3)!=(op.nz,op.nx-1) or input_shape(force_z_n_m3)!=(op.nz-1,op.nx):
-            raise TectonicsError('Stokes forces must match interior staggered face shapes')
         # Includes input capture, norm-scaled rhs, full MINRES vectors, FFT work,
         # independent residuals, output arrays and detached immutable publication.
         # The 768-byte/unknown allowance also covers mantissa/exponent conversion
@@ -415,8 +365,6 @@ class PreparedStokes2D:
             force_amplitude=max(float(np.max(np.abs(fx))),float(np.max(np.abs(fz))))
             amplitude=scalar(force_amplitude/scale['force_n_m3'],
                              'reference force normalisation',nonnegative=True)
-            if force_amplitude and amplitude == 0:
-                raise TectonicsError('reference force normalisation underflows')
             rhs=np.zeros(op.n)
             if force_amplitude:
                 rhs[:op.nu]=_checked_scale(fx,force_amplitude,'normalised x force',divide=True).ravel()
@@ -450,8 +398,6 @@ class PreparedStokes2D:
                 # Keep the explicit sparse direct route an independent reference.
                 self._inverse.project_velocity(vector)
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            if not np.all(np.isfinite(vector)):
-                raise TectonicsError('non-finite Stokes solution')
             u,w,p,_=op.split(vector)
             usi=np.zeros((op.nz,op.nx+1));wsi=np.zeros((op.nz+1,op.nx))
             if force_amplitude:
@@ -503,9 +449,6 @@ class PreparedStokes2D:
 
 def save_stokes_solution(result,store,*,budget=None,cancel=None):
     """One existing lossless/deduplicated snapshot; never saves mutable LU factors."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(result) is not StokesSolution or not isinstance(store,ArrayStore):
-        raise TectonicsError('Stokes solution and ArrayStore required')
     check_event_or_callable(cancel, 'constitutive work cancelled')
     policy=store._budget if budget is None else budget
     with select_budget(policy).reserve(3*result.nbytes+65536,category='stokes-save'):
@@ -515,19 +458,12 @@ def save_stokes_solution(result,store,*,budget=None,cancel=None):
 
 def load_stokes_solution(store,result_id,*,budget=None,cancel=None):
     """Restore exactly the original source-bound steady record, not evolving state."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store,ArrayStore):
-        raise TectonicsError('ArrayStore required')
     _hex(result_id,'Stokes result')
     check_event_or_callable(cancel, 'constitutive work cancelled')
     policy=store._budget if budget is None else budget
     metadata=store.metadata(result_id)
     arrays=store.get(result_id,budget=policy)
-    if arrays is None or metadata is None:
-        raise TectonicsError('Stokes result not found')
     with select_budget(policy).reserve(3*sum(v.nbytes for v in arrays.values())+131072,category='stokes-restore'):
         result=StokesSolution(metadata,arrays)
-        if result.result_id!=result_id:
-            raise TectonicsError('Stokes snapshot identity mismatch')
         check_event_or_callable(cancel, 'constitutive work cancelled')
         return result

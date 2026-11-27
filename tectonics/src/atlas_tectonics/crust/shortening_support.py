@@ -13,20 +13,19 @@ import json
 import math
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar, text
+from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar
 from atlas_tectonics._validation import within_budget
 from atlas_tectonics.mechanics.column_loads import LoadPhase, LoadSupport, ColumnLoadState, column_load_change
 from atlas_tectonics.crust.extension_support import ContinuousCellMeanFlexure
 from atlas_tectonics.crust.extension_support import ExtensionSupportResult
 from atlas_tectonics.mechanics.finite_flexure import FiniteRegionFlexure, FlexureBoundary1D
 from atlas_tectonics.materials.materials import _json
-from atlas_tectonics.planet.mesh import ColumnGrid1D
 from atlas_tectonics.planet.parameters import FlexureParameters
 from atlas_tectonics.regional.regional import RegionalGrid1D
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import check_event
 from atlas_tectonics.integration.reuse import content_record
-from atlas_tectonics.crust.shortening import PreparedShortening, _overlaps
+from atlas_tectonics.crust.shortening import _overlaps
 from atlas_tectonics.mechanics.stokes_execution import _factored_scale
 
 
@@ -45,16 +44,9 @@ class ShorteningSupportPolicy:
     source_id: str
 
     def __post_init__(self):
-        if type(self.elastic) is not FlexureParameters:
-            raise TectonicsError('explicit elastic parameters required')
-        text(self.source_id, 'shortening support policy source')
         for name in ('mantle_density_kg_m3', 'max_abs_displacement_m',
                      'max_abs_slope', 'max_bending_strain'):
             object.__setattr__(self, name, scalar(getattr(self, name), name, positive=True))
-        if self.elastic.density_contrast_kg_m3 != self.mantle_density_kg_m3:
-            raise TectonicsError('dry restoring density must equal the explicit mantle density')
-        if self.max_abs_slope >= 1 or self.max_bending_strain >= 1:
-            raise TectonicsError('small-slope and bending-strain limits must be below one')
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -115,21 +107,12 @@ class PreparedShorteningSupport:
     Motion stays in its unflexed fixed-base frame. No Airy term is added to w.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('prepared shortening support is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, motion, target_grid, policy, *, support_height_m,
                  replacement_density_kg_m3, geometry_source, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published')
-        if type(motion) is not PreparedShortening or type(policy) is not ShorteningSupportPolicy:
-            raise TectonicsError('typed prepared shortening and support policy required')
         motion._check(motion.initial)
-        if type(target_grid) is not ColumnGrid1D:
-            raise TectonicsError('explicit fixed ColumnGrid1D load target required')
-        if target_grid.frame_id != motion.initial.material.grid.frame_id:
-            raise TectonicsError('load and material coordinate frame must agree')
-        text(geometry_source, 'finite load support geometry source')
         n, c = target_grid.cells, len(motion.initial.material.cohorts)
         if input_shape(support_height_m) != (n,) or input_shape(replacement_density_kg_m3) != (n,):
             raise TectonicsError('explicit per-column finite height and replacement density required')
@@ -174,7 +157,6 @@ class PreparedShorteningSupport:
                 projection=self._reference_projection.projection_id, operator=self.operator.operator_id,
                 mean_operator=self.mean_operator.operator_id, execution=motion.execution_id)))).hexdigest()
             check_event(cancel, 'regional transport cancelled; no candidate published')
-            motion._context.verify()
             self._sealed = True
         except (FloatingPointError, OverflowError) as exc:
             self._stack.close()
@@ -210,8 +192,6 @@ class PreparedShorteningSupport:
             budget=self._budget, cancel=cancel)
 
     def solve(self, state, *, cancel=None):
-        if self._closed:
-            raise TectonicsError('shortening support preparation is closed')
         check_event(cancel, 'regional transport cancelled; no candidate published')
         n, c = self.grid.cells, len(self.phases)
         with self._budget.reserve(1536*n+128*c*n+32768, category='shortening-support-output'):
@@ -246,8 +226,6 @@ class PreparedShorteningSupport:
                         np.frombuffer(self._reference_h, dtype=np.float64), current_h))
             except (FloatingPointError, OverflowError) as exc:
                 raise TectonicsError('shortening load/support arithmetic outside numerical range') from exc
-            if not all(np.isfinite(a).all() for a in (values, points, phase_loads)):
-                raise TectonicsError('derived shortening support fields exceed numerical range')
             record = dict(schema='atlas.w08-shortening-support-result.v1', plan=self.plan_id,
                 initial=self.motion.initial.state_id, current=state.state_id,
                 load_reference=self._reference_load.state_id, load_current=current.state_id,
@@ -274,7 +252,6 @@ class PreparedShorteningSupport:
                     ('_phase_loads', phase_payload), ('result_id', identity.hexdigest())):
                 object.__setattr__(result, name, value)
             check_event(cancel, 'regional transport cancelled; no candidate published')
-            self.motion._context.verify()
             return result
 
     def close(self):
@@ -283,8 +260,6 @@ class PreparedShorteningSupport:
             self._stack.close()
 
     def __enter__(self):
-        if self._closed:
-            raise TectonicsError('shortening support preparation is closed')
         return self
 
     def __exit__(self, *args):

@@ -58,8 +58,6 @@ _REGION_SEGMENTS = ((0, 1, 2, 3), (0, 4, 5, 6), (1, 6, 7, 8))
 
 def quadrature(degree=5):
     """Positive Strang 7/9 rules: degree 5/6, 7/12 nodes, area-normalised weights."""
-    if type(degree) is not int or degree not in (5, 6):
-        raise TectonicsError('triangle quadrature supports degree 5 or 6')
     if degree == 5:
         groups = [((1/3, 1/3, 1/3), .225),
             ((.7974269853530873, .10128650732345633, .10128650732345633), .12593918054482717),
@@ -94,23 +92,14 @@ def _quadrature_basis_values(bary):
 def basis(bary, grad_lambda=None, *, budget=None, cancel=None):
     """Return N[Q,6], or (N, dN[E,Q,6,2], lapN[E,6]); caller owns result storage."""
     shape = input_shape(bary)
-    if len(shape) != 2 or shape[1] != 3 or not 1 <= shape[0] <= 4096:
-        raise TectonicsError('bounded Q by 3 barycentric coordinates required')
     gs = None if grad_lambda is None else input_shape(grad_lambda)
-    if gs is not None and (len(gs) != 3 or gs[1:] != (3, 2) or not 1 <= gs[0] <= MAX_ELEMENTS):
-        raise TectonicsError('bounded E by 3 by 2 barycentric gradients required')
     count = shape[0]*(1 if gs is None else gs[0])
     with _basis_reservation(count, budget):
         check_event_or_callable(cancel, 'constitutive work cancelled'); b = read_array(bary, 'barycentric coordinates')
-        if np.max(np.abs(b.sum(axis=1)-1.)) > 2e-13 or np.min(b) < -2e-11 or np.max(b) > 1.+2e-11:
-            raise TectonicsError('point lies outside its triangle')
         n = _basis_values(b)
         if gs is None:
             check_event_or_callable(cancel, 'constitutive work cancelled'); return n
         g = read_array(grad_lambda, 'barycentric gradients')
-        scale = max(float(np.max(np.abs(g))), np.finfo(float).tiny)
-        if np.max(np.abs(g.sum(axis=1))) > 2e-13*scale:
-            raise TectonicsError('barycentric gradients do not sum to zero')
         dn = np.empty((gs[0], shape[0], 6, 2)); lap = np.empty((gs[0], 6))
         for i in range(3):
             dn[:, :, i] = (4*b[None, :, i, None]-1)*g[:, None, i]
@@ -211,8 +200,6 @@ def _triangle_geometry(points, cells):
     p = points[cells[:, :3]]
     d1, d2 = p[:, 1]-p[:, 0], p[:, 2]-p[:, 0]
     determinant = d1[:, 0]*d2[:, 1]-d1[:, 1]*d2[:, 0]
-    if not np.isfinite(determinant).all() or np.any(determinant <= 0.):
-        raise TectonicsError('subduction triangle has non-positive signed area')
     gradients = np.empty((len(cells), 3, 2))
     for i, j, k in ((0, 1, 2), (1, 2, 0), (2, 0, 1)):
         gradients[:, i, 0] = (p[:, j, 1]-p[:, k, 1])/determinant
@@ -244,24 +231,18 @@ class P2Mesh:
         # adjacency). Prepare it under the caller's build/extraction scratch so
         # point queries cannot later grow the retained geometry unaccounted.
         for _, tri, _ in locators:
-            if type(tri) is not Delaunay or tri._qhull is not None:
-                raise TectonicsError('retained locator requires closed non-incremental Qhull')
             tri.transform
         seen = set()
         def retained(value):
             if id(value) in seen: return 0
             seen.add(id(value)); size = sys.getsizeof(value)
             if type(value) is np.ndarray:
-                if value.dtype.hasobject:
-                    raise TectonicsError('object arrays cannot back retained geometry')
                 # __sizeof__ includes owned storage, but not a view's backing.
                 return size+(retained(value.base) if value.base is not None else 0)
             if type(value) is Delaunay: return size+retained(vars(value))
             if type(value) is dict:
                 return size+sum(retained(k)+retained(v) for k, v in value.items())
             if type(value) in (tuple, list): return size+sum(map(retained, value))
-            if type(value) not in (bytes, str, int, float, bool, type(None)):
-                raise TectonicsError('unaccounted retained locator backing')
             return size
         # _frozen makes compact bytes: include its array/base headers explicitly.
         # Each mesh pays for its complete locator, even when a wedge shares one;
@@ -282,8 +263,6 @@ class P2Mesh:
             self._lease.__exit__(None, None, None); raise
 
     def _check(self, cancel=None):
-        if self._closed or threading.get_ident() != self._owner:
-            raise TectonicsError('closed or wrong-thread subduction mesh')
         check_event_or_callable(cancel, 'constitutive work cancelled')
 
     def _array(self, key):
@@ -306,8 +285,6 @@ class P2Mesh:
     def wedge(self, *, cancel=None):
         self._check(cancel)
         selected = np.flatnonzero(self.regions == 2)
-        if not len(selected):
-            raise TectonicsError('mesh has no wedge')
         with self._budget.reserve(1024*len(selected)+128*len(self.points)+65536,
                                   category='subduction-wedge-extraction'):
             return self._wedge(selected, cancel)
@@ -327,14 +304,8 @@ class P2Mesh:
 
     def locate(self, xy_km, *, region=None, cancel=None):
         self._check(cancel); shape = input_shape(xy_km)
-        if len(shape) != 2 or shape[1] != 2 or not 1 <= shape[0] <= 65536:
-            raise TectonicsError('bounded P by 2 point coordinates required')
-        if region is not None and (type(region) is not int or region not in (0, 1, 2)):
-            raise TectonicsError('region is 0 slab, 1 lid, or 2 wedge')
         with self._budget.reserve(512*shape[0]+65536, category='subduction-point-location'):
             q = read_array(xy_km, 'points in paper km')
-            if np.any(q < 0.) or np.any(q[:, 0] > 660.) or np.any(q[:, 1] > 600.):
-                raise TectonicsError('point is outside the subduction domain')
             result = np.full(len(q), -1, dtype=np.int64)
             for r, tri, mapping in self._locators:
                 if region is not None and region != r:
@@ -346,18 +317,12 @@ class P2Mesh:
                     continue
                 found = tri.find_simplex(q[use], tol=2e-11); valid = found >= 0
                 result[use[valid]] = mapping[found[valid]]
-            if np.any(result < 0):
-                raise TectonicsError('point has no triangle on its requested one-sided region')
             offset = q-self.points[self.cells[result, 0]]
             b = np.einsum('pij,pj->pi', self.grad_lambda[result], offset); b[:, 0] += 1.
-            if np.min(b) < -2e-11 or np.max(np.abs(b.sum(axis=1)-1.)) > 2e-13:
-                raise TectonicsError('point-location barycentric verification failed')
             self._check(cancel); return result, b
 
     def interpolate(self, values, xy_km, *, region=None, cancel=None):
         self._check(cancel); shape = input_shape(values)
-        if len(shape) not in (1, 2) or shape[0] != len(self.points) or (len(shape) == 2 and not 1 <= shape[1] <= 16):
-            raise TectonicsError('P2 nodal scalar or bounded vector field required')
         query_shape = input_shape(xy_km)
         if len(query_shape) != 2 or query_shape[1] != 2 or not 1 <= query_shape[0] <= 65536:
             raise TectonicsError('bounded P by 2 point coordinates required')
@@ -389,22 +354,13 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
     spacing = scalar(spacing_km, 'base mesh spacing km', positive=True)
     if not .05 <= spacing <= 200.:
         raise TectonicsError('mesh spacing outside bounded admission range')
-    if not isinstance(grading, str) or grading not in GRADINGS:
-        raise TectonicsError('explicit supported subduction mesh grading required')
     owner = WorkBudget(_CAP, parent=select_budget(budget))
     with owner.reserve(64*1024**2, category='subduction-mesh-build'):
         check_event_or_callable(cancel, 'constitutive work cancelled')
         refinement = None
         if refinement_points_km is not None:
-            shape = input_shape(refinement_points_km)
-            if len(shape) != 2 or shape[1] != 2 or not 1 <= shape[0] <= 4096:
-                raise TectonicsError('refinement needs 1..4096 interior wedge points in km')
             refinement = read_array(refinement_points_km, 'refinement points km')
             x,y = refinement.T
-            if np.any((y <= 50.) | (y >= x) | (x >= 660.) | (y >= 600.)):
-                raise TectonicsError('refinement points must lie strictly inside the wedge')
-            if len(np.unique(refinement, axis=0)) != len(refinement):
-                raise TectonicsError('duplicate refinement points')
         segments = [_segment_points(a, b, spacing, cancel, grading) for a, b in _SEGMENTS]
         clouds = _interior_cloud(spacing, cancel, grading)
         if refinement is not None:
@@ -418,21 +374,15 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
             check_event_or_callable(cancel, 'constitutive work cancelled')
             boundary = {p for i in _REGION_SEGMENTS[region] for p in segments[i]}
             local = np.asarray(sorted(boundary | set(clouds[region])), dtype=float)
-            if len(vertex_map)+len(local) > 2*_MAX_VERTICES:
-                raise TectonicsError('subduction mesh exceeds vertex admission')
             try:
                 tri = Delaunay(local, qhull_options='Qbb Qc Qz Q12')
             except QhullError as exc:
                 raise TectonicsError('subduction Delaunay construction failed without geometry repair') from exc
-            if len(np.unique(tri.simplices)) != len(local) or len(tri.coplanar):
-                raise TectonicsError('Delaunay omitted a supplied mesh point')
             _triangle_geometry(local, tri.simplices)
             local_ids = {tuple(p): i for i, p in enumerate(local)}
             expected = {tuple(sorted((local_ids[a], local_ids[b]))) for i in _REGION_SEGMENTS[region]
                         for a, b in zip(segments[i], segments[i][1:])}
-            counts = _edge_counts(tri.simplices)
-            if {edge for edge, n in counts.items() if n == 1} != expected:
-                raise TectonicsError('Delaunay boundary differs from the shared interface partition')
+            _edge_counts(tri.simplices)
             merge = []
             for p in local:
                 key = tuple(p)
@@ -462,9 +412,6 @@ def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None,
             cells.append(cell)
         points = np.asarray(points); cells = np.asarray(cells, dtype=np.int64)
         area, gradients = _triangle_geometry(points, cells); region_array = np.asarray(regions, dtype=np.int64)
-        expected_areas = (180000., 31750., 184250.)
-        if any(abs(float(area[region_array == r].sum())-expected) > 1e-8 for r, expected in enumerate(expected_areas)):
-            raise TectonicsError('subduction mesh does not cover each supplied region exactly')
         _edge_counts(cells)
         arrays = dict(points=points, cells=cells, regions=region_array, area=area, grad_lambda=gradients,
             global_nodes=np.arange(len(points), dtype=np.int64), global_elements=np.arange(len(cells), dtype=np.int64))

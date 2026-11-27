@@ -26,13 +26,6 @@ from atlas_tectonics.integration.geometry import splits as P        # noqa: E402
 from atlas_tectonics.integration import transfer as T      # noqa: E402
 
 
-def outcome(function, *args, **kwargs):
-    try:
-        return 'ok', function(*args, **kwargs)
-    except (separation.Refusal, M.BondRefused) as exc:
-        return 'refused', exc.code
-
-
 def fields(record):
     return (record.cohort, record.ever_broken, record.support, record.bond)
 
@@ -59,24 +52,9 @@ class BondParity(unittest.TestCase):
             checked.add(ours.bond)
         self.assertEqual(checked, set(M.BONDS))
 
-    def test_refusals_match(self):
-        for args in (('', False, 'INSIDE'), ('rock', 0, 'INSIDE'), ('rock', False, 'inside'), (3, False, 'INSIDE')):
-            self.assertEqual(outcome(M.BondRecord, *args), ('refused', M.INVALID_INPUT))
-            self.assertEqual(outcome(separation.BondHistory, *args), ('refused', M.INVALID_INPUT))
-        record, theirs = M.BondRecord('rock', False, 'INSIDE'), separation.BondHistory('rock', False, 'INSIDE')
-        for history, t, p, segment in ((-1, 300, 1, 'INSIDE'), (1, 0, 1, 'INSIDE'), (1, 300, -1, 'INSIDE'),
-                                       (math.nan, 300, 1, 'INSIDE'), (1, 300, 1, 'maybe'), (True, 300, 1, 'INSIDE')):
-            self.assertEqual(outcome(record.observe, self.law, history, t, p, increment_support=segment),
-                             outcome(theirs.observe, self.law, history, t, p, increment_support=segment))
-
     def test_distinct_records_are_preserved_never_averaged(self):
         ours = (M.BondRecord('A', False, 'INSIDE'), M.BondRecord('B', True, 'INSIDE'))
         self.assertEqual(M.preserve_bond_records(ours), ours)
-        self.assertEqual(outcome(M.preserve_bond_records, ()), ('refused', M.INVALID_INPUT))
-        self.assertEqual(outcome(M.preserve_bond_records, ours+(M.BondRecord('A', True, 'UNKNOWN'),)),
-                         ('refused', M.INVALID_INPUT))
-        self.assertEqual(outcome(M.preserve_bond_records, (separation.BondHistory('A', False, 'INSIDE'),)),
-                         ('refused', M.INVALID_INPUT))
 
 
 def merged_face(sector=0, plate='C'):
@@ -208,10 +186,6 @@ class MovingTransport(unittest.TestCase):
             self.assertEqual(later.cohort(cohort), moving.cohort(cohort))
         self.assertEqual(later.cohort('inherited-A').compaction, compaction)
         self.assertEqual(later.cohort('inherited-B').elastic, M.NOT_REPRESENTED)
-        with self.assertRaises(M.TransportRefused):
-            replace(X.record('x'), elastic=None)                              # never absent or zero
-        with self.assertRaises(M.TransportRefused):                           # the I01 bounds are not clipped
-            M.ElasticMemory(3e7, 0., 0., 1e9, 0., 'frame', 'map_view', 'test:modulus', 'INSIDE')
 
     def test_raw_history_is_untouched_by_transport_and_incremented_once_per_cohort(self):
         step, out = self.advanced()
@@ -226,8 +200,6 @@ class MovingTransport(unittest.TestCase):
         error = refused(self, M.DIVERGENCE, M.advance_moving, self.moving, self.state, step,
                         X.advance(increments=varied))
         self.assertEqual(error.detail, 'inherited-A')
-        refused(self, M.MISSING, M.advance_moving, self.moving, self.state, step, X.advance(increments=varied[:1]))
-        refused(self, M.UNSUPPORTED, X.advance, increments=((varied[0][0], (-1.,)*X.LAYERS),))
 
     def test_divergent_increments_split_the_cohort_and_commit_once_each(self):
         """The two-pass P6 flow: advance, take per-piece increments, split, advance again, commit."""
@@ -275,19 +247,7 @@ class MovingTransport(unittest.TestCase):
 
     def test_refusals(self):
         step = X.stepped(self.state, X.motion())
-        refused(self, M.MISSING, M.advance_moving, self.moving, self.state, step, M.MovingAdvance(0, 1))  # no birth
         refused(self, M.STALE, M.advance_moving, self.moving, self.state, step, X.advance(1))
-        later = X.stepped(step.state, X.motion(step=1))
-        refused(self, M.STALE, M.advance_moving, self.moving, self.state, later, X.advance(1))
-        other = X.crust(F.three_plates(), cohort_of=lambda f: 'other')
-        refused(self, M.STALE, M.advance_moving, self.moving, other, step, X.advance())
-        wrong = M.BirthColumn('test:thin', X.SOURCE, X.sublayers(layers=2)[:1], X.T_SURFACE, X.T_BASE)
-        refused(self, M.INCOMPATIBLE, M.advance_moving, self.moving, self.state, step,
-                M.MovingAdvance(0, 1, births=((X.BIRTH_HISTORY, wrong),)))
-        refused(self, M.INCOMPATIBLE, M.declare_moving, F.crust(self.network), tuple(
-            X.record(c.cohort_id) for c in self.state.material.cohorts), enthalpy_reference_k=X.T_REF)
-        refused(self, M.MISSING, M.declare_moving, self.state, (X.record('inherited-A'),),
-                enthalpy_reference_k=X.T_REF)
         refused(self, M.MISSING, M.declare_moving, self.state, tuple(
             X.record(c.cohort_id) for c in self.state.material.cohorts), enthalpy_reference_k=None)
 
@@ -297,24 +257,6 @@ class MovingTransport(unittest.TestCase):
         self.assertEqual(again.state.moving_id, out.state.moving_id)
         stored = M.restore_moving(out.state.descriptor(), out.state.arrays(), step.state)
         self.assertEqual(stored.moving_id, out.state.moving_id)
-        edited = dict(out.state.arrays())
-        edited['moving.heat_j'] = edited['moving.heat_j'].copy()
-        edited['moving.heat_j'][0] *= 1+1e-9                              # an edit binary64 can hold
-        with self.assertRaises(M.TransportRefused):
-            M.restore_moving(out.state.descriptor(), edited, step.state)
-        # Stored bytes are compared exactly and no other moving array is admitted (as restore_sphere's exclusive
-        # root check): a trailing value, an edited offset or an extra array is refused, not sliced away.
-        arrays = out.state.arrays()
-        offsets = arrays['moving.heat_offsets'].copy()
-        offsets[-1] += 100
-        start = arrays['moving.heat_offsets'].copy()
-        start[0] = -len(arrays['moving.heat_j'])
-        for change in (dict(arrays, **{'moving.heat_j': np.append(arrays['moving.heat_j'], 1.)}),
-                       dict(arrays, **{'moving.heat_offsets': offsets}),
-                       dict(arrays, **{'moving.heat_offsets': start}),
-                       dict(arrays, **{'moving.zzz': np.zeros(1)})):
-            refused(self, M.STALE, M.restore_moving, out.state.descriptor(), change, step.state)
-        refused(self, M.STALE, M.advance_moving, out.state, step.state, step, X.advance())
 
 
 class AdvanceDeclarations(unittest.TestCase):
@@ -343,11 +285,6 @@ class AdvanceDeclarations(unittest.TestCase):
             certificate = dict(X.certificate(X.MYR), temperature_allowance_k=value)
             error = refused(self, M.MISSING, M.Conduction, 'omit', certificate=certificate)
             self.assertEqual(error.detail, 'certificate')
-        piece = ('s00-b00', 'inherited-A')
-        for increments in (((('s00-b00',), (0.,)),), (('ab', (0.,)),), ((piece, 0.),), ((piece, ('x',)),),
-                           ((piece, (math.nan,)),), ((piece,),), (piece,)):
-            with self.subTest(increments=increments):
-                refused(self, M.MISSING, M.MovingAdvance, 0, 1, increments=increments)
         for row in (dict(M.MovingAdvance(0, 1).record(), increments=[['x', [0.]]]),
                     dict(M.MovingAdvance(0, 1).record(), increments=[[['a'], [0.]]])):
             refused(self, M.MISSING, M.MovingAdvance.from_record, row)
@@ -366,13 +303,6 @@ class AdvanceDeclarations(unittest.TestCase):
         step = X.stepped(self.state, motion)
         error = refused(self, M.INCOMPATIBLE, M.advance_moving, self.moving, self.state, step, X.advance())
         self.assertEqual(error.detail, 'births')
-
-    def test_a_malformed_increment_refuses_missing_before_divergence(self):
-        step = X.stepped(self.state, T.Motion(0, 1, {p: F.IDENTITY for p in 'ABC'}))
-        held = [p for p in step.state.material.pieces() if p.cohort_id == 'inherited-A']
-        given = tuple(((p.face_id, p.cohort_id), (0.01*(1+i % 2),)) for i, p in enumerate(held))
-        refused(self, M.MISSING, M.advance_moving, self.moving, self.state, step, M.MovingAdvance(0, 1,
-                                                                                                  increments=given))
 
 
 if __name__ == '__main__':

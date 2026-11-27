@@ -444,8 +444,6 @@ class Meter:
 
     # ------------------------------------------------------------ single steps
     def begin_burst(self, count):
-        if type(count) is not int or count < 0:
-            raise ValueError('A declared step needs a nonnegative integer count')
         self.read()
         entry = [count, self.last, self.others]
         self.bursts.append(entry)
@@ -466,8 +464,6 @@ class Meter:
     # ----------------------------------------------------------------- workers
     def expect_workers(self, count):
         """Charge ``count`` workers their starting allowance before any is started."""
-        if type(count) is not int or count < 0:
-            raise ValueError('Worker count must be a nonnegative integer')
         self.expected += count
         try:
             self.read()
@@ -476,8 +472,6 @@ class Meter:
             raise
 
     def worker_started(self, pid):
-        if self.expected <= 0:
-            raise RuntimeError('A worker must be expected before it is started')
         self.children[pid] = dict(process=self.psutil.Process(pid), last=None, peak=0, commit=0)
         self.read()              # still charged its allowance as well, until the next line
         self.expected -= 1
@@ -494,8 +488,6 @@ class Meter:
 
     def unexpect_workers(self, count):
         """Return the starting allowance of workers that were never started."""
-        if count > self.expected:
-            raise RuntimeError('More starting allowances returned than held')
         self.expected -= count
         if not self.failed:
             self.read()
@@ -514,12 +506,8 @@ class Meter:
         """The producer has returned: its workspaces are gone, the result is admitted."""
         if self.closed:
             return
-        if self.bursts or self.expected or self.children:
-            raise RuntimeError('A declared step or worker outlives the metered call')
         self.read()
         left = self.side.reserved_bytes
-        if left and self.categories is not EVERY:
-            raise RuntimeError('Producer workspaces remain after the producer returned: %d bytes' % left)
         if left:
             # A re-read may leave objects with the reader (a restored plan, a record) whose
             # reservations carry no name that says so. They were admitted at their calculated
@@ -588,8 +576,6 @@ def open(budget, *, categories=None, name='forward-call'):
     settle_carried(budget)
     current = getattr(budget, '_scope', None)
     if current is not None:
-        if type(current) is not Meter or not current.failed:
-            raise RuntimeError('This budget already has an admission scope')
         if categories is None or current.categories is None:
             current.categories = None                  # a forward call's categories
         elif categories is EVERY or current.categories is EVERY:

@@ -27,6 +27,7 @@ from dataclasses import fields
 from decimal import Decimal
 from fractions import Fraction
 import sys
+from typing import cast
 
 from atlas_tectonics._private.integration.heat import certification_resources as I
 from atlas_tectonics._private.integration.heat import counted_blocks as COUNT
@@ -40,8 +41,6 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
     from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     G = selected.library()
-    if G is None:
-        raise RuntimeError('Selected GMP backend required')
     # One recursion frame + one iterator/locals generation per level, plus
     # source-local closure/scalar/owner metadata. This is transient, not a
     # retained per-row256KiB allowance.
@@ -58,21 +57,19 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
         def visit(value, depth=0):
             nonlocal total
             I.check(cancelled)
-            if depth > MAX_DEPTH:
-                raise ValueError('Unexpected retained result nesting')
             if not counted:
                 # R2's figure for the object is added as it was, here and further down. Once it is
                 # complete the object is charged the larger of it and its blocks as they are made.
-                base, total = total, I.size(total+sys.getsizeof(value))
+                base, total = total, (total+sys.getsizeof(value))
                 need = (COUNT.refused_bytes(value, G, padding) if type(value) in plain
                         else COUNT.refused_block(sys.getsizeof(value), padding))
                 if type(value) not in later:
-                    total = I.size(max(total, base+need))
+                    total = max(total, base+need)
             elif type(value) in plain:
                 # The object exists: its own blocks, as it reports them.
-                total = I.size(total+COUNT.own_bytes(value, G))
+                total = (total+COUNT.own_bytes(value, G))
             elif type(value) in record_types:
-                total = I.size(total+COUNT.block(sys.getsizeof(value)))
+                total = (total+COUNT.block(sys.getsizeof(value)))
             if type(value) in (dict, list, tuple):
                 if type(value) is dict:
                     for key, item in value.items():
@@ -83,26 +80,26 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
                         visit(item, depth+1)
             elif type(value) in record_types:
                 # An early instance of a class holds more than its dictionary reports.
-                total = I.size(total+(COUNT.own_bytes(value.__dict__, G)+COUNT.record_instance(type(value), classes)
+                total = (total+(COUNT.own_bytes(value.__dict__, G)+COUNT.record_instance(type(value), classes)
                                       if counted else sys.getsizeof(value.__dict__)))
                 if not counted:
                     need += COUNT.refused_bytes(value.__dict__, G, padding)+COUNT.record_instance(type(value), classes)
-                    total = I.size(max(total, base+need))
+                    total = max(total, base+need)
                 for field in fields(value):
                     visit(field.name, depth+1)
                     visit(getattr(value, field.name), depth+1)
             elif counted and type(value) is G.mpq:
                 pass
             elif counted and type(value) is Fraction:
-                total = I.size(total+COUNT.own_bytes(value.numerator, G)+COUNT.own_bytes(value.denominator, G))
+                total = (total+COUNT.own_bytes(value.numerator, G)+COUNT.own_bytes(value.denominator, G))
             elif type(value) in (G.mpq, Fraction):
-                total = I.size(total+R.native_slot_allowance(R.RationalShape(
+                total = (total+R.native_slot_allowance(R.RationalShape(
                     max(1, value.numerator.bit_length()), value.denominator.bit_length())))
                 if type(value) is Fraction:
-                    total = I.size(total+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator))
+                    total = (total+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator))
                     need += (COUNT.refused_bytes(value.numerator, G, padding)
                              +COUNT.refused_bytes(value.denominator, G, padding))
-                total = I.size(max(total, base+need))        # only a refused count comes this way
+                total = max(total, cast(int, base)+cast(int, need))        # only a refused count comes this way
             elif type(value) not in (str, int, bool, float, Decimal, type(None)):
                 raise TypeError('Unsupported retained result object '+type(value).__name__)
         value = owner.value
@@ -118,7 +115,7 @@ def transfer(owner, *, budget, cancelled=None, category='heat-retained-functiona
             owner_bytes += sys.getsizeof(entry)+sys.getsizeof(entry[1])
         for entry in work.lease.charged:
             owner_bytes += sys.getsizeof(entry)
-        retained = I.size(total+owner_bytes)
+        retained = (total+owner_bytes)
         # Preserve the walking lease until this local traversal frame drops.
         # Objects in value remain funded by both old and new owners at transfer.
         work.resize_before_allocation_or_after_drop(max(traversal_bytes, retained))

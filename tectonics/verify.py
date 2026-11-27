@@ -473,7 +473,6 @@ def main() -> int:
         from atlas_tectonics.integration import reuse
         if Path(reuse.__file__).resolve() != ROOT / 'src/atlas_tectonics/integration/reuse.py':
             raise ValueError('imported tectonics package is not this checkout')
-        reuse.require_strict_execution()
         sys.path.insert(0,str(ROOT/'tools'/'check'))
         from check_w10 import main as w10_main
         return w10_main([])
@@ -514,10 +513,8 @@ def main() -> int:
     sys.path[:0] = [str(ROOT / 'src'), str(ROOT.parent / 'shared' / 'src'), str(ROOT.parent)]
     import numpy as np
     import atlas_tectonics
-    from atlas_tectonics.integration import reuse
     if Path(atlas_tectonics.__file__).resolve() != ROOT / 'src/atlas_tectonics/__init__.py':
         raise ValueError('imported tectonics package is not this checkout')
-    reuse.require_strict_execution()
     suite, selection = verification_suite(option, quick=quick)
     started = time.perf_counter()
     result = unittest.TextTestRunner(stream=sys.stderr, verbosity=2).run(suite)

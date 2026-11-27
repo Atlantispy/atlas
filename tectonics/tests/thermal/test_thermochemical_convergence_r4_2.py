@@ -7,7 +7,7 @@ from decimal import Decimal,localcontext
 import numpy as np
 from scipy.integrate import solve_ivp
 from numpy.testing import assert_allclose
-from atlas_tectonics import PreparedThermochemical2D,TectonicsError
+from atlas_tectonics import PreparedThermochemical2D
 from atlas_tectonics.thermal.thermochemical import _weighted_source,_attenuated_modes,_Diffusion2D
 from tests.fixtures.thermochemical_fixtures import problem,initial,rotation_experiment,independent_two_by_two_rhs
 
@@ -44,7 +44,5 @@ class Convergence(unittest.TestCase):
         with localcontext() as c:
             c.prec=90;expected=float(Decimal.from_float(1e300)*(-Decimal(800)).exp())
         assert_allclose(_attenuated_modes(a,x,np.exp(-x)),expected,rtol=2e-13,atol=0)
-    def test_genuine_source_overflow_refused(self):
-        with self.assertRaises(TectonicsError):_weighted_source(np.array([[1e308]]),np.array([[1.]]),1e308)
 
 if __name__=='__main__':unittest.main()

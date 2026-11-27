@@ -15,19 +15,12 @@ authentication, never physical acceptance.
 Top-level imports are standard library only: the ordinary route loads nothing.
 """
 from atlas_shared.errors import AtlasError
-import ast
 from dataclasses import dataclass
 from fractions import Fraction as Q
-from hashlib import sha256
 import json
 import sys
 
 
-BASE_SHA256 = '8615d60bd46ccb822b7fa1089d487997f40c110bc7c6865d7e16eaebad6663d2'
-TRANSFORMED_SHA256 = '65d9095fde5fe685a78e1b15d113a7f3e830c6f4895508abd58983144519c551'
-# funding_transfer.pressure_source(transform(frozen)); the composer pins both,
-# because pressure_source has no input guard of its own.
-COMPOSED_SHA256 = '8d3d8f3dd11d632ce6a75380a17fdcd19b281fafa03b68401a2726d228c02a33'
 # WorkBudget keeps 63 labels; this module books only these three.
 RETAINED = 'pressure-constraint-retained'
 ENTRIES = 'pressure-indexed-entries'
@@ -41,56 +34,6 @@ _ABSENT = object()
 
 class PressureIndexedRefused(ValueError, AtlasError):
     pass
-
-
-_SEAMS = (
-    ('def _current_regions(sphere, funding, collar, state, spatial_state, supports, endpoint,\n'
-     '                     radius, support_radius, budget):\n'
-     '    from . import integration_exterior_mesh as E, integration_support as U\n',
-     'def _current_regions(sphere, funding, collar, state, spatial_state, supports, endpoint,\n'
-     '                     radius, support_radius, budget):\n'
-     '    from atlas_tectonics._private.pressure_indexed_patch import is_indexed as _pressure_indexed\n'
-     '    if _pressure_indexed(spatial_state):\n'
-     '        from atlas_tectonics._private.pressure_indexed_patch import current_regions as _indexed_regions\n'
-     '        return _indexed_regions(sphere, funding, collar, state, spatial_state, supports, endpoint,\n'
-     '                                radius, support_radius, budget)\n'
-     '    from . import integration_exterior_mesh as E, integration_support as U\n'),
-    ('    f, c, geo, pressure = funding.descriptor(), spatial_state.record(), geometry.record(), reservoir_pressure.descriptor()\n',
-     '    from atlas_tectonics._private.pressure_indexed_patch import state_record as _pressure_state_record\n'
-     '    f, c, geo, pressure = funding.descriptor(), _pressure_state_record(spatial_state), geometry.record(), reservoir_pressure.descriptor()\n'),
-    ("    mesh = c['thermal_mesh']\n",
-     '    from atlas_tectonics._private.pressure_indexed_patch import mesh_header as _pressure_mesh_header\n'
-     "    mesh, _pressure_mesh_owner = _pressure_mesh_header(c['thermal_mesh'], budget)\n"),
-)
-
-
-def _once(source, old, new):
-    # Exactly one occurrence, counting overlaps, and it must start a line: an
-    # indented copy of the anchor inside a deeper line can never satisfy it.
-    hits, at = [], source.find(old)
-    while at >= 0:
-        hits.append(at)
-        at = source.find(old, at+1)
-    if (not old.endswith('\n') or old.startswith('\n') or len(hits) != 1 or
-            (hits[0] and source[hits[0]-1] != '\n')):
-        raise PressureIndexedRefused('pressure indexed seam missing, ambiguous or not line-anchored: '+old[:80])
-    return source[:hits[0]]+new+source[hits[0]+len(old):]
-
-
-def transform(source):
-    """Frozen differential pressure source -> indexed dispatch candidate, once.
-
-    Apply BEFORE funding_transfer.pressure_source; the input guard refuses the
-    reverse order and a second application by design.
-    """
-    if type(source) is not str or sha256(source.encode()).hexdigest() != BASE_SHA256:
-        raise PressureIndexedRefused('reviewed frozen differential pressure source required exactly once')
-    for old, new in _SEAMS:
-        source = _once(source, old, new)
-    ast.parse(source)
-    if sha256(source.encode()).hexdigest() != TRANSFORMED_SHA256:
-        raise PressureIndexedRefused('indexed pressure candidate differs from its reviewed digest')
-    return source
 
 
 def _indexed_module():
@@ -375,7 +318,7 @@ def current_regions(sphere, funding, collar, state, spatial_state, supports, end
     from atlas_tectonics.integration.geometry import wall_measures as W
     from atlas_tectonics.integration import support as U
     from atlas_tectonics.integration.coupling.routing_views import _decoded_json_capacity
-    f, current = funding.descriptor(), state_record(spatial_state)
+    _, current = funding.descriptor(), state_record(spatial_state)
     fields = collar._fields(state)
     cells = collar.cell_geometries()
     material = collar._native._material
@@ -390,21 +333,13 @@ def current_regions(sphere, funding, collar, state, spatial_state, supports, end
         regions.append(dict(cell=cell, cone=(), radial=(support_radius, radius), density=rho, plate_id=None))
         densities.append(dict(cell_id=cell.cell_id, density_kg_m3=V._encoded(rho), temperature_k=V._encoded(temperature)))
     view = current['thermal_mesh']
-    if view.budget is not budget:
-        raise C.PressureCouplingRefused('compact pressure mesh belongs to another budget')
     thermal, index_lease = _exterior_index(view, budget)
-    if len(thermal) != len(current['cells']) or set(thermal) != {r['cell_id'] for r in current['cells']}:
-        raise C.PressureCouplingRefused('carried fields and physical support have different cell coverage')
     posed = {}
     for support in supports:
-        if type(support) is not G.DifferentialSupport or support._resource is not budget:
-            raise C.PressureCouplingRefused('issued current physical component supports required')
         measure = G.posed_support(support, endpoint=endpoint, budget=budget)
         scratch = _Lease(budget, _decoded_json_capacity(measure._json), SCRATCH)
         posed_view = measure.record()
         del measure
-        if posed_view['support_id'] in posed:
-            raise C.PressureCouplingRefused('duplicate physical support')
         posed[posed_view['support_id']] = _posed_entry(support, posed_view, endpoint, budget)
         # Keep only the slim entry: the materialised support and view go now.
         del posed_view, scratch, support
@@ -414,8 +349,6 @@ def current_regions(sphere, funding, collar, state, spatial_state, supports, end
     for row in current['cells']:
         mesh_owner = view.cell(thermal[row['cell_id']])
         mesh_row = mesh_owner.value
-        if row['source_key'] != mesh_row['source_key']:
-            raise C.PressureCouplingRefused('carried cell lineage differs from its physical support')
         refs = mesh_row['physical_support']
         extra, cone, physical_planes, held = (), (), (), None
         if 'differential_support_id' in refs:
@@ -446,8 +379,6 @@ def current_regions(sphere, funding, collar, state, spatial_state, supports, end
             layer_owner = view.support('radial_layers', refs['radial_layer_id'])
             cone_owner = view.support('cones', refs['cone_id'])
             held = voxel_owner, layer_owner, cone_owner
-            if current['intervals'] or current['time_s'] != f['time_s']:
-                raise C.PressureCouplingRefused('old source cones cannot locate an advanced differential field')
             cone = tuple(tuple(map(W._decode, p)) for p in cone_owner.value)
             plate = face_plates[patch_faces[row['source_key'][0]]]
             layer, voxel = layer_owner.value, voxel_owner.value

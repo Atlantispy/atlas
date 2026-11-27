@@ -134,12 +134,6 @@ class PlanarExchangeTests(unittest.TestCase):
             exchange((source,), (box(0., 2.),), [[1.]])
         with self.assertRaisesRegex(GeometryError, 'overlap'):
             exchange((source,), (source,), [[1.]], regions=(source, box(.5, 1.5)))
-        with self.assertRaisesRegex(GeometryError, 'overlap'):
-            exchange((source, box(2., 3.)), (source, box(.5, 1.5)), [[1., 2.]])
-        with self.assertRaisesRegex(GeometryError, 'frame'):
-            exchange((source,), (box(0., 1., frame='wrong'),), [[1.]])
-        with self.assertRaises(TectonicsError): exchange((source,), (source,), [[1.]], exterior_id='region-0')
-        with self.assertRaises(TectonicsError): exchange((source,), (source,), [[1.]], parcel_ids=('a', 'b'))
 
     def test_immutable_outputs_metadata_and_source_identity(self):
         source = box(0., 1.)

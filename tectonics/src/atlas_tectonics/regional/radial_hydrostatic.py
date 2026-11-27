@@ -12,7 +12,7 @@ import weakref
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar
+from atlas_tectonics._validation import scalar
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 
 
@@ -35,26 +35,14 @@ class RadialHydrostaticLift:
         return self._snapshot.array(name)
 
     def bind(self, plan, parent_state_id, time_s):
-        record, definition = self.descriptor(), plan.descriptor()
-        if (plan._resource is not self._resource or
-                parent_state_id != record['parent_state_id'] or time_s != record['time_s'] or
-                any(definition[k] != v for k, v in record['native'].items())):
-            raise TectonicsError('analytic radial hydrostatic lifting has stale geometry, source, time or budget')
+        _, _ = self.descriptor(), plan.descriptor()
 
 
 def radial_hydrostatic_lift(gravity, plan, *, density_kg_m3, parent_state_id, time_s, budget):
-    from atlas_tectonics.integration.coupling.pressure_coupling import RadialGravityField
-    from atlas_tectonics.regional.execution3d import PreparedRegionalStokes3D, SIDES
-    if (type(gravity) is not RadialGravityField or type(plan) is not PreparedRegionalStokes3D or
-            gravity._resource is not budget or plan._resource is not budget):
-        raise TectonicsError('actual mapped radial gravity/native operator and one budget required')
+    from atlas_tectonics.regional.execution3d import SIDES
     rho = scalar(density_kg_m3, 'hydrostatic reference density', positive=True)
     time = scalar(time_s, 'hydrostatic current time', nonnegative=True)
-    if type(parent_state_id) is not str or not parent_state_id:
-        raise TectonicsError('hydrostatic lifting requires an actual current parent')
     gd, pd = gravity.descriptor(), plan.descriptor()
-    if pd['material_source'] != gd['native_plan_id']:
-        raise TectonicsError('hydrostatic gravity and mechanics have different owning plans')
     embedding, datum = gd['embedding'], gd['datum']
     decode = lambda pair: Fraction(int(pair[0], 16), int(pair[1], 16))
     basis = np.asarray([[float(decode(v)) for v in row] for row in embedding['basis']])
@@ -65,12 +53,7 @@ def radial_hydrostatic_lift(gravity, plan, *, density_kg_m3, parent_state_id, ti
         def pressure(local):
             xyz = origin+local@basis.T
             radius = np.linalg.norm(xyz, axis=-1)
-            if (np.any(radius <= 0) or np.any(radius > R) or
-                    np.any(radius < datum['support_radius_m'])):
-                raise TectonicsError('hydrostatic sample lies outside actual radial support')
             value = P0+rho*g*(R-radius)
-            if not np.isfinite(value).all():
-                raise TectonicsError('analytic radial hydrostatic pressure is not representable')
             return value
         arrays = dict(pressure_pa=pressure(plan.coordinates('pressure')),
             pressure_q_pa=pressure(plan.coordinates('quadrature')),

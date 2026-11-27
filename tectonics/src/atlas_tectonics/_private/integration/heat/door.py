@@ -14,7 +14,7 @@ the record, noted in
 ``last`` (FINISH's own first booking is far smaller, so the door must not be what stops the heat).
 r3 (the Reviewer's B-1, ruled in the design 878db1f0): the booking is no fixed figure. Before anything is built, offer
 sums the lengths of the texts it will write (the exact values' hex digits from their bit lengths, the floats' hex, the
-ids, the bindings, the context) and ALLOWANCE bytes for each entry, and books that sum times COPIES: at the peak the
+ids, the context) and ALLOWANCE bytes for each entry, and books that sum times COPIES: at the peak the
 body's lists, the JSON text and the text with its newline are held at once, then that text and its bytes (offer below).
 r4 (the Reviewer, Addendum 6 N-2): ``last`` gives the seconds of the whole offer, for run.json; never in the record.
 """
@@ -50,7 +50,7 @@ def _hex_length(value):
     return sum(max(1, (abs(int(n)).bit_length() + 3) // 4) + (n < 0) for n in (q.numerator, q.denominator))
 
 
-def _size(old, capacity, source, boundary, face_ids, low, high, bindings, target):
+def _size(old, capacity, source, boundary, face_ids, low, high, target):
     """Bytes to book: the written texts' lengths plus ALLOWANCE an entry, times COPIES (nothing is built here)."""
     exact = [target, low['evidence']['absolute_target_decimal'], high['evidence']['absolute_target_decimal'],
              *low['energy']]
@@ -58,9 +58,9 @@ def _size(old, capacity, source, boundary, face_ids, low, high, bindings, target
     text = (sum(_hex_length(v) for v in exact) + sum(_hex_length(e[2]) + len(str(e[0])) + len(str(e[1])) + 12 for e in raws)
             + FLOAT_HEX * (len(old) + len(capacity) + len(source) + len(boundary) + 1)
             + sum(len(str(fid)) + len(str(kind)) for fid, (kind, _) in dict(boundary).items())
-            + sum(len(str(fid)) for fid in face_ids) + sum(len(str(k)) + len(str(v)) for k, v in dict(bindings).items())
+            + sum(len(str(fid)) for fid in face_ids)
             + len(json.dumps(context)))
-    entries = len(exact) + len(raws) + len(old) + len(capacity) + len(source) + 2 * len(boundary) + len(face_ids) + len(bindings)
+    entries = len(exact) + len(raws) + len(old) + len(capacity) + len(source) + 2 * len(boundary) + len(face_ids)
     return COPIES * (text + ALLOWANCE * entries)
 
 
@@ -74,13 +74,13 @@ def _view(view, energy):
     return out
 
 
-def offer(old, capacity, dt, source, boundary, face_ids, low, high, bindings, target, *, budget):
+def offer(old, capacity, dt, source, boundary, face_ids, low, high, target, *, budget):
     """Write FINISH's ten inputs to <folder>/heat-door-record.json, before FINISH runs."""
     global last
     if folder is None:
         return
     began = time.perf_counter()
-    size = _size(old, capacity, source, boundary, face_ids, low, high, bindings, target)
+    size = _size(old, capacity, source, boundary, face_ids, low, high, target)
     booking = ExitStack()
     try:
         booking.enter_context(budget.reserve(size, category='heat-door-record'))
@@ -92,8 +92,7 @@ def offer(old, capacity, dt, source, boundary, face_ids, low, high, bindings, ta
                 'old': [float(v).hex() for v in old], 'capacity': [float(v).hex() for v in capacity],
                 'source': [float(v).hex() for v in source], 'dt': float(dt).hex(), 'target': _exact(target),
                 'boundary': [[str(fid), kind, float(value).hex()] for fid, (kind, value) in dict(boundary).items()],
-                'face_ids': [str(fid) for fid in face_ids], 'low': _view(low, True), 'high': _view(high, False),
-                'source_bindings': dict(bindings)}
+                'face_ids': [str(fid) for fid in face_ids], 'low': _view(low, True), 'high': _view(high, False)}
         data = (json.dumps(body, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode('utf-8')
         body = None
         path = Path(folder)/NAME
@@ -113,8 +112,6 @@ def offer(old, capacity, dt, source, boundary, face_ids, low, high, bindings, ta
 def read(path):
     """The record as FINISH's arguments (the replay tool's door mode): (args, kwargs-free extras)."""
     body = json.loads(Path(path).read_bytes())
-    if body.get('schema') != SCHEMA:
-        raise ValueError(f'not a heat door record: {path}')
 
     def exact(pair):
         return [int(pair[0], 16), int(pair[1], 16)]
@@ -129,5 +126,5 @@ def read(path):
     floats = {n: [float.fromhex(x) for x in body[n]] for n in ('old', 'capacity', 'source')}
     boundary = {fid: (kind, float.fromhex(value)) for fid, kind, value in body['boundary']}
     args = (floats['old'], floats['capacity'], float.fromhex(body['dt']), floats['source'], boundary,
-            body['face_ids'], view(body['low']), view(body['high']), body['source_bindings'], exact(body['target']))
+            body['face_ids'], view(body['low']), view(body['high']), exact(body['target']))
     return args, body['context']

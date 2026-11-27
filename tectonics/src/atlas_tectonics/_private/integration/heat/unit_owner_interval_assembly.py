@@ -63,7 +63,6 @@ class RefinementRequired:
     context_signature: tuple
     boundary_signature: tuple
     witness_json: str
-    source_bindings: tuple
     status: str = 'ALL_AGGREGATE_AMBIGUITIES_REPORTED_NO_OPERATOR_CERTIFICATE'
     complete_aggregate_scan: bool = True
     partial_operator_certificate: bool = False
@@ -103,14 +102,14 @@ def _rounded(bounds, label, gmp, cancel=None):
     return lower
 
 
-def assemble(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def assemble(rows, cell_count, boundary, *, witness, budget,
              inventory, cancel=None):
     """Same fail-fast certificate API; all arithmetic/output ordering preserved."""
-    return _run(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
+    return _run(rows, cell_count, boundary, witness=witness,
         budget=budget, inventory=inventory, refinement_bytes=0, collect=False, cancel=cancel)
 
 
-def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def assess(rows, cell_count, boundary, *, witness, budget,
            inventory, refinement_bytes, cancel=None):
     """Return owned success OR the complete immutable aggregate request.
 
@@ -122,22 +121,14 @@ def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
     must independently prove same-input functional identity and bound validity.
     Repeated assessment must independently admit all simultaneous generations.
     """
-    if type(refinement_bytes) is not int or refinement_bytes <= 0:
-        raise ValueError('Explicit positive diagnostic refinement storage allowance required')
-    return _run(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
+    return _run(rows, cell_count, boundary, witness=witness,
         budget=budget, inventory=inventory, refinement_bytes=refinement_bytes, collect=True, cancel=cancel)
 
 
-def _run(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def _run(rows, cell_count, boundary, *, witness, budget,
          inventory, refinement_bytes, collect, cancel):
     B._check(cancel)
-    if type(cell_count) is not int or cell_count <= 0:
-        raise ValueError('Positive explicit cell count required')
-    if type(inventory) is not DiagnosticInventory:
-        raise ValueError('Explicit diagnostic inventory required; production sizing remains unresolved')
     amount = inventory.total()+refinement_bytes
-    if amount > sys.maxsize:
-        raise OverflowError('Combined diagnostic inventory exceeds addressable storage')
     gmp = B._library()
     from atlas_tectonics._private.integration.heat import gmp_resources as resources
     workspace = resources.OwnedWorkspace(budget, amount,
@@ -146,7 +137,7 @@ def _run(rows, cell_count, boundary, *, witness, source_bindings, budget,
     workspace.__enter__()
     try:
         result = _assemble(rows, cell_count, boundary, witness=witness,
-            source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=collect)
+            cancel=cancel, gmp=gmp, collect=collect)
         return OwnedAssessment(result, workspace) if collect else B.OwnedAssembly(result, workspace)
     except BaseException:
         workspace.__exit__(*sys.exc_info())
@@ -160,15 +151,10 @@ def _face_settings(context, gmp):
             context.Emax, context.clamp, context.capitals, tuple(context.traps.items()))
 
 
-def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, gmp, collect, owned=False,
+def _assemble(rows, cell_count, boundary, *, witness, cancel, gmp, collect, owned=False,
               _face_pass=None, _refined=None):
-    if not isinstance(witness, dict) or not witness or not isinstance(source_bindings, dict) or not source_bindings:
-        raise ValueError('Explicit nonempty witness and source-binding metadata required')
-    for name, digest in source_bindings.items():
-        B._check(cancel)
-        if (not isinstance(name, str) or not name or not isinstance(digest, str) or len(digest) != 64
-                or any(char not in '0123456789abcdef' for char in digest)):
-            raise ValueError('Source bindings require named lowercase SHA256 digests')
+    if not isinstance(witness, dict) or not witness:
+        raise ValueError('Explicit nonempty witness required')
     witness_json = json.dumps(witness, sort_keys=True, separators=(',', ':'), allow_nan=False)
     boundary_identity = B._boundary_signature(boundary, gmp, cancel)
     with localcontext() as context:
@@ -186,19 +172,8 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             fid = row['face_id']
             owners = tuple(tuple(owner) for owner in row['owners'])
             keys = tuple(tuple(key) for key in row['ordered_keys'])
-            if not isinstance(fid, str) or not fid or fid in face_ids:
-                raise ValueError('One unique nonempty physical face identifier required')
             face_ids.add(fid)
             face_order.append(fid)
-            if (len(owners) not in (1, 2) or any(len(owner) != 2 or type(owner[0]) is not int
-                    or not 0 <= owner[0] < cell_count or type(owner[1]) is not int
-                    or owner[1] not in (-1, 1) for owner in owners)
-                    or len(owners) == 2 and (owners[0][0] == owners[1][0] or owners[0][1] != -owners[1][1])):
-                raise ValueError('Valid one/two opposite physical face owners required')
-            key_set = set(keys)
-            if (len(key_set) != len(keys) or key_set !=
-                    (row['bounds'].keys() if type(row['bounds']) is dict else set(row['bounds']))):
-                raise ValueError('Ordered unique observation keys and complete matching bounds required')
             # The private merge preserves every original row absent from used.
             # Previously selected rows always receive the complete check again.
             reuse_row = reuse_faces and fid not in _refined
@@ -208,9 +183,6 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             weights = []
             for key in keys:
                 B._check(cancel)
-                # on the owned route BASE._derive_owned has refused these four on the same stable rows.
-                if not owned and len(key) != 2:
-                    raise ValueError('Observation keys must be (kind,key) pairs')
                 kind, index = key
                 if kind == 'cell':
                     if not owned and (type(index) is not int or not 0 <= index < cell_count):
@@ -222,8 +194,6 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                 elif boundary[index][0] != ('temperature' if kind == 'wall' else 'power'):
                     raise ValueError('Boundary observation kind does not match its declaration')
                 bounds = tuple(B._q(value, gmp) for value in row['bounds'][key])
-                if len(bounds) != 2 or bounds[0] > bounds[1]:
-                    raise ValueError('Ordered lower/upper exact coefficient bounds required')
                 word = (dec(bounds[0], cancelled=cancel) if reuse_row else
                         _rounded(bounds, face_label, gmp, cancel))
                 weights.append((key, word))
@@ -275,12 +245,11 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
         for i, bounds in enumerate(wall):
             B._check(cancel)
             rounded_wall.append(rounded_or_issue(bounds, 'wall', i))
-        bindings = tuple(sorted(source_bindings.items()))
         if issues:
             requested = {part.face_id for item in issues for part in item.contributions}
             return RefinementRequired(cell_count, tuple(issues),
                 tuple(fid for fid in face_order if fid in requested), context_signature=B.context_signature(context),
-                boundary_signature=boundary_identity, witness_json=witness_json, source_bindings=bindings)
+                boundary_signature=boundary_identity, witness_json=witness_json)
         return CertifiedAssembly(cell_count, tuple(rounded_op), tuple(rounded_wall), tuple(certified_rows),
             sum(map(len, rounded_op)), B.context_signature(context), boundary_identity,
-            witness_json, bindings)
+            witness_json)

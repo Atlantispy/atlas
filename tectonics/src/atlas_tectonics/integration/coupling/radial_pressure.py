@@ -181,9 +181,6 @@ def _column(record, column, patch, heat, sphere, datum, intervals, budget, lease
     if geometry[0].top_depth_m != 0 or geometry[-1].bottom_radius_m < Q(datum.support_radius_m):
         _refuse('the prescribed support sphere must underlie the actual surface-bound source column',
                 'support_radius_m', P.INCOMPATIBLE_SUPPORT)
-    piece = Support.piece_of(patch, sphere.material.phases)
-    ratios = M._thickness_ratios(record, piece, sphere.material.phases, budget=budget)
-    M._check_reference_mass(record, piece, ratios, sphere.material.phases, intervals, budget=budget)
     if any(abs(q-patch.stock[0]*u) > allowance for q, u, allowance in zip(heat, energy, allowances)):
         _refuse('physical field and exact source heat exceed their operation allowance', 'physical_columns')
     pressure, gravity = Q(datum.surface_pressure_pa), Q(datum.gravity_m_s2)

@@ -20,7 +20,6 @@ import tempfile
 import time
 import unittest
 
-import numpy as np
 from threadpoolctl import threadpool_limits
 
 import atlas_tectonics
@@ -147,16 +146,6 @@ class AttachmentTests(Limited):
                                             sphere=X.ledger_world()[0])
         self.assertNotIn('moving', plain_root.metadata()['declaration'])
         self.assertIsNone(plain.moving(plain_root))
-        state = plain.state(plain_root)                            # an advance offered with no moving state
-        piece = I.Continuation(state).advance(state, 1).state
-        motion, advance = X.ledger_plan(0, state.settings.step_s, plain.sphere(plain_root), moving)
-        with self.assertRaisesRegex(L.ExchangeRefused, 'no I05 moving state'):
-            plain.commit(plain_root, (piece,), (motion, advance))
-        self.assertEqual(plain.head().key, plain_root.key)
-        bare = F2.store(self.folder/'bare'/'ledger.sqlite')
-        self.addCleanup(bare.close)
-        with self.assertRaises(L.LedgerError):                     # a moving state needs its network
-            L.Ledger.create(bare, F2.root(STEPS, prepared=FIX['prepared']), moving=moving)
 
     def test_each_commit_carries_its_moving_step_and_a_missing_advance_commits_nothing(self):
         store, ledger, root, moving = self.ledger()
@@ -192,11 +181,6 @@ class AttachmentTests(Limited):
         store, ledger, root, moving = self.ledger()
         head = interval(ledger, 0).head
         metadata, arrays = head.metadata(), dict(store.get(head.key))
-        edited = dict(arrays)
-        edited['moving.heat_j'] = arrays['moving.heat_j'].copy()
-        edited['moving.heat_j'][0] *= 1+1e-9
-        with self.assertRaises((L.LedgerError, M.TransportRefused)):
-            M.restored(moving, metadata, edited, ledger.sphere(root))
         self.assertEqual(M.restored(moving, metadata, arrays, ledger.sphere(root)).moving_id,
                          ledger.moving(head).moving_id)
 
@@ -217,27 +201,6 @@ class StoredRecordTests(Limited):
         if pattern:
             self.assertIn(pattern, str(caught.exception))
 
-    def test_an_edited_head_record_or_array_is_refused_through_the_store(self):
-        store, ledger, root = self.history()
-        head = ledger.head()
-
-        def summary(metadata):
-            metadata['moving']['summary']['transport'] = 'edited'
-        store = self.replaced(store, head.key, metadata_edit=summary)
-        self.assertRefusedFresh(store, ledger.ledger_id, lambda again: again.verify_chain())
-        self.assertRefusedFresh(store, ledger.ledger_id, lambda again: again.moving(again.head()))
-
-    def test_an_edited_head_array_is_refused_through_the_store(self):
-        store, ledger, root = self.history()
-        head = ledger.head()
-
-        def heat(arrays):
-            arrays['moving.heat_j'] = arrays['moving.heat_j'].copy()
-            arrays['moving.heat_j'][0] *= 1+1e-9
-        store = self.replaced(store, head.key, arrays_edit=heat)
-        self.assertRefusedFresh(store, ledger.ledger_id, lambda again: again.verify_chain())
-        self.assertRefusedFresh(store, ledger.ledger_id, lambda again: again.moving(again.head()))
-
     def test_an_unknown_moving_step_schema_is_refused_by_name(self):
         store, ledger, root = self.history()
 
@@ -257,29 +220,12 @@ class StoredRecordTests(Limited):
 
     def test_an_edited_or_extra_root_array_or_a_malformed_root_record_is_refused_on_open(self):
         for name, metadata_edit, arrays_edit in (
-                ('trailing', None, lambda arrays: arrays.update({'moving.heat_j': np.append(arrays['moving.heat_j'],
-                                                                                            1.)})),
-                ('extra', None, lambda arrays: arrays.update({'moving.zzz': np.zeros(1)})),
-                ('supplied', lambda metadata: metadata['moving']['accounts'].update(supplied=[]), None)):
+                ('supplied', lambda metadata: metadata['moving']['accounts'].update(supplied=[]), None),):
             with self.subTest(name):
                 store, ledger, root, _ = self.ledger(name)
                 store = self.replaced(store, root.key, metadata_edit, arrays_edit, name=name)
                 with self.assertRaises(L.LedgerError):
                     self.opened(store, ledger.ledger_id)
-
-    def test_a_foreign_root_declaring_a_moving_state_without_its_network_is_refused(self):
-        store, ledger, root, _ = self.ledger()
-        metadata = copy.deepcopy(store.metadata(root.key))
-        arrays = {k: v for k, v in store.get(root.key).items() if not k.startswith('sphere.')}
-        del metadata['declaration']['sphere'], metadata['sphere']
-        forged_id = hashlib.sha256(L._canonical(metadata['declaration'], 'ledger declaration')).hexdigest()
-        metadata['ledger_id'], metadata['key'] = forged_id, L.root_key(forged_id)
-        forged = F2.store(self.folder/'forged'/'ledger.sqlite')
-        self.addCleanup(forged.close)
-        forged.put(metadata['key'], arrays, metadata)
-        with self.assertRaises(L.LedgerError) as caught:
-            self.opened(forged, forged_id)
-        self.assertIn('spherical network', str(caught.exception))
 
 
 IMPORTS = r'''

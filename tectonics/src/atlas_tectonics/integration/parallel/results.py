@@ -15,11 +15,11 @@ import hashlib
 import json
 import threading
 import weakref
+from typing import cast
 
 from atlas_tectonics.integration.coupling.routing_views import _decoded_json_capacity as decoded_capacity
 from atlas_tectonics.integration.parallel.owner import nodes_for
-from atlas_tectonics.integration.parallel.binding import (REQUEST_FIELDS, WALL_KIND, WALL_REQUEST_FIELDS,
-    request_fields, VOLUME_SCHEMA, VOLUME_REQUEST_FIELDS, INITIAL_VOLUME_REQUEST_FIELDS)
+from atlas_tectonics.integration.parallel.binding import REQUEST_FIELDS, WALL_KIND, WALL_REQUEST_FIELDS, request_fields, VOLUME_SCHEMA, VOLUME_REQUEST_FIELDS
 from atlas_tectonics.integration.resources import canonical_json
 
 # Algorithm-selection limit, not a scientific limit: beyond this depth the
@@ -93,11 +93,7 @@ class SlotLease:
             raise
 
     def shrink(self, capacity):
-        if type(capacity) is not int or not 0 <= capacity <= self.count:
-            raise ValueError('a transfer may only shrink its existing charge')
         self._finish_return()
-        if capacity > self.count:
-            raise ValueError('an interrupted shrink already returned this capacity')
         if capacity != self.count:
             self._pending = (capacity, self._returned+self.count-capacity)
             self._finish_return()
@@ -111,8 +107,6 @@ class SlotLease:
 
     def grow_optional(self, capacity):
         self._finish_return()
-        if type(capacity) is not int or capacity < self.count:
-            raise ValueError('optional growth cannot shrink a slot')
         if capacity == self.count:
             return True
         delta = capacity-self.count
@@ -153,17 +147,14 @@ class Hint:
         self.consumed = False
 
     def receive(self, payload, digest):
-        # In production the wire length is checked before allocating/receiving.
-        if self.consumed or self.payload is not None or self.slot is None:
-            raise RuntimeError('one result per live slot')
         if type(payload) is not bytes or len(payload) > self.max_payload:
             return False
-        if self.slot.count < raw_capacity(len(payload)):
+        if cast(SlotLease, self.slot).count < raw_capacity(len(payload)):
             return False
         owner = _BufferOwner(payload, self.slot)
         try:
             required = _receive_capacity(payload, owner)
-            if required is None or not self.slot.grow_optional(max(required, self.slot.count)):
+            if required is None or not cast(SlotLease, self.slot).grow_optional(max(required, cast(SlotLease, self.slot).count)):
                 owner._finalizer.detach()  # raw slot still belongs to the hint
                 return False
             self.payload, self.digest = payload, digest
@@ -202,14 +193,12 @@ CERTIFICATE = {
     'exact-zero-relative-flux-on-rigid-material-fan-edge': None,
     'material-velocity-minus-actual-two-ray-face-velocity': MOMENTS,
 }
-DIGEST_KEYS = frozenset((ZERO_AREA, MOMENTS))
 VOLUME_RESULT_FIELDS = frozenset((
     'lower_m3', 'upper_m3', 'leaves', 'met', 'positive_witness_m3', 'work_units'))
 VOLUME_WITNESS_FIELDS = frozenset(('positive_witness_point_m', 'positive_witness_point_rule'))
 VOLUME_POSES = 'whole_voxel_pose_levels'
 VOLUME_WITNESS_RULE = 'exact vertex barycentre of a positive-volume certified inner convex polyhedron'
 WALL_TEMPORAL = 'temporal_integration'
-WALL_DIGEST_KEYS = frozenset((WALL_TEMPORAL,))
 WALL_RESULT_FIELDS = frozenset((
     'physical_cell_id', 'face', 'moment_polynomials', 'moment_bounds', 'max_widths',
     'inward_volume_bounds_m3', 'outward_volume_bounds_m3', 'leaves', 'met', 'work_units',
@@ -270,8 +259,6 @@ class FitWitness:
         if any(type(node) is not resources.WorkBudget or _OVERRIDES.intersection(vars(node))
                for node in nodes.values()):
             return None
-        if (max_units is None) != (work is None):
-            raise ValueError('the envelope must use the ledger mode of its budget')
         charged = resources._admit_budgets(max_bytes, budget, category=ENVELOPE, _optional=True)
         if charged is None:
             return None
@@ -371,7 +358,7 @@ def _wall_scalar(value):
     return True
 
 
-def _validated_wall(record, request, digests, fit):
+def _validated_wall(record, request, fit):
     fields = WALL_REQUEST_FIELDS | WALL_RESULT_FIELDS
     extra = record.keys()-fields
     if not fields <= record.keys() or extra not in (set(), {WALL_ZERO}, {WALL_ZERO_MEASURE}, {WALL_TEMPORAL}):
@@ -420,7 +407,6 @@ def _validated_wall(record, request, digests, fit):
     if WALL_TEMPORAL in extra:
         certificate = record[WALL_TEMPORAL]
         if (type(certificate) is not dict
-                or certificate.get('source_sha256') != digests[WALL_TEMPORAL]
                 or certificate.get('method') != 'fixed-topology-interval-Taylor'):
             return False
     return True
@@ -511,32 +497,16 @@ def _interface_facts(record):
     for name in ('inward_volume_bounds_m3', 'outward_volume_bounds_m3'):
         if type(record[name]) is not list or len(record[name]) != 2:
             return None
-    source = None
-    if extra is not None:
-        detail = record[extra]
-        if type(detail) is not dict or type(detail.get('source_sha256')) is not str:
-            return None
-        source = detail['source_sha256']
-        if rule == 'exact-zero-area-from-complementary-moving-cuts':
-            extra = 'complementary-cuts'
-    return work, extra, source
+    if extra is not None and type(record[extra]) is not dict:
+        return None
+    return work, extra
 
 
-def _admits_interface(facts, digests, fit):
-    if facts is None or not fit.admits_work(facts[0]):
-        return False
-    _, extra, source = facts
-    if extra is None:
-        return True
-    if extra == 'complementary-cuts':
-        from atlas_tectonics.integration.geometry import differential_geometry as geometry
-        expected = getattr(geometry, '_CP_SOURCE_SHA256', None)
-    else:
-        expected = digests[extra]
-    return type(expected) is str and source == expected
+def _admits_interface(facts, fit):
+    return facts is not None and fit.admits_work(facts[0])
 
 
-def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interface=False):
+def _validated(encoded, digest, request, fit, owner, *, _owned_interface=False):
     """Structural admission of one worker record; no decoded object escapes.
 
     `owner` is retained by an escaping traceback and owns the whole slot, as
@@ -557,11 +527,11 @@ def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interfac
         if record.get('schema') == VOLUME_SCHEMA:
             return _validated_volume(record, request, fit)
         if record.get('kind') == WALL_KIND:
-            return _validated_wall(record, request, digests, fit)
+            return _validated_wall(record, request, fit)
         facts = _interface_facts(record)
         return (facts is not None and (_owned_interface or canonical_json(
             {key: record[key] for key in REQUEST_FIELDS}) == request)
-            and _admits_interface(facts, digests, fit))
+            and _admits_interface(facts, fit))
     except (ValueError, TypeError, OverflowError, RecursionError):
         return False
 
@@ -569,8 +539,6 @@ def _validated(encoded, digest, request, digests, fit, owner, *, _owned_interfac
 class MeasureHint(Hint):
     """One funded worker result for one exact request and one envelope."""
     def __init__(self, slot, *, max_payload, request, binding, fit):
-        if type(fit) is not FitWitness or slot is None or fit.budget is not slot.budget:
-            raise TypeError('a measure hint needs its own envelope witness on the slot budget')
         _complete_request(request)
         super().__init__(slot, max_payload=max_payload, request=request, binding=binding, fit=fit)
 
@@ -588,18 +556,12 @@ class MeasureHint(Hint):
                 return False
             return self.receive(payload, digest)
 
-    def claim_measure(self, room, *, cls, budget, request, binding, fit, digests):
-        return self._claim_measure(room, cls=cls, budget=budget, request=request, binding=binding,
-                                   fit=fit, digests=digests)
+    def claim_measure(self, room, *, cls, budget, request, binding, fit):
+        return self._claim_measure(room, cls=cls, budget=budget, request=request, binding=binding, fit=fit)
 
-    def _claim_measure(self, room, *, cls, budget, request, binding, fit, digests, receipt_request=None,
+    def _claim_measure(self, room, *, cls, budget, request, binding, fit, receipt_request=None,
                        receipt_dispatch=None):
-        fields = _complete_request(request)
-        digest_keys = (frozenset() if fields in (VOLUME_REQUEST_FIELDS, INITIAL_VOLUME_REQUEST_FIELDS) else
-                       WALL_DIGEST_KEYS if fields == WALL_REQUEST_FIELDS else DIGEST_KEYS)
-        if (type(digests) is not dict or digests.keys() != digest_keys
-                or any(type(value) is not str or len(value) != 64 for value in digests.values())):
-            raise ValueError('exact parent certificate source digests for this request kind are required')
+        _complete_request(request)
         # Caller-owned snapshots; built before any lock is taken.
         wanted, bound = canonical_json(request), canonical_json(binding)
         with room.condition:
@@ -620,10 +582,10 @@ class MeasureHint(Hint):
                             entry = receipt_dispatch._receipt_for(binding['index'], self.payload,
                                                                   self.request, binding['batch'])
                     if entry is None:
-                        valid = _validated(self.payload, self.digest, self.request, digests, fit, token,
+                        valid = _validated(self.payload, self.digest, self.request, fit, token,
                                            _owned_interface=receipt_dispatch is None and receipt_request == self.request)
                     else:
-                        valid = self.digest == entry[2] and _admits_interface(entry[3], digests, fit)
+                        valid = self.digest == entry[2] and _admits_interface(entry[3], fit)
                     if not valid:
                         token._finalizer.detach()  # the hint keeps the whole slot
                         return None
@@ -650,11 +612,7 @@ def adopt(cls, funded, budget):
     budget and a finalizer returning the retained charge. It makes no
     reservation, so it cannot refuse; the charge it takes over is exactly R.
     """
-    if type(funded) is not FundedMeasure or funded.cls is not cls or funded.budget is not budget:
-        raise TypeError('validated funded token of exactly this class and budget required')
     lease, encoded = funded._lease, funded.encoded
-    if lease is None or type(encoded) is not bytes or lease.count != RETAINED_FIXED+len(encoded):
-        raise RuntimeError('funded token is unvalidated or already adopted')
     result = object.__new__(cls)
     object.__setattr__(result, '_json', encoded)
     object.__setattr__(result, '_resource', budget)

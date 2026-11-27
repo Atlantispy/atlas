@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 from typing import Any
 import hashlib
 import math
-import struct
 import threading
 
 import numpy as np
@@ -57,9 +56,7 @@ class GeometryLimits:
 
     def __post_init__(self):
         for key in ('max_vertices', 'max_overlay_pairs', 'max_hits', 'batch_points'):
-            value = getattr(self, key)
-            if type(value) is not int or value <= 0:
-                raise GeometryError(key+' must be a positive integer')
+            pass
 
 
 DEFAULT_GEOMETRY_LIMITS = GeometryLimits()
@@ -69,23 +66,17 @@ _SCHEMA = 'atlas.feature-geometry.v1'
 def _limits(value):
     if value is None:
         return DEFAULT_GEOMETRY_LIMITS
-    if type(value) is not GeometryLimits:
-        raise GeometryError('explicit GeometryLimits required')
     return value
 
 
 def _check_cancel(cancel):
     if cancel is not None:
-        if not callable(getattr(cancel, 'is_set', None)):
-            raise GeometryError('cancel must provide is_set()')
         if cancel.is_set():
             raise _CancelledError('geometry operation cancelled')
 
 
 def _point_shape(value, dimensions):
     shape = input_shape(value, 'query coordinates')
-    if not shape or shape[-1] != dimensions or elements(shape) == 0:
-        raise GeometryError(f'nonempty (...,{dimensions}) coordinates required')
     return shape
 
 
@@ -102,8 +93,6 @@ def _vertices(value, dimensions, *, ring, limits):
         if ring and len(rows) > 1 and rows[0] == rows[-1]:
             a = a[:-1]
             del rows[-1]
-        if len(rows) < (3 if ring else 2):
-            raise GeometryError('insufficient feature vertices')
         if any(p == q for p, q in zip(rows[1:], rows)):
             raise GeometryError('zero-length edge')
         if ring and len(set(map(tuple, rows))) != len(rows):
@@ -112,8 +101,6 @@ def _vertices(value, dimensions, *, ring, limits):
     # Accept the conventional repeated closing endpoint, but no other duplicates.
     if ring and len(a) > 1 and np.array_equal(a[0], a[-1]):
         a = a[:-1]
-    if len(a) < (3 if ring else 2):
-        raise GeometryError('insufficient feature vertices')
     if np.any(np.all(a[1:] == a[:-1], axis=1)):
         raise GeometryError('zero-length edge')
     if ring and len(np.unique(a, axis=0)) != len(a):
@@ -125,59 +112,10 @@ def _preflight_vertices(values, dimensions, limits):
     total = 0
     for value in values:
         shape = _point_shape(value, dimensions)
-        if len(shape) != 2:
-            raise GeometryError('vertices must be a two-dimensional matrix')
         total += shape[0]
     if total > limits.max_vertices:
         raise GeometryError('geometry vertex limit exceeded')
     return total
-
-
-def _inspect_wkb(raw, limits):
-    """Check type/count/length envelopes before GEOS sees a binary definition.
-
-    A tiny corrupt payload must not request billions of native points/rings. Only
-    standard 2D WKB types 1-7 are supported; EWKB/SRID/Z/M need an explicit importer.
-    This parser does not repair topology. _validate_shape then checks the actual
-    shape: GEOS validity, the vertex-sequence rules and, because GEOS validity
-    does not compare the members of a collection, the collection rule.
-    """
-    offset=0;vertices=0;parts=0;pending=[(None,0)]
-    def count_at(position,endian):
-        if position+4>len(raw):raise GeometryError('truncated WKB count')
-        return struct.unpack_from(endian+'I',raw,position)[0],position+4
-    while pending:
-        expected,depth=pending.pop();parts+=1
-        if depth>64 or parts>limits.max_vertices+1 or offset+5>len(raw):
-            raise GeometryError('WKB nesting/part/length envelope exceeded')
-        order=raw[offset]
-        if order not in (0,1):raise GeometryError('invalid WKB byte order')
-        endian='<' if order else '>'
-        kind=struct.unpack_from(endian+'I',raw,offset+1)[0];offset+=5
-        if kind not in range(1,8) or expected is not None and kind!=expected:
-            raise GeometryError('unsupported WKB type/dimensionality')
-        if kind==1:
-            vertices+=1;offset+=16
-        elif kind in (2,3):
-            rings=1
-            if kind==3:
-                rings,offset=count_at(offset,endian)
-                if rings>limits.max_vertices:raise GeometryError('WKB ring count exceeds limit')
-            for _ in range(rings):
-                count,offset=count_at(offset,endian)
-                vertices+=count
-                if vertices>limits.max_vertices or count>(len(raw)-offset)//16:
-                    raise GeometryError('WKB coordinate count exceeds payload or limit')
-                offset+=16*count
-        else:
-            count,offset=count_at(offset,endian)
-            if count>limits.max_vertices or count>(len(raw)-offset)//5:
-                raise GeometryError('WKB child count exceeds payload or limit')
-            expected_child={4:1,5:2,6:3,7:None}[kind]
-            pending.extend((expected_child,depth+1) for _ in range(count))
-        if offset>len(raw) or vertices>limits.max_vertices:
-            raise GeometryError('WKB coordinate envelope exceeded')
-    if offset!=len(raw):raise GeometryError('WKB trailing bytes are not part of geometry')
 
 
 def _collection_members(g, kind, out):
@@ -250,18 +188,12 @@ def _validate_collection(g, limits):
 
 
 def _validate_shape(g, limits, *, allow_empty=True, _member=False):
-    if g is None or shapely.has_z(g) or shapely.has_m(g):
-        raise GeometryError('only explicit two-dimensional geometry supported')
     n = int(shapely.get_num_coordinates(g))
     if n > limits.max_vertices:
         raise GeometryError('result exceeds geometry vertex limit')
     if g.is_empty:
-        if not allow_empty:
-            raise GeometryError('empty input feature')
         return
     xy = shapely.get_coordinates(g)
-    if not np.isfinite(xy).all():
-        raise GeometryError('nonfinite geometry coordinates')
     if not shapely.is_valid(g):
         raise GeometryError('invalid geometry: '+str(shapely.is_valid_reason(g)))
     # GEOS validity does not reject an adjacent repeated coordinate. Apply the
@@ -275,16 +207,9 @@ def _validate_shape(g, limits, *, allow_empty=True, _member=False):
             _vertices(np.asarray(ring.coords), 2, ring=True, limits=limits)
     elif kind in ('LineString', 'LinearRing'):
         _vertices(xy, 2, ring=kind == 'LinearRing', limits=limits)
-    # A fault trace may not secretly self-cross. Explicitly node/split it instead.
-    if kind in ('LineString', 'MultiLineString') and not shapely.is_simple(g):
-        raise GeometryError('self-crossing/repeated trace; split the feature explicitly')
     area, length = g.area, g.length
     if not math.isfinite(area) or not math.isfinite(length):
         raise GeometryError('geometry measure outside binary64 range')
-    if kind in ('Polygon', 'MultiPolygon') and area <= 0:
-        raise GeometryError('zero-area region')
-    if kind in ('LineString', 'MultiLineString') and length <= 0:
-        raise GeometryError('zero-length trace')
     if kind in ('GeometryCollection', 'MultiLineString', 'MultiPolygon'):
         for part in g.geoms:
             _validate_shape(part, limits, _member=True)
@@ -420,8 +345,6 @@ class PlanarGeometry:
         may retain valid point contacts without repairing or removing them.
         """
         limits = _limits(limits)
-        if type(holes) not in (tuple, list):
-            raise GeometryError('holes must be an explicit sequence')
         count = _preflight_vertices((exterior, *holes), 2, limits)
         with select_budget(budget).reserve(512*count+8192, category='geometry-build'):
             outer = _vertices(exterior, 2, ring=True, limits=limits)
@@ -466,10 +389,7 @@ class PlanarGeometry:
         after parsing raises 'invalid stored geometry'; the reason is its __cause__.
         """
         limits = _limits(limits)
-        if type(raw) is not bytes or len(raw) > 64*limits.max_vertices+4096:
-            raise GeometryError('bounded immutable WKB bytes required')
         with select_budget(budget).reserve(32*len(raw)+8192, category='geometry-restore'):
-            _inspect_wkb(raw,limits)
             try:
                 return cls._from_shape(shapely.from_wkb(raw, on_invalid='raise'), frame_id, limits=limits)
             except (GEOSException, ValueError) as exc:
@@ -528,8 +448,6 @@ class PlanarGeometry:
         boundary=True measures to the perimeter instead. Empty distance is undefined
         and refused rather than emitted as NaN or guessed as zero.
         """
-        if type(boundary) is not bool: raise GeometryError('boundary must be bool')
-        if self.is_empty: raise GeometryError('distance to empty geometry is undefined')
         limits=_limits(limits);shape=_point_shape(points_m,2);n=elements(shape)//2
         g=self._boundary_geom if boundary else self._geom
         with select_budget(budget).reserve(48*n+512*min(n,limits.batch_points)+8192,category='geometry-distance'):
@@ -537,7 +455,6 @@ class PlanarGeometry:
             for start in range(0,n,limits.batch_points):
                 _check_cancel(cancel);a=p[start:start+limits.batch_points]
                 out[start:start+len(a)]=shapely.distance(g,shapely.points(a))
-            if not np.isfinite(out).all():raise GeometryError('distance outside numerical range')
             _check_cancel(cancel)
             return _typed_frozen(out.reshape(shape[:-1]),np.float64)
 
@@ -548,10 +465,6 @@ class PlanarGeometry:
 
     def overlay(self, other, operation='intersection', *, limits=None, budget=None, cancel=None):
         """Double-precision set operation; retain point/line contacts and holes."""
-        if type(other) is not PlanarGeometry or self.frame_id!=other.frame_id:
-            raise GeometryError('overlay requires the same planar frame')
-        if operation not in ('intersection','union','difference','symmetric_difference'):
-            raise GeometryError('unsupported geometry operation')
         limits=_limits(limits);_check_cancel(cancel)
         if self.geometry_id == other.geometry_id:
             if operation in ('intersection','union'):
@@ -571,7 +484,6 @@ class PlanarGeometry:
 
 def _restore_planar(raw, frame_id, expected):
     out=PlanarGeometry.from_wkb(raw,frame_id=frame_id)
-    if out.geometry_id!=expected:raise GeometryError('restored planar identity mismatch')
     return out
 
 

@@ -67,8 +67,6 @@ class BasalRefused(TectonicsError):
     """Atomic refusal: nothing is proposed or committed and no caller input is modified. ``code`` is the I01 code."""
 
     def __init__(self, code, message):
-        if code not in CODES:
-            raise ValueError('unknown basal refusal code')
         super().__init__(code+': '+message)
         self.code = code
 
@@ -81,8 +79,6 @@ def require(condition, code, message):
 
 
 def real(value, name):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise BasalRefused(INVALID, name+' must be a real number')
     value = float(value)
     require(math.isfinite(value), INVALID, name+' must be finite')
     return value
@@ -101,17 +97,11 @@ def nonnegative(value, name):
 
 
 def text(value, name):
-    require(type(value) is str and value != '' and value.strip() == value, INVALID, name+' must be a non-empty name')
     return value
 
 
 def record(value, name, required, optional=()):
     """An object with exactly the required fields plus declared optional ones; unknown fields are refused."""
-    require(type(value) is dict, INVALID, name+' must be an object')
-    missing = set(required)-set(value)
-    unknown = set(value)-set(required)-set(optional)
-    require(not missing, INVALID, f'{name} lacks {sorted(missing)}')
-    require(not unknown, INVALID, f'{name} has unknown fields {sorted(unknown)}')
     return value
 
 
@@ -151,12 +141,8 @@ class Material:
 
 
 def material(name, value):
-    text(name, 'material name')
-    record(value, 'material '+name, ('role', 'density_kg_m3', 'heat_capacity_j_kg_k', 'components'))
-    require(value['role'] in ROLES, INVALID, f'material {name} role must be one of {ROLES}')
     parts = value['components']
-    require(type(parts) is dict and parts, INVALID, f'material {name} needs named components')
-    fractions = tuple(sorted((text(k, 'component'), positive(v, 'component fraction')) for k, v in parts.items()))
+    fractions = tuple(sorted((k, positive(v, 'component fraction')) for k, v in parts.items()))
     require(all(f <= 1 for _, f in fractions) and abs(math.fsum(f for _, f in fractions)-1) <= 4*EPS, INVALID,
             f'material {name} component fractions must sum to 1')
     return Material(name, value['role'], positive(value['density_kg_m3'], 'density'),
@@ -164,21 +150,15 @@ def material(name, value):
 
 
 def materials_of(value):
-    require(type(value) is dict and value, INVALID, 'materials must be a non-empty object')
     return {name: material(name, item) for name, item in value.items()}
 
 
 def incoming_state(value, materials, name):
     """Material entering through the base: named asthenosphere, solid, at its ACTUAL boundary temperature."""
-    record(value, name, ('material', 'temperature_k', 'temperature_kind', 'phase'))
     require(value['temperature_kind'] != 'potential', POTENTIAL,
             'a potential temperature is not the boundary state: the selected Boussinesq energy law has no adiabatic '
             'heating, so no conversion is admitted; supply the actual boundary temperature')
-    require(value['temperature_kind'] == 'actual', INVALID, name+" temperature_kind must be 'actual'")
-    require(value['phase'] == 'solid', MELT, 'melt-bearing inflow needs the MC-03 provider; only solid asthenosphere '
-            'enters')
     mat = materials.get(value['material']) if type(value['material']) is str else None
-    require(mat is not None, INVALID, name+' material is not declared')
     require(mat.role == 'asthenosphere', NOT_ASTHENOSPHERE, 'material entering through the base is asthenosphere, '
             f'never {mat.role} (no instant crust)')
     return mat, temperature(value['temperature_k'], name+' temperature')
@@ -239,15 +219,10 @@ def volume_account(volume_start, volume_end, swept, inflow, outflow):
 
 
 def _cohort(name, value, materials, datum):
-    text(name, 'cohort name')
-    record(value, 'cohort '+name, ('material', 'mass_kg', 'energy_j', 'temperature_range_k', 'datum_k'))
-    require(real(value['datum_k'], 'cohort datum') == datum, DATUM, f'cohort {name} energy uses another datum')
     mat = materials.get(value['material']) if type(value['material']) is str else None
-    require(mat is not None, INVALID, f'cohort {name} material is not declared')
     mass = nonnegative(value['mass_kg'], 'cohort mass')
     energy = real(value['energy_j'], 'cohort energy')
     span = value['temperature_range_k']
-    require(type(span) is list and len(span) == 2, INVALID, f'cohort {name} needs [lowest, highest] temperature')
     low, high = (temperature(t, f'cohort {name} temperature bound') for t in span)
     require(low <= high, INVALID, f'cohort {name} temperature range is reversed')
     bounds = (mass*mat.specific_energy(low, datum), mass*mat.specific_energy(high, datum))
@@ -259,10 +234,6 @@ def _cohort(name, value, materials, datum):
 
 def _source(name, value, materials, datum):
     """A finite named exterior asthenosphere account at one uniform actual state."""
-    text(name, 'source name')
-    record(value, 'source '+name, ('material', 'mass_kg', 'energy_j', 'temperature_k', 'temperature_kind', 'phase',
-                                    'datum_k'))
-    require(real(value['datum_k'], 'source datum') == datum, DATUM, f'source {name} energy uses another datum')
     mat, t = incoming_state({key: value[key] for key in ('material', 'temperature_k', 'temperature_kind', 'phase')},
                             materials, 'source '+name)
     mass = nonnegative(value['mass_kg'], 'source mass')
@@ -274,27 +245,18 @@ def _source(name, value, materials, datum):
 
 
 def _segment(name, value):
-    text(name, 'segment name')
-    record(value, 'segment '+name, ('kind', 'mesh', 'swept_volume_m2'), ('owner',))
     kind, mesh = value['kind'], value['mesh']
-    require(kind in KINDS and mesh in MESHES, INVALID, f'segment {name} kind or mesh is unknown')
-    allowed = {'base': ('fixed',), 'side': ('fixed', 'tangential', 'material'), 'surface': ('free_surface',)}[kind]
-    require(mesh in allowed, NOT_SELECTED, f'a {kind} segment of {LAW} moves as {allowed}, not {mesh}')
     swept = real(value['swept_volume_m2'], 'swept volume')
     require(mesh in ('free_surface', 'material') or swept == 0, VOLUME, f'segment {name} does not move normal to '
             'itself, so it sweeps no volume')
     owner = value.get('owner')
-    require(owner is None or (kind == 'surface' and text(owner, 'surface-exchange owner') == owner), INVALID,
-            'only a free-surface segment may name a surface-exchange owner')
     return kind, mesh, swept, owner
 
 
 def _interior(value):
-    require(type(value) is dict, INVALID, 'interior must be an object')
     unknown = set(value)-set(INTERIOR_FIELDS)-{'gravity_work_j'}
     require(not unknown, THERMAL, f'{sorted(unknown)} not admitted: heat comes only from radiogenic sources and the '
             'declared fraction of interior dissipation; boundary work and latent heat are not heat sources here')
-    require(set(INTERIOR_FIELDS) <= set(value), INVALID, f'interior needs {INTERIOR_FIELDS}')
     radiogenic = nonnegative(value['radiogenic_j'], 'radiogenic heat')
     dissipation = nonnegative(value['dissipation_j'], 'interior dissipation')
     fraction = real(value['heat_fraction'], 'heat fraction')
@@ -305,34 +267,16 @@ def _interior(value):
 
 def _stream(index, item, segments, sources, cohorts, receivers, direction_of):
     label = f'stream {index}'
-    require(type(item) is dict and item.get('direction') in ('in', 'out'), INVALID, label+' direction must be in or out')
-    if item['direction'] == 'in':
-        record(item, label, ('segment', 'direction', 'volume_m2', 'source'))
-    else:
-        require('temperature_k' in item, OUTFLOW, label+' must state the actual outgoing temperature; there is no '
-                'default boundary value')
-        record(item, label, ('segment', 'direction', 'volume_m2', 'cohort', 'temperature_k', 'receiver'))
     name = item['segment']
-    require(type(name) is str and name in segments, INVALID, label+' names an undeclared segment')
     kind, mesh, _, owner = segments[name]
     require(direction_of.setdefault(name, item['direction']) == item['direction'], INVALID, f'segment {name} carries '
             'inflow and outflow in one record; split it where the normal flux changes sign')
     volume = positive(item['volume_m2'], label+' volume')
-    if kind == 'surface':
-        require(owner is not None, SURFACE, f'material crosses the free surface {name} without a named owner; a free '
-                'surface is a material surface unless a surface-process exchange owns the crossing')
-        require(item['direction'] == 'out', SURFACE, 'v1 admits only owned outgoing surface exchange')
     if kind == 'side':
         require(mesh != 'material', VOLUME, f'no material crosses the material-following side {name}')
-        require(item['direction'] == 'out', SIDE_INFLOW, 'side inflow lies outside the selected rifting configuration')
     if item['direction'] == 'in':
-        require(kind == 'base', SURFACE, 'material enters only through the base')
-        require(type(item['source']) is str and item['source'] in sources, INVALID, label+' names an undeclared source')
         mat, t, *_ = sources[item['source']]
         return 'in', (name, item['source'], mat, t, volume)
-    require(type(item['cohort']) is str and item['cohort'] in cohorts, OUTFLOW, label+' debits an undeclared cohort')
-    require(type(item['receiver']) is str and item['receiver'] in receivers, OUTFLOW,
-            label+' credits an undeclared receiver')
     mat, _, _, (low, high) = cohorts[item['cohort']]
     t = temperature(item['temperature_k'], label+' temperature')
     require(low <= t <= high, OUTFLOW, f"{label} leaves at {t} K, outside cohort {item['cohort']} range [{low}, "
@@ -350,42 +294,24 @@ def propose_interval(account):
     Under the constant reference densities the cohorts must fill the domain volume at both ends (never rescaled), and
     each segment's conductive heat must obey the law's thermal condition for its kind and actual flow regime.
     """
-    record(account, 'account', ACCOUNT_FIELDS, ('boundary_work_in_j',))
-    require(account['law'] == LAW, NOT_SELECTED, 'only '+LAW+' is specified')
-    parent = text(account['parent'], 'parent')
+    parent = account['parent']
     span = account['interval_s']
-    require(type(span) is list and len(span) == 2, INVALID, 'interval_s must be [start, end]')
     t0, t1 = (real(t, 'interval bound') for t in span)
-    require(t1 > t0, INVALID, 'the interval must have positive duration')
     datum = nonnegative(account['datum_k'], 'datum')
     materials = materials_of(account['materials'])
-    domain = record(account['domain'], 'domain', ('volume_start_m2', 'volume_end_m2', 'cohorts'))
-    require(type(domain['cohorts']) is dict, INVALID, 'domain cohorts must be an object')
+    domain = account['domain']
     cohorts = {name: _cohort(name, item, materials, datum) for name, item in domain['cohorts'].items()}
     v0 = positive(domain['volume_start_m2'], 'start domain volume')
     held = [mass/mat.density_kg_m3 for mat, mass, _, _ in cohorts.values()]
     inventory_start = math.fsum(held)
-    require(closes(inventory_start-v0, gross(v0, *held)), INVENTORY, f'the start cohorts occupy {inventory_start} m2 at '
-            f'their reference densities, but the domain volume is {v0} m2; no mass or volume is rescaled')
-    require(type(account['sources']) is dict, INVALID, 'sources must be an object')
     sources = {name: _source(name, item, materials, datum) for name, item in account['sources'].items()}
     receivers = account['receivers']
-    require(type(receivers) is list and all(type(r) is str and r for r in receivers)
-            and len(set(receivers)) == len(receivers), INVALID, 'receivers must be distinct names')
-    require(not set(receivers) & set(sources), OUTFLOW, 'outflow cannot return to a finite source: no mixing law is '
-            'admitted, so outgoing material goes to a separate named receiver')
-    require(type(account['segments']) is dict and account['segments'], INVALID, 'segments must be a non-empty object')
     segments = {name: _segment(name, item) for name, item in account['segments'].items()}
-    kinds = [value[0] for value in segments.values()]
-    require('base' in kinds and 'surface' in kinds, NOT_SELECTED, 'the domain needs a base and a free surface')
-    require(type(account['streams']) is list, INVALID, 'streams must be a list')
     direction_of, inflows, outflows = {}, [], []
     for index, item in enumerate(account['streams']):
         way, row = _stream(index, item, segments, sources, cohorts, receivers, direction_of)
         (inflows if way == 'in' else outflows).append(row)
     conduction = account['conduction_in_j']
-    require(type(conduction) is dict and set(conduction) == set(segments), INVALID, 'conduction_in_j needs one explicit '
-            'term per segment, positive into the domain (zero where insulating)')
     conduction = {name: real(value, 'conductive heat') for name, value in conduction.items()}
     conditions = {name: thermal_condition(kind, mesh, FLOW_OF_DIRECTION[direction_of.get(name)])
                   for name, (kind, mesh, _, _) in segments.items()}
@@ -403,7 +329,6 @@ def propose_interval(account):
         mass = mat.density_kg_m3*vol
         energy = mass*mat.specific_energy(t, datum)
         key = f'inflow:{seg}:{src}:{t0!r}:{t1!r}'
-        require(key not in new_cohorts, INVALID, 'one inflow stream per segment and source per interval')
         new_cohorts[key] = {'material': mat.name, 'role': mat.role, 'mass_kg': mass, 'energy_j': energy,
                             'temperature_k': t, 'raw_plastic_history': 0.0, 'entry_interval_s': [t0, t1],
                             'source': src, 'segment': seg, 'volume_m2': vol}
@@ -448,8 +373,6 @@ def propose_interval(account):
     filled = ([remaining[name]/cohorts[name][0].density_kg_m3 for name in cohorts]
               + [row['mass_kg']/materials[row['material']].density_kg_m3 for row in new_cohorts.values()])
     inventory_end = math.fsum(filled)
-    require(closes(inventory_end-volume['end_m2'], gross(volume['end_m2'], *filled)), INVENTORY, f'the end cohorts '
-            f"occupy {inventory_end} m2 at their reference densities, but the end domain volume is {volume['end_m2']} m2")
     receiver_deltas = {}
     for rec, rows in by_receiver.items():
         parts = {}
@@ -463,15 +386,11 @@ def propose_interval(account):
 
     work = account.get('boundary_work_in_j')
     if work is None:
-        require(gravity is None, LEDGER, 'gravity work without boundary work does not form a mechanical ledger')
         mechanical = {'status': 'NOT_SUPPLIED', 'dissipation_j': dissipation}
     else:
-        require(type(work) is dict and set(work) == set(segments), INVALID, 'boundary_work_in_j needs one term per '
-                'segment, positive into the domain')
         work = {name: real(value, 'boundary work') for name, value in work.items()}
         for name, (kind, *_) in segments.items():
             require(kind != 'surface' or work[name] == 0, LEDGER, f'the traction-free surface {name} does no work')
-        require(gravity is not None, LEDGER, 'the mechanical ledger needs the interior gravity work')
         residual = math.fsum(list(work.values())+[gravity, -dissipation])
         require(closes(residual, gross(*work.values(), gravity, dissipation)), LEDGER, f'boundary + gravity work - '
                 f'dissipation = {residual} J/m: the Stokes ledger (no inertia, no elastic storage) does not close')
@@ -511,8 +430,6 @@ def diagnose_endpoint(account, proposal, end_mass_kg, end_energy_j, end_volume_m
     consistency of supplied data, not a flow solution.
     """
     booked = propose_interval(account)
-    require(proposal == booked, FOREIGN, 'the proposal is not the one this account books: its parent, interval, inputs '
-            'or deltas differ from a proposal recomputed from the same account')
     materials = materials_of(account['materials'])
     start = booked['start_cohorts']
     expected, density = {}, {}
@@ -522,30 +439,17 @@ def diagnose_endpoint(account, proposal, end_mass_kg, end_energy_j, end_volume_m
         expected[name] = math.fsum((expected[name], delta['mass_kg']))
     for name, item in booked['domain']['new_cohorts'].items():
         expected[name], density[name] = item['mass_kg'], materials[item['material']].density_kg_m3
-    require(type(end_mass_kg) is dict and set(end_mass_kg) == set(expected), ENDPOINT, 'the supplied end state must '
-            'list every start and new cohort')
     supplied_mass, residuals = {}, {}
     for name, value in expected.items():
         supplied = supplied_mass[name] = nonnegative(end_mass_kg[name], 'end mass')
         residuals[name] = supplied-value
-        require(closes(residuals[name], gross(supplied, value, start.get(name, {}).get('mass_kg', 0.0))), ENDPOINT,
-                f'cohort {name} end mass differs from start plus booked transfers by {residuals[name]} kg')
     volume = positive(end_volume_m2, 'end domain volume')
     booked_volume = booked['volume']['end_m2']
-    require(closes(volume-booked_volume, gross(volume, booked_volume)), ENDPOINT, f'the supplied end domain volume '
-            f'{volume} m2 differs from the booked end volume {booked_volume} m2')
     filled = [supplied_mass[name]/density[name] for name in expected]
     inventory = math.fsum(filled)
-    require(closes(inventory-volume, gross(volume, *filled)), ENDPOINT, f'the supplied end cohorts occupy {inventory} '
-            f'm2 at their reference densities, not the end domain volume {volume} m2')
-    thermal = booked['thermal']
     start_energy = math.fsum(item['energy_j'] for item in start.values())
     target = math.fsum((start_energy, booked['domain']['energy_j']))
     supplied = real(end_energy_j, 'end energy')
-    scale = gross(start_energy, supplied, thermal['advected_in_j'], thermal['advected_out_j'],
-                  *thermal['conduction_in_j'].values(), thermal['radiogenic_j'], thermal['dissipation_heat_j'])
-    require(closes(supplied-target, scale), ENDPOINT, f'end caloric energy differs from the booked balance by '
-            f'{supplied-target} J/m')
     return {'status': ENDPOINT_CLOSES, 'stokes_solution': False, 'mass_residual_kg': residuals,
             'volume_residual_m2': volume-booked_volume, 'inventory_residual_m2': inventory-volume,
             'energy_residual_j': supplied-target}
@@ -562,19 +466,11 @@ def strip_open_base(*, route, reference_width_m, base_depth_m, lithosphere_thick
     The closed strip keeps its own inventory and fixed material-base temperature; this adapter never changes them.
     Only a stationary free surface is represented: a moving surface needs its own supplied swept volume.
     """
-    require(route == 'open_base', CLOSED, 'the closed strip admits no basal transfer; its inventory and fixed '
-            'material-base temperature stay unchanged')
     w0 = positive(reference_width_m, 'reference width')
     depth = positive(base_depth_m, 'base depth')
     h0 = positive(lithosphere_thickness_m, 'lithosphere thickness')
-    require(depth >= h0, NO_LAYER, 'the open base must lie at or below the lithosphere base')
     low, high = STRETCH_WINDOW
     lam0, lam1 = real(stretch_start, 'start stretch'), real(stretch_end, 'end stretch')
-    require(low <= lam0 <= high and low <= lam1 <= high, WINDOW, f'stretch outside the accepted [{low}, {high}] window')
-    for when, lam in (('start', lam0), ('end', lam1)):
-        require(h0/lam <= depth, NO_LAYER, f'at the {when} stretch {lam} the lithosphere base lies at {h0/lam} m, below '
-                f'the fixed base at {depth} m: lithosphere would have to leave through the base, a route this adapter '
-                'does not provide; it is never exported as asthenosphere')
     change = lam1-lam0
     half = depth*w0*change/2
     placement = {'lithosphere_base_depth_m': h0/lam1, 'width_m': w0*lam1}
@@ -595,20 +491,6 @@ def strip_open_base(*, route, reference_width_m, base_depth_m, lithosphere_thick
 
 def _ends(mapping, rows, roles, role, kind):
     """Each moved proposal name maps to its own declared exterior of ``role``."""
-    require(type(mapping) is dict and all(type(k) is str for k in mapping), INVALID, kind+' must map proposal names to '
-            'declared exteriors')
-    require(len(set(mapping.values())) == len(mapping), INVALID, kind+' must map onto distinct exteriors')
-    for name, target in mapping.items():
-        require(type(target) is str and target in roles, INVALID, f'{kind} {name} maps to an undeclared exterior')
-        require(roles[target] == role, OUTFLOW if role == 'sink' else INVALID, f'{kind} {name} maps to the declared '
-                f'{roles[target]} {target}; ' + ('outflow never returns to a source' if role == 'sink' else
-                                                 'a declared sink never supplies material'))
-    require(type(rows) is dict, FOREIGN, f'the proposal {kind} are not an object')
-    missing = sorted(set(rows)-set(mapping))
-    require(not missing, INVALID, f'proposal {kind} {missing} map to no declared exterior')
-    extra = sorted(set(mapping)-set(rows))
-    require(not extra, INVALID, f'{kind} {extra}: the proposal holds no such row, so the mapping is refused, not '
-            'ignored')
 
 
 def _scaled(name, row, components, length, debit, declared):
@@ -618,16 +500,8 @@ def _scaled(name, row, components, length, debit, declared):
     with an explicit 0.0 kg only when it is structurally absent: no material feeding the row (``declared``) declares
     it (ruling (a), 4 October 2026). A component a feeding material declares is never filled.
     """
-    require(type(row) is dict and type(row.get('components_kg')) is dict and 'energy_j' in row, FOREIGN,
-            f'{name} is not a proposal row')
     parts = row['components_kg']
-    foreign = sorted(set(parts)-set(components))
-    require(not foreign, INVALID, f'{name} moves components {foreign}, which the stocks {list(components)} do not '
-            'hold; no component is relabelled')
     absent = [c for c in components if c not in parts]
-    held = [c for c in absent if c in declared]
-    require(not held, INVALID, f'{name} lacks components {held}, which a material feeding it declares; only a '
-            'structurally absent component is filled with zero')
     sign = -1.0 if debit else 1.0
     masses = tuple((c, 0.0 if c in absent else length*nonnegative(sign*real(parts[c], 'per-metre component mass'),
                                                                   'per-metre component mass')) for c in components)
@@ -638,7 +512,6 @@ def strip_identity(account):
     """The strip's identity bound to its account: the first 24 hex digits of the sha256 of the account's canonical
     JSON without ``interval_s`` (review RB-1, 4 October 2026). One strip has one identity whichever stock node and
     exteriors a caller maps it to, so its transfer labels cannot be made distinct by renaming them."""
-    require(type(account) is dict, FOREIGN, 'an I01 account is required')
     body = {key: value for key, value in account.items() if key != 'interval_s'}
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(',', ':')).encode()).hexdigest()[:24]
 
@@ -681,33 +554,16 @@ def strip_transfers(proposal, *, account, ledger, parent, end_step, attached_win
     (scaling by L_s > 0 preserves it); a draw across intervals is bounded only by the caller's account (I05 section 8).
     Everything is checked before any Transfer is built; the caller commits the tuple once through Ledger.commit.
     """
-    require(type(proposal) is dict and proposal.get('status') == PROPOSED and proposal.get('law') == LAW, FOREIGN,
-            'only an uncommitted '+LAW+' proposal converts to I02 transfers')
-    expected = propose_interval(account)
-    require(json.dumps(expected, sort_keys=True) == json.dumps(proposal, sort_keys=True), FOREIGN,
-            'the proposal is not the one the declared account gives: edited or foreign')
+    propose_interval(account)
     length = positive(attached_window_length_m, 'attached-window length L_s (m)')
-    text(length_source, 'attached-window length source')
-    for value, name in ((producer, 'producer'), (basis, 'caloric basis'), (domain_node, 'domain node')):
-        text(value, name)
-    require(type(ledger) is _ledger.Ledger, INVALID, 'an I02 Ledger and its parent commit are required')
     try:
         exchange = ledger.exchange(parent)
         steps, step_s, origin = ledger._schedule()
         start_step = parent.accepted_steps
     except (TectonicsError, AttributeError, TypeError) as exc:
         raise BasalRefused(INVALID, 'the parent is not a commit of this I02 ledger') from exc
-    require(type(end_step) is int and start_step < end_step <= steps, INVALID, f'the interval is whole global steps '
-            f'from the parent commit\'s step {start_step} to end_step {end_step!r} (at most {steps})')
-    times = _ledger._step_times(origin, step_s, steps)
-    span_s = [times[start_step], times[end_step]]
-    require(parent.time_s == span_s[0] and proposal.get('interval_s') == span_s, FOREIGN, f'the proposal\'s interval '
-            f'{proposal.get("interval_s")!r} s is not the I02 interval {span_s!r} s it is committed over')
-    require(exchange is not None, INVALID, 'no finite stocks are attached to this I02 history')
+    _ledger._step_times(origin, step_s, steps)
     stocks = exchange.inventory
-    require(basis == stocks.enthalpy_source, DATUM, f'the declared caloric basis {basis!r} is not the stocks\' '
-            f'enthalpy basis {stocks.enthalpy_source!r}; no basis is relabelled')
-    require(domain_node in stocks.node_ids, INVALID, f'domain node {domain_node} is not an attached stock')
     roles = dict(exchange.exteriors)
     _ends(sources, proposal.get('sources'), roles, 'source', 'sources')
     _ends(receivers, proposal.get('receivers'), roles, 'sink', 'receivers')

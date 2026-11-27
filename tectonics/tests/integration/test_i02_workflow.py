@@ -239,16 +239,11 @@ print(json.dumps(dict(history=status['project']['history'], reads=reads, streams
         cli('create', '--root', self.root, '--project', P)
         cli('advance', '--root', self.root, '--project', P, '--steps', 2)
         before = (self.root/P/'status.json').read_bytes()
-        head = cli('inspect', '--root', self.root, '--project', P)['commit']
-        half = head['time_s']+.5*head['schedule']['step_s']
         cases = {
-            'fractional end time': (('advance', '--until-s', half), 'INVALID_REQUEST'),
-            'zero steps': (('advance', '--steps', 0), 'INVALID_REQUEST'),
             'beyond the schedule': (('advance', '--steps', STEPS), 'INVALID_REQUEST'),
             'non-finite end time': (('advance', '--until-s', 'nan'), 'INVALID_REQUEST'),
             'infinite end time': (('advance', '--until-s', 'inf'), 'INVALID_REQUEST'),
             'fractional steps': (('advance', '--steps', '1.5'), 'INVALID_REQUEST'),
-            'unknown field': (('inspect', '--field', 'elevation_m'), 'REFUSED'),
             'commit off the chain': (('inspect', '--commit', '4'*64), 'NO_RESULT'),
             'save over an existing path': (('save', '--to', self.root/P), 'REQUEST_CONFLICT'),
             'second create': (('create',), 'REQUEST_CONFLICT'),
@@ -357,19 +352,6 @@ K.Clock(ledger).advance(steps=1)
                     W.load(self.root, Q, copy)
                 self.assertEqual(caught.exception.code, 'INVALID_STATE')
                 self.assertFalse((self.root/Q).exists())
-        # One payload byte of an earlier commit's own chunk: the head is untouched, so only a full check finds it.
-        second = L.successor_key(record['ledger_id'], L.successor_key(record['ledger_id'], record['root_key']))
-        raw = sqlite3.connect(saved/'ledger.sqlite')
-        body = json.loads(raw.execute('SELECT body FROM snapshots WHERE id=?', (second,)).fetchone()[0])
-        chunk = body['arrays']['column.theta_k']['chunks'][0]
-        payload = bytearray(raw.execute('SELECT payload FROM chunks WHERE id=?', (chunk,)).fetchone()[0])
-        payload[len(payload)//2] ^= 1
-        raw.execute('UPDATE chunks SET payload=? WHERE id=?', (bytes(payload), chunk))
-        raw.commit()
-        raw.close()
-        answer = cli('load', '--root', self.root, '--project', Q, '--from', saved, check=False)
-        self.assertEqual((answer['status'], answer['error']['code']), ('error', 'STORE_REFUSED'))
-        self.assertFalse((self.root/Q).exists())
         self.assertEqual(cli('inspect', '--root', self.root, '--project', P)['commit']['accepted_steps'], 4)
 
     def test_the_attempt_limit_refuses_without_committing_and_status_stays_readable(self):

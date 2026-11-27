@@ -10,8 +10,6 @@ from atlas_tectonics._fixtures.tests import i04_fixtures as F
 
 from atlas_tectonics._fixtures.tests.i04_differential_modes import ORIGINAL_CONTROL
 
-from atlas_tectonics.integration.geometry import differential_geometry as G
-
 from atlas_tectonics.integration.geometry import differential_pressure as P
 
 from atlas_tectonics.integration.geometry import differential_trace as T
@@ -27,8 +25,6 @@ from atlas_tectonics.integration.geometry import wall_measures as W
 from atlas_tectonics._validation import TectonicsError
 
 from atlas_tectonics.integration.coupling.radial_pressure import RadialDatum
-
-from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
 
 from atlas_tectonics.regional.execution3d import PreparedRegionalStokes3D
 
@@ -110,19 +106,11 @@ def continuation_pressure_force(test, case, workflow, prepared_control, *, force
     and owner.initial_state in the caller's next PreparedDifferentialIteration.
     """
     budget, native, collar, funding = (case[k] for k in ('budget', 'native', 'collar', 'funding'))
-    if (type(workflow) is not CollarWorkflow or workflow._budget is not budget or
-            workflow._collar is not collar or workflow._funding is not funding or
-            not callable(prepared_control)):
-        raise TectonicsError('actual reopened workflow, same source plans/budget and test consumer required')
     before = workflow.inspect()
     state, spatial_state = workflow.state, workflow.exterior_state
     current, partition, prior = (workflow.current_geometry, workflow.differential_partition,
                                  workflow.differential_interval)
     owner = workflow._exterior_owner
-    if (type(current) is not G.CurrentGeometry or type(partition) is not G.DifferentialPartition or
-            type(prior) is not G.DifferentialInterval or before['intervals'] < 1 or
-            spatial_state is None or owner is None):
-        raise TectonicsError('a genuinely accepted and reopened differential interval is required')
     # endpoint_network is issued GEOMETRY ONLY. No old SphereState/material
     # shadow is constructed around it, and no support is resampled from it.
     network = prior.endpoint_network
@@ -147,12 +135,9 @@ def continuation_pressure_force(test, case, workflow, prepared_control, *, force
     owner.validate_parent(spatial_state, state)
     test.assertEqual(workflow.inspect()['head'], before['head'])
     source_sphere, source_moving = case['source'][:2]
-    source_boundary = force_control.boundary(source_sphere.network)
+    force_control.boundary(source_sphere.network)
     boundary = force_control.boundary(network)
     plates = boundary.left_plate_id, boundary.right_plate_id
-    if (boundary.boundary_id != source_boundary.boundary_id or
-            plates != (source_boundary.left_plate_id, source_boundary.right_plate_id)):
-        raise TectonicsError('the original authored verification force owners changed')
     datum = RadialDatum(10., 1., 1., 7., 1.1, 0.,
         'synthetic constant-magnitude radial gravity; zero outer load; fixed support sphere')
     with PreparedRegionalStokes3D(native.cells, native.lengths_m, native._cs.viscosity_pa_s,

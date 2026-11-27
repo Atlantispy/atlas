@@ -15,7 +15,7 @@ import weakref
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar
+from atlas_tectonics._validation import TectonicsError, read_array, scalar
 from atlas_tectonics.thermal.magmatic_transfer import MagmaticInventory, PreparedMagmaticTransfer
 from atlas_tectonics.materials.materials import MaterialCohort, _json, _name
 from atlas_tectonics.integration.resources import DEFAULT_BUDGET, WorkBudget, select_budget
@@ -29,11 +29,6 @@ ROUND = 128*np.finfo(float).eps
 KINDS = ('crust', 'mantle', 'source-solid', 'source-melt', 'reservoir',
          'intrusion', 'extrusion', 'export', 'accretion', 'deep-storage')
 _DEFAULT_BUDGET = WorkBudget(CAP, parent=DEFAULT_BUDGET)
-_RETIREMENT_KEYS = frozenset((
-    'epoch_id', 'density_kg_m3', 'thickness_m', 'material_velocity_m_s',
-    'boundary_velocity_m_s', 'outward_normal', 'strike_direction',
-    'section_width_m', 'frame_id', 'section_policy', 'destination_fractions',
-    'flux_source', 'partition_source'))
 
 
 def _owner(budget):
@@ -45,8 +40,6 @@ def _sum(values):
         value = math.fsum(float(x) for x in values)
     except (ValueError, OverflowError) as exc:
         raise TectonicsError('W08 extensive account exceeds finite arithmetic') from exc
-    if not math.isfinite(value):
-        raise TectonicsError('nonfinite W08 extensive account')
     return value
 
 
@@ -55,8 +48,6 @@ def _names(values, label):
         raise TectonicsError('one to 64 explicit '+label+' required')
     for value in values:
         _name(value, label)
-    if values != tuple(sorted(set(values))):
-        raise TectonicsError(label+' must be unique and lexically sorted')
     return values
 
 
@@ -119,20 +110,11 @@ class W08Inventory:
         nodes = _names(node_ids, 'node IDs')
         components = _names(component_ids, 'component IDs')
         count, kinds = len(nodes), node_kinds
-        if (type(kinds) is not tuple or len(kinds) != count
-                or any(kind not in KINDS for kind in kinds)):
-            raise TectonicsError('one explicit supported kind per W08 node required')
-        if type(origin_ids) is not tuple or len(origin_ids) != count:
-            raise TectonicsError('one explicit source-owned origin per W08 node required')
         for origin in origin_ids:
             _name(origin, 'origin')
         _name(source_id, 'inventory source')
         _name(enthalpy_source, 'enthalpy convention')
         now = scalar(time_s, 'inventory time')
-        if known_mass is None and (input_shape(component_mass_kg) != (count, len(components))
-                or input_shape(enthalpy_j) != (count,)
-                or input_shape(formation_time_s) != (count,)):
-            raise TectonicsError('component(N,K), enthalpy(N), formation-time(N) shapes required')
         owner = _owner(budget)
         with owner.reserve(96*count*(len(components)+4)+8192,
                            category='w08-inventory-input'):
@@ -140,10 +122,6 @@ class W08Inventory:
                 c = read_array(component_mass_kg, 'component mass', nonnegative=True)
                 e = read_array(enthalpy_j, 'signed enthalpy')
                 formation = read_array(formation_time_s, 'source formation times')
-                if c.shape != (count, len(components)) or e.shape != (count,) or formation.shape != (count,):
-                    raise TectonicsError('W08 input shape changed during capture')
-                if np.any(formation > now):
-                    raise TectonicsError('source formation time cannot lie after inventory time')
                 mass = np.array([_sum(row) for row in c])
                 if np.any((mass == 0) & (e != 0)):
                     raise TectonicsError('empty stock cannot contain enthalpy or implicit throughflow')
@@ -155,8 +133,6 @@ class W08Inventory:
                 formation_time_s=formation.tolist(), source_id=source_id,
                 enthalpy_source=enthalpy_source, time_s=now)
             encoded = _json(record)
-            if len(encoded) > 131072:
-                raise TectonicsError('W08 inventory metadata exceeds bounded descriptor')
             values = dict(node_ids=nodes, node_kinds=kinds, component_ids=components,
                 origin_ids=origin_ids, source_id=source_id, enthalpy_source=enthalpy_source,
                 time_s=now, inventory_id=_identity(encoded, c, e), _record=encoded,
@@ -188,8 +164,6 @@ class W08Inventory:
     def retime(self, time_s, *, source_id=None, budget=None, cancel=None):
         """Cessation/chronology only: preserve every stock and formation label."""
         now = scalar(time_s, 'inventory time')
-        if now < self.time_s:
-            raise TectonicsError('W08 inventory time cannot run backwards')
         result = object.__new__(W08Inventory)
         result._initialise(self.node_ids, self.node_kinds, self.component_ids,
             self._components, self._enthalpy, self.source_id if source_id is None else source_id,
@@ -204,11 +178,7 @@ class W08Inventory:
 
 
 def _selection(inventory, selected):
-    if type(inventory) is not W08Inventory:
-        raise TectonicsError('explicit W08Inventory required')
     _names(selected, 'selected node IDs')
-    if any(node not in inventory.node_ids for node in selected):
-        raise TectonicsError('selected node is absent from the shared W08 inventory')
     return [inventory.node_ids.index(node) for node in selected]
 
 
@@ -221,9 +191,6 @@ def _closure(initial, components, enthalpy, heat, moved_c, moved_e):
             (initial._enthalpy, enthalpy, heat, moved_e.flat)]:
         old, new, external, transfers = map(tuple, (old, new, external, transfers))
         residual = _sum((*new, *(-x for x in old), *(-x for x in external)))
-        scale = _sum((abs(x) for group in (old, new, external, transfers) for x in group))
-        if abs(residual) > ROUND*scale:
-            raise TectonicsError('global W08 component/enthalpy account does not close')
         residuals.append(residual)
     return dict(component_residual_kg=residuals[:-1], enthalpy_residual_j=residuals[-1])
 
@@ -278,18 +245,7 @@ def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s
     """
     check_event_or_callable(cancel, 'constitutive work cancelled')
     indices = _selection(inventory, selected_node_ids)
-    if any(inventory.node_kinds[i] not in ('crust', 'mantle') for i in indices):
-        raise TectonicsError('retirement sources must be explicitly crust or mantle')
-    if (type(destination_ids) is not tuple or len(destination_ids) != 3
-            or any(type(node) is not str for node in destination_ids)
-            or len(set(destination_ids)) != 3
-            or any(node not in inventory.node_ids for node in destination_ids)):
-        raise TectonicsError('three distinct existing retirement destinations required')
     destinations = [inventory.node_ids.index(node) for node in destination_ids]
-    if tuple(inventory.node_kinds[i] for i in destinations) != DESTINATIONS:
-        raise TectonicsError('destination order must be accretion, deep-storage, export')
-    if type(parameters) is not dict or parameters.keys() != _RETIREMENT_KEYS:
-        raise TectonicsError('complete explicit retirement parameters including epoch_id required')
     supplied = dict(parameters)
     epoch = supplied.pop('epoch_id')
     _name(epoch, 'retirement epoch')

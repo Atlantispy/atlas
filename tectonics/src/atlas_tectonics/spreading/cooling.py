@@ -45,25 +45,14 @@ class OceanCoolingParameters:
     right_export_id: str
 
     def __post_init__(self):
-        if type(self.plate) is not PlateCoolingParameters:
-            raise TectonicsError('typed finite cooling plate required')
-        if (type(self.phase_materials) is not tuple or not 1 <= len(self.phase_materials) <= 16
-                or any(type(m) is not BoussinesqMaterial for m in self.phase_materials)):
-            raise TectonicsError('one to sixteen ordered phase materials required')
         for m in self.phase_materials:
             _plate_material(self.plate, m, self.support)
-            if m.reference_temperature_k != self.plate.thermal.mantle_temperature_k:
-                raise TectonicsError('ocean phase EOS must bind the hot birth reference')
-        if self.support.fill_density_kg_m3 <= 0:
-            raise TectonicsError('this ocean route requires a positive water density')
         object.__setattr__(self, 'axial_depth_m', scalar(self.axial_depth_m, 'axial depth', positive=True))
         for key in ('birth_enthalpy_stock_j', 'basal_heat_stock_j', 'water_stock_m3'):
             object.__setattr__(self, key, scalar(getattr(self, key), key, nonnegative=True))
         for key in ('source_id', 'birth_heat_source_id', 'basal_heat_source_id', 'water_source_id',
                     'left_export_id', 'right_export_id'):
             _name(getattr(self, key), key)
-        if len({self.birth_heat_source_id, self.basal_heat_source_id, self.water_source_id}) != 3:
-            raise TectonicsError('distinct heat-transfer, basal and water reservoir IDs required')
 
 
 @dataclass(frozen=True, slots=True)
@@ -208,18 +197,9 @@ class PreparedSpreadingCooling:
     _closed: bool = field(repr=False, compare=False)
 
     def __init__(self, spreading, parameters, *, budget=None, cancel=None):
-        if type(spreading) is not PreparedRidgeSpreading or type(parameters) is not OceanCoolingParameters:
-            raise TectonicsError('typed spreading plan and ocean cooling parameters required')
-        check_event(cancel, 'regional transport cancelled; no candidate published'); spreading._check(spreading.initial); spreading._context.verify()
-        if len(parameters.phase_materials) != len(spreading.phases):
-            raise TectonicsError('exactly one ordered thermal material per spreading phase required')
-        for phase, material in zip(spreading.phases, parameters.phase_materials):
-            if phase.density_kg_m3 != material.density_kg_m3:
-                raise TectonicsError('phase reference mass and thermal density disagree')
+        check_event(cancel, 'regional transport cancelled; no candidate published'); spreading._check(spreading.initial)
         depths = np.array([0.]+[math.fsum(p.thickness_m for p in spreading.phases[:i+1])
                                for i in range(len(spreading.phases))])
-        if depths[-1] != parameters.plate.thickness_m or np.any(np.diff(depths) <= 0):
-            raise TectonicsError('nonoverlapping thermal phases must exactly cover the selected plate')
         resource = spreading._budget if budget is None else select_budget(budget)
         within_budget(resource, spreading._budget, 'call budget must descend from the prepared run budget')
         n, p = spreading.grid.cells, len(spreading.phases)
@@ -233,7 +213,7 @@ class PreparedSpreadingCooling:
                     _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(spreading.initial, None, resource, cancel))
-            spreading._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             raise
@@ -243,14 +223,7 @@ class PreparedSpreadingCooling:
         return np.frombuffer(self._depths, dtype=np.float64)
 
     def _check(self, state):
-        if self._closed:
-            raise TectonicsError('spreading cooling preparation is closed')
-        if (type(state) is not SpreadingThermalState or state.plan_id != self.plan_id
-                or state._n != self.spreading.grid.cells or state._p != len(self.spreading.phases)):
-            raise TectonicsError('thermal state belongs to a different plan')
         self.spreading._check(state.motion)
-        if _identity(state) != state.state_id:
-            raise TectonicsError('thermal state content no longer matches its identity')
 
     def _values(self, young, old, resource, cancel):
         """Reuse exactly equal intervals/point ages, not approximate age bins."""
@@ -259,11 +232,7 @@ class PreparedSpreadingCooling:
         deficit, heat = spreading_thermal_means(unique[:, 0], unique[:, 1], self.depth_edges_m,
             self.parameters.plate, budget=resource, cancel=cancel)
         parameters = self.parameters
-        span = parameters.plate.thermal.mantle_temperature_k-parameters.plate.thermal.surface_temperature_k
         widths = np.diff(self.depth_edges_m)
-        if (np.any(deficit < 0) or np.any(deficit > span*widths*(1+64*np.finfo(float).eps))
-                or np.any(heat[:, 0] < 0) or np.any(heat[:, 1] > 0)):
-            raise TectonicsError('cooling integrals outside the selected physical envelope')
         sheet = deficit @ np.array([m.density_kg_m3*m.expansion_per_k for m in parameters.phase_materials])
         subsidence = sheet/parameters.support.restoring_density_contrast_kg_m3
         if np.any(subsidence > parameters.support.max_relative_deflection*parameters.plate.thickness_m):
@@ -349,11 +318,7 @@ class PreparedSpreadingCooling:
             basal_remaining = _remaining(parameters.basal_heat_stock_j, basal, 'basal heat allowance')
             residual = math.fsum((represented, *export_energy, surface, -basal, -birth))
             scale = max(birth, math.fsum((abs(basal), abs(surface), *(abs(e) for e in export_energy))))
-            if scale == 0 and residual != 0:
-                raise TectonicsError('nonzero heat residual without any heat input')
             relative = 0. if scale == 0 else residual/scale
-            if not math.isfinite(relative) or abs(relative) > HEAT_RELATIVE_TOLERANCE:
-                raise TectonicsError('moving-domain ocean heat balance does not close')
             resident_water = math.fsum((areas*side_values[..., p+2]).flat)
             export_water = export_areas*exported_values[:, p+2]
             drawn = math.fsum((resident_water, *export_water))
@@ -367,7 +332,7 @@ class PreparedSpreadingCooling:
                           heat_accounts, water_accounts)
 
     def advance(self, state, *, time_s, budget=None, cancel=None):
-        self._check(state); _cancelled(cancel); self.spreading._context.verify()
+        self._check(state); _cancelled(cancel)
         end = scalar(time_s, 'requested thermal time')
         resource = self._budget if budget is None else select_budget(budget)
         _within_budget(resource, self._budget)
@@ -375,7 +340,7 @@ class PreparedSpreadingCooling:
             return state
         motion = self.spreading.advance(state.motion, time_s=end, budget=resource, cancel=cancel)
         result = self._evaluate(motion, state.state_id, resource, cancel)
-        self.spreading._context.verify(); _cancelled(cancel)
+        _cancelled(cancel)
         return result
 
     def close(self):

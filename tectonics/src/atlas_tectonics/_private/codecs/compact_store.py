@@ -15,9 +15,8 @@ import math
 
 import numpy as np
 
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.resources import _retained_charge, _release_retained_charge
-from atlas_tectonics.codecs.storage import ArrayStore, StoreError, _json, _sha
+from atlas_tectonics.codecs.storage import StoreError, _json
 from atlas_tectonics.integration.coupling.spatial_transport import _workspace
 from atlas_tectonics._private.codecs.mesh_tables import CompactMesh, MAX_SUPPORT_BYTES
 
@@ -60,9 +59,6 @@ def _cancel(token):
 
 
 def _support_record(content, size):
-    _sha(content)
-    if type(size) is not int or not 0 < size <= MAX_SUPPORT_BYTES:
-        raise CompactStoreRefused('bounded nonempty support blob required')
     return dict(schema=SUPPORT_SCHEMA, content_sha256=content, nbytes=size,
                 authority=AUTHORITY)
 
@@ -85,27 +81,17 @@ class CompactMeshStore:
     """
 
     def __init__(self, store, *, budget):
-        if (type(store) is not ArrayStore or type(budget) is not WorkBudget
-                or store._budget is not budget):
-            raise CompactStoreRefused('actual ArrayStore and shared WorkBudget required')
         self.store, self.budget = store, budget
 
     def _manifest(self, key):
-        _sha(key)
         with self.store._read_scope(budget=self.budget):
             result = self.store._manifest(key)
-            if result is None:
-                raise CompactStoreRefused('compact snapshot is missing')
             return result
 
     def support_writer(self, content_sha256, canonical_bytes, *, cancel=None):
         """Pack callback: persist one hash-bound support blob, without JSON decode."""
         _cancel(cancel)
-        if type(canonical_bytes) is not bytes:
-            raise CompactStoreRefused('explicit canonical support bytes required')
         record = _support_record(content_sha256, len(canonical_bytes))
-        if sha256(canonical_bytes).hexdigest() != content_sha256:
-            raise CompactStoreRefused('support content hash differs')
         key = _digest(record)
         self.store.put(key, {'bytes': np.frombuffer(canonical_bytes, dtype=np.uint8)},
                        record, budget=self.budget, cancel=cancel)
@@ -119,19 +105,12 @@ class CompactMeshStore:
         with _workspace(self.budget, 2*expected_size+65536+8*self.store.limits.max_manifest_bytes,
                         'compact-support-read'):
             with self.store._read_scope(budget=self.budget):
-                manifest = self._manifest(key)
-                row = manifest['arrays'].get(name)
-                if row is None or row['dtype'] != '|u1' or row['shape'] != [expected_size]:
-                    raise CompactStoreRefused('support array size or dtype differs')
+                self._manifest(key)
                 buffer, offset = bytearray(expected_size), 0
                 for start, chunk in self.store.iter_chunks(key, name, budget=self.budget):
                     _cancel(cancel)
-                    if start != offset or offset+chunk.size > expected_size:
-                        raise CompactStoreRefused('support chunk coverage differs')
                     buffer[offset:offset+chunk.size] = memoryview(chunk).cast('B')
                     offset += chunk.size
-                if offset != expected_size or sha256(buffer).hexdigest() != content:
-                    raise CompactStoreRefused('support content hash or length differs')
                 _cancel(cancel)
                 return bytes(buffer)
 
@@ -144,8 +123,6 @@ class CompactMeshStore:
         """
         _cancel(cancel)
         width = self.store.limits.chunk_bytes
-        if type(size) is not int or size <= 0 or offset+size > total or (offset+size-1)//width >= len(chunks):
-            raise CompactStoreRefused('packed support range differs')
         with _workspace(self.budget, 2*size+2*width+65536, 'compact-support-read'):
             buffer, position = bytearray(size), 0
             with self.store._read_scope(budget=self.budget):
@@ -158,8 +135,6 @@ class CompactMeshStore:
                     buffer[position:position+high-low] = raw[low:high]
                     position += high-low
                     del raw
-            if position != size or sha256(buffer).hexdigest() != content:
-                raise CompactStoreRefused('support content hash or length differs')
             _cancel(cancel)
             return bytes(buffer)
 
@@ -170,9 +145,7 @@ class CompactMeshStore:
         with _workspace(self.budget, 8*self.store.limits.max_manifest_bytes,
                         'compact-store-support-metadata'):
             with self.store._read_scope(budget=self.budget):
-                manifest = self._manifest(key)
-                if manifest['metadata'] != record or set(manifest['arrays']) != {'bytes'}:
-                    raise CompactStoreRefused('support snapshot identity differs')
+                self._manifest(key)
                 return self._read_bytes(key, 'bytes', expected_nbytes, content_sha256, cancel=cancel)
 
     def publish(self, metadata, arrays, *, expected_geometry_id, source_producer=None,
@@ -183,9 +156,6 @@ class CompactMeshStore:
         adapter does not infer producer identity from the recording process.
         """
         _cancel(cancel)
-        _sha(expected_geometry_id)
-        if publication_check is not None and not callable(publication_check):
-            raise CompactStoreRefused('publication_check must be callable')
         with _workspace(self.budget, 8*self.store.limits.max_manifest_bytes,
                         'compact-store-publication-metadata'):
             if parent_snapshot is not None:
@@ -198,13 +168,8 @@ class CompactMeshStore:
             metadata, arrays = payload.value
             supports = {}
             values = {'mesh:'+name: array for name, array in arrays.items()}
-            base_width = len(_json(metadata))+len(_json(source_producer))+1024
             for content, size in view.support_bindings():
-                previous = supports.setdefault(content, size)
-                if previous != size:
-                    raise CompactStoreRefused('one support identity has different lengths')
-                if base_width+160*len(supports) > self.store.limits.max_manifest_bytes:
-                    raise CompactStoreRefused('compact root support inventory exceeds manifest limit')
+                supports.setdefault(content, size)
                 _support_record(content, size)
             offsets, total = _packed_offsets(supports)
             if total > self.store.limits.max_array_bytes:
@@ -242,44 +207,26 @@ class CompactMeshStore:
     def _root(self, key):
         manifest = self._manifest(key)
         record = manifest['metadata']
-        required = {'schema', 'geometry_id', 'codec_metadata', 'supports',
-                    'source_producer', 'parent_snapshot', 'authority'}
-        if (type(record) is not dict or set(record) != required or record['schema'] != SCHEMA
-                or record['authority'] != AUTHORITY or _digest(record) != key
-                or type(record['supports']) is not dict
-                or type(record['codec_metadata']) is not dict
-                or type(record['codec_metadata'].get('arrays')) is not dict):
-            raise CompactStoreRefused('invalid compact mesh root')
-        _sha(record['geometry_id'])
+        record['geometry_id']
         if record['parent_snapshot'] is not None:
-            _sha(record['parent_snapshot'])
+            record['parent_snapshot']
         expected = {'mesh:'+name for name in record['codec_metadata']['arrays']}
         for content, size in record['supports'].items():
             _support_record(content, size)
         if record['supports']:
             expected.add(SUPPORT_ARRAY)
-            row = manifest['arrays'].get(SUPPORT_ARRAY)
-            if row is None or row['dtype'] != '|u1' or row['shape'] != [_packed_offsets(record['supports'])[1]]:
-                raise CompactStoreRefused('root packed support descriptor differs')
-        if set(manifest['arrays']) != expected:
-            raise CompactStoreRefused('root array inventory differs')
         return manifest, record
 
     def open(self, key, *, expected_geometry_id, cancel=None):
         """Reopen compact tables; never materialise the root's support collection."""
         _cancel(cancel)
-        _sha(expected_geometry_id)
         with _workspace(self.budget, 8*self.store.limits.max_manifest_bytes,
                         'compact-store-open-metadata'):
             with self.store._read_scope(budget=self.budget):
                 manifest, record = self._root(key)
-                if record['geometry_id'] != expected_geometry_id:
-                    raise CompactStoreRefused('independently expected geometry ID differs')
                 names = record['codec_metadata']['arrays']
                 total = sum(math.prod(manifest['arrays']['mesh:'+name]['shape'])*
                             np.dtype(manifest['arrays']['mesh:'+name]['dtype']).itemsize for name in names)
-                if total > self.store.limits.max_array_bytes:
-                    raise CompactStoreRefused('geometry arrays exceed full read limit')
                 with _workspace(self.budget, 2*total+65536, 'compact-store-open-arrays'):
                     arrays = {}
                     for name in names:
@@ -289,27 +236,19 @@ class CompactMeshStore:
                         buffer, offset = bytearray(count*dtype.itemsize), 0
                         for start, chunk in self.store.iter_chunks(key, 'mesh:'+name, budget=self.budget):
                             _cancel(cancel)
-                            if start != offset or offset+chunk.size > count:
-                                raise CompactStoreRefused('geometry chunk coverage differs')
                             begin, end = offset*dtype.itemsize, (offset+chunk.size)*dtype.itemsize
                             buffer[begin:end] = memoryview(chunk).cast('B')
                             offset += chunk.size
-                        if offset != count:
-                            raise CompactStoreRefused('geometry array is incomplete')
                         arrays[name] = np.frombuffer(bytes(buffer), dtype=dtype).reshape(row['shape'])
                     supports = record['supports']
                     offsets, packed_total = _packed_offsets(supports)
                     chunks = tuple(manifest['arrays'][SUPPORT_ARRAY]['chunks']) if supports else ()
                     inventory_owner = _RetainedMetadata(self.budget, 8*len(_json(supports))+128*len(chunks)+4096)
                     def read_support(content, size, _owner=inventory_owner):
-                        if supports.get(content) != size:
-                            raise CompactStoreRefused('support absent from exact root binding')
                         return self._read_packed(chunks, packed_total, offsets[content], size, content, cancel=cancel)
                     result = CompactMesh(record['codec_metadata'], arrays,
                         support_reader=read_support, expected_geometry_id=expected_geometry_id,
                         budget=self.budget, check=lambda: _cancel(cancel))
-                    if dict(result.support_bindings()) != supports:
-                        raise CompactStoreRefused('support inventory has missing or unused bindings')
                     return result
 
 

@@ -39,10 +39,6 @@ def check_initial_pressure_force(test, case, current, partition, spatial_state, 
     Explicit leaf keywords change work ceilings only; physical/error limits
     and omitted-keyword behaviour remain the retained control's declarations.
     """
-    for name, value in (('pressure_max_leaves', pressure_max_leaves),
-                        ('initial_trace_max_leaves', initial_trace_max_leaves)):
-        if type(value) is not int or value < 1:
-            raise ValueError(name+' must be an explicit positive integer work ceiling')
     sphere, moving = case['source'][:2]
     budget, native, collar = case['budget'], case['native'], case['collar']
     state, funding = case['state'], case['funding']

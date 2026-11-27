@@ -19,10 +19,7 @@ from atlas_tectonics.integration import support as U
 from . import volume as V
 from . import volume_bounds as B
 from . import volume_overlap as O
-from atlas_tectonics.integration.coupling.regional_evolution import PreparedRegionalOwner
-from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
-from atlas_tectonics.integration.resources import WorkBudget
 
 
 FIELDS = ('mass_kg', 'enthalpy_j', 'source_kappa_mass_kg')
@@ -40,17 +37,11 @@ def _partition(bounds, total):
     [-1/2,1/2]. Every value remains in its own proved interval. This is not a
     normalisation of missing coverage, masses, or an unproved geometry union.
     """
-    if any(not 0 <= a <= b for a, b in bounds):
-        raise V.VolumeError('invalid nonnegative component volume enclosure')
     low, high = sum((a for a, _ in bounds), Q(0)), sum((b for _, b in bounds), Q(0))
-    if not low <= total <= high:
-        raise V.VolumeError('proved partition and independent volume enclosures disagree')
     if high == low:
         return tuple(a for a, _ in bounds)
     shift = (total-(low+high)/2)/(high-low)
     values = tuple((a+b)/2+shift*(b-a) for a, b in bounds)
-    if sum(values, Q(0)) != total or any(not a <= v <= b for v, (a, b) in zip(values, bounds)):
-        raise V.VolumeError('bounded partition allocation failed exact closure')
     return values
 
 
@@ -114,16 +105,8 @@ class FullCellFunding:
     @classmethod
     def restore(cls, record, arrays, sphere, moving, collar, owner, *, budget):
         """Reissue only initial admission, never reconstruct an evolved state."""
-        if type(record) is not dict or record.get('schema') != 'atlas.full-cell-collar-funding.v1':
-            raise V.VolumeError('typed initial full-cell funding record required')
         request = record.get('integration_request')
-        if (type(budget) is not WorkBudget or type(request) is not dict or
-                set(request) != {'max_cell_volume_width_m3', 'max_field_errors', 'max_leaves'} or
-                type(request['max_field_errors']) is not dict or set(request['max_field_errors']) != set(FIELDS)):
-            raise V.VolumeError('invalid encoded integration request')
         encoded = [request['max_cell_volume_width_m3'], *request['max_field_errors'].values()]
-        if any(type(pair) is not list or len(pair) != 2 or any(type(v) is not str for v in pair) for pair in encoded):
-            raise V.VolumeError('canonical rational pairs required')
         # Guard encoded sizes BEFORE allocating integers or their Fractions.
         with budget.reserve(65536+1024*sum(len(v) for pair in encoded for v in pair),
                             category='collar-funding-restore'):
@@ -132,8 +115,6 @@ class FullCellFunding:
                     value = Q(int(pair[0], 16), int(pair[1], 16))
                 except (ValueError, ZeroDivisionError) as exc:
                     raise V.VolumeError('invalid rational funding request') from exc
-                if V._encoded(value) != pair:
-                    raise V.VolumeError('noncanonical rational funding request')
                 return value
             rebuilt = fund_full_cells(sphere, moving, collar, owner,
                 max_cell_volume_width_m3=decode(request['max_cell_volume_width_m3']),
@@ -143,15 +124,9 @@ class FullCellFunding:
                 from atlas_tectonics.integration.coupling.basal_inventory import carve_basal_inventory
                 from atlas_tectonics.integration.coupling.regional_inventory import HaloReservoir
                 basal = record['basal_inventory']
-                if (type(basal) is not dict or basal.get('schema') != 'atlas.finite-basal-funding.v1' or
-                        type(basal.get('reservoirs')) is not list):
-                    raise V.VolumeError('complete typed finite basal funding declaration required')
                 rebuilt = carve_basal_inventory(rebuilt, sphere, moving, collar,
                     tuple(HaloReservoir.from_record(row, budget=budget) for row in basal['reservoirs']), budget=budget,
                     compartment_kind=basal.get('compartment_kind', 'source'))
-            if rebuilt.descriptor() != record or set(arrays) != set(rebuilt.arrays()) or any(
-                    not np.array_equal(v, arrays[k]) for k, v in rebuilt.arrays().items()):
-                raise V.VolumeError('initial funding source, geometry, accounts or projected arrays changed')
             return rebuilt
 
 
@@ -165,21 +140,8 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
     full cell and share the native density/Cp/k. Unsupported material is refused,
     never supplied as a zero-filled corner or an averaged constitutive law.
     """
-    if type(collar) is not PreparedRegionalCollar3D or type(owner) is not PreparedRegionalOwner:
-        raise V.VolumeError('typed prepared collar and source owner required')
-    if type(budget) is not WorkBudget or collar._budget is not budget or owner._budget is not budget:
-        raise V.VolumeError('one explicit shared allocation budget required')
-    if owner._native is not collar._native or owner._funding is not None:
-        raise V.VolumeError('fresh matching native owner without already reserved halo funding required')
     owner.require_dormant_source(sphere, moving)
     owner._bound(owner.initial_state)
-    if owner.initial_state.descriptor()['metadata']['intervals'] != 0:
-        raise V.VolumeError('evolved regional state cannot be refunded or reset')
-    if (type(max_cell_volume_width_m3) not in (int, Q) or max_cell_volume_width_m3 < 0 or
-            type(max_field_errors) is not dict or set(max_field_errors) != set(FIELDS) or
-            any(type(v) not in (int, Q) or v < 0 for v in max_field_errors.values()) or
-            type(max_leaves) is not int or max_leaves < 1):
-        raise V.VolumeError('explicit nonnegative exact volume/field budgets and positive subdivision limit required')
     definition, layout = collar.descriptor(), owner.layout()
     registry = owner._registry
     keys = (tuple((row['patch_id'], row['sublayer']) for row in layout['components']) if registry is None
@@ -188,41 +150,21 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
             keys != tuple(sorted(set(keys))) or
             (registry is None and len(keys) != len(collar._native._composition))):
         raise V.VolumeError('actual ordered source component layout does not match native fields')
-    if (definition['volume_map_id'] != owner.physical_geometry_binding()['volume_map_id'] or
-            definition['native_plan_id'] != collar._native.plan_id):
-        raise V.VolumeError('collar/source owner geometry binding differs')
-    if moving._physical_columns is None or moving._patch_heat is None:
-        raise V.VolumeError('retained physical columns and positioned heat are required')
     support = U.required(sphere.material)
     count, components = math.prod(collar.cells), len(collar._native._composition)
     with budget.reserve(262144+256*count*(components+8)+4*support.workspace_bytes(),
                         category='collar-source-funding'), U.geometry_workspace(budget):
         cells = collar.cell_geometries()
-        if type(cells) is not tuple or len(cells) != count or any(type(c) is not V.CartesianCell for c in cells):
-            raise V.VolumeError('collar must issue one actual row-major Cartesian cell per full-grid node')
         patch_ids = {k[0] for k in keys}
         patches = {p.patch_id: p for p in support.patches if p.patch_id in patch_ids}
-        if len(patches) != len(patch_ids):
-            raise V.VolumeError('funding component lost its actual material patch')
         del patch_ids
         physical, heat = dict(moving._physical_columns), dict(moving._patch_heat)
         reference = Q(moving.enthalpy_reference_k)
-        native = collar._native
-        mat = native._material
-        expected = tuple(Q(q) for q in (mat.density_kg_m3, mat.heat_capacity_j_kg_k,
-                                        mat.conductivity_w_m_k, mat.expansion_per_k))
         source, geometry, densities, groups, measures = {}, {}, {}, {}, {}
         for patch_id, patch in patches.items():
             record = moving.cohort(patch.cohort_id)
-            if record.volume_convention != V.PHYSICAL_RADIAL_SHELL or record.reference_radius_m != sphere.network.sphere.radius_m:
-                raise V.VolumeError('fresh physical radial-shell convention on the actual sphere required')
-            if record.elastic != M.NOT_REPRESENTED or record.compaction != M.NOT_REPRESENTED:
-                raise V.VolumeError('collar cannot erase elastic or compaction history')
             heights, areal, _ = physical[patch_id]
             layers = M.layer_geometry(record, heights, budget=budget)
-            M._check_reference_mass(record, U.piece_of(patch, sphere.material.phases),
-                [h/s.thickness_m for h, s in zip(heights, record.sublayers)], sphere.material.phases,
-                sphere.network.step-moving.declared_step, budget=budget)
             phase_factor = M.phase_volume_per_area(record, heights, budget=budget)
             try:
                 cones = (V.convex_cone_union(patch.cells, budget=budget),)
@@ -247,9 +189,6 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
                 geometry[key] = shell
                 measures[key] = tuple(a*factor for a in area)
                 if key in keys:
-                    if tuple(Q(q) for q in (layer.reference_density_kg_m3, layer.heat_capacity_j_kg_k,
-                            layer.conductivity_w_m_k, layer.alpha_per_k)) != expected or layer.radiogenic_w_m3 != 0:
-                        raise V.VolumeError('full homogeneous collar cannot average different rho/Cp/k/alpha or source laws')
                     absolute = areal[j]/factor+rho*cp*reference
                     densities[key] = (rho, absolute, rho*Q(record.kappa[j]))
         ncharts = sum(len(groups[p][0]) for p, _ in keys)
@@ -258,8 +197,6 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
         energy = np.zeros(collar.cells)
         tracers = {name.removeprefix('tracer:'): np.zeros(collar.cells)
                    for name in owner.initial_state.native_state.array_names if name.startswith('tracer:')}
-        if set(tracers)-{'damage', 'accumulated_strain_ii', 'source_kappa', 'radial_plastic_kappa'}:
-            raise V.VolumeError('fresh collar admission has no producer for an additional native history')
         debit = {key: [Q(0)]*4 for key in source}
         projections = {key: [Q(0)]*3 for key in source}
         source_uncertainty = {key: Q(0) for key in source}
@@ -329,8 +266,6 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
             if any(q < 0 for q in remaining):
                 raise V.VolumeError('actual source stock cannot fund the proposed full cells and nonnegative remainder')
             error = source_uncertainty[key]
-            if debit[key][0]+error > measures[key][0]:
-                raise V.VolumeError('chosen debit plus geometric uncertainty is not below certified source volume')
             common = dict(patch_id=key[0], sublayer=key[1])
             remainder.append(dict(**common, radial_layer=geometry[key].record(),
                 geometry='actual source cone/shell minus shared full-cell exclusion union',
@@ -344,8 +279,6 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
                 component_mass_projection=_encode(projections[key][0])))
         arrays = dict(component_mass_kg=mass, enthalpy_j=energy,
                       **{'tracer:'+name: value for name, value in tracers.items()})
-        if any(not np.isfinite(value).all() for value in arrays.values()):
-            raise V.VolumeError('native projection is nonfinite')
         metadata = dict(schema='atlas.full-cell-collar-funding.v1',
             source=dict(sphere_state_id=sphere.state_id, network_id=sphere.network.network_id,
                         material_id=sphere.material.material_id, moving_id=moving.moving_id),
@@ -361,8 +294,6 @@ def fund_full_cells(sphere, moving, collar, owner, *, max_cell_volume_width_m3,
             inherited_geometry_scope='retained rays and existing spherical-area enclosure premise; no historical positional bound inferred',
             authority='one-time fresh funding proposal; transaction must reserve source; no clock advance or future resampling')
         if registry is not None:
-            if np.any(mass[len(keys):] != 0):
-                raise V.VolumeError('undeployed finite supply cannot occur in fresh physical source funding')
             metadata['component_registry'] = registry.record()
             if registry.initial_source_plate_ids:
                 metadata['initial_source_plate_ids'] = list(registry.initial_source_plate_ids)

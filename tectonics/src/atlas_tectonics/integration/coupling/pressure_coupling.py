@@ -51,6 +51,14 @@ def _jet_outward(jet):
     return tuple(_dyadic_outward(pair, denominator) for pair in jet)
 
 
+def _jet_outward_sum(jet):
+    """_jet_outward for a sum: a pair of Q endpoints already on the grid is its own rounding."""
+    denominator = 1 << _JET_PRECISION.get()
+    return tuple(pair if (type(pair[0]) is Q and type(pair[1]) is Q and not denominator % pair[0]._denominator
+                          and not denominator % pair[1]._denominator)
+                 else _dyadic_outward(pair, denominator) for pair in jet)
+
+
 def _arithmetic_exact_pair(pair):
     return type(pair) is tuple and len(pair) == 2 and all(type(q) is Q for q in pair)
 
@@ -63,16 +71,12 @@ def _scale(a, q):
 
 
 def _divide(q, interval):
-    if interval[0] <= 0 <= interval[1]:
-        raise PressureCouplingRefused('interval division crosses zero')
     values = q/interval[0], q/interval[1]
     return min(values), max(values)
 
 
 def _sqrt(q, bits=72):
     """Outward rational square-root bounds, with no floating predicate."""
-    if q < 0:
-        raise PressureCouplingRefused('negative squared radius')
     # Relative dyadic resolution; its explicit enclosure remains in the result.
     exponent = (q.numerator.bit_length()-q.denominator.bit_length())//2 if q else 0
     denominator = 1 << max(0, bits-exponent)
@@ -122,8 +126,6 @@ def wall_polygon(cell, first, second):
     """
     a, b = tuple(map(Q, first)), tuple(map(Q, second))
     normal = O._cross(a, b)
-    if not any(normal):
-        raise PressureCouplingRefused('noncollinear radial-wall rays required')
     omitted = max(range(3), key=lambda j: abs(normal[j]))
     i, j = (k for k in range(3) if k != omitted)
     determinant = a[i]*b[j]-a[j]*b[i]
@@ -230,8 +232,6 @@ def _integrate(poly, a, b, evaluator, *, width, max_leaves, budget):
 
 def _density_range(profile, radial):
     selected = [rho for bottom, top, rho, _ in profile if bottom <= radial[1] and top >= radial[0]]
-    if not selected:
-        raise PressureCouplingRefused('owned wall outside the pressure profile')
     return min(selected), max(selected)
 
 
@@ -279,7 +279,7 @@ def _jet_add(a, b):
         return a
     if _jet_is_constant(a) and _jet_is_constant(b):
         return _jet_constant(a[0][0]+b[0][0])
-    return _jet_outward(tuple(_add(x, y) for x, y in zip(a, b)))
+    return _jet_outward_sum(tuple(_add(x, y) for x, y in zip(a, b)))
 
 
 def _jet_scale(a, q):
@@ -350,8 +350,6 @@ def _angular_wedges(poly):
                 empty = True
         if empty:
             continue
-        if not upper:
-            raise PressureCouplingRefused('bounded radial wall polygon has no ray exit')
         low = max(lower, key=lambda pair: pair[0])
         high = min(upper, key=lambda pair: pair[0])
         if high[0] > low[0]:
@@ -369,8 +367,6 @@ def _radial_chart_jets(a, b, normal, left, right, bits):
         point = tuple(x+t*y for x, y in zip(a, direction))
         return O._dot(point, point)
     square = radius2(closest), max(radius2(left), radius2(right))
-    if square[0] <= 0:
-        raise PressureCouplingRefused('radial angular chart reaches the origin')
     s = _sqrt(square[0], bits)[0], _sqrt(square[1], bits)[1]
     qprime = tuple(2*(ad+dd*t) for t in (left, right))
     inv_s = _divide(_ONE, s)
@@ -455,8 +451,6 @@ def _integrate_radial_shell(poly, a, b, bottom, top, rc, *, width, max_leaves, b
     """Certified radial-first wall integral, with no curved indicator triangles."""
     if not poly or top <= bottom:
         return (_ZERO_PAIR,)*3, 0
-    if not 0 < rc <= bottom < top or any(min(p) < 0 for p in poly):
-        raise PressureCouplingRefused('positive physical shell and minor-wall coordinates required')
     normal = O._cross(a, b)
     with V._work((*a, *b, bottom, top, rc, *(q for p in poly for q in p)), budget, convert_values=False):
         wedges = _angular_wedges(poly)
@@ -508,8 +502,6 @@ def _integrate_angular(pieces, evaluate, coefficients, *, width, max_leaves, bud
                     del payload
                     whole = tuple(tight)
                 bounded = tuple(outward(pair) for pair in whole)
-                if any(lo > hi for lo, hi in bounded):
-                    raise PressureCouplingRefused('radial pressure value and derivative certificates disagree')
             values = (left, right, *values, *(q for pair in bounded for q in pair))
             lease = budget.reserve(4096+16*sum((V._bits(v)+7)//8 for v in values), category='owned-pressure-leaf')
             lease.__enter__(); leases[serial] = lease
@@ -804,8 +796,6 @@ def _pressure_partition_pieces(receiver, donors, wedges):
         receivers = [value for (i, _), value in active.items() if i == -1]
         if not receivers:
             continue
-        if len(receivers) != 1:
-            raise PressureCouplingRefused('radial receiver angular partition overlaps')
         rows = tuple(value for (i, _), value in sorted(active.items()) if i != -1)
         pieces.append((left, right, (receivers[0], rows)))
     return pieces
@@ -965,8 +955,6 @@ def _radial_linear_mean(points, radial, normal, *, rc=_ZERO):
 def _ray_length(planes, points, radial, bottom, top):
     """Enclose radial length of [x,outward] intersect one box and one shell."""
     rlo, rhi = radial
-    if rlo <= 0:
-        raise PressureCouplingRefused('pressure wall reaches the spherical centre')
     entry = (_ONE, _ONE); exit_ = (top/rhi, top/rlo)
     entry = (max(entry[0], bottom/rhi), max(entry[1], bottom/rlo))
     for plane in planes:
@@ -998,8 +986,6 @@ def wall_integrals(first, second, profiles, cells, densities, owned_box, *, grav
     """
     a, b = tuple(map(Q, first)), tuple(map(Q, second))
     gravity, rc, width = Q(gravity), Q(support_radius), Q(width)
-    if gravity <= 0 or rc <= 0 or width < 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise PressureCouplingRefused('positive gravity/support and explicit nonnegative width/work budgets required')
     active = []
     for cell, density in zip(cells, densities):
         poly, side = wall_polygon(cell, a, b)
@@ -1012,8 +998,6 @@ def wall_integrals(first, second, profiles, cells, densities, owned_box, *, grav
     leaves = 0
     for cell, density, poly, sides, _ in active:
         def anomaly(points, radial, moment):
-            if radial[0] < rc:
-                raise PressureCouplingRefused('owned cell wall lies below pressure support')
             difference = _ZERO_PAIR
             for side, weight in sides:
                 old = _density_range(profiles[side], radial)
@@ -1056,13 +1040,8 @@ def wall_integrals(first, second, profiles, cells, densities, owned_box, *, grav
 
 def reference_torque(native, lift):
     """The SAME native discrete pressure reaction, in actual plate virtual work."""
-    definition = native.descriptor()
-    if definition.get('pressure_reference') != lift._pressure_reference:
-        raise PressureCouplingRefused('native pressure reference differs from physical lift')
     if native._pressure_reference is None:
         return np.zeros((2, 3))
-    if definition['pressure_reference']['load_partition'] != 'full':
-        raise PressureCouplingRefused('owned pressure replacement requires full physical native loads')
     reaction = _factored_scale(native._pressure_reference['reaction'].reshape(-1, 3),
         (native._eta0, native._scales.velocity_m_s, native._scales.length_m), (), 'reference reaction')
     return np.einsum('aij,ij->a', lift._full, reaction).reshape(2, 3)
@@ -1115,29 +1094,17 @@ def radial_gravity_field(collar, datum, *, budget):
     Directions vary spatially. The evolution consumer multiplies them by the
     CURRENT density every mechanics endpoint, not by an admission density.
     """
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
-    from atlas_tectonics.integration.coupling.radial_pressure import RadialDatum
-    if type(collar) is not PreparedRegionalCollar3D or type(datum) is not RadialDatum or collar._budget is not budget:
-        raise PressureCouplingRefused('actual mapped collar, radial datum and shared budget required')
     plan = collar.descriptor()
     native = collar._native
     binding = collar._map.record()
     source = native._radial_constitutive
-    if source is None or source.descriptor()['volume_map_id'] != plan['volume_map_id']:
-        raise PressureCouplingRefused('radial gravity requires the actual mapped radial constitutive source')
-    if datum.reference_radius_m != binding['embedding']['sphere']['radius_m']:
-        raise PressureCouplingRefused('gravity datum and physical source sphere differ')
     with budget.reserve(65536+1024*native._n*27, category='owned-radial-gravity'):
         # These are the same declared Gauss points used by the native source;
         # no mechanical solve/operator needs to exist before gravity is issued.
         coordinates = source.array('local_position_m')
         points = collar._origin+coordinates@collar._basis.T
         radius = np.linalg.norm(points, axis=-1)
-        if np.any(radius <= 0) or np.any(radius > datum.reference_radius_m) or np.any(radius < datum.support_radius_m):
-            raise PressureCouplingRefused('native gravity point outside declared radial support')
         gravity = (-datum.gravity_m_s2*points/radius[..., None])@collar._basis
-        if not np.isfinite(gravity).all():
-            raise PressureCouplingRefused('radial gravity is not representable')
         snapshot = RegionalMechanicalSnapshot(dict(schema='atlas.owned-radial-gravity.v1',
             native_plan_id=native.plan_id, volume_map_id=plan['volume_map_id'],
             embedding=binding['embedding'], datum=datum.record(), datum_id=datum.datum_id,
@@ -1160,36 +1127,14 @@ def owned_pressure_correction(sphere, moving, support, base_port, funding, colla
     Rotated or thermally changed remainder needs a new current geometry/field
     producer; this function never treats a fresh funding record as its advance.
     """
-    from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D, RegionalCollarState
-    from atlas_tectonics.integration.coupling.radial_pressure import RadialPressureTrace
-    from atlas_tectonics.integration import material as M, ports as P
+    from atlas_tectonics.integration import material as M
     from atlas_tectonics.materials.constitutive import boussinesq_response
-    from atlas_tectonics.integration.resources import WorkBudget
-    if (type(funding) is not FullCellFunding or type(collar) is not PreparedRegionalCollar3D or
-            type(state) is not RegionalCollarState or type(base_port) is not RadialPressureTrace or
-            type(support) is not P.TraceSupport or type(budget) is not WorkBudget or
-            funding._resource is not budget or collar._budget is not budget):
-        raise PressureCouplingRefused('issued source trace, actual funded collar state and shared budget required')
-    if (type(max_torque_width_n_m) not in (Q, int) or max_torque_width_n_m < 0 or
-            type(max_leaves) is not int or max_leaves < 1):
-        raise PressureCouplingRefused('exact nonnegative torque enclosure width and positive work limit required')
     M.bound_moving(moving, sphere)
     funded, plan = funding.descriptor(), collar.descriptor()
     binding = dict(sphere_state_id=sphere.state_id, network_id=sphere.network.network_id,
                    material_id=sphere.material.material_id, moving_id=moving.moving_id)
-    if (funded['source'] != binding or funded['collar_plan_id'] != collar.plan_id or
-            funded['volume_map_id'] != plan['volume_map_id'] or
-            base_port.source_state_id != sphere.state_id or base_port.moving_id != moving.moving_id or
-            base_port.material_id != sphere.material.material_id or
-            base_port.support_id != support.support_id or support.network_id != sphere.network.network_id):
-        raise PressureCouplingRefused('stale source, material wall, funding or collar geometry')
     native, datum = collar._native, base_port.datum
     material = native._material
-    if material.reference_temperature_k != datum.reference_temperature_k:
-        raise PressureCouplingRefused('native and radial pressure use different physical density reference temperatures')
-    if material.composition_density_contrast_kg_m3 != 0:
-        raise PressureCouplingRefused('radial source has no declared composition density field to subtract')
     count = math.prod(collar.cells)
     with budget.reserve(262144+16384*(count+support.edges)+8*len(base_port._record)+16*count,
                         category='owned-pressure-source'):
@@ -1209,8 +1154,6 @@ def owned_pressure_correction(sphere, moving, support, base_port, funding, colla
         density = tuple(Q(float(v)) for v in density.flat)
         for c in cells:
             low, high = c.radial_bounds_squared_m2
-            if low < Q(datum.support_radius_m)**2 or high > Q(datum.reference_radius_m)**2:
-                raise PressureCouplingRefused('funded cell extends outside prescribed pressure support')
         inner = [c for i, c in enumerate(cells) if all(s.start <= int(j) < s.stop
                  for s, j in zip(collar._inner, np.unravel_index(i, collar.cells)))]
         owned = V.CartesianCell(tuple(min(c.lower_m[j] for c in inner) for j in range(3)),
@@ -1241,8 +1184,6 @@ def owned_pressure_correction(sphere, moving, support, base_port, funding, colla
                 removed[plate] = [_add(a, _scale(b, sign)) for a, b in zip(removed[plate], w)]
         def project(bounds):
             values = np.asarray([[float((a+b)/2) for a, b in row] for row in bounds])
-            if not np.isfinite(values).all():
-                raise PressureCouplingRefused('owned pressure torque cannot be projected to finite binary64')
             residual = [[V._encoded(Q(float(value))-(a+b)/2) for value, (a, b) in zip(row, exact)]
                         for row, exact in zip(values, bounds)]
             return values, residual

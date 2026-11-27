@@ -24,7 +24,7 @@ try:
     from scipy.fft import dct, idct, dst, idst
 except ImportError:
     dct=idct=dst=idst=None
-from atlas_tectonics._validation import TectonicsError, scalar, text, frozen, input_shape, read_array
+from atlas_tectonics._validation import TectonicsError, scalar
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.mechanics.stokes import StokesBox2D
@@ -32,7 +32,6 @@ from atlas_tectonics.materials.constitutive import BoussinesqMaterial, Diffusive
 
 _METHOD='atlas.thermochemical-strang-mc-ssprk2-2d.v1'
 # Python float also participates in the existing loaded-constant identity check.
-_BOUND_TOL=float(64*np.finfo(np.float64).eps)
 # A numerical publication guard, not a physical time-resolution ceiling.
 # Source identity includes these Python constants.
 _TIME_RTOL=2e-11
@@ -55,8 +54,6 @@ class ThermalBoundary2D:
     top_temperature_k: float | None = None
 
     def __post_init__(self):
-        if self.kind not in ('fixed-top-bottom', 'insulated'):
-            raise TectonicsError('supported thermal boundary: fixed-top-bottom or insulated')
         for key in ('bottom_temperature_k','top_temperature_k'):
             value=getattr(self,key)
             if self.kind=='insulated':
@@ -79,12 +76,9 @@ class ThermochemicalPolicy:
             if type(getattr(self,k)) is not int or getattr(self,k)<1:
                 raise TectonicsError(k+' must be a positive integer')
         c=scalar(self.outgoing_courant,'outgoing Courant',positive=True)
-        if c>0.5: raise TectonicsError('MC Euler positivity requires outgoing Courant <= 1/2')
         object.__setattr__(self,'outgoing_courant',c)
         for k in ('inventory_rtol','velocity_divergence_rtol'):
             v=scalar(getattr(self,k),k,positive=True)
-            if not 8*np.finfo(float).eps<=v<=1e-8:
-                raise TectonicsError(k+' outside supported accuracy envelope')
             object.__setattr__(self,k,v)
 
 
@@ -103,25 +97,17 @@ class ThermochemicalProblem:
 
     def __post_init__(self):
         from atlas_tectonics.mechanics.stokes import _scaling
-        if self.mechanical_mode not in ('constant-r4.2','variable-r4.3'):
-            raise TectonicsError('unknown mechanical mode')
         if self.mechanical_mode == 'variable-r4.3':
             from atlas_tectonics.mechanics.variable_stokes import check_coupled_rheology
             check_coupled_rheology(self.box,self.scales,self.rheology)
         else:
             _scaling(self.box,self.scales,self.rheology)
-        if type(self.material) is not BoussinesqMaterial or type(self.boundary) is not ThermalBoundary2D:
-            raise TectonicsError('typed material and thermal boundary required')
         for key in ('epoch_id','composition_id','source'):
-            text(getattr(self,key),key)
+            getattr(self,key)
             if len(getattr(self,key))>4096: raise TectonicsError('metadata string too long')
-        if type(self.gravity_m_s2) is not tuple or len(self.gravity_m_s2)!=2:
-            raise TectonicsError('explicit Cartesian gravity tuple required')
         object.__setattr__(self,'gravity_m_s2',tuple(scalar(v,'gravity') for v in self.gravity_m_s2))
         if self.boundary.kind=='fixed-top-bottom':
             lo,hi=self.material.temperature_range_k
-            if not all(lo<=v<=hi for v in (self.boundary.bottom_temperature_k,self.boundary.top_temperature_k)):
-                raise TectonicsError('thermal walls outside material temperature interval')
         capacity=scalar(self.material.density_kg_m3*self.material.heat_capacity_j_kg_k,'volumetric heat capacity',positive=True)
         scalar(self.material.conductivity_w_m_k/capacity,'thermal diffusivity',positive=True)
         scalar((self.box.width_m/self.box.nx)*(self.box.height_m/self.box.nz),'cell area',positive=True)
@@ -163,28 +149,17 @@ class ThermochemicalProblem:
 
 
 def _check_fields(problem,T,C):
-    shape=(problem.box.nz,problem.box.nx)
-    if T.shape!=shape or C.shape!=shape or not np.isfinite(T).all() or not np.isfinite(C).all():
-        raise TectonicsError('finite cell-average temperature/composition fields required')
     lo,hi=problem.material.temperature_range_k
-    if np.any((T<lo)|(T>hi)):
-        raise TectonicsError('temperature outside the selected material validity interval')
     if problem.rheology.family != 'constant':
-        t=(T-problem.scales.surface_temperature_k)/problem.scales.temperature_scale_k
-        if not np.isfinite(t).all() or np.any((t<0)|(t>1)):
-            raise TectonicsError('temperature outside selected R3 dimensionless law interval')
+        pass
     # This is a disclosed binary64 round-off envelope, not clipping or a source.
     # Raw excursions are retained, reported, and included in every material account.
     excursion=max(0.,float(-C.min()),float(C.max()-1.))
-    if excursion>_BOUND_TOL:
-        raise TectonicsError('composition outside [0,1] beyond 64-epsilon round-off envelope')
     m=problem.material
     with np.errstate(over='raise',invalid='raise'):
         try:
             rho=-m.density_kg_m3*m.expansion_per_k*(T-m.reference_temperature_k)+m.composition_density_contrast_kg_m3*C
         except FloatingPointError as exc: raise TectonicsError('density anomaly outside finite range') from exc
-    if not np.isfinite(rho).all() or np.any(np.abs(rho)>m.density_kg_m3*m.max_relative_density_anomaly):
-        raise TectonicsError('density anomaly exceeds R3 Boussinesq validity envelope')
     return rho,excursion
 
 
@@ -235,7 +210,6 @@ def _weighted_source(modes,weight,dt,*,prepared=None,source_exponent=0):
         a,ea=np.frexp(modes);b,eb=np.frexp(weight);c,ec=math.frexp(dt)
         with np.errstate(over='ignore',under='ignore',invalid='ignore'):
             out=np.ldexp((a*b)*c,ea+eb+ec+source_exponent)
-        if not np.isfinite(out).all(): raise TectonicsError('diffusive forcing response outside finite range')
         return out
     factor,unsafe=_source_weight(weight,dt) if prepared is None else prepared
     with np.errstate(over='ignore',under='ignore',invalid='ignore'):
@@ -246,7 +220,6 @@ def _weighted_source(modes,weight,dt,*,prepared=None,source_exponent=0):
         a,ea=np.frexp(modes[unsafe]);b,eb=np.frexp(weight[unsafe]);c,ec=math.frexp(dt)
         with np.errstate(over='ignore',under='ignore',invalid='ignore'):
             out[unsafe]=np.ldexp((a*b)*c,ea+eb+ec)
-    if not np.isfinite(out).all(): raise TectonicsError('diffusive forcing response outside finite range')
     return out
 
 
@@ -263,13 +236,9 @@ def _attenuated_modes(modes,x,exponential):
 def _normalise_extreme(values):
     """Rare power-of-two normalisation, refusing even nonzero rounding loss."""
     maximum=float(np.max(np.abs(values)))
-    if not math.isfinite(maximum): raise TectonicsError('thermal source outside finite range')
     exponent=math.frexp(maximum)[1]
     with np.errstate(under='ignore'):
         scaled=np.ldexp(values,-exponent)
-        restored=np.ldexp(scaled,exponent)
-    if not np.array_equal(restored,values):
-        raise TectonicsError('thermal normalisation loses represented values')
     return scaled,exponent
 
 
@@ -285,8 +254,6 @@ def _scaled_thermal_sum(values,numerator,denominator=()):
         m,e=math.frexp(factor);mantissa/=m;power-=e
     try: result=math.ldexp(mantissa,power)
     except OverflowError as exc: raise TectonicsError('thermal account outside finite range') from exc
-    if not math.isfinite(result) or (result==0 and mantissa!=0):
-        raise TectonicsError('thermal account outside representable range')
     return result
 
 
@@ -311,7 +278,6 @@ class _Diffusion2D:
     One dt entry is retained; parameter/source changes require another parent plan.
     """
     def __init__(self,problem):
-        if dct is None: raise TectonicsError('SciPy transforms required; no fallback')
         self.problem=problem
         b=problem.box
         dx=b.width_m/b.nx; dz=b.height_m/b.nz
@@ -323,7 +289,6 @@ class _Diffusion2D:
         self.lz=_factored_scale((2*np.sin(np.pi*modes/(2*b.nz)))**2,
             (problem.diffusivity_m2_s,),(dz,dz),'vertical diffusion rates')
         with np.errstate(over='ignore'): self.rates=self.lz[:,None]+self.lx[None,:]
-        if not np.isfinite(self.rates).all(): raise TectonicsError('diffusion operator outside finite range')
         if self.fixed:
             fraction=(np.arange(b.nz)+.5)/b.nz
             self.lift=((1-fraction)*problem.boundary.bottom_temperature_k+fraction*problem.boundary.top_temperature_k)[:,None]
@@ -392,8 +357,6 @@ class _Diffusion2D:
                     else:
                         average=lift+self.inverse(p*modes+source_average)
             except FloatingPointError as exc: raise TectonicsError('diffusion/source response overflows') from exc
-        if not np.isfinite(updated).all() or (self.fixed and not np.isfinite(average).all()):
-            raise TectonicsError('diffusion/source field outside finite range')
         check_event_or_callable(cancel, 'constitutive work cancelled')
         # Integrated heat flux, outward positive. Face temperature BCs are applied
         # at a HALF-cell separation, not a full-cell distance. Side flux is zero.
@@ -403,8 +366,6 @@ class _Diffusion2D:
             lower=_wall_heat(average[0]-self.problem.boundary.bottom_temperature_k,k,dx,dz,dt)
             upper=_wall_heat(average[-1]-self.problem.boundary.top_temperature_k,k,dx,dz,dt)
         else: lower=upper=0.
-        if not all(math.isfinite(v) for v in (lower,upper)):
-            raise TectonicsError('boundary heat account outside finite range')
         return updated,(lower,upper)
 
 

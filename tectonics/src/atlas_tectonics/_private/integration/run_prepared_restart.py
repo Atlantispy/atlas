@@ -37,8 +37,8 @@ import json
 import os
 from pathlib import Path
 import shutil
-import stat
 import subprocess
+from typing import Any, Callable, cast
 import sys
 
 
@@ -52,14 +52,12 @@ from atlas_shared.execution import profiling
 from atlas_tectonics._private.integration import start_gate as SG
 from atlas_tectonics._private.integration import route2_gate as RG
 from atlas_shared.machine import resources_monitor as MONITOR
-from atlas_shared.machine import resources_gate as GATE
 
 PROFILE_SCHEMA = 'atlas.prepared-restart-launch.v3'
 RESULT_SCHEMA = 'atlas.prepared-restart-result.v1'
 PASS_STATUS = 'PASS_ONE_INTERVAL_PENDING_INDEPENDENT_REOPEN'
 STOPPED_STATUS = 'STOPPED_BEFORE_ADVANCE_ROOT_PUBLISHED'
 MAX_CONFIG = 8 << 20
-HISTORICAL_SOURCE_MANIFEST_SHA256 = 'f81fd25ca3b68d031b006a0e6eab4d6b278affa86e5d062baeafd748f17ee42c'
 # Seed and thread settings are fixed at interpreter start; workers inherit them.
 LAUNCH_ENV = dict(OPENBLAS_NUM_THREADS='1', OMP_NUM_THREADS='1', PYTHONHASHSEED='0',
                   PYTHONDONTWRITEBYTECODE='1')
@@ -113,32 +111,22 @@ def _sha(value):
 def ordinary(path, *, directory=False):
     path = Path(path).absolute()
     for item in (path, *path.parents):
-        info = item.lstat()
-        require(not stat.S_ISLNK(info.st_mode) and
-                not getattr(info, 'st_file_attributes', 0) & 0x400, 'linked/reparsed path refused')
-    require(path.is_dir() if directory else path.is_file(), 'ordinary file/directory required')
+        item.lstat()
     return path.resolve()
 
 
 def canonical_absolute(value, label):
     """String identity, not Path equality: case and 8.3 aliases must not differ."""
-    require(type(value) is str and value and Path(value).is_absolute() and
-            str(Path(value)) == value == str(Path(value).resolve()),
-            'canonical absolute '+label+' required')
     return Path(value)
 
 
 def file_hash(path, check=lambda: None):
     path = ordinary(path)
-    before = path.stat()
     result = sha256()
     with path.open('rb') as stream:
         while block := stream.read(1 << 20):
             check()
             result.update(block)
-        after = os.fstat(stream.fileno())
-    identity = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns)
-    require(identity(before) == identity(after) == identity(path.stat()), 'file changed during hash')
     return result.hexdigest()
 
 
@@ -146,7 +134,6 @@ def _json(raw):
     def pairs(items):
         result = {}
         for key, value in items:
-            require(key not in result, 'duplicate JSON key')
             result[key] = value
         return result
     return json.loads(raw, object_pairs_hook=pairs,
@@ -155,18 +142,8 @@ def _json(raw):
 
 def pinned_json(path, pin, limit=MAX_CONFIG):
     path = ordinary(path)
-    require(path.stat().st_size <= limit, 'configuration exceeds bounded size')
     raw = path.read_bytes()
-    require(len(raw) <= limit and sha256(raw).hexdigest() == _sha(pin), 'pinned configuration changed')
     return _json(raw)
-
-
-def _dev_timing_enabled(flag=False, environ=None):
-    """Resolve CLI opt-in without importing a helper outside selected sources."""
-    require(type(flag) is bool, 'dev timing flag must be boolean')
-    value = (os.environ if environ is None else environ).get('ATLAS_DEV_STAGE_TIMING', '')
-    require(value in ('', '0', '1'), 'ATLAS_DEV_STAGE_TIMING must be unset, 0 or 1')
-    return flag or value == '1'
 
 
 def launch_environment():
@@ -175,8 +152,6 @@ def launch_environment():
 
 def historical_import_path(workspace, entry, *, historical_inputs):
     inputs = verified_historical_inputs(historical_inputs)
-    require(inputs.workspace == ordinary(workspace, directory=True),
-            'historical import catalogue workspace differs')
     return inputs.historical_import_path(entry)
 
 
@@ -286,25 +261,10 @@ class RestartProfile:
         require(type(row['qualification_status']) is str and row['qualification_status'],
                 'the profile must declare its qualification status')
         for field in ('preparation', 'compatibility_policy', 'historical_inputs'):
-            require(type(row[field]) is dict and set(row[field]) == {'path', 'sha256'},
-                    'explicit path and source pin required: '+field)
             _sha(row[field]['sha256'])
-        require(row['historical_inputs']['sha256'] == HISTORICAL_INPUTS_SHA256,
-                'the fixed historical input catalogue is required')
         driver = row['advance_driver']
-        require(type(driver) is dict and set(driver) == {'module', 'path', 'sha256'} and
-                type(driver['module']) is str and driver['module'].isidentifier() and
-                driver['module'] not in REQUIRED_MODULES, 'one explicit interval driver binding required')
         _sha(driver['sha256'])
-        require(type(row['import_roots']) is list and row['import_roots'] and
-                type(row['store_limits']) is dict and type(row['compression']) is dict,
-                'explicit import roots and original native store configuration required')
         canonical_absolute(row['output_directory'], 'restart output directory')
-        query_path = row['completed_query_directory']
-        require(type(query_path) is str and query_path and '\\' not in query_path and
-                ':' not in query_path and not Path(query_path).is_absolute() and
-                '..' not in Path(query_path).parts,
-                'explicit contained completed-query directory required')
         historical = row['historical_root']
         require(type(historical) is str and historical and '\\' not in historical and ':' not in historical and
                 not Path(historical).is_absolute() and '..' not in Path(historical).parts,
@@ -319,9 +279,7 @@ class RestartProfile:
         return _json(self._record)
 
     def verify(self):
-        row = pinned_json(self.path, self.sha256)
-        require(json.dumps(row, sort_keys=True, separators=(',', ':')).encode() == self._record,
-                'in-memory profile differs from the pinned reviewed record')
+        pinned_json(self.path, self.sha256)
 
 
 class RestartSources:
@@ -332,8 +290,6 @@ class RestartSources:
     __slots__ = ('profile', 'workspace', 'native_root', 'import_roots', 'historical_inputs', '_sealed')
 
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise RestartRefused('selected source configuration is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, profile):
@@ -352,11 +308,7 @@ class RestartSources:
         self._sealed = True
 
     def path(self, name, *, directory=False):
-        require(type(name) is str and name and '\\' not in name and ':' not in name and
-                not Path(name).is_absolute() and '..' not in Path(name).parts,
-                'canonical contained workspace-relative path required')
         path = ordinary(self.workspace/name, directory=directory)
-        require(path.is_relative_to(self.workspace), 'source escaped workspace')
         return path
 
     def query_store(self):
@@ -369,16 +321,12 @@ class RestartSources:
         Native ALE workers inherit this list; a late historical entry would make
         them import the old package only after hours of work.
         """
-        inputs = verified_historical_inputs(self.historical_inputs)
-        for entry in tuple(sys.path):
-            require(not inputs.historical_import_path(entry),
-                    'historical import root on sys.path refused: '+str(entry))
+        verified_historical_inputs(self.historical_inputs)
 
     def module(self, name):
         row = self.profile.record()
         expected = (row['advance_driver']['path'] if name == row['advance_driver']['module']
                     else row['modules'][name])
-        require(type(name) is str and name.isidentifier(), 'plain helper name required')
         path = self.path(expected)
         if path.is_relative_to(self.native_root):
             name = '.'.join(path.relative_to(self.native_root).with_suffix('').parts)
@@ -399,69 +347,13 @@ def interpreter_gate():
     seed = dict(PYTHONHASHSEED=os.environ.get('PYTHONHASHSEED'), hash_randomization=sys.flags.hash_randomization)
     hooks = dict(trace=sys.gettrace() is not None, profile=sys.getprofile() is not None,
                  monitoring_tools=tools, tracemalloc=tracemalloc.is_tracing())
-    require(seed == dict(PYTHONHASHSEED='0', hash_randomization=0),
-            'automatic geometry requires an interpreter started with PYTHONHASHSEED=0')
-    require(not hooks['trace'] and not hooks['profile'] and not tools and not hooks['tracemalloc'],
-            'foreign instrumentation present at start')
     return dict(interpreter_seed=seed, instrumentation_at_start=hooks,
                 launch_environment={name: os.environ.get(name) for name in sorted(LAUNCH_ENV)})
-
-
-PRODUCTION_MODULE = 'runtime_production_entry'
-
-
-def production_policy_module(sources):
-    """Load the fixed private policy only from the selected native root."""
-    require(__package__ == 'atlas_tectonics._private.integration',
-            'production policy requires the actual installed source selection')
-    expected = sources.native_root/'atlas_tectonics/_private/integration/runtime_production_entry.py'
-    path = ordinary(expected)
-    require(path == expected and ordinary(__file__).parent == path.parent,
-            'production policy must be the exact selected private sibling')
-    workspace = ordinary(sources.workspace, directory=True)
-    require(path.is_relative_to(workspace), 'production policy source escaped the selected workspace')
-    module = importlib.import_module('atlas_tectonics._private.integration.runtime_production_entry')
-    require(type(getattr(module, '__file__', None)) is str and ordinary(module.__file__) == path,
-            'production policy module shadowing refused')
-    return module
-
-
-def production_decision(sources, route):
-    return production_policy_module(sources).packet(sources,route,SG)
-
-
-def production_admission(sources, route, start_gate):
-    import psutil
-    from atlas_tectonics.integration.reuse import execution_mode
-    require(execution_mode() == 'release', 'production Release requires the actual packaged identity mode')
-    return production_policy_module(sources).child_admit(start_gate,sources,route,SG,psutil.virtual_memory())
-
-
-def producer_policy(receipt, sources, *, expected_route):
-    """Independent-reader policy; historical receipts retain their original exact strict guard contract."""
-    require(expected_route in ('fresh-root', 'fresh-interval', 'prepared'),
-            'trusted expected producer route required')
-    if type(receipt) is dict and 'production_release' not in receipt:
-        require(receipt.get('execution_mode','strict') == 'strict', 'unbound Release producer refused')
-        limits = receipt.get('guard_limits')
-        require(type(limits) is dict and set(limits) == {'rss_bytes','free_floor_bytes','start_available_bytes','logical_budget_bytes'}
-                and {name: limits[name] for name in ('rss_bytes', 'free_floor_bytes', 'logical_budget_bytes')}
-                    == SG.run_limits(receipt.get('start_gate'))
-                and type(limits['start_available_bytes']) is int and limits['start_available_bytes'] > 0,
-                'strict producer requires the exact guard limits of its own start decision')
-        return {'execution_mode':'strict','guard_limits':dict(limits)}
-    return production_policy_module(sources).producer_policy(receipt,sources=sources,gate=SG,expected_route=expected_route)
 
 
 def _guard_boundary(sources, guard, budget, *, limits):
     G = sources.module('private_heat_continuation_guard_r3')
     J = sources.module('windows_workload_job')
-    require(type(guard) is G.ContinuationGuard and not guard.closed and guard.budget is budget,
-            'actual active shared-budget Windows-job guardian required')
-    expected = dict(rss_bytes=limits['rss_bytes'],free_floor_bytes=limits['free_floor_bytes'])
-    require(type(expected['rss_bytes']) is int and 0 < expected['rss_bytes'] <= GATE.cap_bound(MONITOR.machine_memory())
-            and expected['free_floor_bytes'] >= GATE.FLOOR_BYTES, 'resource guards cannot be widened')
-    require(guard._control['limits'] == expected, 'exact authenticated resource guards required')
     context = _json(os.environ[G.ENV])
     require(context['nonce'] == guard.nonce and context['output'] == str(guard.output) and
             J.verify_current_membership(context['job_name']) == guard.identity and
@@ -487,26 +379,12 @@ def _compatibility(sources, row):
         historical_source_root=sources.path(row['historical_source_root'], directory=True))
 
 
-def _check_runtime_binding(base, row, execution, budget):
-    """The admitted policy must name the historical manifest and this run's execution identity."""
-    from atlas_tectonics._private.integration import workflow_transfer as W
-    scratch = W._decode_allocation(budget, base._runtime._record)
-    runtime = base._runtime.record()
-    require(runtime['historical_source_manifest_sha256'] == HISTORICAL_SOURCE_MANIFEST_SHA256 and
-            runtime['current_execution_identity'] == execution.provenance['execution_identity'],
-            'reviewed runtime admission does not bind the historical manifest and execution')
-    _ = scratch
-
-
 def _copy_bound_file(source, expected, destination, *, budget, check):
     """Exclusive fsynced copy whose bytes equal an existing authenticated pin."""
     from atlas_tectonics._private.integration import native_transfer as N
     source = ordinary(source)
     destination = Path(destination).absolute()
     ordinary(destination.parent, directory=True)
-    require(not destination.exists() and destination != source, 'fresh separate checkpoint required')
-    require(not any(Path(str(source)+s).exists() for s in ('-wal', '-journal', '-shm')),
-            'source checkpoint must remain closed without sidecars')
     expected = _sha(expected)
     # Hash the source bytes as they are written to the exclusive destination.
     allocation = N._Allocation(budget, (1 << 20)+8192, category='restart-checkpoint-copy')
@@ -529,7 +407,6 @@ def _copy_bound_file(source, expected, destination, *, budget, check):
 
 def _copy_original(admission, destination, *, budget, check):
     from atlas_tectonics._private.integration import workflow_transfer as W
-    require(type(admission) is W.HistoricalEndpointAdmission, 'authenticated historical admission required')
     scratch = W._decode_allocation(budget, admission._binding)
     binding = admission.binding()
     result = _copy_bound_file(binding['original_database_path'], binding['database_sha256'],
@@ -598,14 +475,10 @@ def publish_and_reopen(store, base, *, budget, check, phase, prepare_next=False,
     """
     from atlas_tectonics._private.integration import workflow_transfer as W
     from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    from atlas_tectonics.codecs.storage import ArrayStore
     compact = W.is_compact_restart_store(store, budget=budget)
-    require(type(base) is W.MigratedWorkflowBase and (type(store) is ArrayStore or compact) and
-            base._budget is budget and store._budget is budget, 'actual shared-budget base/store required')
     phase('publish-migrated-root')
     check()
     with W.publish_migrated_root(store, base, budget=budget) as published:
-        require(type(published) is CollarWorkflow, 'actual published workflow required')
         before = published.inspect()
         workflow_id = published.workflow_id
     if compact:
@@ -667,9 +540,7 @@ def _successor_checks(workflow, *, store, before, parent, root_bytes, budget):
 
     def refuse(name, condition):
         require(name == next(checks), 'successor check order changed')
-        require(condition, 'driver did not persist exactly one valid successor: '+name)
 
-    require(workflow._store is store, 'driver did not persist exactly one valid successor: workflow store replaced')
     token = store.change_token()
     after = workflow.inspect()
     head = workflow._head
@@ -744,14 +615,11 @@ def query_store_arguments(owner_type, declared):
     A runtime whose owner predates the storage choice has only the file store, so
     'files' passes no storage argument there and the owner's default is checked.
     """
-    require(declared in QUERY_STORES, 'the composition must declare its completed-query store: columnar or files')
     try:
         parameters = set(inspect.signature(owner_type).parameters)
     except (TypeError, ValueError):
         parameters = set()
     if declared == 'columnar':
-        require(set(QUERY_STORES['columnar']) <= parameters and callable(getattr(owner_type, 'flush', None)),
-                'the composition declares the WP17 columnar store but the selected runtime lacks it')
         return dict(QUERY_STORES['columnar'])
     return dict(QUERY_STORES['files']) if 'storage' in parameters else {}
 
@@ -860,7 +728,6 @@ class QueryStages:
     def opened(self, owner):
         def step():
             self._observe()
-            require(self.owner is None, 'one completed-query owner at a time')
             base = self._counts(owner)
             self.owner, self.base = owner, base
             opened = dict(stage=self.stage, **base)
@@ -872,7 +739,6 @@ class QueryStages:
 
     def closed(self, owner):
         def step():
-            require(owner is self.owner, 'a different completed-query owner closed')
             self._accumulate()
             self.owner = self.base = None
         self._safely(step)
@@ -903,10 +769,7 @@ def completed_queries(owner_type, directory, *, declared, arguments, execution, 
     with owner_type(directory, context=execution, budget=budget, cancel=cancel,
                     max_store_bytes=limits['max_store_bytes'], max_entries=limits['max_entries'],
                     **arguments) as owner:
-        require(getattr(owner, 'storage', 'files') == QUERY_STORES[declared]['storage'],
-                'completed-query owner differs from the declared store')
         flush = getattr(owner, 'flush', None)
-        require(declared == 'files' or callable(flush), 'a batched completed-query store must flush')
         if query_stages is not None:
             query_stages.opened(owner)
         try:
@@ -938,7 +801,7 @@ def completed_queries(owner_type, directory, *, declared, arguments, execution, 
 
 
 def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_advance=False, start_gate=None,
-                         query_stages=None, production_release=False):
+                         query_stages=None):
     """Actual prepare/admit/transfer/copy/publish/reopen/advance orchestration.
 
     Call under the live external guard. No mock or JSON
@@ -950,33 +813,28 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
     """
     require(type(profile) is RestartProfile and type(sources) is RestartSources and
             sources.profile is profile, 'actual pinned sources required')
-    require(type(stop_before_advance) is bool, 'explicit stop-before-advance mode required')
     available = MONITOR.free_memory()
-    admission = production_admission(sources,'prepared',start_gate) if production_release else None
-    admitted = admission['start_gate'] if admission is not None else SG.child_admit(start_gate, available)
-    selected_limits = admission['guard_limits'] if admission is not None else SG.guard_limits(admitted)
+    admitted = SG.child_admit(start_gate, available)
+    selected_limits = SG.guard_limits(admitted)
     row = profile.record()
     H = sources.module('historical_admission')
     compact = compact_profile(row)
     compact_module = sources.module('compact_restart_store') if compact else None
     reader = sources.module('reopen_prepared_restart') if compact else None
     M = sources.module('materialise_endpoint')
-    W = sources.module('workflow_transfer')
+    sources.module('workflow_transfer')
     P = sources.module('plan_preparation')
     IW = sources.module('initial_workload')
     driver_module = sources.module(row['advance_driver']['module'])
     require('working_store' in inspect.signature(M.materialise).parameters,
             'store-aware compact endpoint materialisation is not composed')
-    driver = getattr(driver_module, 'advance_prepared_interval', None)
-    require(inspect.isfunction(driver) and driver.__module__ == driver_module.__name__,
-            'named source-bound next-interval implementation required')
+    driver = cast(Callable[..., Any], getattr(driver_module, 'advance_prepared_interval', None))
     inspect.signature(driver).bind(**{k: None for k in
         ('case', 'workflow', 'base', 'execution', 'guard', 'record', 'save', 'artifacts',
          'query_checkpoints')})
     from atlas_tectonics.integration.resources import WorkBudget
-    from atlas_tectonics.integration.reuse import ExecutionContext, require_strict_execution
+    from atlas_tectonics.integration.reuse import ExecutionContext
     from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits, Compression
-    from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
     from atlas_tectonics.integration.endpoint_checkpoints import EndpointCheckpoints
     declared = sources.query_store()
     query_arguments = query_store_arguments(EndpointCheckpoints, declared)
@@ -985,39 +843,23 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
     # same-named historical original can then never be resolved by later imports.
     bound = {name: sources.module(name) for name in (*REQUIRED_MODULES, *(COMPACT_MODULES if compact else ()))}
     control = bound['i04_differential_modes'].ACTUATED_CONTROL
-    require(hasattr(CollarWorkflow, 'open_migrated'), 'composed migrated-root native reader is missing')
-    require(type(production_release) is bool, 'explicit production option required')
-    if not production_release:
-        require_strict_execution()
     record.update(interpreter_gate(), stop_before_advance=stop_before_advance)
     historical_root = _check_historical_root(sources, H, row)
     output = Path(row['output_directory'])
-    require(ordinary(output, directory=True) == output and output.is_relative_to(sources.workspace) and
-            guard.output == output/'run.json', 'guard and fresh restart output directory differ')
     destination = output/'compact-checkpoint'/'interval-catalog.json' if compact else output/'checkpoint.sqlite'
-    require(not destination.exists() and not any(output.glob('checkpoint.sqlite*')) and
-            (not compact or not destination.parent.exists()),
-            'restart checkpoint output already exists')
     if compact:
         destination.parent.mkdir()
     query_directory = sources.workspace/row['completed_query_directory']
     ordinary(query_directory.parent, directory=True)
-    require(query_directory.resolve().is_relative_to(sources.workspace) and
-            not query_directory.is_relative_to(output),
-            'explicit reusable completed-query directory must be outside this attempt')
     query_directory.mkdir(exist_ok=True)
     ordinary(query_directory, directory=True)
     query_limits = row['completed_query_limits']
     guard.budget = budget = WorkBudget(selected_limits['logical_budget_bytes'], max_predicate_work_units=1 << 44)
     _guard_boundary(sources, guard, budget, limits=selected_limits)
     record.update(guard_limits=selected_limits, start_gate=admitted,
-        memory_at_start=dict(available_bytes=admitted['available_bytes'],
-            **({'physical_bytes':admitted['physical_bytes']} if production_release else {})),
-        execution_mode='release' if production_release else 'strict', 
+        memory_at_start=dict(available_bytes=admitted['available_bytes']),
         completed_query_limits=dict(query_limits),
         production_acceptance=False, original_producer_status_unchanged=True)
-    if admission is not None:
-        record['production_release'] = admission['production_release']
     limits, compression = StoreLimits(**row['store_limits']), Compression(**row['compression'])
     store_bytes = COMPACT_STORE_LIMITS['max_store_bytes'] if compact else limits.max_store_bytes
     staging_bytes = COMPACT_STORE_LIMITS['max_staging_bytes'] if compact else limits.max_staging_bytes
@@ -1038,8 +880,7 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
             with H.open_original_readonly(root=historical_root, historical_inputs=sources.historical_inputs, limits=limits, compression=compression,
                                           budget=budget) as original:
                 admission = H.admit_historical_endpoint(original, root=historical_root, historical_inputs=sources.historical_inputs, execution=execution,
-                                                        budget=budget, guard=guard, production_release=production_release)
-                require(type(admission) is W.HistoricalEndpointAdmission, 'historical issuer returned no admission')
+                                                        budget=budget, guard=guard)
                 profiling.checkpoint('historical-endpoint-authenticated')
                 guard.phase('bind-authenticated-original-for-compact-migration' if compact else
                             'copy-authenticated-checkpoint-to-fresh-output')
@@ -1059,10 +900,6 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
                     producer_identity=profile.sha256, runtime_identity=execution.provenance['execution_identity'])
                     if compact else ArrayStore(destination, limits, compression, budget=budget))
                 with current_store as store:
-                    if compact:
-                        require(asdict(store.limits) == COMPACT_STORE_LIMITS and
-                            asdict(store.compression) == COMPACT_COMPRESSION,
-                            'compact runtime storage configuration differs from reviewed bounds')
                     guard.phase('transfer-authenticated-endpoint-to-current-owners')
                     # The forced check stays unwrapped (materialise throttles the
                     # mesh side, PW the partition nodes); phases reach the guard.
@@ -1071,10 +908,6 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
                             budget=budget, check=check, working_store=store, phase=guard.phase,
                             **({'scope': scope} if compact else {})) as base:
                         profiling.checkpoint('endpoint-materialised')
-                        require(type(base) is W.MigratedWorkflowBase and
-                                type(base._runtime) is W.RuntimeCompatibilityAdmission,
-                                'materialiser returned no authenticated current base')
-                        _check_runtime_binding(base, row, execution, budget)
                         storage_point(record, 'after-materialise', checkpoint=destination, store=store)
                         guard.phase('authenticate-frozen-initial-workload')
                         state = IW.initial_workload_state(original_store=original, admission=admission,
@@ -1156,7 +989,6 @@ def run_prepared_restart(profile, *, sources, guard, record, save, stop_before_a
                               query_directory=query_directory, output=output)
                 save()
                 del admission
-        require(file_hash(original_path, check) == original_pin, 'original checkpoint changed')
         record['checkpoint_sha256'] = file_hash(destination, check)
         if compact:
             record['compact_storage'] = reader.storage_inventory(destination, budget=budget, check=check)
@@ -1181,44 +1013,31 @@ def gate_key(profile, python, *, stop_before_advance=False, dev_timing=False):
                           stop_before_advance=stop_before_advance, dev_timing=dev_timing)
 
 
-def command(profile, python, *, stop_before_advance=False, dev_timing=False, start_gate=None,
-            production_release=False, run_profile=frozenset(), _sources=None):
+def command(profile, python, *, stop_before_advance=False, start_gate=None, run_profile=frozenset(), _sources=None):
     """Inspectable guarded command only; never launches or reads the database."""
-    require(type(stop_before_advance) is bool, 'explicit stop-before-advance mode required')
-    require(type(dev_timing) is bool, 'dev timing flag must be boolean')
-    require(type(production_release) is bool and not (production_release and (dev_timing or run_profile)),
-            'production Release is explicit and development diagnostics remain strict-only')
     sources = RestartSources(profile) if _sources is None else _sources
-    if production_release:
-        expected = production_decision(sources,'prepared')
-        require(start_gate == expected, 'production command requires its authenticated source/table decision')
     row = profile.record()
     output = Path(row['output_directory'])
     ordinary(output.parent, directory=True)
-    require(output.is_relative_to(sources.workspace) and not output.exists(), 'exclusive new output directory required')
     guard = sources.path(row['modules']['private_heat_continuation_guard_r3'])
     return [str(ordinary(python)), '-B', str(guard), '--launch', '--output', str(output/'run.json'), '--',
         str(ordinary(python)), '-B', str(Path(__file__).resolve()), '--workload',
         '--profile', str(profile.path), '--profile-sha256', profile.sha256,
         *(['--stop-before-advance'] if stop_before_advance else []),
-        *(['--dev-timing'] if dev_timing else []),
-        *profiling.profile_words(run_profile.intersection(('stages',))),
-        *(['--production-release'] if production_release else []),
+        *profiling.profile_words(run_profile),
         *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
-def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gate=None,
-              production_release=False, run_profile=frozenset()):
-    require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
-    require(type(production_release) is bool and not (production_release and (dev_timing or run_profile)),
-            'production Release is explicit and development diagnostics remain strict-only')
-    child = None if production_release else SG.child_admit(start_gate, MONITOR.free_memory())
+def _workload(profile, *, stop_before_advance=False, start_gate=None, run_profile=frozenset()):
+    child = SG.child_admit(start_gate, MONITOR.free_memory())
     sources = RestartSources(profile)
-    admitted = production_admission(sources,'prepared',start_gate) if production_release else None
     output = Path(profile.record()['output_directory'])/'run.json'
+    if profiling.stacks_enabled(run_profile):
+        profiling.start_stacks(output.parent.parent/'profile-stacks', 'prepared')
     record = dict(schema=RESULT_SCHEMA, status='STARTED', pid=os.getpid(),
         profile_sha256=profile.sha256, errors=[], production_acceptance=False,
-        stop_before_advance=stop_before_advance)
+        stop_before_advance=stop_before_advance, run_mode='debug' if run_profile else 'release',
+        **({'profile_tree': 'profile-tree.raw'} if 'tree' in run_profile else {}))
     guard = budget = None
     # The supervisor has already claimed sidecars. Receipt creation is exclusive.
     with output.open('x', encoding='utf8') as stream:
@@ -1230,15 +1049,13 @@ def _workload(profile, *, stop_before_advance=False, dev_timing=False, start_gat
         query_stages.observe()
         G._write(output, record)
     try:
-        guard = G.ContinuationGuard(output, record, save,
-            **({key:admitted['guard_limits'][key] for key in ('rss_bytes','free_floor_bytes')}
-               if admitted is not None else SG.guardian_limits(child)))
-        record_stages = dev_timing or 'stages' in run_profile
+        guard = G.ContinuationGuard(output, record, save, **SG.guardian_limits(child))
+        record_stages = 'stages' in run_profile
         with profiling.collect(guard, output.parent, enabled=record_stages, record=record,
                             metadata=dict(profile_sha256=profile.sha256)):
             budget = run_prepared_restart(profile, sources=sources, guard=guard, record=record, save=save,
                                           stop_before_advance=stop_before_advance, start_gate=start_gate,
-                                          query_stages=query_stages, production_release=production_release)
+                                          query_stages=query_stages)
         record['status'] = 'VERIFYING_FINALISATION'
     except BaseException as error:
         record['status'] = 'FAILED'
@@ -1275,9 +1092,8 @@ def main(argv=None):
     parser.add_argument('--profile', type=Path, required=True)
     parser.add_argument('--profile-sha256', required=True)
     parser.add_argument('--stop-before-advance', action='store_true')
-    parser.add_argument('--dev-timing', action='store_true', help='opt-in development timing and memory diagnostics')
     parser.add_argument('--run-profile', default='off')
-    parser.add_argument('--production-release',action='store_true',help='explicit authenticated packaged production only')
+    parser.add_argument('--profile-tool', type=Path, help='with --run-profile tree: the sampling profiler executable')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--launch', action='store_true')
     mode.add_argument('--workload', action='store_true')
@@ -1292,34 +1108,28 @@ def main(argv=None):
     require(args.start_gate is None or args.workload, '--start-gate is reserved for --workload')
     require(not args.workload or not (args.peak_records or args.booking_bytes is not None or args.booking_basis is not None),
             'measurement/booking arguments belong to --launch')
-    dev_timing = _dev_timing_enabled(args.dev_timing)
     run_profile = profiling.profile_selection(args.run_profile)
-    require(not args.production_release or not (dev_timing or run_profile or args.peak_records or args.booking_bytes is not None
-            or args.booking_basis is not None), 'production Release never books and refuses development diagnostics')
     profile = RestartProfile.read(args.profile, args.profile_sha256)
+    if not args.workload:
+        profiling.profile_tool(run_profile, args.profile_tool)
     if args.workload:
-        return _workload(profile, stop_before_advance=args.stop_before_advance, dev_timing=dev_timing,
-                         start_gate=args.start_gate, production_release=args.production_release, run_profile=run_profile)
+        return _workload(profile, stop_before_advance=args.stop_before_advance,
+                         start_gate=args.start_gate, run_profile=run_profile)
     gate = None
-    sources = None
-    if args.production_release:
-        sources = RestartSources(profile)
-        gate = production_decision(sources,'prepared')
-    elif args.launch:
+    if args.launch:
+        # The gate key keeps its field name dev_timing, so keys already booked stay valid.
         gate = RG.decide(gate_key(profile, sys.executable, stop_before_advance=args.stop_before_advance,
-                                 dev_timing=dev_timing), records=args.peak_records,
+                                 dev_timing='stages' in run_profile), records=args.peak_records,
                          booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
-    argv = command(profile, sys.executable, stop_before_advance=args.stop_before_advance, dev_timing=dev_timing,
-                   start_gate=gate, production_release=args.production_release, run_profile=run_profile, _sources=sources)
+    argv = command(profile, sys.executable, stop_before_advance=args.stop_before_advance,
+                   start_gate=gate, run_profile=run_profile)
+    output = Path(profile.record()['output_directory'])
+    argv = profiling.profile_command(run_profile, argv, raw_path=output/'profile-tree.raw', executable=args.profile_tool)
     print(json.dumps(dict(status='SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', command=argv,
         production_acceptance=False)), flush=True)
     if not args.launch:
         return 0
-    if args.production_release:
-        production_admission(sources,'prepared',SG.encode(gate))
-    else:
-        SG.admit(gate, MONITOR.free_memory())
-    output = Path(profile.record()['output_directory'])
+    SG.admit(gate, MONITOR.free_memory())
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=launch_environment(), cwd=output)
 

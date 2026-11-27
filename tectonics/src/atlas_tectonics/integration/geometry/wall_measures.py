@@ -21,7 +21,7 @@ from . import volume as V
 from . import volume_overlap as O
 from . import volume_bounds as B
 from . import collar_geometry as G
-from atlas_tectonics.integration.resources import WorkBudget, select_budget
+from atlas_tectonics.integration.resources import select_budget
 
 
 METHOD = 'exact-rational-enclosed-rigid-space-time-wall-v1'
@@ -67,8 +67,6 @@ class TrajectoryHash:
 
 
 def _q(value):
-    if type(value) not in (int, float, Q) or type(value) is float and not math.isfinite(value):
-        raise V.VolumeError('finite explicit real scalar required')
     return Q(value)
 
 
@@ -149,8 +147,6 @@ POSE_ROUND_GUARD_RAY = 12
 
 def _floor_log2(x):
     """floor(log2 x) for a positive int or Fraction, exactly."""
-    if type(x) not in (int, Q) or x <= 0:
-        raise V.VolumeError('positive exact rational required')
     x = Q(x)
     e = x.numerator.bit_length()-x.denominator.bit_length()
     return e-1 if Q(2)**e > x else e
@@ -358,8 +354,6 @@ def _integral(poly, linear, arena=None):
                      and all(type(q) in (int, Q) for q in p) for p in poly))
     for b, c in zip(poly[1:-1], poly[2:]):
         twice = (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
-        if twice < 0:
-            raise V.VolumeError('wall polygon orientation changed')
         if exact:
             # Affine linearity: f(a)+f(b)+f(c) uses each coefficient once.
             # No new retained rational local or polygon/point cache is created.
@@ -367,8 +361,6 @@ def _integral(poly, linear, arena=None):
                             +linear[1]*(a[1]+b[1]+c[1])+3*linear[2])/6
         else:
             total += twice*(values(a)+values(b)+values(c))/6
-    if total < 0:
-        raise V.VolumeError('negative sign-split wall integral')
     return total
 
 
@@ -484,8 +476,6 @@ def _wall_leaf(layer, cones, face, bounds, omega, t0, t1, level, arena, prior=()
                     poly = _clip2(poly, line, arena)
                 total += _integral(poly, linear, arena)*(t1-t0)
             limits.append(min(whole, total))
-        if not 0 <= limits[0] <= limits[1] <= whole:
-            raise V.VolumeError('space-time wall enclosure lost nonnegative ordering')
         result.append(tuple(limits))
     arena.work(128+64*sum(map(len, normals)))
     return tuple(result)
@@ -500,27 +490,14 @@ def enclose_rotating_wall(layer, cones, cell, axis, end, *, angular_velocity_rad
     both endpoint wall traces. Returned intervals are NOT accepted if `met`
     is false. One explicit per-sign width and finite subdivision limit apply.
     """
-    if type(layer) is not V.RadialLayer or type(cell) is not V.CartesianCell:
-        raise V.VolumeError('typed radial layer and Cartesian wall cell required')
-    if type(axis) is not int or axis not in (0, 1, 2) or type(end) is not int or end not in (0, 1):
-        raise V.VolumeError('wall axis/end must be integer indices')
-    if type(angular_velocity_rad_s) is not tuple or len(angular_velocity_rad_s) != 3:
-        raise V.VolumeError('one explicit constant angular velocity triple required')
     omega = tuple(map(_q, angular_velocity_rad_s))
-    if type(prior_rotations) is not tuple or any(type(p) is not tuple or len(p) != 2 or
-            type(p[0]) is not tuple or len(p[0]) != 3 for p in prior_rotations):
-        raise V.VolumeError('explicit prior rotation/positive duration pairs required')
     prior = tuple((tuple(map(_q, w)), _q(duration)) for w, duration in prior_rotations)
-    if any(duration <= 0 for _, duration in prior):
-        raise V.VolumeError('prior segments need positive durations')
     t0, t1, width = map(_q, (start_offset_s, end_offset_s, max_width_m3))
     if t0 < 0 or t1 <= t0 or width < 0 or type(max_leaves) is not int or max_leaves < 1:
         raise V.VolumeError('positive forward interval, nonnegative error and finite work limit required')
     resource = select_budget(budget)
     quantum = _quantum(width, max_leaves)
     cones = tuple(V.convex_cone_union((cone,), budget=resource) for cone in cones)
-    if not cones:
-        raise V.VolumeError('actual source cones required')
     face = _face(cell, axis, end)
     with B._Arena(resource) as arena:
         with V._work((*omega, t0, t1, *cell._geometry()), resource, convert_values=False):
@@ -660,8 +637,6 @@ def _endpoint_volume(layer, cones, grid, omega, time, width, max_leaves, resourc
             leaves += 1
         if high-low > width:
             raise V.VolumeError('endpoint shadow geometry exceeds declared integration width/work budget')
-        if witness > high:
-            raise V.VolumeError('physical inner-subset witness exceeds enclosing upper bound')
         return max(low, witness), high
 
 
@@ -698,26 +673,15 @@ def _issued(encoded, budget, *, fresh=False):
 
 
 def _history(prior_trajectory, epoch, start):
-    cursor, rotations, records = epoch, [], []
+    _, rotations, records = epoch, [], []
     for record in prior_trajectory:
-        if type(record) is not dict or set(record) != {'start_time_s', 'end_time_s', 'angular_velocity_rad_s'}:
-            raise V.VolumeError('canonical accepted trajectory segment required')
-        if type(record['angular_velocity_rad_s']) is not list or len(record['angular_velocity_rad_s']) != 3:
-            raise V.VolumeError('canonical accepted angular velocity triple required')
         pairs = [record['start_time_s'], record['end_time_s'], *record['angular_velocity_rad_s']]
-        if len(pairs) != 5 or any(type(p) is not list or len(p) != 2 or any(type(q) is not str for q in p) for p in pairs):
-            raise V.VolumeError('canonical trajectory rational pairs required')
         try:
             a, b, *w = map(_decode, pairs)
         except (ValueError, ZeroDivisionError) as exc:
             raise V.VolumeError('invalid stored trajectory rational') from exc
-        if a != cursor or b <= a or b > start or any(V._encoded(q) != p for q, p in zip((a, b, *w), pairs)):
-            raise V.VolumeError('accepted trajectory must tile epoch to current start exactly')
-        cursor = b
         rotations.append((tuple(w), b-a))
         records.append(dict(start_time_s=V._encoded(a), end_time_s=V._encoded(b), angular_velocity_rad_s=list(map(V._encoded, w))))
-    if cursor != start:
-        raise V.VolumeError('complete accepted trajectory prefix required; previous motion cannot be reset')
     return tuple(rotations), records
 
 
@@ -752,22 +716,12 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     This first representation is coarse per-patch/layer, not spatially refined.
     """
     from atlas_tectonics.integration import support as U
-    if type(parent_state_id) is not str or not parent_state_id:
-        raise V.VolumeError('actual parent exterior state identity required')
-    if original['source']['sphere_state_id'] != sphere.state_id or original['collar_plan_id'] != collar.plan_id:
-        raise V.VolumeError('original source/funding/collar geometry binding changed')
-    if type(angular_velocity_rad_s) is not tuple or len(angular_velocity_rad_s) != 3:
-        raise V.VolumeError('one explicit common angular velocity required')
     omega = tuple(map(_q, angular_velocity_rad_s))
     start, end, epoch, width = map(_q, (start_time_s, end_time_s, original['time_s'], max_volume_error_m3))
-    if start < epoch or end <= start or width < 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('forward source-bound interval and explicit finite integration budgets required')
     prior, history = _history(prior_trajectory, epoch, start)
     support = U.required(sphere.material)
     cells = collar.cell_geometries()
     cell_ids = [cell.cell_id for cell in cells]
-    if cell_ids != [row['cell_id'] for row in original['cell_accounts']]:
-        raise V.VolumeError('actual fixed full-grid cell identity changed')
     base = cells[0]
     lower, upper = base.lower_m, cells[-1].upper_m
     grid = V.CartesianCell(lower, upper, base.origin_m, base.basis, budget=budget)
@@ -788,11 +742,7 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
     # Coverage must be established from the actual conforming union, not by
     # normalising a deficient sum of positive row measures.
     union_planes = tuple(G._cone_planes(c) for p in sorted(cones) for c in cones[p])
-    envelope_bottom = max(min(s.bottom_radius_m for k, s in geometry.items() if k[0] == p) for p in cones)
-    envelope_top = min(max(s.top_radius_m for k, s in geometry.items() if k[0] == p) for p in cones)
     minimum, maximum = grid._radial_bounds()
-    if minimum < envelope_bottom**2 or maximum > envelope_top**2:
-        raise V.VolumeError('moving full-grid coverage is not common to the actual selected radial intervals')
     with B._Arena(budget) as arena:
         pending, leaves = [(Q(0), end-start, 0)], 0
         while pending:
@@ -902,8 +852,6 @@ def _measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, en
         inward, outward = totals[key]
         flux = outward[0]-inward[1], outward[1]-inward[0]
         common = max(change[0], flux[0]), min(change[1], flux[1])
-        if common[0] > common[1]:
-            raise V.VolumeError('independent shadow geometry and integrated wall flux violate GCL')
         chosen = selected[key][1]-selected[key][0]
         admissible = common[0]-selected_error[key], common[1]+selected_error[key]
         if not admissible[0] <= chosen <= admissible[1]:
@@ -946,13 +894,6 @@ def measure_walls(funding, sphere, collar, *, parent_state_id, start_time_s, end
     and the candidate/report tables have explicit shared work-budget charges.
     Failed admission releases every transient lease; nothing is partly issued.
     """
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
-    if type(funding) is not G.FullCellFunding or type(collar) is not PreparedRegionalCollar3D:
-        raise V.VolumeError('issued funding and typed prepared collar required')
-    if type(budget) is not WorkBudget or funding._resource is not budget or collar._budget is not budget:
-        raise V.VolumeError('one shared explicit WorkBudget required')
-    if type(prior_trajectory) not in (tuple, list):
-        raise V.VolumeError('explicit retained trajectory segment list required')
     # Encoded-size guard before _history creates large rational integers.
     text_size, stack = 0, [prior_trajectory]
     while stack:

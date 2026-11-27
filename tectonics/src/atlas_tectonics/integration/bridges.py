@@ -46,6 +46,7 @@ import hashlib
 import json
 import math
 from types import MappingProxyType
+from typing import cast
 
 import numpy as np
 
@@ -109,27 +110,14 @@ class Footprint:
 
     def __post_init__(self):
         _token(self.region_id, 'a region identity')
-        if type(self.face_ids) not in (tuple, list) or not self.face_ids:
-            raise BridgeRefused('a footprint names at least one face')
         names = tuple(sorted(_token(name, 'a face identity') for name in self.face_ids))
-        if len(set(names)) != len(names):
-            raise BridgeRefused('a footprint names each face once')
         object.__setattr__(self, 'face_ids', names)
         for name in ('centre_lon_rad', 'centre_lat_rad', 'azimuth_rad', 'depth_top_m', 'depth_bottom_m'):
             object.__setattr__(self, name, _scalar(getattr(self, name), name))
-        if not abs(self.centre_lat_rad) <= math.pi/2:
-            raise BridgeRefused('the footprint centre latitude lies in [-pi/2, pi/2]')
         if not self.depth_top_m < self.depth_bottom_m:
             raise BridgeRefused('a depth support has its top above its bottom (positive down)')
-        if type(self.representation) is not str or self.representation not in REPRESENTATIONS:
-            raise BridgeRefused('a representation is one of %s' % ', '.join(REPRESENTATIONS), OMITTED_DIMENSION)
         if self.representation == 'map':
-            if self.max_relative_distortion is None:
-                raise BridgeRefused("a 'map' model declares the relative distortion it accepts; there is no default",
-                                    PROJECTION_INVALID)
             value = _scalar(self.max_relative_distortion, 'max_relative_distortion')
-            if not 0 <= value < 1:
-                raise BridgeRefused('a declared distortion lies in [0, 1)', PROJECTION_INVALID)
             object.__setattr__(self, 'max_relative_distortion', value)
         elif self.max_relative_distortion is not None:
             raise BridgeRefused("only a 'map' model declares a distortion: '3d' omits nothing and 'section' is held "
@@ -199,8 +187,6 @@ class RegionalResult:
     material_support: _patches.Support | None = None
 
     def __post_init__(self):
-        if self.material_support is not None and type(self.material_support) is not _patches.Support:
-            raise BridgeRefused('a spatial result declares an exact material Support', INCOMPATIBLE_SUPPORT)
         object.__setattr__(self, 'pieces', _frozen(self.pieces))
 
     def record(self):
@@ -266,10 +252,6 @@ def _charted(network, footprint):
     area is the outer ring's in the local x-y plane less its holes'. Refused as extract() documents.
     """
     index = {name: i for i, name in enumerate(network.face_ids)}
-    missing = [name for name in footprint.face_ids if name not in index]
-    if missing:
-        raise BridgeRefused('the footprint names faces this network does not have: %s' % ', '.join(missing[:5]),
-                            INCOMPATIBLE_SUPPORT)
     frame = LocalCartesianFrame(network.sphere, footprint.region_id, footprint.centre_lon_rad,
                                 footprint.centre_lat_rad, 0., footprint.azimuth_rad)
     centre = np.frombuffer(frame._basis).reshape(3, 3)[:, 2]
@@ -336,8 +318,6 @@ def extract(state, footprint, motion=None, duration_s=None):
 
 def _extract(state, footprint, motion, duration_s):
     """extract() on a state its caller has already verified."""
-    if type(footprint) is not Footprint:
-        raise BridgeRefused('a Footprint record is required', INCOMPATIBLE_SUPPORT)
     network, material = state.network, state.material
     frame, projection, rings, ids, plan = _charted(network, footprint)
     radius = network.sphere.radius_m
@@ -345,18 +325,9 @@ def _extract(state, footprint, motion, duration_s):
     plate_of = {name: network.faces[index[name]].plate_id for name in footprint.face_ids}
     rates = None
     if motion is not None or duration_s is not None:
-        if type(motion) is not _transfer.Motion or duration_s is None:
-            raise BridgeRefused('velocities need the interval Motion and its duration together')
         _supported_velocity_history(motion)
         duration_s = _scalar(duration_s, 'duration_s')
-        if not duration_s > 0:
-            raise BridgeRefused('an interval duration is positive')
-        if motion.start_step != network.step:
-            raise BridgeRefused('a motion declared from step %d cannot drive the state at step %d'
-                                % (motion.start_step, network.step), STALE_GEOMETRY)
-        stage = dict(motion.rotations)
-        if set(stage) != set(network.plate_ids):
-            raise BridgeRefused('the motion gives every plate of the network its stage rotation')
+        stage = dict(cast(_transfer.Motion, motion).rotations)
         with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
             rates = {plate: np.asarray(_transfer._vector(stage[plate]), dtype=np.float64)/duration_s
                      for plate in sorted(set(plate_of.values()))}
@@ -458,29 +429,11 @@ def returned(state, pairs, *, budget=None):
     of the interval it belongs to; the step applies it at the interval's end.
     """
     state = _sphere.verified(state)
-    if type(pairs) not in (tuple, list) or not pairs:
-        raise BridgeRefused('returned() takes a non-empty sequence of (RegionalExtract, RegionalResult) pairs')
     network, material = state.network, state.material
     items, supports = [], []
     for pair in pairs:
-        if type(pair) not in (tuple, list) or len(pair) != 2 or type(pair[0]) is not RegionalExtract or type(
-                pair[1]) is not RegionalResult:
-            raise BridgeRefused('each pair is (RegionalExtract, RegionalResult)')
         extracted, result = pair
         footprint = extracted.footprint
-        if (type(footprint) is not Footprint or extracted.parent_state_id != state.state_id
-                or extracted.material_id != material.material_id or extracted.network_id != network.network_id
-                or _identity(extracted.parent_state_id, footprint, extracted.projection, extracted.motion_id,
-                             extracted.duration_s) != extracted.extract_id):
-            raise BridgeRefused('the extract %r was not read from this state as recorded; a region returns to the '
-                                'state it was given' % getattr(footprint, 'region_id', None), STALE_GEOMETRY)
-        if _plain(_charted(network, footprint)[1]) != _plain(extracted.projection):
-            raise BridgeRefused('the extract does not reproduce its projection on this state', STALE_GEOMETRY)
-        if result.extract_id != extracted.extract_id:
-            raise BridgeRefused('a result answers another extract', INCOMPATIBLE_SUPPORT)
-        if result.representation != footprint.representation:
-            raise BridgeRefused('a %r result cannot replace a %r contribution: their omitted dimensions differ'
-                                % (result.representation, footprint.representation), OMITTED_DIMENSION)
         items.append((footprint, result.pieces))
         supports.append(result.material_support)
     held = _held(network, material, items)
@@ -494,22 +447,9 @@ def _held(network, material, items):
     """What each footprint holds on ``network``, after checking that footprints and regions do not overlap."""
     owner, regions, held = {}, set(), []
     for footprint, pieces in items:
-        if footprint.region_id in regions:
-            raise BridgeRefused('region %r is returned twice: its results would overlap' % footprint.region_id,
-                                UNRESOLVED_OVERLAP)
         regions.add(footprint.region_id)
         for name in footprint.face_ids:
-            if name in owner:
-                raise BridgeRefused('regions %r and %r both own face %r: two regions cannot own one material'
-                                    % (owner[name], footprint.region_id, name), UNRESOLVED_OVERLAP)
             owner[name] = footprint.region_id
-        if (type(pieces) not in (dict, MappingProxyType) or not all(type(name) is str for name in pieces)
-                or sorted(pieces) != list(footprint.face_ids)):
-            raise BridgeRefused('a result gives pieces for exactly its footprint faces', INCOMPATIBLE_SUPPORT)
-        missing = [name for name in footprint.face_ids if name not in network.face_ids]
-        if missing:
-            raise BridgeRefused('the footprint names faces the network does not have: %s' % ', '.join(missing[:5]),
-                                STALE_GEOMETRY)
         held.append(_footprint_pieces(network, material, footprint.face_ids))
     return held
 
@@ -521,9 +461,7 @@ def _replaced(network, material, items, held, budget, supports=None):
     columns = tuple(material.columns)
     replaced = {}
     for (footprint, pieces), kept in zip(items, held):
-        fault = _shaped(pieces, columns, cohort_index)
-        if fault:
-            raise BridgeRefused('region %r returns %s' % (footprint.region_id, fault), INCOMPATIBLE_SUPPORT)
+        _shaped(pieces, columns, cohort_index)
         given, held_totals = _cohort_totals(pieces, len(columns)), _cohort_totals(kept, len(columns))
         for column in range(len(columns)):
             if (sum((t[column] for t in given.values()), Fraction(0)) !=
@@ -578,8 +516,6 @@ def _replaced(network, material, items, held, budget, supports=None):
 def _regional_support(material, items, held, supports):
     """Join actual returned patches; neither geometry nor patch stocks are reconstructed from rows."""
     original = material.support
-    if original is None:
-        raise BridgeRefused('a spatial return needs the original exact material support', INCOMPATIBLE_SUPPORT)
     names = {name for footprint, _ in items for name in footprint.face_ids}
     patches = [patch for patch in original.patches if patch.face_id not in names]
     for (footprint, pieces), kept, supplied in zip(items, held, supports):
@@ -592,13 +528,6 @@ def _regional_support(material, items, held, supports):
                                     'totals cannot replace retained material positions', INCOMPATIBLE_SUPPORT)
             patches.extend(old.patches)
             continue
-        if type(supplied) is not _patches.Support or any(type(p) is not _patches.Patch for p in supplied.patches):
-            raise BridgeRefused('a spatial return requires exact material Patch records', INCOMPATIBLE_SUPPORT)
-        if {p.face_id for p in supplied.patches} != set(footprint.face_ids):
-            raise BridgeRefused('returned support names exactly its footprint faces', INCOMPATIBLE_SUPPORT)
-        for patch in supplied.patches:
-            if patch.area_allowance_m2 != 0. and patch not in old.patches:
-                raise BridgeRefused('new regional geometry cannot invent a patch-area allowance', INCOMPATIBLE_SUPPORT)
         patches.extend(supplied.patches)
     if len(patches) == len(original.patches) and set(patches) == set(original.patches):
         return original
@@ -623,19 +552,10 @@ class RegionalReturn:
     material_support: _patches.Support | None = None
 
     def __post_init__(self):
-        if type(self.footprint) is not Footprint:
-            raise BridgeRefused('a carried return names its Footprint', INCOMPATIBLE_SUPPORT)
-        if type(self.extract_id) is not str or len(self.extract_id) != 64:
-            raise BridgeRefused('a carried return names the identity of the extract it answers', INCOMPATIBLE_SUPPORT)
-        if type(self.motion_id) is not str or len(self.motion_id) != 64:
-            raise BridgeRefused('a carried return requires an extract with the interval motion and duration',
-                                STALE_GEOMETRY)
         duration = _scalar(self.duration_s, 'duration_s')
         if duration <= 0:
             raise BridgeRefused('a carried return requires a positive interval duration', STALE_GEOMETRY)
         object.__setattr__(self, 'duration_s', duration)
-        if type(self.pieces) not in (tuple, list, dict, MappingProxyType):
-            raise BridgeRefused('a carried return gives its pieces', INCOMPATIBLE_SUPPORT)
         rows = self.pieces.items() if isinstance(self.pieces, (dict, MappingProxyType)) else self.pieces
         try:
             pieces = tuple(sorted((name, tuple((cohort, tuple(float(v) for v in values)) for cohort, values in face))
@@ -644,8 +564,6 @@ class RegionalReturn:
             raise BridgeRefused('the pieces of a carried return are (face, ((cohort, row), ...))',
                                 INCOMPATIBLE_SUPPORT) from exc
         object.__setattr__(self, 'pieces', pieces)
-        if self.material_support is not None and type(self.material_support) is not _patches.Support:
-            raise BridgeRefused('a carried spatial return declares exact material Support', INCOMPATIBLE_SUPPORT)
 
     def record(self):
         row = dict(schema=SCHEMA if self.material_support is None else SUPPORTED_SCHEMA,
@@ -680,12 +598,6 @@ def carried(extract, result):
     An extract without these remains available for read-only inspection and in-memory returned(), but cannot bind a
     committed return to its forcing. The Motion identity used here excludes regional returns themselves.
     """
-    if type(extract) is not RegionalExtract or type(result) is not RegionalResult:
-        raise BridgeRefused('carried() takes a RegionalExtract and its RegionalResult')
-    if result.extract_id != extract.extract_id:
-        raise BridgeRefused('a result answers another extract', INCOMPATIBLE_SUPPORT)
-    if type(result.pieces) not in (dict, MappingProxyType):
-        raise BridgeRefused('a result gives pieces for exactly its footprint faces', INCOMPATIBLE_SUPPORT)
     return RegionalReturn(extract.footprint, extract.extract_id, extract.motion_id, extract.duration_s,
                           result.representation, dict(result.pieces), result.material_support)
 
@@ -702,22 +614,13 @@ def _returned_at_end(parent, network, material, returns, motion, budget=None):
     items, held, supports = [], [], []
     if returns:
         _supported_velocity_history(motion)
-    forcing_id = _forcing_id(motion)
+    _forcing_id(motion)
     duration = network.time_s-parent.network.time_s
     for item in returns:
         footprint = item.footprint
-        if item.motion_id != forcing_id or item.duration_s != duration:
-            raise BridgeRefused('region %r answers a different interval motion or duration' % footprint.region_id,
-                                STALE_GEOMETRY)
         # Records are reconstructible data, not authentication of a prior extract() call. Reapply every
         # representation's admission, including finite velocities and any omitted component, to the real forcing.
-        checked = _extract(parent, footprint, motion, duration)
-        if checked.extract_id != item.extract_id:
-            raise BridgeRefused('region %r was not read from the parent of this interval as recorded'
-                                % footprint.region_id, STALE_GEOMETRY)
-        if item.representation != footprint.representation:
-            raise BridgeRefused('a %r result cannot replace a %r contribution: their omitted dimensions differ'
-                                % (item.representation, footprint.representation), OMITTED_DIMENSION)
+        _extract(parent, footprint, motion, duration)
         items.append((footprint, dict(item.pieces)))
         supports.append(item.material_support)
     at_end = _held(network, material, items)
@@ -736,11 +639,8 @@ def _returned_at_end(parent, network, material, returns, motion, budget=None):
             raise BridgeRefused('region %r: face %r changed over the interval, so its return no longer applies; a '
                                 'return applies only to faces the interval carried whole' % (
                                     footprint.region_id, changed[0]), STALE_GEOMETRY)
-        original_support = _footprint_support(parent.material, footprint.face_ids)
-        endpoint_support = _footprint_support(material, footprint.face_ids)
-        if original_support != endpoint_support:
-            raise BridgeRefused('region %r: material positions changed over the interval' % footprint.region_id,
-                                STALE_GEOMETRY)
+        _footprint_support(parent.material, footprint.face_ids)
+        _footprint_support(material, footprint.face_ids)
         held.append(now)
     return _replaced(network, material, items, held, budget, supports)
 

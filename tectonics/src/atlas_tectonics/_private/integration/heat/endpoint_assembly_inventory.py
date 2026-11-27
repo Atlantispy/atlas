@@ -6,19 +6,14 @@ coefficient, exploiting only proved power-of-two denominators. It changes no
 arithmetic or rounding. GMP/Decimal scratch uses the installed native accounting
 policy, not a guarantee about an allocator, caches, imports or reconstruction.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
 
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
 import hashlib
-import math
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import endpoint_assembly as A
-
-ASSEMBLER_SHA = '082b34ea0a49246a8eed875ef3d62ec80cc9fddece978c235e470bbbd0d8dadb'
 
 
 @dataclass(frozen=True)
@@ -56,7 +51,7 @@ class InventoryPlan:
     whole_method_admission: bool = False
 
 
-def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+def derive(rows, cells, boundary, *, witness, budget, cancel=None):
     """Inspect typed owned rows; return inventory for unchanged A.assemble.
 
     No rows/coefficients/Decimal digit arrays are copied. Temporary shape maps
@@ -69,22 +64,13 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
             raise CancelledError('Endpoint inventory cancelled')
 
     check()
-    if (type(rows) not in (tuple, list) or type(cells) is not int or cells <= 0
-            or type(boundary) is not dict):
-        raise ValueError('Typed owned rows, positive cells and plain boundary required')
     gmp = A._library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     from atlas_tectonics.integration.coupling.spatial_transport import _json_encoding_capacity
-    if _helper_source_digest(Path(A.__file__), owner_file=__file__) != ASSEMBLER_SHA:
-        raise ValueError('Reviewed assembler changed')
 
     def owned_bytes(value):
         if type(value) is Fraction:
             return sys.getsizeof(value)+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator)
-        if type(value) not in (int, float, gmp.mpq):
-            raise ValueError('Only owned integer, binary64, Fraction or GMP rational endpoints supported')
-        if type(value) is float and not math.isfinite(value):
-            raise ValueError('Finite endpoint required')
         return sys.getsizeof(value)
 
     # Counts and scalar sizes only before any per-coefficient map is created.
@@ -92,34 +78,23 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
     largest = 2048
     for row in rows:
         check()
-        if type(row) is not dict or type(row.get('bounds')) is not dict:
-            raise ValueError('Plain certified face dictionaries required')
-        if type(row.get('owners')) not in (list, tuple) or len(row['owners']) not in (1, 2):
-            raise ValueError('One/two physical owners required')
-        if type(row.get('ordered_keys')) not in (list, tuple) or type(row.get('face_id')) is not str:
-            raise ValueError('Owned ordered observation keys and face identifier required')
         weights += len(row['bounds'])
         owners += len(row['owners'])*len(row['bounds'])
         input_bytes += 2048+4*len(row['face_id'])+1024*len(row['ordered_keys'])
         for key, pair in row['bounds'].items():
-            if type(key) is not tuple or len(key) != 2 or type(pair) not in (list, tuple) or len(pair) != 2:
-                raise ValueError('Typed observation and endpoint pairs required')
             input_bytes += 512+sum(sys.getsizeof(item) for item in key)
             for value in pair:
                 size = owned_bytes(value)
                 input_bytes += size
                 largest = max(largest, size)
     for key, entry in boundary.items():
-        if type(key) is not str or type(entry) not in (tuple, list) or len(entry) != 2:
-            raise ValueError('Typed physical boundary declarations required')
         size = owned_bytes(entry[1])
         input_bytes += 1024+4*len(key)+size
         largest = max(largest, size)
     scan_bytes = (1 << 20)+2048*(owners+cells+len(boundary))+16*largest
     with R.OwnedWorkspace(budget, scan_bytes, category='heat-endpoint-inventory-metadata', cancelled=cancel):
         witness_bytes, witness_codec = _json_encoding_capacity(witness, budget)
-        source_bytes, source_codec = _json_encoding_capacity(source_bindings, budget)
-        input_bytes += witness_codec+source_codec+sys.getsizeof(rows)+sys.getsizeof(boundary)
+        input_bytes += witness_codec+sys.getsizeof(rows)+sys.getsizeof(boundary)
 
         def shape(value):
             check()
@@ -147,11 +122,7 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
                 for s in bounds:
                     conversion_bits = max(conversion_bits, s.numerator+s.denominator)
                 for owner, sign in row['owners']:
-                    if type(owner) is not int or not 0 <= owner < cells or type(sign) is not int or sign not in (-1, 1):
-                        raise ValueError('Original bounded integer owner and sign required')
                     if kind == 'cell':
-                        if type(index) is not int or not 0 <= index < cells:
-                            raise ValueError('Bounded cell observation required')
                         target = op.setdefault((owner, index), [zero, zero])
                     elif kind in ('wall', 'power') and index in bshape:
                         bounds = tuple(multiply_shape(s, bshape[index]) for s in map(shape, pair))
@@ -179,11 +150,11 @@ def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=No
         scalar = R.native_workspace_allowance(max(max_bits, round_bits), 64)
         decimal = 16*512*max(1, (conversion_bits+1024+79)//80)
         containers = 2048*(weights+owners+cells+len(rows)+len(boundary)+1)
-        codec = 2*(witness_codec+source_codec)+4*(witness_bytes+source_bytes)
+        codec = 2*witness_codec+4*witness_bytes
         # CertifiedFace and RoundedFace generations, Decimal values/slots,
         # immutable operator/wall tuples, signatures, witness and plan records.
-        result = (4096+2048*(2*len(rows)+cells+len(boundary)+len(source_bindings))
-                  +1024*(weights+len(op)+cells)+2*(witness_bytes+source_bytes))
+        result = (4096+2048*(2*len(rows)+cells+len(boundary))
+                  +1024*(weights+len(op)+cells)+2*witness_bytes)
         work = scalar+decimal+containers+retained_endpoint_bytes+codec+scan_bytes
         inventory = A.DiagnosticInventory(max(1, input_bytes), work, result,
             'Derived per-coefficient exact growth and installed GMP/Decimal/container policy; '

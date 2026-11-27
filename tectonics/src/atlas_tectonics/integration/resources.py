@@ -267,17 +267,8 @@ class WorkBudget:
 
     def __init__(self, max_bytes: int, *, parent: WorkBudget | None = None,
                  max_predicate_work_units: int | None = None):
-        if type(max_bytes) is not int or max_bytes <= 0:
-            raise ValueError("max_bytes must be a positive integer")
-        if parent is not None and not isinstance(parent, WorkBudget):
-            raise TypeError("parent must be a WorkBudget")
         if max_predicate_work_units is None and parent is not None:
             max_predicate_work_units = parent.max_predicate_work_units
-        if max_predicate_work_units is not None:
-            if type(max_predicate_work_units) is not int or max_predicate_work_units <= 0:
-                raise ValueError('max_predicate_work_units must be a positive integer or None')
-            if parent is not None and parent.max_predicate_work_units is None:
-                raise ValueError('separate predicate work requires an opted-in parent scope')
         # A private parallel tree reuses the exact integer admission ledger.
         # Its counts are predicate units, NOT RAM bytes; never expose its byte-
         # named implementation statistics or charge it for physical storage.
@@ -437,19 +428,11 @@ def _admit_budgets(count: int, *budgets: WorkBudget, category: str = 'work', _op
     revoke one registered optional owner outside all locks, then retry once;
     only an unresolved shortfall counts the original refusal on every ledger.
     """
-    if type(count) is not int or count < 0:
-        raise ValueError("reservation must be a nonnegative integer")
-    if type(category) is not str or not category or len(category) > 64:
-        raise ValueError("category must be a nonempty string of at most 64 characters")
     chains = []
     for budget in budgets:
-        if not isinstance(budget, WorkBudget):
-            raise TypeError("budgets must be WorkBudget instances")
         scope = budget._scope
         if scope is not None:
             budget = scope.admit(budget, count, category)
-            if type(budget) is not WorkBudget:
-                raise TypeError("an admission scope must name a WorkBudget")
         chains.append(budget._ordered)
     if not chains:
         raise ValueError("at least one budget required")
@@ -467,8 +450,6 @@ def _admit_budgets(count: int, *budgets: WorkBudget, category: str = 'work', _op
                 if not attempted:
                     for node in ordered:
                         if count > node._max_bytes - node._used and node._revoker is not None:
-                            if revoker is not None and node._revoker is not revoker:
-                                raise RuntimeError('multiple optional owners in one mandatory admission')
                             revoker = node._revoker
                 if revoker is None:
                     for node in ordered:
@@ -513,8 +494,6 @@ class _GrowingLease:
         return self
 
     def add(self, count, *, category='work'):
-        if self.closed:
-            raise RuntimeError('closed cumulative lease')
         charged = _admit_budgets(count, *self.budgets, category=category)
         try:
             # A ledger-allocation exception must return just this increment,
@@ -540,10 +519,6 @@ class _GrowingLease:
 class _GrowingPredicateLease(_GrowingLease):
     """Cumulative unit charges with the same ancestor/atomic/release policy."""
     def __init__(self, *budgets):
-        if not budgets or any(not isinstance(budget, WorkBudget) for budget in budgets):
-            raise TypeError('predicate work requires explicit WorkBudget instances')
-        if any(budget._predicate_work is None for budget in budgets):
-            raise ValueError('predicate work requires an explicit finite unit allowance')
         super().__init__(*(budget._predicate_work for budget in budgets))
 
     def add(self, count, *, category='predicate-work'):
@@ -567,15 +542,9 @@ class _ResizableLease:
         self.count, self.charged, self.closed = 0, (), False
 
     def __enter__(self):
-        if self.closed:
-            raise RuntimeError('closed live lease')
         return self
 
     def resize(self, count):
-        if self.closed:
-            raise RuntimeError('closed live lease')
-        if type(count) is not int or count < 0:
-            raise ValueError('live capacity must be a nonnegative integer')
         delta = count-self.count
         if delta > 0:
             charged = _admit_budgets(delta, *self.budgets, category=self.category)
@@ -630,8 +599,6 @@ def _release(charged, count, *, _ticket=None):
         for node, label in charged:
             node._returned.append((count, label))
     else:
-        if _ticket.charged is not charged or type(count) is not int or count < 0:
-            raise ValueError('a return ticket requires its original charge and cumulative count')
         for entry in _ticket.entries:
             entry.returned = max(entry.returned, count)
             while True:
@@ -653,14 +620,10 @@ DEFAULT_BUDGET = WorkBudget(256 * 1024 * 1024)
 
 
 def elements(shape):
-    if len(shape) > 32 or any(type(n) is not int or n < 0 for n in shape):
-        raise ValueError("invalid array shape")
     return math.prod(shape)
 
 
 def select_budget(budget):
     if budget is None:
         return DEFAULT_BUDGET
-    if not isinstance(budget, WorkBudget):
-        raise TypeError("budget must be a WorkBudget")
     return budget

@@ -14,14 +14,10 @@ before admitting the arithmetic workspace for the measured widths.
 The proof is the GMP canonical-rational contract; no projection decoder,
 saved-output acceptance or backend selection is imported here.
 """
-from hashlib import sha256; import atlas_tectonics._identity as _atlas_identity
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import correction_owned as C
 
-_SOURCES = dict(C._SOURCES)
-_SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def getter_envelope(resources, reported_bytes):
@@ -33,8 +29,6 @@ def getter_envelope(resources, reported_bytes):
     without incorrectly multiplying it by the arithmetic eight-expression
     envelope. The original mpq remains owned by the caller throughout.
     """
-    if type(reported_bytes) is not int or reported_bytes <= 0:
-        raise ValueError('A positive current GMP allocation is required')
     bits = 8*reported_bytes+64
     return (resources.native_workspace_allowance(bits, 2)
             + 2*resources.native_slot_allowance(resources.RationalShape(bits, 1)))
@@ -55,8 +49,6 @@ def _parts(value, resources):
 class Arithmetic(C._Arithmetic):
     """Same fixed operations; part getters have their own transient owner."""
     def __init__(self, workspace, gmp, resources, n, f, initial_bits, check, *, extra_fixed_bytes=0):
-        if initial_bits != 1:
-            raise ValueError('Getter-safe entry begins with one-bit arithmetic capacity')
         self.getter_operations = self.getter_peak_bytes = self.inspected_peak_bits = 0
         super().__init__(workspace, gmp, resources, n, f, 1, check,
                          extra_fixed_bytes=extra_fixed_bytes)
@@ -64,8 +56,6 @@ class Arithmetic(C._Arithmetic):
     def shape(self, value):
         if type(value) is int:
             return self.R.RationalShape(max(1, value.bit_length()), 1)
-        if type(value) is not self.G.mpq:
-            raise TypeError('Owned exact GMP correction inputs required')
         self.check()
         before = self.workspace.lease.count
         extra = getter_envelope(self.R, sys.getsizeof(value))
@@ -81,8 +71,6 @@ class Arithmetic(C._Arithmetic):
         return shape
 
     def equal(self, left, right):
-        if any(type(value) not in (int, self.G.mpq) for value in (left, right)):
-            raise TypeError('Already owned canonical mpq or exact int equality operands required')
         # shape owns its transient getters and drops them before return.
         # Renew a full scalar envelope for the actual component widths before
         # the following four getter copies can coexist. Do not add opposite

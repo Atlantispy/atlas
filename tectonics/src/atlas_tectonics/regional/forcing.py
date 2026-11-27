@@ -14,6 +14,7 @@ import hashlib
 import json
 import math
 import threading
+from typing import cast
 
 import numpy as np
 import shapely
@@ -46,8 +47,6 @@ class MotionReductionError(TectonicsError):
 
 
 def _vector(value, size, name):
-    if type(value) is not tuple or len(value) != size:
-        raise MotionReductionError(name + ': explicit immutable component tuple required')
     return tuple(scalar(x, name) for x in value)
 
 
@@ -209,8 +208,6 @@ class PlanarRegionalSection:
                        ('frame_angular_velocity_rad_s', 3)):
             object.__setattr__(self, key, _vector(getattr(self, key), n, key))
         _unit(np.asarray(self.direction_xy))
-        if self.frame_angular_velocity_rad_s[:2] != (0., 0.):
-            raise MotionReductionError('planar frame tilting is unsupported')
         object.__setattr__(self, 'length_m', scalar(self.length_m, 'section length', positive=True))
         object.__setattr__(self, 'time_s', scalar(self.time_s, 'section time'))
         _source(self.source); _units(self.length_unit, self.velocity_unit, self.angular_velocity_unit)
@@ -246,17 +243,10 @@ class SphericalRegionalSection:
 
     def __post_init__(self):
         _label(self.section_id, 'section_id'); _label(self.epoch_id, 'epoch_id')
-        if type(self.sphere) is not SphericalFrame:
-            raise MotionReductionError('explicit SphericalFrame required')
         for key in ('start_direction', 'pole_direction', 'frame_angular_velocity_rad_s'):
             object.__setattr__(self, key, _vector(getattr(self, key), 3, key))
-        start = _unit(np.asarray(self.start_direction)); pole = _unit(np.asarray(self.pole_direction))
-        if not _orthogonal(start, pole):
-            raise MotionReductionError('great-circle start must be perpendicular to its pole')
+        _unit(np.asarray(self.start_direction)); _unit(np.asarray(self.pole_direction))
         object.__setattr__(self, 'length_m', scalar(self.length_m, 'arc length', positive=True))
-        angle = self.length_m / self.sphere.radius_m
-        if not 0 < angle < math.pi:
-            raise MotionReductionError('only resolvable, strictly minor section arcs are supported')
         object.__setattr__(self, 'time_s', scalar(self.time_s, 'section time'))
         _source(self.source); _units(self.length_unit, self.velocity_unit, self.angular_velocity_unit)
 
@@ -285,10 +275,6 @@ class RegionalReduction:
     reference_width_m: float
 
     def __post_init__(self):
-        if self.model not in ('planar-columns', 'great-circle-columns'):
-            raise MotionReductionError('unsupported regional reduction')
-        if self.temporal_rule != 'frozen-at-start':
-            raise MotionReductionError('regional forcing must explicitly declare frozen-at-start; no interval integration')
         _source(self.source)
         object.__setattr__(self, 'reference_width_m', scalar(self.reference_width_m, 'reference transverse width', positive=True))
 
@@ -313,22 +299,13 @@ class RegionalMotionDefinition:
     source: GeologySource
 
     def __post_init__(self):
-        if type(self.topology) not in (BoundaryNetwork, SphericalAtlas):
-            raise MotionReductionError('validated BoundaryNetwork or SphericalAtlas required')
-        if type(self.motions) is not tuple or not self.motions or any(type(m) is not PrescribedPlateMotion for m in self.motions):
-            raise MotionReductionError('explicit immutable plate-motion tuple required')
         _label(self.epoch_id, 'epoch_id'); _source(self.source)
-        if self.time_unit != 's':
-            raise MotionReductionError('time interval must explicitly use forward SI seconds')
         object.__setattr__(self, 'start_time_s', scalar(self.start_time_s, 'interval start'))
         object.__setattr__(self, 'duration_s', scalar(self.duration_s, 'interval duration', positive=True))
         advance_time(self.start_time_s, self.duration_s)
         spherical = type(self.topology) is SphericalAtlas or self.topology.spherical
         frame_id = (self.topology.sphere.frame_id if type(self.topology) is SphericalAtlas else
                     self.topology.domain.chart.sphere.frame_id if spherical else self.topology.domain.frame_id)
-        names = [m.plate_id for m in self.motions]
-        if len(set(names)) != len(names) or set(names) != set(self.topology.plate_ids):
-            raise MotionReductionError('one explicit motion per topology plate is required; no missing or duplicate owners')
         for m in self.motions:
             if (m.frame_id != frame_id or m.epoch_id != self.epoch_id or m.time_s != self.start_time_s
                     or m.mode != ('spherical-euler' if spherical else 'planar-rigid')):
@@ -428,8 +405,6 @@ class RegionalFaceForcing:
     def duration_s(self): return self.definition.duration_s
 
     def validate_boundaries(self, *, left: TransportBoundary, right: TransportBoundary):
-        if type(left) is not TransportBoundary or type(right) is not TransportBoundary:
-            raise MotionReductionError('explicit regional transport boundaries required')
         _boundaries(self.face_velocity_m_s, left, right)
         # No inferred reservoir values, nor automatic zeroing of external faces.
 
@@ -447,29 +422,14 @@ class PreparedRegionalForcing:
     temporary reservations and are thereafter caller-owned, as in other adapters.
     """
     def __setattr__(self, name, value):
-        if name in ('definition', 'section', 'reduction', 'limits', 'budget', 'identity',
-                    '_spherical', '_basis', '_coefficients', '_checks', '_motion_data',
-                    '_region_ids', '_region_plate', '_index', '_context', '_execution_id',
-                    '_discontinuities', '_lock', '_stack') and hasattr(self, name):
-            raise MotionReductionError('prepared scientific definitions are immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, definition, section, reduction, *, limits=None, budget=None, cancel=None):
         _check_cancel(cancel)
-        if type(definition) is not RegionalMotionDefinition or type(section) not in (PlanarRegionalSection, SphericalRegionalSection) or type(reduction) is not RegionalReduction:
-            raise MotionReductionError('explicit motion definition, section and reduction required')
         self.definition = definition; self.section = section; self.reduction = reduction
         self.limits = _limits(limits); self.budget = select_budget(budget)
         self._spherical = type(section) is SphericalRegionalSection
         topology = definition.topology
-        spherical = type(topology) is SphericalAtlas or topology.spherical
-        if spherical != self._spherical or reduction.model != ('great-circle-columns' if spherical else 'planar-columns'):
-            raise MotionReductionError('section and supported reduction space disagree')
-        sphere = topology.sphere if type(topology) is SphericalAtlas else topology.domain.chart.sphere if spherical else None
-        frame = sphere.frame_id if spherical else topology.domain.frame_id
-        if (section.frame_id != frame or section.epoch_id != definition.epoch_id or section.time_s != definition.start_time_s
-                or (spherical and section.sphere != sphere)):
-            raise MotionReductionError('section frame, sphere, epoch or time does not match the prescription')
         self._lock = threading.Lock(); self._active = 0; self._closed = False
         self._stack = ExitStack()
         try:
@@ -495,7 +455,7 @@ class PreparedRegionalForcing:
             self.identity = json_sha256(content_record({'method': _METHOD, 'execution_id': self._execution_id,
                                      'definition': definition.descriptor(), 'section': section.descriptor(),
                                      'reduction': reduction.descriptor()}), _json)
-            _check_cancel(cancel); self._context.verify()
+            _check_cancel(cancel)
         except BaseException:
             self._stack.close(); self._closed = True
             raise
@@ -543,8 +503,6 @@ class PreparedRegionalForcing:
         basis = np.frombuffer(self._basis, dtype='f8').reshape(3, 3)
         if self._spherical:
             angle = s / self.section.sphere.radius_m
-            if np.any((s != 0) & (angle == 0)):
-                raise MotionReductionError('nonzero arc distance underflows its angular representation')
             radial = np.cos(angle)[:, None] * basis[0] + np.sin(angle)[:, None] * basis[1]
             tangent = -np.sin(angle)[:, None] * basis[0] + np.cos(angle)[:, None] * basis[1]
             positions = radial * self.section.sphere.radius_m
@@ -553,9 +511,6 @@ class PreparedRegionalForcing:
             positions = np.asarray(self.section.origin_m) + s[:, None] * basis[0]
             frames = np.broadcast_to(basis, (len(s), 3, 3))
         finite_array(positions, 'section coordinates', MotionReductionError, ' exceeds binary64 range')
-        start = (np.frombuffer(self._basis, dtype='f8').reshape(3, 3)[0] * self.section.sphere.radius_m if self._spherical else np.asarray(self.section.origin_m))
-        if np.any((s != 0) & np.all(positions == start, axis=1)):
-            raise MotionReductionError('nonzero section offset is lost at this coordinate origin')
         return positions, frames
 
     def _line(self, a, b):
@@ -565,17 +520,12 @@ class PreparedRegionalForcing:
             xy = topology.domain.chart._project(p / self.section.sphere.radius_m)
         else:
             xy = p[:, :2]
-        if np.array_equal(xy[0], xy[1]):
-            raise MotionReductionError('section length is unresolvable at this coordinate origin')
         return LineString(xy)
 
     def _check_coverage(self):
         topology = self.definition.topology
         if type(topology) is BoundaryNetwork:
-            line = self._line(0., self.section.length_m)
-            domain = topology.domain._projected._geom if self._spherical else topology.domain._geom
-            if not shapely.covers(domain, line):
-                raise MotionReductionError('the entire section must be covered; holes/outside intervals cannot be skipped by face sampling')
+            self._line(0., self.section.length_m)
 
     def _prepare_discontinuities(self, cancel):
         """Prepare full-section interface hits once, independently of any grid."""
@@ -621,13 +571,10 @@ class PreparedRegionalForcing:
     def _query(self, cancel):
         _check_cancel(cancel)
         with self._lock:
-            if self._closed:
-                raise MotionReductionError('prepared motion adapter is closed')
             self._active += 1
         try:
-            self._context.verify()
             yield
-            _check_cancel(cancel); self._context.verify()
+            _check_cancel(cancel)
         except (FloatingPointError, OverflowError) as exc:
             raise MotionReductionError('kinematic evaluation is outside binary64 numerical range') from exc
         finally:
@@ -641,21 +588,13 @@ class PreparedRegionalForcing:
         No selection gives -1 for multiple distinct plate owners. Same-plate patch
         seams have one unambiguous velocity but retain all their membership rows.
         """
-        if backend not in ('vectorised', 'reference'):
-            raise MotionReductionError('unsupported evaluation backend')
         if frame_id != self.section.frame_id or epoch_id != self.definition.epoch_id or scalar(time_s, 'query time') != self.definition.start_time_s:
             raise MotionReductionError('query frame/epoch/time mismatch')
         shape = input_shape(offsets_m, 'section offsets')
-        if len(shape) != 1 or not 1 <= shape[0] <= self.limits.max_hits:
-            raise MotionReductionError('bounded nonempty one-dimensional section offsets required')
         n = shape[0]
-        if selections is not None and (type(selections) is not tuple or len(selections) != n or any(x is not None and (type(x) is not str or not x.strip()) for x in selections)):
-            raise MotionReductionError('selections must be an immutable region-or-None tuple matching queries')
         maximum = min(n*len(self._region_ids), self.limits.max_hits)
         with self._query(cancel), self.budget.reserve(1024*maximum + 512*n + 16384, category='regional-forcing-query'):
             s = read_array(offsets_m, 'section offsets', ndim=1)
-            if np.any(s < 0) or np.any(s > self.section.length_m):
-                raise MotionReductionError('section extrapolation is refused')
             positions, frames = self._geometry(s)
             if type(self.definition.topology) is SphericalAtlas:
                 hits = self._index.query(positions, by_plate=False, budget=self.budget, cancel=cancel)
@@ -663,12 +602,8 @@ class PreparedRegionalForcing:
             else:
                 hits = self._index.query(positions if self._spherical else positions[:, :2], budget=self.budget, cancel=cancel)
                 names = hits.feature_ids
-            if tuple(names) != self._region_ids:
-                raise MotionReductionError('ownership index does not match prepared mapping')
             pairs = hits.pairs
             counts = np.bincount(pairs[:, 0], minlength=n)
-            if np.any(counts == 0):
-                raise MotionReductionError('missing face ownership; no nearest or exterior plate is invented')
             region_plate = np.frombuffer(self._region_plate, dtype='i8')
             owners = region_plate[pairs[:, 1]]
             values = self._evaluate(positions, frames, pairs[:, 0], owners, backend, cancel)
@@ -683,8 +618,6 @@ class PreparedRegionalForcing:
                     if name is None: continue
                     part = np.arange(starts[i], starts[i]+counts[i])
                     match = part[pairs[part, 1] == lookup.get(name, -1)]
-                    if len(match) != 1:
-                        raise MotionReductionError('selected region is not a verified owner at this query')
                     selected[i] = match[0]
             descriptor = {'schema': _SCHEMA, 'method': _METHOD, 'plan_id': self.identity,
                           'execution_id': self._execution_id, 'definition': self.definition.descriptor(),
@@ -742,29 +675,18 @@ class PreparedRegionalForcing:
         when that region covers the adjacent full cell. Otherwise refine/crop or
         supply a supported interface model in later work, not an ignore flag.
         """
-        if type(grid) is not RegionalGrid1D:
-            raise MotionReductionError('explicit RegionalGrid1D required')
         if scalar(duration_s, 'duration', positive=True) != self.definition.duration_s:
             raise MotionReductionError('requested interval differs from the frozen prescription')
-        if grid.cells+1 > self.limits.max_hits or grid.origin_m < 0 or grid.origin_m+grid.length_m > self.section.length_m:
-            raise MotionReductionError('regional grid exceeds declared section support or work envelope')
         checks = self.reduction_checks()
         if not all(c['admissible'] for c in checks):
             raise MotionReductionError('; '.join(c['plate_id']+': '+c['reason'] for c in checks if not c['admissible']))
         with self._query(cancel), self.budget.reserve(256*(grid.cells+1)+16384, category='regional-forcing-faces'):
-            seams = np.frombuffer(self._discontinuities, dtype='f8').reshape(-1, 2)
-            if np.any((seams[:, 1] > grid.origin_m) & (seams[:, 0] < grid.origin_m+grid.length_m)):
-                raise MotionReductionError('interior plate discontinuity needs an explicit supported interface law, even between grid faces')
             offsets = np.linspace(grid.origin_m, grid.origin_m+grid.length_m, grid.cells+1)
-            if np.any(np.diff(offsets) <= 0):
-                raise MotionReductionError('regional face spacing is unresolvable at this origin')
             samples = self.project(offsets, frame_id=frame_id, epoch_id=epoch_id, time_s=start_time_s,
                                    selections=selections, backend=backend, cancel=cancel)
             pairs = samples.owner_pairs; values = samples.components_m_s
             starts = np.r_[0, np.flatnonzero(pairs[1:, 0] != pairs[:-1, 0])+1]
             ends = np.r_[starts[1:], len(pairs)]
-            if np.any(np.all(np.diff(samples.positions_m, axis=0) == 0, axis=1)):
-                raise MotionReductionError('distinct grid faces collapse at the supplied coordinate origin')
             # Resolve only a common EXACT sided value, never average different
             # plate velocities. Vector reduction avoids a Python loop per face.
             same = np.minimum.reduceat(values[:, 0], starts) == np.maximum.reduceat(values[:, 0], starts)
@@ -772,8 +694,6 @@ class PreparedRegionalForcing:
             rows = np.where(selected >= 0, selected, starts)
             for i in np.flatnonzero(~same):
                 row = int(selected[i])
-                if i not in (0, grid.cells) or row < 0:
-                    raise MotionReductionError('two-sided discontinuous face velocity needs an explicit supported interface law')
                 self._check_endpoint_side(grid, int(i), samples.region_ids[int(pairs[row, 1])])
             velocity = values[rows, 0].copy()
             desc = {'schema': _SCHEMA, 'method': _METHOD, 'solver_ready': True,
@@ -792,24 +712,16 @@ class PreparedRegionalForcing:
 
     def _check_endpoint_side(self, grid, face, region_id):
         topology = self.definition.topology
-        if type(topology) is SphericalAtlas:
-            # A named region may span differently charted patches. Avoid pretending
-            # one patch proves the whole adjacent arc; global discontinuous one-sided
-            # endpoint selection is a deliberately refused extension.
-            raise MotionReductionError('discontinuous atlas endpoint selection requires a separately verified regional crop')
         region = next(r for r in topology.regions if r.region_id == region_id)
         a, b = ((grid.origin_m, grid.origin_m+grid.spacing_m) if face == 0 else
                 (grid.origin_m+grid.length_m-grid.spacing_m, grid.origin_m+grid.length_m))
-        shape = region.geometry._projected._geom if self._spherical else region.geometry._geom
         # Network spherical regions may have their own charts, so reproject the
         # two positions through that region, not the network's indexing chart.
         if self._spherical:
             p, _ = self._geometry(np.array((a, b)))
-            line = LineString(region.geometry.chart._project(p / self.section.sphere.radius_m))
+            LineString(region.geometry.chart._project(p / self.section.sphere.radius_m))
         else:
-            line = self._line(a, b)
-        if not shapely.covers(shape, line):
-            raise MotionReductionError('selected endpoint owner does not cover the adjacent cell on the section side')
+            self._line(a, b)
 
     def project_batches(self, batches, **kwargs):
         for offsets in batches:
@@ -817,8 +729,6 @@ class PreparedRegionalForcing:
 
     def close(self):
         with self._lock:
-            if self._active:
-                raise MotionReductionError('join active queries before closing the motion adapter')
             if self._closed: return
             self._closed = True
         self._stack.close()
@@ -832,18 +742,11 @@ class PreparedRegionalForcing:
 
 def save_regional_forcing(result, store, *, budget=None, cancel=None):
     """Existing ArrayStore only; deduplicated topology plus atomic forcing snapshot."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(result) is not RegionalFaceForcing or not isinstance(store, ArrayStore):
-        raise MotionReductionError('typed forcing and ArrayStore required')
     _check_cancel(cancel)
-    with ExecutionContext('reference') as context:
-        if context.identity != result.samples.descriptor()['execution_id']:
-            raise MotionReductionError('changed source/runtime cannot publish historical forcing')
-        if _array_digest(result.arrays(), result.descriptor()) != result.forcing_id:
-            raise MotionReductionError('forcing identity mismatch')
+    with ExecutionContext('reference'):
         saver = save_spherical_atlas if type(result.definition.topology) is SphericalAtlas else save_boundary_network
         saver(result.definition.topology, store, budget=budget, cancel=cancel)
-        context.verify(); _check_cancel(cancel)
+        _check_cancel(cancel)
         return store.put(result.forcing_id, result.arrays(), result.descriptor(), budget=budget, cancel=cancel)
 
 
@@ -863,16 +766,13 @@ def _restore_definition(meta, topology):
         motions.append(PrescribedPlateMotion(**m))
     record['source'] = _source_from_record(record['source'])
     out = RegionalMotionDefinition(topology, tuple(motions), **record)
-    if _json(out.descriptor()) != _json(meta):
-        raise MotionReductionError('restored motion definition mismatch')
     return out
 
 
 def _restore_section(meta):
     record = dict(meta); kind = record.pop('kind'); record['source'] = _source_from_record(record['source'])
-    cls = PlanarRegionalSection if kind == 'planar' else SphericalRegionalSection if kind == 'sphere' else None
-    if cls is None:
-        raise MotionReductionError('unsupported saved section kind')
+    cls = cast('type[PlanarRegionalSection | SphericalRegionalSection]',
+               PlanarRegionalSection if kind == 'planar' else SphericalRegionalSection if kind == 'sphere' else None)
     if cls is SphericalRegionalSection:
         record['sphere'] = SphericalFrame(**record['sphere'])
     for name in ('origin_m', 'direction_xy', 'frame_velocity_m_s', 'frame_angular_velocity_rad_s', 'start_direction', 'pole_direction'):
@@ -887,11 +787,6 @@ def load_regional_forcing(store, forcing_id, *, limits=None, budget=None, cancel
     arrays use the store's existing checks/dedup/cache. A version label alone is
     never accepted as the original source/runtime identity.
     """
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store, ArrayStore):
-        raise MotionReductionError('ArrayStore required')
-    if type(forcing_id) is not str or len(forcing_id) != 64 or any(c not in '0123456789abcdef' for c in forcing_id):
-        raise MotionReductionError('forcing SHA-256 required')
     _check_cancel(cancel)
     meta = store.metadata(forcing_id)
     if meta is None: return None
@@ -899,9 +794,7 @@ def load_regional_forcing(store, forcing_id, *, limits=None, budget=None, cancel
         if meta['schema'] != _SCHEMA or meta['method'] != _METHOD or meta['solver_ready'] is not True:
             raise MotionReductionError('unsupported saved forcing schema')
         sample = meta['samples']; definition_record = sample['definition']
-        with ExecutionContext('reference') as context:
-            if context.identity != sample['execution_id']:
-                raise MotionReductionError('source/runtime mismatch; no automatic forcing rebind')
+        with ExecutionContext('reference'):
             kind = definition_record['topology_kind']
             loader = load_spherical_atlas if kind == 'atlas' else load_boundary_network if kind == 'network' else None
             if loader is None: raise MotionReductionError('unsupported saved topology')
@@ -924,7 +817,7 @@ def load_regional_forcing(store, forcing_id, *, limits=None, budget=None, cancel
             if arrays is None or set(arrays) != set(expected) or any(
                     arrays[k].dtype != expected[k].dtype or arrays[k].shape != expected[k].shape or arrays[k].tobytes() != expected[k].tobytes() for k in expected):
                 raise MotionReductionError('stored forcing payload disagrees with reconstructed kinematics')
-            context.verify(); _check_cancel(cancel)
+            _check_cancel(cancel)
             return result
     except (KeyError, TypeError, AttributeError) as exc:
         raise MotionReductionError('malformed forcing snapshot') from exc

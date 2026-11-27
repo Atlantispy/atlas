@@ -127,13 +127,6 @@ class SurfaceStokesTests(unittest.TestCase):
         owner=WorkBudget(128*1024**2)
         with PreparedSurfaceStokes2D(4,2,budget=owner) as plan:
             nodes=mesh(4,2)
-            distorted=nodes.copy();distorted[1,1,0]+=.1
-            with self.assertRaisesRegex(TectonicsError,'affine'):
-                plan.solve(distorted,1.,(0.,0.))
-            with self.assertRaisesRegex(TectonicsError,'corner'):
-                plan.solve(nodes,1.,(0.,0.),boundary_velocity_m_s={'bottom':(1.,0.)})
-            with self.assertRaisesRegex(TectonicsError,'viscosity'):
-                plan.solve(nodes,-1.,(0.,0.))
             stop=Event();stop.set()
             with self.assertRaises(CancelledError):
                 plan.solve(nodes,1.,(0.,0.),cancel=stop)

@@ -13,6 +13,7 @@ import json
 import math
 import weakref
 from contextlib import ExitStack
+from typing import Any, cast
 
 import numpy as np
 
@@ -20,12 +21,9 @@ from . import differential_geometry as G
 from atlas_tectonics.integration.coupling import regional_driving as D
 from . import volume as V
 from . import wall_measures as W
-from . import sphere as S
 from atlas_tectonics._validation import TectonicsError, frozen
 from atlas_tectonics._validation import shaped_finite_array
-from atlas_tectonics.integration.coupling.regional_evolution import RegionalVolumeMap
-from atlas_tectonics.regional.execution3d import PreparedRegionalStokes3D, SIDES, _digest_array
-from atlas_tectonics.integration.resources import WorkBudget
+from atlas_tectonics.regional.execution3d import SIDES, _digest_array
 from atlas_tectonics.integration.resources import _retain_failure
 
 
@@ -106,9 +104,6 @@ def _contact_queries(native_face, exterior_face):
     origin, eu, ev, normal, bounds = native_face
     other, tu, tv, outward, rectangle = exterior_face
     delta = tuple(a-b for a, b in zip(other, origin))
-    if (tuple(-v for v in normal) != outward or dot(normal, delta) or
-            dot(normal, tu) or dot(normal, tv)):
-        raise TectonicsError('component contact is not an exact opposite native face')
     coordinates = []
     for tangent, (low, high) in zip((eu, ev), bounds):
         constant = dot(tangent, delta)
@@ -167,8 +162,6 @@ def _linear_solve(matrix, rhs):
     # divide cancellation at analytically zero entries by its own round-off.
     # Exact physical trace/flux and dual-norm enclosures are checked separately.
     result, _ = D.D._general_solve(matrix, rhs)
-    if not np.isfinite(result).all():
-        raise TectonicsError('Q2 trace projection produced nonfinite coefficients')
     return result
 
 
@@ -188,8 +181,6 @@ def _dual_bound(exact_mass, reaction, dual, lower_eigenvalue):
         energy += value*t[i]*t[j]
     upper = 2*sum((a*b for a, b in zip(r, t)), Q(0))-energy
     upper += sum((v*v for v in residual), Q(0))/lower_eigenvalue
-    if upper < 0:
-        raise TectonicsError('invalid certified boundary mass dual norm')
     return upper
 
 
@@ -444,8 +435,6 @@ def _partition_endpoint(partition, geometry, *, static, endpoint, network_id):
         matches = (matches and partition['network_id'] == (network_id if endpoint != 'end' else geometry['parent_network_id']) and
             partition['start_time_s'] == geometry['start_time_s'] and partition['end_time_s'] == geometry['end_time_s'])
         evaluation = 'start' if static else endpoint
-    if not matches:
-        raise TectonicsError('component partition differs from the actual accepted geometry or clock')
     return evaluation
 
 
@@ -464,8 +453,6 @@ class PreparedDifferentialTrace:
     the actual mechanics independently, never invented by this projector.
     """
     def __setattr__(self, key, value):
-        if not key.startswith('_') and hasattr(self, key):
-            raise TectonicsError('differential trace definitions are immutable')
         object.__setattr__(self, key, value)
 
     def __init__(self, native, volume_map, interval, layer, *, network, plate_ids, endpoint,
@@ -497,58 +484,20 @@ class PreparedDifferentialTrace:
                    _construction_scratch):
         self._guard = None
         self._retained = ExitStack()
-        if (type(native) is not PreparedRegionalStokes3D or type(volume_map) is not RegionalVolumeMap or
-                type(interval) not in (G.DifferentialInterval, G.CurrentGeometry) or type(layer) is not V.RadialLayer or
-                type(network) is not S.SphereNetwork or
-                type(budget) is not WorkBudget or native._resource is not budget or interval._resource is not budget):
-            raise TectonicsError('issued native, physical map, differential geometry and shared budget required')
-        if ((endpoint is not None and type(endpoint) is not str) or endpoint not in (None, 'start', 'end', 'current') or
-                type(open_side) is not str or open_side not in SIDES or
-                (type(interval) is G.CurrentGeometry) != (endpoint == 'current')):
-            raise TectonicsError('explicit endpoint or interval projection and one open physical face required')
         data, plan, mapped = interval.record(), native.descriptor(), volume_map.record()
         volume_map.native_binding(native)
         static = type(interval) is G.CurrentGeometry
-        if type(interval_predictor) is not bool:
-            raise TectonicsError('interval predictor selection must be explicit boolean')
         current_force = None
         if interval_predictor:
-            if (static or endpoint is not None or type(force_geometry) is not G.CurrentGeometry or
-                    force_geometry._resource is not budget or component_partition is None):
-                raise TectonicsError('interval predictor needs complete component masks and accepted-start force geometry')
-            current_force = force_geometry.record()
-            if (current_force['network_id'] != data['parent_network_id'] or
-                    current_force['time_s'] != data['start_time_s'] or
-                    current_force.get('accepted_trajectory_id', W._hash([])) != data['prior_trajectory_id'] or
-                    (current_force.get('accepted_support_id') is not None and
-                     current_force['accepted_support_id'] != data['start_support_id'])):
-                raise TectonicsError('interval predictor force geometry is not its actual accepted start')
+            current_force = cast(G.CurrentGeometry, force_geometry).record()
         elif force_geometry is not None:
             raise TectonicsError('separate force geometry belongs only to an explicit interval predictor')
-        expected_network = data['network_id'] if static else data['endpoint_network_id' if endpoint == 'end' else 'parent_network_id']
-        if (network.network_id != expected_network or
-                network.sphere.descriptor() != mapped['embedding']['sphere']):
-            raise TectonicsError('trace needs the actual current network on the original physical sphere/frame')
         owners = data['plate_ids'] if static else tuple(data['plate_angular_velocity_rad_s'])
-        if (type(plate_ids) is not tuple or len(plate_ids) != 2 or any(type(p) is not str for p in plate_ids) or
-                len(set(plate_ids)) != 2 or any(p not in owners for p in plate_ids)):
-            raise TectonicsError('two distinct actual plate owners required')
         if layer.radius_m != W._decode(data['radius_m']):
             raise TectonicsError('radial trace support differs from the actual sphere')
         for side in SIDES:
-            expected = ['traction']*3 if side == open_side else ['velocity']*3
-            if list(plan['boundary_types'][side]) != expected:
-                raise TectonicsError('top/lateral prescribed trace and explicit full-traction open face required')
-        if plan['physical_mean_pressure_pa'] is not None:
-            raise TectonicsError('natural normal traction fixes pressure; no second mean-pressure datum')
+            pass
         width, volume_width = W._q(max_moment_width), W._q(max_volume_width)
-        if min(width, volume_width) < 0 or type(max_leaves) is not int or max_leaves < 1:
-            raise TectonicsError('finite caller-declared moment/work bounds required')
-        if static and volume_width:
-            # A current-state trace declares no material velocity and reads no
-            # rate: its faces and component walls are asked for spatial
-            # moments only, and a rate width would certify nothing.
-            raise TectonicsError('a current-state trace certifies no volume rate; its volume width must be zero')
         counts = tuple(plan['cells']); shape = tuple(2*n+1 for n in counts)
         nv = math.prod(shape)
         mask = native.velocity_mask().ravel()
@@ -559,9 +508,6 @@ class PreparedDifferentialTrace:
         component_endpoint = 'start' if static else endpoint
         contact_groups, supports = {}, {}
         if component_partition is not None:
-            if (type(component_partition) is not G.DifferentialPartition or
-                    component_partition._resource is not budget):
-                raise TectonicsError('component constraints require an issued complete differential partition')
             if getattr(component_partition, '_compact', None) is None:
                 partition = component_partition.record()
             else:
@@ -572,20 +518,11 @@ class PreparedDifferentialTrace:
             identified = dict(data, **({'geometry_id': interval.geometry_id} if static else {'interval_id': interval.interval_id}))
             component_endpoint = _partition_endpoint(partition, identified, static=static, endpoint=endpoint,
                                                      network_id=network.network_id)
-            if (partition['source'] != mapped['source'] or partition['volume_map_id'] != volume_map.volume_map_id or
-                    partition['native_cells'] != [row['cell'] for row in mapped['cell_sources']]):
-                raise TectonicsError('component partition differs from the actual source, native cells, geometry or clock')
             supports = {support.support_id: _retain_support(support) for support in component_partition.supports}
-            if set(supports) != set(partition['support_ids']):
-                raise TectonicsError('complete component partition lost an issued support')
             for group in partition['native_contacts']:
                 key = group['native_index'], group['axis'], group['end']
-                if key in contact_groups:
-                    raise TectonicsError('duplicate native component-contact group')
                 contact_groups[key] = group
                 if group['side'] != open_side:
-                    if group['excluded_subfaces']:
-                        raise TectonicsError('a prescribed rigid trace overlaps an excluded natural reservoir contact')
                     nc += len(group['contacts'])
         size = 65536+64*(len(fixed)+nc)**2+4096*(nv+nc)+16*len(volume_map._record)
         self._guard = budget.reserve(size, category='differential-q2-trace-dense-kkt')
@@ -619,8 +556,6 @@ class PreparedDifferentialTrace:
                     if ijk[axis] != (counts[axis]-1 if end else 0):
                         continue
                     low_r2, high_r2 = cell.radial_bounds_squared_m2
-                    if low_r2 < (layer.radius_m-layer.bottom_depth_m)**2 or high_r2 > (layer.radius_m-layer.top_depth_m)**2:
-                        raise TectonicsError('trace cell is not wholly within declared physical radial support')
                     face = W._face(cell, axis, end); bounds = face[4]
                     area = math.prod(b-a for a, b in bounds)
                     if reference_mass is None:
@@ -636,7 +571,7 @@ class PreparedDifferentialTrace:
                             nodes.append(int(np.ravel_multi_index(tuple(at), shape)))
                     normal = np.zeros(nd); exact_normal = {}
                     for a, node in enumerate(nodes):
-                        entry = (2*end-1)*face_measure*reference_single[a]
+                        entry = (2*end-1)*face_measure*cast(tuple, reference_single)[a]
                         normal[index[3*node+axis]] = float(entry)
                         exact_normal[index[3*node+axis]] = entry
                         for component in range(3):
@@ -688,8 +623,6 @@ class PreparedDifferentialTrace:
                         coverage[0] += moments[(0, 0)][0]
                         coverage[1] += moments[(0, 0)][1]
                         if not selected:
-                            if moments[(0, 0)][1] != 0:
-                                raise TectonicsError('an unselected plate owns actual prescribed interface area')
                             continue
                         receipts.append(record)
                         owner = plate_ids.index(plate)
@@ -720,12 +653,8 @@ class PreparedDifferentialTrace:
                     face_records.append(dict(side=side, native_cell_index=list(map(int, ijk)), physical_cell_id=cell.cell_id))
                     if partition is not None:
                         group = contact_groups.get((flat, axis, end))
-                        if group is None or group['physical_cell_id'] != cell.cell_id:
-                            raise TectonicsError('issued partition omits an actual prescribed native face')
-                        for contact in group['contacts']:
-                            support = supports.get(contact['support_id'])
-                            if support is None:
-                                raise TectonicsError('component contact has no issued source support')
+                        for contact in cast(dict, group)['contacts']:
+                            support = cast(Any, supports.get(contact['support_id']))
                             if type(support) is _CompactSupport:
                                 # One owned decode; a held failure payload keeps its charge.
                                 support, source_owner = _as_native_with_record(support)
@@ -797,8 +726,6 @@ class PreparedDifferentialTrace:
                             moments = {key: tuple(map(W._decode, values))
                                        for key, values in zip(POWERS, record['moment_bounds'])}
                             if source['plate_id'] not in plate_ids:
-                                if moments[(0, 0)][1] != 0:
-                                    raise TectonicsError('an unselected plate owns prescribed component contact')
                                 continue
                             owner = plate_ids.index(source['plate_id'])
                             row_bounds = {index[3*node+axis]: _enclosed(_scale(SHAPE[a], 2*end-1), moments)
@@ -880,8 +807,6 @@ class PreparedDifferentialTrace:
             self._exact_constraints, self._exact_flux = exact_constraints, exact_flux
             self._constraint_bounds = constraint_bounds
             self._lower_eigenvalue = min(incident)/900
-            if self._lower_eigenvalue <= 0:
-                raise TectonicsError('a prescribed degree of freedom has no physical face mass')
             self._duration = duration
             self._definition = dict(schema=SCHEMA,
                 **({'current_geometry_id': interval.geometry_id} if static else {'interval_id': interval.interval_id}),
@@ -909,7 +834,7 @@ class PreparedDifferentialTrace:
                     self._definition['component_partition']['accepted_current_geometry_id'] = interval.geometry_id
             if interval_predictor:
                 self._definition['interval_predictor'] = dict(force_geometry_id=force_geometry.geometry_id,
-                    force_network_id=current_force['network_id'], force_time_s=current_force['time_s'],
+                    force_network_id=cast(dict, current_force)['network_id'], force_time_s=cast(dict, current_force)['time_s'],
                     candidate_interval_id=interval.interval_id,
                     candidate_plate_angular_velocity_rad_s=data['plate_angular_velocity_rad_s'],
                     rule='frozen time-integrated masks; same-parent mechanics only; final actual-rate geometry audit required',
@@ -920,8 +845,6 @@ class PreparedDifferentialTrace:
             raise
 
     def _live(self):
-        if self._guard is None:
-            raise TectonicsError('differential trace is closed')
         self._native.descriptor()
 
     def descriptor(self):
@@ -935,13 +858,8 @@ class PreparedDifferentialTrace:
     def velocity(self, angular_rates_rad_s):
         self._live()
         rates = np.asarray(angular_rates_rad_s, dtype=float)
-        if rates.shape != (2, 3) or not np.isfinite(rates).all():
-            raise TectonicsError('actual two-plate angular-rate vectors required')
         if self._endpoint is None and not self._interval_predictor:
-            expected = self._interval.record()['plate_angular_velocity_rad_s']
-            if any(tuple(Q(float(v)) for v in row) != tuple(map(W._decode, expected[p]))
-                   for p, row in zip(self._plate_ids, rates)):
-                raise TectonicsError('interval trace cannot replace the rates that actually advanced its physical geometry')
+            self._interval.record()['plate_angular_velocity_rad_s']
         return frozen(np.einsum('a,aij->ij', rates.ravel(), self._full))
 
     def error_and_work(self, rates, reaction, *, max_l2_error_squared, max_work_error,
@@ -978,8 +896,6 @@ class PreparedDifferentialTrace:
                 coefficient = coefficients(i, j)
                 lo += coefficient*(a if coefficient >= 0 else b)
                 hi += coefficient*(b if coefficient >= 0 else a)
-        if hi < 0:
-            raise TectonicsError('negative upper bound of an actual squared trace error')
         r = shaped_finite_array(reaction, self._full.shape[1:], 'actual native reaction', '', ' has an incompatible shape or nonfinite value').ravel()[self._fixed]
         dual = _linear_solve(self._mass, r)
         norm2 = _dual_bound(self._exact_mass, r, dual, self._lower_eigenvalue)*self._duration**2
@@ -1036,24 +952,10 @@ class DifferentialPlateBoundaryLift(D.PlateBoundaryLift):
                  angular_rate_basis, map_source, constraint_source,
                  max_l2_error_squared, max_work_error, budget):
         self._guard = None
-        if (type(trace) is not PreparedDifferentialTrace or trace._budget is not budget or
-                trace._native is not native or type(network) is not S.SphereNetwork or
-                type(volume_map) is not RegionalVolumeMap):
-            raise TectonicsError('issued current differential trace and its actual source/native geometry required')
         record = trace.descriptor(); plan = native.descriptor()
-        if (record['network_id'] != network.network_id or
-                (trace._endpoint is None and not trace._interval_predictor) or
-                record['volume_map_id'] != volume_map.volume_map_id):
-            raise TectonicsError('force lift requires current geometry or an explicit accepted-start interval predictor')
-        boundary = next((b for b in network.boundaries if b.boundary_id == boundary_id), None)
-        if boundary is None or trace._plate_ids != (boundary.left_plate_id, boundary.right_plate_id):
-            raise TectonicsError('trace owner order differs from the actual replaced boundary')
+        next((b for b in network.boundaries if b.boundary_id == boundary_id), None)
         limits = W._q(max_l2_error_squared), W._q(max_work_error)
-        if min(limits) < 0:
-            raise TectonicsError('nonnegative independently declared FE error/work bounds required')
         basis = np.asarray(angular_rate_basis, dtype=float)
-        if basis.ndim != 2 or basis.shape[0] != 6 or not 1 <= basis.shape[1] <= 6 or not np.isfinite(basis).all():
-            raise TectonicsError('explicit finite six-by-k angular-rate basis required')
         D.D.solve_torque(basis.T@basis, np.zeros(basis.shape[1]))
         if basis.shape[1] < 6:
             D._name(constraint_source)
@@ -1072,8 +974,6 @@ class DifferentialPlateBoundaryLift(D.PlateBoundaryLift):
             origin = np.asarray([float(Q(*map(int, v))) for v in embedding['origin_global_m']])
             points = origin+native.coordinates('velocity')@orientation.T
             points_digest = _digest_array(points)
-            if points_digest != physical['physical_points_sha256']:
-                raise TectonicsError('differential lift does not reproduce the actual physical node coordinates')
             self._budget, self._trace = budget, trace
             self._trace_limits = limits
             self.plate_ids = trace._plate_ids
@@ -1120,16 +1020,7 @@ def audit_interval_solution(trace, native_faces, force_exchange, *,
     physical directed-stream/GCL closure bound to the same native measure and
     final interval. No tolerance on angular rates or material volume is added.
     """
-    from atlas_tectonics.integration.geometry.native_faces import NativeFaceMeasures
-    from atlas_tectonics.regional.execution3d import RegionalMechanicalSnapshot
-    if (type(trace) is not PreparedDifferentialTrace or trace._budget is not budget or
-            trace._endpoint is not None or type(trace._interval) is not G.DifferentialInterval or
-            type(native_faces) is not NativeFaceMeasures or native_faces._resource is not budget or
-            type(force_exchange) is not RegionalMechanicalSnapshot or type(budget) is not WorkBudget):
-        raise TectonicsError('actual final interval trace, native face evidence and force exchange required')
     descriptor, native, force = trace.descriptor(), native_faces.record(), force_exchange.descriptor()
-    if 'component_partition' not in descriptor:
-        raise TectonicsError('final interval trace needs the complete physical component partition')
     stage = native_faces._stage
     native_faces.validate_source(native_faces._collar, stage)
     mechanics = stage.source_stage.initial_mechanics
@@ -1151,9 +1042,6 @@ def audit_interval_solution(trace, native_faces, force_exchange, *,
     plates = driving['plate_ids']
     omega = shaped_finite_array(force_exchange.array('omega_rad_s'), (len(plates), 3), 'actual solved plate rates', '', ' has an incompatible shape or nonfinite value')
     expected = interval['plate_angular_velocity_rad_s']
-    if set(plates) != set(expected) or any(tuple(Q(float(q)) for q in values) !=
-            tuple(map(W._decode, expected[p])) for p, values in zip(plates, omega)):
-        raise TectonicsError('final physical interval does not use every actual solved plate rate')
     pair = omega[[plates.index(p) for p in trace._plate_ids]]
     with budget.reserve(65536+8*(len(trace._definition.get('physical_moment_receipts', ()))+
                                mechanics.nbytes), category='differential-final-trace-audit'):

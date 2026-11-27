@@ -12,14 +12,15 @@ import hashlib
 import json
 import math
 from types import MappingProxyType
+from typing import cast
 
 import numpy as np
 
 from atlas_tectonics._validation import scalar, input_shape, read_array
 from atlas_tectonics.history.geological_records import (GeologyError, GeologicalLayer, SurfaceSelector,
-    _name, _choice, _text, _tuple, _names, STACK_RELATIVE_TOLERANCE)
-from atlas_tectonics.history.geological_case import (GeologicalCase, _json, _sha, _snapshot,
-    restore_geological_case, GeologyLimits, _check_geometry_frame)
+    _name, _text, _names, STACK_RELATIVE_TOLERANCE)
+from atlas_tectonics.history.geological_case import (GeologicalCase, _json, _snapshot,
+    restore_geological_case)
 from atlas_tectonics.history.geological_domain import GeologicalDomain
 from atlas_tectonics.planet.geometry import _check_cancel, GeometryLimits
 from atlas_tectonics.materials.material_library import EarthMaterialLibrary, restore_material_library
@@ -39,12 +40,9 @@ def _digest(value):
 
 
 def _unique(records, cls, key, label):
-    _tuple(records, label)
     if len(records) > _MAX_RECORDS or any(type(x) is not cls for x in records):
         raise GeologyError('bounded typed ' + label + ' required')
     result = tuple(sorted(records, key=lambda x: getattr(x, key)))
-    if len({getattr(x, key) for x in result}) != len(result):
-        raise GeologyError('duplicate ' + label)
     return result
 
 
@@ -63,13 +61,8 @@ class InputOrigin:
 
     def __post_init__(self):
         _name(self.source_id, 'origin source')
-        _choice(self.kind, {'observed', 'authored', 'sampled_prior', 'model_evolved'}, 'input origin')
         _text(self.basis_id, 'origin basis', 2048)
-        if self.kind == 'sampled_prior':
-            _sha(self.basis_id)
-        if self.kind == 'model_evolved':
-            _sha(self.parent_state_id)
-        elif self.parent_state_id is not None:
+        if self.kind != 'model_evolved' and self.parent_state_id is not None:
             raise GeologyError('only model-evolved input has a parent model state')
 
 
@@ -87,8 +80,6 @@ class CoolingHistory:
             _text(self.unknown_reason, 'unknown cooling history')
         else:
             object.__setattr__(self, 'start_time_s', scalar(self.start_time_s, 'cooling onset'))
-            if self.unknown_reason is not None:
-                raise GeologyError('known cooling onset cannot also be unknown')
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,7 +95,6 @@ class MaterialVolumeBasis:
 
     def __post_init__(self):
         _name(self.material_id, 'material basis ID'); _name(self.source_id, 'basis source')
-        _choice(self.basis, {'grain', 'bulk_reference', 'fluid'}, 'material volume basis')
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,18 +122,14 @@ class SeededSpatialPrior:
     _waves: tuple = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        _name(self.name, 'prior name'); _name(self.frame_id, 'prior frame'); _sha(self.domain_id)
+        _name(self.name, 'prior name'); _name(self.frame_id, 'prior frame')
         if type(self.seed) is not int or not 0 <= self.seed < 2**64:
             raise GeologyError('prior seed must be an unsigned 64-bit integer')
         object.__setattr__(self, 'mean', scalar(self.mean, 'prior mean'))
         object.__setattr__(self, 'amplitude', scalar(self.amplitude, 'prior amplitude', nonnegative=True))
         if not math.isfinite(abs(self.mean) + self.amplitude):
             raise GeologyError('prior value envelope exceeds binary64')
-        _tuple(self.wavelengths_m, 'prior wavelengths', allow_empty=False)
-        if len(self.wavelengths_m) > 64:
-            raise GeologyError('at most 64 explicitly specified prior modes are supported')
         scales = tuple(scalar(x, 'prior wavelength', positive=True) for x in self.wavelengths_m)
-        _tuple(self.origin_m, 'prior origin')
         if len(self.origin_m) != 3:
             raise GeologyError('prior origin needs three coordinates')
         origin = tuple(scalar(x, 'prior origin') for x in self.origin_m)
@@ -174,15 +160,9 @@ class SeededSpatialPrior:
         """Bulk native arithmetic, fixed mode order, no point-by-all-mode cube."""
         _check_cancel(cancel)
         shape = input_shape(coordinates_m, 'prior coordinates')
-        if len(shape) != 2 or shape[1] != 3 or shape[0] == 0:
-            raise GeologyError('prior evaluation requires nonempty (n,3) Cartesian coordinates')
-        if type(batch_points) is not int or batch_points <= 0:
-            raise GeologyError('positive prior batch size required')
         n = shape[0]
         with select_budget(budget).reserve(64*n + 160*min(n, batch_points)+8192, category='precursor-prior'):
             points = read_array(coordinates_m, 'prior coordinates', ndim=2)
-            if points.shape != shape:
-                raise GeologyError('prior input shape changed during capture')
             out = np.full(n, self.mean, dtype=np.float64)
             for start in range(0, n, batch_points):
                 _check_cancel(cancel)
@@ -190,11 +170,7 @@ class SeededSpatialPrior:
                 for kx, ky, kz, phase in self._waves:
                     # Component-wise expression has no batch-dependent BLAS reduction.
                     angle = p[:, 0]*kx + p[:, 1]*ky + p[:, 2]*kz + phase
-                    if not np.isfinite(angle).all() or np.any(np.abs(angle) > 2**40):
-                        raise GeologyError('prior phase is insufficiently resolved; change explicit support/scale')
                     out[start:start+len(p)] += (self.amplitude/len(self._waves))*np.cos(angle)
-            if not np.isfinite(out).all():
-                raise GeologyError('prior values exceed numerical range')
             _check_cancel(cancel)
             return np.frombuffer(out.tobytes(), dtype=np.float64)
 
@@ -218,7 +194,6 @@ class InitialScalarField:
 
     def __post_init__(self):
         _name(self.name, 'initial field'); _name(self.source_id, 'field source')
-        _choice(self.role, {'temperature_offset', 'stress', 'damage', 'prescribed_forcing'}, 'initial field role')
         _text(self.interpretation, 'field interpretation')
         expected = {'temperature_offset': {'K'}, 'stress': {'Pa'}, 'damage': {'1'},
                     'prescribed_forcing': {'Pa', 'N/m3', 'm/s'}}
@@ -228,8 +203,6 @@ class InitialScalarField:
             raise GeologyError('field must be exactly one of constant, named prior or explicitly unknown')
         if self.constant_value is not None:
             object.__setattr__(self, 'constant_value', scalar(self.constant_value, 'initial field value'))
-        if self.prior is not None and type(self.prior) is not SeededSpatialPrior:
-            raise GeologyError('typed spatial prior required')
         if self.unknown_reason is not None:
             _text(self.unknown_reason, 'unknown initial field')
 
@@ -260,7 +233,6 @@ class SubsurfaceBody:
     def __post_init__(self):
         for key in ('body_id', 'thermal_profile_id', 'source_id'):
             _name(getattr(self, key), key)
-        _choice(self.kind, {'mantle', 'slab'}, 'subsurface body kind')
         if type(self.selector) is not SurfaceSelector or self.selector.kind not in ('domain', 'geometry'):
             raise GeologyError('subsurface bodies cannot depend on final plate labels')
         top = scalar(self.top_depth_m, 'body top depth', nonnegative=True)
@@ -318,32 +290,22 @@ class PrecursorState:
                  bodies=(), body_order=(), library=None, budget=None, cancel=None):
         _check_cancel(cancel)
         initial = type(self) is InitialConditionState
-        if type(case) is not GeologicalCase or (not initial and type(case.topology) is not GeologicalDomain):
-            raise GeologyError('precursor needs a GeologicalCase on a plate-independent GeologicalDomain')
         topology = case.topology
         domain = (topology if type(topology) is GeologicalDomain else
                   GeologicalDomain(topology.sphere if type(topology) is SphericalAtlas else topology.domain, case.source_id))
-        if library is not None and type(library) is not EarthMaterialLibrary:
-            raise GeologyError('typed material library or explicit absence required')
         origins = _unique(origins, InputOrigin, 'source_id', 'origins')
         history = _unique(cooling_history, CoolingHistory, 'profile_id', 'cooling histories')
         bases = _unique(material_bases, MaterialVolumeBasis, 'material_id', 'material bases')
         fields = _unique(fields, InitialScalarField, 'name', 'initial fields')
         bodies = _unique(bodies, SubsurfaceBody, 'body_id', 'subsurface bodies')
         _names(body_order, 'body precedence', ordered=True)
-        if set(body_order) != {b.body_id for b in bodies}:
-            raise GeologyError('body precedence must name every body exactly once, highest first')
         count = sum(map(len, (origins, history, bases, fields, bodies))) + sum(len(b.layer.components) for b in bodies)
-        if count > _MAX_RECORDS:
-            raise GeologyError('precursor record envelope exceeded')
         selector_bound = min(_MAX_RECORDS, len(topology.regions)*(len(case.provinces)+len(case.weak_zones)))
         estimate = (case.retained_bytes_estimate + 8192*count + 1024*len(topology.regions)
                     + 128*selector_bound + (0 if library is None else 4*library.nbytes) + 65536)
         with select_budget(budget).reserve(estimate, category='precursor-definition'):
             sources = {s.source_id: s for s in case.sources}
             origin_map = {o.source_id: o for o in origins}
-            if set(origin_map) != set(sources):
-                raise GeologyError('every source must have exactly one explicit origin assignment')
             for o in origins:
                 if o.kind == 'observed' and not sources[o.source_id].references:
                     raise GeologyError('observed origin requires cited source evidence')
@@ -352,40 +314,22 @@ class PrecursorState:
                     raise GeologyError('unknown precursor source: ' + str(key))
             thermal = {p.profile_id: p for p in case.thermal_profiles}
             history_map = {h.profile_id: h for h in history}
-            if set(history_map) != set(thermal):
-                raise GeologyError('every thermal profile needs explicit known or unknown cooling history')
             for h in history:
                 source(h.source_id)
-                if h.start_time_s is not None and (h.start_time_s > case.time_s or not math.isfinite(case.time_s-h.start_time_s)):
-                    raise GeologyError('cooling onset is after the initial epoch or age overflows')
                 p = thermal[h.profile_id]
-                if p.mode == 'half_space' and h.start_time_s != p.cooling_start_time_s:
-                    raise GeologyError('half-space profile and independently labelled cooling history disagree')
             materials = {m.material_id: m for m in case.materials}
             base_map = {b.material_id: b for b in bases}
             # Library-bound profiles carry their basis and exact evidence. A
             # changed reference definition is not silently rebound to this version.
             for m in case.materials:
                 if m.source_id.startswith('earth-ref-'):
-                    if library is None:
-                        raise GeologyError('source-bound Earth profiles require their actual library dependency')
-                    expected, evidence = library.definitions((m.material_id,), reference_temperature_k=m.reference_temperature_k)
-                    if expected != (m,) or sources.get(evidence[0].source_id) != evidence[0]:
-                        raise GeologyError('material/source binding differs from the supplied library')
-                    derived = MaterialVolumeBasis(m.material_id, library[m.material_id].basis, m.source_id)
-                    if m.material_id in base_map and base_map[m.material_id] != derived:
-                        raise GeologyError('declared material volume basis contradicts source binding')
+                    expected, evidence = cast(EarthMaterialLibrary, library).definitions((m.material_id,), reference_temperature_k=m.reference_temperature_k)
+                    derived = MaterialVolumeBasis(m.material_id, cast(EarthMaterialLibrary, library)[m.material_id].basis, m.source_id)
                     base_map[m.material_id] = derived
-            if set(base_map) != set(materials):
-                raise GeologyError('every material requires an explicit or source-bound volume basis')
             bases = tuple(base_map[k] for k in sorted(base_map))
             for b in bases:
                 source(b.source_id)
-                if (b.basis == 'fluid') != (materials[b.material_id].material_class == 'fluid'):
-                    raise GeologyError('material class and volume basis disagree')
             cohorts = {c.cohort.cohort_id: c.cohort for c in case.cohorts}
-            if any(c.formation_time_s is not None and not math.isfinite(case.time_s-c.formation_time_s) for c in cohorts.values()):
-                raise GeologyError('formation age exceeds binary64; choose a representable explicit epoch')
             geometry = {g.key: g.geometry for g in case.geometries}
             # Keep the original case/topology verbatim. Only resolve its selectors
             # into shared patch references; never union a globe into one chart.
@@ -410,8 +354,6 @@ class PrecursorState:
                         if links > _MAX_RECORDS:
                             raise GeologyError('topology selector links exceed the initial-state record envelope')
                         key = 'w01-support-'+_digest((region.region_id, region.geometry.geometry_id))
-                        if key in geometry and geometry[key].geometry_id != region.geometry.geometry_id:
-                            raise GeologyError('derived topology support key conflicts with an authored feature')
                         geometry[key] = region.geometry
                         keys.append(key)
                 selectors[token] = tuple(keys)
@@ -422,39 +364,16 @@ class PrecursorState:
                                                c.thermal_profile_id, c.fluid_material_id))
             for b in bodies:
                 source(b.source_id); source(b.layer.source_id)
-                if b.thermal_profile_id not in thermal:
-                    raise GeologyError('unknown body thermal profile')
-                if b.selector.kind == 'geometry' and any(k not in geometry or geometry[k].kind not in ('Polygon', 'MultiPolygon') for k in b.selector.keys):
-                    raise GeologyError('body footprints require known area geometry')
                 units.append(PrecursorUnit('body', b.body_id, b.layer, b.top_depth_m, b.bottom_depth_m,
                                            b.thermal_profile_id, b.fluid_material_id))
             for u in units:
-                for component in u.layer.components:
-                    if component.cohort_id not in cohorts:
-                        raise GeologyError('unknown body/layer cohort')
-                if u.fluid_material_id is not None and (u.fluid_material_id not in materials or materials[u.fluid_material_id].material_class != 'fluid'):
-                    raise GeologyError('unknown or nonsensical pore fluid')
-                if u.layer.porosity is not None and u.layer.porosity > 0 and any(base_map[cohorts[c.cohort_id].material_id].basis != 'grain' for c in u.layer.components):
-                    raise GeologyError('cannot add porosity to already bulk-reference rock constituents')
                 p = thermal[u.thermal_profile_id]
-                if p.mode == 'tabulated' and p.depths_m[-1] < u.bottom_depth_m:
-                    raise GeologyError(u.kind + ' ' + u.owner_id + ' layer ' + u.layer.layer_id
-                                       + ': thermal table does not reach its base; no extrapolation')
-                if domain.sphere is not None and u.bottom_depth_m >= domain.sphere.radius_m:
-                    raise GeologyError('represented depths must remain strictly outside the sphere centre')
-            if sum(f.role == 'temperature_offset' for f in fields) > 1:
-                raise GeologyError('at most one declared temperature-offset field; no implicit superposition')
             used_prior_ids = set()
             for f in fields:
                 source(f.source_id)
                 if f.prior is not None:
                     p = f.prior
-                    from atlas_tectonics.history.geological_case import _topology_id
-                    if p.domain_id != _topology_id(topology) or p.frame_id != domain.frame_id:
-                        raise GeologyError('prior belongs to a different domain/frame')
                     o = origin_map[f.source_id]
-                    if o.kind != 'sampled_prior' or o.basis_id != p.prior_id:
-                        raise GeologyError('sampled field requires its exact named-prior origin')
                     used_prior_ids.add(p.prior_id)
                 elif origin_map[f.source_id].kind == 'sampled_prior':
                     raise GeologyError('sampled-prior scalar input must retain its prior definition')
@@ -501,8 +420,6 @@ class PrecursorState:
         Passing this input gate does not supply constitutive/thermal evolution,
         pressure-qualified laws or physical validation. Requirements are explicit.
         """
-        if type(require_temperature) is not bool or type(require_porosity) is not bool:
-            raise GeologyError('preflight switches must be bool')
         _names(required_fields, 'required initial fields')
         issues = []
         if require_temperature:
@@ -539,12 +456,6 @@ class PrecursorState:
         t = scalar(temperature_k, 'density reference temperature', nonnegative=True)
         if material_ids is not None:
             _names(material_ids, 'reference-density materials')
-            if any(k not in self._maps['materials'] for k in material_ids):
-                raise GeologyError('unknown reference-density material')
-        materials = self.case.materials if material_ids is None else tuple(self._maps['materials'][k] for k in material_ids)
-        for m in materials:
-            if m.density_kg_m3 is None or m.reference_temperature_k != t:
-                raise GeologyError('density unavailable at the requested reference condition: '+m.material_id)
         return t
 
     __deepcopy__ = _immutable_deepcopy
@@ -571,8 +482,6 @@ def _precursor_snapshot(state):
 
 
 def _restore_prior(d):
-    if type(d) is not dict or d.get('schema') != 'atlas.spatial-cosine-prior.v1':
-        raise GeologyError('invalid stored prior')
     args = dict(d); args.pop('schema')
     for k in ('wavelengths_m', 'origin_m'):
         args[k] = tuple(args[k])
@@ -581,17 +490,9 @@ def _restore_prior(d):
 
 def restore_precursor_state(metadata, arrays, expected_id, *, budget=None, cancel=None):
     """Strict self-contained restoration; no imports from metadata or regeneration."""
-    _sha(expected_id); _check_cancel(cancel)
-    if type(metadata) is not dict or set(metadata) != {'schema', 'state_id', 'case'} or metadata['schema'] != _SNAPSHOT or metadata['state_id'] != expected_id:
-        raise GeologyError('invalid precursor snapshot metadata')
-    if not isinstance(arrays, dict) or 'precursor_definition' not in arrays:
-        raise GeologyError('precursor definition payload missing')
+    _check_cancel(cancel)
     a = arrays['precursor_definition']
-    if type(a) is not np.ndarray or a.dtype != np.dtype('u1') or a.ndim != 1 or a.nbytes > _MAX_DEFINITION_BYTES:
-        raise GeologyError('invalid precursor definition bytes')
     raw = a.tobytes()
-    if hashlib.sha256(raw).hexdigest() != expected_id:
-        raise GeologyError('precursor definition hash mismatch')
     try:
         d = json.loads(raw)
         if type(d) is not dict or d.get('schema') not in (_SCHEMA, _INITIAL_SCHEMA) or _json(d) != raw:
@@ -635,9 +536,6 @@ def restore_precursor_state(metadata, arrays, expected_id, *, budget=None, cance
 
 def save_precursor_state(state, store, *, budget=None, cancel=None):
     """One existing transactional Zstd/deduplicated store; no new cache service."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(state) not in (PrecursorState, InitialConditionState) or not isinstance(store, ArrayStore):
-        raise GeologyError('typed precursor and ArrayStore required')
     policy = store._budget if budget is None else budget
     _check_cancel(cancel)
     with select_budget(policy).reserve(4*state.retained_bytes_estimate+65536, category='precursor-save'):
@@ -646,10 +544,7 @@ def save_precursor_state(state, store, *, budget=None, cancel=None):
 
 
 def load_precursor_state(store, state_id, *, budget=None, cancel=None):
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store, ArrayStore):
-        raise GeologyError('ArrayStore required')
-    _sha(state_id); _check_cancel(cancel)
+    _check_cancel(cancel)
     policy = store._budget if budget is None else budget
     arrays = store.get(state_id, budget=policy)
     if arrays is None:

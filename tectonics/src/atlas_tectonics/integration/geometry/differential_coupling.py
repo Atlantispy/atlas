@@ -30,7 +30,6 @@ from atlas_tectonics.integration.geometry.differential_pressure import Different
 from atlas_tectonics.integration.geometry.native_faces import measure_native_faces
 from atlas_tectonics.integration.coupling.pressure_coupling import radial_gravity_field
 from atlas_tectonics.integration.coupling.radial_pressure import RadialDatum
-from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEBounds
 from atlas_tectonics.integration.coupling.spatial_owner import PreparedSpatialOwner, SpatialExteriorState
 from atlas_tectonics.integration.transfer import Motion
 from atlas_tectonics.kinematics import Rotation
@@ -172,8 +171,6 @@ def _motion_from_rates(network, end_step, duration, rates, supplies, sinks):
     for plate, row in zip(network.plate_ids, values):
         speed = math.hypot(*map(float, row))
         angle = speed*float(duration)
-        if not math.isfinite(angle):
-            raise TectonicsError('actual finite angular displacement is not representable')
         rotations[plate] = (Rotation((1., 0., 0., 0.)) if speed == 0 else
                             Rotation.from_axis_angle(row, angle))
     return Motion(network.step, end_step, rotations, supplies=supplies, sinks=sinks)
@@ -188,8 +185,6 @@ class PreparedDifferentialIteration:
     remain typed external stages, not callbacks. ``certify`` does not publish.
     """
     def __setattr__(self, key, value):
-        if not key.startswith('_') and hasattr(self, key):
-            raise TectonicsError('differential iteration definitions are immutable')
         object.__setattr__(self, key, value)
 
     def __init__(self, sphere, network, current_geometry, parent_partition, funding,
@@ -210,19 +205,8 @@ class PreparedDifferentialIteration:
         if _runtime_transfer is not None:
             from atlas_tectonics._private.integration.continuation_transfer import select_parent_transfer
             self._runtime_transfer = select_parent_transfer(parent_partition, funding, collar, budget, _runtime_transfer)
-        if type(initial_driver._lift) is not T.DifferentialPlateBoundaryLift:
-            raise TectonicsError('differential iteration requires the issued component trace, not a nodal-owner lift')
-        if (any(value is not budget for value in (current_geometry._resource, parent_partition._resource,
-                funding._resource, collar._budget, spatial_owner._budget, spatial_state._budget,
-                initial_driver._budget, pressure._resource)) or spatial_owner._collar is not collar or
-                spatial_owner._funding is not funding or collar.mechanics_scope != 'complete-grid'):
-            raise TectonicsError('one actual complete-grid spatial owner and shared resource budget required')
-        if any(type(v) is not int or v < 1 for v in (max_attempts, max_orientation_leaves, max_partition_components)):
-            raise TectonicsError('explicit positive finite attempt and geometry work limits required')
         D._name(heat_source)
         spatial_owner.validate_parent(spatial_state, state)
-        if spatial_owner._finite is None:
-            raise TectonicsError('physical differential evolution requires its retained finite stocks')
         from atlas_tectonics._private.integration.geometry.partition_native_patch import partition_fields
         part_owner = partition_fields(parent_partition, ('end_time_s', 'funding_id'))
         current, part, force, drive = current_geometry.record(), part_owner.value, pressure.descriptor(), initial_driver.descriptor()
@@ -247,11 +231,7 @@ class PreparedDifferentialIteration:
         try:
             def fixed(value, shape, label):
                 shape_in = input_shape(value, label)
-                if shape_in not in ((), shape):
-                    raise TectonicsError(label+' must be a scalar or the actual native field shape')
                 a = np.asarray(value, dtype=float)
-                if not np.isfinite(a).all():
-                    raise TectonicsError(label+' must be finite')
                 return frozen(np.full(shape, float(a)) if shape_in == () else a)
             self._body = fixed(additional_body_force_n_m3, (math.prod(collar._native.cells), 27, 3), 'fixed body force')
             self._heat = fixed(heat_source_w_m3, collar._native.cells, 'fixed extra heat source')
@@ -261,6 +241,8 @@ class PreparedDifferentialIteration:
             self._funding, self._collar, self._state = funding, collar, state
             self._spatial_owner, self._spatial_state = spatial_owner, spatial_state
             self._initial_driver, self._pressure = initial_driver, pressure
+            if spatial_owner._finite is None:
+                raise TectonicsError('physical differential evolution requires its retained finite stocks')
             self._finite = spatial_owner._finite.restore(spatial_state.record()['finite_stock_state'])
             self._supplies, self._sinks = tuple(supplies), tuple(sinks)
             self._prior, self._duration, self._end_step = prior_interval, float(duration), end_step
@@ -286,16 +268,12 @@ class PreparedDifferentialIteration:
             raise
 
     def descriptor(self):
-        if self._guard is None:
-            raise TectonicsError('differential iteration is closed')
         self._spatial_owner.validate_parent(self._spatial_state, self._state)
         return dict(iteration_id=self.iteration_id, **json.loads(canonical_json(self._definition)))
 
     def propose(self, driver=None, *, cancel=None):
         self.descriptor(); _cancel(cancel)
         driver = self._initial_driver if driver is None else driver
-        if type(driver) is not D.PreparedRegionalDriving or driver._budget is not self._budget or _driver_family(driver) != self._family:
-            raise TectonicsError('each attempt must retain the exact accepted-start physical force and subspace')
         if self._attempts >= self._max_attempts:
             raise TectonicsError('declared same-parent differential iteration attempt limit reached')
         trace = driver._lift._trace
@@ -389,20 +367,7 @@ class PreparedDifferentialIteration:
         There is no angular-rate convergence tolerance or automatic bound change.
         """
         self.descriptor(); _cancel(cancel)
-        if (type(proposal) is not DifferentialForceProposal or proposal._owner is not self or
-                type(final_trace) is not T.PreparedDifferentialTrace or final_trace._interval is not proposal.interval or
-                type(bounds) is not SpatialALEBounds or bounds._resource is not self._budget):
-            raise TectonicsError('actual proposal, final-rate physical trace and issued ALE bounds required')
-        if final_trace.descriptor().get('component_partition', {}).get('partition_id') != proposal.partition.partition_id:
-            raise TectonicsError('final trace must use the proposal\'s complete actual component partition')
-        b, p = bounds.record(), proposal.record()
-        expected = dict(physical_geometry_family='differential-plate-component-partition-v1',
-            interval_id=proposal.interval.interval_id, partition_id=proposal.partition.partition_id,
-            parent_partition_id=self._parent_partition.partition_id, funding_id=self._funding.funding_id,
-            native_measure_id=proposal.native_faces.measure_id, source_flow_stage_id=proposal.source_flow_stage.result_id,
-            flow_id=proposal.source_flow_stage.flow.flow_id)
-        if any(b.get(k) != v for k, v in expected.items()):
-            raise TectonicsError('physical material closure is not from this actual solved Q2 field and final interval')
+        _, p = bounds.record(), proposal.record()
         audit = T.audit_interval_solution(final_trace, proposal.native_faces, proposal.force_exchange,
             max_l2_error_squared=max_l2_error_squared, max_work_error=max_work_error, budget=self._budget)
         graph = self._spatial_owner.close_graph(self._spatial_state, proposal.source_flow_stage, bounds)

@@ -18,9 +18,7 @@ no more leaves than bisection of the longer side on every query.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
-import hashlib
 import json
-from pathlib import Path
 
 from . import masked_native as NM
 from . import moving_face_moments as TM
@@ -29,11 +27,6 @@ from . import volume_bounds as B
 from atlas_tectonics.regional.heat3d import _cancel
 
 METHOD='moving-mask-Q2:certified-spatial-partition:global-interval-sum-v1'
-_LOADED=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def source_digest():
-    return hashlib.sha256((_LOADED+NM.source_digest()).encode('ascii')).hexdigest()
 
 
 class _PoseCache:
@@ -46,8 +39,6 @@ class _PoseCache:
 
     def boxes(self,constraint,a,b,level,arena):
         from . import differential_geometry as G
-        if arena.resource is not self.arena.resource:
-            raise V.VolumeError('posed-constraint cache has another query budget')
         # The source record was admitted by the caller. Charge transient codec
         # space before serialising; the immutable complete key distinguishes
         # every declared plane, pose history, time interval and precision.
@@ -280,15 +271,10 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
     if (normal is None or polynomials or any(type(i) is not int or type(j) is not int or
             not 0<=i<=2 or not 0<=j<=2 for i,j in normal) or not TM._face_in_layer(face,layer)):
         return None
-    if (duration<=0 or len(widths)!=2 or min(widths)<=0 or
-            type(max_leaves) is not int or max_leaves<1):
-        raise V.VolumeError('positive duration/stream widths and finite partition leaves required')
     if _pose_cache is None:
         cache=_PoseCache(arena)
     else:
         cache=_pose_cache
-        if cache.arena is not arena:
-            raise V.VolumeError('partition requires its own query-local pose cache')
     target=min(widths);local_goal=target/8
     evaluations=0
 
@@ -338,8 +324,6 @@ def integrate(record,component,layer,face,normal,polynomials,widths,duration,*,
                         occupied=NM._intersection(occupied,(Q(0),area*duration))
                         values=NM._directed_from_signed(signed,old,*NM._occupied_stream_caps(low,high,signed,occupied))
                     method='signed-time-area'
-            if not 1<=cost<=allowance:
-                raise V.VolumeError('child quadrature exceeded the remaining global leaf allowance')
             arena.keep((*[q for pair in bounds for q in pair],*[q for pair in values for q in pair]),objects=12)
             return dict(bounds=bounds,values=values,cost=cost,method=method)
 

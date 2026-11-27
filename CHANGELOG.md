@@ -203,6 +203,103 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev90](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev90) - 2026-11-27
+
+### Tools
+
+
+- Removed the strict and packaged-release execution modes. Every run executes the same way; `--run-profile`
+  selects Debug diagnostics (`stages`, `stacks`, `tree`), and run receipts record `run_mode`. The
+  `ATLAS_DEV_STAGE_TIMING` and `ATLAS_PROFILE_SAMPLER` variables and the `--dev-timing` flag are gone. Saved stores
+  and projects that carry the old `execution_mode` field still open.
+
+- Runs no longer check their own code. File hashes of Atlas modules, pinned source digests and execution-context
+  checks are gone, so a run or a continued state carries on under edited code. Records no longer carry the
+  removed code hashes; older records that hold them still read. Checks on stored evidence, input data and
+  outside libraries (MPFR) stay.
+
+- Deleted the helpers, constants, imports and locals that only the removed checks used: 85 top-level definitions in
+  50 modules, and the imports and local names they left unused. Tests of removed checks are deleted. Definitions
+  removed: `_identity`: `_HEAT`, `_HEAT_OTHER_OWNERS`, `_PRIVATE`, `is_private_heat_module`;
+  `_private/codecs/compact_contracts`: `BINDING_PAGE_BYTES`, `RECORD_SCHEMA_BYTES`, `validate_segment_budget`;
+  `_private/codecs/compact_restart_patch`: `accepts_store`, `workflow_source`; `_private/codecs/heat_ledger_tables`:
+  `MAX_FIELDS`, `MAX_FIELD_BYTES`; `_private/codecs/interval_catalog`: `_BASENAME`;
+  `_private/codecs/partition_store`: `REFERENCE_KEYS`; `_private/codecs/partition_tables`: `MAX_ROW_ITEMS`;
+  `_private/codecs/storage_zstd_backend`: `MAX_DICTIONARIES`, `MAX_DICTIONARY_BYTES`,
+  `MAX_RETAINED_DICTIONARY_BYTES`; `_private/integration/geometry/endpoint_geometry_provider`: `CARRY_SHA`;
+  `_private/integration/geometry/live_finite_patch`: `is_stocks`; `_private/integration/geometry/live_mesh_patch`:
+  `support_sequence`; `_private/integration/geometry/live_spatial_patch`: `is_rows`;
+  `_private/integration/geometry/overlap_reader`: `SPEC_FIELDS`; `_private/integration/geometry/publish_mesh_patch`:
+  `MARK`; `_private/integration/geometry/spatial_indexed_patch`: `mesh_identity`;
+  `_private/integration/heat/compiled_dot`: `_context_settings`, `contexts_ok`;
+  `_private/integration/heat/decimal_inventory`: `MAX_DECIMAL_EXPONENT`; `_private/integration/heat/heat_cold_patch`:
+  `HEX_SCALAR_LOGICAL`, `RATIONAL_CHUNK_WORK`, `RATIONAL_ROW_BOUND`; `_private/integration/heat/native_issuer`:
+  `_TRANSPORT_FIELDS`; `_private/integration/heat/physical_order`: `PREPARED_FIELDS`, `ROW_FIELDS`;
+  `_private/integration/heat/snapshot_store`: `MAX_LOGICAL_BYTES`; `_private/integration/historical_admission`:
+  `MAX_AUDIT`, `MAX_CAPSULE`, `MAX_DATABASE`; `_private/integration/historical_input_contract`: `CATALOGUE_SCHEMA`,
+  `CATALOGUE_SHA256`; `_private/integration/materialise_endpoint`: `check_field_group`;
+  `_private/integration/prepared_interval_driver`: `FRESH_JOINED`; `_private/integration/reopen_fresh_restart`:
+  `LINEAGE_FIELDS`, `REOPEN_REASON`; `_private/integration/reopen_prepared_restart`: `COMPLETED_FIELDS`,
+  `OBSERVED_FIELDS`, `PREPARATIONS`, `PUBLISHED_FIELDS`, `validate_guard`, `validate_producer_accounting`,
+  `validate_retained_producer`; `_private/integration/route2_gate`: `PRODUCER_PASS`, `PRODUCER_STOP`;
+  `_private/integration/run_fresh_interval`: `WORKFLOW_ENTRY_POINTS`; `_private/integration/run_prepared_restart`:
+  `HISTORICAL_SOURCE_MANIFEST_SHA256`; `_private/integration/runtime_compatibility`: `MAX_POLICY_BYTES`;
+  `_private/integration/windows_workload_job`: `BREAKAWAY`; `_private/private_heat_original_coverage_r1`:
+  `CACHE_SHA`; `history/geological_records`: `_choice`, `_tuple`; `history/planar_projection`: `MAX_PLANAR_POLYGONS`;
+  `integration/coupling/driving`: `CENTRAL_RADIAL_PRESSURE`, `SYMMETRY_RELATIVE`;
+  `integration/coupling/regional_exchange`: `AUDIT_SCHEMA`; `integration/coupling/strength`: `ORDER_RANGE`;
+  `integration/events`: `EVENT_TYPES`; `integration/geometry/dual_measures`: `check_state_cells`;
+  `integration/geometry/exact_gmp`: `CEILING_BITS`; `integration/heat/exterior_heat`: `ExteriorThermalCell`,
+  `PreparedFiniteExteriorHeat3D`, `_positive_float`; `integration/ledger`: `MAX_APPLIED`, `MAX_EXACT_TEXT`,
+  `_COMMIT_FIELDS`, `_EXACT`; `integration/ports`: `D5_PRODUCERS`, `PORTS`, `TEST_PREFIX`; `mechanics/column_loads`:
+  `_MAX_COLUMNS`, `_MAX_PHASES`; `plates/deformation_network`: `MAX_NETWORK_INTERVALS`; `plates/fault_slip`:
+  `MAX_SLIP_INTERVALS`, `MAX_SLIP_PARCELS`; `plates/reference_dataset`: `PB2002_COUNTS`; `subduction/subduction`:
+  `COUPLING_TRACES`; `thermal/thermochemical`: `_BOUND_TOL`.
+
+- Removed the refusals that guarded only against callers or inputs no real run produces, with the tests that asserted
+  them. Refusals that guard a native call's sizes or indices, stored or outside input, or a loop exit stay or were
+  restored: the remap plan checks, the validate calls, the block-residual refusal (C12069), the transport exponent
+  overflow, the sparse fill limit (`INT32_MAX`) and the exits of loops that would otherwise spin. Where a refusal
+  went, loops that only it could leave were deleted. The test of a material event overflow is kept. A GMP lease
+  resize to its current size now charges nothing.
+
+### Tectonics
+
+- A starting family now writes each face's background wedge by wedge round each province. The region is
+  unchanged, but it takes far fewer cells, so family material support records and their identities change.
+  This is a declared change of the recorded digest: the material stocks are identical on all 32 world levels
+  checked, and an exact proof shows that the wedges cover the old region. Coarse worlds where one face holds a
+  whole province now build instead of exceeding the memory budget. World 6 at the wide range now gets past the
+  budget, which exposes an existing refusal on the area closure. Its two levels no longer refuse alike, so
+  checks C-7 and C-8 each fail for that world until the closure refusal is fixed.
+- On a face shared by provinces and a smaller background, the largest province now takes the face's rounding
+  and the background is booked at the area of its own cells. Before, the background took the remainder of the
+  face's measured area and a thin sliver could miss the area closure by more than 1 part in 10^12. This is a
+  declared change of values: on those faces the background's and the largest province's area, mass and volume
+  move by the same small area in opposite directions, so family material, support and state records and their
+  identities change. No tolerance changed. Eleven development world levels that were refused on the area
+  closure now build: level 2 of worlds 2, 3, 4, 6, 7 and 8 at the default range and of 2 and 3 at the wide
+  range, both levels of world 4 wide and level 1 of world 6 wide.
+
+### Optimisations
+
+#### Dispatch and execution
+
+- Removed repeated work in geometry indexing, differential and dual geometry, interface moments, exterior heat,
+  directed Q2 bounds and thermochemical execution: chart identities, interval ids and nested source checks are
+  computed once per call.
+
+### Bugfixes
+
+- The shared material-support allowance (`Support.workspace_bytes`), used by nine memory bookings, now counts
+  two bytes per coordinate bit instead of eight. The material-support check booked about five times the memory
+  it uses, which refused the 52-plate wide world at level 2 for want of budget; the new
+  booking stays at least 1.49 times the measured peak across the dev, size and long-edge worlds at levels 1 and 2.
+- Declaring moving material now books its workspace once, at 512 bytes per heat layer, and the material advance
+  uses the same allowance. Before, a declaration booked 16 KiB per layer twice and refused the resolved case B
+  control at 42 and 84 rows on the default budget; its booking falls from about 340 MiB to 12 MB at 42 rows and
+  23 MB at 84 rows, and stays at least 1.36 times the measured peak.
+
 ## [0.1.0.dev89](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev89) - 2026-11-27
 
 ### Tests
@@ -629,6 +726,20 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Shared the conversion from plain longitude and latitude to Cartesian directions.
 - Preserved stored event bindings when reading prior material transfers. Fresh events still establish
   their own bindings.
+- This release changed behaviour as well as layout (entry corrected after review):
+  - Removed most code-identity and source checks (ruling 1809). Execution identity schema v6 covers the backend,
+    runtime versions, fixture binding and declared source pins, not code or source bytes. Run drivers, geometry
+    readers, endpoint checkpoints and parallel release no longer re-hash sources. The check in
+    `regional/heat3d.py` remained.
+  - Reuse persists only for declared builds. Fixture and dispatch source digests come from the manifest.
+  - An exact area tie in a plate merge or ridge jump is now refused unless a parent is prescribed. Restore
+    keeps the old rule.
+  - New exact overlap and uncovered-region tests, with a clipping budget, in integration support and bridges.
+    Family-issued cells skip the integer, canonical and convex checks. Straight-transform donor planes and
+    projective carry now use the fragment's measured area. Their equivalence to the old tests is not proved.
+  - The fresh-interval driver gained an optional `--require-heat-pool` gate.
+  - Arc lengths use the chord form `2·atan2(|d|,|s|)`, and the heat update adds its increment directly.
+    Results can differ at rounding level.
 
 ### Tools
 

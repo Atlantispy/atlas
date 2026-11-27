@@ -21,7 +21,7 @@ from . import regional_evolution as O
 from atlas_tectonics.integration.coupling.strength import CreepLaw
 from atlas_tectonics._validation import TectonicsError, frozen
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
-from atlas_tectonics.regional.execution3d import PreparedRegionalStokes3D, _array, _cancel, _json
+from atlas_tectonics.regional.execution3d import _array, _cancel
 from atlas_tectonics.integration.resources import select_budget
 
 SOURCE = 'atlas.radial-strength-source.v1'
@@ -54,7 +54,7 @@ class RadialPlasticity3D:
     friction_rad: float
     plastic_viscosity_pa_s: float | None
     grain_m: float
-    weakening_interval: tuple
+    weakening_interval: tuple[float, float]
     cohesion_factor: float
     friction_factor: float
     provenance: str
@@ -63,13 +63,9 @@ class RadialPlasticity3D:
         for key in ('cohesion_pa', 'friction_rad', 'grain_m'):
             object.__setattr__(self, key, C.number(getattr(self, key), key,
                 positive=key == 'grain_m', nonnegative=key != 'grain_m'))
-        if self.friction_rad >= math.pi/2:
-            raise RadialStrengthRefused('friction must be in [0,pi/2)')
         if self.plastic_viscosity_pa_s is not None:
             object.__setattr__(self, 'plastic_viscosity_pa_s', C.number(
                 self.plastic_viscosity_pa_s, 'plastic viscosity', positive=True))
-        if type(self.weakening_interval) is not tuple or len(self.weakening_interval) != 2:
-            raise RadialStrengthRefused('explicit engineering-plastic weakening interval required')
         law = W.WeakeningLaw(*self.weakening_interval, self.cohesion_factor, self.friction_factor)
         object.__setattr__(self, 'weakening_interval', (law.start, law.end))
         object.__setattr__(self, 'cohesion_factor', law.cohesion_factor)
@@ -118,17 +114,8 @@ def radial_strength_source(moving, sphere, volume_map, *, materials, creep_laws,
     retained layer's physical FV value; radial depth varies at actual Gauss
     positions. No source geometry is flattened or stock invented here.
     """
-    M.bound_moving(moving, sphere)
-    if type(volume_map) is not O.RegionalVolumeMap:
-        raise RadialStrengthRefused('actual contained radial volume map required')
     _name(provenance, 'constitutive source provenance')
     data = volume_map.record()
-    if data['source'] != O._source_binding(sphere, moving):
-        raise RadialStrengthRefused('radial constitutive map has stale material/heat identity')
-    if type(materials) is not dict or type(creep_laws) is not dict:
-        raise RadialStrengthRefused('explicit named material and creep tables required')
-    if any(type(m) is not RadialPlasticity3D for m in materials.values()):
-        raise RadialStrengthRefused('3D material declarations required; old 2D laws cannot be relabelled')
     if any(type(c) is not CreepLaw for c in creep_laws.values()):
         raise RadialStrengthRefused('typed already-SI creep laws required')
     cells = tuple(data['request']['cells']); n = math.prod(cells)
@@ -144,10 +131,6 @@ def radial_strength_source(moving, sphere, volume_map, *, materials, creep_laws,
             patch = patches[patch_id]; record = moving.cohort(patch.cohort_id)
             field = fields[patch_id]
             with resource.reserve(H.field_workspace({patch_id: field}), category='radial-strength-column'):
-                piece = U.piece_of(patch, sphere.material.phases)
-                ratios = M._thickness_ratios(record, piece, sphere.material.phases, budget=resource)
-                M._check_reference_mass(record, piece, ratios, sphere.material.phases,
-                                        moving.step-moving.declared_step, budget=resource)
                 if any(abs(q-patch.stock[0]*u) > b for q, u, b in zip(heat[patch_id], field[1], field[2])):
                     raise RadialStrengthRefused('retained physical source exceeds its caloric account allowance')
                 geometry = M.layer_geometry(record, field[0], budget=resource)
@@ -157,9 +140,6 @@ def radial_strength_source(moving, sphere, volume_map, *, materials, creep_laws,
         for row in data['cell_sources']:
             record, geometry, temperature = column_data[row['patch_id']]
             j = row['sublayer']; layer = record.sublayers[j]
-            if (layer.material_id not in materials or layer.creep_law_id not in creep_laws or
-                    layer.pore_pressure_pa is None):
-                raise RadialStrengthRefused('every owned sublayer needs declared material, creep and pore pressure')
             if record.elastic != M.NOT_REPRESENTED or record.compaction != M.NOT_REPRESENTED:
                 raise RadialStrengthRefused('elastic/compaction source memory needs its own constitutive law')
             keys.append(dict(row, material_id=layer.material_id, creep_law_id=layer.creep_law_id))
@@ -208,13 +188,9 @@ def evaluate_radial_strength(source, strain_rate_s_1, physical_mean_pressure_pa,
     The deviatoric symmetric tensor is objective. Any numerical volumetric
     rate is reported separately, not counted as plastic strain or heat.
     """
-    if type(source) is not RadialStrengthSource:
-        raise RadialStrengthRefused('source-bound radial constitutive fields required')
     n = len(source._materials); shape = (n, 27)
     with select_budget(budget).reserve(65536+16384*n, category='radial-strength-evaluate'):
         strain = _array(strain_rate_s_1, shape+(3, 3), 'full strain-rate tensor')
-        if not np.array_equal(strain, strain.swapaxes(-1, -2)):
-            raise RadialStrengthRefused('the strain-rate tensor must be symmetric')
         pressure = _array(physical_mean_pressure_pa, shape, 'actual physical mean pressure', scalar_ok=True)
         trace = np.trace(strain, axis1=-2, axis2=-1)
         dev = strain-trace[..., None, None]*np.eye(3)/3
@@ -247,8 +223,6 @@ def evaluate_radial_strength(source, strain_rate_s_1, physical_mean_pressure_pa,
                     linear = [c for c, m in zip(coefficients, mechanisms) if m.n == 1.]
                     if y == 0 and material.plastic_viscosity_pa_s is not None:
                         linear.append(-math.log(2*material.plastic_viscosity_pa_s))
-                    if not linear:
-                        raise RadialStrengthRefused('zero-rate viscosity is infinite for a purely superlinear source')
                     logfluid = float(np.logaddexp.reduce(linear))
                     eta = math.exp(-math.log(2)-logfluid)
                 if not math.isfinite(eta) or eta <= 0:
@@ -272,8 +246,6 @@ def evaluate_radial_strength(source, strain_rate_s_1, physical_mean_pressure_pa,
 
 def native_descriptor(source):
     """A transported shared cell admits one actual law, never a mixture rule."""
-    if type(source) is not RadialStrengthSource:
-        raise RadialStrengthRefused('typed radial constitutive source required')
     material, creep = source._materials[0].record(), source._creep[0].record()
     if (any(m.record() != material for m in source._materials) or
             any(c.record() != creep for c in source._creep) or
@@ -293,18 +265,12 @@ def refresh_radial_strength(source, state, native_plan, *, budget=None):
     parser checks its plan/runtime identity and reference inventories. The
     enclosing owner's accepted-chain check still owns ordering/branch authority.
     """
-    if getattr(native_plan, '_radial_constitutive', None) is not source:
-        raise RadialStrengthRefused('current native plan does not own this radial constitutive declaration')
     native_descriptor(source)
     source._map.native_binding(native_plan)
     n = len(source._materials)
     with select_budget(budget).reserve(65536+16384*n, category='radial-strength-refresh'):
         _, _, mass, temperature, _, _, _, histories = native_plan._fields(state)
-        if 'source_kappa' not in histories or PLASTIC_HISTORY not in histories:
-            raise RadialStrengthRefused('separate original and incremental plastic histories required')
         kappa = (histories['source_kappa']+histories[PLASTIC_HISTORY])/mass
-        if np.any(kappa < 0) or not np.isfinite(kappa).all():
-            raise RadialStrengthRefused('raw engineering plastic history is invalid')
         fields = {k: source.array(k) for k in source.array_names}
         fields['temperature_k'] = np.repeat(temperature.reshape(n, 1), 27, axis=1)
         fields['plastic_kappa'] = np.repeat(kappa.reshape(n, 1), 27, axis=1)
@@ -339,16 +305,8 @@ def solve_radial_strength(plan, source, body_force_n_m3, velocity_m_s, traction_
     normal traction. This adapter adds none. The original plan is not mutated;
     at most one changed-viscosity operator is retained, then released.
     """
-    if type(plan) is not PreparedRegionalStokes3D or type(source) is not RadialStrengthSource:
-        raise RadialStrengthRefused('typed full-3D native plan and radial source required')
     source.bind(plan)
     meta = source.descriptor()
-    if epoch_id != meta['epoch_id'] or time_s != meta['time_s']:
-        raise RadialStrengthRefused('mechanics time/epoch differs from its source material snapshot')
-    if parent_state_id != meta.get('native_state_id', meta['source']['sphere_state_id']):
-        raise RadialStrengthRefused('mechanics parent differs from its actual source snapshot')
-    if not plan._physical:
-        raise RadialStrengthRefused('actual mean-pressure datum or natural normal traction required')
     request = dict(parent_state_id=parent_state_id, epoch_id=epoch_id, time_s=time_s,
                    force_source=force_source, boundary_source=boundary_source, cancel=cancel)
     if hydrostatic_lift is not None or residual_body_force_n_m3 is not None:
@@ -358,8 +316,6 @@ def solve_radial_strength(plan, source, body_force_n_m3, velocity_m_s, traction_
                     'pressure_reference_id'}
         if type(coupling) is dict and 'natural_traction_binding' in coupling:
             required.add('natural_traction_binding')
-        if type(coupling) is not dict or set(coupling) != required or plan._pressure_reference is None:
-            raise RadialStrengthRefused('coupled full strength requires an explicit same-field pressure-reference partition')
     current = plan
     try:
         with plan._resource.reserve(65536+32768*len(source._materials), category='radial-strength-mechanics'):

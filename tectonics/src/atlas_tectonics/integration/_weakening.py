@@ -155,7 +155,6 @@ class PreparedColumn:
 
 def prepare(layers, order, *, closure, gravity=None):
     """Prepare through the read-only column kernel: identical quadrature and creep coefficients."""
-    validate_layers(layers, closure)
     g = positive(gravity, "gravity") if closure == LITHOSTATIC else None
     kernel_layers, top = [], 0.
     for layer in layers:
@@ -185,8 +184,6 @@ def prepare(layers, order, *, closure, gravity=None):
             index += 1
             f = (float(node)+1)/2
             t, p, pore = t0*(1-f)+t1*f, p0*(1-f)+p1*f, w0*(1-f)+w1*f
-            if law.yield_pa != c0*math.cos(phi)+max(p-pore, 0.)*math.sin(phi):
-                raise RuntimeError("prepared quadrature differs from the column kernel")
             pad = width-len(mechanisms)
             volumes = [m.volume_m3_mol for m in mechanisms]+[0.]*pad
             rows.append(dict(
@@ -211,9 +208,6 @@ def prepare(layers, order, *, closure, gravity=None):
 
 def history_array(prep, kappa):
     kappa = np.asarray(kappa)
-    if (kappa.dtype.kind not in "fiu" or kappa.shape != (prep.size,)
-            or not np.all(np.isfinite(kappa)) or np.any(kappa < 0)):
-        raise ValueError("raw history must be finite, nonnegative and one value per material point")
     return np.asarray(kappa, dtype=float)
 
 

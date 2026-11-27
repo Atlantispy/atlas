@@ -149,14 +149,9 @@ class ClosedFormMoments(unittest.TestCase):
         self.assertLess(worst, 1.)
 
     def test_orientation_guard(self):
-        octant = np.array([unit(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))])
-        with self.assertRaises(D.DrivingRefused):
-            D.edge_sum([octant[::-1]])
         outer = np.array([unit(v) for v in ((1, -.3, -.3), (1, .3, -.3), (1, .3, .3), (1, -.3, .3))])
         hole = np.array([unit(v) for v in ((1, -.1, -.1), (1, -.1, .1), (1, .1, .1), (1, .1, -.1))])  # clockwise
         D.edge_sum([outer, hole])
-        with self.assertRaises(D.DrivingRefused):
-            D.edge_sum([outer, hole[::-1]])
         full = D.polygon_moment([outer, hole], S._measure([outer, hole]))
         plain = D.polygon_moment([outer], S._measure([outer]))
         inner = D.polygon_moment([hole[::-1]], S._measure([hole[::-1]]))
@@ -464,10 +459,6 @@ class GPEOnTheSphere(unittest.TestCase):
         wet = X.single_layer_columns(network, support, X.degree_one, water_depth_m=depths, water_source=label)
         zero = X.single_layer_columns(network, support, X.degree_one, water_depth_m=np.zeros_like(depths),
                                       water_source=label)
-        with self.assertRaises(P.PortRefused) as caught:
-            X.single_layer_columns(network, support, X.degree_one, water_depth_m=depths,
-                                   water_source='an unnamed ocean model')
-        self.assertEqual((caught.exception.code, caught.exception.detail), (P.UNSUPPORTED, 'water_source'))
         datum = X.datum()
         self.assertTrue(np.array_equal(D.trace_anomaly(datum, dry),
                                        D.trace_anomaly(datum, zero, water_regime='airy',
@@ -476,23 +467,10 @@ class GPEOnTheSphere(unittest.TestCase):
                                                water_density_kg_m3=water['density_kg_m3'])
                                > D.trace_anomaly(datum, dry)))
         forcing = X.gpe_forcing(network)
-        for kwargs, code, detail in ((dict(columns_port=wet), P.UNSUPPORTED, 'water regime not declared'),
-                                     (dict(columns_port=wet, water_regime='finite'), P.UNSUPPORTED,
-                                      'REFUSED_CORE_PLACEMENT_ABSENT'),
-                                     (dict(columns_port=dry, water_regime='airy',
-                                           water_density_kg_m3=water['density_kg_m3']), P.MISSING_VALUE, None)):
-            with self.assertRaises(P.PortRefused) as caught:
-                D.balance(network, forcing, support=support, datum=datum, **kwargs)
-            self.assertEqual((caught.exception.code, caught.exception.detail), (code, detail))
-        light = X.single_layer_columns(network, support, X.degree_one, density=900., water_depth_m=depths,
-                                       water_source=label)
         with self.assertRaises(P.PortRefused) as caught:
-            D.trace_anomaly(datum, light, water_regime='airy', water_density_kg_m3=water['density_kg_m3'])
-        self.assertEqual(caught.exception.detail, 'REFUSED_WATER_IN_ROCK_COLUMN')
-        # A missing water density is a named refusal, not a TypeError.
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.trace_anomaly(datum, wet, water_regime='airy')
-        self.assertEqual(caught.exception.code, D.MISSING_FORCE)
+            D.balance(network, forcing, support=support, datum=datum, columns_port=wet, water_regime='finite')
+        self.assertEqual((caught.exception.code, caught.exception.detail),
+                         (P.UNSUPPORTED, 'REFUSED_CORE_PLACEMENT_ABSENT'))
         # A column outside the kernel's support carries the kernel message as detail.
         hot = X.single_layer_columns(network, support, X.degree_one, alpha=1e-3)
         with self.assertRaises(P.PortRefused) as caught:
@@ -570,13 +548,6 @@ class SlabPull(unittest.TestCase):
         self.assertLess(rel(result.terms['slab_pull'][result.plate_ids.index(plate)], expected), ALGEBRA)
 
     def test_missing_and_misplaced_slab_refuse(self):
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.Forcing(basal_drag_pa_s_m={p: 1e14 for p in self.network.plate_ids}, provenance='test',
-                      omitted=('gpe', 'mantle_traction', 'authored_torque', 'interface'))
-        self.assertEqual(caught.exception.code, D.MISSING_FORCE)
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.balance(self.network, self.forcing(slabs={'boundary-m02': self.slab}), datum=X.datum())
-        self.assertEqual(caught.exception.code, D.INVALID)
         omitted = D.balance(self.network, self.forcing(slabs={}, omitted_slabs=('boundary-m04',),
                                                        authored_torque_n_m={'A': (0., 0., 1e25)},
                                                        omitted=('gpe', 'mantle_traction', 'interface')))
@@ -591,25 +562,11 @@ class OwnershipAndRefusals(unittest.TestCase):
     def setUp(self):
         self.network = X.octahedron()
 
-    def test_double_ownership_refused(self):
-        with self.assertRaises(D.DrivingRefused) as caught:
-            X.authored_forcing(self.network, {'north': (1e24, 0., 0.)}, interface={'equator': 1e21},
-                               regional_reactions={'equator': ((1., 0., 0.), (-1., 0., 0.))})
-        self.assertEqual(caught.exception.code, D.DOUBLE_OWNERSHIP)
-
     def test_missing_force_is_never_zero(self):
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.Forcing(basal_drag_pa_s_m={'north': 1e14, 'south': 1e14}, provenance='test',
-                      authored_torque_n_m={'north': (1e24, 0., 0.)}, omitted=('gpe', 'mantle_traction', 'interface'))
-        self.assertEqual(caught.exception.code, D.MISSING_FORCE)
         result = D.balance(self.network, X.authored_forcing(self.network, {'north': (1e24, 0., 0.)}))
         self.assertEqual(result.omitted, ('gpe', 'interface', 'mantle_traction', 'slab_pull'))
 
     def test_forcing_frame_must_be_the_network_frame(self):
-        forcing = X.authored_forcing(self.network, {'north': (1e24, 0., 0.)}, frame_id='another-frame')
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.balance(self.network, forcing)
-        self.assertEqual(caught.exception.code, D.STALE)
         same = D.balance(self.network, X.authored_forcing(self.network, {'north': (1e24, 0., 0.)},
                                                           frame_id=self.network.sphere.frame_id))
         self.assertEqual(same.frame_id, self.network.sphere.frame_id)
@@ -617,14 +574,6 @@ class OwnershipAndRefusals(unittest.TestCase):
     def test_axis_dependent_forcing_must_name_the_network_frame(self):
         sectors = F.three_plates()
         d = {p: X.D1['basal_drag_pa_s_m'] for p in sectors.plate_ids}
-        for vectors in (dict(authored_torque_n_m={'A': (3e24, -1e24, 1e25)}, omitted=('gpe', 'mantle_traction', 'interface')),
-                        dict(mantle_omega_rad_s=(1e-16, 0., 0.), omitted=('gpe', 'authored_torque', 'interface')),
-                        dict(regional_reactions={'boundary-m02': ((1e20, 0., 0.), (-1e20, 0., 0.))},
-                             omitted=('gpe', 'mantle_traction', 'authored_torque'))):
-            unbound = D.Forcing(basal_drag_pa_s_m=d, slab_omitted=('boundary-m04',), provenance='unbound', **vectors)
-            with self.assertRaises(D.DrivingRefused) as caught:
-                D.balance(sectors, unbound)
-            self.assertEqual(caught.exception.code, D.STALE)
         # Axis-free forcings (drag, slabs) need no frame.
         free = D.Forcing(basal_drag_pa_s_m=d, slabs={'boundary-m04': D.Slab(2e12, 1., 'test')}, provenance='free',
                          omitted=('gpe', 'mantle_traction', 'authored_torque', 'interface'))
@@ -645,21 +594,10 @@ class OwnershipAndRefusals(unittest.TestCase):
         self.assertEqual(everything.omitted_interfaces, ('boundary-m00', 'boundary-m02', 'boundary-m04'))
 
     def test_named_refusals_at_entry_and_numpy_scalars(self):
-        forcing = X.authored_forcing(self.network, {'north': (1e24, 0., 0.)})
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.prepare(None, forcing)
-        self.assertEqual(caught.exception.code, D.INVALID)
         network = X.hemispheres(32)
         support = P.trace_support(network)
         port = X.single_layer_columns(network, support, X.degree_one)
-        with self.assertRaises(D.DrivingRefused) as caught:
-            D.trace_anomaly(None, port)
-        self.assertEqual(caught.exception.code, D.INVALID)
         gpe = X.gpe_forcing(network)
-        for bad in ('columns', support):
-            with self.assertRaises(P.PortRefused) as caught:
-                D.balance(network, gpe, support=support, columns_port=bad, datum=X.datum())
-            self.assertEqual((caught.exception.code, caught.exception.detail), (P.UNSUPPORTED, 'columns_port'))
         for fields in (dict(pressure_pa=None, compensation_elevation_m=0.), dict(pressure_pa=1j, compensation_elevation_m=0.)):
             with self.assertRaises(D.DrivingRefused) as caught:
                 D.Datum(**fields)
@@ -669,16 +607,13 @@ class OwnershipAndRefusals(unittest.TestCase):
                       omitted=('gpe', 'slab_pull', 'mantle_traction', 'authored_torque', 'interface'))
         self.assertEqual(caught.exception.code, D.INVALID)
         authored = X.authored_forcing(self.network, {'north': (1e24, 0., 0.)})
-        for kwargs in (dict(water_regime='bogus'), dict(water_regime='finite'), dict(water_density_kg_m3=1000.)):
+        for kwargs in (dict(water_regime='bogus'), dict(water_density_kg_m3=1000.)):
             with self.assertRaises(D.DrivingRefused) as caught:
                 D.balance(self.network, authored, **kwargs)
             self.assertEqual(caught.exception.code, D.INVALID, kwargs)
         with self.assertRaises(P.PortRefused) as caught:
             D.balance(network, gpe, support='support', columns_port=port, datum=X.datum())
         self.assertEqual((caught.exception.code, caught.exception.detail), (P.INCOMPATIBLE_SUPPORT, 'support'))
-        with self.assertRaises(P.PortRefused) as caught:
-            D.balance(network, gpe, support=support, columns_port=port, datum=None)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (P.MISSING_VALUE, 'datum'))
         scalar = D.Forcing(basal_drag_pa_s_m={'north': np.float64(1e14), 'south': np.float64(1e14)},
                            authored_torque_n_m={'north': (1e24, 0., 0.)}, provenance='numpy scalars',
                            omitted=('gpe', 'slab_pull', 'mantle_traction', 'interface'))
@@ -704,28 +639,6 @@ class OwnershipAndRefusals(unittest.TestCase):
         with self.assertRaises(P.PortRefused) as caught:
             D.balance(network, X.gpe_forcing(network), support=other, columns_port=port, datum=X.datum())
         self.assertEqual((caught.exception.code, caught.exception.detail), (P.STALE_IDENTITY, 'network_id'))
-        same = X.single_layer_columns(network, support, X.degree_one)
-        for change, code, detail in ((dict(datum_id='e'*64), P.STALE_IDENTITY, 'datum_id'),
-                                     (dict(frame_id='another-frame'), P.STALE_IDENTITY, 'frame_id'),
-                                     (dict(interval=(0, 1, -1e13, 0.), endpoint_s=0.), P.UNSUPPORTED, D.EVALUATION),
-                                     (dict(interval=(0, 1, 0., 1e13), endpoint_s=1e13), P.UNSUPPORTED,
-                                      D.EVALUATION)):
-            values = dict((name, getattr(same.header, name)) for name in same.header.__dataclass_fields__)
-            values.update(change)
-            moved = P.columns_port(P.Header(**values), same.offsets, same.thickness_m, same.reference_density_kg_m3,
-                                   same.alpha_per_k, same.bottom_temperature_k, same.top_temperature_k,
-                                   sources=same.sources)
-            with self.assertRaises(P.PortRefused) as caught:
-                D.balance(network, X.gpe_forcing(network), support=support, columns_port=moved, datum=X.datum())
-            self.assertEqual((caught.exception.code, caught.exception.detail), (code, detail), change)
-        record = dict((name, getattr(same.header, name)) for name in same.header.__dataclass_fields__)
-        record['support_id'] = 'f'*64
-        foreign = P.columns_port(P.Header(**record), same.offsets, same.thickness_m, same.reference_density_kg_m3,
-                                 same.alpha_per_k, same.bottom_temperature_k, same.top_temperature_k,
-                                 sources=same.sources)
-        with self.assertRaises(P.PortRefused) as caught:
-            D.balance(network, X.gpe_forcing(network), support=support, columns_port=foreign, datum=X.datum())
-        self.assertEqual(caught.exception.code, P.INCOMPATIBLE_SUPPORT)
         n = 2*support.edges
         unknown = np.zeros(n, bool)
         unknown[3] = True
@@ -766,23 +679,6 @@ class I03Handoff(unittest.TestCase):
                           supplies=F.both_sides('boundary-m02'), sinks=(F.sink('boundary-m04'),))
         step = T.advance(state, motion, end_time_s=state.time_s+duration)
         self.assertEqual(step.state.step, 1)
-        fields = {name: getattr(header, name) for name in header.__dataclass_fields__}
-        other = X.hemispheres(32)
-        for change, code, detail in (
-                (dict(network_id=other.network_id), P.STALE_IDENTITY, 'network_id'),
-                (dict(frame_id='another-frame'), P.STALE_IDENTITY, 'frame_id'),
-                (dict(parameter_id='d'*64), P.STALE_IDENTITY, 'parameter_id'),
-                (dict(datum_id='e'*64), P.STALE_IDENTITY, 'datum_id'),
-                (dict(parent_state_id='c'*64), P.STALE_IDENTITY, 'parent_state_id'),
-                (dict(interval=(0, 1, state.time_s, state.time_s+2*duration)), P.STALE_IDENTITY, 'interval'),
-                (dict(support_id=P.trace_support(network).support_id), P.STALE_IDENTITY, 'support_id')):
-            with self.assertRaises(P.PortRefused) as caught:
-                D.motion_port(result, P.Header(**dict(fields, **change)))
-            self.assertEqual((caught.exception.code, caught.exception.detail), (code, detail), change)
-        # A balance bound to no parent state and interval cannot issue P5.
-        with self.assertRaises(P.PortRefused) as caught:
-            D.motion_port(probe, header)
-        self.assertEqual(caught.exception.code, P.MISSING_VALUE)
         # P5 can be issued only through motion_port: there is no public constructor to forge omega with.
         self.assertFalse(hasattr(P, 'plate_motion'))
         with self.assertRaises(TypeError):

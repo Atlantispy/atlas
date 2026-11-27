@@ -1227,24 +1227,14 @@ universal constraint on generated planets.
    the expected response. Use existing case H and refinement evidence where
    applicable. Acceptance requires the actual long run at the declared settings,
    with its scientific criteria and elapsed-time target met together.
-5. **I11.5 — Separate strict validation from release execution.** Apply the
-   existing [execution policy](../../docs/CODING_SAFETY.md#strict-checkout-and-packaged-release-execution).
-   Development/debug work, ordinary tests, scientific benchmarks and evidence
-   producers remain **strict**; debug instrumentation is not a lower-fidelity
-   physics mode. Use dedicated packaged-release checks to demonstrate equivalent
-   scientific results, conservation and refusal behaviour on a bounded matched
-   workload. Require exact equality where the deterministic calculation is
-   unchanged, otherwise the already-approved numerical comparison, never a new
-   relaxed tolerance. Check equivalent scientific identities/cache semantics and
-   separately recorded execution-mode provenance. Exercise full source/callable
-   checks at save/commit, reopen and cache-read boundaries, including changed
-   source refusal; a checkout environment variable must not enable release.
-   Verification/evidence commands must still refuse release mode.
-   Measure strict and packaged-release elapsed time separately with matched
-   inputs, physics, precision, resolution, solver settings, native threads and
-   declared cache state. Name diagnostic/profiling overhead separately. Report
-   the actual seconds saved and their denominator, not an assumed release
-   speedup. Release timings do not replace strict scientific acceptance.
+5. **I11.5 — One execution; Debug by run profile.** Apply the
+   [execution policy](../../docs/CODING_SAFETY.md#release-and-debug-runs).
+   Checkouts, tests, scientific benchmarks, evidence producers and the desktop
+   run one execution; Debug (`--run-profile`) adds instrumentation only and is
+   not a lower-fidelity physics mode. Measure elapsed time with matched inputs,
+   physics, precision, resolution, solver settings, native threads and declared
+   cache state. Name diagnostic/profiling overhead separately and report the
+   actual seconds saved and their denominator.
    Removing repeated integrity work must not remove exact geometry predicates,
    volume/error certificates, conservation, convergence or other required
    scientific checks. Reuse adequate controls; do not duplicate full campaigns
@@ -1307,13 +1297,8 @@ references support release engineering, not tectonics realism.
    without the development checkout, preserving projects, cancellation and
    native identity checks. Include only authorised examples and required notices,
    not private data, caches or coordination files. No installer/download implied.
-   Confirm the actual packaged routes enter **release** only through the trusted
-   payload/interpreter/command gate, and refuse invalid trust metadata. Reuse
-   I11.5's cross-mode parity evidence; check boundary verification and mode
-   provenance on the shipped bytes. Normal generation must not launch development
-   test suites or optional profiling; scientific runtime checks remain enabled.
-   Keep strict verification tools distinct from release runtime and prevent the
-   packaged policy from silently weakening their checks. Record the policy in
+   Normal generation must not launch development test suites or optional
+   profiling; scientific runtime checks remain enabled. Record the policy in
    release/runtime documentation. This is test/execution separation, not one of
    the lower-accuracy simulation settings.
 3. **I12.3 — Deliver the accepted module and handoff.** Confirm all five user

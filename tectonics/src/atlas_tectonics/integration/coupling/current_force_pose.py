@@ -15,18 +15,13 @@ import numpy as np
 
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.geometry import volume as V, volume_bounds as B
-from atlas_tectonics.integration.geometry import volume_overlap as O, wall_measures as W
+from atlas_tectonics.integration.geometry import volume_overlap as O
 from . import exterior_mesh as E
-from atlas_tectonics.integration.geometry import collar_geometry as F
 from atlas_tectonics.integration import support as U
-from atlas_tectonics.integration.geometry import sphere as S
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
-from atlas_tectonics.integration.resources import WorkBudget
 
 
 def _q(value):
-    if type(value) not in (Q, int):
-        raise TectonicsError('an explicit exact rational numerical error budget is required')
     return Q(value)
 
 
@@ -97,19 +92,8 @@ def current_force_pose(sphere, funding, walls, *, max_operator_error, budget):
     The enclosing transaction binds acceptance; this read-only calculation
     cannot publish a trajectory or turn differential plate rates into one Ω.
     """
-    if (type(sphere) is not S.SphereState or type(funding) is not F.FullCellFunding or
-            type(walls) is not W.WallMeasures or type(budget) is not WorkBudget or
-            funding._resource is not budget or walls._resource is not budget):
-        raise TectonicsError('actual source, funding, trajectory and one shared budget required')
     goal = _q(max_operator_error)
-    if not 0 < goal < 1:
-        raise TectonicsError('pose operator budget must be strictly between zero and one')
     source, motion = funding.descriptor(), walls.descriptor()
-    if (source['source']['sphere_state_id'] != sphere.state_id or
-            source['source']['network_id'] != sphere.network.network_id or
-            motion['source'] != source['source'] or motion['funding_id'] != funding.funding_id or
-            motion['collar_plan_id'] != source['collar_plan_id']):
-        raise TectonicsError('current force geometry has stale source/funding/trajectory')
     with budget.reserve(65536+8*len(walls._json), category='current-force-pose'), B._Arena(budget) as arena:
         quaternion, error = E._representative_pose(motion['trajectory']['segments'], goal, arena)
         rotation = V.CartesianCell((0, 0, 0), (1, 1, 1), budget=budget).rotated(quaternion, budget=budget).basis
@@ -157,20 +141,8 @@ def rotated_background(pose, network, exterior, prepared, *, max_torque_error_n_
     Sum-absolute norms bound the Euclidean/operator norms without a rounded
     square root. The caller's angular-rate bound converts these to watts.
     """
-    from . import driving as D
-    if (type(pose) is not CurrentForcePose or type(network) is not S.SphereNetwork or
-            type(exterior) is not D.Balance or type(prepared) is not D.Prepared or pose._resource is not budget):
-        raise TectonicsError('issued current pose and actual source-bound D1 objects required')
     data = pose.descriptor()
-    if (data['source']['network_id'] != network.network_id or exterior.network_id != network.network_id or
-            prepared.network_id != network.network_id or exterior.prepared_id != prepared.prepared_id or
-            exterior.parent_state_id != data['source']['sphere_state_id']):
-        raise TectonicsError('background force source differs from the current trajectory source')
-    if set(exterior.terms)-{'radial_pressure', 'gpe', 'slab_pull'}:
-        raise TectonicsError('only material-attached covariant background loads can be rigidly rotated; external vectors need new current forcing')
     torque_limit, power_limit, rate_limit = map(_q, (max_torque_error_n_m, max_power_error_w, angular_rate_l2_bound_s_inv))
-    if min(torque_limit, power_limit, rate_limit) < 0:
-        raise TectonicsError('nonnegative force/work/rate budgets required')
     n = 3*len(network.plate_ids)
     # Each tensor entry sums nine Q*M*Q products. Product integer widths add;
     # sum widths are bounded by the sum of term widths plus carry bits. Charge
@@ -192,8 +164,6 @@ def rotated_background(pose, network, exterior, prepared, *, max_torque_error_n_
             for a in range(3) for b in range(3)) for j in range(n)) for i in range(n))
         fv = np.asarray(list(map(float, vector)))
         fm = np.asarray([[float(v) for v in row] for row in tensor])
-        if not np.isfinite(fv).all() or not np.isfinite(fm).all():
-            raise TectonicsError('current background cannot be represented in binary64')
         vector_residual = tuple(Q(float(v))-q for v, q in zip(fv, vector))
         matrix_residual = tuple(tuple(Q(float(v))-q for v, q in zip(row, exact)) for row, exact in zip(fm, tensor))
         force_error = pose._error*sum(map(abs, force))+sum(map(abs, vector_residual))

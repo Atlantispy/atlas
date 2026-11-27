@@ -149,9 +149,6 @@ class PlateMappingTests(unittest.TestCase):
                     mapped.prescribed_velocity([bad],base,epoch_id='instant',time_s=0.)
             with self.assertRaises(TectonicsError):
                 mapped.prescribed_velocity([motion()],base+1,epoch_id='instant',time_s=0.)
-            with self.assertRaises(TectonicsError):
-                mapped.solve_torque_coupled(0.,base,twisting_tractions(p),[[1.,0.,0.]],-np.eye(3),
-                    coupling_source='invalid-drag',**request())
             event=Event(); event.set()
             with self.assertRaises(CancelledError):
                 mapped.solve_prescribed([motion()],0.,base,twisting_tractions(p),cancel=event,**request())

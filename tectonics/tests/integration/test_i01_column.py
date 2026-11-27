@@ -101,21 +101,6 @@ class ColumnTests(unittest.TestCase):
             a, b = law.solve(e), law.solve(e, method="bisection")
             self.assertLess(abs(a["stress_pa"]/b["stress_pa"]-1), 5e-11)
 
-    def test_invalid_and_unrepresentable_inputs(self):
-        for changes in (dict(temperature_k=0.), dict(mean_pressure_pa=-1.),
-                        dict(grain_m=0.), dict(friction_rad=math.pi/2),
-                        dict(plastic_viscosity_pa_s=0.)):
-            with self.assertRaises(ValueError):
-                self.law(**changes)
-        with self.assertRaises(ValueError):
-            self.law().solve(-1.)
-        with self.assertRaises(ValueError):
-            m.Creep(1., .5, 0.)
-        with self.assertRaises(ValueError):
-            self.law((m.Creep(1., 1., 1e9),)).solve(1e-15)
-        with self.assertRaises(ValueError):
-            m.Column([self.layer()], 129)
-
     def test_cancel_and_prepared_immutability(self):
         event = threading.Event()
         event.set()

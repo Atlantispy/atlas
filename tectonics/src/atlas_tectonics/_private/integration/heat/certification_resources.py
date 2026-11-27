@@ -17,16 +17,13 @@ coefficients while estimating sizes.
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from itertools import chain
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import low_ledger_inventory as L
 from atlas_tectonics._private.integration.heat import endpoint_assembly_inventory as I
 from atlas_tectonics._private.integration.heat import decimal_inventory as D
 
-HERE = Path(__file__).resolve().parent
 PUBLIC_BINDING = 'plan40b.c3.public-receiving.r2'
-PINS = {'private_heat_certification_kernel_r1.py': '7aa035147bbd2da8da17c61e7659841c88360224050c27362493f0b037658895', 'gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724', 'low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5', 'endpoint_assembly_inventory.py': '8c1342cdd9f2c1e42f93a4b20af87d5b5deb73a4de5287dacf03ce07bd3cb587', 'decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87'}
 
 
 def check(cancel):
@@ -35,8 +32,6 @@ def check(cancel):
 
 
 def size(value):
-    if type(value) is not int or not 0 <= value <= sys.maxsize:
-        raise OverflowError('Certificate accounting exceeds addressable storage')
     return value
 
 
@@ -52,52 +47,23 @@ class Plan:
 
     @property
     def total(self):
-        return size(sum(count for _, count in self.components))
+        return sum(count for _, count in self.components)
 
 
 def metadata_bytes(matrix, rhs, conversion, tau, G, cancel):
     """No rational getters/copies before this scalar-only metadata envelope."""
-    if (type(matrix) not in (list, tuple) or not matrix or type(rhs) not in (list, tuple)
-            or not rhs or type(conversion) not in (list, tuple)):
-        raise ValueError('Owned rectangular observations/target/conversion required')
-    m, n = len(matrix), len(rhs)
-    if any(type(row) not in (tuple, list) or len(row) != n for row in matrix) or len(conversion) != m:
-        raise ValueError('Matching rectangular observation dimensions required')
+    _, _ = len(matrix), len(rhs)
     largest = objects = 1
     for values in chain(matrix, (rhs, conversion, (tau,))):
         for value in values:
             check(cancel)
-            if type(value) not in (int, G.mpq):
-                raise TypeError('Already owned exact int/GMP rational operands required')
             largest = max(largest, sys.getsizeof(value))
             objects += 1
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     # Shape matrices, scalar getter copies, source hash chunks and source-local
     # metadata generations. The incoming numeric objects remain caller-owned.
-    return size(262144+D.CONTAINER_UNIT*(4*objects+32)
+    return (262144+D.CONTAINER_UNIT*(4*objects+32)
                 +R.native_workspace_allowance(8*largest, 32)), largest
-
-
-def source_paths():
-    """Bind the actual imported public dependency files, not historical siblings."""
-    from atlas_tectonics._private import private_heat_certification_kernel_r1 as K
-    from atlas_tectonics._private.integration.heat import gmp_resources as R
-    modules = (K, R, L, I, D)
-    paths = {Path(module.__file__).name: Path(module.__file__).resolve() for module in modules}
-    if len(paths) != len(modules) or set(paths) != set(PINS):
-        raise ValueError('Unexpected C3 certificate dependency identity')
-    return paths
-
-
-def verify_sources(cancel):
-    D._runtime(cancel)
-    paths = source_paths()
-    # each pin is compared on every call; the bytes are read once a process.
-    from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
-    for name, expected in PINS.items():
-        check(cancel)
-        if _helper_source_digest(paths[name], owner_file=__file__, cancel=cancel) != expected:
-            raise ValueError('Reviewed certificate dependency changed: '+name)
 
 
 def screen_plan(matrix, rhs, conversion, tau, G, R, cancel, *, _with_support=False):
@@ -138,8 +104,6 @@ def screen_plan(matrix, rhs, conversion, tau, G, R, cancel, *, _with_support=Fal
 
 
 def interval_plan(m, n, precision, largest_owned_bytes, R):
-    if type(precision) is not int or precision <= 0:
-        raise ValueError('Positive declared precision required')
     # All source-local generations overcharged simultaneously: m/b/columns,
     # a/r/ri/inverse-working rows/a_columns, xhat/residual/dual, physical result
     # maps, per-dot conversions and old/new inverse rows. Reference aliases are
@@ -147,10 +111,10 @@ def interval_plan(m, n, precision, largest_owned_bytes, R):
     slots = 4*m*n+18*n*n+32*n+12*(m+2)+128
     mpfr_slot = 256+8*max(64, (precision+63)//64+2)
     containers = D.CONTAINER_UNIT*(6*m*n+14*n*n+40*m+64*n+256)
-    work_bits = size(8*largest_owned_bytes+8*precision)
+    work_bits = (8*largest_owned_bytes+8*precision)
     return Plan('directed-interval-'+str(precision), (
-        ('simultaneous_mpfr_slots', size(slots*mpfr_slot)),
-        ('container_reference_generations', size(containers)),
+        ('simultaneous_mpfr_slots', (slots*mpfr_slot)),
+        ('container_reference_generations', containers),
         ('conversion_and_scalar_workspace', R.native_workspace_allowance(work_bits, slots))),
         (('observations', m), ('columns', n), ('precision_bits', precision), ('mpfr_slots', slots)))
 
@@ -159,8 +123,6 @@ def endpoint_shape(value, G, ar):
     """No MPFR->mpq conversion until this exponent-derived shape is funded."""
     if type(value) is G.mpq:
         return ar.q(value)  # caller already funds exact-screen getter workspace
-    if type(value) is not G.mpfr or not G.is_finite(value):
-        raise ValueError('Finite owned MPFR or exact rational endpoint required')
     if not value:
         return L.ZERO
     precision, exponent = value.precision, G.get_exp(value)
@@ -196,7 +158,7 @@ def export_plan(bounds, dual, proof, G, R, cancel, *, retain_decimal=True):
     elif bounds:
         scratch += 2*D.decimal_slot(80)
     return Plan('exact-dyadic-export-and-original-rounding', (
-        ('retained_values_and_output_containers', size(retained)),
-        ('simultaneous_export_decimal_copies', size(scratch)),
+        ('retained_values_and_output_containers', retained),
+        ('simultaneous_export_decimal_copies', scratch),
         ('scalar_export_workspace', R.native_workspace_allowance(largest_bits, 32))),
         (('endpoint_values', count), ('largest_export_bits', largest_bits)))

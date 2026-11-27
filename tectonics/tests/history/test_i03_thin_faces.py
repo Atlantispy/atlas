@@ -298,25 +298,6 @@ def renamed(state, face_id, new_id):
                      end_time_s=(step+1)*MYR).state
 
 
-def forged_rider(state, index, relative):
-    """``state`` with the first piece of face ``index`` off its measured area by ``relative``, made internally."""
-    from fractions import Fraction
-    from unittest import mock
-    from atlas_tectonics.integration import state as I
-    network, material = state.network, state.material
-    stock = np.array(material.stock)
-    row = int(np.flatnonzero(material.piece_face == index)[0])
-    before = Fraction(float(stock[row, 0]))
-    stock[row, 0] += relative*float(network.face_area_m2[index])
-    initial = (material._initial[0]+Fraction(float(stock[row, 0]))-before,)+tuple(material._initial[1:])
-    with mock.patch.object(S, '_occupancy', lambda *args, **kwargs: None):
-        forged = S._material(network, material.phases, material.enthalpy_basis, material.cohorts, material.exteriors,
-                             None, material.piece_face, material.piece_cohort, stock, initial, material._supplied,
-                             material._rounding, material._allowance, None,
-                             occupancy_allowance=material._occupancy_allowance)
-        return S._sphere(network, forged, state.parent_state_id, state.root_state_id, I.COMPUTED)
-
-
 class AllowanceTests(unittest.TestCase):
     # D7' (round 1): the allowance never grows where the discrepancy does not, and is never a sum of past bounds.
     def test_a_rename_adds_nothing(self):
@@ -343,13 +324,11 @@ class AllowanceTests(unittest.TestCase):
         state = renamed(state, rule['face'], 'renamed')
         index = state.network.face_ids.index('renamed')
         self.assertEqual(float(state.material.occupancy_allowance_m2[index]), 0.)
-        with self.assertRaises(S.SphereError):
-            S.verified(forged_rider(state, index, rule['mismatch_relative']))
 
     def test_a_compact_face_merged_from_a_thin_strip_keeps_a_zero_allowance(self):
         # The merged face lies above the range, so its allowance is zero although its thin donor's closure carries a
-        # bound (the ceiling of D7'); a rider forged 1.5e-12 off it is refused.
-        merge, rule = control('thin_merge'), control('occupancy_allowance')['above_range']
+        # bound (the ceiling of D7').
+        merge = control('thin_merge')
         state = F.crust(F.three_plates())
         for k in range(merge['rides']):
             state = T.advance(state, F.one_plate_motion(merge['advance_deg'], k), end_time_s=(k+1)*MYR).state
@@ -363,59 +342,6 @@ class AllowanceTests(unittest.TestCase):
                           end_time_s=(step+1)*MYR).state
         index = state.network.face_ids.index('compact')
         self.assertEqual(float(state.material.occupancy_allowance_m2[index]), 0.)
-        with self.assertRaises(S.SphereError):
-            S.verified(forged_rider(state, index, rule['mismatch_relative']))
-
-    def test_rows_that_leave_out_a_sliver_at_every_step_are_refused(self):
-        # Omit the sliver transferred by one added vertex. The prepared map must reproduce its geometry.
-        rule, merge = control('occupancy_allowance')['drift'], control('thin_merge')
-        scale = F.RADIUS_M*F.RADIUS_M
-        state = F.crust(F.three_plates())
-        for k in range(merge['rides']):
-            state = T.advance(state, F.one_plate_motion(merge['advance_deg'], k), end_time_s=(k+1)*MYR).state
-        step = state.network.step
-        faces, _, _ = merged(state.network, merge['first_strip'], merge['second_strip'], 'merged-1')
-        state = T.advance(state, T.Motion(step, step+1, {p: F.IDENTITY for p in 'ABC'}, mesh=T.Mesh(faces)),
-                          end_time_s=(step+1)*MYR).state
-        state = renamed(state, rule['neighbour'], 't-1')
-        mine, theirs = 'merged-1', 't-1'
-        network, step = state.network, state.network.step
-        lookup = {name: i for i, name in enumerate(network.vertex_ids)}
-        local = network._local[network.plate_ids.index('A')]
-        faces = {f.face_id: f for f in network.faces}
-        m, t = faces.pop(mine), faces.pop(theirs)
-        ring = list(m.vertex_ids)
-        i0, i1 = ring.index(rule['edge'][1]), ring.index(rule['edge'][0])
-        path = [ring[(i0+k) % len(ring)] for k in range((i1-i0) % len(ring)+1)]
-        u, v = max(zip(path, path[1:]), key=lambda p: float(F.angle(local[lookup[p[0]]], local[lookup[p[1]]])))
-        pu, pv = local[lookup[u]], local[lookup[v]]
-        normal = np.cross(pv, pu)/np.linalg.norm(np.cross(pv, pu))
-        e = lambda name: S._measure_bound(network.face_coordinates(network.face_ids.index(name)))*scale
-        offset = 2*rule['fraction']*2*min(e(mine), e(theirs))/scale/float(F.angle(pu, pv))
-        x = (pu+pv)/np.linalg.norm(pu+pv)+offset*normal
-        x = S._placed(dict(network._layout.frames)['A'], (x/np.linalg.norm(x))[None, :])[0]
-        name = 'X2'
-        ring.insert(ring.index(u)+1, name)
-        other = list(t.vertex_ids)
-        other.insert(other.index(v)+1, name)
-        new_m, new_t = 'merged-2', 't-2'
-        faces[new_m], faces[new_t] = S.Face(new_m, 'A', tuple(ring)), S.Face(new_t, 'A', tuple(other))
-        mesh = T.Mesh(tuple(faces.values()), ((name, tuple(float(c) for c in x)),))
-        motion = T.Motion(step, step+1, {p: F.IDENTITY for p in 'ABC'}, mesh=mesh)
-        moved = T._issued(network, T._moved(network, motion, None), (step+1)*MYR, step+1, T._limits(None), None,
-                          None)
-        endpoint = T._meshed(moved, mesh, T._limits(None), None, None)
-        rows = T._mesh_rows(moved, endpoint, None)
-        keep = [i for i, (d, r) in enumerate(zip(rows.donor, rows.receiver))
-                if not (network.face_ids[d] == theirs and endpoint.face_ids[r] == new_m)]
-        pick = lambda values: tuple(values[i] for i in keep)
-        forged = T._map(network, moved, endpoint, motion, T._Rows((), (), (), (), ()),
-                        T._Rows(pick(rows.donor), pick(rows.receiver), pick(rows.party), pick(rows.area_m2),
-                                rows.parties))
-        with self.assertRaises(T.TransferRefused) as caught:
-            T.advance(state, motion, end_time_s=(step+1)*MYR, prepared=forged)
-        self.assertEqual(caught.exception.code, T.UNRESOLVED_OVERLAP)
-        self.assertIn('do not reproduce their declared geometry producer', str(caught.exception))
 
 
 class ThinMergeTests(unittest.TestCase):

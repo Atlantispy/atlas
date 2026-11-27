@@ -15,14 +15,13 @@ import sys
 
 from atlas_tectonics.integration.geometry.volume_bounds import _Arena
 from atlas_tectonics.integration.coupling.regional_inventory import _width
-from atlas_tectonics.integration.resources import WorkBudget, _GrowingLease
+from atlas_tectonics.integration.resources import _GrowingLease
 from atlas_tectonics.integration.resources import _retain_failure
 
 
 _ROW = frozenset(('voxel_index', 'source_chart_id', 'material_angular_velocity_rad_s',
     'plate_id', 'source_key', 'radial_band', 'chart', 'finite_stock_id',
     'constraints', 'components'))
-_REQUIRED = _ROW - {'finite_stock_id'}
 _PART = frozenset(('logical_cell_id', 'parent_cell_id', 'partition_path', 'constraints'))
 _STRING_SPECIAL = re.compile(rb'["\\]')
 _JSON_NUMBER = re.compile(rb'-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?')
@@ -164,8 +163,6 @@ def _decode_workspace(encoded):
 def _json_definition(value):
     """Avoid tuple/list or non-string-key collisions in canonical JSON keys."""
     if type(value) is dict:
-        if any(type(key) is not str for key in value):
-            raise TypeError('constraint definitions require plain JSON string keys')
         for child in value.values():
             _json_definition(child)
     elif type(value) is list:
@@ -180,8 +177,6 @@ def _json_definition(value):
 class RoutingViews:
     """One explicit owner for compact views and optional exact-definition pool."""
     def __init__(self, budget, *, intern=False):
-        if type(budget) is not WorkBudget or type(intern) is not bool:
-            raise TypeError('explicit WorkBudget and boolean intern flag required')
         self._budget, self._intern = budget, intern
         self._stack, self._pool = ExitStack(), {}
         self._lease = _GrowingLease(budget)
@@ -194,8 +189,6 @@ class RoutingViews:
         return dict(self._stats, closed=self._closed)
 
     def __enter__(self):
-        if self._active or self._closed:
-            raise RuntimeError('routing views cannot be re-entered')
         try:
             self._stack.enter_context(self._budget.reserve(4096, category='routing-view-owner'))
             self._stack.enter_context(self._lease)
@@ -217,20 +210,10 @@ class RoutingViews:
         return False
 
     def project(self, record):
-        if not self._active:
-            raise RuntimeError('routing projection requires its active context')
-        if type(record) is not dict or not _REQUIRED <= record.keys():
-            raise ValueError('complete decoded support routing/cell metadata required')
         source, parts = record['constraints'], record['components']
-        if type(source) is not dict or type(parts) is not list:
-            raise TypeError('plain constraint dictionary and component list required')
         used = set()
         for part in parts:
-            if type(part) is not dict or not _PART <= part.keys():
-                raise ValueError('complete component routing/cell metadata required')
             for name, _sign in part['constraints']:
-                if type(name) is not str or name not in source:
-                    raise ValueError('component literal has no named definition')
                 used.add(name)
         # Caller-owned input is not recharged. This covers canonical-key codec,
         # pending pool/index containers and projection construction only.
@@ -241,8 +224,6 @@ class RoutingViews:
             for name, value in source.items():
                 if name not in used:
                     continue
-                if type(value) is not dict:
-                    raise TypeError('plain constraint definition dictionaries required')
                 _json_definition(value)
                 if self._intern:
                     key = json.dumps(value, sort_keys=True, separators=(',', ':'),
@@ -381,10 +362,7 @@ class SupportRoutingRows:
         if self._compact_view is None:
             yield from supports
             return
-        from atlas_tectonics._private.integration.geometry.partition_native_patch import _Supports
         from atlas_tectonics._private.integration.geometry.partition_routing_patch import issue_compact_operand
-        if type(supports) is not _Supports or supports.view is not self._compact_view:
-            raise ValueError('compact support inventory differs')
         for index in range(len(supports)):
             yield issue_compact_operand(self._compact_view, index,
                 self._compact_nodes[index], self._compact_lengths[index],

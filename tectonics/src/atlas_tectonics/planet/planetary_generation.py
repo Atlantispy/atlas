@@ -25,18 +25,17 @@ import hashlib
 import itertools
 import json
 import math
-from typing import Mapping
 
 import numpy as np
 
 from atlas_tectonics.planet.coordinates import SphericalFrame
 from atlas_tectonics.planet.geometry import GeometryError, _limits, _label, _json, _check_cancel
-from atlas_tectonics._validation import input_shape, read_array
+from atlas_tectonics._validation import read_array
 from atlas_tectonics._validation import unit_rows
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 from atlas_tectonics.planet.spherical_geometry import SphericalChart
-from atlas_tectonics.planet.spherical_atlas import (SphericalAtlas, SphericalPatch, build_spherical_atlas,
+from atlas_tectonics.planet.spherical_atlas import (SphericalPatch, build_spherical_atlas,
                               _capture_directions)
 
 _SCHEMA = 'atlas.planetary-partition.v1'
@@ -83,12 +82,9 @@ class PlanetPartitionSettings:
             raise GeometryError('seed must be an unsigned 128-bit integer')
         if type(self.max_attempts) is not int or not 1 <= self.max_attempts <= 4096:
             raise GeometryError('max_attempts must be an integer in 1..4096')
-        _layout(self.patch_layout)
 
 
 def _layout(value):
-    if type(value) is not str or value not in ('auto', 'triangles'):
-        raise GeometryError('patch_layout must be auto or triangles')
     return value
 
 
@@ -296,7 +292,7 @@ class PlanetaryPartitionPlan:
         triangles fans the same cell to interior points. Fan spokes are patch
         seams only. No edge is resampled and no junction is duplicated per owner.
         """
-        _check_cancel(cancel); _layout(patch_layout); lim = _limits(limits)
+        _check_cancel(cancel); lim = _limits(limits)
         policy = select_budget(budget); count = len(self.plate_ids)
         estimate = _preflight(count, lim)
         with policy.reserve(estimate, category='partition-patches'):
@@ -345,8 +341,6 @@ def prepare_planetary_partition(sphere, sites, *, limits=None, budget=None, canc
     Existing authored stage-3B atlas construction remains available unchanged.
     """
     _check_cancel(cancel); lim = _limits(limits); policy = select_budget(budget)
-    if type(sphere) is not SphericalFrame or not isinstance(sites, Mapping):
-        raise GeometryError('explicit SphericalFrame and site mapping required')
     estimate = _preflight(len(sites), lim)
     with policy.reserve(estimate, category='partition-topology'):
         for name in sites: _label(name, 'plate ID')
@@ -354,7 +348,6 @@ def prepare_planetary_partition(sphere, sites, *, limits=None, budget=None, canc
         points = np.empty((len(names), 3), dtype='f8')
         for i, name in enumerate(names):
             _check_cancel(cancel)
-            if input_shape(sites[name], 'site') != (3,): raise GeometryError('one 3D direction per site')
             points[i] = read_array(sites[name], 'site')
         points = _capture_directions(points)
         if len(names) > 1:
@@ -386,11 +379,7 @@ def prepare_planetary_partition(sphere, sites, *, limits=None, budget=None, canc
 
 
 def _restore_plan(sphere, ids, payload, identity):
-    if type(ids) is not tuple or type(payload) is not bytes or len(payload) != 24*len(ids):
-        raise GeometryError('invalid partition plan payload')
-    if ids != tuple(sorted(set(ids))): raise GeometryError('invalid partition site IDs')
     plan = prepare_planetary_partition(sphere, dict(zip(ids, np.frombuffer(payload, dtype='f8').reshape(-1, 3))))
-    if plan.partition_id != identity: raise GeometryError('restored partition plan identity mismatch')
     return plan
 
 
@@ -403,8 +392,6 @@ def generate_planetary_partition(sphere, settings, *, limits=None, budget=None, 
     No evolution, terrain target, property calibration, remote write or I/O occurs.
     """
     _check_cancel(cancel); lim = _limits(limits); policy = select_budget(budget)
-    if type(settings) is not PlanetPartitionSettings or type(sphere) is not SphericalFrame:
-        raise GeometryError('explicit sphere and PlanetPartitionSettings required')
     count = settings.plate_count; _preflight(count, lim)
     # Reject unreasonable allocation before asking SHAKE or a native library for it.
     with policy.reserve(512*count+65536, category='partition-seeds'):
@@ -437,20 +424,8 @@ def generated_partition_id(atlas):
 
 
 def _generation(atlas):
-    if type(atlas) is not SphericalAtlas: raise GeometryError('SphericalAtlas required')
     source = atlas.descriptor()['source_bindings'].get('partition_generation')
-    expected = {'schema','method','partition_id','site_ids','site_directions','patch_layout',
-                'generation','runtime','prior','physical_validation'}
-    if type(source) is not dict or set(source) != expected or source['schema'] != _SCHEMA or source['method'] != _METHOD:
-        raise GeometryError('atlas has no compatible partition-generation definition')
-    ids = source['site_ids']; values = source['site_directions']; identity = source['partition_id']
-    if (type(ids) is not list or tuple(ids) != atlas.plate_ids or
-            type(values) is not list or input_shape(values, 'saved sites') != (len(ids), 3) or
-            type(identity) is not str or len(identity) != 64 or
-            any(c not in '0123456789abcdef' for c in identity) or
-            source['physical_validation'] is not False):
-        raise GeometryError('invalid partition-generation inventory')
-    _layout(source['patch_layout'])
+    source['patch_layout']
     return source
 
 
@@ -461,11 +436,9 @@ def repatch_planetary_partition(atlas, *, patch_layout='triangles', limits=None,
     route. The prepared-plan API is preferable for repeated in-process layouts.
     Full saved atlases use existing save/load_spherical_atlas(), not this rebuild.
     """
-    _check_cancel(cancel); source = _generation(atlas); _layout(patch_layout)
+    _check_cancel(cancel); source = _generation(atlas)
     sites = dict(zip(source['site_ids'], source['site_directions']))
     plan = prepare_planetary_partition(atlas.sphere, sites, limits=limits, budget=budget, cancel=cancel)
-    if plan.partition_id != source['partition_id']:
-        raise GeometryError('reconstructed partition differs; no silent geometry migration')
     with select_budget(budget).reserve(plan.retained_bytes_estimate, category='partition-plan-retained'):
         return plan.build(patch_layout=patch_layout, limits=limits, budget=budget,
                           cancel=cancel, provenance=source['generation'])

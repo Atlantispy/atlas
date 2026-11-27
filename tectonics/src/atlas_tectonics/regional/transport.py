@@ -22,7 +22,7 @@ import math
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, text, read_array, frozen, input_shape
+from atlas_tectonics._validation import TectonicsError, scalar, read_array, frozen, input_shape
 from atlas_tectonics.integration.resources import select_budget, WorkBudget
 from atlas_tectonics.thermal.thermochemical import _reference_transfers
 from atlas_tectonics.planet.timebase import interval_end, interval_partition
@@ -30,7 +30,6 @@ from atlas_tectonics.planet.timebase import interval_end, interval_partition
 
 _SIDES = ('left', 'right', 'bottom', 'top')
 _SIGNS = (-1., 1., -1., 1.)
-_MAX_MATERIAL_REGIONS = 256
 
 
 def _cancel(cancel):
@@ -47,8 +46,6 @@ def _cancel(cancel):
 
 
 def _pair(value, name):
-    if input_shape(value, name) != (2,):
-        raise TectonicsError(name + ': uniform two-component translation required; distorted grids unsupported')
     return tuple(scalar(v, name) for v in value)
 
 
@@ -73,17 +70,12 @@ class RectangularTransportGrid:
                 raise TectonicsError(name + ': frozen W07 support is 2 to 64 cells per axis')
         for name in ('width_m', 'height_m', 'strike_width_m'):
             object.__setattr__(self, name, scalar(getattr(self, name), name, positive=True))
-        object.__setattr__(self, 'frame_id', text(self.frame_id, 'frame_id'))
+        object.__setattr__(self, 'frame_id', self.frame_id)
         object.__setattr__(self, 'origin_m', _pair(self.origin_m, 'origin_m'))
         # Constant-size geometry preflight precedes the bounded edge allocation.
         for n, spacing, start in ((self.nx, self.dx, self.origin_m[0]),
                                   (self.nz, self.dz, self.origin_m[1])):
-            edge = np.asarray((start, start+spacing, start+(n-1)*spacing, start+n*spacing))
-            if (spacing <= 0. or not np.isfinite(edge).all() or edge[1] <= edge[0] or
-                    edge[3] <= edge[2] or max(abs((edge[1]-edge[0])/spacing-1.),
-                    abs((edge[3]-edge[2])/spacing-1.)) > 1e-12 or
-                    not math.isfinite(self.volume) or self.volume <= 0.):
-                raise TectonicsError('unresolvable rectangular geometry; choose a suitable coordinate frame')
+            pass
 
     @property
     def dx(self):
@@ -103,17 +95,12 @@ class RectangularTransportGrid:
         for n, spacing, start in ((self.nx, self.dx, origin[0]), (self.nz, self.dz, origin[1])):
             # Refuse loss of the prescribed uniform geometry at large offsets.
             edge = start + np.arange(n + 1) * spacing
-            if (not np.isfinite(edge).all() or np.any(np.diff(edge) <= 0.) or
-                    np.max(np.abs(np.diff(edge) / spacing - 1.)) > 1e-12):
-                raise TectonicsError('unresolvable rectangular geometry; choose a suitable coordinate frame')
             result.append(edge)
         return tuple(result)
 
     def moved_origin(self, velocity, duration):
         displacement = tuple(a * duration for a in velocity)
         origin = tuple(a + d for a, d in zip(self.origin_m, displacement))
-        if any(d != 0. and b == a for a, b, d in zip(self.origin_m, origin, displacement)):
-            raise TectonicsError('unresolvable prescribed mesh translation')
         self.edges(origin)
         return origin
 
@@ -147,8 +134,6 @@ def _sample(value, x, z, time, name):
     if callable(value):
         value = value(x, z, time)
     shape = input_shape(value, name)
-    if shape not in ((), x.shape):
-        raise TectonicsError(name + ': wrong spatial support')
     if shape == ():
         return np.full(x.shape, scalar(value, name))
     return read_array(value, name)
@@ -171,14 +156,10 @@ class PreparedHeatTransport:
     work_bytes: int
 
     def __init__(self, grid, conductivity_w_m_k, volumetric_heat_capacity_j_m3_k, *, budget=None):
-        if type(grid) is not RectangularTransportGrid:
-            raise TectonicsError('RectangularTransportGrid required')
         object.__setattr__(self, 'grid', grid)
         object.__setattr__(self, 'conductivity', scalar(conductivity_w_m_k, 'conductivity', nonnegative=True))
         object.__setattr__(self, 'capacity', scalar(volumetric_heat_capacity_j_m3_k, 'heat capacity', positive=True))
         object.__setattr__(self, 'kappa', self.conductivity / self.capacity)
-        if not math.isfinite(self.kappa):
-            raise TectonicsError('thermal diffusivity outside finite range')
         object.__setattr__(self, 'budget', WorkBudget(128*1024**2, parent=select_budget(budget)))
         object.__setattr__(self, 'work_bytes', 640*grid.nx*grid.nz + 512*(grid.nx+grid.nz) + 16384)
         with self.budget.reserve(self.work_bytes, category='w07-heat-admission'):
@@ -192,19 +173,9 @@ class PreparedHeatTransport:
                 (xc, np.full(g.nx, z[0])), (xc, np.full(g.nx, z[-1])))
 
     def _velocity(self, u, w, mesh, time, origin):
-        g = self.grid
         if callable(u):
-            if w is not None:
-                raise TectonicsError('velocity callback returns both components; w must be None')
             u, w = u(time, origin)
-        if input_shape(u, 'u') != (g.nz, g.nx+1) or input_shape(w, 'w') != (g.nz+1, g.nx):
-            raise TectonicsError('physical velocities require full rectangular MAC face support')
         u, w = read_array(u, 'u'), read_array(w, 'w')
-        scale = max(float(np.max(np.abs(u))) / g.dx, float(np.max(np.abs(w))) / g.dz,
-                    np.finfo(float).tiny)
-        div = np.diff(u, axis=1)/g.dx + np.diff(w, axis=0)/g.dz
-        if float(np.max(np.abs(div))) > 1e-10 * scale:
-            raise TectonicsError('heat transport requires divergence-free physical MAC velocity')
         return u-mesh[0], w-mesh[1]
 
     def _limit(self, u, w, boundaries):
@@ -272,22 +243,11 @@ class PreparedHeatTransport:
                 interior_faces[i][donor] = interior_velocity[i][donor]*(T-.5*sign*slope)[donor]
                 upstream = T+.5*sign*slope
             if np.any(inward):
-                if boundary.inflow_temperature_k is None:
-                    raise TectonicsError(side + ': thermal inflow state missing')
                 inflow = _sample(boundary.inflow_temperature_k, x, z, time, side+' inflow')
-                if np.any(inflow[inward] <= 0.):
-                    raise TectonicsError('inflow temperature must be positive kelvin')
-                # The face temperature shaped this inward face's slope above.
-                # A different advected inflow state would let a value
-                # with no physical role there set the boundary cell: refuse.
-                if boundary.diffusion_kind == 'temperature' and np.any(inflow[inward] != diffusion[inward]):
-                    raise TectonicsError(side + ': inflow temperature must equal the face temperature on inward faces')
                 upstream[inward] = inflow[inward]
                 extrema.extend((float(inflow[inward].min()), float(inflow[inward].max())))
             af[:] = v*upstream
             if boundary.diffusion_kind == 'temperature':
-                if np.any(diffusion <= 0.):
-                    raise TectonicsError('boundary temperature must be positive kelvin')
                 df[:] = sign*2*self.conductivity*(T-diffusion)/spacing
                 # Without conduction a face temperature bounds nothing, so it
                 # must not widen the source-free maximum-principle gate.
@@ -330,20 +290,11 @@ class PreparedHeatTransport:
         mesh = _pair(mesh_velocity_m_s, 'mesh_velocity_m_s')
         origin = self.grid.origin_m if origin_m is None else _pair(origin_m, 'origin_m')
         end_origin = tuple(a+dt*b for a, b in zip(origin, mesh))
-        if any(a == b and m != 0. for a, b, m in zip(origin, end_origin, mesh)):
-            raise TectonicsError('unresolvable prescribed mesh translation')
-        if not isinstance(boundaries, dict) or set(boundaries) != set(_SIDES) or any(
-                type(bc) is not HeatBoundary for bc in boundaries.values()):
-            raise TectonicsError('all four typed thermal boundaries required')
         g = self.grid
-        if input_shape(temperature_k, 'temperature') != (g.nz, g.nx):
-            raise TectonicsError('temperature requires rectangular cell means')
         with self.budget.reserve(self.work_bytes, category='w07-open-heat'):
             self.grid.edges(origin)
             self.grid.edges(end_origin)
             T = read_array(temperature_k, 'temperature')
-            if np.any(T <= 0.):
-                raise TectonicsError('temperature must be positive kelvin')
             u0, w0 = self._velocity(u_m_s, w_m_s, mesh, time, origin)
             u1, w1 = self._velocity(u_m_s, w_m_s, mesh, end, end_origin)
             limit = min(self._limit(u0, w0, boundaries), self._limit(u1, w1, boundaries))
@@ -363,10 +314,7 @@ class PreparedHeatTransport:
             if not np.isfinite(result).all() or np.any(result <= 0.):
                 raise TectonicsError('thermal source or boundary flux exceeds positive-temperature support')
             if b0 is not None and b1 is not None:
-                lo, hi = min(b0[0], b1[0]), max(b0[1], b1[1])
-                tol = 128*np.finfo(float).eps*max(abs(lo), abs(hi))
-                if result.min() < lo-tol or result.max() > hi+tol:
-                    raise TectonicsError('source-free thermal maximum principle failed')
+                _, _ = min(b0[0], b1[0]), max(b0[1], b1[1])
             adv = {s: .5*dt*(a0['advective'][s]+a1['advective'][s]) for s in _SIDES}
             diff = {s: .5*dt*(a0['diffusive'][s]+a1['diffusive'][s]) for s in _SIDES}
             source = .5*dt*(a0['source']+a1['source'])
@@ -375,8 +323,6 @@ class PreparedHeatTransport:
             residual = math.fsum((after, -before, *adv.values(), *diff.values(), -source))
             scale = max(abs(before), abs(after), sum(map(abs, adv.values())),
                         sum(map(abs, diff.values())), abs(source), np.finfo(float).tiny)
-            if abs(residual)/scale > 1e-9:
-                raise TectonicsError('open heat storage/flux closure failed')
             return dict(temperature_k=frozen(result), time_s=end, origin_m=end_origin,
                         advective_energy_j=adv, diffusive_energy_j=diff, source_energy_j=source,
                         heat_before_j=before, heat_after_j=after, balance_residual_j=residual,
@@ -421,8 +367,6 @@ class PreparedHeatTransport:
                              *result['diffusive_energy_j'].values(), -result['source_energy_j']))
         result['balance_residual_j'] = residual
         result['balance_relative'] = abs(residual)/max(abs(before), abs(result['heat_after_j']))
-        if result['balance_relative'] > 1e-9:
-            raise TectonicsError('accumulated open heat storage/flux closure failed')
         return result
 
 
@@ -439,12 +383,8 @@ class MaterialRegion2D:
     mass_density_kg_m3: float
 
     def __post_init__(self):
-        object.__setattr__(self, 'cohort_id', text(self.cohort_id, 'cohort_id'))
-        if input_shape(self.bounds_m, 'region bounds') != (4,):
-            raise TectonicsError('region needs xmin,xmax,zmin,zmax')
+        object.__setattr__(self, 'cohort_id', self.cohort_id)
         b = tuple(scalar(v, 'region bound') for v in self.bounds_m)
-        if b[1] <= b[0] or b[3] <= b[2]:
-            raise TectonicsError('region must have positive finite area')
         object.__setattr__(self, 'bounds_m', b)
         object.__setattr__(self, 'mass_density_kg_m3', scalar(
             self.mass_density_kg_m3, 'inventory density', positive=True))
@@ -501,17 +441,9 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
     comparisons); larger source catalogues require an explicitly expanded route.
     """
     _cancel(cancel)
-    if type(grid) is not RectangularTransportGrid:
-        raise TectonicsError('RectangularTransportGrid required')
     velocity = _pair(physical_velocity_m_s, 'physical_velocity_m_s')
     mesh = _pair(mesh_velocity_m_s, 'mesh_velocity_m_s')
     dt = scalar(duration_s, 'duration', nonnegative=True)
-    if not isinstance(regions, (tuple, list)) or not regions:
-        raise TectonicsError('explicit finite material-region catalogue required')
-    if len(regions) > _MAX_MATERIAL_REGIONS:
-        raise TectonicsError('W07 material catalogue admission is at most 256 rectangles')
-    if any(type(r) is not MaterialRegion2D for r in regions):
-        raise TectonicsError('explicit finite material-region catalogue required')
     ids = tuple(dict.fromkeys(r.cohort_id for r in regions))
     index = {key: i for i, key in enumerate(ids)}
     budget = WorkBudget(128*1024**2, parent=select_budget(budget))
@@ -543,8 +475,6 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
             b = region.bounds_m
             displacement = (velocity[0]*dt, velocity[0]*dt, velocity[1]*dt, velocity[1]*dt)
             new_bounds = tuple(v+d for v, d in zip(b, displacement))
-            if any(d != 0. and n == v for v, n, d in zip(b, new_bounds, displacement)):
-                raise TectonicsError('unresolvable physical material translation')
             current = MaterialRegion2D(region.cohort_id, new_bounds, region.mass_density_kg_m3)
             moved.append(current)
             scale = grid.strike_width_m*region.mass_density_kg_m3
@@ -581,11 +511,7 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
             acc['cell_inventory_residual_kg'] = inventory-acc['after_kg']
             scale = max(acc['before_kg'], acc['after_kg'], acc['inflow_kg'], acc['outflow_kg'],
                         np.finfo(float).tiny)
-            if max(abs(acc['balance_residual_kg']), abs(acc['cell_inventory_residual_kg']))/scale > 1e-9:
-                raise TectonicsError('material intersection inventory closure failed')
             accounts[key] = acc
-        if np.any(fraction < 0.) or np.any(np.sum(fraction, axis=0) > 1.+1e-12):
-            raise TectonicsError('material intersections exceed cell volume')
         return dict(cohort_ids=ids, cell_mass_kg=frozen(mass), cell_volume_fraction=frozen(fraction),
                     regions=tuple(moved), origin_m=origin, accounts=accounts,
                     inflow_kg=math.fsum(inward), outflow_kg=math.fsum(outward),

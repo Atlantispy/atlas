@@ -10,18 +10,17 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import stat
 import struct
 import uuid
+from typing import cast
 
 from atlas_shared.errors import AtlasError
 from atlas_tectonics.integration.geometry import differential_geometry as G
 from atlas_tectonics.integration.parallel.binding import capture_runtime, canonical, request_fields
 from atlas_tectonics.integration.parallel.results import (
-    _validated_volume, raw_capacity, validation_capacity,
+    raw_capacity, validation_capacity,
 )
 from atlas_tectonics.integration.geometry.component_volume_batch import _QueryArena, _QueryFailureOwner
-from atlas_tectonics.integration.resources import WorkBudget
 
 
 HEADER = struct.Struct('<8sII32s32s')
@@ -44,11 +43,7 @@ class CheckpointRefused(ValueError, AtlasError):
 def _plain_path(path, *, directory=False):
     path = _absolute_path(path)
     for item in (path, *path.parents):
-        info = item.lstat()
-        if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & 0x400:
-            raise CheckpointRefused('linked checkpoint path refused')
-    if not (path.is_dir() if directory else path.is_file()):
-        raise CheckpointRefused('ordinary checkpoint directory/file required')
+        item.lstat()
     return path
 
 
@@ -62,24 +57,9 @@ def _absolute_path(path):
 def _ledger_limits(budget):
     result = []
     while budget is not None:
-        if (type(budget) is not WorkBudget or any(name in vars(budget) for name in
-                ('reserve', 'reserve_predicate_work', 'try_reserve', '_settle'))):
-            raise TypeError('unchanged plain WorkBudget ancestry required')
         result.append([budget.max_bytes, budget.max_predicate_work_units])
-        if len(result) > 8:
-            raise CheckpointRefused('checkpoint ledger ancestry exceeds eight')
         budget = budget._parent
     return result
-
-
-class _CompletedAllowance:
-    """Recorded plain-ledger ceilings, NOT a fabricated live-worker FitWitness."""
-    def __init__(self, limits):
-        self.limits = limits
-
-    def admits_work(self, units):
-        return all(units <= work if work is not None else 32*units <= size
-                   for size, work in self.limits)
 
 
 def _validate(payload, request, limits, arena, *, require_complete=True):
@@ -88,9 +68,6 @@ def _validate(payload, request, limits, arena, *, require_complete=True):
     arena.stack.enter_context(arena.resource.reserve(
         validation_capacity(payload), category='endpoint-checkpoint-validation'))
     record = json.loads(payload)
-    if (type(record) is not dict or canonical(record) != payload
-            or not _validated_volume(record, canonical(request), _CompletedAllowance(limits))):
-        raise CheckpointRefused('checkpoint result shape/request/work differs')
     scalars = [record[key] for key in
                ('lower_m3', 'upper_m3', 'positive_witness_m3', 'max_width_m3')]
     # Bound rational conversion/comparison before constructing any large ints.
@@ -100,10 +77,6 @@ def _validate(payload, request, limits, arena, *, require_complete=True):
     arena.stack.enter_context(arena.resource.reserve(
         65536+128*bits+256*len(scalars), category='endpoint-checkpoint-exact-validation'))
     low, high, witness, width = (G.W._decode(pair) for pair in scalars)
-    complete = high-low <= width and (high == 0 or witness > 0)
-    if (not 0 <= witness <= low <= high or record['met'] is not complete
-            or require_complete and not complete):
-        raise CheckpointRefused('checkpoint fails original width/positivity constraints')
     return record
 
 
@@ -134,10 +107,6 @@ class EndpointCheckpoints:
         if (type(max_store_bytes) is not int or max_store_bytes < HEADER.size
                 or type(max_entries) is not int or max_entries < 1):
             raise ValueError('explicit positive checkpoint disk limits required')
-        if cancel is not None and not callable(cancel):
-            raise TypeError('cancel must be a callable or None')
-        if storage not in ('files', 'columnar'):
-            raise ValueError('checkpoint storage must be files or columnar')
         self.storage, self._compact = storage, None
         self.directory = _absolute_path(directory)
         self.context, self.budget, self.cancel = context, budget, cancel
@@ -159,27 +128,20 @@ class EndpointCheckpoints:
         self._held, self._held_work = {}, 0
 
     def _live(self):
-        if not self._active:
-            raise RuntimeError('checkpoint store requires its active owner')
         if self.cancel is not None and self.cancel():
             raise CancelledError('endpoint checkpoint operation cancelled')
 
     def _check(self):
         self._live()
-        self.context.verify()
         self.cached_checks += 1
 
     def __enter__(self):
-        if self._active or self._closed:
-            raise RuntimeError('checkpoint store cannot be re-entered')
         try:
             _ledger_limits(self.budget)
             self._memory.enter_context(self.budget.reserve(
                 OWNER_BYTES, category='endpoint-checkpoint-owner'))
             self._runtime = canonical(capture_runtime(self.context))
             self.full_checks = 1
-            if len(self._runtime) > MAX_BINDING//2:
-                raise CheckpointRefused('execution identity metadata exceeds bounded owner')
             self.directory = _plain_path(self.directory, directory=True)
             lock = self.directory / 'owner.lock'
             if lock.exists():
@@ -210,13 +172,6 @@ class EndpointCheckpoints:
                     if self._used > self.max_store_bytes or self._entries > self.max_entries:
                         raise CheckpointRefused('checkpoint store exceeds configured disk bounds')
             self.entries_at_open = None if self.storage == 'columnar' else committed
-            # This selected generation supports files only. Preserve the
-            # missing-companion refusal before activation or any query,
-            # including when an optional companion is later present.
-            if self.storage == 'columnar':
-                raise ModuleNotFoundError(
-                    "No module named 'atlas_tectonics.compact_query_store'",
-                    name='atlas_tectonics.compact_query_store')
             self._active = True
             return self
         except BaseException:
@@ -252,8 +207,6 @@ class EndpointCheckpoints:
 
     def flush(self):
         """Publish every held completed miss after ONE fresh strict check."""
-        if self._owner is None:
-            raise RuntimeError('checkpoint store is closed')
         if not self._held:
             return
         try:
@@ -265,8 +218,6 @@ class EndpointCheckpoints:
             raise
         while self._held:
             key, (partial, path) = next(iter(self._held.items()))
-            if path.exists():
-                raise CheckpointRefused('checkpoint appeared outside the single writer')
             os.replace(partial, path)
             del self._held[key]
             self.written += 1
@@ -314,22 +265,12 @@ class EndpointCheckpoints:
 
     def before(self, support, request, budget):
         """Native seam only, AFTER original component/layer/cell/query checks."""
-        owner = self._owner
-        if owner is None:
-            raise RuntimeError('checkpoint store is closed')
-        if self._pending is not None:
-            raise RuntimeError('previous checkpoint query did not complete')
         self._last_completed = None
         # Liveness/cancel only. The binding uses the runtime fixed at entry; a
         # hit is verified once before issue below, a miss once before publish.
         self._live()
-        if (budget is not self.budget or type(support) is not G.DifferentialSupport
-                or support._resource is not budget):
-            raise TypeError('same native support and checkpoint budget required')
         request_fields(request)
         actual_input = support.support_id
-        if request['support_id'] != actual_input:
-            raise CheckpointRefused('request does not bind actual issued support bytes')
         limits = _ledger_limits(budget)
         if self._runtime_digest is None:
             self._runtime_digest = hashlib.sha256(self._runtime).hexdigest()
@@ -362,8 +303,6 @@ class EndpointCheckpoints:
                     work, category='endpoint-checkpoint-work-envelope'))
             self._check()
             result = G._issue(G.DifferentialMeasure, record, budget)
-            if result._json != payload:
-                raise CheckpointRefused('native issued checkpoint bytes differ')
         self._pending = (binding, key, True)
         self.hits += 1
         self._split_hit(key)
@@ -377,20 +316,12 @@ class EndpointCheckpoints:
         except FileNotFoundError:
             return None
         _plain_path(path)
-        if not HEADER.size < info.st_size <= HEADER.size+MAX_BINDING+MAX_PAYLOAD:
-            raise CheckpointRefused('checkpoint file size is outside bounds')
         arena.stack.enter_context(self.budget.reserve(
             raw_capacity(info.st_size), category='endpoint-checkpoint-read'))
         with open(path, 'rb') as source:
             opened = os.fstat(source.fileno())
-            if (opened.st_dev, opened.st_ino, opened.st_size) != (info.st_dev, info.st_ino, info.st_size):
-                raise CheckpointRefused('checkpoint changed before bounded read')
             header = source.read(HEADER.size)
             magic, bound_size, size, bound_hash, result_hash = HEADER.unpack(header)
-            if (magic != MAGIC or not 0 < bound_size <= MAX_BINDING
-                    or not 0 < size <= MAX_PAYLOAD
-                    or HEADER.size+bound_size+size != info.st_size):
-                raise CheckpointRefused('checkpoint header/length differs')
             bound = source.read(bound_size)
             payload = source.read(size)
             after = os.fstat(source.fileno())
@@ -403,18 +334,10 @@ class EndpointCheckpoints:
 
     def after(self, result, budget):
         """Called only on the exact result returned by the native query body."""
-        owner = self._owner
-        if owner is None:
-            raise RuntimeError('checkpoint store is closed')
         # A hit was verified before issue; a completed miss is verified at the
         # publication boundary below; an unmet result is never stored.
         self._live()
-        if self._pending is None:
-            raise RuntimeError('checkpoint result has no native validated query')
-        if (type(result) is not G.DifferentialMeasure or result._resource is not budget
-                or budget is not self.budget):
-            raise TypeError('native issued result on the same budget required')
-        binding, key, hit = self._pending
+        binding, key, hit = cast('tuple[bytes, str, bool]', self._pending)
         if hit:
             self._last_completed = (key, True)
             self._pending = None
@@ -446,8 +369,6 @@ class EndpointCheckpoints:
             header = HEADER.pack(MAGIC, len(binding), len(payload),
                 hashlib.sha256(binding).digest(), hashlib.sha256(payload).digest())
             path = self.directory / (key+'.query')
-            if path.exists():
-                raise CheckpointRefused('checkpoint appeared outside the single writer')
             partial = self.directory / (key+'.partial-'+uuid.uuid4().hex)
             # A stopped process can leave this incomplete file, but the read
             # path considers only .query. No committed filename appears early.

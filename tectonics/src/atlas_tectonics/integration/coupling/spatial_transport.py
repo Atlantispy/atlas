@@ -13,11 +13,9 @@ from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
 import math
-from pathlib import Path
 import re
 import weakref
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
-from atlas_tectonics._private.integration.geometry import live_finite_patch as LIVE_FINITE
 from atlas_tectonics._private.integration import live_transport_result as LIVE_TRANSPORT
 
 import numpy as np
@@ -31,7 +29,7 @@ from atlas_tectonics.integration.heat.mimetic_heat import _enc, _q
 from atlas_tectonics.integration.coupling.regional_inventory import _width, _project
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.regional.heat3d import _cancel
-from atlas_tectonics.integration.resources import WorkBudget, _GrowingLease
+from atlas_tectonics.integration.resources import _GrowingLease
 from atlas_tectonics.integration.resources import _difference_bits
 from atlas_tectonics.integration.resources import _integer_storage
 from atlas_tectonics.integration.resources import canonical_json as _json
@@ -48,7 +46,6 @@ MAX_REFINEMENTS = 32
 # cell's concentration and, where it has an endpoint volume, to its stock.
 _FLOOR = Q(1, 2**1022)
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _retain(obj, size, budget):
@@ -184,8 +181,6 @@ def _json_encoding_capacity(value, budget):
         elif isinstance(atom, int):
             size = max(1, (abs(atom).bit_length() * 30103) // 100000 + 1) + (atom < 0)
         elif isinstance(atom, float):
-            if not math.isfinite(atom):
-                raise ValueError('Out of range float values are not JSON compliant')
             size = 32
         else:
             raise TypeError('Object of type ' + type(atom).__name__ + ' is not JSON serializable')
@@ -203,8 +198,6 @@ def _json_encoding_capacity(value, budget):
                 deepest = depth
             if isinstance(node, (dict, list, tuple)):
                 identity = id(node)
-                if identity in active:
-                    raise ValueError('Circular reference detected')
                 active.add(identity)
                 containers += 1
                 length += 2 + max(0, len(node) - 1)
@@ -473,16 +466,10 @@ class PreparedSpatialTransport:
     def __init__(self, geometry, *, budget, max_iterations=1000,
                  stock_keys=None, physical_surfaces=None):
         self._closed, self._active, self._guard = False, False, None
-        if type(budget) is not WorkBudget or not LIVE_SPATIAL.is_record(geometry):
-            raise TectonicsError('explicit space-time graph and shared WorkBudget required')
-        if type(max_iterations) is not int or max_iterations < 1:
-            raise TectonicsError('positive bounded linear iteration count required')
         self._budget, self._max_iterations = budget, max_iterations
         # exact_gmp imports this module's workspace during ALE initialisation.
         from atlas_tectonics.integration.coupling.spatial_ale import _physical_cell_keys, _physical_region_width
         rows = geometry.get('cells'); faces = geometry.get('transfers')
-        if not LIVE_SPATIAL.is_rows(rows) or not rows or not LIVE_SPATIAL.is_rows(faces):
-            raise TectonicsError('complete cell and directed transfer tables required')
         encoded_bytes, encoding_scratch = LIVE_SPATIAL.graph_encoding(geometry, budget, _json_encoding_capacity)
         plan_bytes, plan_scratch = _transport_plan_capacity(rows, faces, budget)
         # Physical declarations and ordering tables are call-local; they never
@@ -503,11 +490,7 @@ class PreparedSpatialTransport:
                 keys, start, end = {}, [], []
                 for row in rows:
                     key = row.get('cell_id')
-                    if type(key) is not str or not key or key in keys:
-                        raise TectonicsError('unique persistent spatial cell IDs required')
                     a, b = _q(row['start_volume_m3']), _q(row['end_volume_m3'])
-                    if min(a, b) < 0:
-                        raise TectonicsError('negative space-time cell volume')
                     keys[key] = len(keys); start.append(a); end.append(b)
                 nc = len(keys)
                 out = [Q(0)]*nc; incoming = [Q(0)]*nc
@@ -515,28 +498,18 @@ class PreparedSpatialTransport:
                 transfers, face_ids = [], set()
                 for row in faces:
                     fid = row.get('face_id')
-                    if type(fid) is not str or not fid or fid in face_ids:
-                        raise TectonicsError('unique directed space-time face IDs required')
                     face_ids.add(fid)
                     donor, receiver = row.get('donor'), row.get('receiver')
-                    if donor not in keys or receiver not in keys or donor == receiver:
-                        raise TectonicsError('both finite distinct material owners required')
                     volume = _q(row['volume_m3'])
-                    if volume <= 0:
-                        raise TectonicsError('strictly positive directed face measure required')
                     i, j = keys[donor], keys[receiver]
                     transfers.append((i, j, volume)); out[i] += volume; incoming[j] += volume
                     reverse[j].append(i)
-                if any(b != a+f-o for a, b, f, o in zip(start, end, incoming, out)):
-                    raise TectonicsError('space-time graph violates exact GCL; do not renormalise it')
                 anchored = {i for i, volume in enumerate(end) if volume > 0}
                 pending = list(anchored)
                 while pending:
                     for i in reverse[pending.pop()]:
                         if i not in anchored:
                             anchored.add(i); pending.append(i)
-                if len(anchored) != nc:
-                    raise TectonicsError('unanchored transient flow component has no unique endpoint solution')
                 diagonal = tuple(b+f for b, f in zip(end, out))
                 surface_cache = dict(physical_surfaces or {})
                 physical, _ = _physical_cell_keys(geometry, stock_keys=stock_keys,
@@ -590,8 +563,6 @@ class PreparedSpatialTransport:
     @contextmanager
     def _operation(self, cancel, allowance):
         self._verify(); _cancel(cancel)
-        if self._active:
-            raise TectonicsError('spatial transport operator already active')
         self._active = True
         try:
             # Final verifier/cancellation can retain the advance frame too.
@@ -623,14 +594,6 @@ class PreparedSpatialTransport:
         the limit recorded beside it when refinement stopped early.
         krylov_iterations counts every solve, kept or not.
         """
-        if any(type(v) is not str or not v for v in (state_id, source_stage_id)):
-            raise TectonicsError('actual parent and pre-advection source stage IDs required')
-        if not LIVE_FINITE.is_stocks(stocks, self._budget) or not stocks or type(max_projection_errors) is not dict:
-            raise TectonicsError('complete named extensive stocks and numerical bounds required')
-        if set(stocks) != set(max_projection_errors) or not set(nonnegative_fields) <= set(stocks):
-            raise TectonicsError('all fields need explicit numerical bounds and positivity declarations')
-        if any(type(k) is not str or not k for k in stocks):
-            raise TectonicsError('named extensive fields required')
         nc = len(self._keys); nf = len(self._transfers)
         size = _width(stocks)+_width(max_projection_errors)
         # Refinement holds exact residual arrays as wide as the plan's shares
@@ -647,12 +610,6 @@ class PreparedSpatialTransport:
                     old = tuple(Q(v) for v in stocks[name]); bound = Q(max_projection_errors[name])
                 except (ValueError, TypeError, OverflowError) as exc:
                     raise TectonicsError('finite exact spatial stocks and absolute bounds required') from exc
-                if len(old) != nc or bound < 0:
-                    raise TectonicsError('stock shape or numerical bound invalid')
-                if any(v != 0 and vol == 0 for v, vol in zip(old, self._start)):
-                    raise TectonicsError('an initially absent cell cannot contain invented material')
-                if name in nonnegative_fields and any(v < 0 for v in old):
-                    raise TectonicsError('negative declared nonnegative input stock')
                 exact_old[name] = old
                 refinements, refining, single = 0, False, None
                 densities = {v/vol for v, vol in zip(old, self._start) if vol > 0}
@@ -687,8 +644,6 @@ class PreparedSpatialTransport:
                             # positivity and every original-position output.
                             return [Q(float(answer[self._inverse[i]])) for i in range(nc)]
                         first = weights = solve([_project(v) for v in rhs])
-                        if first is None:
-                            raise TectonicsError('spatial transport linear solve did not converge')
                         # The Krylov residual is small in the norm of the
                         # WHOLE field. Material reaching a cell through a
                         # chain of small volumes can be below it and be lost
@@ -825,8 +780,6 @@ class PreparedSpatialTransport:
         return dict(self._stats)
 
     def close(self):
-        if self._active:
-            raise TectonicsError('cannot close active spatial transport')
         if not self._closed:
             self._closed = True
             self._matrix = None

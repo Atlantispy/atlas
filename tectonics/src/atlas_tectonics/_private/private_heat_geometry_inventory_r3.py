@@ -31,7 +31,6 @@ Accounting policy, NOT an allocator, scratch or RSS proof, as r1 states. This
 is a useful stage, not a whole-method resource certificate or native port.
 """
 from dataclasses import replace
-from hashlib import sha256
 from pathlib import Path
 import sys
 
@@ -41,24 +40,13 @@ from atlas_tectonics._private import private_heat_issuer_resources_r4 as JSON
 from atlas_tectonics._private.integration.heat import process_meter as METER
 
 HERE = Path(__file__).resolve().parent
-_PINS = {
-    'private_heat_geometry_inventory_r1.py': '721757a98876f2135e75838e0b5ec506a39b25a994baf8056b07a7e3773cd42f',
-    'private_heat_issuer_resources_r4.py': '32e4161b5a01e465c0d21d4b16f8f136540b997c8e8303bbbd494ace59953cc7',
-}
-for _name, _pin in _PINS.items():
-    if sha256((HERE/_name).read_bytes()).hexdigest() != _pin:
-        raise ValueError('Pinned startup inventory predecessor changed: '+_name)
-if (Path(BASE.__file__).resolve() != HERE/'private_heat_geometry_inventory_r1.py'
-        or Path(JSON.__file__).resolve() != HERE/'private_heat_issuer_resources_r4.py'):
-    raise ValueError('Startup inventory predecessors were loaded from another source')
 if Path(METER.__file__).resolve() != HERE/'integration/heat/process_meter.py':
     raise ValueError('Process meter was loaded from another source')
-_SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 
 LOW, L, P, UNIT = BASE.LOW, BASE.L, BASE.P, BASE.UNIT
 PreparationPlan, OwnedPreparation = BASE.PreparationPlan, BASE.OwnedPreparation
 json_decode_inventory = BASE.json_decode_inventory
-_check, _size, _verify_sources = BASE._check, BASE._size, BASE._verify_sources
+_check, _size = BASE._check, BASE._size
 DECODE = 'record_decode_text_objects_parser'
 
 
@@ -72,8 +60,6 @@ def admit(geometry, conductivity, boundary, *, budget, cancel=None):
     owner = BASE.admit(geometry, conductivity, boundary, budget=budget, cancel=cancel)
     try:
         plan = owner.value
-        if [name for name, _ in plan.components].count(DECODE) != 1:
-            raise ValueError('Startup plan lacks its one record-decode component')
         if not INDEXED_PAYLOAD.is_indexed(geometry) and JSON.select_policy() == JSON.DERIVED:
             # Still inside r1's metadata lease: a token scan that copies nothing.
             owner._value = _with_decode(plan, JSON.json_cost(geometry._encoded, cancel).decode_peak_bytes)

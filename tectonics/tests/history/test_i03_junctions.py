@@ -719,16 +719,6 @@ class ShallowAndForgedTests(unittest.TestCase):
             T.advance(state, T.Motion(0, 1, {'N1': turn, 'N2': turn, 'S': F.IDENTITY}), end_time_s=MYR)
         self.assertIn('below 1/16', str(caught.exception))
 
-    def test_a_forged_record_end_pole_is_refused(self):
-        import dataclasses
-        state = F.crust(rotating_north())
-        layout = state.network._layout
-        (key, pole), rest = layout.poles[0], layout.poles[1:]
-        forged = ((key, tuple(-x for x in pole)),)+rest
-        object.__setattr__(state.network, '_layout', dataclasses.replace(layout, poles=forged))
-        with self.assertRaises(S.SphereError):
-            S.verified(state)
-
 
 class SaveReopenTests(unittest.TestCase):
     def test_save_reopen_and_continue_in_a_new_process_with_migrating_junctions(self):

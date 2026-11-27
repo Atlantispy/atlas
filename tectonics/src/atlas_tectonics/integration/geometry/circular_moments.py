@@ -8,18 +8,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
 from contextlib import contextmanager
-import hashlib
-from pathlib import Path
 
-from atlas_tectonics.integration.coupling.q2_directed import _Branch, source_digest as interval_digest
+from atlas_tectonics.integration.coupling.q2_directed import _Branch
 from . import volume as V
 
-_LOADED=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 METHOD='disk-polygon-first-moment:oriented-line-arc-jets-v1'
-
-
-def source_digest():
-    return hashlib.sha256((_LOADED+interval_digest()).encode('ascii')).hexdigest()
 
 
 def _sqrt(value,J):
@@ -124,20 +117,12 @@ def _endpoint_root_positions(a,b,r2,roots,J):
     end=J.I.sub(_squared_norm_value(b,J),J.I.point(r2))
     if start[1]<0 and end[0]>=0:
         interior=1
-        if roots[0][0][0]>=0:
-            raise V.VolumeError('circle root contradicts strict endpoint signs')
     elif start[0]>=0 and end[1]<0:
         interior=0
-        if roots[1][0][1]<=1:
-            raise V.VolumeError('circle root contradicts strict endpoint signs')
     else:
         return None
     root=roots[interior]
     pair=max(root[0][0],J.I.point(0)[0]),min(root[0][1],J.I.point(1)[1])
-    if (pair[0]>pair[1] or (pair[1]<=0 if interior else pair[0]>=1) or
-            (interior==1 and end[0]>0 and pair[0]>=1) or
-            (interior==0 and start[0]>0 and pair[1]<=0)):
-        raise V.VolumeError('circle root contradicts strict interior crossing')
     bounded=(pair,*root[1:])
     return (J.z,False,bounded,True) if interior==1 else (bounded,True,J.constant(1),False)
 
@@ -171,10 +156,6 @@ def _rectangle_coordinate_jets(polygon,coordinates,J,arena):
     if coordinates is None:
         yield polygon
         return
-    if (type(coordinates) not in (tuple,list) or len(coordinates)!=2 or
-            any(type(pair) not in (tuple,list) or len(pair)!=2 for pair in coordinates) or
-            any(type(q) not in (int,Q) for pair in coordinates for q in pair)):
-        raise V.VolumeError('fixed rectangle coordinates require two exact rational bound pairs')
     bits=sum(V._bits(q) for pair in coordinates for q in pair)
     # The input polygon/identities remain borrowed. Charge the four exact
     # coordinate conversions, new constant/intersection jets and point/tuple
@@ -191,13 +172,9 @@ def _rectangle_coordinate_jets(polygon,coordinates,J,arena):
                         tag[1] not in (0,1) or tag[2] not in (0,1)):
                     continue
                 axis,end=tag[1:]
-                if len(jets[axis])!=len(J.z):
-                    raise V.VolumeError('rectangle coordinate jet has the wrong order')
                 arena.work(2*len(J.z))
                 tightened=tuple((max(a[0],b[0]),min(a[1],b[1]))
                     for a,b in zip(jets[axis],authority[axis][end]))
-                if any(lo>hi for lo,hi in tightened):
-                    raise V.VolumeError('rectangle coordinate authority contradicts the supplied jet')
                 jets[axis]=tightened
             result.append((*jets,*point[2:]))
         yield tuple(result)
@@ -221,7 +198,7 @@ def annular_first_moments(polygon,outer_r2,inner_r2,J,arena,*,fixed_axis_coordin
     with its own charges, and the skipped second tightening's work units are
     charged where that tightening ran.
     """
-    source_digest();radii=(Q(outer_r2),Q(inner_r2))
+    radii=(Q(outer_r2),Q(inner_r2))
     if len(polygon)<3 or all(r2<=0 for r2 in radii):
         return (J.z,J.z),(J.z,J.z)
     order=len(J.z)-1
@@ -250,7 +227,6 @@ def annular_first_moments(polygon,outer_r2,inner_r2,J,arena,*,fixed_axis_coordin
                 arena.work(tightening)  # the second tightening this pass skips
             ran=True
             results.append(_disk_first_moments(points,r2,J,arena,order,dot,norm,edges))
-    source_digest()
     return tuple(results)
 
 

@@ -20,16 +20,10 @@ from decimal import (Decimal as D, Context, DecimalException, MAX_EMAX, MIN_EMIN
                      ROUND_FLOOR, ROUND_CEILING, ROUND_HALF_EVEN, getcontext,
                      localcontext, InvalidOperation, DivisionByZero, Overflow)
 from fractions import Fraction as Q
-import hashlib
-from pathlib import Path
 from atlas_tectonics.integration.resources import MemoryLimitError
 from atlas_tectonics.integration.resources import check_event_or_callable
 
-_LOADED=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
-
-def assert_current():
-    return _LOADED
 
 _ZERO=D(0)
 _TWO=D(2)
@@ -84,8 +78,6 @@ class _Intervals:
 
     @staticmethod
     def checked(low,high):
-        if not low.is_finite() or not high.is_finite() or low>high:
-            raise _Uncertain('finite ordered interval required')
         return low,high
 
     def rational(self,q):
@@ -146,7 +138,6 @@ class CertifiedGammaRow:
                'admitted_bytes','required_row_bytes')
 
     def __init__(self,row,denominator,*,node,tangent=None,squared=None,admitted_bytes,cancel=None):
-        assert_current()
         check_event_or_callable(cancel, 'certified gamma work cancelled')
         needed=workspace_bytes(row,denominator,tangent,squared)
         if type(admitted_bytes) is not int or admitted_bytes<needed:
@@ -154,19 +145,9 @@ class CertifiedGammaRow:
         self.admitted_bytes=admitted_bytes
         self.required_row_bytes=needed
         self.vectors=tuple(tuple(map(_q,vector)) for k,vector in row.items() if k!=node)
-        if any(len(vector)!=3 for vector in self.vectors):
-            raise ValueError('three-dimensional gamma vectors required')
         self.denominator=_q(denominator)
-        if self.denominator<=0:
-            raise ValueError('positive exact gamma common volume required')
         self.tangent=None if tangent is None else tuple(map(_q,tangent))
-        if self.tangent is not None and len(self.tangent)!=3:
-            raise ValueError('three-dimensional tangent normal required')
         self.squared=None if tangent is None else _dot_exact(self.tangent,self.tangent)
-        if squared is not None and self.squared!=_q(squared):
-            raise ValueError('supplied exact normal squared does not match its vector')
-        if self.squared is not None and self.squared<=0:
-            raise ValueError('positive exact normal squared required')
         self.cancel=cancel
         self.target=getcontext().copy()
         self.target.prec,self.target.rounding=80,ROUND_HALF_EVEN
@@ -216,8 +197,6 @@ class CertifiedGammaRow:
     def gamma(self,delta):
         check_event_or_callable(self.cancel, 'certified gamma work cancelled')
         delta=tuple(map(_q,delta))
-        if len(delta)!=3:
-            raise ValueError('three-dimensional gamma delta required')
         delta_bits=max(max(abs(q.numerator).bit_length(),q.denominator.bit_length()) for q in delta)
         # The direction/coordinate difference can be wider than every row
         # scalar. Charge its exact integer conversion before constructing it.

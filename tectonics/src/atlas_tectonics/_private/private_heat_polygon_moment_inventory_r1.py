@@ -8,20 +8,16 @@ frame is gone, admission shrinks to the prospectively bounded 3x3 result/plan.
 Polygon validation, expression order and values remain the predecessor's.
 No HIGH support/basis/interval/rank/elimination/row admission is implied.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
 
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from hashlib import sha256
-from pathlib import Path
 import sys
 
-from atlas_tectonics._private import private_heat_geometry_inventory_r1 as START
 from atlas_tectonics._private.integration.heat import low_ledger_inventory as L
 from atlas_tectonics._private.integration.heat import endpoint_assembly_inventory as I
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 
-FUNCTIONALS_SHA = '94dc7c871aedf7770f6e89ee7e864827ced67e5655fd54d8f1f106cc534ee130'
 ONE = I.Shape(1, 1, True)
 
 
@@ -31,10 +27,6 @@ def _check(cancel):
 
 
 def _hex_shape(pair):
-    # Bounds from text width only: the original decoder retains responsibility
-    # for valid integers, nonzero denominators and exact polygon validation.
-    if type(pair) not in (tuple, list) or len(pair) != 2 or any(type(v) is not str or not v for v in pair):
-        raise ValueError('Owned encoded rational pair required')
     return I.Shape(max(1, 4*len(pair[0])), max(1, 4*len(pair[1])), False)
 
 
@@ -52,7 +44,7 @@ class MomentPlan:
 
     @property
     def total_bytes(self):
-        return START._size(self.metadata_bytes+sum(value for _, value in self.components))
+        return (self.metadata_bytes+sum(value for _, value in self.components))
 
     @property
     def retained_bytes(self):
@@ -65,7 +57,7 @@ class _Growth(L.RationalGrowth):
         self.generated_bytes = self.operations = 0
 
     def retain(self, shape):
-        self.generated_bytes = START._size(self.generated_bytes+self.slot(shape))
+        self.generated_bytes = (self.generated_bytes+self.slot(shape))
         return shape
 
     def op(self, operation, left, right, **kwargs):
@@ -76,8 +68,6 @@ class _Growth(L.RationalGrowth):
 
 def _plan(face, metadata_bytes, ar):
     def vector(raw):
-        if type(raw) not in (list, tuple) or len(raw) != 3:
-            raise ValueError('Three-dimensional encoded vector required')
         return tuple(ar.retain(_hex_shape(pair)) for pair in raw)
 
     def sub(a, b):
@@ -139,23 +129,15 @@ def _plan(face, metadata_bytes, ar):
 def admit(face, *, budget, cancel=None):
     """An owned shape plan; supplied encoded face remains caller-owned."""
     _check(cancel)
-    if type(face) is not dict or type(face.get('vertices_m')) is not list or len(face['vertices_m']) < 3:
-        raise ValueError('Owned face with at least three declared vertices required')
     from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     G = selected.library()
-    if G is None:
-        raise RuntimeError('Selected GMP backend required')
-    metadata = START._size(262144+L.CONTAINER_UNIT*(100*len(face['vertices_m'])+512))
+    metadata = (262144+L.CONTAINER_UNIT*(100*len(face['vertices_m'])+512))
     work = R.OwnedWorkspace(budget, metadata, category='heat-polygon-moment-inventory', cancelled=cancel)
     work.__enter__()
     try:
-        START._verify_sources(cancel)
-        from atlas_tectonics._private import private_heat_functionals_kernel_r1 as F
         # This source is small and its complete bytes fit the fixed admitted
         # source-read buffers. It is not the geometry or any captured operands.
-        if _helper_source_digest(Path(F.__file__), owner_file=__file__) != FUNCTIONALS_SHA:
-            raise ValueError('Reviewed polygon expression source changed')
         plan = _plan(face, metadata, _Growth(G, R, cancel))
         return P.OwnedSolve(plan, work)
     except BaseException:

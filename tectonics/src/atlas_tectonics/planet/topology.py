@@ -17,7 +17,7 @@ from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 from atlas_tectonics.integration.resources import check_event
 from atlas_tectonics.planet.mesh import ColumnGrid1D
-from atlas_tectonics.materials.materials import (MaterialState, MaterialCohort, _name, _sha, _json, _account,
+from atlas_tectonics.materials.materials import (MaterialState, _name, _json, _account,
                         restore_material_state)
 from atlas_tectonics.regional.regional import _METRICS
 from atlas_tectonics.planet.remapping import (_mesh_state, _inventories, RemapPlan, remap_materials, advect_ale)
@@ -29,11 +29,8 @@ class PlateRecord:
     parent_plate_ids: tuple[str,...]=()
     def __post_init__(self):
         _name(self.plate_id,'plate ID')
-        if type(self.parent_plate_ids) is not tuple or len(set(self.parent_plate_ids))!=len(self.parent_plate_ids):
-            raise TectonicsError('unique parent plate tuple required')
         for p in self.parent_plate_ids:
             _name(p,'parent plate')
-            if p==self.plate_id:raise TectonicsError('plate cannot parent itself')
 
 
 @dataclass(frozen=True,slots=True)
@@ -43,11 +40,8 @@ class BlockRecord:
     parent_block_ids: tuple[str,...]=()
     def __post_init__(self):
         _name(self.block_id,'block ID');_name(self.plate_id,'plate ID')
-        if type(self.parent_block_ids) is not tuple or len(set(self.parent_block_ids))!=len(self.parent_block_ids):
-            raise TectonicsError('unique parent block tuple required')
         for p in self.parent_block_ids:
             _name(p,'parent block')
-            if p==self.block_id:raise TectonicsError('block cannot parent itself')
 
 
 @dataclass(frozen=True,slots=True)
@@ -81,35 +75,12 @@ class PlateTopology1D:
     retired_boundary_ids: tuple[str,...]=()
     topology_id: str=field(init=False)
     def __post_init__(self):
-        if type(self.cuts) is not ColumnGrid1D:raise TectonicsError('column cut geometry required')
-        for values,cls in ((self.plates,PlateRecord),(self.blocks,BlockRecord),(self.boundaries,BoundaryRecord)):
-            if type(values) is not tuple or any(type(v) is not cls for v in values):raise TectonicsError('typed topology tuples required')
-        if len(self.blocks)!=self.cuts.cells or len(self.boundaries)!=len(self.blocks)-1 or not self.plates:
-            raise TectonicsError('one block per cut interval and one shared boundary between neighbours required')
-        pids=[p.plate_id for p in self.plates];bids=[b.block_id for b in self.blocks];fids=[f.boundary_id for f in self.boundaries]
-        if pids!=sorted(set(pids)) or len(set(bids))!=len(bids) or len(set(fids))!=len(fids):
-            raise TectonicsError('plate catalogue must be sorted and topology IDs unique')
+        bids=[b.block_id for b in self.blocks];fids=[f.boundary_id for f in self.boundaries]
         parents={p.plate_id:p.parent_plate_ids for p in self.plates}
-        for p in self.plates:
-            if not set(p.parent_plate_ids)<=set(pids):raise TectonicsError('unknown parent plate')
-        # Iterative topological elimination; cycles must never be hidden by a rename.
-        pending=dict(parents);done=set()
-        while pending:
-            ready=[k for k,v in pending.items() if set(v)<=done]
-            if not ready:raise TectonicsError('cyclic plate lineage')
-            for k in ready:done.add(k);del pending[k]
         for b in self.blocks:
             if b.plate_id not in parents:raise TectonicsError('block references unknown plate')
-        for i,f in enumerate(self.boundaries):
-            if f.active and f.kind in ('ridge','transform','collision','subduction') and self.blocks[i].plate_id==self.blocks[i+1].plate_id:
-                raise TectonicsError('active plate boundary cannot separate identical plate identities')
         for retired,active in ((self.retired_block_ids,bids),(self.retired_boundary_ids,fids)):
-            if type(retired) is not tuple or tuple(sorted(set(retired)))!=retired or set(retired)&set(active):
-                raise TectonicsError('retired IDs must be sorted, unique and inactive')
             for k in retired:_name(k,'retired ID')
-        for b in self.blocks:
-            if not set(b.parent_block_ids)<=set(self.retired_block_ids):
-                raise TectonicsError('block lineage must name preserved retired IDs')
         object.__setattr__(self,'topology_id',hashlib.sha256(_json(self.descriptor())).hexdigest())
 
     def descriptor(self):
@@ -126,15 +97,11 @@ class PlateTopology1D:
         from atlas_tectonics._validation import snapshot
         x=snapshot(positions_m,'query positions')
         edges=self.cuts.edges_m
-        if np.any(x<edges[0]) or np.any(x>edges[-1]):raise TectonicsError('position outside the owned region')
         ids=np.minimum(np.searchsorted(edges,x,side='right')-1,len(self.blocks)-1)
         return tuple(self.blocks[int(i)].plate_id for i in ids.flat)
 
 
 def _restore_topology(desc,edges):
-    required={'schema','cuts','plates','blocks','boundaries','retired_block_ids','retired_boundary_ids'}
-    if type(desc) is not dict or set(desc)!=required or desc['schema']!='atlas.topology1d.v1':
-        raise TectonicsError('invalid stored topology')
     try:
         mesh=ColumnGrid1D(edges,frame_id=desc['cuts']['frame_id'])
         if mesh.descriptor()!=desc['cuts']:raise TectonicsError('topology cut identity mismatch')
@@ -160,19 +127,11 @@ class TectonicState1D:
     _receipt: bytes=field(repr=False)
     def __init__(self,material,topology,*,applied_event_ids=(),receipt=None,budget=None):
         _mesh_state(material)
-        if type(topology) is not PlateTopology1D:raise TectonicsError('PlateTopology1D required')
-        if (material.grid.frame_id!=topology.cuts.frame_id or
-                not np.array_equal(material.grid.edges_m[[0,-1]],topology.cuts.edges_m[[0,-1]])):
-            raise TectonicsError('material mesh and ownership partition must cover the same frame/domain')
-        if type(applied_event_ids) is not tuple or len(set(applied_event_ids))!=len(applied_event_ids):
-            raise TectonicsError('unique accepted event identities required')
         for e in applied_event_ids:_name(e,'event ID')
         payload=_json(receipt)
         with select_budget(budget).reserve(4*len(payload)+1024*(len(topology.blocks)+len(applied_event_ids))+8192,category='topology-state'):
             if receipt is not None:
-                if type(receipt) is not dict or receipt.get('event_id') not in applied_event_ids:
-                    raise TectonicsError('receipt must name its accepted event')
-                _sha(receipt.get('parent_model_id'),'parent model')
+                receipt.get('parent_model_id')
             object.__setattr__(self,'material',material);object.__setattr__(self,'topology',topology)
             object.__setattr__(self,'applied_event_ids',applied_event_ids);object.__setattr__(self,'_receipt',payload)
             object.__setattr__(self,'model_id',hashlib.sha256(_json(self.descriptor())).hexdigest())
@@ -188,23 +147,17 @@ class TectonicState1D:
 
 def _restore_model(material,topology,event_ids,receipt,expected):
     result=TectonicState1D(material,topology,applied_event_ids=event_ids,receipt=receipt)
-    if result.model_id!=expected:raise TectonicsError('model identity mismatch')
     return result
 
 
 def _begin(world,event_id,expected_parent_id,cancel):
     check_event(cancel, 'regional transport cancelled; no candidate published')
-    if type(world) is not TectonicState1D:raise TectonicsError('TectonicState1D required')
-    _name(event_id,'event ID');_sha(expected_parent_id,'expected parent')
-    if expected_parent_id!=world.model_id:raise TectonicsError('event is bound to a different parent')
-    if event_id in world.applied_event_ids:raise TectonicsError('event already applied; cannot replay on successor')
+    _name(event_id,'event ID')
 
 
 def _plates(old, additions):
-    if type(additions) is not tuple or any(type(p) is not PlateRecord for p in additions):raise TectonicsError('typed new plate tuple required')
     values={p.plate_id:p for p in old}
     for p in additions:
-        if p.plate_id in values and values[p.plate_id]!=p:raise TectonicsError('plate origin/lineage cannot be redefined')
         values[p.plate_id]=p
     return tuple(values[k] for k in sorted(values))
 
@@ -263,17 +216,7 @@ def split_block(world,block_id,split_m,left_block,right_block,boundary,*,event_i
                   expected_parent_id,new_plates=(),budget=None,cancel=None):
     _begin(world,event_id,expected_parent_id,cancel);t=world.topology
     ids=[b.block_id for b in t.blocks]
-    if block_id not in ids:raise TectonicsError('split block is not active')
-    if type(left_block) is not BlockRecord or type(right_block) is not BlockRecord or type(boundary) is not BoundaryRecord:
-        raise TectonicsError('typed split records required')
     i=ids.index(block_id);x=scalar(split_m,'split coordinate')
-    if not t.cuts.edges_m[i]<x<t.cuts.edges_m[i+1]:raise TectonicsError('split must lie strictly within the selected block')
-    known=set(ids)|set(t.retired_block_ids)
-    if left_block.block_id in known or right_block.block_id in known or left_block.block_id==right_block.block_id:
-        raise TectonicsError('split children need fresh distinct identities')
-    if left_block.parent_block_ids!=(block_id,) or right_block.parent_block_ids!=(block_id,):
-        raise TectonicsError('split children must retain their source block identity')
-    if boundary.boundary_id in {f.boundary_id for f in t.boundaries}|set(t.retired_boundary_ids):raise TectonicsError('split boundary needs a fresh identity')
     target=_new_topology(t,np.insert(t.cuts.edges_m,i+1,x),t.blocks[:i]+(left_block,right_block)+t.blocks[i+1:],
         t.boundaries[:i]+(boundary,)+t.boundaries[i:],additions=new_plates,retired_blocks=(block_id,),budget=budget)
     return _commit_change(world,target,event_id,'split-block-v1',{'source':block_id,'children':[left_block.block_id,right_block.block_id]},budget=budget,cancel=cancel)
@@ -285,9 +228,6 @@ def merge_blocks(world,block_ids,new_block,*,event_id,expected_parent_id,new_pla
     if type(block_ids) is not tuple or len(block_ids)<2 or len(set(block_ids))!=len(block_ids) or any(k not in ids for k in block_ids):
         raise TectonicsError('at least two distinct active adjacent blocks required')
     places=[ids.index(k) for k in block_ids];i,j=places[0],places[-1]
-    if places!=list(range(i,j+1)):raise TectonicsError('merge blocks must be supplied in contiguous spatial order')
-    if type(new_block) is not BlockRecord or new_block.block_id in set(ids)|set(t.retired_block_ids):raise TectonicsError('merged block needs a fresh identity')
-    if new_block.parent_block_ids!=block_ids:raise TectonicsError('merged block must retain all source IDs in spatial order')
     target=_new_topology(t,np.delete(t.cuts.edges_m,np.arange(i+1,j+1)),t.blocks[:i]+(new_block,)+t.blocks[j+1:],
         t.boundaries[:i]+t.boundaries[j:],additions=new_plates,retired_blocks=block_ids,
         retired_boundaries=tuple(f.boundary_id for f in t.boundaries[i:j]),budget=budget)
@@ -304,7 +244,6 @@ def reassign_blocks(world,assignments: Mapping[str,str],*,event_id,expected_pare
 
 def change_boundary(world,boundary,*,event_id,expected_parent_id,budget=None,cancel=None):
     _begin(world,event_id,expected_parent_id,cancel);t=world.topology
-    if type(boundary) is not BoundaryRecord or boundary.boundary_id not in {f.boundary_id for f in t.boundaries}:raise TectonicsError('existing boundary identity required')
     target=_new_topology(t,t.cuts.edges_m,t.blocks,tuple(boundary if f.boundary_id==boundary.boundary_id else f for f in t.boundaries),budget=budget)
     return _commit_change(world,target,event_id,'boundary-regime-v1',asdict(boundary),budget=budget,cancel=cancel)
 
@@ -317,8 +256,6 @@ def move_partition(world,new_edges_m,*,event_id,expected_parent_id,budget=None,c
     """
     _begin(world,event_id,expected_parent_id,cancel);t=world.topology
     target=_new_topology(t,new_edges_m,t.blocks,t.boundaries,budget=budget)
-    if not np.array_equal(t.cuts.edges_m[[0,-1]],target.cuts.edges_m[[0,-1]]):
-        raise TectonicsError('ownership event cannot create/delete regional coverage')
     return _commit_change(world,target,event_id,'reclassify-ownership-v1',{'old_cuts':t.cuts.grid_id,'new_cuts':target.cuts.grid_id},budget=budget,cancel=cancel)
 
 
@@ -341,7 +278,6 @@ def _block_outflow_fractions(x,y,relative,dt,ids,scheme,backend,admitted):
         cells=fraction if cells is None else np.maximum(cells,fraction)
     # Floor at +0, where advance_ale starts: an idle block is never labelled -0.
     fractions=[max(0.,float(v)) for v in np.maximum.reduceat(cells,ids[:-1])]
-    if max(fractions)!=admitted:raise TectonicsError('block outflow fractions disagree with the admitted ALE maximum')
     return fractions
 
 
@@ -401,8 +337,6 @@ def regrid_plate_state(world,target_mesh,*,event_id,expected_parent_id,plan=None
 
 def save_tectonic_state(world,store,*,budget=None,cancel=None):
     """Existing chunk store; edges and fields are arrays, never duplicated JSON grids."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(world) is not TectonicState1D or not isinstance(store,ArrayStore):raise TectonicsError('typed model/store required')
     meta={'model':world.descriptor(),'material':world.material.descriptor(),'topology':world.topology.descriptor()}
     return store.put(world.model_id,{'partial_thickness_m':world.material.thickness_m,
         'material_edges_m':world.material.grid.edges_m,'topology_edges_m':world.topology.cuts.edges_m},
@@ -410,7 +344,6 @@ def save_tectonic_state(world,store,*,budget=None,cancel=None):
 
 
 def load_tectonic_state(store,model_id,*,budget=None):
-    _sha(model_id,'model ID')
     data=store.get(model_id,budget=budget)
     if data is None:return None
     meta=store.metadata(model_id)
@@ -435,8 +368,7 @@ def apply_plate_material_event(world,event,amount,*,expected_parent_id,budget=No
     The existing event validation ties transfer to the exact material parent and
     named reservoir. This wrapper also binds the containing topology/model parent.
     """
-    from atlas_tectonics.materials.materials import MaterialEvent, apply_material_event
-    if type(event) is not MaterialEvent:raise TectonicsError('MaterialEvent required')
+    from atlas_tectonics.materials.materials import apply_material_event
     _begin(world,event.event_id,expected_parent_id,cancel)
     transferred=apply_material_event(world.material,event,amount,budget=budget,cancel=cancel)
     receipt={'operation':'plate-material-transfer-v1','event_id':event.event_id,

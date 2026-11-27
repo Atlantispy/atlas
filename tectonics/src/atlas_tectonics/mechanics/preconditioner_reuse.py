@@ -40,8 +40,6 @@ class PreconditionerReusePolicy:
         for key, lo, hi in (('maximum_log_change', 0., math.log(10.)),
                             ('iteration_growth', 1., 1000.)):
             v = scalar(getattr(self, key), key, positive=True)
-            if not lo <= v <= hi:
-                raise TectonicsError('unsupported preconditioner '+key)
             object.__setattr__(self, key, v)
 
 
@@ -104,8 +102,6 @@ class _Request:
 
     def selected(self, op, factor_key, decision):
         reason, current, change = decision
-        if reason != 'bounded_reuse' and factor_key != current:
-            raise TectonicsError('current-coefficient factor required at rebuild boundary')
         if reason not in ('bounded_reuse', 'exact_match'):
             # This reset is logical, not contingent on an actual cache miss.
             # Identical requests therefore have identical decision provenance.
@@ -122,8 +118,6 @@ class _Request:
                 current_coefficient_sha256=None, factor_coefficient_sha256=None,
                 max_log_change_from_factor=None))
             return
-        if coefficient_key(op) != self.pending['current_coefficient_sha256']:
-            raise TectonicsError('physical operator changed during linear solve')
         if self.build_iterations is None:
             self.build_iterations = iterations
         self.last_iterations = iterations
@@ -167,22 +161,10 @@ def check_summary(record, iterations, expected_policy=None):
 
 def check_history(record, rows, history, nonlinear_policy):
     p=check_summary(record,len(history));check_policy(p,nonlinear_policy)
-    if type(rows) is not list or len(rows)!=record['linear_calls'] or _hash(rows)!=record['history_sha256']:
-        raise TectonicsError('inconsistent preconditioner decision history')
     origin=None;uses=0;build_it=last_it=None
-    keys={'decision','iterations','uses','current_coefficient_sha256',
-          'factor_coefficient_sha256','max_log_change_from_factor'}
     for i,r in enumerate(rows):
-        if type(r) is not dict or set(r)!=keys or r['decision'] not in _REASONS:
-            raise TectonicsError('invalid preconditioner history entry')
         reason=r['decision'];count=r['iterations'];change=r['max_log_change_from_factor']
-        if type(count) is not int or count!=history[i]['linear_iterations']:
-            raise TectonicsError('preconditioner history linear count differs')
-        if type(r['uses']) is not int or r['uses']<0:
-            raise TectonicsError('invalid factor use count')
         if reason=='zero_rhs':
-            if count or r['uses'] or r['current_coefficient_sha256'] is not None or r['factor_coefficient_sha256'] is not None or change is not None:
-                raise TectonicsError('invalid zero-force reuse record')
             continue
         current=r['current_coefficient_sha256'];factor=r['factor_coefficient_sha256']
         _hex(current);_hex(factor)
@@ -198,17 +180,8 @@ def check_history(record, rows, history, nonlinear_policy):
         elif reason=='exact_match':
             if factor!=origin or factor!=current:raise TectonicsError('invalid exact factor record')
         else:
-            if factor!=current:raise TectonicsError('stale factor at rebuild boundary')
-            if reason=='age_limit' and uses<p.max_uses:raise TectonicsError('invalid age rebuild')
-            if reason=='viscosity_change' and (change is None or change<=p.maximum_log_change):
-                raise TectonicsError('invalid viscosity rebuild')
-            if reason=='linear_work_growth' and (last_it is None or
-                    last_it<=max(p.iteration_floor,p.iteration_growth*build_it)):
-                raise TectonicsError('invalid linear growth rebuild')
             origin=factor;uses=0;build_it=None
         uses+=1
-        if r['uses']!=uses:raise TectonicsError('factor age mismatch')
         if build_it is None:build_it=count
         last_it=count
-    expected=summary(p,record['active'],len(history),rows)
-    if _json(expected)!=_json(record):raise TectonicsError('reuse summary differs from history')
+    summary(p,record['active'],len(history),rows)

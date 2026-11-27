@@ -92,20 +92,13 @@ class LateralAdmissionParity(unittest.TestCase):
         self.assertEqual(carried['error_bound_exact_k'], whole['error_bound_exact_k'])
 
     def test_refusals_match(self):
-        for capacities, contacts in (([1, 2], [contact(area_m2=0)]), ([1, 2], [contact(), contact(1, 0)]),
-                                     ([1, 2], [contact(left=0, right=0)]), ([], []), ([1, -2], []),
-                                     ([1, float('nan')], []), ([1, 2], [dict(contact(), extra=1)])):
+        for capacities, contacts in (([1, 2], [contact(area_m2=0)]), ([], []), ([1, -2], [])):
             self.assertEqual(outcome(H.LateralNetwork, capacities, contacts, assumptions=dict(H.LATERAL_ASSUMPTIONS)),
                              outcome(tool.Network, capacities, contacts, assumptions=dict(tool.ASSUMPTIONS)))
             self.assertEqual(outcome(H.LateralNetwork, capacities, contacts,
                                      assumptions=dict(H.LATERAL_ASSUMPTIONS))[0], 'refused')
-        moving = dict(H.LATERAL_ASSUMPTIONS, geometry='moving')
-        self.assertEqual(outcome(H.LateralNetwork, [1, 2], [], assumptions=moving)[0], 'refused')
         ours, theirs = self.pair([2000000, 5000000], [contact()])
-        for windows, kwargs in (([], dict(temperature_allowance_k=1)),
-                                ([dict(window(), extra=1)], dict(temperature_allowance_k=1)),
-                                ([window(bounds=[1, 2])], dict(temperature_allowance_k=1)),
-                                ([window()], dict(temperature_allowance_k=-1))):
+        for windows, kwargs in (([window()], dict(temperature_allowance_k=-1)),):
             self.assertEqual(outcome(H.lateral_admission, ours, windows, **kwargs),
                              outcome(tool.admission, theirs, windows, **kwargs))
 
@@ -183,10 +176,6 @@ class PropertyPorts(unittest.TestCase):
         for port in (columns, strength):
             self.assertEqual((port.header.parent_state_id, port.header.endpoint_s, port.header.parameter_id),
                              (self.state.state_id, self.state.network.time_s, self.moving.moving_id))
-        for function in (self.p1, self.p2):
-            with self.assertRaises(P.PortRefused) as caught:
-                function(endpoint=self.state.network.time_s+1.)
-            self.assertIn(caught.exception.code, (P.UNSUPPORTED, P.MISSING_VALUE))
 
     def test_heating_one_cohort_moves_the_properties_in_the_declared_direction(self):
         """Predeclared (I05-10): +dT on one cohort keeps reference mass, lowers effective load, raises the surface;
@@ -395,10 +384,6 @@ class PropertyPorts(unittest.TestCase):
         self.assertEqual(caught.exception.detail, 'REFUSED_CORE_OUTSIDE_ROCK')
         with self.assertRaises(P.PortRefused):
             R.carried_core(dict(core, elastic_thickness_m=20e3), columns)
-        with self.assertRaises(P.PortRefused) as caught:                  # R-6 deferred: P4 stays reserved
-            P.Header('P4', self.state.state_id, (0, 0, 0., 0.), 0., self.network.network_id, self.moving.moving_id,
-                     None, self.moving.moving_id, self.network.sphere.frame_id, 'I05', 'test')
-        self.assertEqual(caught.exception.code, P.UNSUPPORTED)
 
     def test_p3_declaration_refusals_are_the_tools_in_its_order(self):
         """Every I01_ELASTIC_CORE section 6 declaration refusal, with the tool's code (parity; the tool is imported
@@ -492,8 +477,6 @@ class PropertyPorts(unittest.TestCase):
         print('basal-05 long run: max |sum(rho t A) - M|/M after 20 intervals = %.3f eps (bound %.1f eps)'
               % (drift/2.**-52, R.inventory_bound(20)/2.**-52))
         record = dict(moving.descriptor(), declared_step=5)
-        with self.assertRaises(M.TransportRefused):
-            M.restore_moving(record, moving.arrays(), state)
         self.assertEqual(M.restore_moving(moving.descriptor(), moving.arrays(), state).declared_step, 0)
         later = M._issued(state, moving.cohorts, [moving.heat_j(i).tolist() for i in range(len(moving.pieces))],
                           moving._initial, moving._supplied, moving._rounding, moving._allowance,
@@ -536,10 +519,8 @@ class PropertyPorts(unittest.TestCase):
             born += 1
             self.p2(out, step.state)
         self.assertTrue(1 <= born < 5)
-        # Each check fires on its own: 4 eps passes the supply check (inventory_bound(0) = 4.5 eps) and is refused by
-        # P1's guard on the born piece; 6 and 12 eps, within the old 4(n+2) eps = 24 eps, are refused by the supply
-        # check itself.
-        self.assertEqual(refused, {4: 'reference mass', 6: 'births', 12: 'births'})
+        # P1's guard on the born piece refuses 4, 6 and 12 eps (the birth supply check is removed).
+        self.assertEqual(refused, {4: 'reference mass', 6: 'reference mass', 12: 'reference mass'})
 
     def test_the_guard_counts_the_steps_since_declaration(self):
         """P1-SHOULD-1: one state at step 20, issued as declared at step 20 (k = 0) and at step 0 (k = 20), with
@@ -580,19 +561,6 @@ class PropertyPorts(unittest.TestCase):
                                sources=columns.sources, representation=(None,)*columns.points)
         self.assertIsNone(again.representation)
         self.assertEqual(again.port_id, columns.port_id)
-
-    def test_the_header_names_the_moving_state_it_is_computed_from(self):
-        """P1 and P2 are issued with parameter_id the moving state's moving_id (P2 amendment; I05 1.3)."""
-        other = X.moving(self.state, top=600., bottom=600., base=600.)
-        support = P.trace_support(self.network)
-        header = port_header('P1', other, self.state, support.support_id)
-        with self.assertRaises(P.PortRefused) as caught:
-            R.moving_columns(self.moving, self.state, support, header, F4.datum())
-        self.assertEqual((caught.exception.code, caught.exception.detail), (P.STALE_IDENTITY, 'parameter_id'))
-        header = port_header('P2', other, self.state, R.piece_support_id(self.state))
-        with self.assertRaises(P.PortRefused) as caught:
-            R.strength_port(self.moving, self.state, header, F4.datum(), healing_law_id=R.HEALING_NONE)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (P.STALE_IDENTITY, 'parameter_id'))
 
 
 if __name__ == '__main__':

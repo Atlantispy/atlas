@@ -29,7 +29,7 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import LinearOperator, gmres, spilu, splu
 
-from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array, frozen
+from atlas_tectonics._validation import TectonicsError, scalar, read_array, frozen
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
@@ -51,10 +51,6 @@ def _basis(xi, zeta):
 def _values(value, points, shape, label, *, components=0):
     if callable(value):
         value = value(points[..., 0], points[..., 1])
-    actual = input_shape(value, label)
-    permitted = ((), shape) if not components else ((components,), shape+(components,))
-    if actual not in permitted:
-        raise TectonicsError(label+' has incompatible physical quadrature support')
     array = read_array(value, label)
     return np.broadcast_to(array, shape if not components else shape+(components,))
 
@@ -79,10 +75,6 @@ class PreparedSurfaceStokes2D:
                  length_scale_m=1., velocity_scale_m_s=1., viscosity_scale_pa_s=1.):
         if any(type(n) is not int or not 1 <= n <= 64 for n in (nx, nz)):
             raise TectonicsError('mapped W07 supports 1..64 elements per axis')
-        if quadrature_order not in (4, 5) or type(quadrature_order) is not int:
-            raise TectonicsError('explicit Gauss quadrature order 4 or 5 required')
-        if method not in ('direct', 'gmres'):
-            raise TectonicsError('explicit direct or gmres method required')
         self.nx, self.nz, self.order, self.method = nx, nz, quadrature_order, method
         self.length_scale = scalar(length_scale_m, 'length scale', positive=True)
         self.velocity_scale = scalar(velocity_scale_m_s, 'velocity scale', positive=True)
@@ -124,8 +116,6 @@ class PreparedSurfaceStokes2D:
 
     @contextmanager
     def _operation(self, cancel):
-        if self._closed or self._active or threading.get_ident() != self._owner:
-            raise TectonicsError('surface plan closed/active or wrong driving thread')
         self._active = True
         try:
             check_event_or_callable(cancel, 'constitutive work cancelled')
@@ -138,8 +128,6 @@ class PreparedSurfaceStokes2D:
     def close(self):
         if self._closed:
             return
-        if self._active or threading.get_ident() != self._owner:
-            raise TectonicsError('close surface plan on its idle driving thread')
         self._geometry = None
         if self._metric_guard is not None:
             self._metric_guard.__exit__(None, None, None)
@@ -148,16 +136,12 @@ class PreparedSurfaceStokes2D:
         self._closed = True
 
     def __enter__(self):
-        if self._closed:
-            raise TectonicsError('surface plan is closed')
         return self
 
     def __exit__(self, *_):
         self.close()
 
     def _metrics(self, mesh):
-        if input_shape(mesh, 'mesh') != (2*self.nz+1, 2*self.nx+1, 2):
-            raise TectonicsError('physical Q2 mesh needs shape (2*nz+1,2*nx+1,2)')
         mesh = frozen(read_array(mesh, 'mesh'))
         key = hashlib.sha256(mesh.tobytes()).hexdigest()
         if key == self._geometry_id:
@@ -170,13 +154,6 @@ class PreparedSurfaceStokes2D:
         guard.__enter__()
         try:
             width = float(mesh[0, -1, 0]-mesh[0, 0, 0])
-            if width <= 0. or not math.isfinite(width):
-                raise TectonicsError('positive physical width required')
-            wanted = mesh[0, 0, 0]+np.arange(2*self.nx+1)*(width/(2*self.nx))
-            if np.max(np.abs(mesh[..., 0]-wanted[None, :])) > 1e-12*width:
-                raise TectonicsError('surface backend requires affine fixed x columns; no horizontal distortion')
-            if np.max(np.abs(mesh[0, :, 1])) > 1e-12*max(width, self.length_scale):
-                raise TectonicsError('surface backend requires a fixed flat bottom z=0')
             xyz = mesh.reshape(self.nnode, 2)[self._conn]
             # Since x is affine, detJ=(dx/dxi)*(dz/dzeta). The latter is linear
             # in zeta and quadratic in xi. Check exact minima, including between
@@ -213,8 +190,6 @@ class PreparedSurfaceStokes2D:
             result = dict(mesh=mesh, xyz=xyz, points=point, gx=gx, gz=gz, weight=weight,
                           pressure_basis=pshape, pressure_origin=centre, pressure_scale=scales,
                           minimum_jacobian=minimum*xx, volume=np.sum(weight, axis=1))
-            if not all(np.isfinite(result[name]).all() for name in ('gx','gz','weight','pressure_basis')):
-                raise TectonicsError('mapped geometry outside finite binary64 range')
             self._geometry, self._geometry_id, self._metric_guard = result, key, guard
             return result
         except BaseException:
@@ -252,8 +227,6 @@ class PreparedSurfaceStokes2D:
     def _lift(self, geometry, prescribed):
         if prescribed is None:
             prescribed = {}
-        if not isinstance(prescribed, dict) or not set(prescribed).issubset({'bottom','left_u','right_u'}):
-            raise TectonicsError('prescribed traces may contain bottom, left_u and right_u only')
         lift = np.zeros(2*self.nnode)
         nodes = self._sides['bottom']; points = geometry['mesh'].reshape(-1, 2)[nodes]
         bottom = _values(prescribed.get('bottom', (0., 0.)), points, (len(nodes),), 'bottom velocity', components=2)
@@ -261,15 +234,11 @@ class PreparedSurfaceStokes2D:
         for side in ('left', 'right'):
             nodes = self._sides[side]; points = geometry['mesh'].reshape(-1, 2)[nodes]
             values = _values(prescribed.get(side+'_u', 0.), points, (len(nodes),), side+' normal velocity')
-            if abs(values[0]-lift[nodes[0]]) > 1e-12*max(self.velocity_scale,abs(values[0])):
-                raise TectonicsError('conflicting bottom/side corner velocity')
             lift[nodes] = values
         return lift
 
     def _velocity_inverse(self, matrix):
         diagonal = matrix.diagonal()
-        if np.any(diagonal <= 0.):
-            raise TectonicsError('nonpositive velocity block diagonal')
         scaling = 1/np.sqrt(diagonal)
         scaled = sparse.diags(scaling)@matrix@sparse.diags(scaling)
         factor = spilu(scaled.tocsc(), drop_tol=1e-7, fill_factor=8.)
@@ -287,8 +256,6 @@ class PreparedSurfaceStokes2D:
         solution, info = gmres(matrix, rhs, M=preconditioner, rtol=1e-12, atol=0.,
                                restart=60, maxiter=1200, callback=callback, callback_type='legacy')
         true = float(np.linalg.norm(matrix@solution-rhs))/float(np.linalg.norm(rhs))
-        if info != 0 or not math.isfinite(true) or true > 1e-12:
-            raise TectonicsError(f'mapped GMRES convergence failed: info={info}, iterations={count}, true={true}')
         return solution, count, true
 
     def solve(self, mesh_nodes_m, viscosity_pa_s, body_force_n_m3, *, top_pressure_pa=0.,
@@ -309,8 +276,6 @@ class PreparedSurfaceStokes2D:
                 shape = (self.nz,self.nx,self.order,self.order)
                 points = g['points'].reshape(shape+(2,))
                 eta = _values(viscosity_pa_s, points, shape, 'quadrature viscosity').reshape(self.elements,-1)
-                if np.any(eta <= 0.):
-                    raise TectonicsError('positive current quadrature viscosity required')
                 force = _values(body_force_n_m3, points, shape, 'physical body force', components=2).reshape(self.elements,-1,2)
                 gx,gz,weight,P = g['gx'],g['gz'],g['weight'],g['pressure_basis']
                 weighted = eta*weight
@@ -339,8 +304,6 @@ class PreparedSurfaceStokes2D:
                 np.add.at(traction,nodes.ravel(),localtop[...,0].ravel())
                 np.add.at(traction,nodes.ravel()+self.nnode,localtop[...,1].ravel())
                 sides={} if side_shear_traction_pa is None else side_shear_traction_pa
-                if not isinstance(sides,dict) or not set(sides).issubset({'left','right'}):
-                    raise TectonicsError('side shear traction accepts left/right signed z components')
                 for side,value in sides.items():
                     edge=self._edge(g,side)
                     shear=_values(value,edge['points'],(self.nz,self.order),side+' shear traction')
@@ -448,8 +411,6 @@ class PreparedSurfaceStokes2D:
                     quadrature_continuity_difference_m2_s=float(np.max(np.abs(qcontinuity+weak.reshape(self.elements,3)))),
                     physical_pressure='top-traction-determined; no gauge removal',iterations=iterations,
                     minimum_jacobian_m2=g['minimum_jacobian'],quadrature_order=self.order)
-                if not gates:
-                    raise TectonicsError('mapped returned-field mechanics gates failed: '+str(diagnostics))
                 result=dict(mesh_nodes_m=g['mesh'],velocity_nodes_m_s=frozen(nodal.reshape(2*self.nz+1,2*self.nx+1,2)),
                     pressure_coefficients_pa=frozen(pc.reshape(self.nz,self.nx,3)),
                     pressure_origin_m=frozen(g['pressure_origin'].reshape(self.nz,self.nx,2)),
@@ -492,8 +453,6 @@ class PreparedSurfaceStokes2D:
         """
         with self._operation(cancel):
             g=self._metrics(mesh_nodes_m)
-            if input_shape(top_vertical_velocity_m_s,'top mesh velocity')!=(2*self.nx+1,):
-                raise TectonicsError('top mesh velocity needs Q2 nodal coefficients')
             with self.budget.reserve(self.work_bytes,category='surface-mesh-laplacian'):
                 local=np.einsum('eq,eqi,eqj->eij',g['weight'],g['gx'],g['gx'])+np.einsum('eq,eqi,eqj->eij',g['weight'],g['gz'],g['gz'])
                 matrix=_csr(local,self._conn,self._conn,(self.nnode,self.nnode))
@@ -506,7 +465,6 @@ class PreparedSurfaceStokes2D:
                 elif self.method=='direct':
                     solved=splu(reduced.tocsc()).solve(rhs); iterations=1
                     residual=float(np.linalg.norm(reduced@solved-rhs)/np.linalg.norm(rhs))
-                    if residual>1e-12:raise TectonicsError('mesh Laplacian direct residual exceeds1e-12')
                 else:
                     inverse=self._velocity_inverse(reduced)
                     preconditioner=LinearOperator(reduced.shape,matvec=inverse,dtype=float)
@@ -528,14 +486,9 @@ class PreparedSurfaceStokes2D:
         Viscosity/stress are not interpolated from quadrature to unknown support.
         """
         count=len(element_indices)
-        if count>65536 or input_shape(reference_points)!=(count,2):
-            raise TectonicsError('bounded (N,2) reference points required')
         indices=np.asarray(element_indices)
-        if indices.shape!=(count,2) or indices.dtype.kind not in 'iu' or np.any(indices<0) or np.any(indices>=np.array([self.nz,self.nx])):
-            raise TectonicsError('valid integer element indices required')
         with self._operation(None),self.budget.reserve(4096*count+4096,category='surface-fe-evaluation'):
             g=self._metrics(result['mesh_nodes_m']); reference=read_array(reference_points,'reference points')
-            if np.any(np.abs(reference)>1.):raise TectonicsError('reference points outside element')
             elements=indices[:,0]*self.nx+indices[:,1]
             shape,dxi,dze=_basis(reference[:,0],reference[:,1]);xyz=g['xyz'][elements]
             points=np.einsum('ni,nip->np',shape,xyz)

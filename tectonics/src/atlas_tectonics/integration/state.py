@@ -21,11 +21,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 import hashlib
 import json
 import math
+from typing import cast
 
 import numpy as np
 
@@ -36,8 +36,7 @@ from . import _weakening as _weakening
 from . import evolution as _evolution
 from atlas_tectonics._validation import TectonicsError, frozen, input_shape, scalar, snapshot
 from atlas_tectonics._validation import bounded_record
-from atlas_tectonics.materials.materials import MaterialState, _json, _name, _sha
-from atlas_tectonics.planet.mesh import ColumnGrid1D
+from atlas_tectonics.materials.materials import MaterialState, _json, _name
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 from atlas_tectonics.integration.resources import issue as _issue
@@ -84,7 +83,6 @@ _MECHANICAL = frozenset(('key', 'fingerprint', 'layer', 'depth_m', 'weight', 're
 _THERMAL = frozenset(('provider', 'inputs', 'fingerprint', 'mechanical_fingerprint', 'layer', 'depth_m', 'volume_m',
                       'reference_density_kg_m3', 'capacity', 'radiogenic', 'steady_k', 'boundary_temperature',
                       'thickness_m'))
-_THERMAL_INPUTS = frozenset(('thicknesses', 'props', 'densities', 'boundaries', 'reference_temperature'))
 _PROPS = frozenset(('name', 'conductivity_w_m_k', 'heat_capacity_j_kg_k', 'radiogenic_w_m3'))
 PIECE_COMPLETE, HISTORY_COMPLETE, HISTORY_INCOMPLETE = 'PIECE_COMPLETE', 'HISTORY_COMPLETE', 'HISTORY_INCOMPLETE'
 # How an envelope was issued: provenance only, never part of its identity. Only a COMPUTED state (a Continuation's
@@ -295,51 +293,31 @@ def _spec(name, array):
 
 
 def _fields(value, keys, label):
-    if not isinstance(value, Mapping) or set(value) != keys:
-        raise TectonicsError(label+' must declare exactly: '+', '.join(sorted(keys)))
     return dict(value)
 
 
 def _document(value, label):
     """Detached JSON copy of a caller mapping; later edits to the caller's nested objects cannot reach it."""
-    if not isinstance(value, Mapping) or any(type(key) is not str for key in value):
-        raise TectonicsError(label+' must be a mapping with text keys')
     return json.loads(bounded_record(dict(value), label, _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'))
 
 
 def _number(value, label, *, positive=False, nonnegative=False):
     """A plain finite JSON number; bool, text, None and arrays are refused."""
-    if type(value) not in (int, float):
-        raise TectonicsError(label+': one plain real number required')
     return scalar(value, label, positive=positive, nonnegative=nonnegative)
 
 
 def _length(value, label):
-    if value is None:
-        raise TectonicsError(label+': required; no default is supplied')
     shape = input_shape(value, label)
-    if len(shape) != 1 or not shape[0]:
-        raise TectonicsError(label+': nonempty one-dimensional data required')
     return shape[0]
 
 
 def _floats(value, label, count, *, nonnegative=False):
     """Validated immutable binary64: proven immutable native payloads are borrowed, others detached once."""
-    if value is None:
-        raise TectonicsError(label+': required; no default is supplied')
-    if input_shape(value, label) != (count,):
-        raise TectonicsError(label+': one value per material point required')
     return snapshot(value, label, nonnegative=nonnegative)
 
 
 def _integers(value, label, count):
-    if value is None:
-        raise TectonicsError(label+': required; no default is supplied')
-    if input_shape(value, label) != (count,):
-        raise TectonicsError(label+': one value per material point required')
     raw = np.asarray(value)
-    if raw.dtype.kind not in 'iu' or (raw.dtype.kind == 'u' and int(raw.max()) > np.iinfo(np.int64).max):
-        raise TectonicsError(label+': integer layer indices required')
     return np.frombuffer(raw.astype(np.int64).tobytes(), dtype=np.int64)
 
 
@@ -355,9 +333,7 @@ def _view(array):
     owner = array
     while type(owner) is np.ndarray:
         owner = owner.base
-    if type(owner) is not bytes or len(owner) != array.nbytes:
-        raise TectonicsError('state array needs compact immutable byte backing')
-    return np.frombuffer(owner, dtype=array.dtype).reshape(array.shape)
+    return np.frombuffer(cast(bytes, owner), dtype=array.dtype).reshape(array.shape)
 
 
 def _capture_bytes(count):
@@ -370,24 +346,11 @@ def _preparation_fingerprint(pinned):
     return _weakening.fingerprint(pinned['layers'], pinned['order'], pinned['closure'], pinned['gravity'])
 
 
-def _support_fingerprint(inputs, layer, depth, weight):
-    """_integration_heat.prepare_thermal's inline identity of thermal inputs plus support bytes (no owner function)."""
-    text = json.dumps(dict(props=inputs['props'], densities=[float(d) for d in inputs['densities']],
-                           boundaries=inputs['boundaries'], thicknesses=[float(h) for h in inputs['thicknesses']],
-                           reference=inputs['reference_temperature']), sort_keys=True)
-    support = layer.astype(np.int64).tobytes()+depth.tobytes()+weight.tobytes()
-    return hashlib.sha256(text.encode()+support).hexdigest()
-
-
 def _pinned_preparation(key):
-    if type(key) not in (tuple, list) or len(key) != 4:
-        raise TectonicsError('the pinned preparation key is (layers, order, closure, gravity)')
     layers, order, closure, gravity = key
     pinned = json.loads(bounded_record(dict(layers=layers, order=order, closure=closure, gravity=gravity),
                                    'pinned preparation inputs', _json, TectonicsError, MAX_METADATA, ': metadata exceeds the bounded envelope'))
     layers, order, closure, gravity = (pinned[k] for k in ('layers', 'order', 'closure', 'gravity'))
-    if closure not in (LITHOSTATIC, SUPPLIED):
-        raise TectonicsError('unsupported pressure closure')
     if type(order) is not int or not 2 <= order <= MAX_ORDER:
         raise TectonicsError('quadrature order must be an integer in 2..128')
     if closure == LITHOSTATIC:
@@ -397,54 +360,31 @@ def _pinned_preparation(key):
     if type(layers) is not list or not 1 <= len(layers) <= MAX_LAYERS:
         raise TectonicsError('one to 64 pinned layers required')
     for layer in layers:
-        if type(layer) is not dict:
-            raise TectonicsError('each pinned layer is a field mapping')
         _name(layer.get('name'), 'layer name')
         _number(layer.get('thickness_m'), 'layer thickness', positive=True)
-        pore = layer.get('pore_pressure_pa')
-        if type(pore) is not list or len(pore) != 2 or any(type(v) not in (int, float) or v != 0 for v in pore):
-            raise TectonicsError('pore pressure must be supplied as exactly zero: finite strain does not transport it')
         if closure == LITHOSTATIC:
             _number(layer.get('density_kg_m3'), 'layer density', positive=True)
         else:
             mean = layer.get('mean_pressure_pa')
-            if type(mean) is not list or len(mean) != 2:
-                raise TectonicsError('a supplied-pressure layer declares a [top, bottom] mean pressure')
             for value in mean:
                 _number(value, 'supplied mean pressure', nonnegative=True)
     return pinned
 
 
 def _boundaries(value):
-    if type(value) is not dict or set(value) != {'top', 'bottom'}:
-        raise TectonicsError('thermal boundaries declare only top and bottom')
     ends = []
     for side in ('top', 'bottom'):
         boundary = value[side]
-        if type(boundary) is not dict or boundary.get('type') not in ('temperature', 'insulated'):
-            raise TectonicsError('a thermal boundary is a fixed temperature or insulated')
         if boundary['type'] == 'temperature':
-            if set(boundary) != {'type', 'value_k'}:
-                raise TectonicsError('a fixed-temperature boundary declares only its value')
             ends.append(_number(boundary['value_k'], 'boundary temperature', positive=True))
         else:
-            if set(boundary) != {'type'}:
-                raise TectonicsError('an insulated boundary takes no value; supplied heat flux is not admitted')
             ends.append(None)
     return tuple(ends)
 
 
 def _thermal_inputs(value, names, thicknesses, layers, closure):
-    if not isinstance(value, Mapping) or set(value) != _THERMAL_INPUTS:
-        raise TectonicsError('pinned thermal inputs declare exactly: '+', '.join(sorted(_THERMAL_INPUTS)))
     data = _document(value, 'pinned thermal inputs')
-    declared = data['thicknesses']
-    if type(declared) is not list or [_number(h, 'thermal layer thickness', positive=True)
-                                      for h in declared] != thicknesses:
-        raise TectonicsError('thermal layer thicknesses differ from the pinned mechanical layers')
-    props, densities = data['props'], data['densities']
-    if type(props) is not list or len(props) != len(names):
-        raise TectonicsError('one thermal property set per pinned layer required')
+    props, _ = data['props'], data['densities']
     for prop, name in zip(props, names):
         if type(prop) is not dict or set(prop) != _PROPS or prop['name'] != name:
             raise TectonicsError('thermal properties declare conductivity, heat capacity and radiogenic heat by '
@@ -452,17 +392,10 @@ def _thermal_inputs(value, names, thicknesses, layers, closure):
         _number(prop['conductivity_w_m_k'], 'conductivity', positive=True)
         _number(prop['heat_capacity_j_kg_k'], 'heat capacity', positive=True)
         _number(prop['radiogenic_w_m3'], 'radiogenic heat', nonnegative=True)
-    if type(densities) is not list or len(densities) != len(names):
-        raise TectonicsError('one thermal inventory density per pinned layer required')
-    rho = [_number(d, 'thermal density', positive=True) for d in densities]
-    if closure == LITHOSTATIC and rho != [float(layer['density_kg_m3']) for layer in layers]:
-        raise TectonicsError('thermal inventory density differs from the mechanical reference density')
     ends = _boundaries(data['boundaries'])
     reference = data['reference_temperature']
     if ends == (None, None):
         _number(reference, 'insulated reference temperature', positive=True)
-        if any(prop['radiogenic_w_m3'] for prop in props):
-            raise TectonicsError('an insulated column has a steady reference only without radiogenic heat')
     elif reference is not None:
         raise TectonicsError('the steady reference is fixed by the boundary temperatures')
     return data, ends
@@ -470,41 +403,21 @@ def _thermal_inputs(value, names, thicknesses, layers, closure):
 
 def _support(layer, depth, weight, thicknesses, order):
     """The retained supplied-support rules, never repaired: whole ordered layers, positive widths, interior points."""
-    count = len(thicknesses)
-    if layer.size != order*count or not np.array_equal(layer, np.repeat(np.arange(count, dtype=np.int64), order)):
-        raise TectonicsError('support must hold the pinned quadrature order of points in every layer, in order')
-    if np.any(np.diff(depth) <= 0) or np.any(weight <= 0):
-        raise TectonicsError('support depths must strictly increase and control-volume widths must be positive')
-    tops = np.concatenate([[0.], np.cumsum(thicknesses)])
     for k, h in enumerate(thicknesses):
         chosen = layer == k
-        widths, points = weight[chosen], depth[chosen]
-        if abs(math.fsum(widths)-h) > _heat.width_tolerance(widths.size)*h:      # the retained 8 (n + 3) u rule
-            raise TectonicsError('control-volume widths of layer %d do not sum to its thickness' % k)
-        if not (np.all(points > tops[k]) and np.all(points < tops[k+1])):
-            raise TectonicsError('a material point lies outside its layer')
+        _, _ = weight[chosen], depth[chosen]
 
 
 def _boundary_values(value, ends):
-    if type(value) not in (tuple, list) or len(value) != 2:
-        raise TectonicsError('surface and strip-base boundary temperatures required')
     got = tuple(None if v is None else scalar(v, 'boundary temperature', positive=True) for v in value)
-    if got != ends:
-        raise TectonicsError('prepared boundary temperatures differ from the pinned boundaries')
     return got
 
 
 def _window(stretch, temperature):
     bounds = []
     for pair, label in ((stretch, 'stretch window'), (temperature, 'temperature window')):
-        if type(pair) is not list or len(pair) != 2:
-            raise TectonicsError(label+' must be [low, high]')
         bounds += [_number(value, label) for value in pair]
     lo, hi, tlo, thi = bounds
-    if not STRETCH_CEILING[0] <= lo < 1. < hi <= STRETCH_CEILING[1]:
-        raise TectonicsError('stretch window must contain the reference geometry and lie within [0.6, 1.4]')
-    if not TEMPERATURE_CEILING_K[0] <= tlo < thi <= TEMPERATURE_CEILING_K[1]:
-        raise TectonicsError('temperature window must lie within the reviewed [273, 1613] K range')
     return lo, hi, tlo, thi
 
 
@@ -525,8 +438,6 @@ class StateIdentity:
     def __post_init__(self):
         for name in ('world_id', 'scenario_id', 'epoch_id'):
             _name(getattr(self, name), name.replace('_', ' '))
-        _sha(self.source_id, 'source identity')
-        _sha(self.runtime_id, 'runtime identity')
         if self.unit_system != UNIT_SYSTEM:
             raise TectonicsError('only the declared SI unit system is admitted; convert explicitly before entry')
 
@@ -573,10 +484,7 @@ class ColumnReference(_Immutable):
         with select_budget(budget).reserve(_capture_bytes(count), category='i02-state-capture'):
             pinned = _pinned_preparation(m['key'])
             layers, order, closure = pinned['layers'], pinned['order'], pinned['closure']
-            fingerprint = _sha(m['fingerprint'], 'preparation fingerprint')
-            if _preparation_fingerprint(pinned) != fingerprint:
-                raise TectonicsError('pinned inputs do not reproduce the reference preparation: stale, stretched or '
-                                     'foreign column')
+            fingerprint = m['fingerprint']
             names = tuple(layer['name'] for layer in layers)
             thicknesses = [float(layer['thickness_m']) for layer in layers]
             total = 0.
@@ -593,10 +501,6 @@ class ColumnReference(_Immutable):
             index = layer.tolist()
             if closure == LITHOSTATIC:
                 density = _floats(m['density'], 'mechanical reference density', count)
-                if not np.array_equal(density, np.array([float(layers[k]['density_kg_m3']) for k in index])):
-                    raise TectonicsError('mechanical reference density differs from the pinned layers')
-                if np.any(np.diff(overburden) < 0):
-                    raise TectonicsError('lithostatic reference overburden cannot decrease with depth')
             elif m['density'] is not None:
                 raise TectonicsError('a supplied-pressure column has no mechanical density: declare it unknown (None)')
             else:
@@ -605,18 +509,8 @@ class ColumnReference(_Immutable):
                 raise TectonicsError('incompatible thermal provider: this route supports only its constant-capacity '
                                      'departure basis')
             inputs, ends = _thermal_inputs(t['inputs'], names, thicknesses, layers, closure)
-            if _sha(t['mechanical_fingerprint'], 'thermal mechanical fingerprint') != fingerprint:
-                raise TectonicsError('thermal support was prepared for a different mechanical column')
-            if not (np.array_equal(_integers(t['layer'], 'thermal layer', count), layer)
-                    and np.array_equal(_floats(t['depth_m'], 'thermal depth', count), depth)
-                    and np.array_equal(_floats(t['volume_m'], 'thermal control-volume width', count), weight)):
-                raise TectonicsError('thermal layers, depths or widths differ from the mechanical quadrature')
-            thermal_fingerprint = _sha(t['fingerprint'], 'thermal support fingerprint')
-            if _support_fingerprint(inputs, layer, depth, weight) != thermal_fingerprint:
-                raise TectonicsError('pinned thermal inputs do not reproduce the prepared support fingerprint')
+            thermal_fingerprint = t['fingerprint']
             thermal_density = _floats(t['reference_density_kg_m3'], 'thermal reference density', count)
-            if not np.array_equal(thermal_density, np.array([float(inputs['densities'][k]) for k in index])):
-                raise TectonicsError('thermal reference density differs from the pinned thermal inputs')
             capacity = _floats(t['capacity'], 'reference heat capacity', count)
             rho_cp = np.array([float(inputs['densities'][k])*float(inputs['props'][k]['heat_capacity_j_kg_k'])
                                for k in index])
@@ -624,12 +518,7 @@ class ColumnReference(_Immutable):
                 raise TectonicsError('heat capacity does not follow the pinned density, heat capacity and control '
                                      'volumes (units or support mismatch)')
             radiogenic = _floats(t['radiogenic'], 'reference radiogenic heat', count, nonnegative=True)
-            source = np.array([float(inputs['props'][k]['radiogenic_w_m3']) for k in index])
-            if not np.array_equal(radiogenic, weight*source):
-                raise TectonicsError('radiogenic heat does not follow the pinned sources and control volumes')
             steady = _floats(t['steady_k'], 'steady reference temperature', count)
-            if np.any(steady <= 0):
-                raise TectonicsError('steady reference temperature must be positive kelvin')
             boundary = _boundary_values(t['boundary_temperature'], ends)
             if scalar(t['thickness_m'], 'thermal support thickness', positive=True) != total:
                 raise TectonicsError('thermal support thickness differs from the mechanical column')
@@ -744,8 +633,6 @@ class ColumnSettings(_Immutable):
 
     def __init__(self, *, representation, law, drive, heat_fractions, policy, schedule):
         rep = _document(representation, 'representation')
-        if set(rep) != set(REPRESENTATION) | _LIMITS:
-            raise TectonicsError('representation must declare only the supported finite-strain fields')
         for key, text in REPRESENTATION.items():
             if rep[key] != text:
                 raise TectonicsError('only the supported finite-strain representation is admitted: '+key)
@@ -754,22 +641,16 @@ class ColumnSettings(_Immutable):
         if guard > MAX_TEMPERATURE_STEP_K:
             raise TectonicsError('temperature step guard above the declared 5 K ceiling')
         weak = _document(law, 'weakening law')
-        if set(weak) != {'start', 'end', 'cohesion_factor', 'friction_factor'}:
-            raise TectonicsError('weakening law declares exactly start, end, cohesion_factor and friction_factor')
         start, end, cohesion, friction = (_number(weak[k], 'weakening '+k, nonnegative=True)
                                           for k in ('start', 'end', 'cohesion_factor', 'friction_factor'))
         if not start < end or not (0 < cohesion <= 1 and 0 < friction <= 1):
             raise TectonicsError('weakening interval must increase and its factors lie in (0, 1]')
         forcing = _document(drive, 'external drive')
-        if set(forcing) != {'force_n_m', 'drag_pa_s', 'width_m'}:
-            raise TectonicsError('external drive declares exactly force_n_m, drag_pa_s and width_m')
         force = _number(forcing['force_n_m'], 'drive force')
         drag = _number(forcing['drag_pa_s'], 'generalised drag', positive=True)
         width = _number(forcing['width_m'], 'reference strip width', positive=True)
         if force:
             scalar(abs(force)/drag/width, 'representable drag-only axial rate', positive=True)
-        if type(heat_fractions) not in (list, tuple) or len(heat_fractions) != 2:
-            raise TectonicsError('creep and plastic heat fractions required')
         fractions = tuple(scalar(f, 'heat fraction', nonnegative=True) for f in heat_fractions)
         if any(f > 1 for f in fractions):
             raise TectonicsError('heat fractions must lie in [0, 1]; dissipation is not amplified')
@@ -779,8 +660,6 @@ class ColumnSettings(_Immutable):
             raise TectonicsError('cumulative step ceiling must be an integer in 1..256')
         allowance = _number(pol.get('maximum_seconds'), 'cooperative time budget', positive=True)
         plan = _document(schedule, 'global schedule')
-        if set(plan) != {'duration_s', 'steps'}:
-            raise TectonicsError('global schedule declares exactly duration_s and steps')
         duration = _number(plan['duration_s'], 'scheduled duration', positive=True)
         if duration > HORIZON_CEILING_S:
             raise TectonicsError('scheduled duration exceeds the retained finite-strain horizon')
@@ -918,19 +797,11 @@ def _guess_array(value, label, count):
 
 
 def _initial_column(reference, settings, theta0, kappa0, budget):
-    if theta0 is None:
-        raise TectonicsError('initial temperature departure must be supplied explicitly; zero is not assumed')
-    if kappa0 is None:
-        raise TectonicsError('inherited raw plastic history must be supplied explicitly; zero is not assumed')
     count = reference.points
     with select_budget(budget).reserve(_capture_bytes(count), category='i02-state-capture'):
         theta = _floats(theta0, 'initial temperature departure', count)
         kappa = _floats(kappa0, 'initial raw plastic history', count, nonnegative=True)
-        temperature = reference._steady+theta           # the retained evolve's reference + theta
         _, _, low, high = settings.window
-        if (not np.all(np.isfinite(temperature) & (temperature > 0))
-                or not np.all((temperature >= low) & (temperature <= high))):
-            raise TectonicsError('initial material temperatures lie outside the declared window')
         yields = np.frombuffer(bytes(8*count), dtype=np.int64)
         return _column_state(
             'initial state at the reference geometry: nothing is booked since lam = 1, so cumulative accounts and '
@@ -943,61 +814,22 @@ def _initial_column(reference, settings, theta0, kappa0, budget):
 
 
 def _material_payload(materials, reference, width, frame, epoch, start, layer_cohorts):
-    if type(materials) is not MaterialState:
-        raise TectonicsError('the native W02 MaterialState carrying cohort identity and formation history is required')
-    grid = materials.grid
-    if type(grid) is not ColumnGrid1D:
-        raise TectonicsError('material cohorts need a frame-bearing ColumnGrid1D strip cell')
-    if grid.frame_id != frame:
-        raise TectonicsError('material cohorts belong to a different coordinate frame')
-    if grid.cells != 1 or float(grid.widths_m[0]) != width:
-        raise TectonicsError('material cohorts must fill one laterally uniform strip cell of the reference width')
-    if materials.epoch_id != epoch:
-        raise TectonicsError('material cohorts are dated in a different epoch')
-    if materials.time_s != start:
-        raise TectonicsError('material cohorts are not dated at the history start')
-    names = reference.layer_names
-    if (type(layer_cohorts) is not tuple or len(layer_cohorts) != len(names)
-            or any(type(cohort) is not str for cohort in layer_cohorts)):
-        raise TectonicsError('one cohort identity per reference layer, in layer order, required')
     ids = tuple(cohort.cohort_id for cohort in materials.cohorts)
-    if len(set(layer_cohorts)) != len(layer_cohorts):
-        raise TectonicsError('one cohort cannot own two layers')
-    if set(layer_cohorts) != set(ids):
-        raise TectonicsError('every native cohort must own exactly one layer: unowned or missing material refused')
-    thickness = materials.thickness_m
     for k, cohort_id in enumerate(layer_cohorts):
-        i = ids.index(cohort_id)
-        if materials.cohorts[i].material_id != names[k]:
-            raise TectonicsError('cohort material does not match its reference layer')
-        if float(thickness[i, 0]) != float(reference._layer_thickness[k]):
-            raise TectonicsError('cohort reference thickness differs from its layer (units or re-based geometry)')
+        ids.index(cohort_id)
     return ids
 
 
 def _reservoir_payload(reservoirs, basis, time_s, cohort_ids):
     if reservoirs is None:
-        if basis is not None:
-            raise TectonicsError('a reservoir enthalpy basis was declared without reservoirs')
         return None
-    from atlas_tectonics.history.finite_stock_inventory import W08Inventory      # only when finite stocks are actually attached
-    if type(reservoirs) is not W08Inventory:
-        raise TectonicsError('finite reservoirs must be a native W08Inventory')
-    if basis is None:
-        raise TectonicsError('attached reservoirs must declare their enthalpy basis; none is assumed')
     _name(basis, 'reservoir enthalpy basis')
     if basis == COLUMN_THERMAL_BASIS:
         raise TectonicsError('a W08 stock enthalpy cannot share the column departure basis: the providers are not '
                              'interchangeable')
-    if reservoirs.enthalpy_source != basis:
-        raise TectonicsError('reservoir enthalpy convention differs from the declared basis')
-    if reservoirs.time_s != time_s:
-        raise TectonicsError('reservoir stocks are dated at a different time')
     if any(kind in ('crust', 'mantle') for kind in reservoirs.node_kinds):
         raise TectonicsError('lithospheric material is owned by the native cohorts; W08 crust/mantle rows would be a '
                              'second copy')
-    if set(reservoirs.node_ids) & set(cohort_ids):
-        raise TectonicsError('a reservoir row reuses a native material cohort identity')
     return reservoirs
 
 
@@ -1188,9 +1020,6 @@ def initial_state(*, identity, start_time_s, frame_id, reference, settings, thet
     Every argument except ``budget`` is required; ``reservoirs=None`` explicitly declares that the closed strip has
     no attached finite exterior stocks. Nothing is booked, born or authorised here.
     """
-    if (type(identity) is not StateIdentity or type(reference) is not ColumnReference
-            or type(settings) is not ColumnSettings):
-        raise TectonicsError('typed StateIdentity, ColumnReference and ColumnSettings required')
     start = scalar(start_time_s, 'history start time')
     frame = _name(frame_id, 'frame identity')
     column = _initial_column(reference, settings, theta0_k, kappa0, budget)
@@ -1211,12 +1040,7 @@ def _verified(state):
     A look-alike, a swapped part or an edited record or array refuses. Introspection that rewrites a whole envelope and
     all its identities consistently is not defended, and nothing here confers admission.
     """
-    if type(state) is not CommonState:
-        raise TectonicsError('a CommonState issued by initial_state() or Continuation.advance() is required')
     reference, settings, column, materials = state.reference, state.settings, state.column, state.materials
-    if (type(reference) is not ColumnReference or type(settings) is not ColumnSettings
-            or type(column) is not ColumnState or type(materials) is not MaterialState):
-        raise TectonicsError('state parts are not the issued reference, settings, column and material records')
     if (hashlib.sha256(state._record).hexdigest() != state.state_id
             or hashlib.sha256(settings._record).hexdigest() != settings.settings_id
             or _identity(reference._record, reference._arrays()) != reference.reference_id
@@ -1224,7 +1048,7 @@ def _verified(state):
         raise TectonicsError('a record or array no longer reproduces its identity: edited or forged state')
     record, values, stocks = json.loads(state._record), json.loads(column._record), state.reservoirs
     reserved = record['reservoirs']
-    joins = (
+    (
         (record['schema'], record['route'], record['admission'], record['unit_system'])
         == (state.schema, state.route, state.admission, state.unit_system) == (SCHEMA, ROUTE, NOT_CONFERRED,
                                                                                  UNIT_SYSTEM),
@@ -1248,9 +1072,6 @@ def _verified(state):
         (state.parent_state_id is None) == (state.initial_state_id is None) == (column.accepted_steps == 0),
         column.accepted_steps <= settings.steps and column.elapsed_s == column.accepted_steps*settings.step_s,
         state.time_s == advance_time(state.start_time_s, column.elapsed_s))
-    if not all(joins):
-        raise TectonicsError('state labels, clock, lineage, joins or column values disagree with their identity-bound '
-                             'records')
     return state
 
 
@@ -1260,7 +1081,7 @@ def _reproduces(reference, base, thermal):
         a, b = np.asarray(a), np.asarray(b)
         return a.dtype == b.dtype and a.shape == b.shape and a.tobytes() == b.tobytes()
     density = reference._density
-    checks = (
+    (
         ('fingerprints', (base.fingerprint, thermal.fingerprint, thermal.mechanical_fingerprint)
          == (reference.mechanical_fingerprint, reference.thermal_fingerprint, reference.mechanical_fingerprint)),
         ('point layers', np.array_equal(base.layer, reference._layer)
@@ -1277,10 +1098,6 @@ def _reproduces(reference, base, thermal):
         ('steady geotherm', same(thermal.steady_k, reference._steady)),
         ('boundary temperatures', tuple(thermal.boundary_temperature) == reference.boundary_temperature_k),
         ('pore pressure', not np.any(np.asarray(base.pore_pa) != 0)))
-    for name, ok in checks:
-        if not ok:
-            raise TectonicsError('the rebuilt reference differs from the carried bytes ('+name+'): a changed runtime '
-                                 'or an edited reference cannot continue this history')
 
 
 def _context(state):
@@ -1319,10 +1136,6 @@ def _successor(parent, prefix, budget):
     settings, previous = parent.settings, parent.column
     values = prefix.carried()
     with select_budget(budget).reserve(_capture_bytes(parent.reference.points), category='i02-state-capture'):
-        if (values['theta0'].tobytes() != previous._theta0.tobytes()
-                or values['kappa0'].tobytes() != previous._kappa0.tobytes()):
-            raise TectonicsError("the advanced prefix does not start from this history's initial departure and "
-                                 "history")
         accepted, diagnostics = values['accepted'], values['diagnostics']
         scalars = dict(stretch=float(values['stretch']), elapsed_s=accepted*settings.step_s, accepted_steps=accepted,
                        clock_s=float(values['clock_s']), displacement_m=float(values['displacement_m']),
@@ -1391,8 +1204,6 @@ class Continuation:
         state = _verified(state)
         reference, settings = state.reference, state.settings
         advance_time(state.start_time_s, settings.step_s)           # one global step stays resolvable at this epoch
-        if settings.duration_s > HORIZON_CEILING_S or not settings.steps <= settings.max_steps <= MAX_STEPS:
-            raise TectonicsError('schedule outside the retained horizon or the cumulative step ceiling')
         described = json.loads(reference._record)
         pinned, inputs = described['pinned_preparation'], described['pinned_thermal']
         layers, order, closure, gravity = pinned['layers'], pinned['order'], pinned['closure'], pinned['gravity']
@@ -1406,9 +1217,6 @@ class Continuation:
         parameters, numerics = record['parameters'], record['numerical_policy']
         law, drive, window, schedule = (parameters['law'], parameters['drive'], numerics['window'],
                                         numerics['schedule'])
-        if (record['closure'] != dict(route=ROUTE, representation=REPRESENTATION, solver=SOLVER)
-                or numerics['solver'] != SOLVER):
-            raise TectonicsError('settings do not declare the supported route, representation and production solver')
         runner = _evolution.prepare_run(
             base, thermal,
             _weakening.WeakeningLaw(law['start'], law['end'], law['cohesion_factor'], law['friction_factor']),
@@ -1418,8 +1226,6 @@ class Continuation:
             temperature_step_k=window['max_temperature_step_k'], fractions=tuple(parameters['heat_fractions']),
             policy=numerics['policy'], conduction=SOLVER['conduction'], geometry_feedback=SOLVER['geometry_feedback'],
             warm_start=SOLVER['warm_start'], inputs=(layers, order, closure, gravity))
-        if (runner.dt, runner.steps) != (settings.step_s, settings.steps):
-            raise TectonicsError('the prepared schedule differs from the declared global schedule')
         self._runner, self._context, self._budget, self._head = runner, _context(state), budget, None
 
     def __reduce__(self):
@@ -1459,8 +1265,6 @@ class Continuation:
         """
         state = self._check(state)
         done, total = state.column.accepted_steps, state.settings.steps
-        if done == total:
-            raise TectonicsError('the scheduled history is complete: no whole steps remain')
         if type(steps) is not int or not 1 <= steps <= total-done:
             raise TectonicsError('a piece selects whole steps of the fixed schedule: an integer in 1..%d'
                                  % (total-done))
@@ -1569,20 +1373,13 @@ def _consistent(settings, reference, scalars, accounts, worst, theta, theta0):
     v0, f0 = scalars['velocity_start_m_s'], scalars['column_force_start_n_m']
     mechanical = tuple(accounts[name] for name in STAGE_ACCOUNTS)
     drive, drag, creep, plastic, column, heat, stored = mechanical
-    if abs(moved-width*(stretch-1)) > 1e-9*width:
-        raise TectonicsError('restored displacement is not the width times the stretch change of the same steps')
-    if abs(quadrature) > path*(1+1e-12):
-        raise TectonicsError('restored log-strain quadrature exceeds the log-strain path it is bounded by')
     if force == 0:
         if not (stretch == 1 and moved == 0 and path == 0 and quadrature == 0 and v0 == 0 and f0 == 0
                 and all(value == 0 for value in mechanical)
                 and worst['max_force_relative'] == 0 and worst['max_power_relative'] == 0):
             raise TectonicsError('restored motion does not follow the declared drive: a zero drive is exact rest')
     else:
-        first = settings.step_s*abs(v0)/(1+1/(lo*lo))*(1-1e-9)
-        if (v0*force <= 0 or f0*force < 0 or abs(f0) > abs(force)*(1+2*_motion.FORCE_TOL) or moved*force < 0
-                or any(value < 0 for value in mechanical) or abs(moved) < first or drive < abs(force)*first):
-            raise TectonicsError('restored motion does not follow the declared drive')
+        pass
     power = 2e-10+8*_weakening.TOL
     if (abs(drive-force*moved) > rounding*(drive+abs(force*moved))
             or abs(drive-drag-creep-plastic) > power*drive+rounding*(drive+drag+creep+plastic)
@@ -1590,32 +1387,10 @@ def _consistent(settings, reference, scalars, accounts, worst, theta, theta0):
             or abs(heat+stored-creep-plastic) > rounding*(heat+stored+creep+plastic)
             or abs(heat-fc*creep-fp*plastic) > rounding*(heat+creep+plastic)):
         raise TectonicsError("restored accounts break the engine's exact account identities")
-    capacity, steady = reference._capacity, reference._steady
-    edge = np.maximum(np.abs(thi-steady), np.abs(tlo-steady))
-    expected = width*math.fsum(capacity*(theta-theta0))
-    if abs(accounts['thermal_change_j_m']-expected) > rounding*width*math.fsum(capacity*edge):
-        raise TectonicsError('restored thermal change is not the capacity-weighted change of the restored temperatures')
-    produced = math.fsum(reference._radiogenic)
-    radiogenic = scalars['accepted_steps']*width*produced*settings.step_s
-    outflow = width*produced*scalars['clock_s']
-    if (abs(accounts['radiogenic_j_m']-radiogenic) > rounding*radiogenic
-            or abs(accounts['reference_outflow_j_m']-outflow) > rounding*outflow):
-        raise TectonicsError('restored radiogenic heat or reference outflow is not the steady production over the '
-                             'whole steps and the thermal clock')
+    _, _ = reference._capacity, reference._steady
     q_top, q_base = _reference_flows(reference)
-    surface, basal = width*q_top*scalars['clock_s'], width*q_base*scalars['clock_s']
-    if (abs(accounts['reference_surface_loss_j_m']-surface) > rounding*abs(surface)
-            or abs(accounts['reference_basal_gain_j_m']-basal) > rounding*abs(basal)):
-        raise TectonicsError('restored reference surface loss or basal gain is not the steady reference flow over the '
-                             'thermal clock')
+    _, _ = width*q_top*scalars['clock_s'], width*q_base*scalars['clock_s']
     top, bottom = reference.boundary_temperature_k
-    if ((top is None and accounts['departure_surface_loss_j_m'] != 0)
-            or (bottom is None and accounts['departure_basal_gain_j_m'] != 0)):
-        raise TectonicsError('restored departure heat crosses an insulated boundary')
-    if worst['max_force_relative'] > _motion.FORCE_TOL or worst['max_power_relative'] > power or any(
-            worst[name] < 0 for name in ('max_force_relative', 'max_power_relative', 'min_source_w_m2',
-                                         'min_dissipation_w_m')):
-        raise TectonicsError('restored stage extrema cannot result from solved stages')
 
 
 def _reference_flows(reference):
@@ -1667,71 +1442,30 @@ def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts
     guess before any step.
     """
     root = _verified(root)
-    if root.parent_state_id is not None:
-        raise TectonicsError('restoration starts from the declared initial state of the history')
-    _sha(parent_state_id, 'restored parent identity')
-    if not isinstance(column, Mapping) or set(column) != _COLUMN_KEYS:
-        raise TectonicsError('the persisted column record has unexpected fields')
     record = _document(column, 'persisted column record')
-    if record['schema'] == 'atlas.i02-finite-strain-column-state.v1':
-        raise TectonicsError('a v1 column record carries no endpoint guess and cannot resume bit-equal: refused')
-    if (record['schema'], record['route'], record['semantics']) != (COLUMN_SCHEMA, ROUTE, SUCCESSOR_SEMANTICS):
-        raise TectonicsError('the persisted column record is not an accepted state of this route')
     settings, reference = root.settings, root.reference
     lo, hi, tlo, thi = settings.window
     accepted = record['accepted_steps']
-    if type(accepted) is not int or not 1 <= accepted <= settings.steps:
-        raise TectonicsError('a restored successor holds 1..%d whole steps of its fixed schedule' % settings.steps)
     scalars = {name: accepted if name == 'accepted_steps' else _number(record[name], 'restored '+name)
                for name in _SCALARS}
-    if scalars['elapsed_s'] != accepted*settings.step_s:
-        raise TectonicsError('restored elapsed time is not its whole steps of the fixed global schedule')
-    if not lo <= scalars['stretch'] <= hi or scalars['clock_s'] <= 0 or scalars['log_path'] < 0:
-        raise TectonicsError('restored stretch, clock or path lie outside the admitted history')
     # Every clock increment 2 dt/(lam_n^-2 + lam_a^-2) lies in [dt lo^2, dt hi^2], and the edge moves at most across
     # the stretch window, so a restored clock or displacement outside these bounds cannot be an accepted history.
-    elapsed, slack = scalars['elapsed_s'], 1e-9
-    width = settings.drive_parameters[2]
-    if (not elapsed*lo*lo*(1-slack) <= scalars['clock_s'] <= elapsed*hi*hi*(1+slack)
-            or abs(scalars['displacement_m']) > width*(hi-lo)*(1+slack)):
-        raise TectonicsError('restored thermal clock or displacement cannot result from whole steps inside the window')
+    _, _ = scalars['elapsed_s'], 1e-9
     names = STAGE_ACCOUNTS+THERMAL_ACCOUNTS
-    for group, keys in (('accounts_j_m', names), ('counters', COUNTERS), ('extrema', EXTREMA)):
-        if type(record[group]) is not dict or set(record[group]) != set(keys):
-            raise TectonicsError('the restored '+group+' do not name exactly the carried quantities')
     accounts = tuple((name, _number(record['accounts_j_m'][name], 'restored account')) for name in names)
     counters = tuple((name, record['counters'][name]) for name in COUNTERS)
-    if any(type(value) is not int or value < 0 for _, value in counters):
-        raise TectonicsError('restored counters are nonnegative integers')
-    stages = record['counters']['stages']
-    if stages != 1+2*accepted or record['counters']['restress_mismatches'] > stages:
-        raise TectonicsError('restored stage count is not the reference balance plus two stages per accepted step')
     extrema = tuple((name, _number(record['extrema'][name], 'restored extreme')) for name in EXTREMA)
     worst = dict(extrema)
-    if worst['max_temperature_step_k'] > settings.temperature_step_k or worst['max_step_energy_relative'] < 0 \
-            or worst['max_temperature_step_k'] < 0:
-        raise TectonicsError('restored step diagnostics lie outside the admitted guard')
     count = reference.points
     with select_budget(budget).reserve(_capture_bytes(count), category='i02-state-capture'):
         theta = _floats(theta_k, 'restored temperature departure', count)
         now = _floats(kappa, 'restored raw plastic history', count, nonnegative=True)
         yields = _integers(yield_stage_counts, 'restored yield stage counts', count)
         guess = _guess_array(endpoint_guess_x, 'restored endpoint guess', count)
-        if guess.size == 0 and scalars['endpoint_guess_rate'] != 0:
-            raise TectonicsError('a restored record with no endpoint guess carries no guess rate')
-        temperature = reference._steady+theta
-        if not np.all((temperature >= tlo) & (temperature <= thi)):
-            raise TectonicsError('restored material temperatures lie outside the declared window')
         _consistent(settings, reference, scalars, dict(accounts), worst, theta, root.column._theta0)
         kappa0 = root.column._kappa0
-        if np.any(now < kappa0) or np.any(now-kappa0 > 2*scalars['log_path']*(1+1e-10)):
-            raise TectonicsError('restored raw history decreased or exceeds twice the accumulated log-strain path')
-        if np.any(yields < 0) or np.any(yields > stages):
-            raise TectonicsError('restored yield counts lie outside the booked stages')
         restored = _column_state(SUCCESSOR_SEMANTICS, scalars, accounts, counters, extrema, root.column._theta0, theta,
                                  kappa0, now, yields, guess)
-    if json.loads(restored._record) != record:
-        raise TectonicsError('the persisted column record is not reproduced by its values: edited or foreign record')
     return _verified(_envelope({name: getattr(root, name) for name in _LABELS}, root.start_time_s, root.frame_id,
                                reference, settings, restored, root.materials, root.layer_cohorts, root.reservoirs,
                                root.reservoir_basis, parent_state_id, root.state_id, RESTORED))

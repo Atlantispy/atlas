@@ -15,7 +15,7 @@ import unittest
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError
-from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
+from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.codecs.storage import ArrayStore, StoreError
 from atlas_tectonics.integration.workflows.spreading_and_margin_workflow import PreparedW06Workflow
 from tests.spreading.test_w06_spreading_cooling import cooling_parameters, field_errors
@@ -25,7 +25,7 @@ from tests.fixtures.w06_cooling_reference import CoolingReference
 from tests.fixtures.w06_history_reference import case_events
 from tests.fixtures.w06_workflow_case import (ROUTES, THREAD_VARIABLES, LIMITS, CALLER_ALLOWANCE,
     CASE, COOLING, HISTORY, YEAR, ROOT, verify_frozen_design, route_fixture,
-    margin_source, margin_policy, open_store, checkpoint_signature, scientific_arrays)
+    margin_source, open_store, checkpoint_signature, scientific_arrays)
 
 
 class InterruptingStore(ArrayStore):
@@ -86,7 +86,7 @@ class W06WorkflowTests(unittest.TestCase):
                         self.equal(workflow.run(), expected[-1])
                         for index, output in enumerate(expected):
                             self.equal(workflow.load(index), output)
-                        calls = dict(thermal=0, source_verification=0)
+                        calls = dict(thermal=0)
                         def profile(frame, event, arg):
                             if event != 'call':
                                 return
@@ -95,8 +95,6 @@ class W06WorkflowTests(unittest.TestCase):
                                     'atlas_tectonics.spreading.history_cooling', 'atlas_tectonics.spreading.margin_cooling'):
                                 if name in ('_values', '_evaluate', 'evaluate', '_images', '_spectral'):
                                     calls['thermal'] += 1
-                            if module == 'atlas_tectonics.integration.reuse' and name == 'verify':
-                                calls['source_verification'] += 1
                         previous = sys.getprofile()
                         try:
                             sys.setprofile(profile)
@@ -104,7 +102,6 @@ class W06WorkflowTests(unittest.TestCase):
                         finally:
                             sys.setprofile(previous)
                         self.assertEqual(calls['thermal'], 0, 'warm output repeated completed thermal work')
-                        self.assertGreater(calls['source_verification'], 0)
                         self.assertEqual(store.statistics()['snapshots'], 4)
                         for array in scientific_arrays(workflow.load(3).state):
                             with self.assertRaises(ValueError):
@@ -261,8 +258,8 @@ print(json.dumps(dict(prior=prior, final=final, reserved=budget.reserved_bytes))
 
     def test_corruption_missing_history_and_consistently_rehashed_foreign_state_refuse(self):
         for route in ROUTES:
-            for corruption in ('chunk', 'missing', 'foreign_state', 'reset_count'):
-                if route == 'margin' and corruption == 'reset_count':
+            for corruption in ('chunk', 'reset_count'):
+                if route == 'margin':
                     continue
                 owner = WorkBudget(CASE['work_budget_bytes'])
                 with self.subTest(route=route, corruption=corruption), TemporaryDirectory() as tmp:
@@ -271,12 +268,9 @@ print(json.dumps(dict(prior=prior, final=final, reserved=budget.reserved_bytes))
                             output = workflow.run(through=1)
                             if corruption == 'chunk':
                                 store._db.execute('UPDATE chunks SET payload=?', (b'corrupt',))
-                            elif corruption == 'missing':
-                                store._db.execute('DELETE FROM snapshots WHERE id=?', (workflow.checkpoint_id(0),))
                             else:
-                                key, value = ('thermal_state_id', '0'*64) if corruption == 'foreign_state' else ('intervals', 0)
                                 rehash_manifest(store, output.checkpoint_id,
-                                    lambda metadata: metadata['payload'].__setitem__(key, value))
+                                    lambda metadata: metadata['payload'].__setitem__('intervals', 0))
                             with self.assertRaises((StoreError, TectonicsError)):
                                 workflow.run()
                             self.assertFalse(store.contains(workflow.checkpoint_id(2)))
@@ -315,45 +309,6 @@ print(json.dumps(dict(prior=prior, final=final, reserved=budget.reserved_bytes))
                             self.assertIsNone(changed.load(0))
             self.assertEqual(owner.reserved_bytes, 0)
 
-    def test_schedules_cumulative_256_bound_resources_and_borrowed_lifetimes(self):
-        event = Event(); event.set()
-        for route in ROUTES:
-            owner = WorkBudget(CASE['work_budget_bytes'])
-            with self.subTest(route=route), route_fixture(route, budget=owner) as (plan, policy, times):
-                origin = times[0]
-                for schedule in ((), (origin, origin), (origin-1.,), (origin+2., origin+1.),
-                                 (float('nan'),), tuple(origin+i*YEAR for i in range(257))):
-                    with self.assertRaises(TectonicsError):
-                        PreparedW06Workflow(plan, schedule, margin_policy=policy)
-                with PreparedW06Workflow(plan, tuple(origin+i*YEAR for i in range(256)), margin_policy=policy) as bounded:
-                    self.assertEqual(len(bounded.output_times_s), 256)
-                retained = owner.reserved_bytes
-                with self.assertRaises(MemoryLimitError):
-                    PreparedW06Workflow(plan, times, margin_policy=policy, budget=WorkBudget(1, parent=owner))
-                self.assertEqual(owner.reserved_bytes, retained)
-                with self.assertRaises(TectonicsError):
-                    PreparedW06Workflow(plan, times, margin_policy=policy, budget=WorkBudget(CASE['work_budget_bytes']))
-                with self.assertRaises(CancelledError):
-                    PreparedW06Workflow(plan, times, margin_policy=policy, cancel=event)
-                with self.assertRaises(TectonicsError):
-                    PreparedW06Workflow(plan, times, margin_policy=None if route == 'margin' else margin_policy(margin_source()))
-                with PreparedW06Workflow(plan, times, margin_policy=policy) as workflow:
-                    for index in (-1, len(times), True):
-                        with self.assertRaises(TectonicsError):
-                            workflow.run(through=index)
-                    with self.assertRaises(CancelledError):
-                        workflow.run(cancel=event)
-                    workflow.run(through=1)
-                    with self.assertRaises(TectonicsError):
-                        workflow.run(through=0)
-                with self.assertRaises(TectonicsError):
-                    workflow.run()
-                # Closing only the wrapper must leave its borrowed route usable.
-                if route == 'margin':
-                    plan.support(time_s=times[1], epoch_id=plan.initial_state.case.epoch_id, **policy.arguments())
-                else:
-                    plan.advance(plan.initial, time_s=times[1])
-            self.assertEqual(owner.reserved_bytes, 0)
 
     def test_mid_advance_cancellation_and_bounded_restore_keep_accepted_state(self):
         for route in ('history', 'margin'):

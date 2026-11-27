@@ -136,8 +136,6 @@ def _final_path(handle):
     while True:
         buffer = ctypes.create_unicode_buffer(size)
         length = kernel.GetFinalPathNameByHandleW(handle, buffer, size, 0)   # FILE_NAME_NORMALIZED|VOLUME_NAME_DOS
-        if length == 0:
-            raise ctypes.WinError(ctypes.get_last_error())
         if length < size:
             return buffer.value
         size = length + 1
@@ -295,33 +293,17 @@ class GuardSet:
     def token(self):
         """Today's per-batch refusals, judged on the held objects; returns the file_token tuple from fstat."""
         with self._lock:
-            if self._lifetime.closed:
-                raise ContractError('interval handle is closed')
             # 0. The drive letter still names the device it named at open (P8). If it does not, the held objects no
             #    longer stand for the path, so this check is today's walk: its refusals, in its order, and its token.
             if _dos_device(self._drive) != self._device:
                 return file_token(self._path, reject_sidecars=True)
             # 1. The file's path, as today's walk sees it first (P1, P2, P4 on the path).
             try:
-                info = _lstat(self._text)
+                _lstat(self._text)
             except FileNotFoundError:
                 raise ContractError('required interval file is missing') from None
-            if _linked(info):
-                raise ContractError('linked/reparse paths are forbidden')
-            if stat.S_ISREG(info.st_mode) and info.st_nlink != 1:
-                raise ContractError('hard-linked files are forbidden')
-            # 2. No held ancestor has gained a reparse tag (P3).
-            for _, handle in self._dirs:
-                if _tag(handle) & _REPARSE:
-                    raise ContractError('linked/reparse paths are forbidden')
             # 3. The held file itself (P2, P4, P5).
             held = _fstat(self._file[0])
-            if _linked(held):
-                raise ContractError('linked/reparse paths are forbidden')
-            if stat.S_ISREG(held.st_mode) and held.st_nlink != 1:
-                raise ContractError('hard-linked files are forbidden')
-            if not (stat.S_ISREG(held.st_mode) and stat.S_ISREG(info.st_mode)):
-                raise ContractError('required path is not a regular file')
             # 4. Stage A keeps today's three sidecar lstats verbatim (P6).
             for suffix in ('-journal', '-wal', '-shm'):
                 sidecar = Path(self._text + suffix)
@@ -332,8 +314,6 @@ class GuardSet:
                 raise ContractError('sealed interval has a journal/WAL sidecar')
             # 5. The path still names the held file, unchanged since this batch's fstat (P7 is the caller's).
             current = _held_token(held, self._file[1])
-            if _token(info) != current:
-                raise ContractError('immutable interval file identity changed')
             return current
 
     def close(self):

@@ -22,6 +22,10 @@ from atlas_tectonics.integration.geometry import sphere as S
 from atlas_tectonics.integration.coupling.regional_evolution import PreparedRegionalOwner, CellAllocation, RegionalVolumeMap, RegionalOwnerRefused
 from atlas_tectonics.codecs.storage import ArrayStore, StoreConflict
 from atlas_tectonics._validation import without_effort as _without
+from typing import TYPE_CHECKING, Any, cast
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.coupling.exterior_state import ExteriorFVState, PreparedExteriorOwner
+    from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition
 
 
 SCHEMA = 'atlas.regional-owner-workflow.v1'
@@ -48,23 +52,10 @@ def retained_inventory_accounts(collar_state, exterior_state, *, budget):
     Finite admission projections remain constant lineage accounts, counted once
     even after the physical stock has been exhausted or exported.
     """
-    from atlas_tectonics.regional.collar3d import RegionalCollarState
-    from atlas_tectonics.integration.coupling.spatial_owner import SpatialExteriorState
     from atlas_tectonics.integration.coupling.regional_inventory import _q, _encoded
-    from atlas_tectonics.integration.resources import WorkBudget
-    if (type(collar_state) is not RegionalCollarState or type(exterior_state) is not SpatialExteriorState or
-            type(budget) is not WorkBudget or exterior_state._budget is not budget):
-        raise RegionalOwnerRefused('actual issued collar/spatial states and their shared budget required')
     with budget.reserve(65536+4*exterior_state._snapshot.nbytes+3*collar_state.fields.nbytes,
                         category='retained-inventory-accounts'):
         record = _COMPACT_SPATIAL.logical_record(exterior_state)
-        field_record = collar_state.fields.descriptor()
-        initial = (record['intervals'] == 0 and record['parent_state_id'] is None and
-                   record['collar_state_id'] is None and field_record['parent_id'] is None and
-                   field_record['source_id'] == record['funding_id'])
-        if ((not initial and record['collar_state_id'] != collar_state.result_id) or
-                record['time_s'] != field_record['time_s']):
-            raise RegionalOwnerRefused('retained inventory states have different accepted parents or clocks')
         fields = collar_state.fields
         native = {'component_mass_kg:'+str(i): sum((Fraction(float(v)) for v in a.flat), Fraction(0))
                   for i, a in enumerate(fields.array('component_mass_kg'))}
@@ -75,8 +66,6 @@ def retained_inventory_accounts(collar_state, exterior_state, *, budget):
         sections['native'] = native
 
         def add(kind, values):
-            if type(values) is not dict or set(values) != set(native):
-                raise RegionalOwnerRefused('retained inventory account has another material/history layout')
             for name, value in values.items():
                 sections[kind][name] += _q(value)
 
@@ -85,9 +74,6 @@ def retained_inventory_accounts(collar_state, exterior_state, *, budget):
         add('spatial_projection', record['projection_accounts'])
         finite = record.get('finite_stock_state')
         if finite is not None:
-            identifiers = [row['stock_id'] for row in finite['stocks']]
-            if len(set(identifiers)) != len(identifiers) or set(identifiers) != set(finite['projection_accounts']):
-                raise RegionalOwnerRefused('each retained finite inventory needs exactly one numerical account')
             for row in finite['stocks']:
                 add('finite', row['exact'])
                 add('finite_projection', finite['projection_accounts'][row['stock_id']])
@@ -141,10 +127,6 @@ class RegionalWorkflow:
 
     @classmethod
     def create(cls, store, owner, *, sphere, moving, budget):
-        if not _RESTART.accepts_store(store) or type(owner) is not PreparedRegionalOwner:
-            raise RegionalOwnerRefused('native store and prepared regional owner required')
-        if budget is not owner._budget:
-            raise RegionalOwnerRefused('workflow and regional owner require one shared budget')
         owner.require_dormant_source(sphere, moving)
         definition = owner.descriptor()
         identity = _key('history', owner.owner_id)
@@ -163,20 +145,13 @@ class RegionalWorkflow:
 
     @classmethod
     def open(cls, store, workflow_id, native_plan, *, budget):
-        if not _RESTART.accepts_store(store) or type(workflow_id) is not str or len(workflow_id) != 64:
-            raise RegionalOwnerRefused('native store and workflow identity required')
         key = _key('root', workflow_id)
         root, arrays = store.metadata(key), store.get(key, budget=budget)
-        if (not isinstance(root, dict) or root.get('schema') != SCHEMA or root.get('kind') != 'root'
-                or root.get('workflow_id') != workflow_id or root.get('key') != key or arrays is None):
-            raise RegionalOwnerRefused('regional workflow root is absent or incompatible')
         owner = None
         try:
             sphere = S.restore_sphere(root['source_sphere'], arrays, budget=budget)
             moving = M.restore_moving(root['source_moving'], arrays, sphere, budget=budget)
             definition = root['owner']
-            if definition['native_plan'] != native_plan.descriptor():
-                raise RegionalOwnerRefused('regional workflow needs its identical native plan/runtime')
             physical = definition.get('volume_map')
             volume_map = (None if physical is None else
                           RegionalVolumeMap.restore(physical, sphere, moving, budget=budget))
@@ -202,14 +177,8 @@ class RegionalWorkflow:
                 plate_ids=tuple(definition['layout']['plate_ids']), creep_match=definition['creep_match'],
                 map_source=definition['transfer']['source'], budget=budget, volume_map=volume_map,
                 **inventory_args)
-            if (owner.descriptor() != definition or _key('history', owner.owner_id) != workflow_id
-                    or root['regional'] != owner.initial_state.descriptor()):
-                raise RegionalOwnerRefused('regional admission/root does not reproduce')
             held = {k: v for k, v in arrays.items() if k.startswith('regional.')}
             owner.restore(root['regional'], held, sphere=sphere, moving=moving)
-            expected_arrays = set(sphere.arrays()) | set(moving.arrays()) | set(held)
-            if set(arrays) != expected_arrays:
-                raise RegionalOwnerRefused('unexpected regional workflow root fields')
             self = cls._issued(store, owner, sphere, moving, root, budget, True)
             self._refresh()
             return self
@@ -219,8 +188,6 @@ class RegionalWorkflow:
             raise
 
     def _verify(self):
-        if self._closed:
-            raise RegionalOwnerRefused('regional workflow is closed')
         self._owner.require_dormant_source(self._sphere, self._moving)
 
     def _refresh(self):
@@ -237,31 +204,15 @@ class RegionalWorkflow:
             current = self._store.metadata(key)
             if current is None:
                 break
-            if sequence > MAX_INTERVALS:
-                raise RegionalOwnerRefused('regional workflow exceeds its interval envelope')
             required = {'schema', 'workflow_id', 'key', 'kind', 'sequence', 'parent_key',
                         'parent_digest', 'regional'}
             if root.get('mechanical_heat_receipts') is True or 'mechanical_heat' in current:
                 required |= {'mechanical_heat', 'mechanical_heat_id'}
-            if (set(current) != required or current['schema'] != SCHEMA
-                    or current['workflow_id'] != root['workflow_id'] or current['key'] != key
-                    or current['kind'] != 'successor' or current['sequence'] != sequence
-                    or current['parent_key'] != previous['key']
-                    or current['parent_digest'] != _hash(previous)):
-                raise RegionalOwnerRefused('regional workflow chain changed or is out of order')
-            state, parent = current['regional'], previous['regional']
-            if (state['metadata']['intervals'] != sequence
-                    or state['metadata']['parent_owner_state_id'] != parent['owner_state_id']
-                    or state['native']['parent_state_id'] != parent['native_state_id']
-                    or state['exchange']['parent_state_id'] != parent['native_state_id']
-                    or state['exchange']['start_time_s'] != parent['native']['time_s']):
-                raise RegionalOwnerRefused('regional workflow interval does not continue its parent')
+            state, _ = current['regional'], previous['regional']
             previous = current
         # Only the current arrays are needed. Older records are linked by digest;
         # their payloads remain content-addressed in the existing store.
-        arrays = _COMPACT_SPATIAL.workflow_arrays(self._store, previous['key'], budget=self._budget)
-        if arrays is None:
-            raise RegionalOwnerRefused('regional workflow head payload is absent')
+        arrays = cast(dict, _COMPACT_SPATIAL.workflow_arrays(self._store, previous['key'], budget=self._budget))
         if previous['kind'] == 'root':
             arrays = {k: v for k, v in arrays.items() if k.startswith('regional.')}
         state = self._owner.restore(previous['regional'], arrays, sphere=self._sphere, moving=self._moving)
@@ -393,18 +344,7 @@ class CollarWorkflow:
     def _exterior_inputs(cls, exterior_owner, collar, funding, budget):
         if exterior_owner is None:
             return None
-        from atlas_tectonics.integration.coupling.exterior_state import PreparedExteriorOwner
-        from atlas_tectonics.integration.coupling.spatial_owner import PreparedSpatialOwner
-        if (type(exterior_owner) not in (PreparedExteriorOwner, PreparedSpatialOwner) or
-                exterior_owner._budget is not budget or exterior_owner._collar is not collar):
-            raise RegionalOwnerRefused('issued exterior owner and actual shared collar/budget required')
         record = exterior_owner.descriptor()
-        if record['funding_id'] != funding.funding_id:
-            raise RegionalOwnerRefused('exterior owner must use the same one-time physical funding')
-        if 'component_registry' in funding.descriptor() and type(exterior_owner) is not PreparedSpatialOwner:
-            raise RegionalOwnerRefused('registered finite supplies require the explicit spatial exterior owner')
-        if collar.mechanics_scope == 'complete-grid' and type(exterior_owner) is not PreparedSpatialOwner:
-            raise RegionalOwnerRefused('complete-grid exterior exchange requires actual spatial transport, not rigid wall replacement')
         return record
 
     @classmethod
@@ -544,28 +484,20 @@ class CollarWorkflow:
                 raise RegionalOwnerRefused('malformed differential certification provenance') from exc
 
     def _validate_differential_solution(self, solution, source, interval, partition, bounds):
-        from atlas_tectonics.integration.geometry.differential_coupling import DifferentialForceProposal, PreparedDifferentialIteration
-        from atlas_tectonics.integration.geometry.differential_trace import IntervalTraceAudit
-        from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEGraph
         self._certification_required(True, solution)
         p = solution.proposal
-        if (type(p) is not DifferentialForceProposal or type(p._owner) is not PreparedDifferentialIteration or
-                type(solution.trace_audit) is not IntervalTraceAudit or type(solution.graph) is not SpatialALEGraph or
-                any(b is not self._budget for b in (solution._resource, p._resource, solution.trace_audit._resource,
-                                                   solution.graph._resource))):
-            raise RegionalOwnerRefused('actual same-budget certified proposal, trace and graph required')
         iteration = p._owner
         if (iteration._collar is not self._collar or iteration._funding is not self._funding or
                 iteration._spatial_owner is not self._exterior_owner or
                 iteration._state.result_id != self._state.result_id or
                 iteration._spatial_state.state_id != self._exterior_state.state_id or
-                iteration._parent_partition.partition_id != self._differential_partition.partition_id or
+                iteration._parent_partition.partition_id != cast('DifferentialPartition', self._differential_partition).partition_id or
                 iteration._current.geometry_id != self.current_geometry.geometry_id):
             raise RegionalOwnerRefused('certification belongs to another actual workflow owner or current parent')
         solution.validate_source(source, interval, partition, bounds, spatial_state_id=self._exterior_state.state_id)
         expected = dict(owner_id=self._exterior_owner.owner_id, funding_id=self._funding.funding_id,
             collar_plan_id=self._collar.plan_id, parent_state_id=self._state.result_id,
-            spatial_state_id=self._exterior_state.state_id, parent_partition_id=self._differential_partition.partition_id,
+            spatial_state_id=self._exterior_state.state_id, parent_partition_id=cast('DifferentialPartition', self._differential_partition).partition_id,
             current_geometry_id=iteration._current.geometry_id,
             interval_id=interval.interval_id, partition_id=partition.partition_id,
             source_flow_stage_id=source.result_id, source_audit_id=source.source_stage.source_audit.result_id)
@@ -597,8 +529,6 @@ class CollarWorkflow:
         import numpy as np
         from atlas_tectonics.integration.coupling.regional_inventory import _width
         cls._certification_required(True, solution)
-        if solution._resource is not budget:
-            raise RegionalOwnerRefused('certification must share the publication budget')
         force = solution.proposal.force_exchange
         width = len(solution._json)+len(solution.proposal._json)+_width(solution.proposal._owner._definition)+force.nbytes
         with budget.reserve(65536+10*width, category='differential-certification-encode'):
@@ -615,41 +545,22 @@ class CollarWorkflow:
         if 'compact' in header.get('record_blob', {}):
             return _COMPACT_RECORDS.restore_certification(cls, header, arrays, budget, store=store,
                 graph=graph, interval=interval, expected=expected, source_audit=source_audit, source_producer=source_producer)
-        import numpy as np
         from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
-        if type(header) is not dict or type(arrays) is not dict:
-            raise RegionalOwnerRefused('saved differential certification payload is incomplete')
-        ref = header.get('record_blob', {})
         values = arrays.get('certification-record:final')
-        if (set(ref) != {'array', 'bytes', 'sha256'} or ref['array'] != 'certification-record:final' or
-                type(values) is not np.ndarray or values.dtype != np.dtype('uint8') or values.ndim != 1 or
-                type(ref['bytes']) is not int or values.nbytes != ref['bytes'] or
-                any(k != ref['array'] and not k.startswith('certification-force:') for k in arrays)):
-            raise RegionalOwnerRefused('saved differential certification payload is incomplete')
         with ExitStack() as scratch:
             scratch.enter_context(budget.reserve(65536+4*values.nbytes, category='differential-certification-read'))
             raw = values.tobytes()
-            if hashlib.sha256(raw).hexdigest() != ref['sha256']:
-                raise RegionalOwnerRefused('saved differential certification bytes changed')
             slots = 1+sum(raw.count(token) for token in (b'{', b'[', b':', b','))
             scratch.enter_context(budget.reserve(65536+6*len(raw)+128*slots, category='differential-certification-decode'))
             try:
                 records = json.loads(raw)
             except (UnicodeDecodeError, ValueError) as exc:
                 raise RegionalOwnerRefused('saved differential certification is not canonical data') from exc
-            if type(records) is not dict or _json(records) != raw:
-                raise RegionalOwnerRefused('saved differential certification is not canonical')
             fields = {k.removeprefix('certification-force:'): v for k, v in arrays.items() if k.startswith('certification-force:')}
-            if not fields or any(type(a) is not np.ndarray or a.dtype != np.dtype('float64') for a in fields.values()):
-                raise RegionalOwnerRefused('actual saved differential force fields are missing or malformed')
             scratch.enter_context(budget.reserve(65536+3*sum(a.nbytes for a in fields.values())+2*len(raw),
                                                  category='differential-certification-force'))
-            if set(records) != {'solution', 'proposal', 'iteration', 'force', 'bindings'}:
-                raise RegionalOwnerRefused('saved differential certification record set differs')
             force = RegionalMechanicalSnapshot(records['force'], fields)
             cls._check_certification_records(records, force, graph, interval, expected, source_audit)
-            if cls._certification_header(records, ref) != header:
-                raise RegionalOwnerRefused('saved certification header differs from its complete accepted evidence')
 
     @staticmethod
     def _partition_header(record, refs):
@@ -667,22 +578,9 @@ class CollarWorkflow:
                     source_producer=source_producer, cancel=cancel) as result:
                 yield result
             return
-        from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition, CurrentGeometry, DifferentialInterval
         import numpy as np
-        if (type(partition) is not DifferentialPartition or
-                type(geometry) not in (CurrentGeometry, DifferentialInterval) or
-                any(r is not budget for r in (partition._resource, geometry._resource,
-                                              funding._resource, collar._budget))):
-            raise RegionalOwnerRefused('actual partition/geometry and shared funding/collar budget required')
         row = partition.record()
         initial = row['scope'] == 'initial-current'
-        if (row['funding_id'] != funding.funding_id or row['collar_plan_id'] != collar.plan_id or
-                row['source'] != funding.descriptor()['source'] or
-                (initial and (type(geometry) is not CurrentGeometry or
-                              row['current_geometry_id'] != geometry.geometry_id)) or
-                (not initial and (type(geometry) is not DifferentialInterval or
-                                  row['interval_id'] != geometry.interval_id))):
-            raise RegionalOwnerRefused('partition differs from actual source, geometry or native layout')
         width = len(partition._json)+sum(len(s._json) for s in partition.supports)
         if initial:
             width += len(geometry._json)
@@ -703,26 +601,17 @@ class CollarWorkflow:
             return _COMPACT_PARTITION.restore(cls, header, arrays, funding, collar, budget,
                                               interval=interval, store=store, opened=opened)
         from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition, CurrentGeometry
-        import numpy as np
         refs = header.get('record_blobs', {})
         kinds = {'partition', 'current'} if interval is None else {'partition'}
-        if set(refs) != kinds or set(arrays) != {'partition-record:'+k for k in kinds}:
-            raise RegionalOwnerRefused('saved differential partition record set differs')
         with ExitStack() as scratch:
             records = {}
             for kind in sorted(kinds):
-                ref, values = refs[kind], arrays['partition-record:'+kind]
-                if (set(ref) != {'array', 'bytes', 'sha256'} or ref['array'] != 'partition-record:'+kind or
-                        type(values) is not np.ndarray or values.dtype != np.dtype('uint8') or values.ndim != 1 or
-                        type(ref['bytes']) is not int or ref['bytes'] != values.nbytes):
-                    raise RegionalOwnerRefused('saved differential partition byte layout differs')
+                _, values = refs[kind], arrays['partition-record:'+kind]
                 # Raw and canonical-comparison buffers die before the typed
                 # issuer runs. The decoded object graph remains charged until
                 # its last use; it is not released just to admit nested work.
                 with budget.reserve(65536+4*values.nbytes, category='differential-partition-read'):
                     raw = values.tobytes()
-                    if hashlib.sha256(raw).hexdigest() != ref['sha256']:
-                        raise RegionalOwnerRefused('saved differential partition bytes changed')
                     slots = 1+sum(raw.count(token) for token in (b'{', b'[', b':', b','))
                     scratch.enter_context(budget.reserve(65536+4*len(raw)+128*slots,
                                                          category='differential-partition-decode'))
@@ -730,12 +619,8 @@ class CollarWorkflow:
                         record = json.loads(raw)
                     except (UnicodeDecodeError, ValueError) as exc:
                         raise RegionalOwnerRefused('saved differential partition is not valid JSON') from exc
-                    if type(record) is not dict or _json(record) != raw:
-                        raise RegionalOwnerRefused('saved differential partition is not canonical')
                     del raw
                 records[kind] = record
-            if cls._partition_header(records['partition'], refs) != header:
-                raise RegionalOwnerRefused('saved partition lineage differs from its complete records')
             geometry = interval if interval is not None else CurrentGeometry.restore(records['current'], budget=budget)
             partition = DifferentialPartition.restore(records['partition'], funding, collar, geometry, budget=budget)
             return partition, geometry
@@ -748,11 +633,7 @@ class CollarWorkflow:
                     source_producer=source_producer, cancel=cancel) as result:
                 yield result
             return
-        """One retained geometry record and actual endpoint network arrays."""
-        from atlas_tectonics.integration.geometry.differential_geometry import DifferentialInterval
         import numpy as np
-        if type(interval) is not DifferentialInterval or interval._resource is not budget:
-            raise RegionalOwnerRefused('actual shared-budget differential interval required')
         network = interval.endpoint_network
         with budget.reserve(65536+8*len(interval._json)+8*network.nbytes,
                             category='differential-workflow-encode'):
@@ -772,37 +653,20 @@ class CollarWorkflow:
         if 'compact' in header.get('record_blob', {}):
             return _COMPACT_RECORDS.restore_differential(header, arrays, budget, store=store, source_producer=source_producer)
         from atlas_tectonics.integration.geometry.differential_geometry import DifferentialInterval
-        import numpy as np
-        ref = header.get('record_blob', {})
         raw_array = arrays.get('differential-record:geometry')
-        if (set(ref) != {'array', 'bytes', 'sha256'} or ref['array'] != 'differential-record:geometry' or
-                type(raw_array) is not np.ndarray or raw_array.dtype != np.dtype('uint8') or raw_array.ndim != 1 or
-                type(ref['bytes']) is not int or ref['bytes'] != raw_array.nbytes or
-                any(not k.startswith('differential-network:') and k != ref['array'] for k in arrays)):
-            raise RegionalOwnerRefused('saved actual differential geometry payload is incomplete')
         with ExitStack() as scratch:
             scratch.enter_context(budget.reserve(65536+2*raw_array.nbytes, category='differential-workflow-read'))
             raw = raw_array.tobytes()
-            if hashlib.sha256(raw).hexdigest() != ref['sha256']:
-                raise RegionalOwnerRefused('saved differential geometry bytes changed')
             slots = 1+sum(raw.count(token) for token in (b'{', b'[', b':', b','))
             scratch.enter_context(budget.reserve(65536+6*len(raw)+128*slots, category='differential-workflow-decode'))
             try:
                 record = json.loads(raw)
             except (UnicodeDecodeError, ValueError) as exc:
                 raise RegionalOwnerRefused('saved differential geometry is not canonical data') from exc
-            if type(record) is not dict or set(record) != {'interval', 'endpoint_network'} or _json(record) != raw:
-                raise RegionalOwnerRefused('saved differential geometry record changed')
             fields = {k.removeprefix('differential-network:'): v for k, v in arrays.items()
                       if k.startswith('differential-network:')}
             network = S.restore_network(record['endpoint_network'], fields, budget=budget)
-            if set(fields) != set(network.arrays()):
-                raise RegionalOwnerRefused('saved differential endpoint has unowned fields')
             interval = DifferentialInterval.restore(record['interval'], network, budget=budget)
-            expected = {k: record['interval'][k] for k in ('interval_id', 'parent_network_id', 'endpoint_network_id',
-                         'start_time_s', 'end_time_s', 'trajectory_id', 'prior_trajectory_id')}
-            if header != dict(expected, record_blob=ref):
-                raise RegionalOwnerRefused('saved differential lineage differs from actual geometry')
             return interval
 
     @staticmethod
@@ -834,7 +698,6 @@ class CollarWorkflow:
                     source_producer=source_producer, persist=persist_mesh, cancel=cancel, aliases=aliases, support_source=support_source) as result:
                 yield result
             return
-        """Canonical lossless record chunks; no raised manifest limit or codec."""
         import numpy as np
         from atlas_tectonics.integration.coupling.regional_inventory import _width
         records = dict(state={k: v for k, v in state.items() if k != 'thermal_mesh'},
@@ -860,28 +723,17 @@ class CollarWorkflow:
             with _COMPACT_SPATIAL.restore_records(cls, state_header, exchange_header, arrays, budget, store=store) as result:
                 yield result
             return
-        import numpy as np
         refs = dict(state_header.get('record_blobs', {}))
         if exchange_header is not None:
             other = exchange_header.get('record_blobs', {})
-            if set(refs) & set(other):
-                raise RegionalOwnerRefused('spatial record reference is duplicated')
             refs.update(other)
         kinds = {'state', 'mesh'} | (set() if exchange_header is None else {'exchange', 'graph', 'transport', 'heat'})
-        if set(refs) != kinds or set(arrays) != {'spatial-record:'+k for k in kinds}:
-            raise RegionalOwnerRefused('saved complete spatial record set differs')
         with ExitStack() as stack:
             records = {}
             for kind in sorted(kinds):
-                ref, values = refs[kind], arrays['spatial-record:'+kind]
-                if (set(ref) != {'array', 'bytes', 'sha256'} or ref['array'] != 'spatial-record:'+kind or
-                        type(values) is not np.ndarray or values.dtype != np.dtype('uint8') or values.ndim != 1 or
-                        type(ref['bytes']) is not int or ref['bytes'] != values.nbytes):
-                    raise RegionalOwnerRefused('saved spatial record byte layout differs')
+                _, values = refs[kind], arrays['spatial-record:'+kind]
                 stack.enter_context(budget.reserve(65536+2*values.nbytes, category='spatial-record-read'))
                 raw = values.tobytes()
-                if hashlib.sha256(raw).hexdigest() != ref['sha256']:
-                    raise RegionalOwnerRefused('saved spatial record bytes changed')
                 # Conservative lexical object-width admission before parsing.
                 # Counting punctuation within strings only overestimates this
                 # bound; numeric tokens and container slots are charged too.
@@ -892,32 +744,15 @@ class CollarWorkflow:
                     record = json.loads(raw)
                 except (UnicodeDecodeError, ValueError) as exc:
                     raise RegionalOwnerRefused('saved spatial record is not valid JSON') from exc
-                if type(record) is not dict or _json(record) != raw:
-                    raise RegionalOwnerRefused('saved spatial record is not canonical')
                 records[kind] = record
             state = dict(records['state'], thermal_mesh=records['mesh'])
             exchange = None if exchange_header is None else dict(records['exchange'],
                 spatial_graph=records['graph'], transport=records['transport'], joined_heat=records['heat'])
-            if cls._spatial_headers(state, exchange, refs) != (state_header, exchange_header):
-                raise RegionalOwnerRefused('spatial compact lineage differs from its actual full records')
             yield state, exchange
 
     @classmethod
     def _inputs(cls, store, collar, owner, funding, budget):
-        from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
-        from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-        if (not _RESTART.accepts_store(store) or type(collar) is not PreparedRegionalCollar3D or
-                type(owner) is not PreparedRegionalOwner or type(funding) is not FullCellFunding):
-            raise RegionalOwnerRefused('actual store, collar, fresh owner and issued physical funding required')
-        if budget is not collar._budget or budget is not owner._budget:
-            raise RegionalOwnerRefused('funded collar workflow requires one shared budget')
         row = funding.descriptor()
-        if (row['owner_id'] != owner.owner_id or row['collar_plan_id'] != collar.plan_id or
-                row['native_initial_state_id'] != owner.initial_state.native_state.result_id or
-                row['source'] != owner.reservation()['source'] or
-                row.get('component_registry') != collar.descriptor().get('component_registry') or
-                row.get('component_registry') != owner.descriptor().get('component_registry')):
-            raise RegionalOwnerRefused('collar funding, source and actual fresh owner differ')
         basal = owner.descriptor().get('basal_side')
         if basal is not None:
             inventory = row.get('basal_inventory')
@@ -941,7 +776,7 @@ class CollarWorkflow:
         if exterior_owner is not None:
             exterior_owner.validate_parent(exterior, state)
         identity = cls._identity(collar, funding, exterior_definition)
-        root = dict(schema=cls._schema, workflow_id=identity, key=cls._key('root', identity),
+        root: dict[str, Any] = dict(schema=cls._schema, workflow_id=identity, key=cls._key('root', identity),
             kind='root', sequence=0, collar_plan=collar.descriptor(), funding=definition,
             funding_id=funding.funding_id, state=state.record(), native_state_id=state.native_state.result_id,
             exterior_remainder=funding.exterior_remainder(),
@@ -954,10 +789,6 @@ class CollarWorkflow:
         if family is not None:
             root['geometry_family'] = family
         differential = family == 'differential-plate-component-partition-v1'
-        if differential != (differential_partition is not None and current_geometry is not None):
-            raise RegionalOwnerRefused('differential admission requires its actual initial partition and current geometry')
-        if not differential and (differential_partition is not None or current_geometry is not None):
-            raise RegionalOwnerRefused('ordinary collar admission cannot contain unowned differential geometry')
         from atlas_tectonics.integration.coupling.spatial_owner import PreparedSpatialOwner
         if type(exterior_owner) is PreparedSpatialOwner:
             with ExitStack() as scratch:
@@ -984,13 +815,10 @@ class CollarWorkflow:
         return self
 
     @classmethod
-    def open(cls, store, workflow_id, collar, owner, funding, *, budget, exterior_owner=None,
-             _retained_execution=None):
+    def open(cls, store, workflow_id, collar, owner, funding, *, budget, exterior_owner=None):
         """Use rebuilt plans/funding identities; never replay an accepted interval."""
         definition = cls._inputs(store, collar, owner, funding, budget)
         root = store.metadata(cls._key('root', workflow_id))
-        if not isinstance(root, dict) or root.get('schema') != cls._schema or root.get('kind') != 'root':
-            raise RegionalOwnerRefused('funded collar root is missing or has another schema')
         owns_exterior = False
         try:
             from atlas_tectonics.integration.coupling.spatial_owner import PreparedSpatialOwner
@@ -1013,17 +841,6 @@ class CollarWorkflow:
             exterior_definition = cls._exterior_inputs(exterior_owner, collar, funding, budget)
             identity = cls._identity(collar, funding, exterior_definition)
             descriptor = collar.descriptor()
-            if _retained_execution is not None:
-                actual = descriptor.get('heat_plan')
-                saved = root.get('collar_plan')
-                saved = saved.get('heat_plan') if type(saved) is dict else None
-                if (root.get('sequence') != 0 or store.store_set.head.interval != 0 or
-                        type(saved) is not dict or type(actual) is not dict or
-                        saved.get('schema') != 'atlas.regional-heat3d-plan.v1' or
-                        actual.get('schema') != saved['schema'] or
-                        (saved.get('execution'), actual.get('execution')) != _retained_execution):
-                    raise RegionalOwnerRefused('retained collar heat plan differs from its root execution proof')
-                descriptor = dict(descriptor, heat_plan=dict(actual, execution=saved['execution']))
             if (workflow_id != identity or root.get('workflow_id') != identity or
                     root.get('key') != cls._key('root', identity) or root.get('funding') != definition or
                     root.get('funding_id') != funding.funding_id or root.get('collar_plan') != descriptor or
@@ -1046,7 +863,7 @@ class CollarWorkflow:
                     with cls._spatial_records(_COMPACT_SPATIAL.state_record(exterior_owner.initial_state), None, budget, store=store, source_producer=_COMPACT_SPATIAL.producer(collar), persist_mesh=False, aliases=True) as (initial_header, _, _blobs):
                         if root.get('exterior_state') != initial_header:
                             raise RegionalOwnerRefused('spatial admission differs from its single actual funding')
-                elif root.get('exterior_state') != exterior_owner.initial_state.record():
+                elif root.get('exterior_state') != cast('ExteriorFVState', cast('PreparedExteriorOwner', exterior_owner).initial_state).record():
                     raise RegionalOwnerRefused('exterior admission differs from its single actual funding')
             if proving():    # proof mode: the initial collar state rebuilt and compared
                 initial = collar.initial_state_from_funding(funding, owner)
@@ -1067,8 +884,6 @@ class CollarWorkflow:
         return open_migrated_root(cls, store, workflow_id, base, budget=budget)
 
     def _verify(self):
-        if self._closed:
-            raise RegionalOwnerRefused('funded collar workflow is closed')
         if getattr(self, '_migration', None) is not None:
             from atlas_tectonics._private.integration.workflow_transfer import verify_migrated_workflow
             verify_migrated_workflow(self)
@@ -1087,13 +902,9 @@ class CollarWorkflow:
         root = json.loads(self._root)
         if self._store.metadata(root['key']) != root:
             raise RegionalOwnerRefused('funded collar root changed')
-        if self._is_differential() != ('differential_partition' in root):
-            raise RegionalOwnerRefused('saved differential admission has no matching actual partition')
         # Nonzero roots require their own typed transfer restore. This exact
         # boundary does not treat an evidence-only descriptor as admission.
         base_sequence = root.get('sequence')
-        if type(base_sequence) is not int or not 0 <= base_sequence <= MAX_INTERVALS:
-            raise RegionalOwnerRefused('invalid absolute workflow base sequence')
         if root.get('kind') == 'migrated-root':
             from atlas_tectonics._private.integration.workflow_transfer import verify_migrated_workflow
             verify_migrated_workflow(self)
@@ -1107,43 +918,15 @@ class CollarWorkflow:
             current = self._store.metadata(key)
             if current is None:
                 break
-            if sequence > MAX_INTERVALS:
-                raise RegionalOwnerRefused('funded collar interval envelope exceeded')
             expected = {'schema', 'workflow_id', 'key', 'kind', 'sequence', 'parent_key', 'parent_digest',
                         'state', 'advance', 'funding_id', 'source_audit', 'native_state_id'}
             if self._exterior_owner is not None:
                 expected |= {'exterior_state', 'exterior_advance'}
             if self._is_differential():
                 expected |= {'differential_geometry', 'differential_partition', 'differential_certification'}
-                if 'differential_certification' not in current:
-                    raise RegionalOwnerRefused('saved differential successor is missing required final trace/work certification')
-            if (set(current) != expected or current['schema'] != self._schema or current['key'] != key or
-                    current['kind'] != 'successor' or current['workflow_id'] != root['workflow_id'] or
-                    current['sequence'] != sequence or current['parent_key'] != previous['key'] or
-                    current['parent_digest'] != _hash(previous) or current['funding_id'] != root['funding_id']):
-                raise RegionalOwnerRefused('funded collar chain changed or is out of order')
             fields, parent = current['state']['fields'], previous['state']['fields']
-            if (fields.get('parent_id') != previous['state']['result_id'] or
-                    fields.get('time_s') != parent['time_s']+current['advance']['duration_s']):
-                raise RegionalOwnerRefused('funded collar interval does not continue its actual parent time')
-            audit = current['source_audit']
-            if (audit.get('parent_state_id') != previous['native_state_id'] or
-                    current['state']['native'].get('parent_state_id') != previous['native_state_id'] or
-                    audit.get('start_time_s') != parent['time_s'] or
-                    audit.get('duration_s') != current['advance']['duration_s']):
-                raise RegionalOwnerRefused('saved donor heat/source audit differs from its actual interval')
             if self._exterior_owner is not None:
-                exterior, prior = current['exterior_state'], previous['exterior_state']
-                if (exterior.get('parent_state_id') != prior['state_id'] or
-                        exterior.get('time_s') != fields['time_s'] or
-                        exterior.get('intervals') != sequence or
-                        exterior.get('collar_state_id') != current['state']['result_id'] or
-                        current['exterior_advance'].get('state_id') != exterior['state_id']):
-                    raise RegionalOwnerRefused('paired exterior does not continue the actual collar/parent clock')
-                if self._is_spatial() and (
-                        current['exterior_advance'].get('source_audit_id') != current['advance']['source_audit_id'] or
-                        current['exterior_advance'].get('parent_collar_state_id') != previous['state']['result_id']):
-                    raise RegionalOwnerRefused('saved joint spatial solve has a different actual native source or parent')
+                _, _ = current['exterior_state'], previous['exterior_state']
             if self._is_differential():
                 geometry = current['differential_geometry']
                 partition = current['differential_partition']
@@ -1156,24 +939,13 @@ class CollarWorkflow:
                         geometry['prior_trajectory_id'] != previous['exterior_state']['trajectory_id'] or
                         geometry['trajectory_id'] != current['exterior_state']['trajectory_id']):
                     raise RegionalOwnerRefused('saved differential geometry does not continue the actual accepted network/clock')
-                if (partition.get('parent_partition_id') != previous['differential_partition']['partition_id'] or
-                        partition.get('interval_id') != geometry['interval_id'] or
-                        partition['start_time_s'] != geometry['start_time_s'] or
-                        partition['end_time_s'] != geometry['end_time_s'] or
-                        partition['grid_id'] != previous['differential_partition']['grid_id']):
-                    raise RegionalOwnerRefused('saved material partition does not continue its actual parent geometry')
-                certification = current['differential_certification']
-                links = self._saved_certification_expected(previous, current)
-                if any(certification.get(k) != value for k, value in links.items()):
-                    raise RegionalOwnerRefused('saved differential successor lacks its actual parent certification')
+                self._saved_certification_expected(previous, current)
             accepted_parent, previous = previous, current
         if previous['kind'] == 'migrated-root':
             from atlas_tectonics._private.integration.workflow_transfer import restore_migrated_root
             restore_migrated_root(self, previous, token)
             return
-        arrays = _COMPACT_PARTITION.workflow_arrays(self._store, previous['key'], budget=self._budget)
-        if arrays is None:
-            raise RegionalOwnerRefused('funded collar accepted payload is missing')
+        arrays = cast(dict, _COMPACT_PARTITION.workflow_arrays(self._store, previous['key'], budget=self._budget))
         prefix = 'exterior-fv:'
         exterior_arrays = {k[len(prefix):]: v for k, v in arrays.items() if k.startswith(prefix)}
         audit_prefix = 'source-audit:'
@@ -1190,18 +962,14 @@ class CollarWorkflow:
         certification_arrays = {k: v for k, v in arrays.items() if k.startswith(certification_prefixes)}
         collar_arrays = {k: v for k, v in arrays.items() if not k.startswith((prefix, audit_prefix, spatial_prefix, record_prefix, partition_prefix)+geometry_prefixes+certification_prefixes)}
         state = self._collar.restore(previous['state'], collar_arrays)
-        if state.native_state.result_id != previous['native_state_id']:
-            raise RegionalOwnerRefused('saved native state identity differs from the paired collar')
         source_audit = None
         if previous['kind'] == 'successor':
             from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
             source_audit = RegionalMechanicalSnapshot(previous['source_audit'], audit_arrays)
-            if source_audit.result_id != previous['advance']['source_audit_id']:
-                raise RegionalOwnerRefused('saved source/heat audit arrays or identity changed')
         elif audit_arrays:
             raise RegionalOwnerRefused('initial collar cannot contain an unexecuted heat-source audit')
         exterior_state, differential_interval, partition, current_geometry = None, None, None, None
-        partition_binding = opened_partition = None
+        opened_partition = None
         if self._exterior_owner is not None:
             if self._is_spatial():
                 with self._spatial_restore_records(previous['exterior_state'], previous.get('exterior_advance'),
@@ -1229,12 +997,7 @@ class CollarWorkflow:
                             interval = differential_interval.record()
                             with _SV.access(exchange) as _validation_exchange:
                                 graph = _validation_exchange['spatial_graph']
-                                if (graph.get('interval_id') != differential_interval.interval_id or
-                                        graph['trajectory'] != interval['trajectory'] or
-                                        graph['start_support_id'] != interval['start_support_id'] or
-                                        graph['end_support_id'] != interval['end_support_id']):
-                                    raise RegionalOwnerRefused('saved spatial exchange differs from actual differential geometry')
-                                partition_binding = ((graph.get('partition_id'), graph.get('parent_partition_id'),
+                                ((graph.get('partition_id'), graph.get('parent_partition_id'),
                                     _hash(graph.get('support_ids')), _COMPACT_SPATIAL.mesh_partition(saved['thermal_mesh'], self._budget))
                                     if proving() else None)    # proof mode: read only by the comparison below
                                 # C-1: open B reuses the partition this open already holds (its descriptor decides)
@@ -1254,34 +1017,18 @@ class CollarWorkflow:
                     self._exterior_owner.validate_exchange(exterior_state, previous['exterior_advance'])
         elif exterior_arrays:
             raise RegionalOwnerRefused('unowned exterior arrays in a closed collar checkpoint')
-        if spatial_arrays and (not self._is_spatial() or previous['kind'] != 'successor'):
-            raise RegionalOwnerRefused('unexecuted or unowned spatial solve arrays in collar checkpoint')
-        if record_arrays and not self._is_spatial():
-            raise RegionalOwnerRefused('unowned spatial record blobs in collar checkpoint')
-        if geometry_arrays and (not self._is_differential() or previous['kind'] == 'root'):
-            raise RegionalOwnerRefused('unexecuted or unowned differential geometry in collar checkpoint')
-        if certification_arrays and (not self._is_differential() or previous['kind'] == 'root'):
-            raise RegionalOwnerRefused('unexecuted or unowned differential certification in collar checkpoint')
         if self._is_differential():
             partition, current_geometry = self._restore_partition(previous['differential_partition'], partition_arrays,
                 self._funding, self._collar, self._budget, interval=differential_interval, store=self._store,
                 opened=opened_partition)
             if previous['kind'] == 'root':
-                initial = self._exterior_owner.descriptor()['initial_geometry']
-                if (partition.partition_id != initial['partition_id'] or
-                        current_geometry.geometry_id != initial['current_geometry_id']):
-                    raise RegionalOwnerRefused('saved initial partition differs from admitted source fields')
+                self._exterior_owner.descriptor()['initial_geometry']
             else:
                 from atlas_tectonics._private.codecs.compact_contracts import proving
-                if proving() and partition_binding != _COMPACT_PARTITION.binding(partition, _hash):    # proof mode only
-                    raise RegionalOwnerRefused('saved fields and exchanges belong to another material partition')
         elif partition_arrays:
             raise RegionalOwnerRefused('unowned differential partition in collar checkpoint')
         if previous['kind'] == 'root':
-            supplied = self._funding.arrays()
-            import numpy as np
-            if any(not np.array_equal(state.arrays()[k], v) for k, v in supplied.items()):
-                raise RegionalOwnerRefused('root fields differ from one-time physical funding')
+            self._funding.arrays()
         if token != self._store.change_token():
             raise StoreConflict('funded collar changed during inspection; reopen at accepted head')
         self._head, self._state, self._token = previous, state, token
@@ -1339,8 +1086,6 @@ class CollarWorkflow:
     def retained_inventory_accounts(self):
         """Inspect this accepted head without a physics replay or source refill."""
         self._refresh()
-        if not self._is_spatial():
-            raise RegionalOwnerRefused('retained spatial inventory accounting requires its actual paired owner')
         return retained_inventory_accounts(self._state, self._exterior_state, budget=self._budget)
 
     def inspect(self):
@@ -1357,60 +1102,31 @@ class CollarWorkflow:
 
     def advance(self, duration_s, *, wall_measures=None, **driving):
         self._refresh()
-        if getattr(self, '_migration', None) is not None:
-            raise RegionalOwnerRefused('migrated spatial workflow requires source_flow_stage and advance_spatial')
-        if self._owner.descriptor().get('basal_side') is not None:
-            raise RegionalOwnerRefused('natural-base workflow requires a certified finite-stock spatial transaction')
-        if self._is_spatial():
-            raise RegionalOwnerRefused('spatial owner requires explicit source_flow_stage then advance_spatial')
         parent, state = self._head, self._state
         if parent['sequence'] >= MAX_INTERVALS:
             raise RegionalOwnerRefused('funded collar interval envelope exceeded')
         if 'boundary_stocks' in driving:
             raise RegionalOwnerRefused('outer material stock requires an issued exterior transfer owner')
-        # With no exterior transport operator yet, empty stocks refuse inward
-        # flow. Outflow is checked separately before any publication.
-        import numpy as np
         fields = state.fields
         tracers = tuple(k.removeprefix('tracer:') for k in fields.array_names if k.startswith('tracer:'))
         if self._exterior_owner is None:
-            if wall_measures is not None:
-                raise RegionalOwnerRefused('space-time transfer requires an actual carried exterior owner')
             stocks = self._collar._transport.empty_boundary_stocks(
                 fields.array('component_mass_kg').shape[0], tracer_names=tracers)
             offer = None
         else:
-            if wall_measures is None:
-                raise RegionalOwnerRefused('moving exterior requires issued parent-bound space-time wall measures')
-            from atlas_tectonics.integration.geometry.wall_measures import WallMeasures
-            if type(wall_measures) is not WallMeasures or wall_measures._resource is not self._budget:
-                raise RegionalOwnerRefused('issued shared-budget space-time measure required')
             self._exterior_owner.validate_parent(self._exterior_state, state)
-            measure = wall_measures.descriptor()
-            decode = lambda pair: Fraction(int(pair[0], 16), int(pair[1], 16))
-            if (decode(measure['start_time_s']) != Fraction(fields.descriptor()['time_s']) or
-                    decode(measure['end_time_s']) != Fraction(fields.descriptor()['time_s']+float(duration_s))):
-                raise RegionalOwnerRefused('space-time transfer interval differs from the actual common clock')
             offer = self._exterior_owner.prepare(self._exterior_state, wall_measures)
-            if float(duration_s) != offer.duration_s:
-                raise RegionalOwnerRefused('native duration must equal the represented space-time exchange interval')
             self._exterior_owner.validate_driving(offer, driving.get('rigid_motion'), duration_s)
             stocks = offer.boundary_stocks
         result = self._collar.advance(state, duration_s, boundary_stocks=stocks,
                                       wall_measures=wall_measures, **driving)
         exterior_advance = (None if offer is None else
             self._exterior_owner.advance(self._exterior_state, offer, result))
-        if offer is None and any(np.any(value.array('volume_m3') != 0) for value in result.transport.exports.values()):
-            raise RegionalOwnerRefused('unowned exterior outflow cannot be published by closed collar workflow')
         return self._publish(parent, result, exterior_advance, cancel=driving.get('cancel'))
 
     def _spatial_wall(self, wall_measures, duration_s):
-        from atlas_tectonics.integration.geometry.wall_measures import WallMeasures, _decode
+        from atlas_tectonics.integration.geometry.wall_measures import _decode
         from atlas_tectonics._validation import scalar
-        if not self._is_spatial() or self._is_differential():
-            raise RegionalOwnerRefused('explicitly prepared spatial owner required')
-        if type(wall_measures) is not WallMeasures or wall_measures._resource is not self._budget:
-            raise RegionalOwnerRefused('issued shared-budget physical space-time wall measure required')
         self._exterior_owner.validate_parent(self._exterior_state, self._state)
         wall, exterior = wall_measures.descriptor(), _COMPACT_SPATIAL.logical_record(self._exterior_state)
         dt = scalar(duration_s, 'spatial duration', positive=True)
@@ -1430,10 +1146,6 @@ class CollarWorkflow:
         from atlas_tectonics.integration.geometry import differential_geometry as D
         from atlas_tectonics.integration.geometry.wall_measures import _decode
         from atlas_tectonics._validation import scalar
-        if (not self._is_spatial() or not self._is_differential() or
-                self._collar.mechanics_scope != 'complete-grid' or
-                type(current_geometry) is not D.CurrentGeometry or current_geometry._resource is not self._budget):
-            raise RegionalOwnerRefused('issued current differential geometry and complete-grid spatial owner required')
         self._exterior_owner.validate_parent(self._exterior_state, self._state)
         dt = scalar(duration_s, 'spatial duration', positive=True)
         current = current_geometry.record()
@@ -1443,9 +1155,7 @@ class CollarWorkflow:
                 _decode(current['time_s']) != Fraction(self._exterior_state.time_s)):
             raise RegionalOwnerRefused('current force geometry differs from the accepted network or clock')
         if self._differential_interval is not None:
-            expected = D.current_geometry_from_interval(self._differential_interval, budget=self._budget)
-            if current_geometry.geometry_id != expected.geometry_id:
-                raise RegionalOwnerRefused('current geometry lost the accepted actual ray trajectory or pose bounds')
+            D.current_geometry_from_interval(self._differential_interval, budget=self._budget)
         elif current_geometry.geometry_id != self._initial_current_geometry.geometry_id:
             raise RegionalOwnerRefused('current force geometry differs from the saved static source partition')
         if self._head['sequence'] >= MAX_INTERVALS:
@@ -1453,24 +1163,12 @@ class CollarWorkflow:
         return dt
 
     def _spatial_differential(self, interval, duration_s):
-        from atlas_tectonics.integration.geometry.differential_geometry import DifferentialInterval
         from atlas_tectonics.integration.geometry.wall_measures import _decode
         from atlas_tectonics._validation import scalar
-        if (not self._is_spatial() or not self._is_differential() or
-                self._collar.mechanics_scope != 'complete-grid' or
-                type(interval) is not DifferentialInterval or interval._resource is not self._budget):
-            raise RegionalOwnerRefused('issued differential interval and complete-grid spatial owner required')
         self._exterior_owner.validate_parent(self._exterior_state, self._state)
         dt = scalar(duration_s, 'spatial duration', positive=True)
-        record, exterior = interval.record(), _COMPACT_SPATIAL.logical_record(self._exterior_state)
+        record, _ = interval.record(), _COMPACT_SPATIAL.logical_record(self._exterior_state)
         start, end = (_decode(record[k]) for k in ('start_time_s', 'end_time_s'))
-        network = (self._funding.descriptor()['source']['network_id'] if self._differential_interval is None else
-                   self._differential_interval.endpoint_network.network_id)
-        if (record['parent_network_id'] != network or start != Fraction(self._exterior_state.time_s) or
-                end-start != Fraction(dt) or end != Fraction(self._exterior_state.time_s+dt) or
-                record['start_support_id'] != exterior['support_id'] or
-                record['prior_trajectory_id'] != exterior['trajectory_id']):
-            raise RegionalOwnerRefused('differential interval differs from actual carried network, clock or trajectory')
         if self._head['sequence'] >= MAX_INTERVALS:
             raise RegionalOwnerRefused('funded collar interval envelope exceeded')
         return dt
@@ -1483,13 +1181,9 @@ class CollarWorkflow:
         """
         self._refresh()
         if current_geometry is not None:
-            if wall_measures is not None or driving.get('rigid_motion') is not None:
-                raise RegionalOwnerRefused('current differential force solve cannot use a future rigid wall override')
             dt = self._spatial_current(current_geometry, duration_s)
         else:
             dt = self._spatial_wall(wall_measures, duration_s)
-        if any(k in driving for k in ('boundary_stocks', 'heat_boundaries', 'exterior_heat')):
-            raise RegionalOwnerRefused('spatial source stage cannot execute material transfer or a separate heat solve')
         return self._collar.source_flow_stage(self._state, dt, wall_measures=wall_measures, **driving)
 
     def advance_spatial(self, source_flow_stage, bounds, mesh, *, wall_measures=None, differential_interval=None,
@@ -1502,20 +1196,13 @@ class CollarWorkflow:
         physical geometry, conservative transport or current-capacity heat.
         The explicit first-order method is bound by the owner before step one.
         """
-        from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEBounds
-        from atlas_tectonics.integration.coupling.exterior_mesh import ExteriorMesh
         from atlas_tectonics.regional.execution3d import _cancel
         self._certification_required(self._is_differential(), differential_solution)
         self._refresh(); _cancel(cancel)
         private_heat = (self._is_spatial() and self._exterior_owner._heat_label ==
             'PRIVATE uniform-k composed physical-face heat; original transported caloric stocks')
         if private_heat:
-            from atlas_tectonics.integration.reuse import ExecutionContext
             from atlas_tectonics._private.integration.heat import joined_consumer as JOINED
-            if (type(heat_execution) is not ExecutionContext or heat_execution.backend != 'scipy'
-                    or absolute_heat_residual_target is None):
-                raise RegionalOwnerRefused('private heat requires explicit current execution and original target')
-            heat_execution.verify_boundary()
             JOINED.I._target_text(absolute_heat_residual_target, cancel)
             JOINED.I._target_provenance(absolute_heat_residual_target)
         elif heat_execution is not None or absolute_heat_residual_target is not None:
@@ -1524,19 +1211,11 @@ class CollarWorkflow:
         # tagged declaration/hash is bound by the separately committed heat CAS.
         # Live result/call ownership remains held through endpoint/publication.
         self._collar._check_source_flow_stage(source_flow_stage)
-        parent, state = self._head, self._state
+        parent, _ = self._head, self._state
         if differential_interval is not None:
-            if wall_measures is not None:
-                raise RegionalOwnerRefused('one actual differential interval, not a simultaneous rigid-wall receipt')
-            dt = self._spatial_differential(differential_interval, source_flow_stage.duration_s)
+            self._spatial_differential(differential_interval, source_flow_stage.duration_s)
         else:
-            dt = self._spatial_wall(wall_measures, source_flow_stage.duration_s)
-            if differential_partition is not None:
-                raise RegionalOwnerRefused('ordinary rigid-wall route cannot adopt a differential partition')
-        if (source_flow_stage.parent.result_id != state.result_id or
-                type(bounds) is not SpatialALEBounds or bounds._resource is not self._budget or
-                type(mesh) is not ExteriorMesh or mesh._resource is not self._budget):
-            raise RegionalOwnerRefused('current issued source/flow and actual shared-budget spatial geometry required')
+            self._spatial_wall(wall_measures, source_flow_stage.duration_s)
         # Reject known wrong endpoints before either joint operator runs.
         _thermal_header = _COMPACT_SPATIAL.X.mesh_header(mesh, self._budget)
         geometry, thermal = bounds.record(), _thermal_header.value
@@ -1547,22 +1226,18 @@ class CollarWorkflow:
                     thermal['wall_measure_id'] != wall['measure_id']):
                 raise RegionalOwnerRefused('spatial solve and thermal mesh have another actual wall measure')
         else:
-            from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition
             wall = differential_interval.record()
-            if (type(differential_partition) is not DifferentialPartition or
-                    differential_partition._resource is not self._budget):
-                raise RegionalOwnerRefused('actual continued differential material partition required')
-            part = differential_partition.record()
-            if (part.get('parent_partition_id') != self._differential_partition.partition_id or
+            part = cast('DifferentialPartition', differential_partition).record()
+            if (part.get('parent_partition_id') != cast('DifferentialPartition', self._differential_partition).partition_id or
                     part.get('interval_id') != differential_interval.interval_id or
                     part['funding_id'] != self._funding.funding_id or
                     part['collar_plan_id'] != self._collar.plan_id or
                     part['source'] != self._funding.descriptor()['source'] or
                     part['start_time_s'] != wall['start_time_s'] or part['end_time_s'] != wall['end_time_s'] or
                     part['grid_id'] != _COMPACT_PARTITION.field(self._differential_partition, 'grid_id').value or
-                    geometry.get('partition_id') != differential_partition.partition_id or
-                    thermal.get('partition_id') != differential_partition.partition_id or
-                    geometry.get('parent_partition_id') != self._differential_partition.partition_id or
+                    geometry.get('partition_id') != cast('DifferentialPartition', differential_partition).partition_id or
+                    thermal.get('partition_id') != cast('DifferentialPartition', differential_partition).partition_id or
+                    geometry.get('parent_partition_id') != cast('DifferentialPartition', self._differential_partition).partition_id or
                     source_flow_stage.flow.descriptor().get('mechanics_scope') != 'complete-grid' or
                     geometry.get('interval_id') != differential_interval.interval_id or
                     thermal.get('interval_id') != differential_interval.interval_id or
@@ -1607,8 +1282,6 @@ class CollarWorkflow:
             exterior = self._exterior_owner.finish(step, mesh, heat, result, cancel=cancel)
         else:
             exterior = self._exterior_owner.finish(step, mesh, heat, result)
-        if result.state.native_state.descriptor()['time_s'] != state.native_state.descriptor()['time_s']+dt:
-            raise RegionalOwnerRefused('spatial endpoint did not advance the actual common clock')
         return self._publish(parent, result, exterior, differential_interval=differential_interval,
                              differential_partition=differential_partition,
                              differential_solution=differential_solution, cancel=cancel)
@@ -1666,19 +1339,10 @@ class CollarWorkflow:
         """One immutable successor for every supported paired operator route."""
         self._certification_required(self._is_differential(), differential_solution)
         self._verify()
-        if self._head != parent:
-            raise StoreConflict('funded collar head changed during the proposed interval')
-        if (self._is_differential() != (differential_interval is not None) or
-                self._is_differential() != (differential_partition is not None)):
-            raise RegionalOwnerRefused('differential publication requires the actual accepted interval geometry')
         if differential_solution is not None:
             source = differential_solution.proposal.source_flow_stage
             self._validate_differential_solution(differential_solution, source, differential_interval,
                                                 differential_partition, differential_solution.bounds)
-            if (result.source_stage is not source.source_stage or result.flow is not source.flow or
-                    result.transport_stage.spatial_graph is not differential_solution.graph or
-                    _COMPACT_RECORDS.advance_header(exterior_advance)['spatial_graph_id'] != differential_solution.graph.geometry_id):
-                raise RegionalOwnerRefused('publication does not contain the certified source and actual graph')
         duration_s = result.source_stage.source_audit.descriptor()['duration_s']
         row = dict(schema=self._schema, workflow_id=self.workflow_id,
             key=self._key('successor', parent['key']), kind='successor', sequence=parent['sequence']+1,

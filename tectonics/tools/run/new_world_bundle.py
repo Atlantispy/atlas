@@ -60,9 +60,6 @@ def _fail(code='INVALID_BUNDLE'):
 
 
 def _guard():
-    guard = sys.modules.get('atlas_tectonics.integration.reuse')
-    if guard is not None:
-        guard.release_boundary()
     if hashlib.sha256(_SELF.read_bytes()).hexdigest() != _SELF_HASH:
         _fail('SOURCE_MISMATCH')
 

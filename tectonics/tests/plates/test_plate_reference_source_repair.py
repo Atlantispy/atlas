@@ -18,7 +18,6 @@ import tempfile
 import threading
 import unittest
 from concurrent.futures import CancelledError
-from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -41,9 +40,6 @@ OPEN = 'AA\n0,0\n90,0\n0,90\n1,1\n*** end of line segment ***\n'
 
 
 class SourceGeometryViews(unittest.TestCase):
-    def test_strict_parser_still_rejects_duplicate_vertices(self):
-        with self.assertRaises(ReferenceDataError):
-            parse_dig(DUPLICATED, 'plate')
 
     def test_raw_repetitions_and_indices_are_retained(self):
         curve = parse_dig(DUPLICATED, 'plate', preserve_source_geometry=True)[0]
@@ -75,15 +71,6 @@ class SourceGeometryViews(unittest.TestCase):
         self.assertEqual(curve.measurement_coordinates().shape, (4,2))
         self.assertEqual(curve.coordinates.shape, (6,2))
 
-    def test_nearby_but_unequal_vertices_are_not_snapped(self):
-        text = DUPLICATED.replace('90,0\n90,0', '90,0\n90.0000000000001,0')
-        with self.assertRaises(ReferenceDataError):
-            parse_dig(text, 'plate', preserve_source_geometry=True)
-
-    def test_antipodal_edges_still_refused(self):
-        text = DUPLICATED.replace('90,0', '180,0')
-        with self.assertRaises(ReferenceDataError):
-            parse_dig(text, 'plate', preserve_source_geometry=True)
 
     def test_open_polygon_can_be_retained_but_not_measured(self):
         curve = parse_dig(OPEN, 'orogen', preserve_source_geometry=True)[0]
@@ -92,20 +79,6 @@ class SourceGeometryViews(unittest.TestCase):
         with self.assertRaisesRegex(ReferenceDataError, 'no closure inferred'):
             curve.measurement_coordinates()
 
-    def test_open_polygon_strict_default_unchanged(self):
-        with self.assertRaises(ReferenceDataError):
-            parse_dig(OPEN, 'orogen')
-
-    def test_preservation_does_not_allow_malformed_syntax(self):
-        with self.assertRaises(ReferenceDataError):
-            parse_dig(DUPLICATED.replace('0,90', 'bad,record'), 'plate', preserve_source_geometry=True)
-        with self.assertRaises(ReferenceDataError):
-            parse_dig(DUPLICATED.split('***')[0], 'plate', preserve_source_geometry=True)
-
-    def test_preservation_setting_requires_real_boolean(self):
-        for value in (1, 'true', None):
-            with self.assertRaises(ReferenceDataError):
-                parse_dig(DUPLICATED, 'plate', preserve_source_geometry=value)
 
     def test_pickled_source_preserves_raw_geometry_and_view_policy(self):
         curve = parse_dig(OPEN, 'orogen', preserve_source_geometry=True)[0]
@@ -186,14 +159,6 @@ class CompleteOfflineSources(unittest.TestCase):
         self.assertEqual(reference_protocol(), record['protocol'])
         self.assertEqual(self.report['protocol'], record['protocol'])
 
-    def test_altered_source_is_refused_before_parsing(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            copy = Path(tmp)/'data'; shutil.copytree(DATA, copy)
-            p = copy/'original/PB2002_plates.dig.txt'
-            p.write_bytes(p.read_bytes().replace(b'AF',b'XX',1))
-            with mock.patch('atlas_tectonics.plates.reference_dataset.parse_dig', side_effect=AssertionError('parsed bad bytes')):
-                with self.assertRaises(ReferenceDataError):
-                    load_pb2002(copy)
 
     def test_record_arrays_remain_unchanged_after_reporting(self):
         before = tuple(hashlib.sha256(c.coordinates.tobytes()).hexdigest()

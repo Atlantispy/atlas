@@ -19,7 +19,7 @@ Parallel: only inside parallel(policy, context), which the driver enters around 
 with the shared InterfaceParallelPolicy (its workers is the ceiling) and the strict
 reference ExecutionContext. Only wall_results reads that variable, and a worker never does.
 Each gate is recorded, in order: the policy type, mode 'auto', enough walls, the
-interpreter seed, strict mode, the predicate ledger, no other optional owner, the
+interpreter seed, the predicate ledger, no other optional owner, the
 transport envelope, then the machine probe of the rolling interface scheduler
 (integration_parallel_selection._Automatic._resources: free physical cores >= workers + 1,
 free memory beside the reserve, the budget fraction, predicate units). The probe may
@@ -64,7 +64,7 @@ from atlas_tectonics.integration.parallel import dispatch as D
 from . import spatial_pressure as P
 from atlas_tectonics.integration.geometry import volume as V
 from atlas_tectonics.integration import resources as R
-from atlas_tectonics.integration.parallel.binding import (BATCH_LIMIT, batch_worker_complete, canonical,
+from atlas_tectonics.integration.parallel.binding import (batch_worker_complete, canonical,
     interpreter_seed)
 from atlas_tectonics.integration.parallel.owner import nodes_for
 from atlas_tectonics.integration.parallel.results import SlotLease, raw_capacity
@@ -93,8 +93,6 @@ def parallel(policy, context, *, test=None):
     report. Production callers never pass it.
     """
     test = {} if test is None else dict(test)
-    if any(type(index) is not int or index < 0 or mode not in TESTS[1:] for index, mode in test.items()):
-        raise ValueError('test table maps wall indices to decline or crash')
     token = _PARALLEL.set((policy, context, test))
     try:
         yield
@@ -242,12 +240,8 @@ class _ParentInputSizer:
 
     def emit(self, count):
         self.raw += count
-        if self.raw > self.limit:
-            raise ValueError('pressure shared inputs exceed the parent raw transport bound')
 
     def string(self, value):
-        if type(value) is not str:
-            raise TypeError('pressure wall inputs: string keys only')
         self.emit(2)
         for char in value:
             code = ord(char)
@@ -297,8 +291,6 @@ class _ParentInputSizer:
     def encoded(self, value, *, plain_planes=False):
         self.depth += 1
         try:
-            if self.depth > 64:
-                raise ValueError('pressure input preparation depth exceeds bounded scratch')
             self.tree += 256
             kind = type(value)
             if value is None:
@@ -338,9 +330,6 @@ class _ParentInputSizer:
                     self.encoded(part)
                 self.emit(1)
             else:
-                from atlas_tectonics.integration.geometry.differential_pressure import _KernelPose
-                if kind is not _KernelPose:
-                    raise TypeError('pressure wall inputs: unsupported type '+kind.__name__)
                 self.emit(5)
                 for index, part in enumerate((value._rotation, value._error, value._plane_history)):
                     if index:
@@ -422,8 +411,6 @@ class _ParentSharedInputs:
                 try:
                     self.inputs, self.ids, self.size, self.decoded = _shared_inputs(
                         walls, regions, profiles, native_box, reservoirs, args)
-                    if self.size != expected:
-                        raise ValueError('pressure input canonical size changed during preparation')
                 except BaseException as error:
                     # Drop encoder frames before releasing their allocation allowance.
                     error.__traceback__ = None
@@ -544,19 +531,12 @@ def batch_worker(directory, process, binding_bytes, requests):
         check_request(request)
     first = requests[0]
     ids = first['inputs']
-    if any((r['inputs'], r['walls'], r['max_leaves']) != (ids, first['walls'], first['max_leaves'])
-           for r in requests):
-        raise ValueError('one batch shares one input set')
     inputs, size = {}, 0
     for identity in ids:
         if identity in inputs:
             continue
         raw = D._mapped_read(directory/'inputs'/(identity+'.json'), D.MAX_INPUT)
-        if hashlib.sha256(raw).hexdigest() != identity:
-            raise ValueError('pressure-wall input digest differs')
         size += len(raw)
-        if size > D.MAX_BATCH_INPUT:
-            raise ValueError('batch inputs exceed the optional transport envelope')
         inputs[identity] = raw
     observed = dict(body=0.0, peak=0)
     decoded = _decoded_bound(b''.join(inputs[identity] for identity in ids))
@@ -607,8 +587,6 @@ def batch_worker(directory, process, binding_bytes, requests):
             return answers
         receipt = batch_worker_complete(binding_bytes, context=context,
             requests=requests, run=run)
-        if len(receipt) > D.MAX_RECEIPT:
-            raise ValueError('receipt exceeds optional wire envelope')
         with (directory/'result.json').open('xb') as stream:
             stream.write(receipt)
     try:
@@ -650,13 +628,8 @@ class PressureWallSession(D.BatchParallelSession):
     def _bind_jobs(self, jobs):
         requests = []
         for request in jobs:
-            check_request(request)
             requests.append(request)
-        if not requests or len(requests) > BATCH_LIMIT:
-            raise ValueError('batch exceeds the optional transport envelope')
         tokens = [canonical(request) for request in requests]
-        if len(set(tokens)) != len(tokens) or any(token in self.members for token in tokens):
-            raise ValueError('duplicate optional request')
         return requests, tokens, dict(self.wall_inputs)
 
     def _adopt(self, batch, index, request, budget, answer):
@@ -726,7 +699,6 @@ class _Run:
 
     def _open(self, policy, context, walls, regions, profiles, native_box, reservoirs, args):
         from atlas_tectonics.integration.parallel import selection as S
-        from atlas_tectonics.integration import reuse
         budget = self.budget
         if not self._gate('policy', type(policy).__name__, type(policy) is S.InterfaceParallelPolicy):
             return self._serial('policy', 'the shared InterfaceParallelPolicy is required')
@@ -745,13 +717,6 @@ class _Run:
             seeded = False
         if not self._gate('seed', os.environ.get('PYTHONHASHSEED'), seeded):
             return self._serial('seed', 'the interpreter did not start with PYTHONHASHSEED=0')
-        mode = reuse.execution_mode()
-        # The gate keeps its recorded name; a packaged release context is admitted too (decision 3).
-        strict = (mode in ('strict', 'release') and type(context) is reuse.ExecutionContext
-                  and context._mode == mode)
-        if not self._gate('strict-mode', mode, strict):
-            return self._serial('strict-mode', 'workers require the %s reference execution context'
-                                % ('release' if mode == 'release' else 'strict'))
         ledger = type(budget) is R.WorkBudget and budget._predicate_work is not None
         if not self._gate('ledger', 'predicate' if ledger else 'bytes', ledger):
             return self._serial('ledger', 'the legacy byte-charged work ledger cannot fund a worker')

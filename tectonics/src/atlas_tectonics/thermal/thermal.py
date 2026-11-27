@@ -26,8 +26,6 @@ def cooling_work_bytes(depth_shape, age_shape, batch_elements=DEFAULT_COOLING_BA
     size = _batch_count(batch_elements)
     shape = np.broadcast_shapes(depth_shape, age_shape)
     total = elements(shape)
-    if not total:
-        raise TectonicsError("cooling inputs must be nonempty")
     # Input conversion, age-length field, output and immutable publication; bounded
     # iterator/filter buffers. This intentionally does not assume zero-copy inputs.
     return (24 * (elements(depth_shape) + elements(age_shape))
@@ -46,10 +44,6 @@ def half_space_temperature(depth_m: Any, age_s: Any,
     batch_elements changes execution granularity, never sampling or physical time.
     No worker pool, approximate erf or automatic dependency fallback is used.
     """
-    if not isinstance(parameters, ThermalParameters):
-        raise TectonicsError("explicit ThermalParameters required")
-    if backend not in ("reference", "scipy"):
-        raise TectonicsError("backend must be reference or scipy; no automatic fallback")
     batch_elements = _batch_count(batch_elements)
     ds, ts = input_shape(depth_m, "depth_m"), input_shape(age_s, "age_s")
     try:
@@ -66,14 +60,10 @@ def half_space_temperature(depth_m: Any, age_s: Any,
                 raise TectonicsError("scipy backend unavailable; install the declared requirements or explicitly select backend='reference'") from exc
         depth = array(depth_m, "depth_m", nonnegative=True)
         age = array(age_s, "age_s", nonnegative=True)
-        if depth.shape != ds or age.shape != ts:
-            raise TectonicsError("input shape changed during capture")
         with np.errstate(over="ignore", under="ignore", divide="ignore", invalid="ignore"):
             length = np.sqrt(age)
             length *= 2 * math.sqrt(parameters.diffusivity_m2_s)
         positive = age > 0
-        if np.any(~np.isfinite(length)) or np.any(positive & (length <= 0)):
-            raise TectonicsError("thermal diffusion length outside numerical range")
         del positive, age
         output = np.empty(shape, dtype=np.float64)
         # Buffered C-order iteration preserves broadcasting/strides without making

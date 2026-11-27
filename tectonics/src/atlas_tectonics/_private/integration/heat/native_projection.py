@@ -10,7 +10,6 @@ JSON views follow resources r4; the metric decode is released after its one
 cell-order check instead of being carried through projection and issuance.
 """
 import hashlib
-import math
 import sys
 
 from atlas_tectonics._private import private_heat_finish_kernel_r3 as A
@@ -20,14 +19,11 @@ from atlas_tectonics._private.integration.heat import public_float as PUBLIC
 from atlas_tectonics._private.integration.heat import heat_ledger_issuer_patch as HEAT_LEDGER
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private.integration.heat import indexed_runtime as INDEXED
-from atlas_tectonics.integration.heat.mimetic_heat import MimeticGeometry
 
 
 def _q(value):
     G = A.A.exact_library()
     if isinstance(value, (tuple, list)):
-        if len(value) != 2 or any(type(v) is not str for v in value):
-            raise ValueError('Exact private decimal rational pair required')
         return G.mpq(G.mpz(value[0]), G.mpz(value[1]))
     return G.mpq(value)
 
@@ -83,12 +79,6 @@ def project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
 def _project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
              duration_s, state_id, absolute_residual_target, budget, cancel=None, record_scope=None,
              sealed_output=None):
-    if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
-        raise TypeError('Original issued metric and same resource owner required')
-    if type(result) is not A.PrivateNumericalResult:
-        raise TypeError('Actual fixed private numerical result required')
-    if type(state_id) is not str or not state_id:
-        raise ValueError('Actual transported state identity required')
     work = R.workspace(budget, 0, cancel=cancel, category='private-heat-projection-r3-owner')
     work.__enter__()
     try:
@@ -99,19 +89,11 @@ def _project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
             result = []
             for value in values:
                 R.check(cancel)
-                if len(result) == n:
-                    raise ValueError('Complete original input coverage required')
                 result.append(value)
-            if len(result) != n:
-                raise ValueError('Complete original input coverage required')
             return result
         ordered = capture(cell_ids)
         arrays = list(map(capture, (enthalpy_j, capacity_j_k, source_w)))
-        if any(any(type(v) not in (int, float) or not math.isfinite(v) for v in values) for values in arrays):
-            raise ValueError('Complete original represented finite input arrays required')
         dt = float(duration_s)
-        if not math.isfinite(dt) or dt <= 0:
-            raise ValueError('Positive represented duration required')
         blob = result._sealed
         record_owner, issued_record = R._verified_private(result, A,
             budget=budget, cancel=cancel, expected_seal=sealed_output.pop() if sealed_output else None)
@@ -128,12 +110,6 @@ def _project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
         # access replaces only the formerly whole-mesh decode/order check.
         if ordered != list(INDEXED.ordered_cell_ids(geometry, cancel=cancel)):
             raise ValueError('Original cell order differs from the actual metric complex')
-        if record['face_ids'] != list(geometry._face_ids):
-            raise ValueError('Original face order differs from the actual metric complex')
-        if (len(record['enthalpy_j']) != n or len(record['temperature_k']) != n
-                or any(not math.isfinite(e) or e <= 0 or not math.isfinite(t) or t <= 0
-                       for e, t in zip(record['enthalpy_j'], record['temperature_k'], strict=True))):
-            raise ValueError('Finite positive complete public enthalpy and temperature required')
         calculate = NUMERICS._calculate_issued if issued_record else NUMERICS.calculate
         numerical = work.stack.enter_context(calculate(record, geometry, *arrays, dt,
             absolute_residual_target, budget=budget, cancel=cancel))
@@ -151,8 +127,6 @@ def _project(result, geometry, *, cell_ids, enthalpy_j, capacity_j_k, source_w,
         projected = _encode(record, exact, geometry, ordered, arrays, state_id, dt, cancel, record_scope)
         if result._sealed is not blob or geometry.geometry_id != INDEXED.metric_identity(geometry, cancel=cancel):
             raise ValueError('Private result or actual metric identity changed during projection')
-        if any(R.source_hash(path, cancel) != digest for path, digest in record['sources'].items()):
-            raise ValueError('Private corrected result source binding changed during projection')
         projected['metadata']['projection_resource_policy'] = dict(
             derived_before_each_exact_operation=True, numerical=numerical.inventory,
             output_components=codec['components'], output_widths_derived_after_validation_before_encoding=True,

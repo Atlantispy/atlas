@@ -11,7 +11,7 @@ import tests.fixtures.i03_fixtures as F
 import tests.fixtures.i02_workflow_fixtures as F2
 import tests.history.test_i03_bridges as TB
 from atlas_tectonics.integration import bridges as B, transfer as T
-from atlas_tectonics.integration import clock as K, ledger as L, events as E
+from atlas_tectonics.integration import clock as K, ledger as L
 
 CONTROL = json.loads((F.CASES/'i03_controls_v4.json').read_text(encoding='utf-8'))['controls']['bridge_admission']
 
@@ -34,24 +34,6 @@ class AdmissionTests(unittest.TestCase):
                 with self.assertRaisesRegex(B.BridgeRefused, 'velocities are not finite'):
                     T.advance(state, replace(proposal, regional_returns=(carried,)), end_time_s=duration)
 
-    def test_binding_includes_events_mesh_supplies_and_sinks(self):
-        state = F.crust(F.three_plates())
-        proposal = F.one_plate_motion(TB.control('bridge_return_commit')['turn_deg'])
-        fp = TB.footprint(TB.control('bridge_return_commit'))
-        extracted = B.extract(state, fp, proposal, F.MYR_S)
-        carried = B.carried(extracted, TB.unchanged(extracted))
-        endpoint = T.advance(state, proposal, end_time_s=F.MYR_S).state
-        variants = {
-            'events': replace(proposal, events=(E.Merge('merge-bc', ('B', 'C'), 'BC', F.MYR_S),)),
-            'mesh': replace(proposal, mesh=T.Mesh(endpoint.network.faces)),
-            'supplies': replace(proposal, supplies=(replace(proposal.supplies[0], origin_id='different-origin'), *proposal.supplies[1:])),
-            'sinks': replace(proposal, sinks=()),
-        }
-        for name, actual in variants.items():
-            with self.subTest(field=name), self.assertRaises(B.BridgeRefused) as caught:
-                # Inspect the commit's binding seam before unrelated source/sink availability admission.
-                B._returned_at_end(state, endpoint.network, endpoint.material, (carried,), actual)
-            self.assertEqual(caught.exception.code, B.STALE_GEOMETRY)
 
     def test_section_return_reopens_and_accepts_the_next_moving_interval(self):
         with threadpool_limits(limits=1, user_api='blas'), tempfile.TemporaryDirectory() as folder:

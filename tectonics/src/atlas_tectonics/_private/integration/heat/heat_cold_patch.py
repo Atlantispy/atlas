@@ -1,6 +1,6 @@
 """Explicit bounded heat-ledger and completed-checkpoint access.
 
-This module is shared by the r10 build transforms. It never turns a compact
+It never turns a compact
 ledger into JSON. A row carries its export owner through arithmetic, including
 failed frames; successful readers release the index and their bounded fields.
 """
@@ -8,7 +8,6 @@ from contextlib import ExitStack, contextmanager, nullcontext
 from hashlib import sha256
 from types import SimpleNamespace
 
-from atlas_tectonics._private.codecs.compact_contracts import ContractError
 from atlas_tectonics._private.codecs import record_tables as _T
 from atlas_tectonics._private.codecs.record_views import RecordRef, _owned
 from atlas_tectonics._private.integration.geometry import spatial_validation_patch as V
@@ -19,7 +18,6 @@ ROW_BYTES = 4 << 20
 # member is one canonical hex spelling of at most the fixed 1 MiB binary
 # magnitude: sign, '0x', two digits per byte and both JSON quotes. ROW_BYTES
 # still bounds every other row and field.
-HEX_SCALAR_LOGICAL = 2*_T.MAX_INTEGER_BYTES+5
 # Retained per decoded pair beyond the scope's 4 KiB owner charge: the list,
 # two ASCII str headers and the owner bookkeeping (measured about 6.2 KiB in
 # all with tracemalloc); the characters are added from the widths.
@@ -29,8 +27,6 @@ RATIONAL_ROW_FIXED = 2560
 # ASCII bytes of one chunk; measured at most about 1.6 chunks at once) while
 # it is filled, or the new text once it is full. That text is already booked
 # as retained, so the transient is the buffer plus whichever part exceeds it.
-RATIONAL_CHUNK_WORK = 3*_T.CHUNK
-RATIONAL_ROW_BOUND = RATIONAL_ROW_FIXED+2*HEX_SCALAR_LOGICAL+2048+max(HEX_SCALAR_LOGICAL, RATIONAL_CHUNK_WORK+1024)
 
 
 def rational_transient(lengths):
@@ -66,18 +62,14 @@ def _hex_text(view, node, length, check):
     for part in view._parts(node):
         check()
         end = at+len(part)
-        _T.require(end <= length, 'exact rational spelling exceeds its declared width')
         buffer[at:end] = part
         at = end
-    _T.require(at == length and buffer[0] == 34 and buffer[-1] == 34,
-               'exact rational spelling differs from its declared width')
     # The spelling is generated from the authenticated integer columns by
     # RecordView._hex, so it is canonical by construction; the ASCII decode
     # and prefix check keep json.loads' result without a second full scan.
     with memoryview(buffer) as raw:
         text = str(raw[1:-1], 'ascii')
     del buffer
-    _T.require(text.startswith(('0x', '-0x')), 'canonical hex spelling required')
     return text
 
 
@@ -99,13 +91,8 @@ def rational_row(ref, check):
             return None
         children = tuple(view._child(ref.index, at) for at in (0, 1))
         lengths = tuple(view._v('node.length', child) for child in children)
-        _T.require(all(view._v('node.kind', child) == _T.HEX for child in children) and
-                   all(5 <= n <= HEX_SCALAR_LOGICAL for n in lengths),
-                   'exact rational row outside the fixed 1 MiB magnitude ceiling')
     retained = RATIONAL_ROW_FIXED+sum(lengths)
     transient = rational_transient(lengths)
-    _T.require(retained+transient <= RATIONAL_ROW_BOUND <= _T.MAX_ROW_WORK_BYTES,
-               'exact rational row exceeds its derived bound')
     def decode():
         scratch = _T.Scratch(ref.scope.run_budget, transient)
         with view._read_batch():
@@ -201,8 +188,6 @@ def ledger_access(snapshot, budget, cancel, resources):
         with resources.decoded(snapshot._metadata, budget=budget, cancel=cancel) as view:
             yield view
         return
-    if snapshot.scope.run_budget is not budget:
-        raise ContractError('compact heat ledger has another resource owner')
     stack = ExitStack()
     ref = snapshot.ledger
     stack.callback(ref.close)
@@ -258,8 +243,6 @@ def state_view(snapshot, budget, cancel, resources):
         with resources.decoded(snapshot._metadata, budget=budget, cancel=cancel) as view:
             yield view
         return
-    if snapshot._budget is not budget:
-        raise ContractError('indexed heat context has another resource owner')
     stack = ExitStack()
     try:
         # The paid plain copy respects resources r4's exact-bytes contract.
@@ -267,8 +250,6 @@ def state_view(snapshot, budget, cancel, resources):
                                           category='private-cold-indexed-metadata'))
         view = stack.enter_context(resources.decoded(bytes(snapshot._metadata), budget=budget, cancel=cancel))
         if snapshot._cells is not None:
-            if 'cells' in view.value:
-                raise ContractError('compact state contains duplicate cell representations')
             cells = snapshot._cells.borrow()
             stack.callback(cells.close)
             view.value['cells'] = V.rows(cells)
@@ -287,9 +268,6 @@ def snapshot_charge(record, arrays, ordinary):
     # The native restored snapshot retains the same compact references; only
     # the existing numeric-array copy and small header need additional charge.
     from atlas_tectonics._private.integration.geometry.spatial_indexed_patch import retained_metadata_nbytes
-    import numpy as np
-    if any(type(v) is not np.ndarray or v.dtype != np.dtype('float64') for v in arrays.values()):
-        raise ValueError('Native float64 snapshot fields required')
     return 65536+4*retained_metadata_nbytes(record)+4*sum(v.nbytes for v in arrays.values())+8192*len(arrays)
 
 
@@ -306,8 +284,6 @@ def owned_plan_bytes(plan, work, budget, cancel, resources, encode):
     work.stack.enter_context(budget.reserve(ROW_BYTES+65536, category='private-cold-retained-plan'))
     with resources.codec_for_value(plan, budget=budget, cancel=cancel):
         encoded = encode(plan)
-    if len(encoded) > ROW_BYTES:
-        raise ContractError('restored heat plan exceeds bounded retained representation')
     return encoded
 
 
@@ -322,8 +298,6 @@ class _CellLookup:
             for at in range(count):
                 with self.ref.at(at) as row, row.field('cell_id') as field, field.scalar(max_owned_bytes=65536) as cell:
                     key = cell.value
-                    if type(key) is not str or len(key) > 256:
-                        raise ContractError('bounded endpoint cell identity required')
                     # The new string is covered by the index's own reservation.
                     index[(' '+key)[1:]] = at
             self.owner = reservation.commit(index)
@@ -336,22 +310,3 @@ class _CellLookup:
 
 def endpoint_cells(rows):
     return _CellLookup(rows) if isinstance(rows, V._Rows) else {row['cell_id']: row for row in rows}
-
-
-def transform(source):
-    """Cold bridge after W.private_heat_cold_source and PWT.cold_source."""
-    if '\nimport atlas_tectonics._private.heat_cold_patch as _HC' in source:
-        raise ContractError('compact heat cold bridge already transformed')
-    source = V._replace(source, 'import atlas_tectonics._private.private_heat_restored_binding_ram_recovery_r1 as B',
-                        'import atlas_tectonics._private.private_heat_restored_binding_r10 as B')
-    source = V._function(source, 'restore_checkpoint', (
-        ('type(exchange) is not dict', 'not _SV.is_record(exchange)'),
-    ), scope='with _SV.access(exchange) as exchange:')
-    source = V._function(source, '_restore_parent', (
-        ('_snapshot_charge(old, exterior_arrays)',
-         '_HC.snapshot_charge(old, exterior_arrays, _snapshot_charge)'),
-    ))
-    # All earlier indexed-mesh and lineage checks remain in place.
-    result = source.rstrip()+'\nimport atlas_tectonics._private.heat_cold_patch as _HC\nimport atlas_tectonics._private.spatial_validation_patch as _SV\n'
-    compile(result, '<compact-heat-cold>', 'exec')
-    return result

@@ -12,9 +12,8 @@ from fractions import Fraction as Q
 from math import gcd
 import sys
 import heapq
-import hashlib
-from pathlib import Path
 from itertools import combinations
+from typing import cast
 
 from atlas_tectonics.integration.coupling.q2_directed import _Intervals, _Branch
 from . import volume as V, volume_overlap as O
@@ -22,16 +21,6 @@ from atlas_tectonics._validation import _arithmetic_sub
 
 ORDER = 12
 POSE_LEVEL = 128
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def source_digest():
-    from atlas_tectonics.integration.coupling.q2_directed import source_digest as interval_digest
-    from atlas_tectonics.integration.geometry.circular_moments import source_digest as circular_digest
-    from atlas_tectonics.integration.geometry.rigid_intersection import source_digest as intersection_digest
-    from atlas_tectonics.integration.geometry.differential_geometry import _SIMPLEX_SOURCE
-    return hashlib.sha256((_LOADED+interval_digest()+circular_digest()+intersection_digest()
-                          +_SIMPLEX_SOURCE).encode('ascii')).hexdigest()
 
 
 # G-PY: jet products by per-coefficient interval classes (T/ck/transforms/gpy_q2_jets.py).
@@ -428,12 +417,8 @@ def _edge_order(constraints, literals):
     def order(name):
         if isinstance(name, tuple):
             edge_class = _EDGE_CLASS.get(name[0])
-            if edge_class is None:
-                raise V.VolumeError('an edge label of unknown class has no order')
             return (1, edge_class, *name[1:])
         key = keys.get(name)
-        if key is None:
-            raise V.VolumeError('an edge name outside the literals has no order')
         return key
     return order
 
@@ -1620,10 +1605,6 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
     """
     from . import differential_geometry as G
     from . import wall_measures as W
-    if type(moments_only) is not bool or moments_only and omega is not None:
-        raise V.VolumeError('moments-only integration has no velocity field')
-    if any(type(index) is not int or not 0 <= index < len(widths) for index in passive):
-        raise V.VolumeError('passive moments must index the returned quantities')
     signs = dict(component['constraints'])
     velocity = None if moments_only else tuple(O._dot(face[3], O._cross(omega, p)) for p in (face[1], face[2], face[0]))
     velocity_normal = None if moments_only else O._cross(face[3], omega)
@@ -1651,8 +1632,6 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
     shared_rotation = None
     fixed_corner = None
     origin_proof = _homogeneous_origin_proof(proof_record, face, arena)
-    if radial_cut and velocity[2] != sum(velocity[j]*shift[j] for j in range(2)):
-        raise V.VolumeError('rigid radial-face velocity has a nonzero disk-centre value')
     def evaluate(bounds, reference, radius=None, event_hint=None):
         lines, open_signs = {}, {}
         def line_for(name):
@@ -1699,14 +1678,10 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
                     correlated = J.scale(correlated, signs[identity])
                     pairs = tuple((max(a[0], b[0]), min(a[1], b[1]))
                                   for a, b in zip(value, correlated))
-                    if any(lo > hi for lo, hi in pairs):
-                        raise V.VolumeError('correlated geometric predicate contradicts direct interval')
                     value = pairs
             if radius is None:
                 reference[key] = value[0]
                 return value
-            if key not in reference:
-                raise _Branch()
             # Earlier clipping predicates have certified the same analytic
             # vertex construction. Mean-value form retains cancellations that
             # separate coordinate intervals cannot: f(t) in f(m)+(t-m)f'(I).
@@ -1731,12 +1706,8 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
                                     pair = max(pair[0], departure[0]), min(pair[1], departure[1])
                                 if open_sign is not None:
                                     open_signs[key] = open_sign
-            if pair[0] > pair[1]:
-                raise V.VolumeError('moving-plane mean-value enclosure contradicts direct interval')
             strict_sign = _strict_interior_sign((pair, *value[1:]), bounds)
             if strict_sign is not None:
-                if key in open_signs and open_signs[key] is not strict_sign:
-                    raise V.VolumeError('moving-plane interior sign contradicts endpoint proof')
                 open_signs[key] = strict_sign
             if (event_hint is not None and pair[0] < 0 <= pair[1]
                     and key not in open_signs):
@@ -1749,7 +1720,7 @@ def integrate(record, component, layer, face, omega, polynomials, widths, durati
             polygon = tuple((*point[:2], point[2] | {_PHYSICAL_ORIGIN})
                 if (u, v) == origin_proof[0] else point
                 for point, (u, v) in zip(polygon, W._rectangle(face[4])))
-        for name, sign in sorted(component['constraints'], key=lambda literal: order(literal[0])):   # A-19
+        for name, sign in sorted(component['constraints'], key=lambda literal: cast(tuple, order(literal[0]))):   # A-19
             line = tuple(J.scale(q, sign) for q in line_for(name))
             polygon = _clip(polygon, line, name, J, contains, guard,
                             lambda identity, index, count: open_signs.get((identity, index, count)),

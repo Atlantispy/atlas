@@ -11,7 +11,7 @@ import math
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, read_array, input_shape, frozen, scalar, text
+from atlas_tectonics._validation import TectonicsError, read_array, input_shape, frozen, scalar
 from atlas_tectonics.planet.parameters import PlateCoolingParameters, identity
 from atlas_tectonics.integration.resources import elements, select_budget
 from atlas_tectonics.integration.resources import check_event as _cancel
@@ -42,8 +42,6 @@ def plate_cooling_work_bytes(depth_shape, age_shape, bottom_shape=None,
         size = elements(np.broadcast_shapes(*shapes))
     except ValueError as exc:
         raise TectonicsError('plate cooling inputs cannot broadcast') from exc
-    if not size:
-        raise TectonicsError('plate cooling inputs must be nonempty')
     return 32*sum(elements(s) for s in shapes) + 24*size + 512*min(count, size) + 8192
 
 
@@ -227,11 +225,7 @@ def finite_plate_temperature(depth_m, age_s, parameters, *, cell_bottom_m=None,
         depth = read_array(depth_m, 'depth_m', nonnegative=True)
         age = read_array(age_s, 'age_s', nonnegative=True)
         bottom = None if bs is None else read_array(cell_bottom_m, 'cell_bottom_m', nonnegative=True)
-        if depth.shape != ds or age.shape != ts or (bottom is not None and bottom.shape != bs):
-            raise TectonicsError('plate cooling input shape changed during capture')
         length = parameters.thickness_m
-        if np.any(depth > length) or (bottom is not None and np.any(bottom > length)):
-            raise TectonicsError('depth outside the finite plate; no implicit mantle extension')
         x = _factored_scale(depth, (), (length,), 'normalised depth')
         fo = _fourier_age(age, parameters)
         b = None if bottom is None else _factored_scale(bottom, (), (length,), 'normalised cell bottom')
@@ -244,8 +238,6 @@ def finite_plate_temperature(depth_m, age_s, parameters, *, cell_bottom_m=None,
                        (x.ndim == 1 or (x.ndim == 2 and x.shape[0] == 1)) and
                        (b is None or b.shape == x.shape))
         if column_grid:
-            if b is not None and np.any(b <= x):
-                raise TectonicsError('cell depths must be ordered and numerically distinct')
             _column_grid(x.reshape(-1), fo.reshape(-1), None if b is None else b.reshape(-1),
                          output, parameters, batch_elements, cancel, erf, erfc)
             return frozen(output)
@@ -255,8 +247,6 @@ def finite_plate_temperature(depth_m, age_s, parameters, *, cell_bottom_m=None,
             for buffers in iterator:
                 _cancel(cancel)
                 top, t = buffers[:2]; end = None if b is None else buffers[2]
-                if end is not None and np.any(end <= top):
-                    raise TectonicsError('cell depths must be ordered and numerically distinct')
                 fraction = _fraction(top, t, end, erf, erfc)
                 th = parameters.thermal
                 buffers[-1][:] = th.surface_temperature_k + (th.mantle_temperature_k-th.surface_temperature_k)*fraction
@@ -274,13 +264,9 @@ def plate_cooling_heat(age_s, parameters, *, budget=None,
     _parameters(parameters); _cancel(cancel)
     shape = input_shape(age_s); size = elements(shape)
     batch = _batch_count(batch_elements)
-    if not size:
-        raise TectonicsError('nonempty ages required')
     with select_budget(budget).reserve(96*size+256*min(size, batch)+8192, category='plate-heat'):
         from scipy.special import erfcx
         age = read_array(age_s, 'age_s', nonnegative=True)
-        if age.shape != shape:
-            raise TectonicsError('age shape changed during capture')
         if parameters.thermal.mantle_temperature_k == parameters.thermal.surface_temperature_k:
             return frozen(np.zeros(shape+(2,)))
         fo = _fourier_age(age, parameters).reshape(-1)
@@ -343,41 +329,24 @@ def plate_cooling_columns(initial_state, models, depth_edges_m, *, time_s, epoch
     retains parent state, history sources and model identities for later assembly.
     time_s uses the named case epoch; no implicit year/epoch conversion.
     """
-    from atlas_tectonics.crust.precursor import PrecursorState
     from atlas_tectonics.integration.reuse import cached_plate_temperature
     from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(initial_state, PrecursorState):
-        raise TectonicsError('source-bound PrecursorState required')
-    _cancel(cancel); text(epoch_id, 'epoch_id')
-    if epoch_id != initial_state.case.epoch_id:
-        raise TectonicsError('cooling workflow epoch mismatch')
+    _cancel(cancel)
     time_s = scalar(time_s, 'time_s')
-    if time_s < initial_state.case.time_s:
-        raise TectonicsError('evaluation predates the source state')
-    if type(models) is not dict or not models:
-        raise TectonicsError('explicit nonempty profile-to-model dictionary required')
     histories = {h.profile_id: h for h in initial_state.cooling_history}
-    if any(type(k) is not str or k not in histories for k in models):
-        raise TectonicsError('unknown cooling profile selected')
     selected = tuple(sorted(models.items()))
     ages = []; sources = []; ids = []
     for key, model in selected:
         _parameters(model); history = histories[key]
-        if history.start_time_s is None:
-            raise TectonicsError('unknown cooling history: '+key+'; '+history.unknown_reason)
         ages.append(scalar(time_s-history.start_time_s, 'cooling age', nonnegative=True))
         sources.append(history.source_id); ids.append(identity(model))
     edge_shape = input_shape(depth_edges_m)
-    if len(edge_shape) != 1 or edge_shape[0] < 2:
-        raise TectonicsError('one-dimensional depth edges required')
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
     resource = select_budget(budget)
     # Retain only the requested snapshot, never a growing trajectory in a plan.
     with resource.reserve(64*len(selected)*edge_shape[0]+32*edge_shape[0]+8192, category='thermal-age-columns'):
         edges = read_array(depth_edges_m, 'depth_edges_m', nonnegative=True)
-        if edges.shape != edge_shape or np.any(np.diff(edges) <= 0):
-            raise TectonicsError('strictly increasing depth edges required')
         temperatures = np.empty((len(selected), len(edges)-1))
         heat = np.empty((len(selected), 2))
         groups = {}
@@ -386,8 +355,6 @@ def plate_cooling_columns(initial_state, models, depth_edges_m, *, time_s, epoch
         for indices in groups.values():
             _cancel(cancel)
             model = selected[indices[0]][1]
-            if edges[0] != 0 or edges[-1] != model.thickness_m:
-                raise TectonicsError('column edges must span exactly the selected plate')
             group_ages = np.array([ages[i] for i in indices])
             temperatures[indices] = cached_plate_temperature(edges[:-1], group_ages[:, None], model,
                 cell_bottom_m=edges[1:], store=store, budget=resource, context=context,

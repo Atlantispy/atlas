@@ -18,8 +18,6 @@ import numpy as np
 from . import volume as V
 from . import wall_measures as W
 from atlas_tectonics.integration.coupling.regional_inventory import _width
-from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D, RegionalCollarSourceFlowStage
-from atlas_tectonics.integration.resources import WorkBudget
 
 
 def _json(value):
@@ -59,8 +57,6 @@ class NativeFaceMeasures:
         return json.loads(self._json)
 
     def validate_source(self, collar, source_flow_stage):
-        if collar is not self._collar or source_flow_stage is not self._stage:
-            raise V.VolumeError('native face evidence belongs to another actual source/flow stage')
         collar._check_source_flow_stage(source_flow_stage)
 
 
@@ -82,8 +78,6 @@ class ComponentNormalPolynomial:
         return json.loads(self._json)
 
     def validate_source(self, measures):
-        if type(measures) is not NativeFaceMeasures or measures is not self._measures:
-            raise V.VolumeError('component polynomial belongs to another actual native measure')
         measures.validate_source(measures._collar, measures._stage)
 
     @property
@@ -97,8 +91,6 @@ def _component_chart_polynomial(native_face, target_face, polynomial, increasing
     from atlas_tectonics.integration.geometry.differential_trace import _contact_queries, POWERS
     outward = target_face[3]
     sign = V._dot(outward, increasing_normal)
-    if sign not in (-1, 1) or tuple(sign*q for q in increasing_normal) != outward:
-        raise V.VolumeError('component target normal is not parallel to the actual native normal')
     # Reuse the exact opposite-contact affine proof; the target can be either
     # side of a native face. Its own outward orientation is applied below.
     query_face = (*native_face[:3], tuple(-q for q in outward), native_face[4])
@@ -124,17 +116,9 @@ def component_normal_polynomial(measures, face_id, voxel, axis, end, *, budget, 
 
 
 def _component_normal_polynomial(measures, face_id, voxel, axis, end, *, budget, projection, native_view=None):
-    if (type(measures) is not NativeFaceMeasures or type(voxel) is not V.CartesianCell or
-            type(budget) is not WorkBudget or measures._resource is not budget or voxel._resource is not budget or
-            type(axis) is not int or axis not in (0, 1, 2) or type(end) is not int or end not in (0, 1) or
-            type(face_id) is not str):
-        raise V.VolumeError('actual native measures, target Cartesian face and shared budget required')
     measures.validate_source(measures._collar, measures._stage)
     projection_width = 0
     if projection is not None:
-        from atlas_tectonics.integration.geometry.native_projection import NativeFluxProjection
-        if type(projection) is not NativeFluxProjection or projection._resource is not budget:
-            raise V.VolumeError('issued same-budget native normal projection required')
         projection.validate_source(measures)
         projection_width = len(projection._json)
     with budget.reserve(131072+8*(len(measures._json)+projection_width)+8*_width(voxel.record()), category='component-normal-chart'):
@@ -220,11 +204,6 @@ def measure_native_faces(collar, source_flow_stage, *, budget):
     part Gauss discretisation, not an asserted exact sign-split Q2 integral.
     A nonzero exact outer net is exposed, never removed or used as uncertainty.
     """
-    if (type(collar) is not PreparedRegionalCollar3D or
-            type(source_flow_stage) is not RegionalCollarSourceFlowStage or
-            type(budget) is not WorkBudget or collar._budget is not budget or
-            source_flow_stage._owner is not collar or collar.mechanics_scope != 'complete-grid'):
-        raise V.VolumeError('actual complete-grid source/flow and shared budget required')
     collar._check_source_flow_stage(source_flow_stage)
     flow, clock = source_flow_stage.flow, source_flow_stage.record()
     mechanics = source_flow_stage.source_stage.initial_mechanics

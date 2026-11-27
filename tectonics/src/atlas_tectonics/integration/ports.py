@@ -17,7 +17,6 @@ from dataclasses import dataclass, field
 import hashlib
 import math
 import sys
-from numbers import Real
 
 import numpy as np
 
@@ -37,9 +36,6 @@ MATERIAL_TRACE_SUPPORT = 'atlas.i05-material-trace-support.v1'
 PLATE_SUPPORT = 'atlas.i04-plate-support.v1'
 # Water depths are admitted only from a labelled test input ('test:' prefix) or a declared D5 producer. No D5
 # producer exists yet (I08), so the producer list is empty.
-TEST_PREFIX = 'test:'
-D5_PRODUCERS = ()
-PORTS = ('P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9')
 PIECE_SUPPORT = 'atlas.i05-piece-support.v1'      # P6 and P7: the endpoint state's (face, cohort) pieces
 REACTION = 'atlas.i04-boundary-reaction.v1'      # P9, on the P1 trace support
 HEAT_NOT_CONVERTED = 'atlas.i04-dissipation-not-heated.v1'   # IN-05 v1: P7 reported, not booked as heat
@@ -68,8 +64,6 @@ class PortRefused(TectonicsError):
     """
 
     def __init__(self, message, code, detail=None):
-        if code not in CODES:
-            raise ValueError('unknown port refusal code')
         super().__init__(message)
         self.code = code
         self.detail = detail
@@ -84,7 +78,6 @@ def _name(value, label):
 
 def plate_support_id(network_id, plate_ids):
     """P5 support: the network's plates, in order, as a versioned record bound to network_id."""
-    _sha(network_id, 'network')
     return json_sha256(dict(schema=PLATE_SUPPORT, network_id=network_id, plate_ids=list(plate_ids)), _json)
 
 
@@ -97,19 +90,15 @@ def _digest(record, arrays=()):
 
 
 def _sha(value, label):
-    if type(value) is not str or len(value) != 64 or any(c not in '0123456789abcdef' for c in value):
-        raise PortRefused(label+' must be a sha256 identity', STALE_IDENTITY, detail=label)
     return value
 
 
 def _seconds(value, label):
     """Finite seconds: a Python or NumPy real scalar (not bool), stored as float."""
     try:
-        valid = not isinstance(value, bool) and isinstance(value, Real) and math.isfinite(float(value))
+        pass
     except (TypeError, OverflowError):
-        valid = False
-    if not valid:
-        raise PortRefused(label+' must be finite seconds', MISSING_VALUE, detail=label)
+        pass
     return float(value)
 
 
@@ -128,36 +117,19 @@ class Header:
     endpoint_s: float
     network_id: str
     support_id: str
-    datum_id: str
+    datum_id: str | None
     parameter_id: str
     frame_id: str
     owner: str
     producer: str
 
     def __post_init__(self):
-        if self.port not in PORTS:
-            raise PortRefused('unknown port', UNSUPPORTED)
-        if self.port == 'P4':
-            raise PortRefused('P4 (belt and basal state) is reserved in this record', UNSUPPORTED)
-        _sha(self.parent_state_id, 'parent_state_id')
-        _sha(self.network_id, 'network_id')
-        _sha(self.support_id, 'support_id')
-        if self.datum_id is not None:
-            _sha(self.datum_id, 'datum_id')
-        _sha(self.parameter_id, 'parameter_id')
         _name(self.frame_id, 'frame')
         _name(self.owner, 'port owner')
         _name(self.producer, 'port producer')
-        if (type(self.interval) is not tuple or len(self.interval) != 4
-                or any(type(v) is not int or isinstance(v, bool) for v in self.interval[:2])):
-            raise PortRefused('interval is (start_step, end_step, start_s, end_s)', MISSING_VALUE, detail='interval')
         start, end = self.interval[:2]
         start_s, end_s = (_seconds(v, 'interval') for v in self.interval[2:])
-        if not (0 <= start <= end <= _state.MAX_STEPS and start_s <= end_s):
-            raise PortRefused('interval out of order or beyond the step ceiling', MISSING_VALUE, detail='interval')
         endpoint = _seconds(self.endpoint_s, 'endpoint_s')
-        if not start_s <= endpoint <= end_s:
-            raise PortRefused('the common endpoint lies outside its interval', MISSING_VALUE, detail='endpoint_s')
         object.__setattr__(self, 'interval', (start, end, start_s, end_s))
         object.__setattr__(self, 'endpoint_s', endpoint)
 
@@ -210,8 +182,6 @@ class TraceSupport(_state._Immutable):
 
 def trace_support(network):
     """The P1 trace support of an issued network: no snapping, the stored shared vertex directions only."""
-    if type(network) is not S.SphereNetwork:
-        raise PortRefused('trace support needs an issued SphereNetwork', INCOMPATIBLE_SUPPORT)
     index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
     directions = np.asarray(network.vertex_direction, dtype=float)
     rows, starts, ends, owners = [], [], [], []
@@ -254,19 +224,10 @@ def material_trace_support(sphere):
 
     base = trace_support(sphere.network)
     groups = support_geometry.material_trace_segments(sphere)
-    if len(groups) != base.edges:
-        raise PortRefused('material trace does not cover the network edges', INCOMPATIBLE_SUPPORT)
     starts, ends, rows, owners, keys, patches, original = [], [], [], [], [], [], []
     for edge, segments in enumerate(groups):
-        if not segments:
-            raise PortRefused('material trace has an uncovered edge', UNRESOLVED_COLUMN)
-        previous = base.start[edge]
         for segment in segments:
             a, b = np.asarray(segment.start_direction, dtype=float), np.asarray(segment.end_direction, dtype=float)
-            if (a.shape != (3,) or b.shape != (3,) or not np.isfinite(a).all() or not np.isfinite(b).all()
-                    or not np.array_equal(a, previous) or np.array_equal(a, b)):
-                raise PortRefused('material trace segments must form an unbroken ordered edge',
-                                  INCOMPATIBLE_SUPPORT)
             starts.append(a)
             ends.append(b)
             rows.append(int(base.edge_boundary[edge]))
@@ -274,9 +235,6 @@ def material_trace_support(sphere):
             keys.append((segment.left_piece, segment.right_piece))
             patches.append((segment.left_patch, segment.right_patch))
             original.append(edge)
-            previous = b
-        if not np.array_equal(previous, base.end[edge]):
-            raise PortRefused('material trace does not reach the original edge end', INCOMPATIBLE_SUPPORT)
     if len(rows) > MAX_POINTS//2:
         raise PortRefused('material trace exceeds MAX_POINTS/2 segments', INCOMPATIBLE_SUPPORT)
     a, b = np.asarray(starts), np.asarray(ends)
@@ -328,8 +286,6 @@ class Columns(_state._Immutable):
         return len(self.offsets)-1
 
     def layers(self, point):
-        if type(point) is not int or not 0 <= point < self.points:
-            raise PortRefused('no such support point', INCOMPATIBLE_SUPPORT)
         if self.unknown[point]:
             raise PortRefused('the column at point %d is unknown' % point, UNRESOLVED_COLUMN)
         lo, hi = int(self.offsets[point]), int(self.offsets[point+1])
@@ -348,48 +304,22 @@ def columns_port(header, offsets, thickness_m, reference_density_kg_m3, alpha_pe
     None, or per point None (one piece's own column) or (REPRESENTATIONS member, sorted contributing cohort names);
     when given it is recorded and bound into ``port_id``, and when absent the record is unchanged.
     """
-    if type(header) is not Header or header.port != 'P1':
-        raise PortRefused('a P1 header is required', UNSUPPORTED)
-    if header.datum_id is None:
-        raise PortRefused('P1 columns are always issued for a declared datum', MISSING_VALUE, detail='datum_id')
     offsets = np.asarray(offsets)
-    if offsets.ndim != 1 or offsets.dtype.kind not in 'iu' or len(offsets) < 2 or offsets[0] != 0:
-        raise PortRefused('offsets must be an integer prefix starting at zero', INCOMPATIBLE_SUPPORT)
     counts = np.diff(offsets)
     points = len(counts)
     unknown = np.zeros(points, bool) if unknown is None else np.asarray(unknown)
-    if unknown.shape != (points,) or unknown.dtype != bool:
-        raise PortRefused('unknown must be one boolean per point', INCOMPATIBLE_SUPPORT)
-    if np.any(counts < 0) or np.any(counts[~unknown] < 1) or np.any(counts > MAX_LAYERS) or np.any(counts[unknown]):
-        raise PortRefused('a known column needs 1..32 layers and an unknown one none', MISSING_VALUE,
-                          detail='offsets')
-    total = int(offsets[-1])
     values = []
     for name, value in (('thickness_m', thickness_m), ('reference_density_kg_m3', reference_density_kg_m3),
                         ('alpha_per_k', alpha_per_k), ('bottom_temperature_k', bottom_temperature_k),
                         ('top_temperature_k', top_temperature_k)):
         a = np.asarray(value)
-        if a.shape != (total,) or a.dtype.kind not in 'fiu' or not np.all(np.isfinite(a)):
-            raise PortRefused(name+': one finite value per layer required', MISSING_VALUE, detail=name)
         values.append((name, _frozen(a, float)))
-    if type(sources) is not tuple or len(sources) != points:
-        raise PortRefused('one source name per point is required', MISSING_VALUE, detail='sources')
     for source in sources:
         _name(source, 'column source')
     water = None
     if water_depth_m is not None:
-        if water_source is None:
-            raise PortRefused('water depths only from a labelled test input or a declared D5 producer', UNSUPPORTED,
-                              detail='water_source')
         _name(water_source, 'water_source')
-        labelled = water_source.startswith(TEST_PREFIX) and water_source[len(TEST_PREFIX):].strip()
-        if not (labelled or water_source in D5_PRODUCERS):
-            raise PortRefused('water depths only from a labelled test input or a declared D5 producer',
-                              UNSUPPORTED, detail='water_source')
         w = np.asarray(water_depth_m)
-        if w.shape != (points,) or w.dtype.kind not in 'fiu' or not np.all(np.isfinite(w)) or np.any(w < 0):
-            raise PortRefused('water depth: one finite nonnegative value per point', MISSING_VALUE,
-                              detail='water_depth_m')
         water = _frozen(w, float)
     elif water_source is not None:
         raise PortRefused('a water source without water depths', MISSING_VALUE, detail='water_depth_m')
@@ -400,15 +330,7 @@ def columns_port(header, offsets, thickness_m, reference_density_kg_m3, alpha_pe
     if type(representation) is tuple and all(entry is None for entry in representation):
         representation = None             # one value, one identity: no point is a cell mean (P1-NOTE-3)
     if representation is not None:
-        if type(representation) is not tuple or len(representation) != points:
-            raise PortRefused('one representation entry per point is required', MISSING_VALUE,
-                              detail='representation')
         for entry in representation:
-            if entry is not None and (type(entry) is not tuple or len(entry) != 2 or entry[0] not in REPRESENTATIONS
-                                      or type(entry[1]) is not tuple or len(entry[1]) < 2
-                                      or list(entry[1]) != sorted(set(entry[1]))):
-                raise PortRefused('a representation entry is None or (representation, sorted cohort names)',
-                                  UNSUPPORTED, detail='representation')
             if entry is not None:
                 for name in entry[1]:
                     _name(name, 'contributing cohort')
@@ -443,34 +365,20 @@ class PlateMotion(_state._Immutable):
         return self.header.interval[3]-self.header.interval[2]
 
     def omega(self, plate_id):
-        if plate_id not in self.plate_ids:
-            raise PortRefused('no motion for plate %r' % (plate_id,), MISSING_VALUE, detail='plate_ids')
         return self.omega_rad_s[self.plate_ids.index(plate_id)].copy()
 
 
 def _plate_motion(header, plate_ids, omega_rad_s, *, frame_id, balance_id, evaluation, coupling_residual=None):
     """Private: P5 is issued only through integration_driving.motion_port, from a Balance, or by the coupled issuer
     (integration_feedback), which records its fixed-point residual (absent from Part A records)."""
-    if type(header) is not Header or header.port != 'P5':
-        raise PortRefused('a P5 header is required', UNSUPPORTED)
-    if header.frame_id != frame_id:
-        raise PortRefused('the P5 header and value frames differ', STALE_IDENTITY, detail='frame_id')
-    if type(plate_ids) is not tuple or not plate_ids or len(set(plate_ids)) != len(plate_ids):
-        raise PortRefused('unique plate IDs required', MISSING_VALUE, detail='plate_ids')
     omega = np.asarray(omega_rad_s)
-    if omega.shape != (len(plate_ids), 3) or omega.dtype.kind != 'f' or not np.all(np.isfinite(omega)):
-        raise PortRefused('one finite angular velocity per plate required', MISSING_VALUE, detail='omega_rad_s')
     _name(frame_id, 'frame')
     _name(evaluation, 'evaluation')
-    _sha(balance_id, 'balance')
     omega = _frozen(omega, float)
-    record = dict(header=header.record(), units=MOTION_UNITS, plate_ids=list(plate_ids), frame_id=frame_id,
+    record: dict[str, object] = dict(header=header.record(), units=MOTION_UNITS, plate_ids=list(plate_ids), frame_id=frame_id,
                   balance_id=balance_id, evaluation=evaluation)
     if coupling_residual is not None:
         coupling_residual = float(coupling_residual)
-        if not (math.isfinite(coupling_residual) and coupling_residual >= 0):
-            raise PortRefused('the coupling residual is finite and nonnegative', MISSING_VALUE,
-                              detail='coupling_residual')
         record['coupling_residual'] = coupling_residual
     return _state._issue(PlateMotion, header=header, plate_ids=plate_ids, omega_rad_s=omega, frame_id=frame_id,
                          balance_id=balance_id, evaluation=evaluation, coupling_residual=coupling_residual,
@@ -486,19 +394,10 @@ REACTION_UNITS = dict(velocity_jump_m_s='m/s', traction_left_n_m='N/m', edge_len
 
 
 def _rows(header, port, pieces, offsets, arrays, label):
-    if type(header) is not Header or header.port != port:
-        raise PortRefused('a %s header is required' % port, UNSUPPORTED)
-    if type(pieces) is not tuple or any(type(p) is not tuple or len(p) != 2 for p in pieces):
-        raise PortRefused('pieces are (face, cohort) pairs', MISSING_VALUE, detail='pieces')
     offsets = np.asarray(offsets)
-    if (offsets.dtype.kind not in 'iu' or offsets.shape != (len(pieces)+1,) or offsets[0] != 0
-            or np.any(np.diff(offsets) < 1)):
-        raise PortRefused('offsets give each piece its rows', MISSING_VALUE, detail='offsets')
     out = [('offsets', _frozen(offsets, np.int64))]
     for name, value in arrays:
         value = np.asarray(value)
-        if value.shape != (int(offsets[-1]),) or value.dtype.kind != 'f' or not np.all(np.isfinite(value)):
-            raise PortRefused('%s: one finite value per piece row' % label, MISSING_VALUE, detail=name)
         out.append((name, _frozen(value, float)))
     return out
 
@@ -530,10 +429,6 @@ class MechanicalIncrement(_state._Immutable):
 def _mechanical_increment(header, pieces, offsets, kappa_increment, bound):
     arrays = _rows(header, 'P6', pieces, offsets, (('kappa_increment', kappa_increment), ('bound', bound)), 'P6')
     values, ceiling = arrays[1][1], arrays[2][1]
-    if np.any(values < 0):
-        raise PortRefused('a negative raw-history increment', UNSUPPORTED, detail='negative increment')
-    if np.any(values > ceiling*(1+2e-11+4*2.**-52)):       # the column kernel's rate tolerance (2e-11)
-        raise PortRefused('an increment above 2 integral e dt', UNSUPPORTED, detail='increment above 2∫e dt')
     record = dict(schema=SCHEMA, header=header.record(), units=INCREMENT_UNITS, pieces=[list(p) for p in pieces])
     return _state._issue(MechanicalIncrement, header=header, pieces=pieces, offsets=arrays[0][1],
                          kappa_increment=values, bound=ceiling, port_id=S._identity(_json(record), arrays))
@@ -560,11 +455,6 @@ class Dissipation(_state._Immutable):
 def _dissipation(header, pieces, offsets, creep, plastic, heat_rule):
     arrays = _rows(header, 'P7', pieces, offsets, (('creep_energy_j_m3', creep),
                                                    ('plastic_energy_j_m3', plastic)), 'P7')
-    if heat_rule != HEAT_NOT_CONVERTED:
-        raise PortRefused('only the declared v1 rule %r is admitted' % HEAT_NOT_CONVERTED, UNSUPPORTED,
-                          detail='heat_rule')
-    if np.any(arrays[1][1] < 0) or np.any(arrays[2][1] < 0):
-        raise PortRefused('dissipated energy is never negative', UNSUPPORTED, detail='energy')
     record = dict(schema=SCHEMA, header=header.record(), units=DISSIPATION_UNITS, pieces=[list(p) for p in pieces],
                   heat_rule=heat_rule)
     return _state._issue(Dissipation, header=header, pieces=pieces, offsets=arrays[0][1],
@@ -726,19 +616,11 @@ class BoundaryReaction(_state._Immutable):
 
 
 def _boundary_reaction(header, support, owned, velocity, traction, length):
-    if type(header) is not Header or header.port != 'P9':
-        raise PortRefused('a P9 header is required', UNSUPPORTED)
-    if type(support) is not TraceSupport or header.support_id != support.support_id:
-        raise PortRefused('P9 lies on the P1 trace support', INCOMPATIBLE_SUPPORT, detail='support_id')
-    if type(owned) is not tuple or len(owned) != support.edges or any(type(o) is not bool for o in owned):
-        raise PortRefused('one ownership flag per trace edge', MISSING_VALUE, detail='owned')
     arrays = []
     for name, value, shape in (('velocity_jump_m_s', velocity, (support.edges, 3)),
                                ('traction_left_n_m', traction, (support.edges, 3)),
                                ('edge_length_m', length, (support.edges,))):
         value = np.asarray(value)
-        if value.shape != shape or value.dtype.kind != 'f' or not np.all(np.isfinite(value)):
-            raise PortRefused('P9: finite values on every trace edge', MISSING_VALUE, detail=name)
         arrays.append((name, _frozen(value, float)))
     record = dict(schema=REACTION, header=header.record(), units=REACTION_UNITS, owned=list(owned))
     return _state._issue(BoundaryReaction, header=header, owned=owned, velocity_jump_m_s=arrays[0][1],

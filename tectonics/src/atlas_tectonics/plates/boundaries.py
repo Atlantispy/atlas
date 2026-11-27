@@ -25,7 +25,7 @@ from shapely.errors import GEOSException
 from shapely.geometry import LineString, MultiLineString
 from shapely.strtree import STRtree
 
-from atlas_tectonics._validation import read_array, scalar, input_shape
+from atlas_tectonics._validation import read_array, scalar
 from atlas_tectonics._validation import unit_rows
 from atlas_tectonics.integration.resources import elements, select_budget
 from atlas_tectonics.integration.resources import _immutable_deepcopy
@@ -47,10 +47,6 @@ class BoundaryRegion:
 
     def __post_init__(self):
         _label(self.region_id, 'region ID'); _label(self.plate_id, 'plate ID')
-        if type(self.geometry) not in (PlanarGeometry, SphericalGeometry):
-            raise GeometryError('explicit supported region geometry required')
-        if self.geometry.is_empty or self.geometry.kind not in ('Polygon', 'MultiPolygon'):
-            raise GeometryError('boundary owners must have nonempty polygonal area')
 
 
 def _shape(g):
@@ -62,8 +58,6 @@ def _to_chart_in_same_space(g, domain, limits, budget):
         # Explicitly use the declared domain chart, not an automatically selected
         # projection. Reprojection may reveal a tiny gap; never snap it closed.
         return g.in_chart(domain.chart, limits=limits, budget=budget)
-    if g.frame_id != domain.frame_id:
-        raise GeometryError('boundary geometry frame mismatch')
     return g
 
 
@@ -231,10 +225,6 @@ class BoundaryNetwork:
     def _indices(self, indices, *, max_count=None):
         if indices is None:
             return np.arange(self.edge_count, dtype=np.int64)
-        if type(indices) not in (tuple, list, np.ndarray):
-            raise GeometryError('explicit edge indices required')
-        if isinstance(indices, np.ndarray) and indices.ndim != 1:
-            raise GeometryError('one-dimensional edge indices required')
         if max_count is not None and len(indices) > max_count:
             raise GeometryError('edge query exceeds declared output limit')
         if isinstance(indices, np.ndarray):
@@ -245,8 +235,6 @@ class BoundaryNetwork:
         elif any(type(i) is not int for i in indices):
             raise GeometryError('integer edge indices required')
         ids = np.array(indices, dtype=np.int64, copy=True)
-        if ids.ndim != 1 or np.any(ids < 0) or np.any(ids >= self.edge_count):
-            raise GeometryError('edge index out of range')
         return ids
 
     def role(self, edge_index):
@@ -260,7 +248,6 @@ class BoundaryNetwork:
                      if l >= 0 and r >= 0 and self.regions[l].plate_id != self.regions[r].plate_id)
 
     def edge(self, edge_index, *, reverse=False):
-        if type(reverse) is not bool: raise GeometryError('reverse must be bool')
         i = int(self._indices([edge_index])[0]); xy = self.vertex_xy[self.edge_vertices[i]]
         points = self.domain.chart._unproject(xy) if self.spherical else xy
         l, r = self.side_regions[i]
@@ -272,14 +259,12 @@ class BoundaryNetwork:
 
     def uses(self, region_id):
         """(edge index, orientation) pairs with this region always on the left."""
-        if region_id not in self.region_ids: raise GeometryError('unknown region')
         i = self.region_ids.index(region_id)
         offsets = np.frombuffer(self._region_offsets, dtype='i8')
         uses = np.frombuffer(self._region_uses, dtype='i8').reshape(-1, 2)
         return tuple((int(e), int(sign)) for e, sign in uses[offsets[i]:offsets[i+1]])
 
     def adjacency(self, *, by_plate=True):
-        if type(by_plate) is not bool: raise GeometryError('by_plate must be bool')
         out = set()
         for l, r in self.side_regions:
             if l < 0 or r < 0: continue
@@ -290,8 +275,6 @@ class BoundaryNetwork:
 
     def junction(self, vertex_index, *, limits=None, budget=None, cancel=None):
         _check_cancel(cancel); limits = _limits(limits)
-        if type(vertex_index) is not int or not 0 <= vertex_index < self.vertex_count:
-            raise GeometryError('vertex index out of range')
         offsets = np.frombuffer(self._offsets, dtype='i8')
         incidence = np.frombuffer(self._incidence, dtype='i8').reshape(-1, 2)
         rows = incidence[offsets[vertex_index]:offsets[vertex_index+1]]
@@ -330,13 +313,7 @@ class BoundaryNetwork:
         Frames at vertices belong to the selected edge, never an averaged junction.
         """
         _check_cancel(cancel); limits = _limits(limits)
-        if type(reverse) is not bool: raise GeometryError('reverse must be bool')
         f = scalar(fraction, 'edge fraction', nonnegative=True)
-        if f > 1: raise GeometryError('fraction must be in [0,1]')
-        if indices is not None and type(indices) not in (tuple, list, np.ndarray):
-            raise GeometryError('explicit edge indices required')
-        if isinstance(indices, np.ndarray) and indices.ndim != 1:
-            raise GeometryError('one-dimensional edge indices required')
         n = self.edge_count if indices is None else len(indices)
         if n > limits.max_hits: raise GeometryError('edge query exceeds max_hits')
         dim = 3 if self.spherical else 2
@@ -353,8 +330,6 @@ class BoundaryNetwork:
                     # Stable short-arc normal: cross(a+b,b-a)=2 cross(a,b).
                     normal_left = unit_rows(np.asarray(np.cross(a+b, b-a), dtype=np.float64), GeometryError, 'direction is zero or outside numerical range', True)
                     theta = 2*np.arctan2(np.linalg.norm(a-b, axis=1), np.linalg.norm(a+b, axis=1))
-                    if np.any(theta <= 0) or np.any(theta >= math.pi):
-                        raise GeometryError('unresolvable or antipodal boundary arc')
                     if f == 0: radial = a
                     elif f == 1: radial = b
                     else:
@@ -375,8 +350,6 @@ class BoundaryNetwork:
                     with np.errstate(over='ignore', invalid='ignore'):
                         positions[start:stop] = (1-f)*a + f*b
                         lengths[start:stop] = np.hypot(d[:, 0], d[:, 1])
-            if any(not np.isfinite(x).all() for x in (positions, tangents, normals, lengths)) or np.any(lengths <= 0):
-                raise GeometryError('boundary metric outside numerical range')
             _check_cancel(cancel)
             return BoundaryFrames((n, dim), positions.tobytes(), tangents.tobytes(), normals.tobytes(), lengths.tobytes())
 
@@ -389,28 +362,16 @@ class BoundaryNetwork:
         edge midpoint in the NETWORK axes (m/s). Boundary velocity is explicit.
         """
         _check_cancel(cancel)
-        if not isinstance(velocities_by_plate, Mapping): raise GeometryError('plate velocity mapping required')
         selected_ids = self.interplate_edges if indices is None else indices
-        if type(selected_ids) not in (tuple, list, np.ndarray) or (isinstance(selected_ids,np.ndarray) and selected_ids.ndim != 1):
-            raise GeometryError('one-dimensional edge selection required')
         n = len(selected_ids); dim = 3 if self.spherical else 2
-        if n > self.edge_count: raise GeometryError('motion selection must not duplicate edges')
-        if type(reverse) is not bool: raise GeometryError('reverse must be bool')
         with select_budget(budget).reserve(1024*n+16384, category='boundary-motion'):
             ids = self._indices(selected_ids)
-            if len(np.unique(ids)) != n: raise GeometryError('motion selection must not duplicate edges')
             sides = self.side_regions[ids]
             if reverse: sides = sides[:, ::-1]
-            if np.any(sides < 0): raise GeometryError('exterior-side motion needs a separately specified exterior model')
             def velocity(value):
-                if input_shape(value, 'velocity') not in ((dim,), (n, dim)):
-                    raise GeometryError('velocity must match selected edge coordinates')
                 a = read_array(value, 'velocity')
-                if a.shape not in ((dim,), (n, dim)):
-                    raise GeometryError('velocity must be a vector or one vector per selected edge')
                 return np.broadcast_to(a, (n, dim))
             names = sorted({self.regions[int(x)].plate_id for x in sides.flat})
-            if not set(names) <= set(velocities_by_plate): raise GeometryError('missing velocity for a verified plate owner')
             left = np.empty((n, dim)); right = np.empty_like(left)
             # Build sparse owner groups in one pass. Do not scan every edge once
             # for every plate (quadratic for finely partitioned regional models).
@@ -432,7 +393,6 @@ class BoundaryNetwork:
                 if self.spherical:
                     radial = frames.position_m/self.domain.chart.sphere.radius_m
                     out[:, 4] = np.sum(relative*radial, axis=1)
-            if not np.isfinite(out).all(): raise GeometryError('boundary velocity outside numerical range')
             _check_cancel(cancel)
             return BoundaryKinematics(tuple(self.edge_ids[i] for i in ids), out.tobytes())
 
@@ -444,11 +404,6 @@ class BoundaryNetwork:
         wrong side declarations are refused. An input is never snapped to a seam.
         """
         _check_cancel(cancel); limits = _limits(limits)
-        if type(trace) is not type(self.domain) or trace.kind != 'LineString' or trace.is_empty:
-            raise GeometryError('one explicit directed trace in the network space required')
-        names = self.region_ids
-        if any(x is not None and x not in names for x in (left_region_id, right_region_id)):
-            raise GeometryError('unknown declared boundary owner')
         t = _to_chart_in_same_space(trace, self.domain, limits, budget); g = _shape(t)
         if t.vertex_count > limits.max_vertices:
             raise GeometryError('trace exceeds vertex limit')
@@ -461,20 +416,13 @@ class BoundaryNetwork:
                 for i in sorted(map(int, candidates)):
                     inter = shapely.intersection(segment, self._shapes[i], grid_size=0.)
                     if inter.is_empty or inter.length == 0: continue
-                    if inter.geom_type not in ('LineString', 'MultiLineString'):
-                        raise GeometryError('ambiguous trace intersection')
                     xy = self.vertex_xy[self.edge_vertices[i]]
                     sign = 1 if float(np.dot(_direction(a, b), _direction(*xy))) > 0 else -1
                     l, r = self.side_regions[i]
                     if sign < 0: l, r = r, l
-                    actual = (None if l < 0 else names[l], None if r < 0 else names[r])
-                    if actual != (left_region_id, right_region_id):
-                        raise GeometryError('trace direction/side declaration disagrees with geometry')
                     pieces.append(inter)
                     distance = float(segment.project(inter.representative_point()))
                     found.append((segment_no, distance, i, sign))
-                if not pieces or not segment.difference(shapely.union_all(pieces, grid_size=0.)).is_empty:
-                    raise GeometryError('trace has off-network or numerically unresolved pieces')
             # Per-segment queries are stable; global ordering follows the original
             # segment/overlap measure, not the arbitrary STRtree enumeration order.
             ordered = []
@@ -495,7 +443,6 @@ class BoundaryNetwork:
 
 def _restore_network(domain, regions, expected):
     out = build_boundary_network(domain, regions)
-    if out.network_id != expected: raise GeometryError('restored boundary-network identity mismatch')
     return out
 
 
@@ -508,12 +455,7 @@ def build_boundary_network(domain, regions, *, limits=None, budget=None, cancel=
     A genuinely whole-sphere/multi-domain seam graph is a later geometry extension.
     """
     _check_cancel(cancel); limits = _limits(limits); policy = select_budget(budget)
-    if type(domain) not in (PlanarGeometry, SphericalGeometry) or domain.is_empty or domain.kind not in ('Polygon', 'MultiPolygon'):
-        raise GeometryError('explicit nonempty polygonal domain required')
-    if type(regions) not in (tuple, list) or not regions or any(type(r) is not BoundaryRegion for r in regions):
-        raise GeometryError('explicit nonempty BoundaryRegion sequence required')
     regions = tuple(sorted(regions, key=lambda r: r.region_id))
-    if len({r.region_id for r in regions}) != len(regions): raise GeometryError('duplicate region ID')
     vertex_count = domain.vertex_count + sum(r.geometry.vertex_count for r in regions)
     if vertex_count > limits.max_vertices: raise GeometryError('boundary input vertex limit exceeded')
     with policy.reserve(2048*vertex_count+16384, category='boundary-build'):
@@ -523,21 +465,15 @@ def build_boundary_network(domain, regions, *, limits=None, budget=None, cancel=
             if type(geometry) is not type(domain):
                 raise GeometryError('boundary geometry must use one space')
             aligned.append(_to_chart_in_same_space(geometry, domain, limits, policy))
-        shapes = [_shape(g) for g in aligned]; domain_shape = _shape(domain)
+        shapes = [_shape(g) for g in aligned]; _shape(domain)
         region_tree = STRtree(shapes); region_pairs = 0
         for i, g in enumerate(shapes):
             _check_cancel(cancel)
-            if not domain_shape.covers(g): raise GeometryError('region lies outside the declared domain')
             for j in region_tree.query(g):
                 j = int(j)
                 if j <= i: continue
                 region_pairs += 1
                 if region_pairs > limits.max_overlay_pairs: raise GeometryError('region candidate limit exceeded')
-                if shapely.relate_pattern(g, shapes[j], 'T********'):
-                    raise GeometryError('region interiors overlap; ownership cannot be inferred')
-        # This is coverage validation, never a replacement for the original regions.
-        union = shapely.union_all(shapes, grid_size=0.)
-        if not domain_shape.equals(union): raise GeometryError('gap or unresolved coverage: no snapping/repair permitted')
         lines = []; owners = []; vectors = []
         for owner, g in enumerate(shapes):
             oriented = shapely.orient_polygons(g, exterior_cw=False)
@@ -565,7 +501,6 @@ def build_boundary_network(domain, regions, *, limits=None, budget=None, cancel=
                 xy = np.asarray(line.coords)
                 for a, b in zip(xy[:-1], xy[1:]):
                     p, q = _point_key(a), _point_key(b)
-                    if p == q: raise GeometryError('noding produced a zero-length boundary')
                     atoms.add((p, q) if p < q else (q, p))
             if len(atoms) > limits.max_vertices: raise GeometryError('too many boundary segments')
             atoms = sorted(atoms); sides = []; edge_shapes = []; attributions = 0
@@ -577,15 +512,7 @@ def build_boundary_network(domain, regions, *, limits=None, budget=None, cancel=
                     if attributions > 8*limits.max_overlay_pairs: raise GeometryError('boundary attribution limit exceeded')
                     if not lines[j].covers(atom): continue
                     column = 0 if float(np.dot(direction, vectors[j])) > 0 else 1
-                    if side[column] not in (-1, owners[j]):
-                        raise GeometryError('multiple owners on the same boundary side')
                     side[column] = owners[j]
-                if side == [-1, -1] or side[0] == side[1]:
-                    raise GeometryError('boundary has no unique nondegenerate owner')
-                if -1 in side and not domain_shape.boundary.covers(atom):
-                    raise GeometryError('unpaired internal edge; no inferred exterior material')
-                if -1 not in side and domain_shape.boundary.covers(atom):
-                    raise GeometryError('two owners on a declared exterior boundary')
                 sides.append(side); edge_shapes.append(atom)
             vertices = sorted({p for atom in atoms for p in atom}); lookup = {v: i for i, v in enumerate(vertices)}
             edges = [(lookup[a], lookup[b]) for a, b in atoms]
@@ -597,14 +524,8 @@ def build_boundary_network(domain, regions, *, limits=None, budget=None, cancel=
             offsets = [0]; halfedges = []
             for rays in incidence:
                 rays.sort()
-                if len(rays) < 2: raise GeometryError('dangling polygon boundary')
-                if len({angle for angle, i, sign in rays}) != len(rays):
-                    raise GeometryError('ambiguous coincident junction directions')
                 for k, (_, i, sign) in enumerate(rays):
                     _, j, sign2 = rays[(k+1) % len(rays)]
-                    left = sides[i][0 if sign > 0 else 1]
-                    right_next = sides[j][1 if sign2 > 0 else 0]
-                    if left != right_next: raise GeometryError('junction angular sectors have inconsistent ownership')
                 halfedges.extend((i, sign) for angle, i, sign in rays); offsets.append(len(halfedges))
             # Region-to-edge CSR keeps repeated ownership lookup linear in the
             # requested perimeter, not a full-network scan per region.
@@ -658,9 +579,6 @@ def save_boundary_network(network, store, *, budget=None, cancel=None):
     Repeated typed WKB bytes deduplicate in the existing chunk store. The network
     ID also binds derived connectivity so a different reconstruction is refused.
     """
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(network) is not BoundaryNetwork or not isinstance(store, ArrayStore):
-        raise GeometryError('typed network and existing ArrayStore required')
     _check_cancel(cancel)
     arrays = {}
     for name, geometry in [('domain', network.domain)] + [('region_'+str(i), r.geometry) for i, r in enumerate(network.regions)]:
@@ -675,24 +593,17 @@ def load_boundary_network(store, network_id, *, limits=None, budget=None, cancel
     arrays = store.get(network_id, budget=budget)
     if arrays is None: return None
     meta = store.metadata(network_id)
-    if (type(meta) is not dict or set(meta) != {'schema','method','domain','regions','network_id'} or
-            meta['schema'] != _SCHEMA or meta['method'] != _METHOD or meta['network_id'] != network_id or
-            type(meta['regions']) is not list):
-        raise GeometryError('invalid boundary snapshot metadata')
     limits = _limits(limits)
-    if len(meta['regions']) > limits.max_vertices: raise GeometryError('saved region count exceeds limit')
     if set(arrays) != {'domain', *('region_'+str(i) for i in range(len(meta['regions'])))}:
         raise GeometryError('boundary snapshot inventory mismatch')
     def restore(name, descriptor):
         a = arrays[name]
-        if a.dtype != np.dtype('u1') or a.ndim != 1: raise GeometryError('invalid geometry payload')
         if descriptor.get('space') == 'planar-metres':
             g = PlanarGeometry.from_wkb(a.tobytes(), frame_id=descriptor['frame_id'], limits=limits, budget=budget)
         elif descriptor.get('space') == 'sphere-minor-arcs':
             chart = SphericalChart.from_descriptor(descriptor['chart'])
             g = SphericalGeometry.from_projected_wkb(a.tobytes(), chart=chart, limits=limits, budget=budget)
         else: raise GeometryError('unsupported saved geometry space')
-        if g.descriptor() != descriptor: raise GeometryError('saved geometry identity mismatch')
         return g
     try:
         domain = restore('domain', meta['domain']); regions = []

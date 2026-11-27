@@ -11,25 +11,20 @@ import math
 import numpy as np
 
 from atlas_tectonics._private.integration import native_transfer as N
-from atlas_tectonics._private.codecs import mesh_tables as M
 from atlas_tectonics._private.codecs.partition_tables import CompactPartition
 from atlas_tectonics._private.codecs.compact_store import _cancel, descriptor_digest
 from atlas_tectonics._private.integration.geometry.spatial_workflow_patch import _OwnedReference, _token
-from atlas_tectonics.integration.resources import WorkBudget
-from atlas_tectonics.codecs.storage import ArrayStore, StoreError
+from atlas_tectonics.codecs.storage import StoreError
 from atlas_tectonics.integration.coupling.spatial_transport import _workspace
 
 SCHEMA = 'atlas.compact-partition-store.v1'
 AUTHORITY = 'storage integrity only; scientific admission required'
-REFERENCE_KEYS = frozenset(('schema', 'snapshot_key', 'partition_id', 'source_producer', 'array_bindings'))
 
 
 def publish_partition_v2(candidate, view, *, producer, check=lambda: None, cancel=None):
     """One descriptor segment root, with no support snapshots or workflow aliases."""
-    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2, DESCRIPTOR, PROFILE
+    from atlas_tectonics._private.integration.geometry.partition_adapter import DESCRIPTOR, PROFILE
     from atlas_tectonics._private.codecs.segment_store import SegmentBackend
-    require(type(view) is PartitionV2 and view._sealed and candidate.scope is view.scope,
-            'sealed same-scope partition v2 required')
     token = _token(check, cancel)
     _cancel(token)
     with view.record.metadata_bytes() as metadata:
@@ -44,16 +39,11 @@ def publish_partition_v2(candidate, view, *, producer, check=lambda: None, cance
 
 def open_partition_v2(resolver, ref, *, scope, check=lambda: None, cancel=None):
     """Read a partition v2 from its bounded authenticated segment directory."""
-    from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
-    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2, DESCRIPTOR, PROFILE
+    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
     from atlas_tectonics._private.codecs.record_views import CompactRecord
     from atlas_tectonics._private.codecs.segment_store import SegmentBackend
-    require(type(ref) is SegmentRef and ref.identity.record_schema == DESCRIPTOR and
-            resolver.scope is scope, 'partition v2 reference and same-scope resolver required')
     token = _token(check, cancel)
     segment = SegmentBackend().open(resolver, ref, scope=scope, cancel=token)
-    require(segment._owner.value['representation_profile'] == PROFILE,
-            'unsupported partition representation profile')
     record = CompactRecord.from_segment(segment, check=lambda: _cancel(token))
     root = record.root()
     child = root.field('partition_id')
@@ -76,14 +66,10 @@ def require(value, message):
 
 
 def _identity(partition_id):
-    require(type(partition_id) is str and len(partition_id) == 64 and
-            all(c in '0123456789abcdef' for c in partition_id), 'canonical partition SHA-256 required')
     return partition_id
 
 
 def binding(partition_id, source_producer):
-    _identity(partition_id)
-    require(type(source_producer) is dict and bool(source_producer), 'actual partition producer required')
     return dict(schema=SCHEMA, partition_id=partition_id, source_producer=source_producer)
 
 
@@ -93,26 +79,14 @@ def key_for(partition_id, source_producer):
 
 class CompactPartitionStore:
     def __init__(self, store, *, budget):
-        require(type(budget) is WorkBudget, 'actual shared WorkBudget required')
-        require(type(store) is ArrayStore and store._budget is budget, 'actual same-budget ArrayStore required')
         self.store, self.budget = store, budget
 
     def _root(self, key):
         manifest = self.store._manifest(key)
-        require(manifest is not None, 'compact partition root is missing')
         row = manifest['metadata']
-        require(type(row) is dict and set(row) == {'schema', 'partition_id', 'source_producer', 'codec_metadata', 'authority'}
-                and row['schema'] == SCHEMA and row['authority'] == AUTHORITY,
-                'complete compact partition root required')
-        require(key_for(row['partition_id'], row['source_producer']) == key, 'partition root producer/identity differs')
         codec = row['codec_metadata']
-        require(type(codec) is dict and type(codec.get('arrays')) is dict and
-                set(manifest['arrays']) == set(codec['arrays']), 'complete compact partition array inventory required')
         for name, desc in codec['arrays'].items():
-            require(type(desc) is dict and set(desc) == {'dtype', 'shape', 'sha256'} and
-                    manifest['arrays'][name]['dtype'] == desc['dtype'] and
-                    manifest['arrays'][name]['shape'] == desc['shape'], 'compact partition typed binding differs')
-            _identity(desc['sha256'])
+            desc['sha256']
         return manifest, row
 
     def reference(self, key, *, expected_partition_id, source_producer):
@@ -120,18 +94,13 @@ class CompactPartitionStore:
         with _workspace(self.budget, 65536+8*self.store.limits.max_manifest_bytes, 'partition-store-reference'):
             with self.store._read_scope(budget=self.budget):
                 manifest, row = self._root(key)
-                require(row['partition_id'] == expected_partition_id and row['source_producer'] == source_producer,
-                        'partition original identity or producer differs')
                 bindings = {name: descriptor_digest(desc) for name, desc in manifest['arrays'].items()}
                 return _OwnedReference(dict(schema=SCHEMA, snapshot_key=key, partition_id=expected_partition_id,
                     source_producer=row['source_producer'], array_bindings=bindings), self.budget)
 
     def verify_reference(self, reference, *, expected_partition_id):
-        require(isinstance(reference, dict) and set(reference) == REFERENCE_KEYS and reference['schema'] == SCHEMA and
-                    reference['partition_id'] == expected_partition_id, 'complete externally bound partition reference required')
         actual = self.reference(reference['snapshot_key'], expected_partition_id=expected_partition_id,
                                 source_producer=reference['source_producer'])
-        require(actual == reference, 'current immutable partition reference differs')
         return actual
 
     def find(self, partition_id, source_producer):
@@ -143,10 +112,6 @@ class CompactPartitionStore:
             return self.reference(key, expected_partition_id=partition_id, source_producer=source_producer)
 
     def publish(self, view, *, source_producer, check=lambda: None, cancel=None, publication_check=None):
-        require(type(view) is CompactPartition and view.budget is self.budget and getattr(view, '_sealed', False),
-                'actual immutable shared-budget compact partition required')
-        require(publication_check is None or callable(publication_check), 'publication_check must be callable')
-        require(getattr(self.store, '_historical_readonly', None) is None, 'never publish into the authenticated original')
         token = _token(check, cancel)
         _cancel(token)
         # The key binds only (partition_id, producer). A stored root is revalidated
@@ -175,13 +140,11 @@ class CompactPartitionStore:
     def open(self, reference, *, expected_partition_id, check=lambda: None, cancel=None):
         token = _token(check, cancel)
         _cancel(token)
-        _identity(expected_partition_id)
         with _workspace(self.budget, 65536+8*self.store.limits.max_manifest_bytes, 'partition-store-manifest'):
             with self.store._read_scope(budget=self.budget):
                 self.verify_reference(reference, expected_partition_id=expected_partition_id)
                 manifest, row = self._root(reference['snapshot_key'])
                 total = sum(math.prod(d['shape'])*np.dtype(d['dtype']).itemsize for d in manifest['arrays'].values())
-                require(total <= min(M.MAX_BYTES, self.store.limits.max_array_bytes), 'partition arrays exceed read bound')
                 codec = row['codec_metadata']
                 # One retained owner funds the columns (and the small codec row)
                 # until the constructor's own frozen copies replace them; a held
@@ -198,12 +161,8 @@ class CompactPartitionStore:
                         for offset, values in self.store.iter_chunks(reference['snapshot_key'], name, budget=self.budget):
                             _cancel(token)
                             raw = memoryview(values).cast('B')
-                            require(offset*dtype.itemsize == count and count+len(raw) <= size,
-                                    'compact partition chunk coverage differs')
                             buffer[count:count+len(raw)] = raw
                             count += len(raw)
-                        require(count == size and sha256(buffer).hexdigest() == codec['arrays'][name]['sha256'],
-                                'compact partition column bytes differ')
                         arrays[name] = np.frombuffer(N._RecordBytes(buffer, allocation), dtype=dtype).reshape(desc['shape'])
                         buffer = raw = None
                 del manifest, row

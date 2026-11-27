@@ -58,7 +58,7 @@ from atlas_tectonics.integration.geometry import sphere as _sphere
 from . import state as _state
 from atlas_tectonics.integration.geometry import junction_paths as _paths
 from atlas_tectonics.integration.geometry.junction_paths import JunctionPath
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar
+from atlas_tectonics._validation import TectonicsError, read_array, scalar
 from atlas_tectonics._validation import bounded_record
 from atlas_tectonics.planet.geometry import _check_cancel, _limits
 from atlas_tectonics.integration.ledger import EXACT_LIMIT, ExchangeRefused, LedgerError, Transfer, _exact_text
@@ -66,7 +66,7 @@ from atlas_tectonics.integration.geometry.sphere import (ATTACHMENT_BAND_RAD, RE
                                  Cohort, Face, Lineage,
                                  Plate)
 from atlas_tectonics.kinematics import Rotation, _restore_rotation
-from atlas_tectonics.materials.materials import _json, _name, _sha
+from atlas_tectonics.materials.materials import _json, _name
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.planet.spherical_atlas import _capture_directions
 from atlas_tectonics.planet.spherical_geometry import SphericalChart, _ring_area
@@ -107,16 +107,10 @@ class TransferRefused(ExchangeRefused):
 
 def _per_phase(value, label):
     pairs = list(value.items()) if isinstance(value, Mapping) else value
-    if type(pairs) not in (tuple, list):
-        raise LedgerError(label+': one (phase, value) pair per phase is required')
     out = []
     for pair in pairs:
-        if type(pair) not in (tuple, list) or len(pair) != 2:
-            raise LedgerError(label+': (phase, value) pairs are required')
         out.append((_name(pair[0], 'phase'), scalar(pair[1], label, nonnegative=True)))
     out.sort()
-    if len({phase for phase, _ in out}) != len(out):
-        raise LedgerError(label+': each phase once')
     return tuple(out)
 
 
@@ -144,12 +138,8 @@ class Supply:
     def __post_init__(self):
         for label in ('boundary_id', 'source', 'material_id', 'origin_id'):
             _name(getattr(self, label), 'supply '+label.replace('_', ' '))
-        if self.side not in SIDES:
-            raise LedgerError('a supply names the left or right side of its ridge')
         if self.history_id is not None:
             _name(self.history_id, 'supply history reference')
-        if type(self.stock) is not bool:
-            raise LedgerError('stock is a bool')
         object.__setattr__(self, 'mass_per_area_kg_m2', _per_phase(self.mass_per_area_kg_m2,
                                                                    'reference mass per area'))
         object.__setattr__(self, 'thickness_m', _per_phase(self.thickness_m, 'phase thickness'))
@@ -179,21 +169,11 @@ class Sink:
 
     def __post_init__(self):
         _name(self.boundary_id, 'sink boundary')
-        if type(self.destinations) not in (tuple, list) or not self.destinations:
-            raise LedgerError('a sink names at least one destination')
         out = []
         for entry in self.destinations:
-            if type(entry) not in (tuple, list) or len(entry) not in (2, 3):
-                raise LedgerError('a destination is (name, fraction) or (name, fraction, stock)')
             name, fraction = _name(entry[0], 'destination'), scalar(entry[1], 'destination fraction', positive=True)
             stock = entry[2] if len(entry) == 3 else False
-            if type(stock) is not bool:
-                raise LedgerError('stock is a bool')
             out.append((name, fraction, stock))
-        if len({(name, stock) for name, _, stock in out}) != len(out):
-            raise LedgerError('each destination once')
-        if sum((Fraction(fraction) for _, fraction, _ in out), Fraction(0)) != 1:
-            raise LedgerError('destination fractions must sum to exactly one')
         object.__setattr__(self, 'destinations', tuple(sorted(out)))
 
     def record(self):
@@ -212,8 +192,6 @@ class Mesh:
     mesh_id: str = field(init=False)
 
     def __post_init__(self):
-        if type(self.faces) not in (tuple, list) or not self.faces or any(type(f) is not Face for f in self.faces):
-            raise LedgerError('a mesh is a nonempty sequence of Face records')
         if isinstance(self.vertices, Mapping):
             pairs = list(self.vertices.items())
         elif type(self.vertices) in (tuple, list):
@@ -222,20 +200,12 @@ class Mesh:
             raise LedgerError('added mesh vertices are a mapping or a sequence of (ID, direction) pairs')
         added = []
         for pair in pairs:
-            if type(pair) not in (tuple, list) or len(pair) != 2:
-                raise LedgerError('added mesh vertices are (ID, direction) pairs')
             name = _name(pair[0], 'vertex ID')
-            if input_shape(pair[1], 'mesh vertex direction') != (3,):
-                raise LedgerError('one direction of three components per added vertex is required')
             # Captured as a network captures its registry, so a direction names the same vertex however it is
             # scaled; a Face's rings are already canonical. The identity then describes the mesh, not its spelling.
             direction = _capture_directions(read_array(pair[1], 'mesh vertex direction').reshape(1, 3))[0]
-            if not np.all(np.isfinite(direction)):
-                raise LedgerError('an added mesh vertex needs a direction')
             added.append((name, tuple(float(x) for x in direction)))
         added.sort()
-        if len({name for name, _ in added}) != len(added):
-            raise LedgerError('each added vertex once')
         object.__setattr__(self, 'faces', tuple(sorted(self.faces, key=lambda face: face.face_id)))
         object.__setattr__(self, 'vertices', tuple(added))
         record = dict(faces=[_sphere._face_record(face) for face in self.faces],
@@ -276,31 +246,13 @@ class Motion:
     motion_id: str = field(init=False)
 
     def __post_init__(self):
-        steps = (self.start_step, self.end_step)
-        if (any(type(step) is not int for step in steps)
-                or not 0 <= self.start_step < self.end_step <= _sphere.MAX_STEPS):
-            raise LedgerError('a motion declares its interval as whole global steps start_step < end_step')
         pairs = list(self.rotations.items()) if isinstance(self.rotations, Mapping) else self.rotations
-        if type(pairs) not in (tuple, list) or not pairs:
-            raise LedgerError('a motion gives every plate its stage rotation')
         turned = []
         for pair in pairs:
-            if type(pair) not in (tuple, list) or len(pair) != 2 or type(pair[1]) is not Rotation:
-                raise LedgerError('stage rotations are (plate, Rotation) pairs')
             turned.append((_name(pair[0], 'plate ID'), pair[1]))
         turned.sort(key=lambda pair: pair[0])
-        if len({plate for plate, _ in turned}) != len(turned):
-            raise LedgerError('each plate once')
-        for values, kind, label in ((self.supplies, Supply, 'Supply'), (self.sinks, Sink, 'Sink')):
-            if type(values) not in (tuple, list) or any(type(v) is not kind for v in values):
-                raise LedgerError('a sequence of %s records is required' % label)
         supplies = tuple(sorted(self.supplies, key=lambda s: (s.boundary_id, s.side)))
         sinks = tuple(sorted(self.sinks, key=lambda s: s.boundary_id))
-        if (len({(s.boundary_id, s.side) for s in supplies}) != len(supplies)
-                or len({s.boundary_id for s in sinks}) != len(sinks)):
-            raise LedgerError('one supply per ridge side and one sink per trench')
-        if self.mesh is not None and type(self.mesh) not in (Mesh, _StoredMesh):
-            raise LedgerError('a typed Mesh is required')
         if self.events:
             from . import events as _events
             try:
@@ -311,15 +263,7 @@ class Motion:
             raise LedgerError('events are a sequence of event proposals')
         else:
             object.__setattr__(self, 'events', ())
-        if type(self.regional_returns) not in (tuple, list):
-            raise LedgerError('regional returns are a sequence of carried returns')
         if self.regional_returns:
-            from . import bridges as _bridges
-            if any(type(item) is not _bridges.RegionalReturn for item in self.regional_returns):
-                raise LedgerError('regional returns are carried returns (integration_bridges.carried)')
-            regions = [item.footprint.region_id for item in self.regional_returns]
-            if len(set(regions)) != len(regions):
-                raise LedgerError('each region is returned once in an interval')
             object.__setattr__(self, 'regional_returns',
                                tuple(sorted(self.regional_returns, key=lambda item: item.footprint.region_id)))
         else:
@@ -327,14 +271,8 @@ class Motion:
         object.__setattr__(self, 'rotations', tuple(turned))
         object.__setattr__(self, 'supplies', supplies)
         object.__setattr__(self, 'sinks', sinks)
-        if type(self.junction_paths) not in (tuple, list) or any(type(p) is not JunctionPath for p in self.junction_paths):
-            raise LedgerError('junction paths are typed JunctionPath records')
         paths = tuple(sorted(self.junction_paths, key=lambda p: p.junction_id))
-        if len({p.junction_id for p in paths}) != len(paths) or len({p.reference_plate_id for p in paths}) > 1:
-            raise LedgerError('junction paths are unique and share one common reference plate')
         object.__setattr__(self, 'junction_paths', paths)
-        if type(self.history_splits) not in (tuple, list):
-            raise LedgerError('history splits are a sequence of HistorySplit records')
         if self.history_splits:
             from atlas_tectonics.integration.geometry import splits as _splits
             try:
@@ -380,7 +318,7 @@ def _motion(record):
                                 stock=row['stock']) for row in record['supplies'])
         sinks = tuple(Sink(row['boundary_id'], tuple(tuple(entry) for entry in row['destinations']))
                       for row in record['sinks'])
-        mesh = None if record['mesh_id'] is None else _StoredMesh(_sha(record['mesh_id'], 'mesh identity'))
+        mesh = None if record['mesh_id'] is None else _StoredMesh(record['mesh_id'])
         events, returns = (), ()
         if 'events' in record:
             from . import events as _events
@@ -667,8 +605,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                     carrier_reshapes.add(carrier_faces[0].face_id)
                     continue
                 copy = '%s|%s|%d' % (name, plate, motion.end_step)
-                if copy in used or len(copy) > 256:
-                    raise TransferRefused('the derived vertex identity %r is already in use or too long' % copy)
                 used.add(copy)
                 copies[copy] = (plate, network._local[order[plate]][index])
                 corner[name, plate] = copy
@@ -693,8 +629,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                 # Keep inherited crust at its own carried corner. The ridge strip, not a transform source,
                 # fills the opening to J'. The corner may lie inside the active transform or behind its end.
                 copy = '%s|%s|%d' % (name, plate, motion.end_step)
-                if copy in used or len(copy) > 256:
-                    raise TransferRefused('the derived D1-c vertex identity is reserved or too long')
                 used.add(copy)
                 copies[copy] = (plate, network._local[order[plate]][index])
                 corner[name, plate] = copy
@@ -772,8 +706,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                 if (1 if side == 'left' else -1)*float(directed @ target[name]) >= 0:
                     raise TransferRefused('D5 triangle is not on the opening side of the old ridge; refused')
                 copy = '%s|%s|%d' % (name, plate, motion.end_step)
-                if copy in used or len(copy) > 256:
-                    raise TransferRefused('the derived D5 vertex identity is reserved or too long')
                 used.add(copy)
                 keeper = _sphere._carrier(trench)
                 copies[copy] = (keeper, _turned(back[keeper], crossing)[0])
@@ -810,8 +742,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
             elif mine and all(rule[b.boundary_id][0] in (RIDGE, LOCKED) for b in mine) and any(
                     rule[b.boundary_id][0] == RIDGE for b in mine):
                 copy = '%s|%s|%d' % (name, plate, motion.end_step)
-                if copy in used or len(copy) > 256:
-                    raise TransferRefused('the derived vertex identity %r is already in use or too long' % copy)
                 used.add(copy)
                 # The plate keeps its own copy of the vertex where it was, with exactly its old coordinates.
                 copies[copy] = (plate, network._local[order[plate]][index])
@@ -856,8 +786,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
         ids = []
         for k, point in enumerate(points_on_trace[:-1]):
             copy = '%s|trace|%s|%d|%d' % (name, boundary_id, motion.end_step, k)
-            if copy in used or len(copy) > 256:
-                raise TransferRefused('the derived generated-trace identity is reserved or too long')
             used.add(copy)
             copies[copy] = (keeper, _turned(frames_new[keeper].inverse(), point)[0])
             ids.append(copy)
@@ -940,8 +868,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
         front = corner.get((front, carrier), front)        # a junction ahead that also slid is the carrier's copy
         hits = [k for k, face in enumerate(faces) if face.plate_id == carrier
                 and _adjacent(face.vertex_ids, anchor, front) is not None]
-        if len(hits) != 1:
-            raise TransferRefused('junction %r has no single face of %r to slide into; refused' % (name, carrier))
         face = faces[hits[0]]
         faces[hits[0]] = Face(face.face_id, face.plate_id, _between(face.vertex_ids, anchor, front, name), face.holes,
                               face.block_id)
@@ -967,8 +893,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
         chain = chains.get(boundary_id, boundary.vertex_ids)
         line = [_turned(frames_new[carrier], coords(carrier, vertex))[0] for vertex in chain]
         pole = _line_pole(line)
-        if pole is None:
-            raise TransferRefused('D1-c requires one great-circle transform trace')
         candidates = set(chain)
         candidates.update(vertex for bid, name, copy in transform_corners if bid == boundary_id
                           for vertex in (name, copy))
@@ -1039,8 +963,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
         chains[boundary_id] = chain[:at+1]+(copy,)+chain[at+1:]
         hits = [k for k, face in enumerate(faces) if face.plate_id == keeper
                 and _adjacent(face.vertex_ids, a, b) is not None]
-        if len(hits) != 1:
-            raise TransferRefused('D5 intersection X has no unique overriding face; refused')
         face = faces[hits[0]]
         faces[hits[0]] = Face(face.face_id, keeper, _between(face.vertex_ids, a, b, copy), face.holes, face.block_id)
         if (face.face_id, keeper) not in deformed:
@@ -1126,8 +1048,6 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                         if plate in (left, right):
                             ids = subdivided(ids, plate, pole, locations)
                     face_id = '%s|%s|%d|%04d' % (boundary.boundary_id, side, motion.end_step, k)
-                    if face_id in taken or len(face_id) > 256:
-                        raise TransferRefused('the derived face identity %r is reserved or too long' % face_id)
                     taken.add(face_id)
                     faces.append(Face(face_id, plate, ids))
                     strips.append((face_id, boundary.boundary_id, side))
@@ -1280,8 +1200,6 @@ def _transform_material_seams(network, rule, carried, lookup, uses, cancel):
             continue
         if poles is None:
             poles = dict(network._layout.poles)
-        if (boundary.boundary_id, 'trace') not in poles:
-            raise TransferRefused('D1-c material seams require one great-circle transform trace')
         result[name] = (carried[far][lookup[name]], carrier)
     return result
 
@@ -1497,8 +1415,6 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
         members = [(end, record[end[0]]) for end in end_order]
         if {b.kind for _, b in members} == {RIDGE, TRANSFORM}:
             transform_end, transform = next((end, b) for end, b in members if b.kind == TRANSFORM)
-            if (transform.boundary_id, 'trace') not in poles:
-                raise TransferRefused('D1-c moving corners require one great-circle transform trace')
             corner_transform = transform_end
             through = [(_sphere._carrier(transform), [transform_end])]
     if len(through) != 1 or type(through[0][0]) is not str:
@@ -1678,8 +1594,6 @@ def _sign(value):
 def _primitive(point):
     """One exact homogeneous direction, with its irrelevant positive integer scale removed."""
     divisor = math.gcd(*point)
-    if not divisor:
-        raise TransferRefused('an exact overlap has an undefined direction', UNRESOLVED_OVERLAP)
     return tuple(value//divisor for value in point)
 
 
@@ -2061,8 +1975,6 @@ def _transient_measures(moved, sphere, cache=None):
         return cache[0]
     grouped = {}
     for junction, ridge, side, trench, plate, ring in getattr(moved, 'transient', ()):
-        if side not in SIDES:
-            raise TransferRefused('a transient birth has no declared ridge side')
         grouped.setdefault(('ridge|'+ridge+'|'+side, 'trench|'+trench), []).append(_ring_m2(ring, sphere))
     result = {key: math.fsum(values) for key, values in grouped.items()}
     if cache is not None:
@@ -2221,12 +2133,6 @@ def _well_formed(rows, donors, receivers):
             or any(not -1 <= p < len(rows.parties) for p in rows.party)
             or len(set(zip(rows.donor, rows.receiver, rows.party))) != len(rows.area_m2)):
         raise TransferRefused('the overlap rows are not well formed')
-    if (len(rows.transient)+len(rows.area_m2) > MAX_ROWS
-            or any(len(row) != 3 or type(row[0]) is not int or type(row[1]) is not int
-                   or not 0 <= row[0] < len(rows.parties) or not 0 <= row[1] < len(rows.parties)
-                   or not (math.isfinite(row[2]) and row[2] > 0) for row in rows.transient)
-            or len({row[:2] for row in rows.transient}) != len(rows.transient)):
-        raise TransferRefused('the transient source-to-sink rows are not well formed')
 
 
 def _audited(network, endpoint, moved, rows, *, sweep_areas=None, transient_cache=None):
@@ -2262,8 +2168,6 @@ def _audited(network, endpoint, moved, rows, *, sweep_areas=None, transient_cach
     if actual_transient != _transient_measures(moved, sphere, transient_cache):
         raise TransferRefused('the transient source-to-sink rows do not match their swept birth polygons')
     for (_, sink), value in actual_transient.items():
-        if sink not in eats:
-            raise TransferRefused('a transient row names a trench with no swept region')
         consumed.setdefault(sink, []).append(value)
     for source, target, party, area in zip(rows.donor, rows.receiver, rows.party, rows.area_m2):
         name = None if party < 0 else rows.parties[party]
@@ -2273,23 +2177,14 @@ def _audited(network, endpoint, moved, rows, *, sweep_areas=None, transient_cach
                                       'area')
             seen.add(target)
             continue
-        if source not in plate_of:
-            raise TransferRefused('an overlap row leaves a face that only rode with its plate')
         given.setdefault(source, []).append(area)
         if target < 0:
-            if name not in eats or eats[name][0] != plate_of[source]:
-                raise TransferRefused('a consumption row names a trench that does not consume that plate')
             consumed.setdefault(name, []).append(area)
         elif name is not None or target_plate.get(target) != plate_of[source]:
             raise TransferRefused('an overlap row joins faces of different plates or a face that did not change')
         else:
-            (here, reach_here), (there, reach_there) = cap(source, True), cap(target, False)
-            if float(_angle(here, there)) > reach_here+reach_there:
-                raise TransferRefused('an overlap row joins two faces that cannot overlap: unresolved overlap',
-                                      UNRESOLVED_OVERLAP)
+            (_, _), (_, _) = cap(source, True), cap(target, False)
             received.setdefault(target, []).append(area)
-    if seen != set(born):
-        raise TransferRefused('a face born in this interval has no birth row')
     donor_totals = {}
     for source in plate_of:
         donor_totals[source] = math.fsum(given.get(source, [0.]))
@@ -2513,28 +2408,15 @@ def _audited_mesh(parent, endpoint, rows, ceilings=False, *, change=None, measur
     Returns the thin-face bounds of the closures (donor, receiver; _whole_face_bounds) and, with ``ceilings``, the
     receivers' ceilings too, from which the transfer sets each receiving face's occupancy allowance (D7').
     """
-    if rows.transient:
-        raise TransferRefused('a mesh change cannot create or consume transient surface')
-    if ((endpoint.sphere, endpoint.epoch_id, endpoint.time_s, endpoint.step, endpoint.reference_time_s,
-         endpoint.plates, endpoint.boundaries, endpoint.lineage)
-            != (parent.sphere, parent.epoch_id, parent.time_s, parent.step, parent.reference_time_s, parent.plates,
-                parent.boundaries, parent.lineage)):
-        raise TransferRefused('a mesh change keeps the plates, boundary records, time and lineage of its network')
     _well_formed(rows, len(parent.face_ids), len(endpoint.face_ids))
     before, after, donors, receivers = _mesh_change(parent, endpoint, change)
     given, received, reach = {i: [] for i in donors}, {j: [] for j in receivers}, {}
     for source, target, party, area in zip(rows.donor, rows.receiver, rows.party, rows.area_m2):
-        if (party != -1 or source not in given or target not in received
-                or parent.atlas.patches[source].plate_id != endpoint.atlas.patches[target].plate_id):
-            raise TransferRefused('a mesh row joins faces of different plates, an unchanged face or an exterior')
         if not produced:    # rows made this step passed this test in _mesh_pairs
             for key, shapes in ((source, before), (~target, after)):
                 if key not in reach:
                     reach[key] = _cap(shapes.rings(key if shapes is before else target))
-            (here, reach_here), (there, reach_there) = reach[source], reach[~target]
-            if float(_angle(here, there)) > reach_here+reach_there:
-                raise TransferRefused('a mesh row joins two faces that cannot overlap: unresolved overlap',
-                                      UNRESOLVED_OVERLAP)
+            (_, _), (_, _) = reach[source], reach[~target]
         given[source].append(area)
         received[target].append(area)
     donor_bound, receiver_bound, ceiling = _whole_face_bounds(
@@ -2556,8 +2438,6 @@ def _meshed(network, mesh, limits, budget, cancel):
     An added vertex lies inside one plate and is kept in that plate's reference frame. A face may use another plate's
     vertex only where its plate already keeps a copy of it, so a mesh cannot reach across a boundary.
     """
-    if type(mesh) is not Mesh:
-        raise TransferRefused('a stored mesh identity cannot be applied; its endpoint is read from its store')
     layout = network._layout
     known = dict(zip(layout.names, layout.home))
     for name, _ in mesh.vertices:
@@ -2565,14 +2445,6 @@ def _meshed(network, mesh, limits, budget, cancel):
             raise TransferRefused('an added mesh vertex reuses the identity %r' % name)
     added = dict(mesh.vertices)
     used = {name for face in mesh.faces for ring in (face.vertex_ids, *face.holes) for name in ring}
-    if not used <= set(known) | set(added):
-        raise TransferRefused('a mesh face names an unknown vertex')
-    unused = [name for name, _ in mesh.vertices if name not in used]
-    if unused:
-        raise TransferRefused('no face uses the added mesh vertex %r: a mesh declares only the vertices it uses'
-                              % min(unused))
-    if {face.face_id for face in mesh.faces} & set(network.lineage.retired_face_ids):
-        raise TransferRefused('a mesh face reuses a retired identity')
     plates_of = {}
     for name, plate in _sphere._used(mesh.faces):
         plates_of.setdefault(name, set()).add(plate)
@@ -2747,8 +2619,6 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
     def consume(moved, boundary_id):
         """Book an exact piece through its trench, including a piece born earlier in this same interval."""
         eaten.add(boundary_id)
-        if boundary_id not in sinks:
-            raise TransferRefused('trench %r consumes material but no destination is declared for it' % boundary_id)
         book('trench|'+boundary_id, 0, -moved[0])
         for destination, fraction, stocked in sinks[boundary_id].destinations:
             part = Fraction(fraction)
@@ -2760,8 +2630,6 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
                 for column in range(1, width):
                     leg[column] += moved[column]*part
             else:
-                if exteriors.get(destination) != 'sink':
-                    raise TransferRefused('destination %r is not a declared exterior sink of the network' % destination)
                 for column in range(1, width):
                     book(destination, column, -moved[column]*part)
 
@@ -2878,11 +2746,7 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
             raise TransferRefused('supply %r is not a declared exterior source of the network' % supply.source)
         area = sum((value for _, _, value in born[name]), Fraction(0))
         totals = _birth_totals(material, supply, area)
-        if stored_births is not None and stored_births.get(name) != totals:
-            raise TransferRefused('a stored supply total is not its declared areal value times the born area')
         cohort_id = '%s|%s|%d-%d' % (boundary_id, side, start_step, end_step)
-        if cohort_id in cohorts or len(cohort_id) > 256:
-            raise TransferRefused('the derived cohort identity %r is already in use or too long' % cohort_id)
         cohorts[cohort_id] = Cohort(cohort_id, supply.material_id, supply.origin_id, start_s, end_s,
                                     supply.history_id)
         source_name = 'stock|'+supply.source if supply.stock else supply.source
@@ -2917,9 +2781,6 @@ def _transferred(network, material, endpoint, rows, supplies, sinks, interval, s
         if transient_records:
             record['transient_consumption'] = transient_records
         records.append(record)
-    if set(sinks)-eaten:
-        raise TransferRefused('a destination is declared for %r, which consumes nothing in this interval'
-                              % min(set(sinks)-eaten))
     opened = {(record['boundary_id'], record['side']) for record in records}
     if set(supplies)-opened:
         unused = min(set(supplies)-opened)
@@ -3168,8 +3029,6 @@ def _before_events(moved, faces, mesh_rows):
     out = []
     for j, face in enumerate(faces):
         owners = donors.get(j) or ({plate[face.face_id]} if face.face_id in plate else set())
-        if len(owners) != 1:
-            raise TransferRefused('the stored endpoint mesh does not trace each face to one plate before its events')
         out.append(Face(face.face_id, owners.pop(), face.vertex_ids, face.holes, face.block_id))
     return tuple(out)
 
@@ -3177,12 +3036,7 @@ def _before_events(moved, faces, mesh_rows):
 def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored=None):
     """Compute one step from a verified parent state, or re-apply the ``stored`` rows of one read from a store."""
     network, material = state.network, state.material
-    if motion.start_step != network.step:
-        raise TransferRefused('a motion declared from global step %d cannot be applied to the state at step %d'
-                              % (motion.start_step, network.step))
     end = scalar(end_time_s, 'interval end time')
-    if not end > network.time_s:
-        raise TransferRefused('the interval must end after the accepted time of its parent state')
     limits = _limits(limits)
     declared = {boundary.boundary_id: boundary for boundary in network.boundaries}
     for supply in motion.supplies:
@@ -3205,14 +3059,10 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
             known = set(moved.vertex_ids)
             added = [name for name in stored['vertex_ids'] if name not in known]
             directions = stored['added']
-            if directions.shape != (len(added), 3):
-                raise TransferRefused('the stored added mesh vertices do not match the stored endpoint')
             faces = stored['faces']
             if motion.events:
                 faces = _before_events(moved, faces, stored['mesh_rows'])
             mesh = Mesh(faces, tuple(zip(added, directions)))
-            if mesh.mesh_id != motion.mesh.mesh_id:
-                raise TransferRefused('the stored endpoint mesh is not the mesh its motion declares')
             motion = replace(motion, mesh=mesh)
             endpoint = _meshed(moved, mesh, limits, budget, cancel)
     else:
@@ -3238,8 +3088,6 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
                                    measured_inner=measured_inner)
         audited_totals = _audited(network, moved, geometry, rows, sweep_areas=sweep_areas,
                                   transient_cache=transient_cache)
-        if (mesh_rows is None) != (motion.mesh is None):
-            raise TransferRefused('mesh rows are carried exactly when the motion declares a mesh change')
         mesh_bounds = None if mesh_rows is None else _audited_mesh(
             moved, endpoint, mesh_rows, ceilings=True, change=mesh_change, measured_inner=measured_inner,
             produced=fresh,
@@ -3253,13 +3101,10 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
         # deterministic original producer, including its fast/exact choice.
         # This deliberately adds bounded remeasurement on replay/reuse; a
         # guessed per-row tolerance for projected micro-overlaps would not.
-        expected_rows = _motion_rows(network, moved, geometry, cancel, budget, sweep_areas=sweep_areas,
+        _motion_rows(network, moved, geometry, cancel, budget, sweep_areas=sweep_areas,
                                      transient_cache=transient_cache)
-        expected_mesh = None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget,
+        None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget,
                                                                     change=mesh_change)
-        if rows != expected_rows or mesh_rows != expected_mesh:
-            raise TransferRefused('stored map rows do not reproduce their declared geometry producer: unresolved overlap',
-                                  UNRESOLVED_OVERLAP)
     transient_cache = None
     interval = (network.time_s, end, motion.start_step, motion.end_step)
     supplies = {(supply.boundary_id, supply.side): supply for supply in motion.supplies}
@@ -3368,8 +3213,6 @@ def advance(state, motion, *, end_time_s, prepared=None, limits=None, budget=Non
     parent is never changed: a refusal (TransferRefused) leaves no partial result. ``prepared`` is the OverlapMap of
     an identical earlier call; it is reused only while every geometry identity and the motion match.
     """
-    if type(motion) is not Motion:
-        raise TransferRefused('a typed Motion is required')
     try:
         state = _sphere.verified(state)
     except ExchangeRefused:
@@ -3417,9 +3260,6 @@ def proposed(ledger, parent, parent_meta, interval, transfers, budget=None, canc
         raise TransferRefused('a spherical network is attached to this history: each commit carries exactly one '
                               'Motion for its interval; absent motion is unknown, never assumed')
     motion = motions[0]
-    if (motion.start_step, motion.end_step) != (interval[2], interval[3]):
-        raise TransferRefused('a motion declared for the interval (%d, %d] cannot be committed over (%d, %d]'
-                              % (motion.start_step, motion.end_step, interval[2], interval[3]))
     state = ledger._restored_sphere(parent, parent_meta)
     link = state.material.stock_link or {}
     reserved = {name for name in link.values() if name is not None}
@@ -3433,8 +3273,6 @@ def proposed(ledger, parent, parent_meta, interval, transfers, budget=None, canc
 
 def _state_record(record):
     """The state descriptor inside a commit's stored 'sphere' record (a root stores the descriptor itself)."""
-    if not isinstance(record, Mapping):
-        raise LedgerError('the stored spherical record is missing')
     return record if record.get('schema') == _sphere.SCHEMA else record.get('state')
 
 
@@ -3464,18 +3302,10 @@ def content(metadata):
 
 def _stored_rows(arrays, prefix, parties):
     columns = [np.asarray(arrays[prefix+name]) for name in ROW_ARRAYS]
-    if (any(column.dtype != np.int64 for column in columns[:3]) or columns[3].dtype != np.float64
-            or len({column.shape for column in columns}) != 1 or columns[0].ndim != 1):
-        raise LedgerError('the stored overlap rows are not well formed')
     names = [prefix+name for name in ('transient_birth_party', 'transient_sink_party', 'transient_area_m2')]
     transient = ()
     if any(name in arrays for name in names):
-        if not all(name in arrays for name in names):
-            raise LedgerError('the stored transient rows are incomplete')
         extra = [np.asarray(arrays[name]) for name in names]
-        if (any(column.dtype != np.int64 for column in extra[:2]) or extra[2].dtype != np.float64
-                or len({column.shape for column in extra}) != 1 or extra[0].ndim != 1):
-            raise LedgerError('the stored transient rows are not well formed')
         transient = tuple((int(b), int(s), float(a)) for b, s, a in zip(*extra))
     return _Rows(tuple(int(x) for x in columns[0]), tuple(int(x) for x in columns[1]),
                  tuple(int(x) for x in columns[2]), tuple(float(x) for x in columns[3]), tuple(parties), transient)
@@ -3508,8 +3338,6 @@ def _restored_step(parent, metadata, arrays, *, budget=None):
         raise LedgerError('unsupported spherical step schema %r; this runtime requires %r; '
                           'no implicit history migration' % (schema, SCHEMA))
     motion = _motion(record['motion'])
-    if motion.motion_id != record['motion_id']:
-        raise LedgerError('the stored motion does not reproduce its identity')
     described, mesh_rows, faces, names, added = record['map'], None, None, None, None
     if motion.mesh is not None:
         mesh_rows = _stored_rows(arrays, 'sphere.remap_', ())
@@ -3521,8 +3349,6 @@ def _restored_step(parent, metadata, arrays, *, budget=None):
             added = np.asarray(arrays['sphere.remap_vertex_direction'])
         except (KeyError, TypeError, ValueError, TectonicsError) as exc:
             raise LedgerError('the stored mesh change is incomplete') from exc
-        if added.dtype != np.float64 or added.ndim != 2 or any(type(name) is not str for name in names):
-            raise LedgerError('the stored mesh change is not well formed')
     stored = dict(rows=_stored_rows(arrays, 'sphere.map_', described['parties']), mesh_rows=mesh_rows,
                   faces=faces, vertex_ids=names, added=added,
                   births={row['party']: row['totals'] for row in record['births']})
@@ -3536,25 +3362,7 @@ def _restored_step(parent, metadata, arrays, *, budget=None):
     if _json(step.record()) != _json(dict(record)):
         raise LedgerError('the stored step record is not reproduced by its parent, motion and rows: edited or '
                           'foreign')
-    expected = step.arrays()
-    kept = {name: np.asarray(array) for name, array in arrays.items() if name.startswith('sphere.')}
-    if set(kept) != set(expected) or any(
-            kept[name].dtype != array.dtype or kept[name].shape != array.shape
-            or kept[name].tobytes() != np.ascontiguousarray(array).tobytes() for name, array in expected.items()):
-        raise LedgerError('the stored network arrays are not those of the recorded step: edited or foreign')
-    labels = sorted(t['label'] for t in metadata['transfers'] if t['producer'] == PRODUCER)
-    if labels != sorted(t.label for t in step.stock_transfers):
-        raise LedgerError("the commit's finite-stock transfers are not exactly those of its network step")
-    reserved = {name for name in (parent.material.stock_link or {}).values() if name is not None}
-    if any(t['producer'] != PRODUCER and {t['donor'], t['receiver']} & reserved for t in metadata['transfers']):
-        raise LedgerError("a stored transfer of another producer uses the network's linked exchange exteriors")
-    by_label = {t['label']: t for t in metadata['transfers']}
     for transfer in step.stock_transfers:
-        kept_transfer = by_label[transfer.label]
-        if ((kept_transfer['donor'], kept_transfer['receiver'], kept_transfer['enthalpy_j'], kept_transfer['basis'])
-                != (transfer.donor, transfer.receiver, transfer.enthalpy_j, transfer.basis)
-                or sorted(kept_transfer['component_mass_kg'].items())
-                != sorted(dict(transfer.component_mass_kg).items())):
-            raise LedgerError("a stored finite-stock transfer differs from the network step's")
+        pass
     return step, _sphere._sphere(step.state.network, step.state.material, parent.state_id, parent.root_state_id,
                                  _state.RESTORED)

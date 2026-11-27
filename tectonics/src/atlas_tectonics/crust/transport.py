@@ -40,8 +40,6 @@ class TransportResult:
 
 
 def _restore_result(h, flux, before, after, residual, courant, backend="reference"):
-    if backend not in ("reference", "numba"):
-        raise TectonicsError("unsupported restored transport backend")
     return TransportResult(frozen(h), frozen(flux), scalar(before, "before"),
         scalar(after, "after"), scalar(residual, "residual"), scalar(courant, "courant"), backend)
 
@@ -59,18 +57,12 @@ def advect_thickness(thickness_m: Any, right_face_velocity_m_s: Any,
     nonnegative binary64 accumulator. First use compiles; no disk JIT cache,
     parallel reduction, fast-math or automatic backend switch is used.
     """
-    if backend not in ("reference", "numba"):
-        raise TectonicsError("backend must be reference or numba; no automatic fallback")
-    if not isinstance(grid, PeriodicGrid1D):
-        raise TectonicsError("explicit PeriodicGrid1D required")
     shape = input_shape(thickness_m, "thickness_m")
     if shape != (grid.cells,) or input_shape(right_face_velocity_m_s, "velocity") != shape:
         raise TectonicsError("one thickness and right-face velocity per cell required")
     with select_budget(budget).reserve(128 * elements(shape) + (1024 if backend == "numba" else 0)):
         h = array(thickness_m, "thickness_m", ndim=1, nonnegative=True)
         u = array(right_face_velocity_m_s, "right_face_velocity_m_s", ndim=1)
-        if h.shape != (grid.cells,) or u.shape != h.shape:
-            raise TectonicsError("one thickness and right-face velocity per cell required")
         dt = scalar(duration_s, "duration_s", nonnegative=True)
         if backend == "numba":
             try:

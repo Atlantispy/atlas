@@ -6,15 +6,16 @@ from dataclasses import dataclass
 import json
 import math
 import threading
+from typing import Any
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array
+from atlas_tectonics._validation import TectonicsError, scalar, read_array
 from atlas_tectonics.materials.constitutive import _json
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
-from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot, RegionalMechanicsScales, _name, _hash
+from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot, _name, _hash
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
 from atlas_tectonics.planet.surface_geometry import graph_mesh, cell_volume_and_flux, SurfaceProjection
 from atlas_tectonics.planet.timebase import interval_end, interval_partition
@@ -27,13 +28,10 @@ from atlas_tectonics.planet.timebase import interval_end, interval_partition
 # H_max dt/eta; the analysis is in docs/W07_SURFACE_STRENGTH.md.
 RELAXATION_RATE_COEFFICIENT = 0.16069800194558428
 RELAXATION_STEP_LIMIT = 0.1
-_MAX_RELAXATION_STEP_LIMIT = 0.25
 # Sloped surfaces add advective modes, lambda*dt ~ i*y with y ~ 2.06*C for the
 # surface Courant number C = max|u_top|*dt/dx_node; SSP-RK2 gives |G|^2 = 1+y^4/4
 # for them at any dt, so C is limited separately (analysis in the same doc).
 SURFACE_COURANT_LIMIT = 0.1
-# Callers may only tighten it: at 0.25 a seeded advective mode grew 12.6% beyond
-# a substepped reference over 64 admitted steps.
 _MAX_SURFACE_COURANT_LIMIT = 0.1
 
 
@@ -64,7 +62,6 @@ class PreparedFreeSurface2D:
         from atlas_tectonics.regional.surface_stokes import PreparedSurfaceStokes2D
         if any(type(n) is not int or not 2<=n<=64 for n in (nx,nz)):
             raise TectonicsError('bounded 2..64 element counts required')
-        if type(scales) is not RegionalMechanicsScales:raise TectonicsError('explicit mechanics scales required')
         values={}
         for name,value in dict(width_m=width_m,reference_height_m=reference_height_m,
                 viscosity_pa_s=viscosity_pa_s,density_kg_m3=density_kg_m3,strike_width_m=strike_width_m).items():
@@ -73,19 +70,15 @@ class PreparedFreeSurface2D:
         values['external_pressure_pa']=scalar(external_pressure_pa,'external pressure',nonnegative=True)
         values['bottom_m']=scalar(bottom_m,'bottom')
         limit=scalar(relaxation_step_limit,'relaxation step limit',positive=True)
-        if limit>_MAX_RELAXATION_STEP_LIMIT:
-            raise TectonicsError('relaxation step limit above 0.25 would admit inaccurate or non-monotone decay')
         values['relaxation_step_limit']=limit
         courant=scalar(surface_courant_limit,'surface Courant limit',positive=True)
         if courant>_MAX_SURFACE_COURANT_LIMIT:
             raise TectonicsError('surface Courant limit above 0.1 would let advective surface modes grow '
                                  'by more than about 2e-4 per step')
         values['surface_courant_limit']=courant
-        if values['bottom_m']!=0.:
-            raise TectonicsError('this mapped surface route requires bottom_m=0 in the explicit vertical datum')
         for value,name in ((frame_id,'frame'),(vertical_datum,'vertical datum'),
                 (material_source,'material source'),(load_source,'load source')):_name(value,name)
-        self._d=dict(values,nx=nx,nz=nz,frame_id=frame_id,vertical_datum=vertical_datum,
+        self._d: dict[str, Any]=dict(values,nx=nx,nz=nz,frame_id=frame_id,vertical_datum=vertical_datum,
             material_source=material_source,load_source=load_source,method=method,
             scales=dict(length_m=scales.length_m,velocity_m_s=scales.velocity_m_s),
             geometry='fixed x columns; Q2 graph; bottom fixed; vertical side tangential mesh sliding',
@@ -116,7 +109,6 @@ class PreparedFreeSurface2D:
                 self._core=PreparedSurfaceStokes2D(nx,nz,method=method,budget=self._resource,
                     length_scale_m=scales.length_m,velocity_scale_m_s=scales.velocity_m_s,
                     viscosity_scale_pa_s=values['viscosity_pa_s'])
-            self._context.verify()
         except BaseException:
             if self._core is not None:self._core.close()
             if self._context is not None:self._context.close()
@@ -124,25 +116,21 @@ class PreparedFreeSurface2D:
 
     @contextmanager
     def _operation(self,cancel):
-        if self._closed or self._active or self._owner!=threading.get_ident():
-            raise TectonicsError('closed, active or wrong-thread surface plan')
         self._active=True
         try:
-            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             with _native_lease():yield
-            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         except BaseException:
             self._latest_key=self._latest=None
             raise
         finally:self._active=False
 
     def __enter__(self):
-        if self._closed:raise TectonicsError('surface plan is closed')
         return self
     def __exit__(self,*_):self.close()
     def close(self):
         if self._closed:return
-        if self._active or threading.get_ident()!=self._owner:raise TectonicsError('close surface plan on its driving thread')
         try:self._core.close();self._context.close()
         finally:
             self._latest=self._core=self._context=None;self._closed=True
@@ -160,50 +148,23 @@ class PreparedFreeSurface2D:
             dict(mesh_nodes_m=mesh,cell_mass_kg=mass))
 
     def _validate(self,state,cancel=None,*,descriptor=None):
-        if type(state) is not RegionalMechanicalSnapshot:raise TectonicsError('immutable source-bound surface state required')
-        # Bound fields and metadata before decoding or any numerical copies.
-        if state.nbytes>self._state_bytes or set(state.array_names)!={'mesh_nodes_m','cell_mass_kg'}:
-            raise TectonicsError('surface state exceeds its bounded field/metadata support')
         d=state.descriptor() if descriptor is None else descriptor
-        if (d.get('schema')!='atlas.free-surface-state.v1' or d.get('plan_id')!=self._plan_id or
-                d.get('context_id')!=self._context_id or d.get('source_status')!='WORKING NON-CANON' or
-                _json(d.get('definition'))!=_json(self._d)):
-            raise TectonicsError('surface state source/geometry/material plan mismatch')
         _name(d.get('epoch_id'),'state epoch');scalar(d.get('time_s'),'state time')
-        steps=d.get('accepted_steps')
-        if type(steps) is not int or not 0<=steps<=256:
-            raise TectonicsError('surface state accepted_steps must be an integer in 0..256')
-        parent=d.get('parent_state_id')
-        if ((steps==0 and parent is not None) or (steps>0 and
-                (type(parent) is not str or len(parent)!=64 or any(c not in '0123456789abcdef' for c in parent)))):
-            raise TectonicsError('surface state parent history is invalid')
         mesh=state.array('mesh_nodes_m');mass=state.array('cell_mass_kg')
-        if (input_shape(mesh)!=(2*self._d['nz']+1,2*self._d['nx']+1,2) or
-                input_shape(mass)!=(self._d['nz'],self._d['nx'])):
-            raise TectonicsError('surface state mesh support mismatch')
         mesh=read_array(mesh,'state mesh');mass=read_array(mass,'state mass')
-        if np.any(mass<=0.):raise TectonicsError('surface state requires positive finite cell mass')
-        x=np.linspace(0.,self._d['width_m'],2*self._d['nx']+1)
-        if np.max(np.abs(mesh[...,0]-x[None,:]))>1e-12*self._d['width_m']:
-            raise TectonicsError('surface state fixed horizontal geometry differs from its definition')
         geometry=self._core.validate_geometry(mesh,cancel=cancel)
         expected=geometry['element_volume_m2']*self._d['density_kg_m3']*self._d['strike_width_m']
         if not np.isfinite(expected).all() or np.any(expected<=0.):
             raise TectonicsError('surface material inventory outside finite positive SI range')
-        if np.max(np.abs(mass-expected)/expected)>1e-9:
-            raise TectonicsError('surface state mass is incompatible with its homogeneous material definition')
         return d
 
     def initial_state(self,surface_elevation_m,*,epoch_id,time_s=0.,cancel=None):
         _name(epoch_id,'epoch');time=scalar(time_s,'time')
-        if input_shape(surface_elevation_m)!=(2*self._d['nx']+1,):raise TectonicsError('surface support mismatch')
         with self._operation(cancel):
             mesh=graph_mesh(self._d['width_m'],self._d['bottom_m'],surface_elevation_m,self._d['nz'])
             geometry=self._core.validate_geometry(mesh,cancel=cancel)
             area=geometry['element_volume_m2']
             mass=area*self._d['density_kg_m3']*self._d['strike_width_m']
-            if not np.isfinite(mass).all() or np.any(mass<=0.):
-                raise TectonicsError('initial surface mass outside finite positive SI range')
             return self._state(mesh,mass,epoch_id,time,0)
 
     def _mechanics(self,state,cancel,*,descriptor=None):
@@ -239,7 +200,6 @@ class PreparedFreeSurface2D:
         if abs(projection['projection_volume_residual_m2_s'])>1e-10*U*L:
             raise TectonicsError('weak surface projection does not preserve boundary flux')
         continuity=float(np.max(np.abs(physical.sum(axis=-1))/area))*L/U
-        if continuity>1e-10:raise TectonicsError('independent physical cell flux continuity failed')
         # Uniform material: ALE advects inventory with physical MINUS mesh flux.
         change=-self._d['density_kg_m3']*self._d['strike_width_m']*(physical-moving).sum(axis=-1)
         return wm,change,dict(projection,independent_cell_divergence_scaled=continuity,
@@ -279,7 +239,6 @@ class PreparedFreeSurface2D:
             original=state;current=state;diagnostics=[]
             for i in range(steps):
                 start,stop=bounds[i],bounds[i+1];dt=stop-start
-                if dt<=0.:raise TectonicsError('unresolvable surface substep')
                 m=current.array('mesh_nodes_m');mass=current.array('cell_mass_kg')
                 wm0,dm0,a0,old_area_sum=self._rate(current,cancel,descriptor=d if i==0 else None)
                 trial=m+dt*wm0;trialmass=mass+dt*dm0

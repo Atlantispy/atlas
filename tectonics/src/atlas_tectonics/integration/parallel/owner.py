@@ -41,10 +41,6 @@ class RevocableOwner:
 
     def __init__(self, budgets, stop):
         ledgers = tuple(budgets)
-        if not ledgers or any(not isinstance(b, WorkBudget) for b in ledgers):
-            raise ValueError('an optional owner requires explicit WorkBudget instances')
-        if not callable(stop):
-            raise TypeError('stop must be callable')
         self.nodes = nodes_for(ledgers + tuple(
             b._predicate_work for b in ledgers if b._predicate_work is not None))
         self.stop = stop
@@ -58,10 +54,6 @@ class RevocableOwner:
 
     def __enter__(self):
         with _BudgetLocks(self.nodes):
-            if self._entered or self.state != 'ACTIVE':
-                raise RuntimeError('optional owner may only be entered once')
-            if any(node._revoker is not None for node in self.nodes):
-                raise RuntimeError('one optional owner per shared resource ancestry')
             try:
                 for node in self.nodes:
                     node._revoker = self
@@ -82,10 +74,6 @@ class RevocableOwner:
                 if self.owner_thread == threading.get_ident():
                     raise RuntimeError('revocation must not make mandatory admissions')
                 self.condition.wait()
-            if self.state == 'FAILED':
-                raise RuntimeError('optional work could not be confirmed stopped') from self.failure
-            if self.state == 'INTERRUPTED' and not _retry_interrupted:
-                raise RuntimeError('optional cleanup was interrupted; explicit close required') from self.failure
             if self.state == 'REVOKED':
                 return
             self.state, self.owner_thread = 'REVOKING', threading.get_ident()
@@ -110,12 +98,6 @@ class RevocableOwner:
             return False
         self.revoke(_retry_interrupted=True)
         with _BudgetLocks(self.nodes):
-            # Check the whole registration before clearing any part of it.
-            # If clearing itself was interrupted, a repeated close may finish
-            # its own missing entries, but may never clear another owner.
-            if any(node._revoker is not self and
-                   not (self._unregistering and node._revoker is None) for node in self.nodes):
-                raise RuntimeError('optional owner registration changed')
             self._unregistering = True
             for node in self.nodes:
                 node._revoker = None

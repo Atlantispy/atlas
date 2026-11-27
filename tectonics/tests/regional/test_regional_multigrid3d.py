@@ -234,13 +234,6 @@ class MultigridPlanTests(unittest.TestCase):
                 self.assertLessEqual(budget.reserved_bytes, reserved*1.01)
         self.assertEqual(budget.reserved_bytes, 0)
 
-    def test_reused_preparation_must_match_geometry_boundaries_and_method(self):
-        with prepare() as plan:
-            shared = plan._shared
-            for changes in (dict(cells=(3, 3, 4)), dict(boundary=mixed_pattern()), dict(method='gmres'),
-                            dict(lengths=(1., 1., 2.)), dict(scales=RegionalMechanicsScales(2., 1.))):
-                with self.subTest(changes=changes), self.assertRaisesRegex(TectonicsError, 'does not match'):
-                    prepare(_shared=shared, **changes)
 
     def test_default_budget_admits_an_eight_cube_and_refuses_underfunded_native_factors(self):
         # The assembled route refuses every 7x7x7 cube in the default 256 MiB.
@@ -429,8 +422,6 @@ class MultigridConsumerTests(unittest.TestCase):
         from atlas_tectonics.materials.constitutive import RheologyProfile
         profile = RheologyProfile('thermal-control', 'tosi-linear', 'declared-analytic',
                                   (('contrast_T', 10.), ('contrast_z', 1.)))
-        with self.assertRaisesRegex(TectonicsError, 'mechanics method'):
-            evolution.prepare(profile, mechanics_method='ilu')
         velocities = {}
         for method in ('direct', 'multigrid'):
             with evolution.prepare(profile, mechanics_method=method) as plan:

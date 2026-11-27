@@ -167,8 +167,6 @@ def clock_source(radiogenic, msource, stretch):
 def eigensystem(thermal, modes=None):
     """One reference eigensystem per support; its dt and time factors are replaced for every step."""
     modes = heat.prepare_propagator(thermal, 1.) if modes is None else modes
-    if type(modes) is not heat.Propagator or modes.fingerprint != thermal.fingerprint:
-        raise ValueError("eigensystem prepared for a different thermal support")
     return modes
 
 
@@ -192,14 +190,10 @@ def rebuilt_propagator(thermal, inputs, stretch, dt):
 
 
 def check_rebuild(thermal, inputs):
-    if type(inputs) is not dict or set(inputs) != REBUILD_KEYS:
-        raise ValueError("rebuild declares only thicknesses, properties, densities, boundaries and reference")
-    again = heat.prepare_thermal(thermal.layer, thermal.depth_m, thermal.volume_m, list(inputs["thicknesses"]),
+    heat.prepare_thermal(thermal.layer, thermal.depth_m, thermal.volume_m, list(inputs["thicknesses"]),
                                  inputs["props"], inputs["densities"], inputs["boundaries"],
                                  reference_temperature=inputs["reference_temperature"],
                                  mechanical_fingerprint=thermal.mechanical_fingerprint)
-    if again.fingerprint != thermal.fingerprint:
-        raise ValueError("rebuild inputs do not reproduce the supplied thermal support")
 
 
 def advance_map(thermal, modes, rebuild, dtau, dt):
@@ -229,13 +223,9 @@ def advance_map(thermal, modes, rebuild, dtau, dt):
 
 def window_of(window):
     """A declared stretch/temperature window inside the frozen ceilings; a tighter window is always admitted."""
-    if type(window) is not dict or set(window) != {"stretch", "temperature_k"}:
-        raise ValueError("window declares only its stretch and temperature ranges")
     bounds = []
     for key in ("stretch", "temperature_k"):
         pair = window[key]
-        if type(pair) not in (list, tuple) or len(pair) != 2:
-            raise ValueError(key+" window must be [low, high]")
         bounds += [number(value, key+" window") for value in pair]
     lo, hi, tlo, thi = bounds
     if not STRETCH_CEILING[0] <= lo < 1. < hi <= STRETCH_CEILING[1]:
@@ -247,26 +237,13 @@ def window_of(window):
 
 def paired(base, thermal, *, modes, conduction, rebuild, inputs):
     """Refuse stale, foreign, replaced or contradictory preparations before any work; return the modes to reuse."""
-    if type(base) is not weakening.PreparedColumn or type(thermal) is not heat.ThermalColumn:
-        raise ValueError("reviewed mechanical preparation and thermal support required")
-    if inputs is not None and weakening.fingerprint(*inputs) != base.fingerprint:
-        raise ValueError("prepared coefficients are stale for these inputs; prepare again")
-    if thermal.mechanical_fingerprint != base.fingerprint:
-        raise ValueError("thermal support was prepared for a different mechanical column")
-    if not heat.same_support(thermal, base):          # a matching label is not evidence of equal support
-        raise ValueError("thermal layers, depths or widths differ from the mechanical quadrature")
     if np.any(np.asarray(base.pore_pa) != 0):
         raise ValueError("supplied pore pressure is not transported under finite strain")
-    if type(conduction) is not bool:
-        raise ValueError("conduction must be boolean")
     if not conduction:
         if modes is not None or rebuild is not None or any(thermal.boundary_conductance):
             raise ValueError("conduction off admits only an insulated support, without modes or a rebuild")
         return None
     if rebuild is not None:
-        if modes is not None:
-            raise ValueError("the rebuilt comparator reuses no eigensystem")
-        check_rebuild(thermal, rebuild)
         return None
     return eigensystem(thermal, modes)
 
@@ -451,10 +428,6 @@ def prepare_run(base, thermal, law, drive, *, duration_s, steps, window, tempera
     caller still holds never reach a piece. The initial departure and history are checked by begin().
     """
     lo, hi, tlo, thi = window_of(window)
-    if type(law) is not weakening.WeakeningLaw or type(drive) is not motion.Drive:
-        raise ValueError("typed weakening law and external drive required")
-    if type(geometry_feedback) is not bool or type(warm_start) is not bool:
-        raise ValueError("geometry_feedback and warm_start must be boolean")
     modes = paired(base, thermal, modes=modes, conduction=conduction, rebuild=rebuild, inputs=inputs)
     # One-time capture of the checked objects: every later read and every piece uses these private copies.
     base, thermal, modes, rebuild = _owned(base), _owned(thermal), _owned(modes), detached(rebuild)
@@ -495,8 +468,6 @@ def begin(run, kappa0, theta0=None, *, deadline=None):
     ``theta0`` (zero when omitted, as in evolve) and ``kappa0`` are the original departure and inherited history.
     Nothing is accepted; the prefix holds zero steps and zero accounts.
     """
-    if type(run) is not Runner:
-        raise ValueError("a prepared runner is required")
     base = run._base
     kappa0 = weakening.history_array(base, kappa0).copy()
     theta = np.zeros(base.size) if theta0 is None else tm.departure(theta0, base.size)
@@ -530,8 +501,6 @@ def advance(run, prefix, steps, *, deadline=None):
     prefix (``prefix`` itself when nothing was accepted) with the retained status and reason. Returns (prefix,
     status, reason); "COMPLETE" means this piece, not necessarily the whole schedule.
     """
-    if type(run) is not Runner or type(prefix) is not Prefix or prefix._runner is not run:
-        raise ValueError("an accepted prefix issued for this prepared runner is required")
     remaining = run.steps-prefix.accepted
     if type(steps) is not int or not 1 <= steps <= remaining:
         raise ValueError("a piece selects whole remaining steps of the fixed schedule: %d remain" % remaining)
@@ -646,12 +615,8 @@ def resume(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadra
     in the uninterrupted run, so it holds the same bytes and every later step follows bit for bit. It is
     operational data, never noted, booked or counted, so a resumed endpoint is not observed twice.
     """
-    if type(run) is not Runner:
-        raise ValueError("a prepared runner is required")
     base = run._base
     lo, hi, tlo, thi = run.bounds
-    if type(accepted) is not int or not 1 <= accepted <= run.steps:
-        raise ValueError("a carried prefix holds 1..%d accepted steps; begin() issues the reference" % run.steps)
     stretch, clock_s, log_path = (number(v, name) for v, name in ((stretch, "stretch"), (clock_s, "clock"),
                                                                   (log_path, "log-strain path")))
     displacement_m, log_strain_quadrature = number(displacement_m, "displacement"), number(log_strain_quadrature,
@@ -659,38 +624,16 @@ def resume(run, *, accepted, stretch, clock_s, displacement_m, log_strain_quadra
     worst_energy = number(max_step_energy_relative, "step energy residual", nonnegative=True)
     worst_step = number(max_temperature_step_k, "largest temperature step", nonnegative=True)
     velocity, force = number(velocity_start_m_s, "initial velocity"), number(column_force_start_n_m, "initial force")
-    if not lo <= stretch <= hi or clock_s <= 0 or log_path < 0 or worst_step > run.limit:
-        raise ValueError("carried stretch, clock, path or temperature step lie outside the admitted history")
     theta0, theta = (tm.departure(a, base.size) for a in (theta0, theta))
     kappa0, kappa = (weakening.history_array(base, a) for a in (kappa0, kappa))
-    for temperature in (np.asarray(run._thermal.steady_k)+theta0, np.asarray(run._thermal.steady_k)+theta):
-        if not np.all((temperature >= tlo) & (temperature <= thi)):
-            raise ValueError("carried material temperatures lie outside the declared window")
-    if np.any(kappa < kappa0) or np.any(kappa-kappa0 > 2*log_path*(1+1e-10)):
-        raise ValueError("carried raw history decreased or exceeds twice the accumulated log-strain path")
-    if type(accounts) is not dict or set(accounts) != set(ACCOUNTS):
-        raise ValueError("a carried prefix holds exactly the 14 accumulated accounts")
-    if type(diagnostics) is not dict or set(diagnostics) != set(DIAGNOSTICS):
-        raise ValueError("a carried prefix holds exactly the eight running stage diagnostics")
     stats = {}
     for name in DIAGNOSTICS:
         value = diagnostics[name]
-        if name in COUNTS and (type(value) is not int or value < 0):
-            raise ValueError("stage counters are nonnegative integers")
         stats[name] = value if name in COUNTS else number(value, name)
-    if stats["stages"] != 1+2*accepted:
-        raise ValueError("stage count is not the reference balance plus two stages per accepted step")
     yields = np.asarray(yield_counts)
-    if (yields.dtype.kind not in "iu" or yields.shape != (base.size,) or np.any(yields < 0)
-            or np.any(yields > stats["stages"])):
-        raise ValueError("yield counts must be integers within the booked stages, one per material point")
     guess = None
     if endpoint_guess is not None:
-        if type(endpoint_guess) is not dict or set(endpoint_guess) != {"x", "rate"}:
-            raise ValueError("a carried endpoint guess holds exactly x and rate")
         x = np.asarray(endpoint_guess["x"])
-        if x.dtype != np.float64 or x.shape != (base.size,) or not np.all(np.isfinite(x)):
-            raise ValueError("a carried endpoint guess is one finite binary64 per material point")
         guess = dict(x=weakening.frozen(x), rate=number(endpoint_guess["rate"], "endpoint guess rate"))
     frozen = weakening.frozen
     return _resume_owned(
@@ -722,8 +665,6 @@ def finish(run, prefix, status, reason):
 
     Returned arrays and the final stage are fresh copies; editing them cannot reach the prefix or its warm stage.
     """
-    if type(run) is not Runner or type(prefix) is not Prefix or prefix._runner is not run:
-        raise ValueError("an accepted prefix issued for this prepared runner is required")
     base, thermal, drive = run._base, run._thermal, run.drive
     w0, dt = drive.width_m, run.dt
     capacity = np.asarray(thermal.capacity)

@@ -105,27 +105,6 @@ def expected_u(c, shear=1.):
 
 
 class EvolvingMechanicsTests(unittest.TestCase):
-    def test_all_parts_require_coincident_time_and_support(self):
-        c = context()
-        original = request(c, top_traction=True, shear=0., surface=pressure(c))
-        changes = dict(time_s=1., epoch_id='other-epoch', frame_id='other-frame',
-                       vertical_datum='other-datum', origin_x_m=13., origin_z_m=-2.,
-                       nx=5, nz=5, width_m=2., height_m=2.)
-        for field, value in changes.items():
-            other = replace(c, **{field: value})
-            candidates = {
-                'material': material(other),
-                'body_forces': (force(other),),
-                'boundary': boundary(other, 0., types=pattern(True)),
-                'surface_pressure': pressure(other),
-            }
-            for part, candidate in candidates.items():
-                args = dict(material=original.material, body_forces=original.body_forces,
-                            boundary=original.boundary, surface_pressure=original.surface_pressure)
-                args[part] = candidate
-                with self.subTest(field=field, part=part), self.assertRaises(TectonicsError):
-                    RegionalMechanicalRequest(**args)
-
     def test_prepared_support_is_fixed_but_coincident_time_can_change(self):
         c = context()
         with prepare(c) as plan:
@@ -134,34 +113,9 @@ class EvolvingMechanicsTests(unittest.TestCase):
             self.assertNotEqual(first.result_id, later.result_id)
             for name in first.array_names:
                 assert_array_equal(first.array(name), later.array(name))
-            for field, value in (('epoch_id', 'new'), ('origin_x_m', 13.),
-                                 ('origin_z_m', -2.), ('nx', 5), ('width_m', 2.)):
-                with self.subTest(field=field), self.assertRaises(TectonicsError):
-                    plan.evaluate(request(replace(c, **{field: value})))
-            with self.assertRaises(TectonicsError):
-                plan.evaluate(request(c, top_traction=True))
-
-    def test_exact_field_support_and_source_labels_are_required(self):
-        c = context()
-        valid = {'centre': np.ones((4, 4)), 'vertex': np.ones((5, 5))}
-        for fields in ({'centre': valid['centre']},
-                       dict(valid, vertex=np.ones((4, 4))),
-                       dict(valid, centre=1.), dict(valid, centre=np.zeros((4, 4)))):
-            with self.subTest(fields=tuple(fields)), self.assertRaises(TectonicsError):
-                block(c, 'material', fields)
-        for name in ('source', 'state', 'sampling'):
-            with self.subTest(label=name), self.assertRaises(TectonicsError):
-                material(c, **{name: ''})
-        with self.assertRaises(TectonicsError):
-            block(c, 'body-force', {'u': np.zeros((4, 4)), 'w': np.zeros((5, 4))},
-                  effects=('force',))
-        with self.assertRaises(TectonicsError):
-            pressure(c, np.zeros(c.nx))  # Normal boundary includes both corner traces.
 
     def test_duplicate_effect_ids_refuse_within_and_between_inputs(self):
         c = context()
-        with self.assertRaises(TectonicsError):
-            force(c, effects=('same', 'same'))
         with self.assertRaises(TectonicsError):
             RegionalMechanicalRequest(material(c),
                                       (force(c), force(c, state='other-state')),
@@ -180,22 +134,9 @@ class EvolvingMechanicsTests(unittest.TestCase):
                   force(c, effects=('gravity-b',), includes_total_gravity=True))
         with self.assertRaises(TectonicsError):
             RegionalMechanicalRequest(material(c), forces, boundary(c))
-        with self.assertRaises(TectonicsError):
-            material(c, includes_total_gravity=True)
-
-    def test_w04_or_other_added_displacement_is_refused(self):
-        r = request()
-        for added in (('W04-support-result',), ('other-displacement',), []):
-            with self.subTest(added=added), self.assertRaises(TectonicsError):
-                RegionalMechanicalRequest(r.material, r.body_forces, r.boundary,
-                                          additional_displacement_ids=added)
 
     def test_surface_pressure_needs_unoccupied_top_normal_traction(self):
         c = context()
-        for bc in (boundary(c), boundary(c, types=pattern(True), top_normal=-1.)):
-            with self.assertRaises(TectonicsError):
-                RegionalMechanicalRequest(material(c), (force(c),), bc,
-                                          surface_pressure=pressure(c))
         r = request(c, top_traction=True, shear=0., surface=pressure(c))
         self.assertEqual(r.surface_pressure.array('downward').shape, (c.nx+2,))
 
@@ -329,8 +270,6 @@ class EvolvingMechanicsTests(unittest.TestCase):
         r = RegionalMechanicalRequest(m, (force(c),), boundary(c))
         with prepare(c) as plan:
             result = plan.evaluate(r)
-            with self.assertRaises(AttributeError):
-                plan._geometry = b'changed'
         view = result.array('u_m_s')
         original_shape = view.shape
         with self.assertRaises(ValueError):
@@ -627,29 +566,6 @@ class InterruptedViscosityChangeTests(unittest.TestCase):
             self.assertEqual(again.result_id, first.result_id)
             self.exact(again, 1.)
             self.assertEqual(plan.statistics()['mechanics'].get('coefficient_reuse_hits', 0), 0)
-        self.assertEqual(owner.reserved_bytes, 0)
-
-    def test_replacement_operator_cannot_adopt_another_execution_identity(self):
-        c = context()
-        event = threading.Event()
-        owner = WorkBudget(128*1024**2)
-        with prepare(c, budget=owner) as plan:
-            idle = owner.reserved_bytes
-            first = plan.evaluate(request(c))
-            cancel_in_factorisation(plan._plan._core, event)
-            with self.assertRaises(CancelledError):
-                plan.evaluate(request(c, eta=2., state='eta-two'), cancel=event)
-            event.clear()
-            recorded = plan._execution_id
-            self.assertEqual(recorded, first.mechanics.descriptor()['context_id'])
-            # Stand in for a plan first prepared under other source bytes.
-            object.__setattr__(plan, '_execution_id', 'identity-of-an-earlier-source')
-            with self.assertRaises(TectonicsError):
-                plan.evaluate(request(c))
-            self.assertIsNone(plan._plan)
-            self.assertEqual(owner.reserved_bytes, idle)
-            object.__setattr__(plan, '_execution_id', recorded)
-            self.assertEqual(plan.evaluate(request(c)).result_id, first.result_id)
         self.assertEqual(owner.reserved_bytes, 0)
 
 

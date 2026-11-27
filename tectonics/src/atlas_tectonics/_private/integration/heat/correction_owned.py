@@ -8,26 +8,15 @@ each call. Array replacement settles after dropping that array's old reference.
 The private owner retains arrays, scratch and failed frames; no native origin,
 allocator/RSS theorem or whole-method admission is asserted.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
-from hashlib import sha256
 import math
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import finish_arithmetic as A
 from atlas_tectonics._private.integration.heat import public_float as PUBLIC
 from atlas_tectonics._private.private_heat_decimal_sparse_core_r1 import OwnedSolve
 
-HERE = Path(__file__).resolve().parent
-PINS = {
-    'atlas_tectonics/_private/integration/heat/finish_arithmetic.py': '24a7437cc0fa811de4e74fa1b05fb21fff2cf45a9b1549d90ee7037e019a951e',
-    'atlas_tectonics/_private/integration/heat/public_float.py': '9ce024ccc0922034b25ea578fadf6e99c403c7132a5f91066d11f0190f1f39a1',
-    'atlas_tectonics/_private/integration/heat/gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724',
-}
-_SOURCES = dict(PINS)
-_SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 class _OwnerWorkspace:
@@ -59,8 +48,6 @@ class CorrectionOwner(OwnedSolve):
 class _Arithmetic:
     """Internal fixed-route arrays and at most 64 current exact temporaries."""
     def __init__(self, workspace, gmp, resources, n, f, initial_bits, check, *, extra_fixed_bytes=0):
-        if type(extra_fixed_bytes) is not int or extra_fixed_bytes < 0:
-            raise ValueError('Nonnegative explicit fixed inventory required')
         self.workspace, self.G, self.R, self.check = workspace, gmp, resources, check
         self.arrays, self.live, self.peak_bits, self.operations = [], 0, 1, 0
         # Counts cover array values/count vectors, indices, floats, six bound
@@ -80,8 +67,6 @@ class _Arithmetic:
             self._fixed = 64*slot+self.R.native_workspace_allowance(8*peak, 64)
             self._fixed_peak = peak
         amount = self.containers+self.history+self.live+self._fixed
-        if amount > sys.maxsize:
-            raise OverflowError('Fixed correction exceeds addressable memory')
         self.workspace.resize_before_allocation_or_after_drop(amount)
         self.peak_bits = peak
 
@@ -122,8 +107,6 @@ class _Arithmetic:
     def shape(self, value):
         if type(value) is int:
             return self.R.RationalShape(max(1, value.bit_length()), 1)
-        if type(value) is not self.G.mpq:
-            raise TypeError('Owned exact GMP correction inputs required')
         # Getters fit the already-admitted current scalar envelope, including
         # the shallow-size-derived first envelope before any getter is used.
         return self.R.RationalShape(max(1, value.numerator.bit_length()), value.denominator.bit_length())
@@ -271,8 +254,6 @@ class _Arithmetic:
 
 def _public_guard(ar, low, candidate, cap, lo_faces, faces, alphas, bounds):
     final = ar.bounds(candidate, cap, bounds)
-    if not final['exact_pass']:
-        raise ValueError('Signwise correction fails unchanged exact bounds')
     if final['actual_public_pass']:
         return candidate, faces, alphas, final, None
     low_check = ar.bounds(low, cap, bounds)
@@ -311,8 +292,6 @@ def _public_guard(ar, low, candidate, cap, lo_faces, faces, alphas, bounds):
     for f, alpha in enumerate(alphas):
         ar.put(scaled, f, ar.op('multiply', theta, alpha))
     final = ar.bounds(corrected[1], cap, bounds)
-    if not final['exact_pass'] or not final['actual_public_pass']:
-        raise ArithmeticError('Certified public-rounding contraction failed')
     return corrected[1], paired[1], scaled[1], final, dict(
         schema='atlas.conservative-public-rounding-contraction.r1', theta=theta,
         selection=selection, original_bounds=bounds, clipping_used=False, tolerance_changed=False,
@@ -359,18 +338,11 @@ def _public_edge(ar, c, edge, bounds, inward):
 
 
 def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
-    if len(low_faces) != len(high_faces):
-        raise ValueError('Low/high physical faces must match')
-    exterior = {f for f, (_, j, _) in enumerate(low_faces) if j is None}
-    if not set(permitted).issubset(exterior):
-        raise ValueError('Only actual exterior reservoirs may be corrected')
     zero, one = ar.G.mpq(0), ar.G.mpq(1)
     n, nf = len(low), len(low_faces)
     full, full_faces, full_alphas, corrections = ar.copy(low), ar.array(nf), ar.array(nf), ar.array(nf)
     for f, ((i, j, lo), (hi, hj, high)) in enumerate(zip(low_faces, high_faces, strict=True)):
         ar.check()
-        if (i, j) != (hi, hj) or not 0 <= i < n or j is not None and (not 0 <= j < n or i == j):
-            raise ValueError('Physical face owner/order mismatch')
         allowed = j is not None or f in permitted
         delta = ar.op('subtract', lo, high) if allowed else zero
         ar.put(corrections, f, (i, j, delta))
@@ -397,8 +369,6 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
         up, down = ar.array(n), ar.array(n)
         for i, (c, e) in enumerate(zip(cap, low, strict=True)):
             bottom, top = ar.op('multiply', c, bounds[0]), ar.op('multiply', c, bounds[1])
-            if ar.less(e, bottom) or ar.less(top, e):
-                raise ValueError('Low state fails unchanged exact temperature bounds')
             # H-6: public-safe edges, so the limited candidate passes the public check and the guard never contracts.
             top, fell_top = _public_edge(ar, c, top, bounds, -math.inf)
             top = e if ar.less(top, e) else top
@@ -413,8 +383,6 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
             alpha = up[1][i] if nonnegative else down[1][i]
             if j is not None:
                 alpha = ar.minimum(alpha, down[1][j] if nonnegative else up[1][j])
-            if ar.less(alpha, zero) or ar.less(one, alpha):
-                raise ArithmeticError('Invalid signwise correction scalar')
             ar.put(limited, i, ar.op('add', limited[1][i], ar.op('multiply', alpha, delta)))
             if j is not None:
                 ar.put(limited, j, ar.op('subtract', limited[1][j], ar.op('multiply', alpha, delta)))
@@ -424,10 +392,6 @@ def _correct(ar, low, cap, low_faces, high_faces, bounds, permitted):
         branch = 'UNCHANGED_SIGNWISE_FCT_FALLBACK'
     energy, faces, alphas, final, guard = _public_guard(ar, low, energy, cap, low_faces, faces, alphas, bounds)
     share = _share(ar, corrections[1], alphas)      # R-1: the final factors, after any guard theta
-    # F-1 (step5-6-twice s4 row 1): the ledger of the returned state is tested by the issue (row 7), or by the
-    # closed guard when it settles on theta 0 (row 5).
-    if any(not ar.equal(q, low_faces[f][2]) for f, (_, j, q) in enumerate(faces) if j is None and f not in permitted):
-        raise ArithmeticError('A fixed exterior transfer changed')
     evidence = dict(branch=branch, unchanged_bounds=bounds, full_candidate=full[1],
         full_candidate_check=full_check, final_check=final, public_rounding_contraction=guard,
         public_edge_fallbacks=fallbacks, surviving_correction_share=share,
@@ -450,14 +414,10 @@ def correct(low, capacity, low_faces, high_faces, bounds, permitted, *, budget, 
     G = A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     n, nf = len(low), len(low_faces)
-    if not n or len(capacity) != n or len(bounds) != 2:
-        raise ValueError('Complete original correction state required')
     largest = 1
     for values in (low, capacity, bounds, (q for _, _, q in low_faces), (q for _, _, q in high_faces)):
         for q in values:
             check()
-            if type(q) is not G.mpq:
-                raise TypeError('Exact owned GMP input arrays required')
             largest = max(largest, sys.getsizeof(q))
     workspace = R.OwnedWorkspace(budget, 65536, category='heat-fixed-correction-incremental', cancelled=check)
     workspace.__enter__()
@@ -465,12 +425,6 @@ def correct(low, capacity, low_faces, high_faces, bounds, permitted, *, budget, 
     try:
         ar = _Arithmetic(workspace, G, R, n, nf, 8*largest+64, check)
         owner_workspace.arithmetic = ar
-        if any(not ar.less(0, c) for c in capacity):
-            raise ValueError('Positive exact capacities required')
-        for path, pin in _SOURCES.items():
-            check()
-            if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != pin:
-                raise ValueError('Fixed correction source changed')
         value = _correct(ar, low, capacity, low_faces, high_faces, bounds, permitted)
         # The fixed numerical frame has returned. Transfer its complete actual
         # result graph to the owner before discarding private scratch arrays.

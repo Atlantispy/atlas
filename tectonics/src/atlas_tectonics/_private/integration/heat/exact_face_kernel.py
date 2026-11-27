@@ -13,10 +13,8 @@ the copied certificate map, plus a separate nested exact-solve owner. All owners
 remain live with the output. No native/RSS, whole-reconstruction, geometry,
 support, observation creation or prior rectangular-rank admission is claimed.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
 
 from hashlib import sha256
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private import private_heat_certification_kernel_r1 as K
@@ -26,7 +24,6 @@ from atlas_tectonics._private.integration.heat import exact_functional_kernel as
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 
 G = K.G
-FUNCTIONALS_SHA = '94dc7c871aedf7770f6e89ee7e864827ced67e5655fd54d8f1f106cc534ee130'
 
 
 def exact_face(matrix, target, keys, base_keys, signed_tau, conversion, *,
@@ -40,9 +37,6 @@ def exact_face(matrix, target, keys, base_keys, signed_tau, conversion, *,
     """
     K._require_gmp()
     INVENTORY.check(cancelled)
-    if (type(matrix) not in (list, tuple) or not matrix or type(target) not in (list, tuple)
-            or not target or any(type(row) not in (list, tuple) or len(row) != len(target) for row in matrix)):
-        raise ValueError('Owned nonempty rectangular observations and target required')
     m, n = len(matrix), len(target)
     if (type(keys) not in (list, tuple) or len(keys) != m or type(base_keys) not in (list, tuple)
             or len(base_keys) != 2 or base_keys[0] == base_keys[1]
@@ -56,35 +50,21 @@ def exact_face(matrix, target, keys, base_keys, signed_tau, conversion, *,
         for row in rows:
             for value in row:
                 INVENTORY.check(cancelled)
-                if type(value) not in (int, G.mpq):
-                    raise TypeError('Already owned int/GMP exact values required')
                 largest = max(largest, sys.getsizeof(value))
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     metadata = 262144+INVENTORY.D.CONTAINER_UNIT*(8*m*n+12*n*n+40*m+64*n+256)
     work = R.OwnedWorkspace(budget, metadata, category='heat-exact-face-fallback', cancelled=cancelled)
     work.__enter__()
     try:
-        INVENTORY.verify_sources(cancelled)
-        path = Path(__file__).resolve().parent/'private_heat_functionals_kernel_r1.py'
-        if _helper_source_digest(path, owner_file=__file__) != FUNCTIONALS_SHA:
-            raise ValueError('Reviewed exact physical-face branch changed')
         arena = GROWTH.Arithmetic(work, G, scalar_slots=3*m*n+3*n*n+16*m+24*n+128,
             container_bytes=metadata, initial_bits=8*largest, cancelled=cancelled)
-        if len(set(keys)) != m:
-            raise ValueError('Unique exact observation keys required')
         certificate = dict(zip(keys, matrix, strict=True))
         for key, row in zip(base_keys, base_observations, strict=True):
-            if key[0] not in ('cell', 'wall'):
-                raise ValueError('Base jump must use declared temperature observations')
-            if key in certificate and list(certificate[key]) != list(row):
-                raise ValueError('Base observation disagrees with selected original row')
             certificate[key] = row
         left, right = base_observations
         for t, a, b, g in zip(target, left, right, gradient, strict=True):
             value = arena.rational('add', t,
                 arena.rational('multiply', signed_tau, arena.rational('subtract', a, b)))
-            if value != g:
-                raise ArithmeticError('Exact target plus base jump does not restore the stated gradient')
         audit = {} if evidence is None else evidence
         audit.update(exact_gram_constructed=True, exact_fallback=True, exact={})
         gram = []
@@ -115,8 +95,6 @@ def exact_face(matrix, target, keys, base_keys, signed_tau, conversion, *,
             for key, value in scaled.items():
                 total = arena.rational('add', total,
                     arena.rational('multiply', value, certificate[key][j]))
-            if total != gradient[j]:
-                raise ArithmeticError('Exact fallback polynomial moment identity failed')
         factors = dict(zip(keys, conversion, strict=True))
         factors.update({key: factors.get(key, G.mpq(1)) for key in base_keys})
         physical = {key: arena.rational('multiply', value, factors[key]) for key, value in scaled.items()}

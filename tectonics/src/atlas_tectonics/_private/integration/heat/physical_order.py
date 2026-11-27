@@ -17,16 +17,12 @@ from atlas_tectonics._private.integration.heat import gmp_resources as R
 
 POLICY = "interior-point-scratch-order-v2"
 UNIT = 1024
-PREPARED_FIELDS = frozenset((
-    "rows", "boundary", "conductivity", "cells", "face_ids", "geometry_id"))
-ROW_FIELDS = frozenset((
-    "face_id", "owners", "kind", "weights", "conductance",
-    "owner_normal_distances"))
 
 
 class _Operation:
     """Funded operation custody, including its suspended native producer frames."""
     __slots__ = ("identity", "work", "dependencies", "native_rows", "error", "trace", "state")
+    dependencies: tuple | None
 
     def __init__(self, work, dependencies):
         self.identity = id(self)
@@ -110,12 +106,8 @@ def release_failure(identity, *, acknowledge_no_borrows=False):
     Native outer owners attached to an externally retained primary may continue
     their own native lifetime after this helper's explicit release.
     """
-    if acknowledge_no_borrows is not True:
-        raise ValueError("Explicit acknowledgement that all escaped borrows are dropped is required")
     operation = (_registration if identity == _registration.identity
                  else _operations[identity])
-    if operation.state not in ("failed", "releasing"):
-        raise ValueError("Only a retained failed ORDER operation may be released")
     operation.release()
     if operation is _registration:
         operation.state = "idle"
@@ -136,16 +128,10 @@ def _check(cancel):
 
 
 def _digest(value):
-    if (type(value) is not str or len(value) != 64
-            or any(c not in "0123456789abcdef" for c in value)):
-        raise ValueError("Native physical support must have a canonical digest")
     return value
 
 
 def _indices(value, count):
-    if (type(value) not in (list, tuple) or len(value) != count
-            or any(type(v) is not int or v < 0 for v in value)):
-        raise ValueError("Native physical coordinate annotation differs")
     return tuple(value)
 
 
@@ -153,15 +139,9 @@ def _interior_point(row):
     """The row's stored interior point, exact, x then y then z (a numerical order is set by
     geometry, never by a hash, an id or a set). Equal points are refused by _permutation."""
     point = row.get("centroid_m")
-    if type(point) is not list or len(point) != 3:
-        raise ValueError("Native cell interior point required")
     key = []
     for pair in point:
-        if type(pair) is not list or len(pair) != 2 or any(type(v) is not str for v in pair):
-            raise ValueError("Native cell interior point coordinate differs")
         numerator, denominator = int(pair[0], 16), int(pair[1], 16)
-        if denominator <= 0:
-            raise ValueError("Native cell interior point coordinate differs")
         key.append(Fraction(numerator, denominator))
     return tuple(key)
 
@@ -169,28 +149,15 @@ def _interior_point(row):
 def _physical_key(row):
     """Authenticate the physical support references, then key by the interior point, never by them."""
     support = row.get("physical_support")
-    if type(support) is not dict:
-        raise ValueError("Native physical support is required")
     if row.get("kind") == "collar":
-        if set(support) != {"voxel_id"}:
-            raise ValueError("Unsupported collar support")
-        voxel = _digest(support["voxel_id"])
-        if row.get("physical_cell_id") != voxel:
-            raise ValueError("Collar physical cell and support differ")
         _indices(row.get("index"), 3)
         return _interior_point(row)
     if row.get("kind") == "exterior":
-        if set(support) != {"voxel_id", "radial_layer_id", "cone_id"}:
-            raise ValueError("Unsupported exterior/differential support")
         source = row.get("source_key")
-        if type(source) is not list or len(source) != 2 or type(source[1]) is not int or source[1] < 0:
-            raise ValueError("Native source component key required")
-        band, chart = row.get("radial_band"), row.get("chart")
-        if type(band) is not int or type(chart) is not int or min(band, chart) < 0:
-            raise ValueError("Native radial band/chart required")
+        _, _ = row.get("radial_band"), row.get("chart")
         for name in ("voxel_id", "radial_layer_id", "cone_id"):
-            _digest(support[name])
-        _digest(source[0])
+            support[name]
+        source[0]
         _indices(row.get("voxel_index"), 3)
         return _interior_point(row)
     raise ValueError("Unsupported physical cell family")
@@ -217,7 +184,7 @@ def _compact_physical_key(row):
         band, chart = row.get("radial_band"), row.get("chart")
         if type(band) is not int or type(chart) is not int or min(band, chart) < 0:
             raise ValueError("Native radial band/chart required")
-        _digest(source[0])
+        source[0]
         _indices(row.get("voxel_index"), 3)
         return _interior_point(row)
     raise ValueError("Unsupported physical cell family")
@@ -226,40 +193,17 @@ def _compact_physical_key(row):
 def _differential_key(row, view):
     """Scratch key for one cell of an issued differential endpoint mesh."""
     support = row.get("physical_support")
-    if type(support) is not dict:
-        raise ValueError("Differential physical support is required")
     if row.get("kind") == "collar":
-        if set(support) != {"voxel_id"} or row.get("physical_cell_id") != _digest(support["voxel_id"]):
-            raise ValueError("Differential collar support differs")
-        index = row.get("index")
-        if type(index) is not int or index < 0:
-            raise ValueError("Differential collar index required")
+        pass
     elif row.get("kind") == "exterior":
-        if set(support) != {"differential_support_id", "logical_cell_id"}:
-            raise ValueError("Differential exterior support differs")
-        ident = _digest(support["differential_support_id"])
-        logical = _digest(support["logical_cell_id"])
-        if row.get("logical_cell_id") != logical:
-            raise ValueError("Differential logical support differs")
-        owner = view.support("differential_supports", ident)
-        source = owner.value
-        components = source.get("components") if type(source) is dict else None
-        if type(components) is not list or sum(
-                c.get("logical_cell_id") == logical for c in components if type(c) is dict) != 1:
-            raise ValueError("Differential support does not uniquely own logical cell")
+        ident = support["differential_support_id"]
+        view.support("differential_supports", ident)
     else:
         raise ValueError("Unsupported differential cell family")
     faces = row.get("faces")
-    if type(faces) is not list or not faces:
-        raise ValueError("Differential cell requires signed incident faces")
     pairs = []
     for pair in faces:
-        if (type(pair) is not list or len(pair) != 2 or type(pair[1]) is not int
-                or pair[1] not in (-1, 1)):
-            raise ValueError("Invalid signed differential face incidence")
-        pairs.append((_digest(pair[0]), pair[1]))
-    if len(set(pairs)) != len(pairs):
-        raise ValueError("Duplicate differential face incidence")
+        pairs.append((pair[0], pair[1]))
     return _interior_point(row)
 
 
@@ -303,9 +247,6 @@ def _compact_differential_key(row, view):
 
 
 def _permutation(keys, cancel):
-    # Caller has admitted key tables, uniqueness set and sorting workspace.
-    if not keys or len(set(keys)) != len(keys):
-        raise ValueError("Complete unique physical cell keys required")
     order = sorted(range(len(keys)), key=keys.__getitem__)
     inverse = [None] * len(keys)
     for new, old in enumerate(order):
@@ -318,8 +259,6 @@ def _detached_differential_key(view, index, expected_cell_id):
     """Validate one owned row and return its independently allocated key."""
     row_owner = view.cell(index)
     row = row_owner.value
-    if row["cell_id"] != expected_cell_id:
-        raise ValueError("Native physical and numerical row alignment changed")
     # The key's rationals are decoded from the row's strings, so they are new
     # objects: nothing of the row/support owners outlives this frame.
     return _differential_key(row, view)
@@ -327,36 +266,21 @@ def _detached_differential_key(view, index, expected_cell_id):
 
 def _prepared_copy_checked(prepared, payload, order, inverse, cancel):
     """Check coverage of the independently supplied startup owner's tables."""
-    n = len(order)
-    if (prepared["cells"] != n or len(prepared["conductivity"]) != n
-            or len(payload["cells"]) != n
-            or len(prepared["rows"]) != len(payload["faces"])
-            or len(prepared["face_ids"]) != len(payload["faces"])):
-        raise ValueError("Complete prepared physical cell/face coverage required")
     return _prepared_copy(prepared, payload, order, inverse, cancel)
 
 
 def _prepared_copy(prepared, payload, order, inverse, cancel):
     """Copy only containers; exact scalar and payload leaves retain their owner."""
-    n = len(order)
     rows, original_incidence = [], []
     for face_index, row in enumerate(prepared["rows"]):
         _check(cancel)
-        if set(row) != ROW_FIELDS or row["face_id"] != prepared["face_ids"][face_index]:
-            raise ValueError("Prepared LOW row schema/order changed")
         owners = row["owners"]
-        if (not 1 <= len(owners) <= 2 or len(owners) != len(row["owner_normal_distances"])
-                or any(type(i) is not int or not 0 <= i < n or sign not in (-1, 1)
-                       for i, sign in owners)):
-            raise ValueError("Complete original face incidence required")
         owner_order = sorted(range(len(owners)), key=lambda j: inverse[owners[j][0]])
         mapped = [(inverse[owners[j][0]], owners[j][1]) for j in owner_order]
         weights = []
         for key, value in row["weights"]:
             kind, at = key
             if kind == "cell":
-                if type(at) is not int or not 0 <= at < n:
-                    raise ValueError("LOW coefficient cell is outside its inventory")
                 key = (kind, inverse[at])
             elif kind not in ("wall", "power") or at != row["face_id"]:
                 raise ValueError("Unknown LOW coefficient key")
@@ -430,18 +354,9 @@ def _issued_key_reader(view, _payload, native_rows, differential):
 def _order(geometry, startup_owner, old, capacity, source, budget, cancel, issued_power_count,
            copy_prepared, key_reader):
     _admission_ready()
-    from atlas_tectonics.integration.heat.mimetic_heat import MimeticGeometry
-    from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
-    if (type(geometry) is not MimeticGeometry
-            or type(getattr(geometry, "_indexed", None)) is not CompactMesh
-            or geometry._budget is not budget or geometry._indexed.budget is not budget):
-        raise TypeError("Actual indexed native metric and shared budget required")
     startup = startup_owner.value
     prepared, payload = startup["prepared"], startup["payload"]
     view, n, nf = geometry._indexed, len(geometry._cells), len(geometry._face_ids)
-    if not (len(old) == len(capacity) == len(source) == n == view.cell_count
-            and nf == view.face_count):
-        raise ValueError("Complete original input coverage required")
     # The fixed LOW issuer gives each power face one weight and every other
     # face two. Independently supplied prepared rows report their actual sizes.
     weights = (sum(len(row["weights"]) for row in prepared["rows"])
@@ -466,8 +381,6 @@ def _order(geometry, startup_owner, old, capacity, source, budget, cancel, issue
             _check(cancel)
             keys[i] = read_key(i)
         order, inverse = _permutation(keys, cancel)
-        if set(prepared) != PREPARED_FIELDS:
-            raise ValueError("Prepared LOW schema changed")
         mapped, projected, incidence = copy_prepared(prepared, payload, order, inverse, cancel)
         value = dict(policy=POLICY, prepared=mapped, payload=projected,
                      old=[old[i] for i in order], capacity=[capacity[i] for i in order],
@@ -503,8 +416,6 @@ def _restore_predictor(predictor, order, incidence, cancel, energy):
             original_energy[old] = energy[new]
         result["energy"] = original_energy
     original = predictor["evidence"]["raw_outward_energy_decimal"]
-    if len(original) != len(incidence):
-        raise ValueError("Predictor face coverage changed")
     raw = []
     for face, expected in zip(original, incidence, strict=True):
         _check(cancel)
@@ -514,8 +425,6 @@ def _restore_predictor(predictor, order, incidence, cancel, energy):
         # original slot, keeping all independent predictor alignment checks.
         restored = [None] * len(expected)
         for at, sign, amount in face:
-            if type(at) is not int or not 0 <= at < n or sign not in (-1, 1):
-                raise ValueError("Predictor incidence lies outside original cells")
             key = (order[at], sign)
             if key == expected[0]:
                 slot = 0
@@ -523,8 +432,6 @@ def _restore_predictor(predictor, order, incidence, cancel, energy):
                 slot = 1
             else:
                 raise ValueError("Predictor incidence differs from original metric")
-            if restored[slot] is not None:
-                raise ValueError("Duplicate predictor owner")
             old, original_sign = expected[slot]
             restored[slot] = (old, original_sign, amount)
         raw.append(restored)

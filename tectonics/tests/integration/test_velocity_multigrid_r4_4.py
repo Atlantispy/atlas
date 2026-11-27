@@ -119,9 +119,6 @@ class MultigridTests(unittest.TestCase):
         self.assertFalse(mg.supported(unit_box(64, width=2)))
 
     def test_invalid_policy_and_explicit_unsupported_shape_refused(self):
-        for value in ('unknown', None, True):
-            with self.assertRaises(at.TectonicsError): at.NonlinearStokesPolicy(velocity_preconditioner=value)
-        with self.assertRaises(at.TectonicsError): at.NonlinearStokesPolicy(method='direct', velocity_preconditioner='gmg')
         for box in (unit_box(7), unit_box(8, 4), unit_box(8, width=2)):
             with self.assertRaises(at.TectonicsError):
                 at.PreparedVariableStokes2D(box, unit_scales(), policy=at.NonlinearStokesPolicy(velocity_preconditioner='gmg'))

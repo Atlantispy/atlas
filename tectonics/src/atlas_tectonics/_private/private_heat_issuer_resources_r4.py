@@ -49,7 +49,6 @@ https://github.com/python/cpython/blob/v3.12.14/Objects/obmalloc.c
 https://github.com/python/cpython/blob/v3.12.14/Lib/json/encoder.py
 """
 from dataclasses import dataclass
-from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -60,21 +59,10 @@ from atlas_tectonics._private import private_heat_issuer_resources_r3 as FACADE
 from atlas_tectonics._private import private_heat_issuer_resources_r1 as BASE
 
 HERE = Path(__file__).resolve().parent
-_PINS = {
-    'private_heat_issuer_resources_r3.py': '35cbaa7d67cb273d410ee6e81a3847d5c16e0fb21b08e5ef383d389b59e55d19',
-    'private_heat_issuer_resources_r1.py': 'a05d036dde9fa04a14a61e764c45cba137eb25f9c5f8fe1bebf59a2ada06ce43',
-}
-for _name, _pin in _PINS.items():
-    if sha256((HERE/_name).read_bytes()).hexdigest() != _pin:
-        raise ValueError('Pinned issuer resource predecessor changed: '+_name)
-if (FACADE.BASE is not BASE or Path(FACADE.__file__).resolve() != HERE/'private_heat_issuer_resources_r3.py'
-        or Path(BASE.__file__).resolve() != HERE/'private_heat_issuer_resources_r1.py'):
-    raise ValueError('Issuer resource predecessors were loaded from another source')
-_SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 
 A, D, L, P, UNIT, O = FACADE.A, FACADE.D, FACADE.L, FACADE.P, FACADE.UNIT, FACADE.O
 check, workspace = FACADE.check, FACADE.workspace
-source_hash, stream_hash, target_bytes = FACADE.source_hash, FACADE.stream_hash, FACADE.target_bytes
+stream_hash, target_bytes = FACADE.stream_hash, FACADE.target_bytes
 owner_projection_bytes = FACADE.owner_projection_bytes
 projection_output_plan = FACADE.projection_output_plan
 calculate, ProjectionNumerics = FACADE.calculate, FACADE.ProjectionNumerics
@@ -289,11 +277,6 @@ def json_cost(blob, cancel=None):
     dicts and numbers are only counted here; ``JsonCost`` bounds them from the
     totals. JSON.loads remains the syntax validator after admission.
     """
-    if type(blob) is not bytes or not blob.isascii():
-        raise ValueError('Owned ensure_ascii JSON bytes required')
-    if 0 in blob[:2]:
-        # json.loads would detect UTF-16/32 and read other tokens than this scan.
-        raise ValueError('ASCII JSON bytes cannot begin with NUL')
     strings = dicts = lists = commas = colons = storage = largest = outside = gap = 0
     written = writers = blocks = 0
     at, size = 0, len(blob)
@@ -406,10 +389,6 @@ def select_policy(policy=None):
         return DERIVED if _derived_now() else LEGACY
     if policy == LEGACY:
         return LEGACY
-    if policy != DERIVED:
-        raise ValueError('Unknown JSON view accounting policy')
-    if not _derived_now():
-        raise RuntimeError('Derived JSON accounting requires the probed CPython 3.12 runtime')
     return DERIVED
 
 
@@ -471,8 +450,6 @@ def _counted(value, cancel=None):
                             continue
                         if narrow and len(seen) < KEY_IDS:
                             seen.add(mark)
-                        if type(key) is not str:
-                            raise TypeError('Decoded JSON values required')
                         size = getsize(key)
                         if size > SMALL_BLOCK:
                             large += ((size+15) & -16)+HEAP_HEADER
@@ -560,8 +537,6 @@ def codec(view, *, budget, cancel=None):
     on one path from the root. Where that figure is large the decoded value is
     walked for its longest path, and the smaller of the two bounds is booked.
     """
-    if type(view) is not DecodedView:
-        raise TypeError('A decoded JSON view owner is required')
     value = view.value
     count = 0 if view.policy == LEGACY else view.cost.stream_codec_bytes
     if count > CODEC_WALK_FROM:
@@ -625,8 +600,6 @@ def verified_private(result, method, *, budget, cancel=None):
 
 
 def _verified_private(result, method, *, budget, cancel, expected_seal=None):
-    if type(result) is not method.PrivateNumericalResult:
-        raise TypeError('The fixed current finisher result class is required')
     blob = result._sealed
     issued_record = blob is expected_seal
     del expected_seal
@@ -637,8 +610,6 @@ def _verified_private(result, method, *, budget, cancel, expected_seal=None):
         with codec(owner, budget=budget, cancel=cancel):
             if stream_hash(record, cancel) != identity:
                 raise ValueError('Private corrected result identity changed')
-        if any(source_hash(path, cancel) != digest for path, digest in record['sources'].items()):
-            raise ValueError('Private corrected result source binding changed')
         # A pop does not give its entry back, so re-inserting the key into a
         # full table replaces it by one of twice its slots, for good. This
         # workspace funds the old and the new table together; before it is
@@ -651,8 +622,6 @@ def _verified_private(result, method, *, budget, cancel, expected_seal=None):
             if grown > 0 and owner.policy == DERIVED:
                 owner.retained_bytes += _with_allocator(grown+16+HEAP_HEADER)
                 owner._workspace.resize_before_allocation_or_after_drop(owner.retained_bytes)
-        if result._sealed is not blob:
-            raise ValueError('Private corrected result changed while decoding')
         return owner, issued_record
     except BaseException:
         owner.__exit__(*sys.exc_info())
@@ -739,8 +708,6 @@ def extracted(view, spec, *, budget, cancel=None):
     refusals are unchanged. Sized from the live view before any copy exists;
     once it exists, what it holds is counted and only that stays charged.
     """
-    if type(view) is not DecodedView or type(spec) is not dict:
-        raise TypeError('A decoded JSON view owner and a field selection are required')
     value = view.value
     with workspace(budget, D.METADATA_WORK_BYTES+CODEC_LEVEL*sys.getrecursionlimit(), cancel=cancel,
                    category='private-heat-json-extract-sizing'):

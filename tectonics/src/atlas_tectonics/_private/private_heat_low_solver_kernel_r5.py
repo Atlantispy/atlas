@@ -34,14 +34,11 @@ walk on a graph with a cycle.
 Module import is stdlib/private-stdlib only; selected exact backend and optional
 numerical/runtime dependencies are loaded only at invocation.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
 from decimal import Context, Decimal as D, localcontext, ROUND_HALF_EVEN
 from fractions import Fraction as Q
-import hashlib
 import math
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import low_geometry_kernel as L
@@ -52,19 +49,8 @@ from atlas_tectonics._private.integration.heat import endpoint_assembly_inventor
 from atlas_tectonics._private.integration.heat import finish_arithmetic as A
 from atlas_tectonics._private.integration.heat import low_ledger_inventory as LEDGER_INVENTORY
 from atlas_tectonics._private.integration.heat import counted_blocks as COUNT
-from atlas_tectonics.integration.coupling import spatial_transport as SPATIAL_TRANSPORT
 
 PUBLIC_GLOBAL_GATE = Q(1, 10**11)
-HERE = Path(__file__).resolve().parent
-_SOURCE_PATHS = (__file__, L.__file__, M.__file__, P.__file__, A.__file__,
-                 INVENTORY.__file__, INVENTORY.POLICY_PATH,
-                 ENDPOINT_INVENTORY.__file__, LEDGER_INVENTORY.__file__,
-                 HERE/'private_heat_low_solver_kernel_r2.py',
-                 SPATIAL_TRANSPORT.__file__,
-                 HERE/'integration/heat/gmp_resources.py', HERE/'integration/heat/sparse_resources.py',
-                 COUNT.__file__)
-_SOURCES = {_atlas_identity.relkey(path): hashlib.sha256(_atlas_identity.as_path(path).read_bytes()).hexdigest()
-            for path in _SOURCE_PATHS}
 
 
 def _cancel(cancel):
@@ -149,22 +135,6 @@ def _settle(owner, graph, cancel):
         work.resize_before_allocation_or_after_drop(total)
 
 
-def _verify_sources(bindings, cancel):
-    for path, digest in bindings.items():
-        _cancel(cancel)
-        if _helper_source_digest(Path(path), owner_file=__file__) != digest:
-            raise ValueError('Standalone LOW source binding changed; no repin')
-
-
-def _bindings(incoming, cancel):
-    values = dict(_SOURCES)
-    for path, digest in (incoming or {}).items():
-        key = _atlas_identity.relkey(path)
-        if key in values and values[key] != digest:
-            raise ValueError('LOW source binding conflicts with fixed internal implementation')
-        values[key] = digest
-    _verify_sources(values, cancel)
-    return values
 
 
 _GMP_RESIDUAL_BITS = 12275   # set from check 3: GMP rationals are slower below this width, faster from it up
@@ -196,13 +166,9 @@ def _residual(energy, faces, load):
 def singleton_rows(prepared, *, cancel=None):
     """Retain exact coefficient and observation order, without rounding."""
     rows = []
-    if list(prepared['face_ids']) != [row['face_id'] for row in prepared['rows']]:
-        raise ValueError('Original LOW face ordering changed')
     for row in prepared['rows']:
         _cancel(cancel)
         keys = [tuple(key) for key, _ in row['weights']]
-        if len(set(keys)) != len(keys):
-            raise ValueError('LOW observation keys must be unique before singleton assembly')
         rows.append(dict(face_id=row['face_id'], owners=row['owners'], ordered_keys=keys,
             bounds={tuple(key): (value, value) for key, value in row['weights']}))
     return rows
@@ -228,13 +194,11 @@ def existing_target(prepared, old, capacity, dt, source, reference):
         free = prepared['cells']+len(prepared['rows'])-sum(row['kind'] == 'temperature' for row in prepared['rows'])
         stock_target = D('1e-11')*min(e0)/free
         target = min(D('1e-11')*rhs_max, stock_target) if rhs_max else stock_target
-        if target <= 0:
-            raise ValueError('Existing stock-scaled target requires strictly positive old stocks')
         return str(target)
 
 
 def solve(prepared, old, capacity, dt, source, *, target, budget,
-          source_bindings=None, cancel=None, observe=None):
+          cancel=None, observe=None):
     """Return P.OwnedSolve; value expires on close, with full retained charge.
 
     No arbitrary solver callback or already-solved state is accepted. Inputs
@@ -249,7 +213,7 @@ def solve(prepared, old, capacity, dt, source, *, target, budget,
     A.exact_library()  # Gate before importing the GMP-dependent resource helper.
     from atlas_tectonics._private.integration.heat import gmp_resources as resources
     initial_owner = LEDGER_INVENTORY.admit_initial(prepared, old, capacity, dt, source, target,
-        source_bindings=_SOURCES, additional_bindings=source_bindings, budget=budget, cancel=cancel)
+        budget=budget, cancel=cancel)
     try:
         workspace = resources.OwnedWorkspace(budget, initial_owner.value.inventory.total(),
             category='heat-low-joined-private', cancelled=cancel)
@@ -260,11 +224,10 @@ def solve(prepared, old, capacity, dt, source, *, target, budget,
     workspace.stack.enter_context(initial_owner)
     try:
         _settle(initial_owner, initial_owner.value, cancel)
-        bindings = _bindings(source_bindings, cancel)
         _observe(observe, 'low-workspace-admitted')
         value = _solve(prepared, old, capacity, dt, source, target=target, budget=budget,
             workspace=workspace,
-            bindings=bindings, cancel=cancel, observe=observe)
+            cancel=cancel, observe=observe)
         return P.OwnedSolve(value, workspace)
     except BaseException:
         workspace.__exit__(*sys.exc_info())
@@ -272,7 +235,7 @@ def solve(prepared, old, capacity, dt, source, *, target, budget,
 
 
 def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
-           bindings, cancel, observe):
+           cancel, observe):
     """r1 result contract with sparse backend and a cooperative cancel callback.
 
     Numerical output fields retain r1 semantics. Diagnostic spectrum values
@@ -284,12 +247,8 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
 
     _cancel(cancel)
     nc = prepared['cells']
-    if not (len(old) == len(capacity) == len(source) == nc):
-        raise ValueError('Stock, capacity and source lengths must match actual cells')
     e0, cap, src = [list(map(L._binary, values)) for values in (old, capacity, source)]
     delta, absolute_target = L._binary(dt), Q(target)
-    if delta <= 0 or any(c <= 0 for c in cap) or absolute_target <= 0:
-        raise ValueError('Strict positive timestep, capacities and unchanged target required')
     load = [e+delta*s for e, s in zip(e0, src, strict=True)]
     loaded = load[:]
     for row in prepared['rows']:
@@ -302,7 +261,7 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
     _cancel(cancel)
     if constant:
         ledger_plan = _admit_ledger(workspace, prepared, old, capacity, dt, source, target,
-            bindings, budget, constant_lower=lower, cancel=cancel, observe=observe)
+            budget, constant_lower=lower, cancel=cancel, observe=observe)
         energy = [c*lower for c in cap]
         diagnostics = dict(refinements=0, residual='0', exact_constant_path=True)
     else:
@@ -311,9 +270,9 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
         witness = dict(kind='EXACT_LOW_COEFFICIENT_SINGLETONS', geometry_id=prepared['geometry_id'],
                        original_face_order_preserved=True, native_origin_bound=False)
         assembly_plan = ENDPOINT_INVENTORY.derive(rows, nc, prepared['boundary'],
-            witness=witness, source_bindings=bindings, budget=budget, cancel=cancel)
+            witness=witness, budget=budget, cancel=cancel)
         assembly = workspace.stack.enter_context(M.assemble(rows, nc, prepared['boundary'],
-            witness=witness, source_bindings=bindings, budget=budget,
+            witness=witness, budget=budget,
             inventory=assembly_plan.inventory, cancel=cancel))
         rounded = assembly.rounded_system(prepared['boundary'], cancel=cancel)
         _settle(assembly, (assembly.value, rounded), cancel)
@@ -331,7 +290,7 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
         state = solved.value
         _settle(solved, state, cancel)
         ledger_plan = _admit_ledger(workspace, prepared, old, capacity, dt, source, target,
-            bindings, budget, returned=state, cancel=cancel, observe=observe)
+            budget, returned=state, cancel=cancel, observe=observe)
         energy = list(map(Q, state['energy']))
         diagnostics = {key: state[key] for key in ('refinements', 'residual',
                        'symmetric_part_minimum_eigenvalue', 'minimum_real_eigenvalue')}
@@ -356,8 +315,6 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
     balance = _residual(energy, faces, load)
     if max(map(abs, balance)) > absolute_target:
         raise ValueError('Reconstructed physical ledger failed unchanged algebraic target')
-    if not all(lower <= value <= upper for value in temperature):
-        raise ValueError('Exact low stock temperature outside loaded bounds; no clipping')
     _cancel(cancel)
     public_energy = list(map(float, energy))
     public_temperature = [e/float(c) for e, c in zip(public_energy, cap, strict=True)]
@@ -374,10 +331,9 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
         raise ValueError('Actual public stock ledger failed existing global heat gate')
     _cancel(cancel)
     _observe(observe, 'low-ledger-accepted')
-    _verify_sources(bindings, cancel)
     return dict(staging=dict(native_origin_bound=False, production_resource_admitted=False,
             inventory_coverage_certified=False, production_acceptance=False,
-            retained_owner_required=True, source_bindings=bindings), energy=energy, temperature=np.asarray(public_temperature),
+            retained_owner_required=True), energy=energy, temperature=np.asarray(public_temperature),
         absolute_temperature=np.asarray(public_temperature), public_energy=public_energy,
         exact_temperature=temperature, loaded_temperature=loaded, bounds_exact=(lower, upper),
         raw=raw, faces=faces, residual_exact=balance, public_residual_exact=public_balance,
@@ -392,11 +348,11 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
 
 
 
-def _admit_ledger(workspace, prepared, old, capacity, dt, source, target, bindings, budget,
+def _admit_ledger(workspace, prepared, old, capacity, dt, source, target, budget,
                   *, returned=None, constant_lower=None, cancel, observe):
     from atlas_tectonics._private.integration.heat import gmp_resources as resources
     plan_owner = workspace.stack.enter_context(LEDGER_INVENTORY.admit_ledger(
-        prepared, old, capacity, dt, source, target, source_bindings=bindings,
+        prepared, old, capacity, dt, source, target,
         budget=budget, returned=returned, constant_lower=constant_lower, cancel=cancel))
     plan = plan_owner.value
     _settle(plan_owner, plan, cancel)

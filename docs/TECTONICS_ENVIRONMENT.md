@@ -148,12 +148,12 @@ the checked routes.
 
 ## What pins do not establish
 
-Atlas's native execution identity (`atlas_tectonics.reuse.ExecutionContext`) hashes
-the interpreter executable and selected numpy, SciPy, numba/llvmlite, shapely and
-GEOS binaries. It also records the full `sys.version`, the machine and the platform,
-and, for the numba backend, the CPU name and features. So identical version strings
-can still produce a different identity, for example with another CPython build,
-another wheel build or another CPU.
+Atlas's native execution identity (`atlas_tectonics.integration.reuse.ExecutionContext`)
+records the full `sys.version`, the machine and the platform, the numpy, SciPy, shapely,
+GEOS and decimal versions, the exact-arithmetic backend and, for the numba backend, the
+numba/llvmlite versions and the CPU name and features. It hashes no source or binary
+file. So identical version strings can still produce a different identity on another
+CPU, and another build of the same versions produces the same one.
 
 Pins specify a package set; they do not recreate binaries. A refused continuation
 is never made acceptable by matching pins. Integrity and compatibility refusals

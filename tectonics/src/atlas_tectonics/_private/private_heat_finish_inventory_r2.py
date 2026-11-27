@@ -7,22 +7,13 @@ even though the numerical predicate selects only endpoint-failing cells.
 The 64 scalar refinements retain history, not 64 rational state generations.
 Installed Python/GMP accounting remains a policy, not an allocator/RSS proof.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
-from hashlib import sha256
 from pathlib import Path
 import sys
 
 from atlas_tectonics._private import private_heat_finish_inventory_r1 as B
 
 HERE = Path(__file__).resolve().parent
-PINS = dict(B.PINS, **{
-    'atlas_tectonics/_private/private_heat_finish_inventory_r1.py': '5f17f3799a456ab098fe0674328667a6e2529f04691ccc666d1b67c665b57343',
-    'atlas_tectonics/_private/private_heat_finish_kernel_r2.py': '319e0e6a93f3dee621377f0299c2d99ec69af2da2ab2595ff6b560927e8285bc',
-    'atlas_tectonics/_private/integration/heat/public_float.py': '9ce024ccc0922034b25ea578fadf6e99c403c7132a5f91066d11f0190f1f39a1',
-})
-_SOURCES = dict(B._SOURCES, **{_atlas_identity.relkey(__file__): sha256(Path(__file__).read_bytes()).hexdigest(),
-    _atlas_identity.relkey(B.__file__): PINS['atlas_tectonics/_private/private_heat_finish_inventory_r1.py']})
 InventoryPlan = B.InventoryPlan
 
 
@@ -30,17 +21,11 @@ def _contraction(ar, d):
     low, candidate, cap, bounds, alphas = [[B._q(ar, v) for v in d[name]]
         for name in ('low', 'candidate', 'cap', 'bounds', 'alphas')]
     lo_faces, hi_faces = B._faces(ar, d['low_faces']), B._faces(ar, d['faces'])
-    if len(low) != len(candidate) or len(low) != len(cap) or len(bounds) != 2:
-        raise ValueError('Complete original contraction state required')
-    if len(lo_faces) != len(hi_faces) or len(alphas) != len(lo_faces):
-        raise ValueError('Complete original contraction faces and alphas required')
     difference = [ar.op('subtract', e, l) for e, l in zip(candidate, low, strict=True)]
     energy = [ar.op('add', l, ar.op('multiply', B.THETA, delta))
               for l, delta in zip(low, difference, strict=True)]
     faces, changes = [], []
     for left, right in zip(lo_faces, hi_faces, strict=True):
-        if left[:2] != right[:2]:
-            raise ValueError('Contraction preserves original face owner/order')
         change = ar.op('subtract', right[2], left[2])
         changes.append(change)
         faces.append((left[0], left[1], ar.op('add', left[2], ar.op('multiply', B.THETA, change))))
@@ -70,40 +55,24 @@ def _contraction(ar, d):
     return components, energy, faces
 
 
-def admit(stage, operands, *, source_bindings, budget, additional_bindings=None, cancel=None):
+def admit(stage, operands, *, budget, cancel=None):
     """Own a prospective plan; unchanged stages use frozen r1 verbatim."""
     if stage != 'public_rounding_contraction':
-        return B.admit(stage, operands, source_bindings=source_bindings, budget=budget,
-                       additional_bindings=additional_bindings, cancel=cancel)
+        return B.admit(stage, operands, budget=budget, cancel=cancel)
     B.L._check(cancel)
     gmp = B.L.A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
-    footprint, objects, _ = B.L._footprint((operands, source_bindings, additional_bindings), gmp, cancel)
+    footprint, objects, _ = B.L._footprint(operands, gmp, cancel)
     scalar = B._scalar_storage(operands, gmp, cancel)
-    maps = (source_bindings, _SOURCES) if additional_bindings is None else (source_bindings, additional_bindings, _SOURCES)
-    if any(type(values) is not dict for values in maps):
-        raise ValueError('Original source binding dictionaries required')
-    path_count = sum(len(values) for values in maps)+len(PINS)
-    source_size = max(max((_atlas_identity.as_path(path).stat().st_size for values in maps for path in values), default=0),
-                      max((_atlas_identity.as_path(name)).stat().st_size for name in PINS))
     amount = B.L._size(R.native_workspace_allowance(8*max(1, scalar), 4)
-                      +B.UNIT*(objects+1)+2*source_size)
+                      +B.UNIT*(objects+1))
     workspace = R.OwnedWorkspace(budget, amount, category='heat-finish-contraction-metadata', cancelled=cancel)
     workspace.__enter__()
     try:
         B.D._runtime(cancel)
-        for name, pin in PINS.items():
-            B.L._check(cancel)
-            if _helper_source_digest(_atlas_identity.as_path(name), owner_file=__file__) != pin:
-                raise ValueError('Reviewed contraction inventory source changed')
-        for path, pin in _SOURCES.items():
-            B.L._check(cancel)
-            if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != pin:
-                raise ValueError('Contraction inventory dependency changed since import')
         ar = B.L.RationalGrowth(gmp, R, cancel)
         components, cells, faces = _contraction(ar, operands)
-        components += [('source_read_and_binding_work', 2*source_size+B.UNIT*(4*path_count+16)),
-                       ('scalar_native_fraction_work', ar.scalar_work(rational_slots=24))]
+        components += [('scalar_native_fraction_work', ar.scalar_work(rational_slots=24))]
         work = B.L._size(sum(value for _, value in components))
         retained = B.L._size(work+B.UNIT*(objects+32))
         inventory = B.M.DiagnosticInventory(max(1, footprint), work, retained,

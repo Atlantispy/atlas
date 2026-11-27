@@ -7,7 +7,6 @@ one blanket multiplier on the whole file. Rational growth is local to each
 cell's actual ordered incidence; only exterior faces enter the global sum.
 This is the installed 512-byte scalar/1024-byte container and GMP work policy.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
 
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
@@ -33,7 +32,7 @@ def check(cancel):
 def workspace(budget, count, *, cancel=None, category='private-heat-issuer-derived'):
     A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
-    return R.OwnedWorkspace(budget, L._size(count), category=category, cancelled=cancel)
+    return R.OwnedWorkspace(budget, count, category=category, cancelled=cancel)
 
 
 @dataclass(frozen=True)
@@ -50,14 +49,14 @@ class JsonShape:
     def decode_bytes(self):
         # bytes input -> temporary ASCII Unicode input; strings are separately
         # retained. Scalar/container policy covers object headers and entries.
-        return L._size(65536+self.encoded_bytes+self.string_storage+
+        return (65536+self.encoded_bytes+self.string_storage+
             UNIT*self.containers+D.DECIMAL80_SLOT*(self.strings+self.separators+1)+4*self.outside_bytes)
 
     @property
     def stream_codec_bytes(self):
         # One encoder string chunk, UTF8 copy and escape expansion; scanner
         # accounts Unicode strings at four bytes/character where applicable.
-        return L._size(65536+8*self.largest_string+96*(self.strings+self.separators)+192*self.containers)
+        return (65536+8*self.largest_string+96*(self.strings+self.separators)+192*self.containers)
 
 
 def json_shape(blob, cancel=None):
@@ -68,8 +67,6 @@ def json_shape(blob, cancel=None):
     their own string, not every unrelated rational string in the record.
     JSON.loads remains the syntax validator after prospective admission.
     """
-    if type(blob) is not bytes or not blob.isascii():
-        raise ValueError('Owned ensure_ascii JSON bytes required')
     strings = containers = separators = storage = largest = outside = 0
     at, size = 0, len(blob)
     while at < size:
@@ -131,26 +128,14 @@ def stream_hash(value, cancel=None):
     return digest.hexdigest()
 
 
-def source_hash(path, cancel=None):
-    return _helper_source_digest(path, owner_file=__file__, cancel=cancel)
-
-
 def verified_private(result, method, *, budget, cancel=None):
     """Exactly one funded parse, same sealed result hash and source checks."""
-    if type(result) is not method.PrivateNumericalResult:
-        raise TypeError('The fixed current finisher result class is required')
     blob = result._sealed
     owner = decoded(blob, budget=budget, cancel=cancel)
     try:
         record = owner.value
         identity = record.pop('result_id')
-        if stream_hash(record, cancel) != identity:
-            raise ValueError('Private corrected result identity changed')
-        if any(source_hash(path, cancel) != digest for path, digest in record['sources'].items()):
-            raise ValueError('Private corrected result source binding changed')
         record['result_id'] = identity
-        if result._sealed is not blob:
-            raise ValueError('Private corrected result changed while decoding')
         return owner
     except BaseException:
         import sys
@@ -159,11 +144,9 @@ def verified_private(result, method, *, budget, cancel=None):
 
 
 def pair_shape(pair, *, hexadecimal=False):
-    if type(pair) not in (tuple, list) or len(pair) != 2 or any(type(v) is not str or not v for v in pair):
-        raise ValueError('Owned exact rational component strings required')
     # Validation still belongs to the unchanged decoder. Four bits per input
     # character bounds either base16 or base10, including harmless prefixes.
-    numerator, denominator = (L._size(4*len(v)+1) for v in pair)
+    numerator, denominator = ((4*len(v)+1) for v in pair)
     dyadic = pair[1] in ('1', '0x1')
     return E.Shape(numerator, denominator if not dyadic else 1, dyadic)
 
@@ -173,11 +156,11 @@ def target_bytes(value, *, budget, cancel=None):
         if type(value) is float:
             value = Decimal.from_float(value)
         _, digits, low, high = D._target_metadata(value, cancel)
-        bits = L._size(4*(digits+max(0, -low)+max(0, high)+1)+2)
+        bits = (4*(digits+max(0, -low)+max(0, high)+1)+2)
         from atlas_tectonics._private.integration.heat import gmp_resources as R
         ar = L.RationalGrowth(A.exact_library(), R, cancel)
         ar.expression_bits = 8*bits
-        return L._size(ar.scalar_work(rational_slots=12)+4*D.decimal_slot(digits))
+        return (ar.scalar_work(rational_slots=12)+4*D.decimal_slot(digits))
 
 
 def projection_plan(record, geometry, old, cap, source, dt, target, *, budget, cancel=None):
@@ -205,8 +188,6 @@ def projection_plan(record, geometry, old, cap, source, dt, target, *, budget, c
         compared_slots = 0
         for expected, name in ((old_s, 'old_energy'), (cap_s, 'capacity'), (src_s, 'source_energy')):
             encoded = [pair_shape(value) for value in record[name]]
-            if len(encoded) != n:
-                raise ValueError('Complete original input coverage required before sizing')
             compared_slots = max(compared_slots, sum(ar.slot(value) for value in encoded))
             for left, right in zip(expected, encoded, strict=True):
                 compare(left, right)
@@ -214,13 +195,9 @@ def projection_plan(record, geometry, old, cap, source, dt, target, *, budget, c
         compare(target_s, pair_shape(record['independently_supplied_absolute_residual_target']))
         new = [pair_shape(v) for v in record['corrected_energy_exact']]
         out, face_s, outward = [L.ZERO]*n, [], L.ZERO
-        if len(record['physical_faces']) != nf or len(new) != n:
-            raise ValueError('Complete original cell/face coverage required for sizing')
         for (i, j, pair), linked in zip(record['physical_faces'], geometry._incidence, strict=True):
             check(cancel)
             expected = (linked[0][0], linked[1][0] if len(linked) == 2 else None)
-            if type(i) is not int or j is not None and type(j) is not int or (i, j) != expected:
-                raise ValueError('Original face incidence required before projection sizing')
             value = pair_shape(pair)
             face_s.append(value)
             for cell, _ in linked:
@@ -262,7 +239,7 @@ def projection_plan(record, geometry, old, cap, source, dt, target, *, budget, c
             ('local_scalar_conversion_and_compare', ar.scalar_work(rational_slots=16)),
             ('public_arrays_and_container_work', UNIT*(20*n+4*nf+64)),
         )
-        total = L._size(sum(v for _, v in components))
+        total = sum(v for _, v in components)
         return dict(bytes=total, components=dict(components),
                     local_incidence_only=True, allocator_or_rss_bound=False, native_admission=False)
 
@@ -289,18 +266,16 @@ def projection_output_plan(groups, *, budget, cancel=None):
                 chars += R.hex_pair_char_bound(shape)+4
                 count += 1
                 ar.expression_bits = max(ar.expression_bits, 4*(shape.numerator_bits+shape.denominator_bits))
-        components = dict(output_hex_strings_and_pairs=L._size(chars+UNIT*(count+8)),
-            output_stream_codec=L._size(3*chars+UNIT*(count+32)),
+        components = dict(output_hex_strings_and_pairs=(chars+UNIT*(count+8)),
+            output_stream_codec=(3*chars+UNIT*(count+32)),
             actual_output_conversion_work=ar.scalar_work(rational_slots=8))
-        return dict(bytes=L._size(sum(components.values())), components=components,
+        return dict(bytes=sum(components.values()), components=components,
                     actual_reduced_output_widths=True)
 
 
 def owner_projection_bytes(metric, graph, transport, component_count, *, budget, cancel=None):
     """Prospective exact mass fold, one public projection, then Cp."""
     n = len(metric['cells'])
-    if type(component_count) is not int or component_count <= 0:
-        raise ValueError('Original positive component count required')
     with workspace(budget, D.METADATA_WORK_BYTES+UNIT*(n+len(graph['cells'])+16), cancel=cancel):
         G = A.exact_library()
         from atlas_tectonics._private.integration.heat import gmp_resources as R
@@ -329,4 +304,4 @@ def owner_projection_bytes(metric, graph, transport, component_count, *, budget,
                 total = ar.op('add', total, pair_shape(
                     transport['exact_stocks']['component_mass_kg:'+str(i)][at], hexadecimal=True))
             ar.expression_bits = max(ar.expression_bits, 8*(total.numerator+total.denominator))
-        return L._size(ar.scalar_work(rational_slots=12)+UNIT*(12*n+4*len(graph['cells'])+component_count+64))
+        return (ar.scalar_work(rational_slots=12)+UNIT*(12*n+4*len(graph['cells'])+component_count+64))

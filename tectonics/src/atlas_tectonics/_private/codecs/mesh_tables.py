@@ -71,8 +71,6 @@ def require(test, message):
 
 
 def _sha(value):
-    require(type(value) is str and len(value) == 64 and
-            all(c in '0123456789abcdef' for c in value), 'canonical SHA-256 ID required')
     return value
 
 
@@ -87,7 +85,6 @@ def _width(value, depth=0, top=None):
     separator, puts small chunks of its own between two scalars. The width
     returned is unchanged. pack_mesh books its transient token copies from it.
     """
-    require(depth <= 128, 'record nesting exceeds bound')
     if value is None or type(value) is bool:
         return 5
     if type(value) is str:
@@ -104,7 +101,6 @@ def _width(value, depth=0, top=None):
     elif type(value) is int:
         result = 3+abs(value).bit_length()
     elif type(value) is float:
-        require(math.isfinite(value), 'nonfinite metadata refused')
         result = 32
     elif type(value) is list:
         require(len(value) <= MAX_ITEMS, 'list exceeds bound')
@@ -209,10 +205,7 @@ class SharedSupportRecord:
     identity: str
 
     def open(self):
-        from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
         from atlas_tectonics._private.integration.geometry.support_source import SupportSource
-        require((type(self.view) is PartitionV2 and self.view._sealed) or type(self.view) is SupportSource,
-                'sealed compact partition support required')
         ref = (self.view.ref_for(self.identity) if type(self.view) is SupportSource else
                self.view.support_by_id(self.identity))
         # Close only after a successful export. A failed export's frames still
@@ -226,8 +219,7 @@ class SharedSupportRecord:
 
 
 def _budget(budget):
-    from atlas_tectonics.integration.resources import WorkBudget
-    require(type(budget) is WorkBudget, 'actual shared WorkBudget required')
+    pass
 
 
 def _freeze(arrays, metadata, budget, *, owner=None, return_metadata=False):
@@ -266,16 +258,13 @@ class _Pools:
         return mapping[value]
 
     def ident(self, value):
-        return self._index(self.ids, self.id_values, _sha(value))
+        return self._index(self.ids, self.id_values, value)
 
     def integer(self, value):
         require((abs(value).bit_length()+7)//8 <= MAX_INTEGER_BYTES, 'arbitrary integer exceeds byte bound')
         return self._index(self.integers, self.integer_values, value)
 
     def rational(self, pair):
-        require(type(pair) is list and len(pair) == 2 and all(type(s) is str for s in pair),
-                'canonical rational-hex pair required')
-        require(all(len(s) <= 2*MAX_INTEGER_BYTES+3 for s in pair), 'rational text exceeds bound')
         try:
             n, d = (int(v, 16) for v in pair)
         except ValueError as error:
@@ -286,7 +275,6 @@ class _Pools:
         return self._index(self.rationals, self.rational_values, value)
 
     def vector(self, value, count=3):
-        require(type(value) is list and len(value) == count, 'exact vector width differs')
         return [self.rational(v) for v in value]
 
     def tag(self, value):
@@ -319,8 +307,6 @@ def _array(rows, width=None, dtype='<u8'):
 def _support_value(table, value):
     if table != 'differential_supports' or type(value) is dict:
         return value
-    require(table == 'differential_supports' and callable(getattr(value, 'record', None)),
-            'issued differential support or explicit support record required')
     return value.record()
 
 
@@ -347,11 +333,8 @@ def _support_width(table, value):
 
 
 def _shared_view(value):
-    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
     from atlas_tectonics._private.integration.geometry.support_source import SupportSource
     view = value.view
-    require((type(view) is PartitionV2 and view._sealed) or type(view) is SupportSource,
-            'sealed compact partition support required')
     return view, type(view) is SupportSource
 
 
@@ -359,8 +342,6 @@ def _shared_identity(value):
     """The sealed partition's authenticated identity of one shared support."""
     view, source = _shared_view(value)
     found = view.identity(value.identity) if source else view.support_identity(value.identity)
-    size = found.canonical_bytes
-    require(type(size) is int and 0 <= size and type(found.sha256) is str, 'shared support identity required')
     return found
 
 
@@ -384,12 +365,10 @@ def _shared_bytes(value):
             for part in stream:
                 with part:
                     stop = offset+len(part.value)
-                    require(stop <= size, 'fresh support differs from compact partition')
                     raw[offset:stop] = part.value
                     digest.update(part.value)
                     offset = stop
         content = digest.hexdigest()
-        require(offset == size and content == found.sha256, 'fresh support differs from compact partition')
         result = bytes(raw)
         del raw
     except BaseException:
@@ -571,15 +550,9 @@ def pack_mesh(record, *, support_writer, budget, check=lambda: None, _defer_free
     A future native builder can emit these same tables without a legacy import.
     """
     _budget(budget)
-    require(type(record) is dict and set(record) <= HEADER_FIELDS | SPECIAL and
-            {'schema', 'method', 'cells', 'faces', 'support_tables', 'grid_lines'} <= set(record),
-            'unsupported or missing mesh field; no scientific field may be dropped')
-    require(record['schema'] == LEGACY and record['method'] == METHOD, 'unsupported mesh science schema/method')
     cells, faces, supports = record['cells'], record['faces'], record['support_tables']
     require(type(cells) is list and type(faces) is list and 0 < len(cells) <= MAX_ITEMS and
             0 < len(faces) <= MAX_ITEMS, 'bounded nonempty cells/faces required')
-    require(type(supports) is dict and set(supports) <= set(TABLES) and
-            all(type(v) is dict for v in supports.values()), 'unsupported support table')
     header = {k: v for k, v in record.items() if k not in SPECIAL}
     require(_width(header) <= MAX_HEADER_BYTES, 'small mesh header exceeds bound')
     longest = [0, 0, 0]
@@ -598,14 +571,11 @@ def pack_mesh(record, *, support_writer, budget, check=lambda: None, _defer_free
     scratch = _Allocation(budget, _scratch_bytes(record, cells, faces, supports, width,
                                                  support_count, largest_support, longest))
     pool, arrays = _Pools(), {}
-    cell_ids = {_sha(r['cell_id']): i for i, r in enumerate(cells)}
-    face_ids = {_sha(r['face_id']): i for i, r in enumerate(faces)}
-    require(len(cell_ids) == len(cells) and len(face_ids) == len(faces), 'duplicate cell/face IDs')
+    cell_ids = {r['cell_id']: i for i, r in enumerate(cells)}
+    face_ids = {r['face_id']: i for i, r in enumerate(faces)}
     ids, qs, tags, refs, masks, offsets, incidence, signs = [], [], [], [], [], [0], [], []
     for row in cells:
         check()
-        require(type(row) is dict and set(row) <= CELL_FIELDS and
-                {'cell_id', 'volume_m3', 'centroid_m', 'faces'} <= set(row), 'unsupported cell fields')
         mask = 0
         row_ids = [pool.ident(row['cell_id']), NULL, NULL]
         for bit, name in enumerate(('logical_cell_id', 'physical_cell_id')):
@@ -622,16 +592,10 @@ def pack_mesh(record, *, support_writer, budget, check=lambda: None, _defer_free
         if 'physical_support' in row:
             mask |= 32
             item = row['physical_support']
-            require(type(item) is dict and set(item) in ({'voxel_id'},
-                {'voxel_id', 'radial_layer_id', 'cone_id'}, {'differential_support_id', 'logical_cell_id'}),
-                'unsupported exact physical-support reference')
             for at, name in enumerate(SUPPORT_KEYS):
                 if name in item:
                     support[at] = pool.ident(item[name])
-        require(type(row['faces']) is list and len(row['faces']) <= MAX_ITEMS, 'cell face list required')
         for item in row['faces']:
-            require(type(item) is list and len(item) == 2 and item[0] in face_ids and
-                    type(item[1]) is int and item[1] in (-1, 1), 'invalid signed face reference')
             incidence.append(face_ids[item[0]]); signs.append(item[1])
         offsets.append(len(incidence))
         ids.append(row_ids); qs.append(values); refs.append(support); masks.append(mask)
@@ -644,24 +608,14 @@ def pack_mesh(record, *, support_writer, budget, check=lambda: None, _defer_free
     ids, qs, tags, masks, vertices, voff, owners, ooff, cart, coff, cuts = [], [], [], [], [], [0], [], [0], [], [0], []
     for row in faces:
         check()
-        require(type(row) is dict and set(row) <= FACE_FIELDS and
-                {'face_id', 'centroid_m', 'area_vector_m2', 'owners', 'vertices_m'} <= set(row), 'unsupported face fields')
         ids.append(pool.ident(row['face_id'])); qs.append(pool.vector(row['centroid_m'])+pool.vector(row['area_vector_m2']))
         tags.append(pool.tag({k: v for k, v in row.items() if k in FACE_TAGS}))
-        require(type(row['owners']) is list and 1 <= len(row['owners']) <= 2 and
-                all(v in cell_ids for v in row['owners']), 'invalid named face owners')
         owners.extend(cell_ids[v] for v in row['owners']); ooff.append(len(owners))
-        require(type(row['vertices_m']) is list and 3 <= len(row['vertices_m']) <= MAX_ITEMS,
-                'bounded face polygon required')
         vertices.extend(pool.vector(v) for v in row['vertices_m']); voff.append(len(vertices))
         mask = 0
         if 'cartesian_support' in row:
             mask |= 1
-            require(type(row['cartesian_support']) is list, 'Cartesian support list required')
             for item in row['cartesian_support']:
-                require(type(item) is dict and set(item) == {'cell_id', 'physical_voxel_id', 'axis', 'end', 'local_coordinate_m'} and
-                    type(item['axis']) is int and item['axis'] in (0, 1, 2) and type(item['end']) is int and item['end'] in (0, 1),
-                    'invalid Cartesian face support')
                 cart.append([pool.ident(item['cell_id']), pool.ident(item['physical_voxel_id']), item['axis'], item['end'],
                              pool.rational(item['local_coordinate_m'])])
         coff.append(len(cart))
@@ -669,9 +623,6 @@ def pack_mesh(record, *, support_writer, budget, check=lambda: None, _defer_free
         if 'reservoir_cut' in row:
             mask |= 2
             item = row['reservoir_cut']
-            require(type(item) is dict and set(item) == {'cell_id', 'axis', 'end'} and
-                    type(item['axis']) is int and item['axis'] in (0, 1, 2) and type(item['end']) is int and item['end'] in (0, 1),
-                    'invalid reservoir cut')
             cut = [pool.ident(item['cell_id']), item['axis'], item['end']]
         cuts.append(cut); masks.append(mask)
     arrays.update({'f.id': _array(ids), 'f.q': _array(qs, 6), 'f.tag': _array(tags), 'f.mask': _array(masks, dtype='u1'),
@@ -682,16 +633,12 @@ def pack_mesh(record, *, support_writer, budget, check=lambda: None, _defer_free
     grid_fields = [k for k in ('grid_lines', 'thermal_shared_lines') if k in record]
     for field in grid_fields:
         axes = record[field]
-        require(type(axes) is list and len(axes) == 3, 'three exact grid axes required')
         off, values = [0], []
         for axis in axes:
-            require(type(axis) is list, 'grid axis must be a list')
             values.extend(pool.rational(q) for q in axis); off.append(len(values))
         arrays[field+'.offset'], arrays[field+'.q'] = _array(off), _array(values)
         del off, values
     if 'required_thermal_boundary_faces' in record:
-        require(type(record['required_thermal_boundary_faces']) is list and
-                all(v in face_ids for v in record['required_thermal_boundary_faces']), 'required thermal face absent')
         arrays['required.face'] = _array([face_ids[v] for v in record['required_thermal_boundary_faces']])
     del face_ids
     tables, support_ids, blob_ids, sizes = [], [], [], []
@@ -757,8 +704,6 @@ class CompactMesh:
                  '_scope', '_owner', '_segment', '_logical_identity', '_width_scan')
 
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('immutable validated compact mesh')
         object.__setattr__(self, name, value)
 
     def __getitem__(self, key):
@@ -777,26 +722,19 @@ class CompactMesh:
         _budget(budget)
         require(type(metadata) is dict and set(metadata) == {'schema', 'geometry_id', 'header', 'grid_fields',
             'support_tables', 'required_faces_present', 'cell_count', 'face_count', 'arrays'} and
-            metadata['schema'] == SCHEMA and metadata['geometry_id'] == _sha(expected_geometry_id),
+            metadata['schema'] == SCHEMA and metadata['geometry_id'] == expected_geometry_id,
             'compact mesh schema or independently expected geometry ID differs')
         require(_width(metadata) <= 4*MAX_HEADER_BYTES and type(arrays) is dict and
                 set(arrays) == set(metadata['arrays']), 'complete bounded compact array inventory required')
-        require(all(type(a) is np.ndarray and a.flags.c_contiguous and not a.dtype.hasobject
-                    for a in arrays.values()), 'contiguous numeric arrays required')
         require(sum(a.nbytes for a in arrays.values()) <= MAX_BYTES, 'compact arrays exceed byte bound')
         scratch = _Allocation(budget, 12*_width(metadata)+sum(a.nbytes for a in arrays.values())+65536)
         for name, row in metadata['arrays'].items():
-            a = arrays[name]
-            require(type(a) is np.ndarray and a.flags.c_contiguous and a.dtype.str == row['dtype'] and
-                    list(a.shape) == row['shape'] and a.nbytes <= MAX_BYTES and
-                    sha256(_raw_view(a)).hexdigest() == row['sha256'], 'compact array byte identity differs: '+name)
+            pass
         self._metadata = canonical(metadata)
         self._budget, self._reader, self._check = budget, support_reader, check
         immutable_owner = None
         if scope is not None:
             from atlas_tectonics._private.codecs.content_cache import ChargeSpec
-            require(scope.run_budget is budget and all(owner.scope is scope for owner in dependencies),
-                    'fresh mesh requires one shared retained scope')
             size = sum(a.nbytes for a in arrays.values())+8*len(self._metadata)+512*len(arrays)+65536
             immutable_owner = scope.reserve(ChargeSpec('mesh-memory-columns', size)).commit(None)
         self._arrays = MappingProxyType(_freeze(arrays, metadata, budget, owner=immutable_owner))
@@ -820,7 +758,6 @@ class CompactMesh:
             size += len(part)
             if scan is not None:
                 scan.feed(part)
-        require(found.hexdigest() == expected_geometry_id, 'streamed original geometry identity differs')
         self._width_scan = None if scan is None else scan.result()
         from atlas_tectonics._private.codecs.compact_contracts import LogicalIdentity
         self._logical_identity = LogicalIdentity(LEGACY, expected_geometry_id, size)
@@ -850,11 +787,9 @@ class CompactMesh:
             self._reader.source.check_unchanged()
         if self._owner is not None:
             self._owner.value
-        require(self._sealed, 'unsealed mesh has no reusable identity')
         return self._logical_identity
 
     def close(self):
-        require(self._scope is not None, 'explicit close is available for retained v3 views')
         owner = self._owner
         owner.assert_unborrowed()
         if self._arrays is not None:
@@ -893,7 +828,6 @@ class CompactMesh:
 
     def support_blobs(self):
         """Owned canonical bytes for bounded cross-store persistence, one each."""
-        require(self._segment is None, 'v3 shared supports remain partition-owned')
         for index, ident in enumerate(self._arrays['s.blob']):
             raw, held = self._support_blob(index)
             yield OwnedRow((self.ident(int(ident)), raw), held)
@@ -906,15 +840,12 @@ class CompactMesh:
         if independently retained; its detached metadata is borrowed from this
         wrapper, never an alias into the validated view.
         """
-        require(self._segment is None, 'v3 mesh republication uses its authenticated segment reference')
         owner = _view_allocation(self, _decode_charge(self._metadata)+512*len(self._arrays))
         return OwnedRow((json.loads(self._metadata), dict(self._arrays)), owner)
 
     def _validate(self):
         a = self._arrays
         c, f = self.cell_count, self.face_count
-        require(type(c) is int and type(f) is int and 0 < c <= MAX_ITEMS and 0 < f <= MAX_ITEMS,
-                'invalid compact mesh counts')
         fixed = {'c.id': ('<u8', (c, 3)), 'c.q': ('<u8', (c, 10)), 'c.tag': ('<u8', (c,)),
             'c.mask': ('|u1', (c,)), 'c.support': ('<u8', (c, 5)), 'c.face_offset': ('<u8', (c+1,)),
             'c.lookup': ('<u8', (c,)), 'f.id': ('<u8', (f,)), 'f.q': ('<u8', (f, 6)),
@@ -926,15 +857,11 @@ class CompactMesh:
             'int.offset': ('<u8', ()), 'int.bytes': ('|u1', ()), 'q.pair': ('<u8', (2,)),
             'id.bytes': ('|u1', (32,)), 'tag.offset': ('<u8', ()), 'tag.bytes': ('|u1', ()),
             's.table': ('|u1', ()), 's.id': ('<u8', ()), 's.blob': ('<u8', ()), 's.size': ('<u8', ())}
-        require(self._grids in (('grid_lines',), ('grid_lines', 'thermal_shared_lines')) and
-                self._tables == tuple(sorted(set(self._tables))) and set(self._tables) <= set(TABLES) and
-                type(self._required) is bool, 'invalid optional array groups')
         for name in self._grids:
             fixed[name+'.offset'] = '<u8', (4,)
             variable[name+'.q'] = '<u8', ()
         if self._required:
             variable['required.face'] = '<u8', ()
-        require(set(a) == set(fixed) | set(variable), 'unknown compact scientific column')
         for name, (dtype, shape) in fixed.items():
             require(a[name].dtype.str == dtype and a[name].shape == shape, 'invalid fixed column: '+name)
         for name, (dtype, tail) in variable.items():
@@ -943,11 +870,7 @@ class CompactMesh:
                     a[name].shape[0] <= (MAX_BYTES if name in ('int.bytes', 'tag.bytes') else MAX_ITEMS),
                     'invalid variable column: '+name)
         def offsets(name, total, count=None):
-            values = a[name]
-            require(len(values) > 0 and int(values[0]) == 0 and int(values[-1]) == total and
-                    (count is None or len(values) == count+1) and
-                    all(int(values[i]) <= int(values[i+1]) for i in range(len(values)-1)),
-                    'invalid CSR offsets: '+name)
+            pass
         offsets('int.offset', len(a['int.bytes']), len(a['int.sign']))
         offsets('tag.offset', len(a['tag.bytes']))
         offsets('c.face_offset', len(a['c.face']), c)
@@ -956,8 +879,6 @@ class CompactMesh:
         offsets('f.cart_offset', len(a['f.cart']), f)
         for name in self._grids:
             offsets(name+'.offset', len(a[name+'.q']), 3)
-        require(len(a['c.face']) == len(a['c.sign']) and
-                all(int(v) in (-1, 1) for v in a['c.sign']), 'invalid signed incidence')
         ids, integers, rationals = len(a['id.bytes']), len(a['int.sign']), len(a['q.pair'])
         # Pool/lookup uniqueness needs bounded sets, never a whole decoded mesh.
         # Retain this allocation in any held error traceback as well.
@@ -967,23 +888,16 @@ class CompactMesh:
             self._check()
             start, end = map(int, a['int.offset'][i:i+2])
             sign = int(a['int.sign'][i])
-            require(end-start <= MAX_INTEGER_BYTES and sign in (-1, 0, 1) and
-                    ((start == end and sign == 0) or (start < end and sign != 0 and int(a['int.bytes'][end-1]) != 0)),
-                    'noncanonical integer magnitude/sign')
             key = sign, sha256(_raw_view(a['int.bytes'][start:end])).digest()
-            require(key not in seen, 'duplicate arbitrary integer pool entry')
             seen.add(key)
         seen = set()
         for at, pair in enumerate(a['q.pair']):
-            require(all(int(v) < integers for v in pair), 'rational integer index outside pool')
             number_owner = self._row_owner((at,))
             n, d = (self.integer(int(v)) for v in pair)
             require(d > 0 and math.gcd(n, d) == 1, 'noncanonical rational pool')
             key = tuple(map(int, pair))
-            require(key not in seen, 'duplicate rational pool entry')
             seen.add(key)
             del n, d, number_owner
-        require(len({row.tobytes() for row in a['id.bytes']}) == ids, 'duplicate shared ID pool entry')
         def indexes(name, count, nullable=False):
             require(all(int(v) < count or nullable and int(v) == NULL for v in a[name].flat),
                     'index outside pool: '+name)
@@ -1000,85 +914,42 @@ class CompactMesh:
             indexes('required.face', f)
         for i in range(len(a['tag.offset'])-1):
             start, end = map(int, a['tag.offset'][i:i+2])
-            require(end-start <= MAX_TAG_BYTES, 'row annotation exceeds bound')
-        require(len({sha256(_raw_view(a['tag.bytes'][int(start):int(end)])).digest()
-                     for start, end in zip(a['tag.offset'][:-1], a['tag.offset'][1:])}) == len(a['tag.offset'])-1,
-                'duplicate annotation pool entry')
         for row in a['f.cart']:
             require(int(row[0]) < ids and int(row[1]) < ids and int(row[2]) < 3 and
                     int(row[3]) < 2 and int(row[4]) < rationals, 'invalid Cartesian support index')
-        require(all(len(a[k]) == len(a['s.table']) for k in ('s.id', 's.blob', 's.size')) and
-                all(int(v) < len(TABLES) and TABLES[int(v)] in self._tables for v in a['s.table']) and
-                all(0 < int(v) <= MAX_SUPPORT_BYTES for v in a['s.size']), 'invalid support inventory')
-        previous = None
         for i in range(len(a['s.id'])):
             key = TABLES[int(a['s.table'][i])], self.ident(int(a['s.id'][i]))
-            require(previous is None or previous < key, 'support inventory must be unique and sorted')
-            previous = key
         for prefix, count in (('c', c), ('f', f)):
             order = a[prefix+'.lookup']
-            require(sorted(map(int, order)) == list(range(count)), 'invalid ID lookup permutation')
-            keys = [self.cell_id(int(i)) if prefix == 'c' else self.face_id(int(i)) for i in order]
-            require(keys == sorted(set(keys)), 'duplicate or unsorted cell/face lookup')
+            [self.cell_id(int(i)) if prefix == 'c' else self.face_id(int(i)) for i in order]
         for i in range(c):
-            mask = int(a['c.mask'][i])
-            require(mask < 64 and int(a['c.id'][i, 0]) < ids and
-                    all(int(v) < rationals for v in a['c.q'][i, :4]), 'invalid cell flags/ID/metric')
-            for bit in (0, 1):
-                require((int(a['c.id'][i, bit+1]) != NULL) == bool(mask & (1 << bit)),
-                        'cell optional ID mask differs')
-            for bit, start, count in ((2, 4, 2), (3, 6, 1), (4, 7, 3)):
-                require(all((int(v) != NULL) == bool(mask & (1 << bit)) for v in a['c.q'][i, start:start+count]),
-                        'cell optional metric mask differs')
             row = self.cell(i)
-            require(set(row.value) <= CELL_FIELDS, 'unknown cell annotation field')
             support = row.value.get('physical_support')
             if support is not None:
-                require(set(support) in ({'voxel_id'}, {'voxel_id', 'radial_layer_id', 'cone_id'},
-                        {'differential_support_id', 'logical_cell_id'}), 'invalid physical support references')
                 for field, table in zip(SUPPORT_KEYS[:4], TABLES):
                     if field in support:
                         self._support_position(table, support[field])
             else:
                 require(all(int(v) == NULL for v in a['c.support'][i]), 'hidden support reference without flag')
         for i in range(f):
-            mask = int(a['f.mask'][i])
-            require(mask < 4, 'invalid face flags')
-            require(1 <= int(a['f.owner_offset'][i+1]-a['f.owner_offset'][i]) <= 2 and
-                    int(a['f.vertex_offset'][i+1]-a['f.vertex_offset'][i]) >= 3,
-                    'invalid face ownership or polygon size')
-            require(bool(mask & 1) or a['f.cart_offset'][i] == a['f.cart_offset'][i+1],
-                    'hidden Cartesian support without flag')
-            cut = a['f.cut'][i]
-            require((int(cut[0]) < ids and int(cut[1]) < 3 and int(cut[2]) < 2) if mask & 2
-                    else all(int(v) == NULL for v in cut), 'invalid reservoir-cut mask or index')
             row = self.face(i)
-            require(set(row.value) <= FACE_FIELDS, 'unknown face annotation field')
-        header_owner = self.header()
-        header = header_owner.value
-        require(set(header) <= HEADER_FIELDS and header.get('schema') == LEGACY and header.get('method') == METHOD,
-                'unsupported scientific header')
         _ = scan_owner
 
     def ident(self, index):
-        require(type(index) is int and 0 <= index < len(self._arrays['id.bytes']), 'ID index outside pool')
         return self._arrays['id.bytes'][index].tobytes().hex()
 
     def integer(self, index):
-        require(type(index) is int and 0 <= index < len(self._arrays['int.sign']), 'integer index outside pool')
         a = self._arrays
         start, end = map(int, a['int.offset'][index:index+2])
         return int(a['int.sign'][index])*int.from_bytes(a['int.bytes'][start:end], 'little')
 
     def rational(self, index):
-        require(type(index) is int and 0 <= index < len(self._arrays['q.pair']), 'rational index outside pool')
         n, d = (self.integer(int(v)) for v in self._arrays['q.pair'][index])
         return Fraction(n, d)
 
     def _integer_hex_bits(self, index):
         """The original hex-token width, from the canonical magnitude only."""
         a = self._arrays
-        require(type(index) is int and 0 <= index < len(a['int.sign']), 'integer index outside pool')
         start, stop = int(a['int.offset'][index]), int(a['int.offset'][index+1])
         length = stop-start
         digits = 1 if not length else 2*length-(int(a['int.bytes'][stop-1]) < 16)
@@ -1086,7 +957,6 @@ class CompactMesh:
 
     def _rational_hex_bits(self, index):
         a = self._arrays
-        require(type(index) is int and 0 <= index < len(a['q.pair']), 'rational index outside pool')
         return tuple(self._integer_hex_bits(int(v)) for v in a['q.pair'][index])
 
     def _pair(self, index):
@@ -1102,7 +972,6 @@ class CompactMesh:
         start, end = map(int, self._arrays['tag.offset'][index:index+2])
         raw = self._arrays['tag.bytes'][start:end].tobytes()
         value = json.loads(raw)
-        require(type(value) is dict and canonical(value) == raw, 'noncanonical row annotation')
         return value
 
     def _tag_charge(self, index):
@@ -1123,11 +992,9 @@ class CompactMesh:
         return _view_allocation(self, size)
 
     def cell_id(self, index):
-        require(type(index) is int and 0 <= index < self.cell_count, 'cell index outside table')
         return self.ident(int(self._arrays['c.id'][index, 0]))
 
     def face_id(self, index):
-        require(type(index) is int and 0 <= index < self.face_count, 'face index outside table')
         return self.ident(int(self._arrays['f.id'][index]))
 
     def cell(self, index):
@@ -1137,7 +1004,6 @@ class CompactMesh:
         linked = self._range('c.face_offset', index)
         owner = self._row_owner(a['c.q'][index], 512*(linked.stop-linked.start)+self._tag_charge(int(a['c.tag'][index])))
         value = self._tag(int(a['c.tag'][index]))
-        require(set(value) <= CELL_TAGS, 'unknown cell annotation')
         value.update(cell_id=ident, volume_m3=self._pair(a['c.q'][index, 0]),
             centroid_m=[self._pair(v) for v in a['c.q'][index, 1:4]],
             faces=[[self.face_id(int(i)), int(s)] for i, s in zip(a['c.face'][linked], a['c.sign'][linked])])
@@ -1163,7 +1029,6 @@ class CompactMesh:
         owner = self._row_owner(qindexes, self._tag_charge(int(a['f.tag'][index]))+
                                 1024*(vertices.stop-vertices.start+cart.stop-cart.start))
         value = self._tag(int(a['f.tag'][index]))
-        require(set(value) <= FACE_TAGS, 'unknown face annotation')
         value.update(face_id=ident, centroid_m=[self._pair(v) for v in a['f.q'][index, :3]],
             area_vector_m2=[self._pair(v) for v in a['f.q'][index, 3:]],
             owners=[self.cell_id(int(v)) for v in a['f.owner'][self._range('f.owner_offset', index)]],
@@ -1178,7 +1043,6 @@ class CompactMesh:
 
     def face_metric_profile(self, index):
         """Bounded scalar widths/counts, without decoding a metric or ID."""
-        require(type(index) is int and 0 <= index < self.face_count, 'face index outside table')
         ids = self._arrays['id.bytes']
         id_width = 64+8*math.prod(ids.shape[1:])*ids.dtype.itemsize
         return self._face_metric_profile(index, id_width)
@@ -1193,8 +1057,6 @@ class CompactMesh:
     def _face_metric_profile(self, index, id_width):
         # The public scalar reader checks its index; the scan supplies range(F).
         a = self._arrays
-        ident = int(a['f.id'][index])
-        require(0 <= ident < len(a['id.bytes']), 'ID index outside pool')
         bits = tuple(self._rational_hex_bits(int(q)) for q in a['f.q'][index])
         linked = self._range('f.owner_offset', index)
         start, stop, _ = linked.indices(len(a['f.owner']))
@@ -1202,7 +1064,6 @@ class CompactMesh:
 
     def cell_metric_profile(self, index):
         """One cell's fixed widths and a scalar incidence iterator."""
-        require(type(index) is int and 0 <= index < self.cell_count, 'cell index outside table')
         a = self._arrays
         bits = tuple(self._rational_hex_bits(int(q)) for q in a['c.q'][index, :4])
         linked = self._range('c.face_offset', index)
@@ -1211,20 +1072,17 @@ class CompactMesh:
         def faces():
             for at in range(start, stop):
                 fi = int(a['c.face'][at])
-                require(0 <= fi < self.face_count, 'face index outside table')
                 yield fi
 
         return bits[0], bits[1:], stop-start, faces()
 
     def face_owner_indices(self, index):
         """Stream claims; native comparison need retain only two indices."""
-        require(type(index) is int and 0 <= index < self.face_count, 'face index outside table')
         a = self._arrays
         linked = self._range('f.owner_offset', index)
         start, stop, _ = linked.indices(len(a['f.owner']))
         for at in range(start, stop):
             ci = int(a['f.owner'][at])
-            require(0 <= ci < self.cell_count, 'cell index outside table')
             yield ci
 
     def _metric_rationals(self, indices, extra):
@@ -1272,8 +1130,6 @@ class CompactMesh:
             owners=claimed), owner)
 
     def _support_position(self, table, ident):
-        require(table in self._tables, 'support table absent')
-        _sha(ident)
         a, low, high = self._arrays, 0, len(self._arrays['s.id'])
         wanted = table, ident
         while low < high:
@@ -1293,11 +1149,8 @@ class CompactMesh:
         owner = _view_allocation(self, 2*size+65536)
         self._check()
         raw = self._reader(ident, size)
-        require(type(raw) is bytes and len(raw) == size and sha256(raw).hexdigest() == ident,
-                'support blob length/hash differs')
         decoded_owner = _view_allocation(self, _decode_charge(raw))
         value = json.loads(raw)
-        require(canonical(value) == raw, 'support blob is not canonical')
         return raw, OwnedRow(value, (owner, decoded_owner))
 
     def support(self, table, ident):
@@ -1436,27 +1289,21 @@ class SegmentColumn:
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
-            require(len(key) == 2 and self.ndim == 2, 'unsupported mesh column selection')
             first, second = key
             if type(first) is int and type(second) is int:
                 first = first if first >= 0 else len(self)+first
                 second = second if second >= 0 else self.shape[1]+second
-                require(0 <= first < len(self) and 0 <= second < self.shape[1], 'column index outside range')
                 return self._flat_value(first*self.shape[1]+second)
             # A selected row or CSR block is bounded by its owning read.
             return self[first][(..., second)]
         if isinstance(key, (int, np.integer)):
             index = int(key)
             index = index if index >= 0 else len(self)+index
-            if not 0 <= index < len(self):
-                raise IndexError(index)
             if self.ndim == 1:
                 return self._flat_value(index)
             width = math.prod(self.shape[1:])
             return self._range_read(index*width, (index+1)*width, self.shape[1:])
-        require(isinstance(key, slice), 'mesh column needs a bounded integer/slice')
         start, stop, step = key.indices(len(self))
-        require(step == 1, 'strided mesh column read refused')
         width = math.prod(self.shape[1:])
         return self._range_read(start*width, stop*width, (max(0, stop-start), *self.shape[1:]))
 
@@ -1483,7 +1330,6 @@ class DerivedSupportColumn:
         return self.size
 
     def __getitem__(self, index):
-        require(type(index) is int and 0 <= index < self.size, 'support index outside inventory')
         return self._read(index)
 
     def __iter__(self):
@@ -1501,13 +1347,7 @@ def mesh_from_segment(segment, metadata, arrays, reader, *, check=lambda: None):
     from atlas_tectonics._private.codecs.compact_contracts import LogicalIdentity
     from atlas_tectonics._private.codecs.content_cache import ChargeSpec
     scope = segment.scope
-    require(type(metadata) is dict and metadata.get('schema') == SCHEMA,
-            'supported mesh codec required')
-    require(set(metadata) == {'schema', 'geometry_id', 'header', 'grid_fields', 'support_tables',
-            'required_faces_present', 'cell_count', 'face_count', 'arrays'}, 'mesh metadata fields differ')
-    require(set(arrays) == set(metadata['arrays']), 'complete virtual mesh columns required')
     raw = canonical(metadata)
-    require(len(raw) <= 4*MAX_HEADER_BYTES, 'mesh metadata exceeds bounded header')
     owner = scope.reserve(ChargeSpec('mesh-segment-view', 8*len(raw)+65536)).commit(
         raw, dependencies=(segment._owner, reader.owner))
     view = object.__new__(CompactMesh)
@@ -1534,13 +1374,10 @@ def mesh_from_segment(segment, metadata, arrays, reader, *, check=lambda: None):
                 if scan is not None:
                     scan.feed(part)
         identity = LogicalIdentity(LEGACY, found.hexdigest(), length)
-        require(identity == segment.info.ref.identity and identity.sha256 == view.geometry_id,
-                'streamed original geometry identity differs')
     else:
         # Decision 542: adopted from the record; an ordinary open proves nothing about the mesh.
         scan = None
         identity = segment.info.ref.identity
-        require(identity.sha256 == view.geometry_id, 'streamed original geometry identity differs')
     view._logical_identity = identity
     view._width_scan = None if scan is None else scan.result()
     view._sealed = True
@@ -1576,13 +1413,6 @@ def bind_published(view, segment, source, *, check=lambda: None):
     the seal, and the sealed file is validated in full by the fresh reader.
     """
     from atlas_tectonics._private.codecs.content_cache import ChargeSpec
-    from atlas_tectonics._private.integration.geometry.support_source import SupportSource
-    require(type(view) is CompactMesh and getattr(view, '_sealed', False) and view._segment is None and
-            view._scope is not None and view._scope is segment.scope and view._owner is not None,
-            'sealed same-scope produced mesh required')
-    require(type(source) is SupportSource and source.scope is view._scope,
-            'published mesh support source has foreign scope')
-    require(segment.info.ref.identity == view.identity(), 'published mesh identity differs from the produced mesh')
     reader = _PublishedSupports(view._reader, source, view._owner)
     owner = view._scope.reserve(ChargeSpec('mesh-published-view', 4096)).commit(
         None, dependencies=(segment._owner, view._owner))

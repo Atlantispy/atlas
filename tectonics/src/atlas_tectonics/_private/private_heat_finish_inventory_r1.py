@@ -13,12 +13,10 @@ All stage owners must remain held with the returned sealed bytes/diagnostics.
 Calling the result's debug record() creates a NEW caller-owned JSON view; an
 unbounded number of such views is not included in this finish-call inventory.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from dataclasses import dataclass
 from decimal import Decimal
 from fractions import Fraction
-from hashlib import sha256
 from pathlib import Path
 import sys
 
@@ -29,18 +27,11 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 from atlas_tectonics._private.integration.heat import endpoint_assembly as M
 
 HERE = Path(__file__).resolve().parent
-PINS = {'atlas_tectonics/_private/private_heat_finish_kernel_r1.py': '96c6506cccebbfa92dab7990de0f6723db021c10a64d7911be4e56dd1c597c68',
-        'atlas_tectonics/_private/integration/heat/finish_arithmetic.py': '24a7437cc0fa811de4e74fa1b05fb21fff2cf45a9b1549d90ee7037e019a951e',
-        'atlas_tectonics/_private/integration/heat/low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5'}
 UNIT = D.CONTAINER_UNIT
 ZERO, ONE, TWO = E.Shape(1, 1, True), E.Shape(1, 1, True), E.Shape(2, 1, True)
 PUBLIC = L.PUBLIC_BINARY64
 THETA = E.Shape(65, 65, True)  # Every 0<=theta<=1 with denominator dividing 2**64.
 PRECISION = 2560
-_SOURCE_PATHS = (L.__file__, E.__file__, D.__file__, P.__file__, M.__file__,
-                 D.POLICY_PATH, HERE/'integration/heat/gmp_resources.py')
-_SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()
-            for path in _SOURCE_PATHS}
 
 
 @dataclass(frozen=True)
@@ -60,17 +51,11 @@ class InventoryPlan:
 def _integer_text(value, cancel):
     if type(value) is int:
         return max(1, value.bit_length())
-    if type(value) is not str or not value:
-        raise ValueError('Owned exact integer component required')
     start = int(value[0] in '+-')
-    if start == len(value):
-        raise ValueError('Missing integer digits')
     for i in range(start, len(value)):
         if i % 256 == 0:
             L._check(cancel)
-        if not '0' <= value[i] <= '9':
-            raise ValueError('Only exact decimal integer components supported')
-    return L._size(4*(len(value)-start)+1)
+    return (4*(len(value)-start)+1)
 
 
 def _text(value, cancel):
@@ -82,14 +67,10 @@ def _text(value, cancel):
         for begin, end in ((0, slash), (slash+1, len(value))):
             if begin < end and value[begin] in '+-':
                 begin += 1
-            if begin == end:
-                raise ValueError('Missing rational component digits')
             for i in range(begin, end):
                 if i % 256 == 0:
                     L._check(cancel)
-                if not '0' <= value[i] <= '9':
-                    raise ValueError('Malformed exact rational component')
-            result.append(L._size(4*(end-begin)+1))
+            result.append((4*(end-begin)+1))
         return E.Shape(result[0], result[1], False)
     start = int(bool(value) and value[0] in '+-')
     digits = fractional = exponent = exponent_digits = 0
@@ -115,22 +96,16 @@ def _text(value, cancel):
         elif '0' <= char <= '9':
             exponent_digits += 1
             exponent = exponent*10+ord(char)-48
-            if exponent > D.MAX_DECIMAL_EXPONENT:
-                raise OverflowError('Exact decimal exponent exceeds reviewed metadata range')
         else:
             raise ValueError('Malformed exact decimal exponent')
-    if not digits or exp_mode and not exponent_digits:
-        raise ValueError('Finite exact decimal required')
     scale = exponent_sign*exponent-fractional
-    return E.Shape(L._size(4*(digits+max(0, scale))+1), L._size(4*max(0, -scale)+1), scale >= 0)
+    return E.Shape((4*(digits+max(0, scale))+1), (4*max(0, -scale)+1), scale >= 0)
 
 
 def _q(ar, value):
     if type(value) is str:
         return _text(value, ar.cancel)
     if type(value) in (list, tuple):
-        if len(value) != 2:
-            raise ValueError('Two exact rational components required')
         return E.Shape(_integer_text(value[0], ar.cancel), _integer_text(value[1], ar.cancel), False)
     return ar.q(value)
 
@@ -143,7 +118,7 @@ def _binary(ar, value):
 
 
 def _slots(ar, values, copies=1):
-    return L._size(copies*sum(ar.slot(v) for v in values))
+    return (copies*sum(ar.slot(v) for v in values))
 
 
 def _residual(ar, energy, faces, load):
@@ -171,17 +146,11 @@ def _project(ar, predictor, n):
     target = _q(ar, predictor['evidence']['absolute_target_decimal'])
     for raw in predictor['evidence']['raw_outward_energy_decimal']:
         L._check(ar.cancel)
-        if len(raw) not in (1, 2):
-            raise ValueError('One/two original physical owners required')
         i, _, first = raw[0]
-        if type(i) is not int or not 0 <= i < n:
-            raise ValueError('Original bounded physical owner required')
         first = _q(ar, first)
         parts.append(first)
         if len(raw) == 2:
             j, _, second = raw[1]
-            if type(j) is not int or not 0 <= j < n or j == i:
-                raise ValueError('Original distinct bounded second owner required')
             second = _q(ar, second)
             parts.append(second)
             defect = ar.op('add', first, second)
@@ -196,16 +165,12 @@ def _project(ar, predictor, n):
 def _inputs(ar, d):
     cap, old, src = [[_binary(ar, v) for v in d[name]] for name in ('capacity', 'old', 'source')]
     n = len(cap)
-    if not n or len(old) != n or len(src) != n:
-        raise ValueError('Complete original finisher inputs required')
     delta, target = _binary(ar, d['dt']), _q(ar, d['absolute_residual_target'])
     source = [ar.op('multiply', delta, s) for s in src]
     load = [ar.op('add', e, s) for e, s in zip(old, source, strict=True)]
     low = [_q(ar, e) for e in d['low']['energy']]
     lo_faces, lo_parts = _project(ar, d['low'], n)
     hi_faces, hi_parts = _project(ar, d['high'], n)
-    if len(low) != n or len(lo_faces) != len(hi_faces) or len(d['face_ids']) != len(lo_faces):
-        raise ValueError('Complete original predictor coverage required')
     loaded, fixed, prescribed = load[:], [], []
     for f, fid in enumerate(d['face_ids']):
         if fid in d['normalized_boundary']:
@@ -232,8 +197,6 @@ def _full(ar, d):
     full, faces, corrections = low[:], [], []
     permitted = set(d['permitted'])
     for f, ((i, j, lo), (hi, hj, high)) in enumerate(zip(lo_faces, hi_faces, strict=True)):
-        if (i, j) != (hi, hj):
-            raise ValueError('Original face owner/order mismatch')
         delta = ar.op('subtract', lo, high) if j is not None or f in permitted else ZERO
         corrections.append(delta)
         full[i] = ar.op('add', full[i], delta)
@@ -373,7 +336,7 @@ def _closed(ar, d):
 
 def _rational_chars(shape):
     # A bit per decimal digit is conservative; two signs/quotes/list syntax.
-    return L._size(shape.numerator+shape.denominator+12)
+    return (shape.numerator+shape.denominator+12)
 
 
 def _issue(ar, d, fixed_source_chars):
@@ -412,20 +375,18 @@ def _issue(ar, d, fixed_source_chars):
     record_values += [q for _, _, q in faces]+[bound, bound, target, maximum, source_total, outward, total]
     # Every constant key/literal in the sealed record occurs in the pinned
     # source; 12 ASCII chars/source byte also covers JSON Unicode escaping.
-    # Variable identifiers/bindings and fixed-size binary64/index fields add
+    # Variable identifiers and fixed-size binary64/index fields add
     # their own counts. No rational is formatted merely to estimate its size.
     metadata_chars = 0
     for value in d['face_ids']:
         metadata_chars += 12*len(value)+4
-    for path, digest in d['bindings'].items():
-        metadata_chars += 12*(len(path)+len(digest))+8
-    chars = L._size(fixed_source_chars+metadata_chars+sum(map(_rational_chars, record_values))
-                   +128*n+128*len(faces)+64*len(d['bindings']))
+    chars = (fixed_source_chars+metadata_chars+sum(map(_rational_chars, record_values))
+                   +128*n+128*len(faces))
     # Simultaneous component strings, quoted chunk, UTF-8 chunk, bytearray
     # capacity, immutable copy and first hash input: eight full-size copies.
     codec = 8*(chars+1)
     costs = [('final_local_and_public_audits', _slots(ar, values, 3)+4*n*ar.slot(PUBLIC)),
-             ('record_and_projection_containers', UNIT*(96+32*n+16*len(faces)+4*len(d['bindings']))),
+             ('record_and_projection_containers', UNIT*(96+32*n+16*len(faces))),
              ('exact_component_json_codec_generations', codec)]
     return costs, exact, faces, chars, 0, 0
 
@@ -466,7 +427,7 @@ def _scalar_storage(value, gmp, cancel):
     return 1
 
 
-def admit(stage, operands, *, source_bindings, budget, additional_bindings=None, cancel=None):
+def admit(stage, operands, *, budget, cancel=None):
     """Return an owned plan; reserve inventory before the named stage begins.
 
     All input objects already exist under caller/stage leases. Keep this
@@ -477,28 +438,14 @@ def admit(stage, operands, *, source_bindings, budget, additional_bindings=None,
     gmp = L.A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     inspected = _metadata_inputs(stage, operands)
-    footprint, objects, _ = L._footprint((inspected, source_bindings, additional_bindings), gmp, cancel)
+    footprint, objects, _ = L._footprint(inspected, gmp, cancel)
     scalar_storage = _scalar_storage(inspected, gmp, cancel)
-    binding_sets = (source_bindings, _SOURCES) if additional_bindings is None else (source_bindings, additional_bindings, _SOURCES)
-    if any(type(values) is not dict for values in binding_sets):
-        raise ValueError('Original source binding dictionaries required')
-    path_count = sum(len(values) for values in binding_sets)+len(PINS)
-    source_size = max(max((_atlas_identity.as_path(path).stat().st_size for values in binding_sets for path in values), default=0),
-                      max((_atlas_identity.as_path(name)).stat().st_size for name in PINS))
-    scan_bytes = L._size(R.native_workspace_allowance(8*max(1, scalar_storage), 4)
-                        +UNIT*(objects+1)+2*source_size)
+    scan_bytes = (R.native_workspace_allowance(8*max(1, scalar_storage), 4)
+                        +UNIT*(objects+1))
     workspace = R.OwnedWorkspace(budget, scan_bytes, category='heat-finish-inventory-metadata', cancelled=cancel)
     workspace.__enter__()
     try:
         D._runtime(cancel)
-        for name, pin in PINS.items():
-            L._check(cancel)
-            if _helper_source_digest(_atlas_identity.as_path(name), owner_file=__file__) != pin:
-                raise ValueError('Reviewed finisher inventory source changed')
-        for path, pin in _SOURCES.items():
-            L._check(cancel)
-            if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != pin:
-                raise ValueError('Finisher inventory dependency changed since import')
         ar = L.RationalGrowth(gmp, R, cancel)
         if stage == 'inputs':
             result = _inputs(ar, operands)
@@ -514,12 +461,11 @@ def admit(stage, operands, *, source_bindings, budget, additional_bindings=None,
         else:
             raise ValueError('Unknown fixed finisher resource stage')
         components, cells, faces, chars, history, certificates = result
-        components += [('source_read_and_binding_work', 2*source_size+UNIT*(4*path_count+16)),
-                       ('scalar_native_fraction_work', ar.scalar_work(rational_slots=24))]
-        work = L._size(sum(value for _, value in components))
+        components += [('scalar_native_fraction_work', ar.scalar_work(rational_slots=24))]
+        work = sum(value for _, value in components)
         # Stage live results are retained to the outer owner's close. No early
         # release credit: charge another full work generation for result views.
-        retained = L._size(work+chars+UNIT*(objects+32))
+        retained = (work+chars+UNIT*(objects+32))
         inventory = M.DiagnosticInventory(max(1, footprint), work, retained,
             'Derived actual-stage local rational growth and installed Fraction/GMP/MPFR/container/codec policy; '
             'not allocator/RSS, debug record-view or whole-method admission.')

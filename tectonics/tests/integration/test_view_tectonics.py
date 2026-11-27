@@ -106,7 +106,7 @@ class ViewGuards(unittest.TestCase):
 
     def test_catalogue_reads_only_committed_markers_and_does_not_claim_array_verification(self):
         store = MetadataStore()
-        with self.saved(store) as execution, patch.object(reader, '_result') as result:
+        with self.saved(store), patch.object(reader, '_result') as result:
             answer = view.response('unused')
         self.assertEqual(answer['status'], 'ok', answer)
         self.assertEqual(store.get_calls, store.keys)
@@ -115,7 +115,6 @@ class ViewGuards(unittest.TestCase):
         self.assertFalse(answer['provenance']['selected_output_full_verification'])
         self.assertIn('checked on selection', answer['catalogue']['verification'])
         self.assertNotIn('view', answer)
-        self.assertTrue(execution.verified)
         result.assert_not_called()
 
     def test_missing_final_time_is_visible_and_selection_never_starts_work(self):

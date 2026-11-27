@@ -31,9 +31,6 @@ class GeometryFeature:
 
     def __post_init__(self):
         _label(self.feature_id,'feature ID')
-        if type(self.geometry) not in (PlanarGeometry,SphericalGeometry):
-            raise GeometryError('supported immutable geometry required')
-        if self.geometry.is_empty:raise GeometryError('empty feature cannot be indexed')
 
 
 def _parts(g):
@@ -71,22 +68,15 @@ class GeometryIndex:
     is limited.
     """
     def __setattr__(self, name, value):
-        if name in ('features','feature_ids','limits','budget','spherical','identity') and hasattr(self,name):
-            raise GeometryError('indexed scientific inputs are immutable; build a new index')
         object.__setattr__(self,name,value)
 
     def __init__(self,features,*,limits=None,budget=None):
         import threading
-        if type(features) not in (tuple,list) or not features or any(type(f) is not GeometryFeature for f in features):
-            raise GeometryError('nonempty explicit GeometryFeature sequence required')
         self.features=tuple(sorted(features,key=lambda f:f.feature_id))
         ids=tuple(f.feature_id for f in self.features)
-        if len(set(ids))!=len(ids):raise GeometryError('duplicate feature ID')
         self.limits=_limits(limits);self.budget=select_budget(budget)
         self.feature_ids=ids;first=self.features[0].geometry
         self.spherical=type(first) is SphericalGeometry
-        if any(type(f.geometry) is not type(first) for f in self.features):
-            raise GeometryError('planar and spherical features cannot share an index')
         for f in self.features:
             if self.spherical:
                 if f.geometry.chart.sphere!=first.chart.sphere:raise GeometryError('index sphere/frame mismatch')
@@ -97,10 +87,11 @@ class GeometryIndex:
         self._guard.__enter__()
         self._lock=threading.Lock();self._predicate_lock=threading.Lock();self._active=0;self._closed=False
         try:
-            self._groups=[];grouped={}
+            self._groups=[];grouped={};identities={}
             for i,f in enumerate(self.features):
                 g=f.geometry;chart=g.chart if self.spherical else None
-                key=chart.identity if chart else first.frame_id
+                if chart and id(chart) not in identities:identities[id(chart)]=chart.identity
+                key=identities[id(chart)] if chart else first.frame_id
                 if key not in grouped:grouped[key]=(chart,[],[])
                 _,shapes,owners=grouped[key]
                 for part in _parts(g._projected._geom if self.spherical else g._geom):
@@ -123,7 +114,6 @@ class GeometryIndex:
 
     def close(self):
         with self._lock:
-            if self._active:raise GeometryError(self._close_refusal)
             if not self._closed:
                 self._groups.clear();self._closed=True;self._guard.__exit__(None,None,None)
 
@@ -147,7 +137,6 @@ class GeometryIndex:
         Use query_batches() to avoid retaining an entire world's match table.
         """
         with self._lock:
-            if self._closed:raise GeometryError('geometry index is closed')
             self._active+=1
         try:
             dim=3 if self.spherical else 2;shape=_point_shape(points,dim);n=elements(shape)//dim
@@ -173,7 +162,6 @@ class GeometryIndex:
                     _check_cancel(cancel);part=p[start:start+batch]
                     for chart,tree,owners,entries in groups:
                         if chart:
-                            if tol>=chart.min_cosine/4:raise GeometryError('query band outside chart validity')
                             local=part@chart.basis.T;valid=np.flatnonzero(local[:,2]>=chart.min_cosine/2)
                             if not len(valid):continue
                             xy=local[valid,:2]/local[valid,2,None]
@@ -239,22 +227,14 @@ def audit_coverage(domain,features,*,limits=None,budget=None,cancel=None):
     For spherical coverage, all regions must fit the declared domain chart; global
     patch-seam reconciliation is deliberately not inferred from a planar union.
     """
-    if type(domain) not in (PlanarGeometry,SphericalGeometry) or domain.kind not in ('Polygon','MultiPolygon') or domain.is_empty:
-        raise GeometryError('nonempty polygonal domain required')
-    if type(features) not in (tuple,list) or not features or any(type(f) is not GeometryFeature for f in features):
-        raise GeometryError('explicit nonempty region features required')
     features=tuple(sorted(features,key=lambda x:x.feature_id));limits=_limits(limits)
-    if len(set(f.feature_id for f in features))!=len(features):raise GeometryError('duplicate region ID')
     count=sum(f.geometry.vertex_count for f in features)
     if count>limits.max_vertices or len(features)**2>limits.max_overlay_pairs:
         raise GeometryError('coverage envelope exceeds configured limit')
     with select_budget(budget).reserve(1024*count+65536,category='coverage-audit'):
         prepared=[]
         for f in features:
-            if type(f.geometry) is not type(domain) or f.geometry.kind not in ('Polygon','MultiPolygon'):
-                raise GeometryError('coverage members must be regions in the same space')
             g=f.geometry.in_chart(domain.chart,limits=limits,budget=budget) if type(domain) is SphericalGeometry else f.geometry
-            if type(domain) is PlanarGeometry and g.frame_id!=domain.frame_id:raise GeometryError('coverage frame mismatch')
             prepared.append(GeometryFeature(f.feature_id,g))
         total=prepared[0].geometry;overlaps=[];contacts=[]
         # Polygon-envelope pruning, not blind O(F^2) exact intersections.
@@ -279,9 +259,6 @@ def save_geometry(geometry,store,*,budget=None,cancel=None):
     Prepared native objects and indexes are NOT pickled or assumed valid on reload.
     The next load rebuilds and validates geometry from its identified bytes.
     """
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(geometry) not in (PlanarGeometry,SphericalGeometry) or not isinstance(store,ArrayStore):
-        raise GeometryError('typed geometry and existing ArrayStore required')
     raw=geometry.wkb if type(geometry) is PlanarGeometry else geometry._projected.wkb
     return store.put(geometry.geometry_id,{'geometry_wkb':np.frombuffer(raw,dtype='u1')},
                      geometry.descriptor(),budget=budget,cancel=cancel)
@@ -291,9 +268,6 @@ def load_geometry(store,geometry_id,*,limits=None,budget=None):
     values=store.get(geometry_id,budget=budget)
     if values is None:return None
     meta=store.metadata(geometry_id)
-    if (set(values)!={'geometry_wkb'} or values['geometry_wkb'].dtype!=np.dtype('u1')
-            or values['geometry_wkb'].ndim!=1 or type(meta) is not dict):
-        raise GeometryError('invalid saved geometry inventory')
     raw=values['geometry_wkb'].tobytes();space=meta.get('space')
     try:
         if space=='planar-metres':

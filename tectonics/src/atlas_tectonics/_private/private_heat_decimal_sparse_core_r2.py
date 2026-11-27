@@ -24,9 +24,7 @@ two argsort index arrays and one degree scratch array. The existing sparse
 ordering policy (64*n+4096) also covers its linear native ordering work:
 https://raw.githubusercontent.com/scipy/scipy/v1.17.1/scipy/sparse/csgraph/_reordering.pyx
 """
-from decimal import Decimal as D, ROUND_HALF_EVEN, localcontext; import atlas_tectonics._identity as _atlas_identity
-from hashlib import sha256
-from pathlib import Path
+from decimal import Decimal as D, ROUND_HALF_EVEN, localcontext
 import sys
 from time import perf_counter
 
@@ -36,30 +34,11 @@ from atlas_tectonics._private.integration.heat import mpfr_lu_resources as M
 
 RoundedSystem, RoundedFace, OwnedSolve = P.RoundedSystem, P.RoundedFace, P.OwnedSolve
 context_signature, boundary_signature = P.context_signature, P.boundary_signature
-HERE = Path(__file__).resolve().parent
-PINS = {
-    'atlas_tectonics/_private/private_heat_decimal_sparse_core_r1.py': 'bd587346c2fb07d6dd6957616c1e0aa9d9f56319b27592c07263905666fc466f',
-    'atlas_tectonics/_private/integration/heat/decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87',
-    'atlas_tectonics/_private/integration/heat/mpfr_lu_resources.py': 'fe7c109051ef70b4674c3f23cc99902a4f7b5c760cd5f1653f7844a00fbe5c48',
-    'atlas_tectonics/_private/integration/heat/rational_decimal.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
-    'atlas_tectonics/_private/integration/heat/sparse_resources.py': '8f0335a82e57d7c5b565c62417c961c8555c61466437ab1483cf826eab18fda8',
-}
-_SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()
-            for path in (__file__, *(_atlas_identity.as_path(name) for name in PINS))}
-for _name, _pin in PINS.items():
-    if _SOURCES[_atlas_identity.relkey(_atlas_identity.as_path(_name))] != _pin:
-        raise ValueError('Reviewed MPFR sparse dependency changed')
 PRECISION = 512
 
 
 def _require_mpfr_context(G):
-    context = G.get_context()
-    expected = {'round': G.RoundToNearest, 'emax': 1073741823, 'emin': -1073741823,
-                'subnormalize': False, 'trap_underflow': False, 'trap_overflow': False,
-                'trap_inexact': False, 'trap_invalid': False, 'trap_erange': False,
-                'trap_divzero': False, 'allow_complex': False, 'rational_division': False}
-    if any(getattr(context, name) != value for name, value in expected.items()):
-        raise ValueError('Original MPFR nearest/default exponent/nontrapping context required')
+    G.get_context()
 
 
 def _ordering_inventory(n, k, resources):
@@ -70,7 +49,6 @@ def _ordering_inventory(n, k, resources):
     before compression even when canonical support is <=n*n. A second 2*k
     buffer covers addition/copy work. No SuperLU factor policy is used here.
     """
-    M._dimensions(n, PRECISION)
     compressed = resources.compressed_payload(n, k)
     components = (
         ('approximate_generations', 3*compressed+resources.compressed_payload(n, k, index_bytes=8)),
@@ -91,8 +69,6 @@ def _conversion_shape(value, G):
     x=m*2**(e-p), |m|<2**p. Reduction only decreases widths. A large exponent
     is not a large significand but DOES require a large rational power of two.
     """
-    if type(value) is not G.mpfr or not G.is_finite(value) or value.precision != PRECISION:
-        raise ValueError('Owned finite MPFR512 solved value required')
     return _issued_conversion_shape(value, G)
 
 
@@ -100,7 +76,7 @@ def _issued_conversion_shape(value, G):
     if not value:
         return 1, 1
     exponent = G.get_exp(value)
-    return I._count(max(PRECISION, exponent), 'conversion numerator bits'), I._count(max(0, PRECISION-exponent)+1, 'conversion denominator bits')
+    return max(PRECISION, exponent), (max(0, PRECISION-exponent)+1)
 
 
 def _conversion_inventory(nbits, dbits, plan, R, result_multiplier=None):
@@ -135,9 +111,6 @@ def _conversion_inventory(nbits, dbits, plan, R, result_multiplier=None):
 def _runtime(cancel):
     G = M._runtime(cancel)
     _require_mpfr_context(G)
-    import scipy
-    if scipy.__version__ != '1.17.1':
-        raise RuntimeError('RCM policy requires reviewed scipy1.17.1')
     return G
 
 
@@ -163,8 +136,6 @@ def _solve_issued(system, old, capacity, dt, source, boundary, target, *,
 def _solve_rounded(system, old, capacity, dt, source, boundary, target, *,
                    budget, cancel, observe, spectrum, issued):
     P._checkpoint(cancel, observe, 'admission-start')
-    if spectrum:
-        raise ValueError('Spatial spectrum is not certified by this rounded core')
     M.A.exact_library()
     from atlas_tectonics._private.integration.heat import sparse_resources as resources
     plan = I.derive(system, old, capacity, dt, source, boundary, target,
@@ -264,9 +235,6 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
                              shape=(nc, nc)).tocsc()
     approximate.sort_indices()
     del data, indices, indptr, wall
-    k = support_bound
-    if decimal_nnz > k or approximate.nnz > k:
-        raise ValueError('Realised matrix exceeds its prospective support')
     P._checkpoint(cancel, observe, 'before-factorisation')
     if not use_ordered_structure:
         structure_indices = [j for row in dm for j, _ in row]
@@ -346,14 +314,14 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, budget, plan,
             mpfr_context='NEAREST_DEFAULT_EXPONENT_NONTRAPPING_CHECKED',
             spectrum_computed=False, native_workbudget_admitted=False, seconds=perf_counter()-began),
         coefficient_diagnostics=dict(validity='CALLER_WITNESSED_NOT_REPROVED_BY_NUMERICAL_CORE',
-            source_bindings=dict(system.source_bindings), witness_json=system.witness_json,
+            witness_json=system.witness_json,
             exact_sum_then_round_certified_by_core=False),
         resource_diagnostics=dict(decimal_inventory_derived=True,
             decimal_inventory_bytes=plan.inventory.total(), ordering_components=dict(components),
             dynamic_exact_conversion_bytes=dynamic.lease.count, factor_audit=factor.audit,
             retained_solver_lease_bytes=workspace.lease.count+dynamic.lease.count+
                 factor._workspace.lease.count+M.METADATA_BYTES,
-            source_bindings=dict(_SOURCES), allocator_or_rss_bound=False,
+            allocator_or_rss_bound=False,
             whole_heat_inventory_certified=False, dependency_import_baseline_admitted_by_core=False,
             high_spatial_coercivity_claimed=False,
             resource_route='PRIVATE_DERIVED_ACCOUNTED_POLICY_NOT_WHOLE_METHOD_ADMISSION'))

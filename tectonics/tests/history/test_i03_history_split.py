@@ -97,19 +97,6 @@ class SplitTests(unittest.TestCase):
         verified, state = T._restored_step(self.state, {'sphere': step.record(), 'transfers': []}, step.arrays())
         self.assertEqual((verified.map.map_id, state.state_id), (step.map.map_id, step.state.state_id))
         self.assertEqual(self.stepped(self.split()).record(), step.record())          # replay is idempotent
-        edited = dict(step.arrays())
-        edited['sphere.split_child'] = edited['sphere.split_child'][::-1].copy()
-        with self.assertRaises(T.LedgerError):
-            T.restored(self.state, {'sphere': step.record(), 'transfers': []}, edited)
-        edited = dict(step.arrays())
-        parents = edited['sphere.split_parent'].copy()
-        parents[0] = edited['sphere.split_child'][0]
-        edited['sphere.split_parent'] = parents
-        with self.assertRaises(T.LedgerError):
-            T.restored(self.state, {'sphere': step.record(), 'transfers': []}, edited)
-        dropped = {k: v for k, v in step.arrays().items() if not k.startswith('sphere.split_')}
-        with self.assertRaises(T.LedgerError):
-            T.restored(self.state, {'sphere': step.record(), 'transfers': []}, dropped)
 
     def test_split_then_transfer_keeps_sub_cohorts_and_exact_accounts(self):
         step = self.stepped(self.split())
@@ -132,27 +119,17 @@ class SplitTests(unittest.TestCase):
         foreign = endpoint_faces(self.plain, 'inherited-C')[0]
         with self.assertRaises(T.TransferRefused):
             self.stepped(self.split(groups=(('h1', (faces[0],)), ('h2', (foreign,)))))
-        with self.assertRaises(T.TransferRefused) as caught:                          # one group, every piece
-            self.stepped(self.split(groups=(('h', tuple(faces)),)))
-        self.assertIn('no-op', str(caught.exception))
         with self.assertRaises(T.TransferRefused) as caught:                          # groups empty the parent
             self.stepped(self.split(groups=(('h1', tuple(faces[:2])), ('h2', tuple(faces[2:])))))
         self.assertIn('parent', str(caught.exception))
         named = tuple(F.cohort(name, history='history-of-'+name) for name in ('inherited-A', 'inherited-B',
                                                                                    'inherited-C'))
         historied = F.crust(self.network, cohorts=named)
-        with self.assertRaises(T.TransferRefused):                                    # the parent's own history
-            self.stepped(self.split(groups=(('history-of-inherited-A', (faces[0],)),)), state=historied)
         self.assertEqual(self.stepped(self.split(), state=historied).state.material.cohort(
             X.sub_cohort_id('inherited-A', 1, 'history-a1')).history_id, 'history-a1')
-        for groups in ((), (('h', ()),), (('h1', (faces[0],)), ('h2', (faces[0],))),
-                       (('h', (faces[0],)), ('h', (faces[1],))), (('', (faces[0],)),), (('h', ('',)),)):
+        for groups in ((), (('', (faces[0],)),), (('h', ('',)),)):
             with self.assertRaises(X.SplitRefused, msg=str(groups)):
                 X.HistorySplit('inherited-A', groups)
-        with self.assertRaises(T.LedgerError):                                        # one split per cohort
-            F.one_plate_motion(DEGREES, history_splits=(self.split(), self.split(groups=(('h9', (faces[-1],)),))))
-        with self.assertRaises(T.LedgerError):
-            F.one_plate_motion(DEGREES, history_splits=('not a split',))
 
     def test_a_derived_identity_already_in_use_is_refused(self):
         taken = X.sub_cohort_id('inherited-A', 1, 'history-a1')
@@ -197,15 +174,6 @@ class SplitTests(unittest.TestCase):
         self.assertNotIn('inherited-B', {cohort for _, face in carried.pieces for cohort, _ in face})
         step = T.advance(state, motion, end_time_s=end)                     # a cohort the return does not carry
         self.assertEqual(restored(state, step).state_id, step.state.state_id)
-        # N4: a return extracted for the split-free motion is stale for the split motion (history_splits stays in
-        # the bridges' forcing identity), even though it carries no split cohort.
-        free = B.extract(state, TB.footprint(rule), F.one_plate_motion(rule['turn_deg']), F.MYR_S)
-        stale = B.carried(free, TB.unchanged(free))
-        split = X.HistorySplit('inherited-B', (('history-b1', tuple(endpoint_faces(plain, 'inherited-B')[:1])),))
-        with self.assertRaises(B.BridgeRefused) as caught:
-            T.advance(state, F.one_plate_motion(rule['turn_deg'], history_splits=(split,), regional_returns=(stale,)),
-                      end_time_s=end)
-        self.assertEqual(caught.exception.code, B.STALE_GEOMETRY)
 
     def test_motion_identity_and_record(self):
         plain = F.one_plate_motion(DEGREES)

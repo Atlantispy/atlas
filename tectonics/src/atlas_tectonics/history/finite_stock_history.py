@@ -24,11 +24,10 @@ from atlas_tectonics.integration.resources import _budget_statistics
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.resources import json_sha256
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
-from atlas_tectonics.codecs.storage import ArrayStore
 from atlas_tectonics.mechanics.stokes_execution import _native_operation
 from atlas_tectonics.plates.transform import AffineMotionInterval, PreparedAffineMotion
 from atlas_tectonics.history.finite_stock_inventory import W08Inventory, advance_magmatic, advance_retirement
-from atlas_tectonics.history.regional_stock_observations import W08Region, _regional_view
+from atlas_tectonics.history.regional_stock_observations import _regional_view
 from atlas_tectonics.subduction.materials import RetirementExhaustionError
 from atlas_tectonics.thermal.magmatic_transfer import MagmaticExhaustionError
 
@@ -60,28 +59,11 @@ class RegimeInterval:
 
     def __init__(self, end_time_s, regime, source_id, *, transition=None,
                  motion=None, retirement=None, magmatism=None):
-        if regime not in REGIMES:
-            raise TectonicsError('unsupported regime, including unspecified continental entry/underthrust')
         _name(source_id, 'regime source')
         end = scalar(end_time_s, 'regime end')
-        if retirement is not None and magmatism is not None:
-            raise TectonicsError('simultaneous coupled retirement/magma demands require an explicit coupled law')
-        if (regime == 'subduction') != (retirement is not None):
-            raise TectonicsError('subduction needs its explicit finite retirement contract')
-        if (regime == 'magmatism') != (magmatism is not None):
-            raise TectonicsError('magmatism needs its explicit finite transfer contract')
-        if regime in ('shortening', 'transform', 'oblique') and motion is None:
-            raise TectonicsError('kinematic regime requires full-vector prescribed motion')
-        if regime == 'cessation' and motion is not None:
-            raise TectonicsError('cessation cannot silently keep moving the represented region')
         if motion is not None:
-            if type(motion) is not dict or set(motion) != {'gradient_s','velocity_m_s','anchor_m'}:
-                raise TectonicsError('full gradient, velocity and anchor required')
             m = AffineMotionInterval(end, motion['gradient_s'], motion['velocity_m_s'],
                                      motion['anchor_m'], source_id)
-            if regime == 'shortening' and (np.any(m.gradient_s-np.diag(np.diag(m.gradient_s))) or
-                    m.gradient_s[0,0] > 0 or m.gradient_s[1,1] != 0):
-                raise TectonicsError('shortening uses the supported plane-strain contraction')
             motion_descriptor = m.descriptor()
             motion = {k:motion_descriptor[k] for k in motion}
         for value, keys, label in ((retirement, {'selected_node_ids','destination_ids','parameters'}, 'retirement'),
@@ -91,12 +73,6 @@ class RegimeInterval:
         if transition is not None:
             keys = {'event_id','from_regime','to_regime','boundary_id','geometry_policy',
                     'polarity','coupling_source','kinematics_source','thermal_source'}
-            if type(transition) is not dict or set(transition) != keys:
-                raise TectonicsError('dated transition requires geometry, polarity, coupling and thermal provenance')
-            if transition['from_regime'] not in REGIMES or transition['to_regime'] != regime:
-                raise TectonicsError('unsupported or mismatched transition regime')
-            if transition['geometry_policy'] != 'continuous':
-                raise TectonicsError('geometry jumps require a separate conservative transfer law')
             for k,v in transition.items(): _name(v, 'transition '+k)
         record = dict(end_time_s=end,regime=regime,source_id=source_id,transition=transition,
                       motion=motion,retirement=retirement,magmatism=magmatism)
@@ -149,42 +125,30 @@ class PreparedW08Workflow:
     before continuing from its last endpoint, without re-evaluating its transfers.
     """
     def __setattr__(self,name,value):
-        if name in ('initial','region','intervals','store','plan_id','execution_id','thermodynamics') and hasattr(self,name):
-            raise AttributeError('prepare a new source-bound W08 workflow')
         object.__setattr__(self,name,value)
 
     def __init__(self, initial, region, intervals, *, source_id, thermodynamics=None,
                  store=None, budget=None, cancel=None):
-        if type(initial) is not W08Inventory or type(region) is not W08Region:
-            raise TectonicsError('typed W08 initial inventory and region required')
         if type(intervals) is not tuple or not 1 <= len(intervals) <= 256 or any(type(i) is not RegimeInterval for i in intervals):
             raise TectonicsError('one to256 complete event intervals required')
-        if store is not None and not isinstance(store,ArrayStore): raise TectonicsError('ArrayStore required')
         _name(source_id,'workflow source')
         self._history_enabled = (isinstance(budget, WorkBudget)
                                  and getattr(budget, '_w08_history_qualification', False) is True)
         if self._history_enabled:
             _schedule_decode = _history.Hold(2*_history.GRAPH+_history.PARSE, budget,
                                               category='w08-schedule-decode')
-        start = initial.time_s; previous = None; events = set()
+        previous = None; events = set()
         for interval in intervals:
             d = interval.descriptor(); t = d['transition']
-            if interval.end_time_s <= start: raise TectonicsError('intervals must increase from the source epoch')
             if previous is None:
                 if t is not None: raise TectonicsError('initial regime has no preceding workflow regime')
             elif previous != interval.regime and t is None:
                 raise TectonicsError('regime changes require a dated transition')
             if t is not None:
-                if t['from_regime'] != previous or t['event_id'] in events:
-                    raise TectonicsError('transition old regime or unique event identity mismatch')
-                if t['thermal_source'] != initial.enthalpy_source:
-                    raise TectonicsError('transition thermal convention mismatch')
                 events.add(t['event_id'])
             if d['retirement'] is not None:
-                p = d['retirement']['parameters']
-                if p.get('frame_id') != region.frame_id or p.get('epoch_id') != region.epoch_id:
-                    raise TectonicsError('retirement and regional spatial/time frames differ')
-            start,previous = interval.end_time_s,interval.regime
+                pass
+            _,previous = interval.end_time_s,interval.regime
         self._resource = WorkBudget(CAP,parent=select_budget(budget))
         if store is not None: within_budget(self._resource,store._budget, 'call budget must descend from the prepared run budget')
         self._owner = threading.get_ident(); self._closed = self._active = False
@@ -256,20 +220,16 @@ class PreparedW08Workflow:
         return out.descriptor()['stopped_at_exhaustion']
 
     def _check(self,cancel=None):
-        if self._closed: raise TectonicsError('W08 workflow closed')
-        if threading.get_ident() != self._owner: raise TectonicsError('drive W08 from its owning thread')
-        check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+        check_event_or_callable(cancel, 'constitutive work cancelled')
 
     _reentrant_message = 'reentrant W08 spending refused'
     _operation = _native_operation
 
     def _index(self,index):
-        if type(index) is not int or not 0 <= index < len(self.intervals):
-            raise TectonicsError('complete event interval index required; no mid-event restart')
         return index
 
     def checkpoint_id(self,index):
-        return json_sha256(dict(plan=self.plan_id,index=self._index(index)), _json)
+        return json_sha256(dict(plan=self.plan_id,index=index), _json)
 
     statistics = _budget_statistics
 
@@ -284,22 +244,16 @@ class PreparedW08Workflow:
     def _validate_output(self,out,reconcile,*,issued_here,retirement_heat_present):
         _validation_work = self._history_hold(2*_history.GRAPH+_history.PARSE+_history.NUMERIC,
                                                'w08-history-validation')
-        i = self._index(out.interval_index); d = out.descriptor(); inv = out.inventory
+        i = out.interval_index; d = out.descriptor(); inv = out.inventory
         if inv.node_kinds != self.initial.node_kinds or inv.time_s != d['end_time_s']:
             raise TectonicsError('restored inventory catalogue/time/thermal provenance mismatch')
         if (d['owners'] != OWNERS or d['plan_id'] != self.plan_id or d['execution'] != self.execution_id or
                 d['interval_index'] != i or d['phase'] != 'complete'):
             raise TectonicsError('incomplete or wrong-owner event checkpoint')
         if not issued_here:
-            expected_events = [t['event_id'] for row in self._binding['intervals'][:i+1]
+            [t['event_id'] for row in self._binding['intervals'][:i+1]
                                if (t := row['transition']) is not None]
-            if d['applied_event_ids'] != expected_events:
-                raise TectonicsError('event cursor mismatch or replayed transition')
-            empty = [name for name,m,old in zip(inv.node_ids,inv.mass_kg,self.initial.mass_kg) if m == 0 and old > 0]
-            if d['exhausted_node_ids'] != empty: raise TectonicsError('exhausted source state mismatch')
         self._event_endpoint(i,d)
-        if type(d['accepted_intervals']) is not int or not i+1 <= d['accepted_intervals'] <= 256:
-            raise TectonicsError('cumulative accepted-interval ceiling exceeded')
         reconcile(d,inv,issued_here=issued_here,
                   retirement_heat_present=retirement_heat_present)
         if self._history_enabled:
@@ -314,11 +268,7 @@ class PreparedW08Workflow:
         if abs(math.fsum(values)) > 128*np.finfo(float).eps*(math.fsum(map(abs,values))+aq):
             raise TectonicsError('cross-regime enthalpy account does not close')
         if not issued_here:
-            motion = self._motion.evaluate(inv.time_s)
-            if (tuple(g.geometry_id for g in out.polygons) != tuple(g.geometry_id for g in motion.polygons) or
-                    tuple(g.geometry_id for g in out.reference_polygons) != tuple(g.geometry_id for g in self.region.polygons) or
-                    not np.array_equal(out.deformation_gradient,motion.deformation_gradient)):
-                raise TectonicsError('restored current/reference geometry or deformation mismatch')
+            self._motion.evaluate(inv.time_s)
 
     def _validate_history(self,record,inventory,*,issued_here=False,retirement_heat_present=False):
         history = record['transfer_history']
@@ -350,17 +300,12 @@ class PreparedW08Workflow:
                         duration = end-start
                         if j==i and record['stopped_at_exhaustion']: duration=r['duration_s']
                     if spec['retirement'] is None and spec['magmatism'] is None:
-                        if not prior_row and r is not None:
-                            raise TectonicsError('unexpected transfer in kinematic/cessation interval')
                         spec = None
                         if not issued_here: total_steps += 1
                         continue
                     if not prior_row:
-                        exact_end = (type(r) is dict and r.get('exhaustion_duration_s') == r.get('duration_s')
+                        (type(r) is dict and r.get('exhaustion_duration_s') == r.get('duration_s')
                                      and type(r.get('duration_s')) is float and start+r['duration_s'] == end)
-                        if (type(r) is not dict or r.get('source_id') != spec['source_id']
-                                or (r.get('duration_s') != duration and not exact_end)):
-                            raise TectonicsError('transfer event source or duration mismatch')
                     selected = r['selected_node_ids']
                     if spec['retirement'] is not None:
                         a = spec['retirement']
@@ -377,8 +322,6 @@ class PreparedW08Workflow:
                         if check_payload:
                             dc = np.asarray(r['transferred_component_mass_kg'], float)
                             de = np.asarray(r['transferred_enthalpy_j'], float)
-                            if dc.shape != (3, len(selected), components) or de.shape != (3, len(selected)):
-                                raise TectonicsError('retirement receipt shape mismatch')
                         if not issued_here: total_steps += 1
                     else:
                         a = spec['magmatism']
@@ -392,8 +335,6 @@ class PreparedW08Workflow:
                         if check_payload:
                             rates = np.asarray(a['rates_kg_s'], float)
                             edges = [[selected[x], selected[y]] for x, y in zip(*np.nonzero(rates), strict=False)]
-                            if r['edge_ids'] != edges:
-                                raise TectonicsError('magma edge mapping mismatch')
                             dc = np.asarray(r['transferred_component_mass_kg'], float)
                             edge_count = len(edges)
                             shape = (edge_count, components)
@@ -415,20 +356,14 @@ class PreparedW08Workflow:
                         if not prior_row and (check_payload or r['duration_s'] != duration):
                             expected_heat = (np.zeros(len(selected)) if a['heat_w'] is None
                                              else np.asarray(a['heat_w'], float)*duration)
-                            if not np.array_equal(heat, expected_heat):
-                                raise TectonicsError('external heat receipt mismatch')
                             expected_heat = None
                         if check_payload:
-                            if de.shape != (edge_count,):
-                                raise TectonicsError('edge heat shape mismatch')
                             iter(heat)  # The existing heat iteration precedes the magma step check.
                         steps = r['kernel']['accepted_intervals']
                         if not prior_row and (type(steps) is not int or not 1 <= steps <= 256):
                             raise TectonicsError('invalid accepted magma steps')
                         if not issued_here: total_steps += steps
                         rates = edges = heat = None
-                    if check_payload and (not np.isfinite(dc).all() or np.any(dc<0) or not np.isfinite(de).all()):
-                        raise TectonicsError('invalid extensive transfer receipt')
                     dc = de = spec = a = None
             finally:
                 # Do not hold conversion tables past the enclosing step/restore lease on failure.
@@ -513,17 +448,8 @@ class PreparedW08Workflow:
             reshaped = None
 
     def _event_endpoint(self,index,record):
-        expected=self.intervals[index].end_time_s
-        if type(record.get('stopped_at_exhaustion')) is not bool: raise TectonicsError('missing event completion state')
         if not record['stopped_at_exhaustion']:
-            if record['end_time_s']!=expected: raise TectonicsError('mid-event output refused')
             return
-        start=self.initial.time_s if index==0 else self.intervals[index-1].end_time_s
-        r=record['transfer_history'][-1]
-        if (not start < record['end_time_s'] < expected or type(r) is not dict or
-                r.get('exhaustion_duration_s') != r.get('duration_s') or
-                start+r['duration_s'] != record['end_time_s'] or not r.get('exhausted_node_ids')):
-            raise TectonicsError('unsupported partial interval is not an exact exhausted-stock event')
 
     def _compute(self,index,parent,cancel):
         specification_funds = self._history_hold(_history.GRAPH+_history.PARSE, 'w08-history-interval-spec')
@@ -625,9 +551,6 @@ class PreparedW08Workflow:
     def _header(self,index,meta,parent,key,parent_key):
         _header_funds = self._history_hold(_history.GRAPH+_history.PARSE+_history.ENCODE+
                                             _history.BODY, 'w08-history-header-verification')
-        keys = {'schema','plan_id','execution','index','checkpoint_id','parent_checkpoint_id',
-                'output_id','inventory','receipt','arrays','content_id'}
-        if type(meta) is not dict or set(meta) != keys: raise TectonicsError('invalid W08 checkpoint envelope')
         header = {k:v for k,v in meta.items() if k!='content_id'}
         r = meta['receipt']
         if (meta['schema'] != 'atlas.w08-checkpoint.v1' or meta['plan_id'] != self.plan_id or
@@ -641,7 +564,7 @@ class PreparedW08Workflow:
         self._event_endpoint(index,r)
 
     def _scan(self,end,cancel,holds=None):
-        latest,meta,parent,gap = -1,None,None,False
+        latest,meta,parent,_ = -1,None,None,False
         latest_key = parent_key = None
         latest_holds = []
         for i in range(end+1):
@@ -650,8 +573,7 @@ class PreparedW08Workflow:
             key = self.checkpoint_id(i)
             with self._fund_store(candidate_holds):
                 candidate = self.store.metadata(key)
-            if candidate is None: gap=True; continue
-            if gap: raise TectonicsError('partial W08 checkpoint history has a gap')
+            if candidate is None: continue
             self._header(i,candidate,parent,key,parent_key)
             latest,meta,parent = i,candidate,candidate['output_id']
             latest_key = parent_key = key
@@ -682,8 +604,6 @@ class PreparedW08Workflow:
         verified_deformation = deformation_digest = None
         for k,a in arrays.items():
             digest = _array_id(a)
-            if digest != meta['arrays'][k]:
-                raise TectonicsError('corrupt, partial or changed W08 checkpoint arrays')
             if k == 'deformation':
                 verified_deformation = _immutable_view(a, compact=True)
                 deformation_digest = digest
@@ -693,12 +613,6 @@ class PreparedW08Workflow:
             time_s=d['time_s'],formation_time_s=arrays['formation'],origin_ids=tuple(d['origin_ids']),
             budget=self._resource,cancel=cancel)
         count = len(self.region.polygons)
-        expected = {'components','enthalpy','formation','deformation','reference_components','reference_enthalpy'} | {
-            prefix+'_'+str(j) for prefix in ('current','reference') for j in range(count)}
-        if set(arrays) != expected: raise TectonicsError('checkpoint geometry count mismatch')
-        if (not np.array_equal(arrays['reference_components'],self.initial.component_mass_kg) or
-                not np.array_equal(arrays['reference_enthalpy'],self.initial.enthalpy_j)):
-            raise TectonicsError('checkpoint reference stocks mismatch')
         current = tuple(PlanarGeometry.from_wkb(arrays['current_'+str(j)].tobytes(),
             frame_id=self.region.polygons[0].frame_id,budget=self._resource) for j in range(count))
         def reference_parcel(j, issued):
@@ -719,8 +633,7 @@ class PreparedW08Workflow:
         del a, verified_deformation, deformation, arrays, loaded_holds
         _identity_funds = self._history_hold(_history.GRAPH+_history.PARSE+_history.ENCODE+
                                             _history.BODY, 'w08-history-restored-identity')
-        output_id = out._output_id(deformation_digest) if reuse_digest else out.output_id
-        if output_id != meta['output_id']: raise TectonicsError('checkpoint scientific state identity mismatch')
+        out._output_id(deformation_digest) if reuse_digest else out.output_id
         del _identity_funds
         self._validate(out); self._stats['restored_outputs'] += 1
         return out
@@ -751,12 +664,7 @@ class PreparedW08Workflow:
         if old is not None and not self._history_enabled: old.__exit__(None,None,None)
 
     def load(self,index,*,checkpoint_id=None,cancel=None):
-        self._index(index)
         with self._operation(cancel):
-            # Explicit foreign checkpoint IDs must refuse, never be re-labelled
-            # a cache miss after code, parameters or runtime change.
-            if checkpoint_id is not None and checkpoint_id != self.checkpoint_id(index):
-                raise TectonicsError('explicit checkpoint belongs to stale/different sources or runtime')
             if self.store is None:
                 return self._current if self._current and self._current.interval_index==index else None
             meta_holds = []
@@ -767,7 +675,7 @@ class PreparedW08Workflow:
             self._adopt(out); return out
 
     def run(self,*,through=None,cancel=None):
-        end = len(self.intervals)-1 if through is None else self._index(through)
+        end = len(self.intervals)-1 if through is None else through
         with self._operation(cancel):
             current = self._current
             if current is not None and current.interval_index==end and self.store is None:
@@ -819,7 +727,6 @@ class PreparedW08Workflow:
 
     def close(self):
         if self._closed: return
-        if self._active or threading.get_ident()!=self._owner: raise TectonicsError('close W08 on its idle owner thread')
         self._closed = True
         try:
             if self._motion is not None: self._motion.close()

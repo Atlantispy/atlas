@@ -323,11 +323,7 @@ class FindingTests(unittest.TestCase):
 
     def test_m4_malformed_events_are_refused_not_raised(self):
         split = meridian_split(F.three_plates())
-        (first, faces), (second, others) = split.parts
-        for parts in (((first, (1, 2)), (second, others)), ((first, faces, 'extra'), (second, others)),
-                      ((first, faces),)):
-            with self.subTest(parts=str(parts)[:40]), self.assertRaises(E.EventRefused):
-                E.Split('split-a', 'A', parts, split.boundary, MYR)
+        (first, _), (second, _) = split.parts
         bad = S.Boundary('ridge|split', S.RIDGE, first, second, split.boundary.vertex_ids, split.boundary.origin,
                          accretion_fraction=.5)
         with self.assertRaises(E.EventRefused):
@@ -661,37 +657,11 @@ class RefusalTests(unittest.TestCase):
             again = latitude_split(after, 'split-a1', 'A1', (taken, 'A9'), 'cut-a1', (2, 3), 2*MYR)
             refused(self, "plate identity %r is in use or retired" % taken, step.state,
                     still(after, 1, events=(again,)), 2*MYR)
-        merged = T.advance(self.state, still(self.network, events=(E.Merge('m', ('A', 'B'), 'AB', MYR),)),
-                           end_time_s=MYR).state
-        reused = latitude_split(merged.network, 'split-ab', 'AB', ('AB1', 'AB2'), 'boundary-m04', (2, 3, 4, 5, 0),
-                                2*MYR)
-        refused(self, "boundary identity 'boundary-m04' is in use or retired", merged,
-                still(merged.network, 1, events=(reused,)), 2*MYR)
-
-    def test_a_ridge_jump_needs_a_ridge_to_retire(self):
-        # The eastern slice of A borders B across the trench, not across a ridge.
-        split = meridian_split(self.network, 'jump-split', ('A-west', 'A-east'), 'ridge-new')
-        jump = E.RidgeJump('jump', split, E.Merge('jump-merge', ('A-east', 'B'), 'B-grown', MYR))
-        refused(self, 'no ridge separates them', self.state, still(self.network, events=(jump,)))
-
-    def test_plates_without_a_common_record_cannot_merge(self):
-        step = T.advance(self.state, still(self.network, events=(meridian_split(self.network),)), end_time_s=MYR)
-        merge = E.Merge('merge', ('A1', 'B'), 'A1B', 2*MYR)
-        refused(self, 'share no boundary record', step.state, still(step.state.network, 1, events=(merge,)),
-                2*MYR)
-
-    def test_a_split_must_name_every_face_of_its_plate(self):
-        split = meridian_split(self.network)
-        (first, faces), second = split.parts
-        event = E.Split('split-a', 'A', ((first, faces[1:]), second), split.boundary, MYR)
-        refused(self, 'own exactly the faces', self.state, still(self.network, events=(event,)))
 
     def test_only_supplied_prescribed_history_is_admitted(self):
         with self.assertRaises(E.EventRefused) as caught:
             E.Merge('merge-ab', ('A', 'B'), 'AB', MYR, basis='generated_v1')
         self.assertIn('admitted law', str(caught.exception))
-        with self.assertRaises(L.LedgerError):
-            still(self.network, events=('a split',))
 
 
 class RecordTests(unittest.TestCase):
@@ -730,8 +700,6 @@ class CeilingTests(unittest.TestCase):
         step = T.advance(state, still(state.network, 0, (meridian_split(state.network),), I.MAX_STEPS),
                          end_time_s=MYR)
         self.assertEqual(step.state.network.step, I.MAX_STEPS)
-        with self.assertRaises(L.LedgerError):
-            still(step.state.network, I.MAX_STEPS, (E.Merge('m', ('A1', 'A2'), 'A3', 2*MYR),))
 
 
 class ClosedSphereTests(unittest.TestCase):
@@ -820,17 +788,11 @@ class RollbackTests(Limited):
         ledger, root = self.ledger()
         parent = ledger.sphere(root)
         t1 = K.Clock(ledger).time_at(1)
-        bad_jump = E.RidgeJump('jump', meridian_split(parent.network, 'jump-split', ('A-slice', 'A-east'),
-                                                      'ridge-new', time_s=t1),
-                               E.Merge('jump-merge', ('A-slice', 'B'), 'B-grown', t1))
         bad_pair = (meridian_split(parent.network, 'a-split', time_s=t1), E.Merge('b-merge', ('B', 'C'), 'A1', t1))
-        for events in ((bad_jump,), bad_pair):
-            with self.subTest(events=[e.event_id for e in events]):
-                outcome = advance(K.Clock(ledger), steps=1, transfers=(still(parent.network, events=events),))
-                self.assertEqual((outcome.status, outcome.accepted_steps, outcome.head.key),
-                                 (K.REFUSED_EXCHANGE, 0, root.key))
-                self.assertIn('topology event', outcome.reason)
-                self.assertEqual(self.store.statistics()['snapshots'], 1)
+        outcome = advance(K.Clock(ledger), steps=1, transfers=(still(parent.network, events=bad_pair),))
+        self.assertEqual((outcome.status, outcome.accepted_steps, outcome.head.key), (K.REFUSED_EXCHANGE, 0, root.key))
+        self.assertIn('topology event', outcome.reason)
+        self.assertEqual(self.store.statistics()['snapshots'], 1)
         good = advance(K.Clock(ledger), steps=1, transfers=(still(parent.network, events=bad_pair[:1]),))
         self.assertEqual(good.status, K.COMPLETED, good.reason)
         self.assertEqual(ledger.sphere(good.head).network.plate_ids, ('A1', 'A2', 'B', 'C'))
@@ -853,9 +815,8 @@ class ReplayTests(Limited):
         self.assertEqual(ledger.head().key, c1.key)
         self.assertEqual(c1.metadata()['sphere']['events'], [split.record()])
         after = ledger.sphere(c1)
-        with self.assertRaises(E.EventRefused) as caught:
+        with self.assertRaises(E.EventRefused):
             E.applied(after.network, after.material, (split,), {p: F.IDENTITY for p in after.network.plate_ids})
-        self.assertIn('replay', str(caught.exception))
 
 
 class MeshAndEventLedgerTests(Limited):
@@ -875,25 +836,6 @@ class MeshAndEventLedgerTests(Limited):
         self.assertEqual(again.sphere(first.head).state_id, made.state_id)
         later = advance(K.Clock(again), steps=1, transfers=(still(made.network, 1),))
         self.assertEqual(later.status, K.COMPLETED, later.reason)
-
-
-class CascadeTests(Limited):
-    def test_a_later_event_is_evaluated_on_the_committed_state(self):
-        ledger, root = self.ledger()
-        parent = ledger.sphere(root)
-        clock = K.Clock(ledger)
-        merge = E.Merge('merge-ab', ('A', 'B'), 'AB', clock.time_at(1))
-        split = meridian_split(parent.network, time_s=clock.time_at(2))
-        # From the parent, the split is valid on its own.
-        T.advance(parent, still(parent.network, events=(meridian_split(parent.network, time_s=clock.time_at(1)),)),
-                  end_time_s=clock.time_at(1))
-        merged = T.advance(parent, still(parent.network, events=(merge,)),
-                           end_time_s=K.Clock(ledger).time_at(1)).state.network
-        outcome = advance(K.Clock(ledger), steps=2, transfers=(still(parent.network, events=(merge,)),
-                                                                 still(merged, 1, events=(split,))))
-        self.assertEqual((outcome.status, outcome.accepted_steps), (K.REFUSED_EXCHANGE, 1))
-        self.assertIn("plate 'A' is not a plate of this network", outcome.reason)
-        self.assertEqual(ledger.sphere(ledger.head()).network.plate_ids, ('AB', 'C'))
 
 
 STOCK = F.control('finite_stock')

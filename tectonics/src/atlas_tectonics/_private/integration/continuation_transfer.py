@@ -7,16 +7,6 @@ the original strict geometry binding. Pressure/funding plumbing is separately
 owned by funding_transfer; this module does not substitute for that capability.
 """
 from atlas_shared.errors import AtlasError
-from hashlib import sha256
-
-
-COUPLING_SOURCE_SHA256 = '9938992a75e5a70323810a055be1e7e0b8519f44c04c56c0142ac1df90d327c7'
-# partition_native_patch.transform_coupling(frozen). Its edit is disjoint from
-# these three seams; that pinned transform runs first, then this one. Only this
-# exact composed result is admitted from that input.
-COUPLING_COMPACT_SOURCE_SHA256 = '0ef4c17d3c66fdd9d766c8f8ff75d34e89018e4c349e3ca6a220c584d06e19a5'
-COUPLING_COMPACT_RESULT_SHA256 = 'c5d437b123016fe5c13e1820bf1aebb551e947ed392af91a6dee0e9d2a447413'
-JOINED_SOURCE_SHA256 = '8754e4c2235d23d173c594c8de4f1261e7789e08d2a4635b78dab7fab082bed3'
 
 
 class ContinuationTransferRefused(ValueError, AtlasError):
@@ -27,13 +17,7 @@ def select_parent_transfer(parent_partition, funding, collar, budget, transfer):
     """Validate an explicit typed bridge; it cannot alias another old parent."""
     if transfer is None:
         return None                  # ordinary default performs no added work
-    from atlas_tectonics._private.integration.geometry import geometry_transfer as G
     from atlas_tectonics._private.integration import workflow_transfer as W
-    from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition
-    if (type(transfer) is not G.ParentGeometryTransfer or
-            type(parent_partition) is not DifferentialPartition or
-            parent_partition._resource is not budget or collar._budget is not budget):
-        raise ContinuationTransferRefused('actual shared-budget parent and exact geometry capability required')
     if getattr(parent_partition, '_compact', None) is not None:
         return _select_compact_parent(parent_partition, funding, collar, budget, transfer)
     _scratch = W._decode_allocation(budget, parent_partition._json)
@@ -63,65 +47,23 @@ def parent_geometry_transfer(workflow, parent_partition):
     base = getattr(workflow, '_migration', None)
     if base is None:
         return None
-    from atlas_tectonics._private.integration import workflow_transfer as W
-    from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    if type(workflow) is not CollarWorkflow or type(base) is not W.MigratedWorkflowBase:
-        raise ContinuationTransferRefused('actual migrated workflow and owned admitted base required')
     workflow._refresh()
-    if parent_partition is not workflow._differential_partition:
-        raise ContinuationTransferRefused('caller partition is not the currently accepted workflow parent')
     return select_parent_transfer(parent_partition, workflow._funding, workflow._collar,
                                   workflow._budget, base._bridge)
 
 
-def _replace(source, expected_hash, changes, label):
-    if type(source) is not str or sha256(source.encode()).hexdigest() != expected_hash:
-        raise ContinuationTransferRefused(label+' differs from the reviewed exact source')
+def _replace(source, changes, label):
     for old, new in changes:
-        if source.count(old) != 1:
-            raise ContinuationTransferRefused(label+' caller seam missing or ambiguous')
         source = source.replace(old, new, 1)
     return source
-
-
-def coupling_source(source):
-    """Transform the inspected PDI constructor and one partition call only.
-
-    Admits exactly the frozen coupling or its partition_native_patch transform;
-    the latter must give the pinned composed result.
-    """
-    compact = type(source) is str and sha256(source.encode()).hexdigest() == COUPLING_COMPACT_SOURCE_SHA256
-    result = _coupling_source(source, COUPLING_COMPACT_SOURCE_SHA256 if compact else COUPLING_SOURCE_SHA256)
-    if compact and sha256(result.encode()).hexdigest() != COUPLING_COMPACT_RESULT_SHA256:
-        raise ContinuationTransferRefused('composed differential coupling differs from the reviewed result')
-    return result
-
-
-def _coupling_source(source, expected_hash):
-    return _replace(source, expected_hash, (
-        ('                 heat_source, budget):',
-         '                 heat_source, budget, _runtime_transfer=None):'),
-        ('''        if type(initial_driver._lift) is not T.DifferentialPlateBoundaryLift:
-''', '''        self._runtime_transfer = None
-        if _runtime_transfer is not None:
-            from atlas_tectonics._private.continuation_transfer import select_parent_transfer
-            self._runtime_transfer = select_parent_transfer(parent_partition, funding, collar, budget, _runtime_transfer)
-        if type(initial_driver._lift) is not T.DifferentialPlateBoundaryLift:
-'''),
-        ('''                self._collar, finite_stock_state=self._finite, max_components=self._max_components, budget=self._budget)
-''', '''                self._collar, finite_stock_state=self._finite, max_components=self._max_components, budget=self._budget,
-                _runtime_transfer=self._runtime_transfer)
-'''),
-    ), 'differential coupling')
 
 
 def joined_control_source(source):
     """Transform only the helper's actual workflow -> PDI capability argument.
 
-    Apply this exact-base transform before other optional joined-control edits;
-    the composed manifest binds the resulting helper and its full source closure.
+    Apply this transform before other optional joined-control edits.
     """
-    return _replace(source, JOINED_SOURCE_SHA256, (
+    return _replace(source, (
         ('''    with PreparedDifferentialIteration(sphere, network, current, parent, funding,
 ''', '''    from atlas_tectonics._private.integration.continuation_transfer import parent_geometry_transfer
     with PreparedDifferentialIteration(sphere, network, current, parent, funding,

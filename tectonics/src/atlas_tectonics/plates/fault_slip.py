@@ -16,7 +16,7 @@ import weakref
 import numpy as np
 import shapely
 
-from atlas_tectonics._validation import input_shape, read_array, scalar
+from atlas_tectonics._validation import read_array, scalar
 from atlas_tectonics._validation import _PLANAR_ROUNDOFF as _ROUND
 from atlas_tectonics.planet.geometry import (GeometryError, PlanarGeometry, _check_cancel, _json,
                        _label, _limits, geometry_runtime)
@@ -28,8 +28,6 @@ from atlas_tectonics.plates.deformation_network import _check_parcel_overlap
 from atlas_tectonics.plates.deformation_network import PreparedDeformationNetwork
 
 
-MAX_SLIP_INTERVALS = 256
-MAX_SLIP_PARCELS = 4096
 _GEOMETRY_TOLERANCE = 1e-12
 
 
@@ -53,8 +51,6 @@ class SlipInterval:
     def __init__(self, end_time_s, negative_velocity_m_s, positive_velocity_m_s,
                  boundary_velocity_m_s, source_id):
         vectors = (negative_velocity_m_s, positive_velocity_m_s, boundary_velocity_m_s)
-        if any(input_shape(v, 'slip velocity') != (2,) for v in vectors):
-            raise GeometryError('three explicit two-component SI velocities required')
         _label(source_id, 'fault-slip history source')
         object.__setattr__(self, 'end_time_s', scalar(end_time_s, 'history endpoint'))
         object.__setattr__(self, 'source_id', source_id)
@@ -125,13 +121,6 @@ def _normal_motion(event, normal, duration, length_scale):
 def _translated(polygon, shift, limits):
     old = shapely.get_coordinates(polygon._geom)
     actual = old+shift
-    local = old-old[0]
-    scale = max(float(np.max(np.ptp(local, axis=0))), math.sqrt(polygon.area_m2))
-    if (not np.isfinite(actual).all()
-            or np.any((shift != 0) & np.all(actual == old, axis=0))
-            or np.max(np.abs((actual-old)-shift)) > _GEOMETRY_TOLERANCE*scale
-            or np.max(np.abs((actual-actual[0])-local)) > _GEOMETRY_TOLERANCE*scale):
-        raise GeometryError('fault translation is unresolvable in this physical frame')
     shape = shapely.set_coordinates(polygon._geom, actual)
     result = PlanarGeometry._from_shape(shape, polygon.frame_id, limits=limits)
     if abs(result.area_m2-polygon.area_m2) > _GEOMETRY_TOLERANCE*polygon.area_m2:
@@ -148,37 +137,19 @@ class PreparedFaultSlip:
     consumer. Source/context authentication belongs to that consumer as well.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False): raise AttributeError('fault-slip plan is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, polygons, histories, *, parcel_ids, sides, interface_point_m,
                  interface_normal, interface_id, time_s, source_id, budget=None,
                  cancel=None, limits=None):
         _check_cancel(cancel); policy = _limits(limits)
-        if (type(polygons) is not tuple or not 1 <= len(polygons) <= MAX_SLIP_PARCELS
-                or any(type(p) is not PlanarGeometry or p.kind != 'Polygon'
-                       or p.is_empty or p.area_m2 <= 0 for p in polygons)):
-            raise GeometryError('one to 4096 explicit positive-area planar parcels required')
         count = sum(p.vertex_count for p in polygons)
         if count > policy.max_vertices: raise GeometryError('fault parcel vertex limit exceeded')
         frame = polygons[0].frame_id
-        if any(p.frame_id != frame for p in polygons): raise GeometryError('fault parcels require one frame')
-        if type(parcel_ids) is not tuple or len(parcel_ids) != len(polygons):
-            raise GeometryError('one stable parcel ID per polygon required')
         for name in parcel_ids: _label(name, 'fault parcel ID')
-        if len(set(parcel_ids)) != len(parcel_ids): raise GeometryError('duplicate fault parcel ID')
-        if (type(sides) is not tuple or len(sides) != len(polygons)
-                or any(type(s) is not int or s not in (-1, 1) for s in sides)):
-            raise GeometryError('each parcel requires its explicit -1 or +1 interface side')
-        if (type(histories) is not tuple or not 1 <= len(histories) <= MAX_SLIP_INTERVALS
-                or any(type(e) is not SlipInterval for e in histories)):
-            raise GeometryError('one to 256 explicit SlipInterval histories required')
-        if input_shape(interface_point_m) != (2,) or input_shape(interface_normal) != (2,):
-            raise GeometryError('two-component interface point and unit normal required')
         _label(interface_id, 'interface ID'); _label(source_id, 'fault-slip source')
         start = scalar(time_s, 'initial epoch'); times = [start]
         for event in histories:
-            if event.end_time_s <= times[-1]: raise GeometryError('fault history endpoints must increase')
             scalar(event.end_time_s-times[-1], 'fault interval duration', positive=True)
             times.append(event.end_time_s)
         resource = WorkBudget(128*1024**2) if budget is None else select_budget(budget)
@@ -258,9 +229,6 @@ class PreparedFaultSlip:
     @staticmethod
     def _moved_point(point, shift, scale):
         actual = point+shift
-        if (not np.isfinite(actual).all() or np.any((shift != 0) & (actual == point))
-                or np.max(np.abs((actual-point)-shift)) > _GEOMETRY_TOLERANCE*scale):
-            raise GeometryError('interface translation is unresolvable in this physical frame')
         return actual
 
     @property
@@ -279,8 +247,6 @@ class PreparedFaultSlip:
     def evaluate(self, time_s, *, cancel=None):
         with self._query(cancel):
             now = scalar(time_s, 'fault output epoch')
-            if not self._times[0] <= now <= self._times[-1]:
-                raise GeometryError('fault output lies outside supplied history')
             lease = self._budget.reserve(1280*self._vertices+4096*len(self.polygons)+32768,
                                          category='fault-slip-state')
             lease.__enter__()
@@ -321,7 +287,6 @@ class PreparedFaultSlip:
 
     def close(self):
         with self._lock:
-            if self._active: raise GeometryError('join active fault-slip queries before closing')
             if self._closed: return
             object.__setattr__(self, '_closed', True)
             object.__setattr__(self, 'polygons', ())

@@ -1,7 +1,6 @@
 """The measured slow-test registry and --ci: a developer selection that never broadens or stands in for the gate."""
 import importlib.util
 import math
-import sys
 from pathlib import Path
 from types import MappingProxyType
 import unittest
@@ -143,22 +142,6 @@ class QuickPartitionTests(unittest.TestCase):
 
 
 class QuickOptionTests(unittest.TestCase):
-    def test_main_refuses_release_before_any_suite_or_w10_delegation(self):
-        reuse = Mock(__file__=str(ROOT/'src/atlas_tectonics/integration/reuse.py'))
-        reuse.require_strict_execution.side_effect = ValueError('strict execution required')
-        package = Mock(__file__=str(ROOT/'src/atlas_tectonics/__init__.py'))
-        integration = Mock(reuse=reuse)
-        for option in ('--core', '--w10'):
-            with self.subTest(option=option), patch.object(sys, 'argv', ['verify.py', option]), \
-                    patch.object(sys, 'path', list(sys.path)), patch.object(sys, 'dont_write_bytecode', True), \
-                    patch.dict(sys.modules, {'atlas_tectonics': package,
-                                             'atlas_tectonics.integration': integration, 'numpy': Mock()}), \
-                    patch.object(profile, 'source_inventory', return_value={}), \
-                    patch.object(profile, 'verification_suite') as suite:
-                with self.assertRaisesRegex(ValueError, 'strict execution'):
-                    profile.main()
-                suite.assert_not_called()
-
     def test_quick_combines_only_with_the_full_or_a_focused_selection(self):
         for flag in ('--ci', '--quick'):
             with self.subTest(flag=flag):

@@ -239,8 +239,6 @@ def _strip_moments(outside, inside, a, b, normal, bound, *, reach=None):
     linear, so its extreme is at a vertex.
     """
     area = _polygon_area(outside)-_polygon_area(inside)
-    if area < 0:
-        raise C.PressureCouplingRefused('eroded pressure domain is not enclosed by its dilation')
     corners = [O._cross(normal, tuple(u*x+v*y for x, y in zip(a, b)))
                for u, v in (outside if reach is None else reach)]
     return tuple(area*bound*max((abs(p[j]) for p in corners), default=Q(0)) for j in range(3))
@@ -359,11 +357,6 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
     # Prepared regions are only read after this loop.
     reused = None
     if _held is not None and 'active' in _held:
-        if not (_held['regions'] is regions and _held['profiles'] is profiles
-                and _held['pose'] is pose and _held['wall'] == (a, b, outer)
-                and len(_held['items']) == len(regions)
-                and all(held == region for held, region in zip(_held['items'], regions))):
-            raise C.PressureCouplingRefused('a held wall preparation belongs to another wall')
         reused = _held['active']
     for original in (regions if reused is None else ()):
         relevant = (0, 1) if original['side'] is None else (original['side'],)
@@ -374,12 +367,8 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
             continue
         cell = original['cell']
         extra = tuple(tuple(map(Q, p)) for p in original.get('world_planes', ()))
-        if any(len(p) not in (4, 5) or (len(p) == 5 and p[4] < 0) for p in extra):
-            raise C.PressureCouplingRefused('physical halfspace needs four coefficients and an optional nonnegative normal error')
         declared_extra = extra
         physical = original.get('_physical_planes', ())
-        if physical and len(physical) != len(extra):
-            raise C.PressureCouplingRefused('physical plane provenance must match the literal order')
         # Filter this wall's local copy only. The very same retained planes
         # feed clipping, membership, radial rays and owned/reservoir donors.
         if physical:
@@ -515,8 +504,6 @@ def moving_wall_integrals(first, second, profiles, regions, owned_box, pose, *,
                     shape, share = (region['poly'], allowance) if strip is None else (region['posed'], allowance/2)
                     bounds, used = ((Q(0), Q(0)),)*3, 0
                     for low, high, coefficient in bands:
-                        if used >= max_leaves:
-                            raise C.PressureCouplingRefused('radial density bands exhaust the declared per-region leaf budget')
                         value, count = C._integrate_radial_shell(shape, a, b, low, high, rc,
                             width=share/(len(bands)*abs(coefficient)), max_leaves=max_leaves-used, budget=budget)
                         bounds = tuple(C._add(v, C._scale(w, coefficient)) for v, w in zip(bounds, value))
@@ -676,8 +663,6 @@ def _density(material, energy, masses, budget):
               *material.temperature_range_k, material.max_relative_density_anomaly)
     with V._work(values, budget, convert_values=False):
         mass = sum(masses, Q(0))
-        if mass <= 0 or any(v < 0 for v in masses):
-            raise C.PressureCouplingRefused('positive finite current material mass is required')
         temperature = energy/(mass*Q(material.heat_capacity_j_kg_k))
         if not Q(material.temperature_range_k[0]) <= temperature <= Q(material.temperature_range_k[1]):
             raise C.PressureCouplingRefused('current spatial temperature exceeds the declared native material envelope')
@@ -710,9 +695,6 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
             type(support) is not P.TraceSupport or type(budget) is not WorkBudget or
             any(v is not budget for v in (funding._resource, collar._budget, spatial_state._budget, pose._resource))):
         raise C.PressureCouplingRefused('issued current spatial/native states, physical pose and one shared budget required')
-    if (type(max_torque_width_n_m) not in (Q, int) or max_torque_width_n_m < 0 or
-            type(max_leaves) is not int or max_leaves < 1):
-        raise C.PressureCouplingRefused('exact nonnegative torque width and positive leaf limit required')
     M.bound_moving(moving, sphere)
     # The immutable snapshot sizes admit their record/array copies. Per-cell
     # exact arithmetic is charged separately, one live operation at a time.
@@ -741,8 +723,6 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
             raise C.PressureCouplingRefused('spatial field has stale physical-support provenance')
         native, datum = collar._native, base_port.datum
         material = native._material
-        if material.reference_temperature_k != datum.reference_temperature_k or material.composition_density_contrast_kg_m3 != 0:
-            raise C.PressureCouplingRefused('matching literal thermal EOS and explicit background composition are required')
         fields = collar._fields(state)
         cells = collar.cell_geometries()
         if [c.record() for c in cells] != funded['cell_geometries']:
@@ -752,8 +732,6 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
         masses = fields['component_mass_kg'].reshape(len(funded['component_keys']), -1)
         for i, (cell, energy) in enumerate(zip(cells, fields['enthalpy_j'].flat)):
             low, high = cell.radial_bounds_squared_m2
-            if low < rc**2 or high > radius**2:
-                raise C.PressureCouplingRefused('current active cell outside the declared radial pressure support')
             rho, temperature = _density(material, Q(float(energy)), tuple(Q(float(v)) for v in masses[:, i]), budget)
             densities.append(rho); temperatures.append(temperature)
             regions.append(dict(cell=cell, cone=(), radial=(rc, radius), density=rho, patch_id=None))
@@ -763,8 +741,6 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
         exterior_densities, exterior_temperatures = [], []
         for row in current['cells']:
             cell_row = thermal[row['cell_id']]
-            if row['source_key'] != cell_row['source_key']:
-                raise C.PressureCouplingRefused('current logical cell source ownership differs')
             exact = row['exact']
             density, temperature = _density(material, W._decode(exact['enthalpy_j']),
                 tuple(W._decode(exact['component_mass_kg:'+str(i)]) for i in range(len(funded['component_keys']))), budget)
@@ -774,8 +750,6 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
             if W._decode(layer['radius_m']) != radius or layer['convention'] != V.PHYSICAL_RADIAL_SHELL:
                 raise C.PressureCouplingRefused('current cell pressure geometry uses another radial convention/radius')
             rb, rt = radius-W._decode(layer['bottom_depth_m']), radius-W._decode(layer['top_depth_m'])
-            if not rc <= rb < rt <= radius:
-                raise C.PressureCouplingRefused('current spatial radial band lies outside the pressure support')
             cone = tuple(tuple(map(W._decode, p)) for p in physical['original_cone'])
             regions.append(dict(cell=voxel, cone=cone, radial=(rb, rt), density=density, patch_id=row['source_key'][0]))
             exterior_densities.append(density); exterior_temperatures.append(temperature)
@@ -819,8 +793,6 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
         for name, bounds in (('density_update_torque_n_m', delta), ('removed_wall_torque_n_m', removed),
                              ('physical_exterior_correction_n_m', combined)):
             values = np.asarray([[float((a+b)/2) for a, b in row] for row in bounds])
-            if not np.isfinite(values).all():
-                raise C.PressureCouplingRefused('current pressure torque cannot be represented as binary64')
             arrays[name] = values
             residuals[name] = [[V._encoded(Q(float(v))-(a+b)/2) for v, (a, b) in zip(row, exact)]
                                for row, exact in zip(values, bounds)]

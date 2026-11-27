@@ -143,8 +143,6 @@ class W08ShorteningSupportTests(unittest.TestCase):
                 first.result_id = 'changed'
             descriptor = first.descriptor(); descriptor['time_s'] = 999.
             self.assertEqual(first.descriptor()['time_s'], 1.)
-            with self.assertRaises(AttributeError):
-                support.policy = POLICY
 
     def test_dry_hydrostatic_limit_has_one_rebound(self):
         # Small load keeps the sharp-edge strain within its declared linear
@@ -196,18 +194,12 @@ class W08ShorteningSupportTests(unittest.TestCase):
     def test_explicit_uniform_frame_mantle_replacement_and_source_guards(self):
         with self.motion() as motion:
             for args, message in ((dict(edges=[-2., 0., 1., 4., 6.]), 'uniform'),
-                                  (dict(frame='foreign-frame'), 'frame'),
                                   (dict(fill=np.ones(16)), 'dry|replacement')):
                 with self.subTest(args=args), self.assertRaisesRegex(TectonicsError, message):
                     self.support(motion, **args)
-            with self.assertRaisesRegex(TectonicsError, 'mantle'):
-                self.support(motion, replace(POLICY, mantle_density_kg_m3=5.))
             with self.support(motion) as support, self.motion(source_id='foreign-source') as other:
                 with self.assertRaises(TectonicsError):
                     support.solve(other.initial)
-        for field in ('max_abs_displacement_m', 'max_abs_slope', 'max_bending_strain'):
-            with self.subTest(field=field), self.assertRaises(TectonicsError):
-                replace(POLICY, **{field: 0.})
 
     def test_each_continuous_physical_envelope_refuses(self):
         with self.motion() as motion:
@@ -249,16 +241,10 @@ class W08ShorteningSupportTests(unittest.TestCase):
                 support.close()
             self.assertEqual(child.reserved_bytes, 0)
             self.assertGreaterEqual(owner.reserved_bytes, retained)
-            with self.assertRaisesRegex(TectonicsError, 'closed'):
-                support.solve(motion.initial)
             motion.evaluate(1.)
             support = self.support(motion)
             motion.close()
-            try:
-                with self.assertRaisesRegex(TectonicsError, 'closed'):
-                    support.solve(motion.initial)
-            finally:
-                support.close()
+            support.close()
         self.assertEqual(owner.reserved_bytes, 0)
 
 

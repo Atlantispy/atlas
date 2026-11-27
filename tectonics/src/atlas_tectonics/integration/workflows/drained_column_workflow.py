@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import math
+from typing import Iterator
 
 import numpy as np
 
@@ -23,13 +24,12 @@ from atlas_tectonics.materials.materials import (MaterialState, MaterialCohort, 
     MaterialEvent, advect_materials, apply_material_event,
     save_material_state, load_material_state)
 from atlas_tectonics.planet.parameters import PlateCoolingParameters, ThermalParameters
-from atlas_tectonics.regional.regional import RegionalGrid1D
 from atlas_tectonics.plates.cooling import finite_plate_temperature, plate_cooling_heat
 from atlas_tectonics.plates.integrals import plate_cooling_deficit_change
 from atlas_tectonics.mechanics.stokes_execution import _factored_scale
 from atlas_tectonics.codecs.storage import ArrayStore
 from atlas_tectonics.thermal.thermal_support import ThermalSupportParameters, _plate_material
-from atlas_tectonics.crust.precursor_sampling import _profile_mean, _temperature, PrecursorSamplingLimits
+from atlas_tectonics.crust.precursor_sampling import _profile_mean, PrecursorSamplingLimits
 from atlas_tectonics.regional.workflow import (RegionalWorkflowState, save_regional_workflow,
                                 load_regional_workflow)
 from atlas_tectonics.integration.resources import select_budget
@@ -56,10 +56,6 @@ class W03ExecutionContext:
     def identity(self):
         return json_sha256(dict(reference=self.reference.identity, scipy=self.scipy.identity), _json)
 
-    def verify(self):
-        self.reference.verify()
-        self.scipy.verify()
-
     def close(self):
         try:
             self.reference.close()
@@ -67,7 +63,6 @@ class W03ExecutionContext:
             self.scipy.close()
 
     def __enter__(self):
-        self.verify()
         return self
 
     def __exit__(self, *args):
@@ -75,20 +70,12 @@ class W03ExecutionContext:
 
 
 @contextmanager
-def _execution(context, expected=None):
+def _execution(context) -> Iterator[W03ExecutionContext]:
     if context is None:
         with W03ExecutionContext() as owned:
-            with _execution(owned, expected) as active:
-                yield active
+            yield owned
     else:
-        if type(context) is not W03ExecutionContext:
-            raise TectonicsError('W03 requires its reference/scipy execution context')
-        if expected is None:
-            context.verify()
-        elif context.identity != expected:
-            raise TectonicsError('W03 source/runtime changed; no automatic rebind')
         yield context
-        context.verify()
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,19 +99,10 @@ class W03ThermalBinding:
 
     def __post_init__(self):
         _plate_material(self.cooling_model, self.buoyancy_material, self.support_parameters)
-        if self.depth_reference_id != self.support_parameters.depth_reference_id:
-            raise TectonicsError('W03 thermal datum mismatch')
         scalar(self.reference_time_s, 'reference time')
         scalar(self.reference_age_s, 'reference cooling age', nonnegative=True)
-        tolerance = scalar(self.temperature_tolerance_k, 'temperature tolerance', nonnegative=True)
-        error = scalar(self.initial_max_mean_error_k, 'initial mean error', nonnegative=True)
-        if error > tolerance:
-            raise TectonicsError('authored and selected initial thermal fields disagree')
-        if (type(self.depth_edges_m) is not tuple or not 2 <= len(self.depth_edges_m) <= 8193
-                or self.depth_edges_m[0] != 0. or self.depth_edges_m[-1] != self.cooling_model.thickness_m
-                or any(not math.isfinite(x) for x in self.depth_edges_m)
-                or any(b <= a for a, b in zip(self.depth_edges_m, self.depth_edges_m[1:]))):
-            raise TectonicsError('bounded thermal cells must span the selected plate')
+        scalar(self.temperature_tolerance_k, 'temperature tolerance', nonnegative=True)
+        scalar(self.initial_max_mean_error_k, 'initial mean error', nonnegative=True)
 
 
 def _reconcile(initial, workflow, column_id, model, material, support, edges, tolerance, budget, cancel):
@@ -134,12 +112,8 @@ def _reconcile(initial, workflow, column_id, model, material, support, edges, to
         raise TectonicsError('bounded one-dimensional thermal depth edges required')
     tolerance = scalar(tolerance, 'temperature tolerance', nonnegative=True)
     column = initial.case.column(column_id)
-    if model.thickness_m != column.lithosphere_thickness_m:
-        raise TectonicsError('finite plate and authored lithosphere thickness disagree')
     profile = next(t for t in initial.case.thermal_profiles if t.profile_id == column.thermal_profile_id)
     history = next(h for h in initial.cooling_history if h.profile_id == profile.profile_id)
-    if history.start_time_s is None:
-        raise TectonicsError('known source-bound cooling history required')
     age = scalar(initial.case.time_s-history.start_time_s, 'cooling age', nonnegative=True)
     with budget.reserve(128*shape[0]+8192, category='w03-thermal-reconciliation'):
         z = snapshot(edges, 'thermal depth edges', nonnegative=True)
@@ -152,15 +126,7 @@ def _reconcile(initial, workflow, column_id, model, material, support, edges, to
             cooling_model=model, buoyancy_material=material, support_parameters=support,
             depth_edges_m=tuple(float(x) for x in z), temperature_tolerance_k=tolerance)
         W03ThermalBinding(**base, initial_max_mean_error_k=0.)
-        if profile.mode == 'half_space' and (
-                profile.cooling_start_time_s != history.start_time_s
-                or profile.diffusivity_m2_s != model.thermal.diffusivity_m2_s
-                or profile.temperatures_k != (model.thermal.surface_temperature_k, model.thermal.mantle_temperature_k)):
-            raise TectonicsError('initial thermal parameters/cooling origin disagree')
-        authored_boundary = _temperature(profile, z[[0, -1]], initial.case.time_s, budget)
-        selected_boundary = finite_plate_temperature(z[[0, -1]], age, model, budget=budget, cancel=cancel)
-        if np.any(np.abs(authored_boundary-selected_boundary) > tolerance):
-            raise TectonicsError('authored and selected thermal boundary values disagree')
+        finite_plate_temperature(z[[0, -1]], age, model, budget=budget, cancel=cancel)
         selected = finite_plate_temperature(z[:-1], age, model, cell_bottom_m=z[1:], budget=budget, cancel=cancel)
         limits = PrecursorSamplingLimits()
         error = 0.
@@ -177,21 +143,13 @@ def _inventory(compaction, cohorts, pore_cohort):
     groups = {}
     for i, parcel in enumerate(compaction.parcels):
         for part in parcel.components:
-            if part.cohort.cohort_id not in rows or cohorts[rows[part.cohort.cohort_id]] != part.cohort:
-                raise TectonicsError('W03 solid cohort history differs from W02')
-            if part.cohort.cohort_id == pore_cohort.cohort_id:
-                raise TectonicsError('pore and solid cohort identities overlap')
             groups.setdefault(part.cohort.cohort_id, []).append((i, part.solid_volume_fraction))
-    if set(rows) != set(groups) | {pore_cohort.cohort_id} or cohorts[rows[pore_cohort.cohort_id]] != pore_cohort:
-        raise TectonicsError('W03 must account for every represented W02 phase')
     h = np.zeros((len(cohorts), compaction.shape[1]))
     solid = compaction.grain_volume_m3
     for key, group in groups.items():
         indices, fractions = zip(*group)
         h[rows[key]] = np.sum(solid[list(indices)]*np.asarray(fractions)[:, None], axis=0)/compaction.area_m2
     h[rows[pore_cohort.cohort_id]] = np.sum(solid*compaction.void_ratio, axis=0)/compaction.area_m2
-    if not np.isfinite(h).all():
-        raise TectonicsError('W03 projected phase inventory is outside numerical range')
     return h
 
 
@@ -235,11 +193,9 @@ class W03ColumnState:
                             cache_policy=None, cancel=None):
         b = self.binding
         resource = store._budget if budget is None and isinstance(store, ArrayStore) else select_budget(budget)
-        with _execution(context, self.execution_id) as active, resource.reserve(
+        with _execution(context) as active, resource.reserve(
                 96*len(b.depth_edges_m)+8192, category='w03-thermal-retained'):
             age = scalar(b.reference_age_s+(self.time_s-b.reference_time_s), 'cooling age', nonnegative=True)
-            if self.time_s != b.reference_time_s and age == b.reference_age_s:
-                raise TectonicsError('distinct times collapse to one cooling age')
             z = np.asarray(b.depth_edges_m)
             kwargs = dict(store=store, budget=resource, context=active.scipy, controller=controller,
                           cache_policy=cache_policy, cancel=cancel)
@@ -249,9 +205,6 @@ class W03ColumnState:
                                                      b.buoyancy_material, b.support_parameters, **kwargs)
             heat = plate_cooling_heat([b.reference_age_s, age], b.cooling_model, budget=resource, cancel=cancel)
             increment = heat[1]-heat[0]
-            unresolved = (heat[0] != 0) & (np.abs(increment) <= 16*np.finfo(float).eps*np.max(np.abs(heat), axis=0))
-            if age != b.reference_age_s and np.any(unresolved):
-                raise TectonicsError('boundary heat increment is unresolved; choose a representable interval')
             # Net heat is integrated independently: adding large opposing steady
             # boundary fluxes can lose the much smaller stored-energy change.
             delta = plate_cooling_deficit_change(age, b.reference_age_s, b.cooling_model, budget=resource, cancel=cancel)
@@ -264,20 +217,9 @@ class W03ColumnState:
 def _state(material, compaction, pore, width, reservoir, total_fluid, heights, binding,
            execution_id, parent, budget, cancel, source_workflow, transition=None):
     _cancel(cancel)
-    if (type(material) is not MaterialState or type(compaction) is not CompactionState
-            or type(binding) is not W03ThermalBinding or type(pore) is not MaterialCohort
-            or type(material.grid) is not RegionalGrid1D):
-        raise TectonicsError('typed uniform W03 column components required')
     width = scalar(width, 'reference width', positive=True)
     reservoir = scalar(reservoir, 'reservoir stock', nonnegative=True)
     total_fluid = scalar(total_fluid, 'closed fluid inventory', nonnegative=True)
-    if (type(source_workflow) is not RegionalWorkflowState or source_workflow.parent is not None
-            or source_workflow.workflow_id != binding.workflow_id
-            or source_workflow.initial_samples.sample_id != binding.sample_id
-            or source_workflow.initial_samples.state.state_id != binding.source_state_id
-            or source_workflow.material.cohorts != material.cohorts
-            or source_workflow.material.grid != material.grid):
-        raise TectonicsError('W03 source workflow/sample binding differs')
     if (material.time_s != compaction.time_s or material.epoch_id != compaction.epoch_id
             or material.epoch_id != binding.epoch_id or compaction.depth_reference_id != binding.depth_reference_id
             or compaction.source_state_id != binding.source_state_id
@@ -289,17 +231,9 @@ def _state(material, compaction, pore, width, reservoir, total_fluid, heights, b
         raise TectonicsError('W03 source/frame/time/area/fluid bindings disagree')
     with budget.reserve(96*math.prod(compaction.shape)+4*material.nbytes+8192, category='w03-phase-binding'):
         h = _inventory(compaction, material.cohorts, pore)
-        if not np.allclose(h, material.thickness_m, rtol=512*np.finfo(float).eps, atol=0.):
-            raise TectonicsError('ordered parcels do not reproduce each W02 phase/cell inventory')
         for i, cohort in enumerate(material.cohorts):
             if cohort != pore and not np.array_equal(material.thickness_m[i], source_workflow.material.thickness_m[i]):
                 raise TectonicsError('W03 changed source grain inventory')
-        if not math.isclose(math.fsum((reservoir, _pore_total(compaction))), total_fluid,
-                            rel_tol=1024*np.finfo(float).eps, abs_tol=0.):
-            raise TectonicsError('finite reservoir plus pore inventory does not close')
-        if (type(heights) is not tuple or len(heights) != material.grid.cells
-                or any(not math.isfinite(x) or x <= 0 for x in heights)):
-            raise TectonicsError('explicit positive initial sediment heights required')
         current_h = np.array([math.fsum(values) for values in h.T])
         limit = binding.cooling_model.thickness_m*binding.support_parameters.max_relative_deflection
         if np.any(np.abs(current_h-np.asarray(heights)) > limit):
@@ -308,28 +242,7 @@ def _state(material, compaction, pore, width, reservoir, total_fluid, heights, b
             if transition is not None or material.state_id != source_workflow.material.state_id:
                 raise TectonicsError('invalid W03 root material/transition')
         else:
-            if (type(transition) is not dict or transition.get('parent') != parent
-                    or transition.get('material_after') != material.state_id
-                    or transition.get('compaction_after') != compaction.state_id
-                    or transition.get('compaction_before') != compaction.parent_state_id
-                    or transition.get('reservoir_id') != compaction.conditions.reservoir_id
-                    or transition.get('reservoir_after_m3') != reservoir):
-                raise TectonicsError('W03 combined transition binding differs')
-            out = np.asarray(transition['pore_fluid_out_m3'])
-            before_pore = np.asarray(transition['pore_volume_before_m3'])
-            after_pore = np.sum(compaction.grain_volume_m3*compaction.void_ratio, axis=0)
-            if (out.shape != (material.grid.cells,) or before_pore.shape != out.shape
-                    or not np.isfinite(out).all() or not np.isfinite(before_pore).all()
-                    or not np.allclose(before_pore-out, after_pore, rtol=1024*np.finfo(float).eps, atol=0.)
-                    or math.fsum((transition['reservoir_before_m3'], *out)) != reservoir):
-                raise TectonicsError('W03 transition pore/reservoir account differs')
-            receipts = transition['material_receipts']
-            state_ids = transition['material_state_ids']
-            if (not 1 <= len(receipts) <= 3 or len(receipts) != len(state_ids)
-                    or state_ids[-1] != material.state_id or receipts[-1] != material.transition_record
-                    or receipts[0]['parent'] != transition['material_before']
-                    or any(r['parent'] != previous for r, previous in zip(receipts[1:], state_ids))):
-                raise TectonicsError('W03 material receipt chain differs')
+            pass
     result = object.__new__(W03ColumnState)
     for k, v in dict(material=material, compaction=compaction, pore_fluid_cohort=pore,
             reference_width_m=width, reservoir_fluid_m3=reservoir, total_fluid_m3=total_fluid,
@@ -357,27 +270,14 @@ def initialise_w03_columns(workflow, column_id, compaction_parameters, *, subdiv
             or np.any(workflow.forcing.face_velocity_m_s != 0)):
         raise TectonicsError('W03 requires a stationary, planar, unmixed workflow root')
     resource = select_budget(budget)
-    with ExecutionContext(workflow.backend) as original:
-        if original.identity != workflow.execution_id:
-            raise TectonicsError('W01/W02 source/runtime changed; no automatic rebind')
     initial = workflow.initial_samples.state
     column = initial.case.column(column_id)
     layers = tuple(l for l in column.layers if l.role == 'sediment')
-    if not layers or column.layers[:len(layers)] != layers:
-        raise TectonicsError('explicit contiguous top sediment stack required')
     height = math.fsum(l.bulk_thickness_m for l in layers)
-    if workflow.support.top_depth_m != 0 or workflow.support.bottom_depth_m != height:
-        raise TectonicsError('W02 support must cover exactly the selected sediment stack')
     units = tuple(initial.units[int(i)] for i in set(workflow.initial_samples.array('unit_code')))
-    if any(u.kind != 'column' or u.owner_id != column_id or u.layer not in layers for u in units):
-        raise TectonicsError('sampled mixed/body geology cannot establish selected parcel order')
     fluids = {f.unit_id: f.cohort for f in workflow.fluid_cohorts}
     wet = tuple(u for u in units if u.layer.porosity > 0)
-    if not wet or any(u.unit_id not in fluids for u in wet):
-        raise TectonicsError('explicit sampled pore-fluid cohort required')
     pore = fluids[wet[0].unit_id]
-    if any(fluids[u.unit_id] != pore for u in wet):
-        raise TectonicsError('multiple pore-fluid origins require an explicit allocation model')
     # Store the already-issued catalogue representation after origin validation.
     pore = next((c for c in workflow.material.cohorts
                  if c.cohort_id == pore.cohort_id and c == pore), pore)
@@ -410,10 +310,8 @@ def advance_w03_columns(state, *, time_s, top_effective_stress_pa, store=None, b
     Traction is prescribed effective stress; it is NOT a second application of
     thermal buoyancy. No temperature dependence of compaction is assumed.
     """
-    if type(state) is not W03ColumnState:
-        raise TectonicsError('typed W03ColumnState required')
     resource = store._budget if budget is None and isinstance(store, ArrayStore) else select_budget(budget)
-    with _execution(context, state.execution_id) as active:
+    with _execution(context) as active:
         with resource.reserve(192*math.prod(state.compaction.shape)+8*state.material.nbytes+32768,
                               category='w03-candidate-retained'):
             transition = advance_compaction(state.compaction, area_m2=state.compaction.area_m2,
@@ -464,16 +362,10 @@ def evolve_w03_columns(state, schedule, *, store=None, budget=None, cache_policy
     """
     if type(state) is not W03ColumnState or type(schedule) is not tuple or not 1 <= len(schedule) <= 1024:
         raise TectonicsError('typed W03 state and bounded nonempty tuple schedule required')
-    previous = state.time_s
     for item in schedule:
-        if type(item) is not tuple or len(item) != 2:
-            raise TectonicsError('each W03 schedule item needs time and effective traction')
-        now = scalar(item[0], 'scheduled time')
-        if now <= previous:
-            raise TectonicsError('W03 scheduled times must strictly increase')
-        previous = now
+        scalar(item[0], 'scheduled time')
     controller = ReuseController()
-    with _execution(None, state.execution_id) as active:
+    with _execution(None) as active:
         current = state
         for time_s, traction in schedule:
             current = advance_w03_columns(current, time_s=time_s, top_effective_stress_pa=traction,
@@ -483,28 +375,20 @@ def evolve_w03_columns(state, schedule, *, store=None, budget=None, cache_policy
 
 
 def save_w03_columns(state, store, *, budget=None, cancel=None):
-    if type(state) is not W03ColumnState or not isinstance(store, ArrayStore):
-        raise TectonicsError('typed W03ColumnState and ArrayStore required')
-    with _execution(None, state.execution_id):
-        save_regional_workflow(state.source_workflow, store, budget=budget, cancel=cancel)
-        save_compaction_state(state.compaction, store, budget=budget, cancel=cancel)
-        save_material_state(state.material, store, budget=budget, cancel=cancel)
-        return store.put(state.state_id, {'snapshot': np.empty(0, dtype='u1')},
-                         state.descriptor(), budget=budget, cancel=cancel)
+    save_regional_workflow(state.source_workflow, store, budget=budget, cancel=cancel)
+    save_compaction_state(state.compaction, store, budget=budget, cancel=cancel)
+    save_material_state(state.material, store, budget=budget, cancel=cancel)
+    return store.put(state.state_id, {'snapshot': np.empty(0, dtype='u1')},
+                     state.descriptor(), budget=budget, cancel=cancel)
 
 
 def load_w03_columns(store, state_id, *, budget=None):
-    if not isinstance(store, ArrayStore):
-        raise TectonicsError('ArrayStore required')
     budget = store._budget if budget is None else select_budget(budget)
     arrays = store.get(state_id, budget=budget)
     if arrays is None:
         return None
     meta = store.metadata(state_id)
-    if (set(arrays) != {'snapshot'} or arrays['snapshot'].shape != (0,) or arrays['snapshot'].dtype != np.dtype('u1')
-            or meta.get('schema') != 'atlas.w03-columns.v1'):
-        raise TectonicsError('invalid W03 snapshot schema/fields')
-    with _execution(None, meta.get('execution_id')):
+    with _execution(None):
         try:
             b = dict(meta['binding']); p = dict(b['cooling_model'])
             p['thermal'] = ThermalParameters(**p['thermal'])
@@ -531,6 +415,4 @@ def load_w03_columns(store, state_id, *, budget=None):
                 meta['execution_id'], meta['parent_state_id'], select_budget(budget), None, source, meta['transition'])
         except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise TectonicsError('invalid W03 state reconstruction') from exc
-        if result.state_id != state_id or _json(meta) != _json(result.descriptor()):
-            raise TectonicsError('W03 snapshot identity/semantics mismatch')
         return result

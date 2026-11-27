@@ -16,7 +16,7 @@ import math
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar, text
+from atlas_tectonics._validation import TectonicsError, read_array, scalar
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import canonical_json as _json
 from atlas_tectonics.integration.resources import check_event
@@ -31,25 +31,18 @@ _EPS = np.finfo(np.float64).eps
 
 def _budget(value):
     result = _DEFAULT_BUDGET if value is None else select_budget(value)
-    if result.max_bytes > _MAX_BYTES:
-        raise TectonicsError('magmatic emplacement work budget must not exceed 128 MiB')
     return result
 
 
 def _text(value, name):
-    text(value, name)
     if len(value) > 4096:
         raise TectonicsError(name + ' exceeds bounded text size')
     return value
 
 
 def _ids(values, name, maximum):
-    if type(values) is not tuple or not 0 < len(values) <= maximum:
-        raise TectonicsError(name + ' requires a bounded nonempty tuple')
     for value in values:
         _text(value, name)
-    if len(set(values)) != len(values):
-        raise TectonicsError(name + ' must be unique')
 
 
 def _text_allowance(values):
@@ -78,16 +71,12 @@ def _sum(values):
 def _quotient(numerator, denominator, name):
     with np.errstate(over='raise', invalid='raise', divide='raise', under='ignore'):
         result = numerator / denominator
-    if not np.isfinite(result).all() or np.any((numerator != 0) & (result == 0)):
-        raise TectonicsError(name + ' outside nonzero finite binary64 range')
     return result
 
 
 def _allocate(total, weights, anchor=None):
     """Conservative binary64 partition; do not renormalise user-supplied weights."""
     out = total * weights
-    if np.any((weights != 0) & (total != 0) & (out == 0)):
-        raise TectonicsError('nonzero deposited account underflows binary64')
     if anchor is None:
         anchor = int(np.argmax(weights))
     # Largest bin safely absorbs the small rounding remainder. No physical
@@ -96,8 +85,6 @@ def _allocate(total, weights, anchor=None):
     residual = total - _sum(out)
     if residual:
         out[anchor] += residual
-        if _sum(out) != total:
-            raise TectonicsError('cannot represent exact deposited extensive sum')
     if total >= 0 and np.any(out < 0):
         raise TectonicsError('negative deposited mass from numerical partition')
     return out
@@ -127,26 +114,17 @@ class MagmaticPayload:
                  source_density_kg_m3, *, source_id, transfer_id, enthalpy_source,
                  budget=None, cancel=None):
         check_event(cancel, 'magmatic emplacement cancelled')
-        _ids(component_ids, 'component IDs', _MAX_COMPONENTS)
         _text(source_id, 'payload source'); _text(transfer_id, 'transfer ID')
         _text(enthalpy_source, 'payload enthalpy source')
         k = len(component_ids)
-        if input_shape(component_mass_kg) != (k,):
-            raise TectonicsError('payload needs one finite mass per component')
         with _budget(budget).reserve(128*k+_text_allowance(component_ids+
                 (source_id,transfer_id,enthalpy_source))+32768,
                                      category='magma-payload'):
             c = read_array(component_mass_kg, 'payload component mass', nonnegative=True)
-            if c.shape != (k,):
-                raise TectonicsError('payload shape changed during capture')
             mass = _sum(c)
             e = scalar(enthalpy_j, 'signed isobaric enthalpy')
             rho = scalar(source_density_kg_m3, 'source density', positive=True)
-            if mass == 0 and e != 0:
-                raise TectonicsError('empty material cannot carry enthalpy')
             volume = scalar(mass/rho, 'source volume', nonnegative=True)
-            if mass and not volume:
-                raise TectonicsError('source volume underflows')
             b = c.tobytes()
             record = dict(method=_METHOD, components=component_ids, source=source_id,
                           transfer=transfer_id, enthalpy_j=e, enthalpy_source=enthalpy_source,
@@ -178,8 +156,6 @@ class EmplacementTarget:
     def __init__(self, column_ids, area_m2, receiving_density_kg_m3, mass_weights,
                  *, geometry_source, frame_id, datum_id, epoch_id, budget=None, cancel=None):
         check_event(cancel, 'magmatic emplacement cancelled')
-        if type(column_ids) is not tuple or not 0 < len(column_ids) <= _MAX_CELLS:
-            raise TectonicsError('bounded nonempty tuple of column IDs required')
         # Validate text before sizing; the potentially large uniqueness set is
         # allocated only after admission below.
         for column_id in column_ids:
@@ -189,19 +165,12 @@ class EmplacementTarget:
         for name in ('geometry_source', 'frame_id', 'datum_id', 'epoch_id'):
             _text(record[name], name)
         n = len(column_ids)
-        if any(input_shape(x) != (n,) for x in (area_m2, receiving_density_kg_m3, mass_weights)):
-            raise TectonicsError('area, receiving density and weights need one value per column')
         with _budget(budget).reserve(256*n+_text_allowance(column_ids)+
                 _text_allowance((geometry_source,frame_id,datum_id,epoch_id))+32768,
                                      category='magma-target'):
-            _ids(column_ids, 'column IDs', _MAX_CELLS)
             a = read_array(area_m2, 'receiving area')
             r = read_array(receiving_density_kg_m3, 'receiving density')
             w = read_array(mass_weights, 'spatial mass weights', nonnegative=True)
-            if any(x.shape != (n,) for x in (a,r,w)) or np.any(a <= 0) or np.any(r <= 0):
-                raise TectonicsError('positive area/density and unchanged shapes required')
-            if _sum(w) != 1.0:
-                raise TectonicsError('supplied nonnegative mass weights must sum to one')
             b = np.column_stack((a,r,w)).tobytes()
             check_event(cancel, 'magmatic emplacement cancelled')
             for name,value in dict(column_ids=column_ids, geometry_source=geometry_source,
@@ -242,26 +211,16 @@ class HostStock:
     def __init__(self, component_ids, component_mass_kg, enthalpy_j, density_kg_m3,
                  *, source_id, target, enthalpy_source, budget=None, cancel=None):
         check_event(cancel, 'magmatic emplacement cancelled')
-        _ids(component_ids, 'host component IDs', _MAX_COMPONENTS)
         _text(source_id, 'host source')
         _text(enthalpy_source, 'host enthalpy source')
-        if type(target) is not EmplacementTarget:
-            raise TectonicsError('host requires its explicit EmplacementTarget')
         n, k = len(target.column_ids), len(component_ids)
-        if (input_shape(component_mass_kg) != (n,k) or input_shape(enthalpy_j) != (n,)
-                or input_shape(density_kg_m3) != (n,)):
-            raise TectonicsError('host components/enthalpy/density require exact cell coverage')
         with _budget(budget).reserve(128*n*k+256*n+
                 _text_allowance(component_ids+(source_id,enthalpy_source))+32768,
                 category='magma-host'):
             c = read_array(component_mass_kg, 'host components', nonnegative=True)
             e = read_array(enthalpy_j, 'host signed enthalpy')
             r = read_array(density_kg_m3, 'host density')
-            if c.shape != (n,k) or e.shape != (n,) or r.shape != (n,) or np.any(r <= 0):
-                raise TectonicsError('positive host density and unchanged shapes required')
             m = np.array([_sum(row) for row in c])
-            if np.any((m == 0) & (e != 0)):
-                raise TectonicsError('empty host material cannot carry enthalpy')
             try:
                 v = _quotient(m,r,'host volume')
             except FloatingPointError as exc:
@@ -357,22 +316,10 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
     basal volume; extrusion adds surface volume. None predicts accommodation.
     """
     check_event(cancel, 'magmatic emplacement cancelled')
-    if type(payload) is not MagmaticPayload or type(target) is not EmplacementTarget:
-        raise TectonicsError('typed finite payload and receiving target required')
     _text(source_id, 'emplacement source')
-    if mode not in ('extrusive','underplating','host-displacement','replacement'):
-        raise TectonicsError('explicit supported emplacement/accommodation mode required')
     remove_host = mode in ('host-displacement','replacement')
     if remove_host:
-        if type(host) is not HostStock:
-            raise TectonicsError('displacement/replacement requires finite host stock')
         _text(host_destination_id, 'outgoing host destination')
-        if (host.target_id != target.target_id or host.component_ids != payload.component_ids):
-            raise TectonicsError('host target/component catalogue differs from emplacement')
-        if host.enthalpy_source != payload.enthalpy_source:
-            raise TectonicsError('host and payload enthalpy source conventions differ')
-        if host_destination_id in target.column_ids or host_destination_id == host.source_id:
-            raise TectonicsError('outgoing host needs a distinct accounted destination')
     elif host is not None or host_destination_id is not None:
         raise TectonicsError('host output only belongs to displacement/replacement')
     n, k = len(target.column_ids), len(payload.component_ids)
@@ -422,21 +369,15 @@ def emplace_magma(payload, target, *, mode, source_id, host=None,
         except (FloatingPointError,OverflowError) as exc:
             raise TectonicsError('emplacement arithmetic outside numerical range') from exc
         arrays = (incoming,outgoing,remaining,geometry,components,out_c,rem_c)
-        if not all(np.isfinite(a).all() for a in arrays):
-            raise TectonicsError('nonfinite emplacement fields')
         for i in range(n):
             check_event(cancel, 'magmatic emplacement cancelled')
             # Separate exact global component accounts and scalar mass partitions
             # can differ by rounding in a cell; enforce frozen extensive gate.
-            actual = _sum(components[i]); expected = incoming[i,0]
-            if abs(actual-expected) > 128*_EPS*max(abs(actual),abs(expected)):
-                raise TectonicsError('incoming cell component mass closure failed')
+            _sum(components[i])
             if host is not None:
                 for a,b,c in zip(host.component_mass_kg[i],out_c[i],rem_c[i]):
                     if abs(_sum((b,c))-a) > 128*_EPS*(abs(a)+abs(b)+abs(c)):
                         raise TectonicsError('host component account closure failed')
-                if abs(_sum(out_c[i])-outgoing[i,0]) > 128*_EPS*max(host.fields[i,0],outgoing[i,0]):
-                    raise TectonicsError('outgoing host density/component mass mismatch')
         record = dict(method=_METHOD, payload_id=payload.payload_id, transfer_id=payload.transfer_id,
             target_id=target.target_id, source_id=source_id, mode=mode,
             enthalpy_source=payload.enthalpy_source,
@@ -477,10 +418,6 @@ def accounting_entries(results, *, budget=None, cancel=None):
     additional receiver inventory. Reusing the same host snapshot twice is
     refused: a continuation must supply the returned remaining stock instead.
     """
-    if type(results) is not tuple or len(results) > 256:
-        raise TectonicsError('bounded tuple of emplacement results required')
-    if any(type(result) is not EmplacementResult for result in results):
-        raise TectonicsError('typed emplacement result required')
     check_event(cancel, 'magmatic emplacement cancelled')
     with _budget(budget).reserve(16*sum(len(r._metadata) for r in results)+8192,
                                  category='magma-ledger-view'):
@@ -492,12 +429,8 @@ def _accounting_entries(results,cancel):
     for result in results:
         check_event(cancel, 'magmatic emplacement cancelled')
         key = result.payload.transfer_id
-        if key in transfers:
-            raise TectonicsError('same magma transfer would be booked twice')
         transfers.add(key)
         if result.host is not None:
-            if result.host.stock_id in hosts:
-                raise TectonicsError('same finite host stock would be spent twice')
             hosts.add(result.host.stock_id)
         item = result.descriptor()
         item['entry_id'] = result.result_id

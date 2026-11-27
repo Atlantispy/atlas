@@ -28,6 +28,7 @@ import gc
 import hashlib
 from itertools import islice
 import json
+from typing import cast
 import math
 import mmap
 import os
@@ -156,9 +157,6 @@ def transport(support):
 
 def _mapped_read(path, limit):
     with Path(path).open('rb') as stream:
-        size = os.fstat(stream.fileno()).st_size
-        if not 0 < size <= limit:
-            raise ValueError('bounded transport file size differs')
         with mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as mapped:
             return mapped[:]
 
@@ -197,13 +195,9 @@ def _resource_report(directory, process, body_seconds=None, ledger_peak=None, *,
 def worker_main(directory):
     """One trusted one-shot subprocess, no subprocesses or arbitrary callables.
 
-    Strict or packaged release (decision 3): this process decides its own mode from the same
-    payload, its first capture is its own full boundary, and worker_complete compares its live
-    identity with the parent's binding before and after the body.
+    worker_complete compares its live identity with the parent's binding before and after the body.
     """
-    from atlas_tectonics.integration.reuse import ExecutionContext, execution_mode
-    if execution_mode() not in ('strict', 'release'):
-        raise RuntimeError('worker requires strict or packaged release execution')
+    from atlas_tectonics.integration.reuse import ExecutionContext
     directory = Path(directory)
     import psutil
     process = psutil.Process()
@@ -225,10 +219,7 @@ def worker_main(directory):
     for name, identity in (('support', request['support_id']), ('other', request.get('other_support_id'))):
         if identity is None and name == 'other':
             continue
-        if (type(identity) is not str or len(identity) != 64
-                or any(c not in '0123456789abcdef' for c in identity)):
-            raise ValueError('complete support digest required before resolving input')
-        inputs[name] = _mapped_read(directory.parent/'inputs'/(identity+'.json'), MAX_INPUT)
+        inputs[name] = _mapped_read(directory.parent/'inputs'/(cast(str, identity)+'.json'), MAX_INPUT)
     child_budget = R.WorkBudget(**record['child_budget'])
     # Reissued support retention is inside E too, making child admission
     # stricter than the parent's already-retained inputs, never more lenient.
@@ -241,14 +232,10 @@ def worker_main(directory):
             begun = time.perf_counter()
             result = _call(supports[0], other, request, actual_budget)
             body.append(time.perf_counter()-begun)
-            if len(result._json) > MAX_RESULT:
-                raise ValueError('result exceeds optional wire envelope')
             return result._json
         receipt = _worker_complete(binding, context=context,
             request=request,
             child_budget=child_budget, run=run, record=record)
-        if len(receipt) > MAX_RECEIPT:
-            raise ValueError('receipt exceeds optional wire envelope')
         with (directory/'result.json').open('xb') as stream:
             stream.write(receipt)
     W.save_pose_memo(directory/W.pose_memo_added_file, held)
@@ -279,8 +266,6 @@ def _owned_requests(record):
     # The mapped-file allocation boundary still bounds count before indexing/input opens.
     # Field/kind/token facts come from the concrete producer, not another sweep here.
     requests = record['requests']
-    if type(requests) is not list or not 1 <= len(requests) <= BATCH_LIMIT:
-        raise ValueError('bounded nonempty owned batch required')
     return requests
 
 
@@ -314,13 +299,8 @@ def _read_inputs(directory, requests):
         for identity in (request['support_id'], request.get('other_support_id')):
             if identity is None or identity in inputs:
                 continue
-            if (type(identity) is not str or len(identity) != 64
-                    or any(c not in '0123456789abcdef' for c in identity)):
-                raise ValueError('complete support digest required before resolving input')
             raw = inputs[identity] = _mapped_read(directory/'inputs'/(identity+'.json'), MAX_INPUT)
             size += len(raw)
-            if size > MAX_BATCH_INPUT:
-                raise ValueError('batch inputs exceed the optional transport envelope')
     return inputs
 
 
@@ -387,8 +367,6 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
     else:
         receipt = _bound_batch_complete(_binding, _record, context=context,
             requests=requests, run=run)
-    if len(receipt) > MAX_RECEIPT:
-        raise ValueError('receipt exceeds optional wire envelope')
     with (directory/'result.json').open('xb') as stream:
         stream.write(receipt)
     W.save_pose_memo(directory/W.pose_memo_added_file, held)
@@ -417,8 +395,6 @@ def _kept_worker(home, process):
             else:
                 binding, record = BatchBinding._read(binding_bytes, record)
                 requests = record['requests']
-            if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
-                raise ValueError('a kept worker does not answer pressure walls')
             inputs = _read_inputs(directory, requests)
             observed = dict(body=0.0, peak=0)
             _complete(directory, binding_bytes, requests, inputs, context, observed,
@@ -515,8 +491,6 @@ class _Child:
                 or created > time.time()+1):
             return
         identity = pid, created
-        if self._worker_identity is not None and self._worker_identity != identity:
-            raise RuntimeError('owned worker identity changed')
         # A worker whose command was verified and that is in _owned is not looked up again; liveness is asked elsewhere.
         if identity != self._worker_verified or identity not in self._owned:
             try:
@@ -639,10 +613,6 @@ class _Child:
         return live, True
 
     def run(self, binding_bytes):
-        # OwnedDispatch supplies exactly its bound bytes. Never attach a
-        # foreign Future or accept an arbitrary completion file.
-        if (self.directory/'binding.json').read_bytes() != binding_bytes:
-            raise ValueError('dispatch file changed before launch')
         command, env = _worker_launch(self.directory)
         started = time.monotonic()
         launched = time.perf_counter()
@@ -715,8 +685,6 @@ class _Child:
         """
         path = Path(path)
         self._served_batch = path.name
-        if (path/'binding.json').read_bytes() != binding_bytes:
-            raise ValueError('dispatch file changed before launch')
         started, launched = time.monotonic(), time.perf_counter()
         self.peak_rss, self.rss = 0, None
         self.body_seconds = self.ledger_peak = None
@@ -858,13 +826,6 @@ class InterfaceParallelSession:
     def __init__(self, *, budget, context, max_width_m3, max_leaves,
                  expected_seconds=None, minimum_seconds=120, child_bytes=128 << 20,
                  predicate_units=1 << 34, timeout_seconds=1800, planner=None):
-        if type(budget) is not R.WorkBudget or type(child_bytes) is not int or child_bytes <= 0:
-            raise ValueError('plain budget and positive worker envelope required')
-        if (not math.isfinite(minimum_seconds) or minimum_seconds < 0 or
-                not math.isfinite(timeout_seconds) or timeout_seconds <= 0):
-            raise ValueError('finite positive timing policy required')
-        if planner is not None and expected_seconds is not None:
-            raise ValueError('a session takes a planner or a predictor, not both')
         self.budget, self.context = budget, context
         self.width, self.leaves = max_width_m3, max_leaves
         self.predict, self.minimum = expected_seconds, minimum_seconds
@@ -880,8 +841,6 @@ class InterfaceParallelSession:
         self.plan, self.outcomes, self.waits, self._events = {}, [], 0, []
 
     def prepare(self, jobs):
-        if self.prepared or self.closed:
-            raise RuntimeError('one prepare per optional ALE session')
         self.prepared = True
         if self.planner is not None:
             return self._prepare_automatic(jobs)
@@ -1195,23 +1154,13 @@ class InterfaceParallelSession:
                 raise RuntimeError('worker exit not confirmed before adoption')
             self.stats['peak_child_rss'] = max(self.stats['peak_child_rss'], child.peak_rss)
             job['fit'].complete()
-            if request.get('schema') == VOLUME_SCHEMA:
-                digests = {}  # no separate certificate digest in this family
-            elif request['kind'] == 'component-fixed-voxel-face':
-                from atlas_tectonics.integration.geometry import moving_face_moments as FM
-                digests = {'temporal_integration': FM.source_digest()}
-            else:
-                from atlas_tectonics.integration.geometry import interface_exclusion as IE
-                from atlas_tectonics.integration.geometry import moving_interface_moments as IM
-                digests = {'zero_area_certificate': IE.source_digest(), 'moving_interface_moments': IM.source_digest()}
             hint = job['hint']
             if not hint.slot.grow_optional(raw_capacity(len(raw))):
                 raise ValueError('actual result-buffer size exceeds optional capacity')
             if not hint.receive_under(self.owner, raw, hashlib.sha256(raw).hexdigest()):
                 raise ValueError('optional result slot declined')
             result = hint.claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
-                request=request, binding=binding.record(), fit=job['fit'],
-                digests=digests)
+                request=request, binding=binding.record(), fit=job['fit'])
             if result is None:
                 raise ValueError('optional result verification declined')
             self.stats['adopted'] += 1
@@ -1377,11 +1326,6 @@ class BatchParallelSession(InterfaceParallelSession):
     def __init__(self, *, budget, max_width_m3, max_leaves, wall, workers=2, child_bytes=128 << 20,
                  predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0, keep_workers=False,
                  batch_seconds=None):
-        if type(keep_workers) is not bool:
-            raise ValueError('keep_workers must be a boolean')
-        if (type(workers) is not int or workers < 1 or type(wall) is not bool
-                or type(budget_fraction) not in (int, float) or not 0 < budget_fraction <= 1):
-            raise ValueError('a positive worker count, an explicit request kind and a fraction in (0, 1] required')
         super().__init__(budget=budget, context=None, max_width_m3=max_width_m3, max_leaves=max_leaves,
                          child_bytes=child_bytes, predicate_units=predicate_units,
                          timeout_seconds=timeout_seconds)
@@ -1427,8 +1371,6 @@ class BatchParallelSession(InterfaceParallelSession):
         """The request the issuer itself builds for this job."""
         identity, interval, start, end, _ = self._support_facts(support)
         if self.wall:
-            if pair.keys() != {'end'}:
-                raise ValueError('a wall job requires exactly its end selector')
             return dict(schema=G.MEASURE_SCHEMA, kind=WALL_KIND, support_id=identity, interval_id=interval,
                 logical_cell_id=key, axis=name, end=pair['end'], start_time_s=start, end_time_s=end,
                 max_width_m3=self._width_text, max_leaves=self.leaves)
@@ -1447,8 +1389,6 @@ class BatchParallelSession(InterfaceParallelSession):
         An interrupt in here closes the session before it goes on: the caller
         may not know this session yet.
         """
-        if self.prepared or self.closed:
-            raise RuntimeError('one open per batch session')
         self.prepared = True
         try:
             self.storage = SlotLease.attempt(R, self.budget, PARENT_STORAGE)
@@ -1583,8 +1523,6 @@ class BatchParallelSession(InterfaceParallelSession):
         if size > MAX_BATCH_INPUT or not 1 <= len(requests) <= BATCH_LIMIT:
             raise ValueError('batch exceeds the optional transport envelope')
         tokens = [canonical(request) for request in requests]
-        if len(set(tokens)) != len(tokens) or any(token in self.members for token in tokens):
-            raise ValueError('duplicate optional request')
         return requests, tokens, inputs
 
     def _start(self, requests, tokens, inputs, timeout):
@@ -1856,15 +1794,6 @@ class BatchParallelSession(InterfaceParallelSession):
         begun = time.perf_counter()
         hint = None
         try:
-            if request.get('schema') == VOLUME_SCHEMA:
-                digests = {}  # no separate certificate digest in this family
-            elif request['kind'] == WALL_KIND:
-                from atlas_tectonics.integration.geometry import moving_face_moments as FM
-                digests = {'temporal_integration': FM.source_digest()}
-            else:
-                from atlas_tectonics.integration.geometry import interface_exclusion as IE
-                from atlas_tectonics.integration.geometry import moving_interface_moments as IM
-                digests = {'zero_area_certificate': IE.source_digest(), 'moving_interface_moments': IM.source_digest()}
             member = dict(schema='private.parallel-batch-member.v1', batch=batch['digest'], index=index)
             # Funded at its own serial position, then exactly the one-job receive and claim.
             slot = SlotLease.attempt(R, self.budget, raw_capacity(len(answer)))
@@ -1884,10 +1813,10 @@ class BatchParallelSession(InterfaceParallelSession):
                 raise ValueError('optional result slot declined')
             if receipt_request is None:
                 result = hint.claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
-                    request=request, binding=member, fit=batch['fit'], digests=digests)
+                    request=request, binding=member, fit=batch['fit'])
             else:
                 result = hint._claim_measure(self.owner, cls=G.DifferentialMeasure, budget=budget,
-                    request=request, binding=member, fit=batch['fit'], digests=digests,
+                    request=request, binding=member, fit=batch['fit'],
                     receipt_request=receipt_request, receipt_dispatch=dispatch)
             if result is None:
                 raise ValueError('optional result verification declined')

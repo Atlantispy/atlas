@@ -50,8 +50,6 @@ def projection_allowances(totals, created_tracers=()):
     every accepted advance; it reads the names from the case.
     """
     created = tuple(created_tracers)
-    if len(set(created)) != len(created) or any(k not in totals or not k.startswith('tracer:') for k in created):
-        raise ValueError('created tracers must be distinct history tracers of this owner')
     mass = sum((q for k, q in totals.items() if k.startswith('component_mass_kg:')), Q(0))
     return {k: (mass if k in created and not q else q)/Q(10**10) for k, q in totals.items()}
 
@@ -61,8 +59,6 @@ def initial_spatial_owner(case, partition, bounds, mesh, *, created_tracers=(), 
     dual = measure_policy is not None
     if dual:
         policy_record(measure_policy)  # All six limits exist before owner preparation.
-    if dual != (B_NAME in case['state'].fields.array_names):
-        raise ValueError('native material quadrature and explicit spatial measure policy must agree')
     arrays = funding.arrays()
     count = len(case['registry'].rows)
     names = tuple('component_mass_kg:'+str(i) for i in range(count))

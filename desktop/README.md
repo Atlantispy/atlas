@@ -45,12 +45,10 @@ are refused. The build includes the pinned UI snapshot and unchanged native Pyth
 sources, not personal projects, caches or coordination records.
 `build-manifest.json` records delivered file hashes. Keep it with the build.
 
-New full builds also create `tectonics/.desktop-runtime.json` in the native
-payload. Together with the packaged interpreter and allowed desktop entry point,
-this enables release identity checking: full capture once per backend, full checks
-at persistence/reuse boundaries, cheap inner checks. It never changes the physical
-calculation or scientific identity. Checkout and evidence runs remain strict.
-See [execution policy](../docs/CODING_SAFETY.md#strict-checkout-and-packaged-release-execution).
+Builds and checkouts run one execution: identity is captured once per backend and
+reused at its boundaries; it never changes the physical calculation or scientific
+identity. Debug is a run with `--run-profile` (see
+[execution policy](../docs/CODING_SAFETY.md#release-and-debug-runs)).
 This source integration does not alter the installed 3 October EXE; a separate
 authorised rebuild and installed-app check are still required.
 

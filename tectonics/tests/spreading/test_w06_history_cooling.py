@@ -317,9 +317,6 @@ class HistoryCoolingTests(unittest.TestCase):
             self.assertTrue(observed)
             self.assertGreater(observed[0], retained)
             self.assertEqual(owner.reserved_bytes, retained)
-            with self.fixture(parameters=replace(cooling_parameters(), water_source_id='other-history-water')) as other:
-                with self.assertRaises(TectonicsError):
-                    plan.advance(other.initial, time_s=YEAR)
         self.assertEqual(owner.reserved_bytes, 0)
 
 

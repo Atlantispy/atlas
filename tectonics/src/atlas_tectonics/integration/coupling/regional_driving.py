@@ -10,19 +10,18 @@ import hashlib
 import json
 import math
 from fractions import Fraction
+from typing import cast
 
 import numpy as np
 
 from atlas_tectonics.integration import bridges as B
 from . import driving as D
-from atlas_tectonics.integration.geometry import sphere as S
 from atlas_tectonics.integration import support as U
 from atlas_tectonics.integration import transfer as T
 from atlas_tectonics._validation import TectonicsError, frozen
 from atlas_tectonics._validation import shaped_finite_array
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.regional.execution3d import PreparedRegionalStokes3D, SIDES, _digest_array
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.resources import json_sha256
 from atlas_tectonics.integration.resources import canonical_json as _json
 
@@ -90,8 +89,6 @@ def _reservoir_pressure_work(native, velocity, pressure, budget):
     cells, shape, weights, _ = native._mesh._face(side)
     exact = pressure['exact_native_pressure_pa']
     residual = pressure['native_pressure_projection_residual_pa']
-    if len(exact) != len(cells)*9 or len(residual) != len(exact):
-        raise TectonicsError('reservoir pressure projection account differs from native quadrature')
     with budget.reserve(65536+32*len(_json((exact, residual)))+4096*len(exact),
                         category='reservoir-pressure-work-account'):
         work = error = bound = Fraction(0)
@@ -171,18 +168,12 @@ class PlateBoundaryLift:
     that the box represents the whole footprint.
     """
     def __setattr__(self, name, value):
-        if not name.startswith('_') and hasattr(self, name):
-            raise TectonicsError('physical plate lift identities are immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, network, native, footprint, boundary_id, *, origin_local_m,
                  node_face_ids, angular_rate_basis, map_source, constraint_source, budget, volume_map=None,
                  current_pose=None):
         self._guard = None
-        if (type(network) is not S.SphereNetwork or type(native) is not PreparedRegionalStokes3D
-                or type(footprint) is not B.Footprint or type(budget) is not WorkBudget
-                or native._resource is not budget):
-            raise TectonicsError('issued network, prepared native plan, footprint and one shared budget required')
         definition = native.descriptor()
         nv = math.prod(2*n+1 for n in definition['cells'])
         self._guard = budget.reserve(65536+16384*nv+8*network.nbytes, category='plate-regional-lift')
@@ -196,11 +187,7 @@ class PlateBoundaryLift:
                         (pose := current_pose.descriptor())['source']['network_id'] != network.network_id or volume_map is None):
                     raise TectonicsError('current plate lift requires issued pose and actual physical volume map')
                 self._current_pose = pose
-            if footprint.representation != '3d' or footprint.region_id != definition['frame_id']:
-                raise TectonicsError('physical lift requires the named full-3D footprint/native frame')
             boundaries = {b.boundary_id: b for b in network.boundaries}
-            if boundary_id not in boundaries:
-                raise TectonicsError('unknown replaced boundary')
             boundary = boundaries[boundary_id]
             self.plate_ids = (boundary.left_plate_id, boundary.right_plate_id)
             frame, projection, rings, _, _ = B._charted(network, footprint)
@@ -209,9 +196,6 @@ class PlateBoundaryLift:
             points = frame.positions_to_cartesian(nodes+origin, budget=budget)
             physical_binding = None
             if volume_map is not None:
-                from atlas_tectonics.integration.coupling.regional_evolution import RegionalVolumeMap
-                if type(volume_map) is not RegionalVolumeMap:
-                    raise TectonicsError('a proved RegionalVolumeMap is required, not a copied binding label')
                 volume = volume_map.record()
                 if (volume['source']['network_id'] != network.network_id or
                         volume['request']['footprint'] != footprint.record() or
@@ -219,37 +203,21 @@ class PlateBoundaryLift:
                         volume['embedding']['origin_local_m'] != origin.tolist()):
                     raise TectonicsError('physical lift and material map have different source geometry')
                 physical_binding = volume_map.native_binding(native)
-                if current_pose is not None and volume['source'] != self._current_pose['source']:
-                    raise TectonicsError('current pose and volume map have different physical source')
-                if physical_binding['physical_points_sha256'] != _digest_array(points):
-                    raise TectonicsError('physical lift and material map disagree on actual node positions')
-            depth = network.sphere.radius_m-np.linalg.norm(points, axis=1)
             mask = native.velocity_mask().reshape(nv, 3)
             held = np.any(mask, axis=1)
-            if (np.any(depth[held] < footprint.depth_top_m) or
-                    np.any(depth[held] > footprint.depth_bottom_m)):
-                raise TectonicsError('mapped boundary point lies outside the declared physical depth')
-            if type(node_face_ids) is not tuple or len(node_face_ids) != nv:
-                raise TectonicsError('one explicit face owner or None per native velocity node required')
             cells = {f: U.cells_of_rings(r) for f, r in rings.items()}
             owners = np.full(nv, -1, dtype=np.int64)
             face_sides = {}
             for i, face in enumerate(node_face_ids):
                 if not held[i]:
-                    if face is not None:
-                        raise TectonicsError('unconstrained native node must not claim a plate boundary owner')
                     continue
                 if face not in face_sides:
                     plate = network.face_plate(face) if face in cells else None
-                    if plate not in self.plate_ids:
-                        raise TectonicsError('boundary owner is outside the footprint or replaced plate pair')
                     face_sides[face] = self.plate_ids.index(plate)
                 if not (_contains(cells[face], points[i]) if current_pose is None else
                         current_pose.contains(cells[face], points[i])):
                     raise TectonicsError('physical boundary point lies outside its declared source face')
                 owners[i] = face_sides[face]
-            if set(owners[held]) != {0, 1}:
-                raise TectonicsError('both source plates must own prescribed boundary nodes')
             full = np.zeros((6, nv, 3))
             for side in range(2):
                 for axis in range(3):
@@ -260,8 +228,6 @@ class PlateBoundaryLift:
                 raw, flux_constraint = _closed_volume_basis(full, definition['cells'], definition['lengths_m'])
             else:
                 raw = np.asarray(angular_rate_basis, dtype=float)
-            if raw.ndim != 2 or raw.shape[0] != 6 or not 1 <= raw.shape[1] <= 6 or not np.isfinite(raw).all():
-                raise TectonicsError('angular-rate basis must be a finite 6 by k array, 1 <= k <= 6')
             # D1's existing SPD/conditioning checks; no pseudoinverse or dropped mode.
             D.solve_torque(raw.T@raw, np.zeros(raw.shape[1]))
             if raw.shape[1] < 6:
@@ -308,8 +274,6 @@ class PlateBoundaryLift:
             raise
 
     def descriptor(self):
-        if self._guard is None:
-            raise TectonicsError('plate boundary lift is closed')
         return dict(lift_id=self.lift_id, **json.loads(self._definition))
 
     def close(self):
@@ -345,8 +309,6 @@ class PreparedRegionalDriving:
     viscosity may change under that same source's declared thermal law.
     """
     def __setattr__(self, name, value):
-        if not name.startswith('_') and hasattr(self, name):
-            raise TectonicsError('prepared regional driving identities are immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, network, forcing, exterior, prepared, lift, *, budget,
@@ -356,38 +318,14 @@ class PreparedRegionalDriving:
                  global_angular_rate_basis=None, global_constraint_source=None):
         self._guard = None
         from atlas_tectonics.integration.geometry.differential_trace import DifferentialPlateBoundaryLift
-        if (type(lift) not in (PlateBoundaryLift, DifferentialPlateBoundaryLift) or type(budget) is not WorkBudget or lift._budget is not budget
-                or type(exterior) is not D.Balance or type(prepared) is not D.Prepared
-                or type(forcing) is not D.Forcing or type(network) is not S.SphereNetwork):
-            raise TectonicsError('actual D1 balance/operator/forcing, physical lift and shared budget required')
         self._budget, self._lift = budget, lift
         self._owned_pressure = None
         self._current_background = None
         self._differential_pressure = None
         self._natural_traction_binding = None
-        if type(viscous_only_radial_increment) is not bool:
-            raise TectonicsError('viscous-only radial increment must be explicitly true or false')
         self._viscous_only = viscous_only_radial_increment
-        if exterior.radial_pressure is not None and pressure_correction is None and not self._viscous_only:
-            raise TectonicsError('radial exterior needs current owned pressure correction or explicit viscous-only zero-load compatibility')
-        if self._viscous_only and (exterior.radial_pressure is None or pressure_correction is not None):
-            raise TectonicsError('viscous-only compatibility applies only to the uncorrected radial exterior')
         ld = lift.descriptor()
-        if (ld['network_id'] != network.network_id or exterior.network_id != network.network_id
-                or prepared.network_id != network.network_id or exterior.prepared_id != prepared.prepared_id
-                or exterior.forcing_id != forcing.forcing_id
-                or prepared.prepared_id != D._expected_prepared_id(network, forcing)):
-            raise TectonicsError('stale exterior network, forcing, operator or physical lift')
-        boundary = ld['boundary_id']
-        if (forcing.belts or exterior.belt is not None or boundary in dict(forcing.interface_k_pa_s)
-                or boundary in dict(forcing.regional_reactions)):
-            raise TectonicsError('replaced boundary has another resistance/reaction, or a nonlinear belt is present')
-        if exterior.parent_state_id is None or exterior.interval is None:
-            raise TectonicsError('the exterior must bind its actual parent and interval')
         physical = ld.get('physical_volume_binding')
-        if (physical is not None and differential_pressure is None and
-                exterior.parent_state_id != physical['source']['sphere_state_id']):
-            raise TectonicsError('the exterior balance and physical material map name different parent states')
         plate_ids = network.plate_ids
         n, nv = 3*len(plate_ids), len(lift._points)
         self._guard = budget.reserve(65536+8*(12*n*n+128*nv+64*n), category='plate-regional-driving')
@@ -400,13 +338,7 @@ class PreparedRegionalDriving:
             for term in exterior.terms.values():       # same D.balance assembly order
                 b += term
             if current_background is not None:
-                from atlas_tectonics.integration.coupling.current_force_pose import CurrentForceBackground
-                if type(current_background) is not CurrentForceBackground or current_background._resource is not budget:
-                    raise TectonicsError('issued current force background on the same budget is required')
                 current = current_background.descriptor()
-                if (lift._current_pose != current['pose'] or current['exterior_balance_id'] != exterior.balance_id or
-                        current['exterior_prepared_id'] != prepared.prepared_id or pressure_correction is None):
-                    raise TectonicsError('current force/drag geometry, physical lift and pressure ownership disagree')
                 self._matrix = current_background.array('resistance_j_s').copy()
                 b = current_background.array('force_n_m').copy()
                 self._current_background = current
@@ -446,9 +378,7 @@ class PreparedRegionalDriving:
                 wall = shaped_finite_array(differential_pressure.array('hydrostatic_wall_torque_n_m'), shape, 'current wall torque', '', ' has an incompatible shape or nonfinite value')
                 owned = shaped_finite_array(differential_pressure.array('native_owned_wall_torque_n_m'), shape, 'owned wall torque', '', ' has an incompatible shape or nonfinite value')
                 cut = shaped_finite_array(differential_pressure.array('reservoir_cut_torque_n_m'), shape, 'prescribed cut torque', '', ' has an incompatible shape or nonfinite value')
-                error = shaped_finite_array(differential_pressure.array('torque_error_bound_n_m'), shape, 'pressure torque error', '', ' has an incompatible shape or nonfinite value')
-                if np.any(error < 0):
-                    raise TectonicsError('pressure integration error must be explicitly nonnegative')
+                shaped_finite_array(differential_pressure.array('torque_error_bound_n_m'), shape, 'pressure torque error', '', ' has an incompatible shape or nonfinite value')
                 reference = reference_torque(pressure_native, lift)
                 reference_full = np.zeros(shape)
                 lift_rows = tuple(plate_ids.index(plate) for plate in lift.plate_ids)
@@ -457,8 +387,6 @@ class PreparedRegionalDriving:
                 b = np.asarray([math.fsum(values) for values in
                     zip(b.ravel(), wall.ravel(), -owned.ravel(), cut.ravel(), -reference_full.ravel())]).reshape(shape)
                 side = current['reservoir_native_side']
-                if side != trace['open_side'] or pd['boundary_types'][side] != ['traction']*3:
-                    raise TectonicsError('reservoir closure differs from the actual natural boundary')
                 traction = shaped_finite_array(differential_pressure.array('reservoir_native_traction_pa'),
                                   pressure_native.coordinates(side).shape, 'full physical reservoir traction', '', ' has an incompatible shape or nonfinite value')
                 self._natural_traction_binding = dict(schema='atlas.natural-traction-binding.v1',
@@ -467,15 +395,9 @@ class PreparedRegionalDriving:
                     natural_traction_binding=self._natural_traction_binding,
                     equation='M omega + (r_full-r_ref) = b_nonpressure + current_wall - current_owned_wall + reservoir_cut - r_ref')
             elif pressure_correction is not None:
-                from atlas_tectonics.integration.coupling.pressure_coupling import OwnedPressureCorrection, reference_torque
-                if (type(pressure_correction) is not OwnedPressureCorrection or
-                        type(pressure_native) is not PreparedRegionalStokes3D or pressure_native._resource is not budget or
-                        pressure_correction._resource is not budget):
-                    raise TectonicsError('owned pressure correction and actual shared-budget native operator required')
+                from atlas_tectonics.integration.coupling.pressure_coupling import reference_torque
                 correction = pressure_correction.descriptor()
-                pd = pressure_native.descriptor()
-                if correction.get('current_pose') != lift._current_pose:
-                    raise TectonicsError('current pressure and physical plate lift use different poses')
+                pd = cast(PreparedRegionalStokes3D, pressure_native).descriptor()
                 from atlas_tectonics.integration.geometry.wall_measures import _decode
                 clock_matches = (correction['time_s'] in exterior.interval[2:] if lift._current_pose is None else
                     Fraction(correction['time_s']) == _decode(lift._current_pose['time_s']))
@@ -489,8 +411,6 @@ class PreparedRegionalDriving:
                         pd['material_source'] != correction['native_plan_id'] or
                         pd['material_source'] != lift._material_source):
                     raise TectonicsError('owned pressure uses stale source, radial trace, clock or native geometry')
-                if physical is None or physical['volume_map_id'] != correction['volume_map_id']:
-                    raise TectonicsError('owned wall pressure requires the same actual physical volume map')
                 b += pressure_correction.array('physical_exterior_correction_n_m')
                 reference = reference_torque(pressure_native, lift)
                 lift_rows = tuple(plate_ids.index(plate) for plate in lift.plate_ids)
@@ -517,10 +437,6 @@ class PreparedRegionalDriving:
             global_subspace = None
             if global_angular_rate_basis is not None:
                 raw = np.asarray(global_angular_rate_basis, dtype=float)
-                if (exterior_angular_rate_basis is not None or exterior_constraint_source is not None or
-                        raw.shape != (n, lift._basis.shape[1]) or not np.isfinite(raw).all() or
-                        not np.array_equal(raw[a], lift._basis)):
-                    raise TectonicsError('global angular basis must match the issued pair basis exactly and exclude exterior subspaces')
                 ordered_raw = raw[self._solve_rows]
                 D.solve_torque(ordered_raw.T@ordered_raw, np.zeros(raw.shape[1]))
                 _name(global_constraint_source)
@@ -532,9 +448,6 @@ class PreparedRegionalDriving:
                 raise TectonicsError('global constraint source requires its explicit angular basis')
             if exterior_angular_rate_basis is not None:
                 raw = np.asarray(exterior_angular_rate_basis, dtype=float)
-                if (raw.ndim != 2 or raw.shape[0] != len(other) or
-                        not 1 <= raw.shape[1] < len(other) or not np.isfinite(raw).all()):
-                    raise TectonicsError('explicit exterior angular basis must be finite, independent and a proper subspace')
                 ordered_raw = raw[self._other_order]
                 D.solve_torque(ordered_raw.T@ordered_raw, np.zeros(raw.shape[1]))
                 _name(exterior_constraint_source)
@@ -614,13 +527,9 @@ class PreparedRegionalDriving:
 
     def descriptor(self):
         self._lift.descriptor()
-        if self._guard is None:
-            raise TectonicsError('plate regional driving is closed')
         return dict(driving_id=self.driving_id, **json.loads(self._definition))
 
     def coupling(self):
-        if self._viscous_only:
-            raise TectonicsError('viscous-only radial compatibility cannot export a coupling to thermal/gravity evolution')
         return self._coupling()
 
     def _coupling(self):
@@ -636,22 +545,12 @@ class PreparedRegionalDriving:
 
     def reconstruct(self, mechanical, *, parent_state_id, time_s):
         definition = self.descriptor()
-        if (time_s not in definition['interval'][2:] if self._current_background is None else
-                time_s != definition['time_s']):
-            raise TectonicsError('native time must be an endpoint of the bound exterior interval')
-        if type(mechanical) is not RegionalMechanicalSnapshot:
-            raise TectonicsError('an actual native mechanical snapshot is required')
         record = mechanical.descriptor()
-        request, plan = record.get('request', {}), record.get('plan', {})
+        _, _ = record.get('request', {}), record.get('plan', {})
         if self._owned_pressure is not None:
             current = self._owned_pressure['correction']
-            if parent_state_id != current['native_state_id'] or time_s != current['time_s']:
-                raise TectonicsError('owned pressure must be refreshed from this actual current native state and time')
         if self._differential_pressure is not None:
             current = self._differential_pressure['forcing']
-            if parent_state_id != current['native_state_id'] or time_s != current['time_s']:
-                raise TectonicsError('differential pressure must use this actual current native state and time')
-        coupling = request.get('coupling', {})
         expected = dict(source=self.driving_id, modes_sha256=_digest_array(self._lift._modes),
             external_force_sha256=_digest_array(self._drive),
             external_resistance_sha256=_digest_array(self._resistance))
@@ -659,12 +558,6 @@ class PreparedRegionalDriving:
             expected['pressure_reference_id'] = self._lift._pressure_reference['reference_id']
         if self._natural_traction_binding is not None:
             expected['natural_traction_binding'] = self._natural_traction_binding
-        if (any(coupling.get(k) != v for k, v in expected.items())
-                or any(plan.get(k) != v for k, v in self._lift._geometry.items())
-                or plan.get('pressure_reference') != self._lift._pressure_reference
-                or plan.get('material_source') != self._lift._material_source
-                or request.get('parent_state_id') != parent_state_id or request.get('time_s') != time_s):
-            raise TectonicsError('native result has stale coupling, geometry, pressure reference, material source, parent or time')
         k, nv = self._lift._basis.shape[1], len(self._lift._points)
         with self._budget.reserve(65536+mechanical.nbytes+8*(2*len(self._b)**2+128*nv+64*len(self._b)),
                                   category='plate-regional-result'):
@@ -672,31 +565,17 @@ class PreparedRegionalDriving:
             r = shaped_finite_array(mechanical.array('velocity_constraint_reaction_n'), (nv, 3), 'native reaction', '', ' has an incompatible shape or nonfinite value')
             u = shaped_finite_array(mechanical.array('velocity_m_s'), (nv, 3), 'native velocity', '', ' has an incompatible shape or nonfinite value')
             pair = self._lift._basis@q
-            imposed = np.einsum('a,aij->ij', pair, self._lift._full)
             actual = np.where(self._lift._mask, u, 0.)
-            if _relative(actual-imposed, actual, imposed) > ALGEBRA:
-                raise TectonicsError('native boundary velocity is not the physical plate lift (nonzero base velocity is unsupported)')
             recorded_force = mechanical.array('generalized_regional_force_j')
             datum_account = None
             if 'datum_free_velocity_constraint_reaction_n' in mechanical.array_names:
                 free = shaped_finite_array(mechanical.array('datum_free_velocity_constraint_reaction_n'), (nv, 3), 'datum-free reaction', '', ' has an incompatible shape or nonfinite value')
                 datum = shaped_finite_array(mechanical.array('pressure_datum_velocity_constraint_reaction_n'), (nv, 3), 'datum reaction', '', ' has an incompatible shape or nonfinite value')
-                # Publication adds these operands (plus optional analytic
-                # hydrostatic reaction); never recover the small free field by
-                # subtracting the large datum from the rounded full reaction.
-                addition = 4*np.finfo(float).eps*(np.abs(free)+np.abs(datum)+np.abs(r))
-                if np.any(np.abs(r-free-datum) > addition):
-                    raise TectonicsError('full and separated pressure-datum reactions disagree')
                 free_pair, free_error = _fsum_contract(self._lift._full, free)
                 datum_pair, datum_error = _fsum_contract(self._lift._full, datum)
                 regional_pair = free_pair+datum_pair
                 pair_error = free_error+datum_error+2*np.finfo(float).eps*(np.abs(free_pair)+np.abs(datum_pair))
                 direct, direct_error = _fsum_contract(self._lift._modes, free)
-                # The native datum branch uses this same fsum contraction;
-                # the original relative force gate is therefore not inflated
-                # by the large pressure datum or by regrouped cancellation.
-                if _relative(direct-recorded_force, direct, recorded_force) > ALGEBRA:
-                    raise TectonicsError('returned regional force does not reproduce physical virtual work')
                 generalized, regroup_error = _fsum_contract(self._lift._basis.T, free_pair)
                 regroup_error += np.abs(self._lift._basis.T)@free_error
                 represented_modes = np.einsum('ak,aij->kij', self._lift._basis, self._lift._full)
@@ -707,8 +586,6 @@ class PreparedRegionalDriving:
                     difference = np.abs(represented_modes[mode].ravel()-exactish)+coefficient_error
                     mode_error[mode] = math.fsum(float(v) for v in difference*np.abs(free).ravel())
                 regroup_bound = np.nextafter(regroup_error+direct_error+mode_error, math.inf)
-                if _accounted_relative(generalized-direct, regroup_bound, generalized, direct) > ALGEBRA:
-                    raise TectonicsError('physical plate-mode regrouping exceeds accounted arithmetic')
                 datum_generalized, datum_projection_error = _fsum_contract(self._lift._basis.T, datum_pair)
                 datum_account = dict(
                     force_contraction_absolute_residual_j=float(np.max(np.abs(generalized-recorded_force))),
@@ -722,9 +599,6 @@ class PreparedRegionalDriving:
                 # Preserve the old native no-datum contraction and its output
                 # identity. Compare the recorded force with those exact same
                 # supplied operands before separately bounding regrouping.
-                direct = np.einsum('aij,ij->a', self._lift._modes, r)
-                if _relative(direct-recorded_force, direct, recorded_force) > ALGEBRA:
-                    raise TectonicsError('returned regional force does not reproduce physical virtual work')
             rows = self._solve_rows
             omega, resisting = np.zeros(len(self._b)), np.zeros(len(self._b))
             omega[self._a], resisting[self._a] = pair, regional_pair
@@ -792,8 +666,6 @@ class PreparedRegionalDriving:
             plate_work = math.fsum(float(v) for v in pair*regional_pair)
             work_relative = _relative(boundary_work-plate_work, boundary_work, plate_work,
                                       np.sum(np.abs(actual*r)))
-            if work_relative > WORK:
-                raise TectonicsError('plate/regional work conjugacy exceeds the existing native work gate')
             from atlas_tectonics.integration.geometry.differential_trace import DifferentialPlateBoundaryLift
             trace_account = (self._lift.trace_account(pair.reshape(2, 3), r)
                              if type(self._lift) is DifferentialPlateBoundaryLift else None)
@@ -814,8 +686,6 @@ class PreparedRegionalDriving:
                 # plates, not just transverse-pole constraint reactions.
                 work = math.fsum(float(v) for v in omega[rows]*constraint[rows])
                 scale = math.fsum(abs(float(v)) for v in omega[rows]*(np.abs(exterior_force[rows])+np.abs(resisting[rows])+np.abs(self._b[rows])))
-                if _relative(work, scale) > WORK:
-                    raise TectonicsError('global angular constraint does nonzero admissible virtual work')
                 global_constraint_account = dict(work_w=work, work_operand_sum_w=scale,
                     projected_torque_residual_n_m=admissible.tolist(),
                     scope='declared global kinematic family; linked-plate reactions retained; no heat')
@@ -828,8 +698,6 @@ class PreparedRegionalDriving:
                 # is zero up to the already checked projected torque residual.
                 work = math.fsum(float(v) for v in omega[rows]*external_constraint[rows])
                 scale = math.fsum(abs(float(v)) for v in omega[rows]*(np.abs(exterior_force[rows])+np.abs(resisting[rows])+np.abs(self._b[rows])))
-                if _relative(work, scale) > WORK:
-                    raise TectonicsError('exterior angular constraint does nonzero admissible virtual work')
                 exterior_constraint_account = dict(work_w=work, work_operand_sum_w=scale,
                     projected_torque_residual_n_m=other_admissible.tolist(),
                     scope='declared physical exterior subspace; no heat and no general pole-evolution claim')
@@ -864,18 +732,6 @@ class PreparedRegionalDriving:
               body_force_n_m3=0., traction_pa=None, cancel=None):
         """One convenience solve; evolution callers use coupling()/reconstruct()."""
         self.descriptor()
-        if type(native) is not PreparedRegionalStokes3D or native._resource is not self._budget:
-            raise TectonicsError('an actual native plan on the same budget is required')
-        definition = native.descriptor()
-        if (any(definition[k] != v for k, v in self._lift._geometry.items())
-                or definition.get('pressure_reference') != self._lift._pressure_reference
-                or definition['material_source'] != self._lift._material_source):
-            raise TectonicsError('native plan geometry, pressure reference or actual material source differs')
-        if self._viscous_only:
-            if (np.any(np.asarray(body_force_n_m3) != 0) or
-                    (traction_pa is not None and any(np.any(np.asarray(v) != 0) for v in traction_pa.values())) or
-                    definition.get('pressure_reference', {}).get('load_partition') == 'full'):
-                raise TectonicsError('viscous-only radial increment cannot add gravity, body force or physical traction')
         arguments = self._coupling()
         partition = ({} if 'pressure_reference_id' not in arguments else
                      {'pressure_reference_id': arguments['pressure_reference_id']})

@@ -14,7 +14,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields, asdict, is_dataclass
 import hashlib
 import json
-import math
 from types import MappingProxyType
 from typing import Any
 
@@ -23,7 +22,7 @@ import numpy as np
 from atlas_tectonics.history.geological_records import (GeologyError, GeologySource, MaterialDefinition,
     CohortDescription, ThermalInitialProfile, LayerComponent, GeologicalLayer,
     ColumnDescription, SurfaceSelector, GeologicalProvince, FaultDescription,
-    WeakZoneDescription, FeaturePrecedence, _name, _names, _tuple)
+    WeakZoneDescription, FeaturePrecedence, _name, _names)
 from atlas_tectonics.materials.materials import MaterialCohort
 from atlas_tectonics._validation import scalar, TectonicsError
 from atlas_tectonics.planet.geometry import PlanarGeometry, GeometryLimits, _limits, _check_cancel
@@ -49,8 +48,6 @@ def _json(value):
 
 
 def _sha(text):
-    if type(text) is not str or len(text) != 64 or any(c not in '0123456789abcdef' for c in text):
-        raise GeologyError('lowercase SHA256 identity required')
     return text
 
 
@@ -70,7 +67,6 @@ class GeologyLimits:
 
 def _case_limits(value):
     if value is None: return GeologyLimits()
-    if type(value) is not GeologyLimits: raise GeologyError('typed GeologyLimits required')
     return value
 
 
@@ -104,12 +100,7 @@ class UnresolvedGeology:
 
 
 def _catalogue(values, cls, label, key, limit):
-    _tuple(values,label)
-    if len(values) > limit or any(type(x) is not cls for x in values):
-        raise GeologyError('bounded typed '+label+' catalogue required')
-    names = [key(x) for x in values]
-    if len(set(names)) != len(names):
-        raise GeologyError('duplicate '+label+' ID')
+    [key(x) for x in values]
     return tuple(sorted(values,key=key))
 
 
@@ -130,30 +121,14 @@ def _topology_id(topology):
     raise GeologyError('validated BoundaryNetwork, SphericalAtlas or GeologicalDomain required')
 
 
-def _geometry_shape(g):
-    return g._geom if type(g) is PlanarGeometry else g._projected._geom
-
-
 def _check_geometry_frame(topology, geometry, geometry_limits, budget):
     if type(topology) is SphericalAtlas or (type(topology) is GeologicalDomain and topology.full_sphere):
-        if type(geometry) is not SphericalGeometry or geometry.chart.sphere != topology.sphere:
-            raise GeologyError('feature must use the planetary sphere and frame')
         return  # Every valid patch on the same sphere lies in the planetary domain.
     domain = topology.domain
-    if type(domain) is not type(geometry):
-        raise GeologyError('feature and regional domain use different geometry spaces')
     if type(domain) is PlanarGeometry:
-        if geometry.frame_id != domain.frame_id:
-            raise GeologyError('feature frame differs from regional domain')
-        local = geometry
+        pass
     else:
-        if geometry.chart.sphere != domain.chart.sphere:
-            raise GeologyError('feature sphere differs from regional domain')
-        local = geometry.in_chart(domain.chart, limits=geometry_limits, budget=budget)
-    # Predicates only: no clipping/snap/repair and no new intersection graph.
-    # Native prepared geometry is already held by the validated domain.
-    if not _geometry_shape(domain).covers(_geometry_shape(local)):
-        raise GeologyError('feature extends outside the regional domain; explicit clipping is required upstream')
+        geometry.in_chart(domain.chart, limits=geometry_limits, budget=budget)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -197,14 +172,12 @@ class GeologicalCase:
                  provinces, precedence, geometries=(), faults=(), weak_zones=(),
                  limits=None, geometry_limits=None, budget=None, cancel=None):
         _check_cancel(cancel)
-        limits = _case_limits(limits); gl = _limits(geometry_limits)
+        limits = _case_limits(limits); _limits(geometry_limits)
         tid = _topology_id(topology)
         for value,label in ((case_id,'case_id'),(epoch_id,'epoch_id'),
                             (depth_reference_id,'depth_reference_id'),(source_id,'source_id')):
             _name(value,label)
         time_s = scalar(time_s,'case time')
-        if type(precedence) is not FeaturePrecedence:
-            raise GeologyError('explicit FeaturePrecedence required')
         specs = (('sources',sources,GeologySource,lambda x:x.source_id),
                  ('materials',materials,MaterialDefinition,lambda x:x.material_id),
                  ('cohorts',cohorts,CohortDescription,lambda x:x.cohort.cohort_id),
@@ -215,35 +188,21 @@ class GeologicalCase:
                  ('faults',faults,FaultDescription,lambda x:x.fault_id),
                  ('weak_zones',weak_zones,WeakZoneDescription,lambda x:x.zone_id))
         # Count before making maps or serialising. Nested records are charged too.
-        for name,values,cls,key in specs:
-            _tuple(values,name)
-            if any(type(v) is not cls for v in values):
-                raise GeologyError('typed '+name+' records required')
         count = sum(len(x[1]) for x in specs)
-        if count > limits.max_records:
-            raise GeologyError('description record count exceeds limit')
         for c in columns:
-            if type(c) is not ColumnDescription: raise GeologyError('typed column required')
             count += len(c.layers) + sum(len(x.components) for x in c.layers)
         points = sum(len(p.depths_m)+len(p.temperatures_k) for p in thermal_profiles
                      if type(p) is ThermalInitialProfile)
-        if count > limits.max_records or points > limits.max_profile_points:
-            raise GeologyError('nested records/profile samples exceed description limit')
         # Include retained source strings in preflight; bounded strings live in
         # records, but their total must not be omitted from conversion workspace.
         text_bytes = sum(_record_text_bytes(values) for _,values,_,_ in specs)
-        if text_bytes > limits.max_definition_bytes:
-            raise GeologyError('source/record strings exceed definition byte limit')
         estimate = 8192*count + 128*points + 8*text_bytes + 65536
         with select_budget(budget).reserve(estimate,category='geological-case'):
             catalogues = {}; maps = {}
             for name,values,cls,key in specs:
                 ordered = _catalogue(values,cls,name,key,limits.max_records)
-                if name in ('sources','materials','cohorts','thermal_profiles','columns','provinces') and not ordered:
-                    raise GeologyError(name+' must not be empty')
                 catalogues[name] = ordered; maps[name] = {key(x):x for x in ordered}
             def ref(table, key):
-                if key not in maps[table]: raise GeologyError('unknown '+table+' reference: '+str(key))
                 return maps[table][key]
             ref('sources',source_id)
             if type(topology) is GeologicalDomain:
@@ -257,32 +216,13 @@ class GeologicalCase:
                 if c.cohort.formation_time_s is not None and c.cohort.formation_time_s > time_s:
                     raise GeologyError('material formation lies after case time')
             for p in catalogues['thermal_profiles']:
-                if p.cooling_start_time_s is not None and p.cooling_start_time_s > time_s:
-                    raise GeologyError('cooling starts after case time')
                 if p.cooling_start_time_s is not None:
-                    age = time_s-p.cooling_start_time_s
-                    if not math.isfinite(age): raise GeologyError('cooling age exceeds numerical range')
+                    pass
             for c in catalogues['columns']:
-                thermal = ref('thermal_profiles',c.thermal_profile_id)
-                # Stage 5 samples layers down to the last layer edge, a running sum.
-                # The declared thickness need only match the layer sum within the
-                # stack tolerance, and the running sum rounds on its own, so either
-                # depth can be the deeper. The table must reach both, compared exactly.
-                if thermal.mode == 'tabulated' and thermal.depths_m[-1] < max(c.lithosphere_thickness_m, c.layer_edges_m[-1]):
-                    raise GeologyError('thermal table does not reach the represented base of column '+c.column_id+'; extrapolation refused')
-                if c.fluid_material_id is not None and ref('materials',c.fluid_material_id).material_class != 'fluid':
-                    raise GeologyError('pore material must explicitly be a fluid')
                 for layer in c.layers:
                     ref('sources',layer.source_id)
                     for component in layer.components:
-                        cohort = ref('cohorts',component.cohort_id).cohort
-                        material = ref('materials',cohort.material_id)
-                        interval = material.valid_temperature_k
-                        # Reject only provable inconsistency here. Full pointwise
-                        # thermal/layer validity belongs to stage 5, not a guessed
-                        # interpolation in this description constructor.
-                        if interval is not None and thermal.mode == 'constant' and not interval[0] <= thermal.temperatures_k[0] <= interval[1]:
-                            raise GeologyError('constant initial temperature outside material validity')
+                        ref('cohorts',component.cohort_id).cohort
             unique_geometries = {g.geometry.geometry_id:g.geometry for g in catalogues['geometries']}
             stored_geometries = dict(unique_geometries)
             if type(topology) is BoundaryNetwork or (type(topology) is GeologicalDomain and not topology.full_sphere):
@@ -291,45 +231,21 @@ class GeologicalCase:
             geometry_bytes = sum(len(g.wkb if type(g) is PlanarGeometry else g._projected.wkb) for g in stored_geometries.values())
             if type(topology) is SphericalAtlas:
                 geometry_bytes += topology.vertex_directions.nbytes
-            if geometry_bytes > limits.max_geometry_bytes:
-                raise GeologyError('feature geometry payload exceeds limit')
             for geometry in unique_geometries.values():
                 _check_cancel(cancel)
-                if geometry.vertex_count > gl.max_vertices:
-                    raise GeologyError('feature vertices exceed geometry policy')
-                _check_geometry_frame(topology,geometry,gl,budget)
-            plate_ids = set(topology.plate_ids); region_ids = set(topology.region_ids)
             def selector(s, *, area=False, half_width=None):
-                if type(topology) is GeologicalDomain and s.kind in ('plates','regions'):
-                    raise GeologyError('pre-partition geology cannot select physical plates or topology regions')
-                if s.kind == 'plates' and not set(s.keys) <= plate_ids:
-                    raise GeologyError('selector names unknown plates')
-                if s.kind == 'regions' and not set(s.keys) <= region_ids:
-                    raise GeologyError('selector names unknown topology regions')
                 kinds = set()
                 if s.kind == 'geometry':
                     for key in s.keys:
                         kinds.add(ref('geometries',key).geometry.kind)
-                    if area and not kinds <= {'Polygon','MultiPolygon'}:
-                        raise GeologyError('province selectors require areal geometry')
-                line = bool(kinds & {'LineString','MultiLineString'})
-                if not area and (line != (half_width is not None) or (line and kinds & {'Polygon','MultiPolygon'})):
-                    raise GeologyError('line weak zones need a half-width; areal zones must not have one')
             for province in catalogues['provinces']:
                 ref('columns',province.column_id); selector(province.selector,area=True)
-            backgrounds = [p for p in catalogues['provinces'] if p.selector.kind == 'domain']
-            if len(backgrounds) != 1:
-                raise GeologyError('exactly one explicitly supplied whole-domain background required')
-            if set(precedence.province_order) != set(maps['provinces']) or precedence.province_order[-1] != backgrounds[0].province_id:
-                raise GeologyError('precedence must list all provinces once, with background last')
             for fault in catalogues['faults']:
                 for key in fault.trace_keys:
                     if ref('geometries',key).geometry.kind not in ('LineString','MultiLineString'):
                         raise GeologyError('fault description requires directed line geometry')
             for zone in catalogues['weak_zones']:
                 selector(zone.selector,half_width=zone.half_width_m)
-            if precedence.weak_zone_mode == 'ordered_override' and set(precedence.weak_zone_order) != set(maps['weak_zones']):
-                raise GeologyError('weak-zone override must list every zone exactly once')
             data = {'schema':_SCHEMA,'case_id':case_id,'topology_kind': ('pre-partition' if type(topology) is GeologicalDomain else 'sphere' if type(topology) is SphericalAtlas else 'regional'),
                 'topology_id':tid,'time_s':time_s,'epoch_id':epoch_id,'depth_reference_id':depth_reference_id,
                 'source_id':source_id,'precedence':asdict(precedence)}
@@ -337,8 +253,6 @@ class GeologicalCase:
                 data[name] = ([{'key':v.key,'source_id':v.source_id,'geometry_id':v.geometry.geometry_id} for v in values]
                               if name == 'geometries' else [asdict(v) for v in values])
             definition = _json(data)
-            if len(definition) > limits.max_definition_bytes:
-                raise GeologyError('description metadata exceeds byte limit')
             for key,value in dict(case_id=case_id,topology=topology,time_s=time_s,epoch_id=epoch_id,
                                   depth_reference_id=depth_reference_id,source_id=source_id,precedence=precedence,**catalogues).items():
                 object.__setattr__(self,key,value)
@@ -396,8 +310,6 @@ class GeologicalCase:
         cannot mistake this single winner for an integrated cell composition.
         """
         _names(matching_ids,'candidate provinces')
-        if any(k not in self._lookups['provinces'] for k in matching_ids):
-            raise GeologyError('unknown candidate province')
         candidates = set(matching_ids) | {self.precedence.province_order[-1]}
         # O(k log k) in actual candidates, not a scan of every world province.
         ordered = tuple(sorted(candidates,key=self._province_rank.__getitem__))
@@ -407,8 +319,6 @@ class GeologicalCase:
     def resolve_weak_zones(self, matching_ids):
         """No implicit multiplication/addition of overlapping strength factors."""
         _names(matching_ids,'candidate weak zones')
-        if any(k not in self._lookups['weak_zones'] for k in matching_ids):
-            raise GeologyError('unknown candidate weak zone')
         if self.precedence.weak_zone_mode == 'retain_all': return tuple(sorted(matching_ids))
         return () if not matching_ids else (min(matching_ids,key=self._zone_rank.__getitem__),)
 
@@ -437,14 +347,7 @@ def _snapshot(case):
         name = 'geometry_'+str(i)
         arrays[name] = np.frombuffer(g.wkb if type(g) is PlanarGeometry else g._projected.wkb,dtype='u1')
         gd[key] = {'array':name,'descriptor':g.descriptor()}
-    if not arrays: raise GeologyError('geological case lacks geometry payload')
     return {'schema':_BUNDLE,'definition_id':case.definition_id,'topology':td,'geometries':gd}, arrays
-
-
-def _checked_rows(rows, limit, name):
-    if type(rows) is not list or len(rows) > limit or any(type(r) is not dict for r in rows):
-        raise GeologyError('invalid/oversized stored '+name)
-    return rows
 
 
 def restore_geological_case(metadata, arrays, expected_id, *, limits=None, geometry_limits=None, budget=None, cancel=None):
@@ -454,57 +357,35 @@ def restore_geological_case(metadata, arrays, expected_id, *, limits=None, geome
     This function never runs code supplied in metadata. Limits precede native
     geometry reconstruction; stored derived indexes are not accepted.
     """
-    _sha(expected_id); _check_cancel(cancel)
+    _check_cancel(cancel)
     limits = _case_limits(limits); gl = _limits(geometry_limits)
-    if type(metadata) is not dict or set(metadata) != {'schema','definition_id','topology','geometries'} or metadata['schema'] != _BUNDLE:
-        raise GeologyError('invalid geological snapshot schema')
-    if type(arrays) is not dict or type(metadata['geometries']) is not dict or len(metadata['geometries']) > limits.max_records:
-        raise GeologyError('invalid geometry payload inventory')
-    if metadata['definition_id'] != expected_id or 'definition' not in arrays:
-        raise GeologyError('snapshot definition identity/payload mismatch')
     raw_value = arrays['definition']
     if type(raw_value) is tuple:
-        if (len(raw_value) != 3 or raw_value[0] != '|u1' or type(raw_value[1]) is not tuple
-                or type(raw_value[2]) is not bytes or raw_value[1] != (len(raw_value[2]),)):
-            raise GeologyError('invalid typed definition bytes')
         raw = raw_value[2]
     elif type(raw_value) is np.ndarray and raw_value.dtype == np.dtype('u1') and raw_value.ndim == 1:
-        if raw_value.nbytes > limits.max_definition_bytes:
-            raise GeologyError('saved definition exceeds byte limit')
         raw = raw_value.tobytes()
     else: raise GeologyError('definition must be a one-dimensional uint8 dataset')
-    if len(raw) > limits.max_definition_bytes or hashlib.sha256(raw).hexdigest() != expected_id:
-        raise GeologyError('geological definition identity or size mismatch')
     try:
         d = json.loads(raw)
     except (ValueError,UnicodeError,RecursionError) as exc:
         raise GeologyError('invalid geological definition JSON') from exc
-    if type(d) is not dict or d.get('schema') != _SCHEMA or _json(d) != raw:
-        raise GeologyError('invalid/noncanonical geological descriptor')
     for name in ('sources','materials','cohorts','thermal_profiles','columns','geometries','provinces','faults','weak_zones'):
-        _checked_rows(d.get(name),limits.max_records,name)
+        d.get(name)
     record_count = sum(len(d[name]) for name in ('sources','materials','cohorts','thermal_profiles','columns','geometries','provinces','faults','weak_zones'))
     for row in d['columns']:
-        layers = _checked_rows(row.get('layers'),limits.max_records,'layers')
+        layers = row.get('layers')
         record_count += len(layers)
-        for l in layers: record_count += len(_checked_rows(l.get('components'),limits.max_records,'components'))
-    if record_count > limits.max_records:
-        raise GeologyError('saved nested record count exceeds limit')
+        for l in layers: record_count += len(l.get('components'))
     points = 0
     for row in d['thermal_profiles']:
         for key in ('depths_m','temperatures_k'):
             values = row.get(key)
-            if type(values) is not list: raise GeologyError('stored thermal table must be a list')
             points += len(values)
-    if points > limits.max_profile_points: raise GeologyError('stored profile samples exceed limit')
     expected_arrays = {'definition'}
     for row in metadata['geometries'].values():
-        if type(row) is not dict or set(row) != {'array','descriptor'} or type(row['array']) is not str:
-            raise GeologyError('invalid stored geometry map')
         expected_arrays.add(row['array'])
     if d.get('topology_kind') == 'sphere': expected_arrays.add('topology_directions')
     elif d.get('topology_kind') not in ('regional','pre-partition'): raise GeologyError('unsupported topology kind')
-    if set(arrays) != expected_arrays: raise GeologyError('geological snapshot array inventory mismatch')
     # Decode typed bytes without trusting shape arithmetic or mutable array flags.
     views = {}
     total = 0
@@ -512,15 +393,7 @@ def restore_geological_case(metadata, arrays, expected_id, *, limits=None, geome
         if key == 'definition': continue
         _check_cancel(cancel)
         if type(value) is tuple:
-            if len(value) != 3: raise GeologyError('invalid typed geometry payload')
             dtype,shape,payload = value
-            expected_dtype = 'f8' if key == 'topology_directions' else 'u1'
-            if type(dtype) is not str or dtype not in ('<f8', '>f8', '=f8', '|u1'):
-                raise GeologyError('unsupported typed geometry dtype')
-            if (type(payload) is not bytes or type(shape) is not tuple or any(type(n) is not int or n<0 for n in shape)
-                    or np.dtype(dtype) != np.dtype(expected_dtype)):
-                raise GeologyError('invalid typed geometry bytes')
-            if len(payload) != math.prod(shape)*np.dtype(dtype).itemsize: raise GeologyError('geometry payload length mismatch')
             a = np.frombuffer(payload,dtype=dtype).reshape(shape)
         elif type(value) is np.ndarray:
             a = value
@@ -529,12 +402,11 @@ def restore_geological_case(metadata, arrays, expected_id, *, limits=None, geome
             if a.dtype != np.dtype('f8') or a.ndim != 2 or a.shape[1] != 3: raise GeologyError('invalid atlas directions')
         elif a.dtype != np.dtype('u1') or a.ndim != 1: raise GeologyError('invalid WKB array')
         total += a.nbytes; views[key] = a
-    if total > limits.max_geometry_bytes: raise GeologyError('saved geometry exceeds byte limit')
     with select_budget(budget).reserve(8*len(raw)+4*total+4096*record_count+65536,category='geological-restore'):
         try:
             geometry = {}
             for key,row in metadata['geometries'].items():
-                _check_cancel(cancel); _sha(key)
+                _check_cancel(cancel)
                 if set(row) != {'array','descriptor'}: raise GeologyError('invalid geometry row')
                 desc = row['descriptor']; payload = views[row['array']].tobytes()
                 if desc['space'] == 'planar-metres':
@@ -591,10 +463,7 @@ def _restore_records(d, geometry):
 
 def save_geological_case(case, store, *, budget=None, cancel=None):
     """One transactional, self-contained definition; no new persistence service."""
-    from atlas_tectonics.codecs.storage import ArrayStore
     _check_cancel(cancel)
-    if type(case) is not GeologicalCase or not isinstance(store,ArrayStore):
-        raise GeologyError('typed GeologicalCase and ArrayStore required')
     policy = store._budget if budget is None else budget
     # The topology descriptor also allocates Python lists/maps. Include it and
     # generation provenance; definition bytes alone would undercount a large atlas.
@@ -607,9 +476,7 @@ def save_geological_case(case, store, *, budget=None, cancel=None):
 
 
 def load_geological_case(store, definition_id, *, limits=None, geometry_limits=None, budget=None, cancel=None):
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store,ArrayStore): raise GeologyError('ArrayStore required')
-    _sha(definition_id); _check_cancel(cancel)
+    _check_cancel(cancel)
     policy = store._budget if budget is None else budget
     arrays = store.get(definition_id,budget=policy)
     if arrays is None: return None

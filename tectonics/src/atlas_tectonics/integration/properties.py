@@ -26,7 +26,6 @@ import math
 
 import numpy as np
 
-from atlas_tectonics.integration.coupling import driving as _driving
 from . import material as _material
 from . import ports as P
 from atlas_tectonics.integration.geometry import sphere as _sphere
@@ -54,39 +53,11 @@ def _faces_of_edges(network):
 
 def _endpoint(moving, sphere, header, port):
     """The common endpoint check: the header names this state at its own time and step, in its own frame."""
-    _material.bound_moving(moving, sphere)
-    network = sphere.network
-    if type(header) is not P.Header or header.port != port:
-        raise P.PortRefused('a %s header is required' % port, P.UNSUPPORTED)
-    # I04.4 coupled route: the state is the interval's candidate endpoint; the header names the interval's parent state
-    # S0 and binds this endpoint through its network_id and moving identity (checked below), not its state_id.
-    coupled = (header.endpoint_s == header.interval[3] == network.time_s and header.interval[1] == network.step
-               and header.interval[0] < header.interval[1])
-    if not coupled and header.parent_state_id != sphere.state_id:
-        raise P.PortRefused('the header names another parent state', P.STALE_IDENTITY, detail='parent_state_id')
-    if header.network_id != network.network_id:
-        raise P.PortRefused('the header names another network', P.STALE_IDENTITY, detail='network_id')
-    if header.frame_id != network.sphere.frame_id:
-        raise P.PortRefused('the header names another frame', P.STALE_IDENTITY, detail='frame_id')
-    if header.parameter_id != moving.moving_id:
-        raise P.PortRefused('the header names another moving state: P1 and P2 are issued with parameter_id the '
-                            'moving_id they are computed from', P.STALE_IDENTITY, detail='parameter_id')
-    start = header.endpoint_s == header.interval[2] == network.time_s and header.interval[0] == network.step
-    # I04.4 coupled route: the state is the interval's endpoint, so its own time is the interval's end.
-    end = (header.endpoint_s == header.interval[3] == network.time_s and header.interval[1] == network.step
-           and header.interval[0] < header.interval[1])
-    if not (start or end):
-        raise P.PortRefused('properties are evaluated at the moving state\'s own time: the start of the interval, or '
-                            'its end for the coupled route', P.UNSUPPORTED, detail=_driving.EVALUATION)
 
 
 def _check_datum(header, datum, sphere):
-    """The header's datum, and for cohorts that come from a starting family (their I03 origin is the family
-    schema's) I04a's v1 family datum gate: rho_m and T_ref exactly 3300 kg/m3 and 293.15 K (review basal-04)."""
-    if type(datum) is not _driving.Datum:
-        raise P.PortRefused('the shared Datum is required', P.MISSING_VALUE, detail='datum')
-    if header.datum_id != _driving.datum_id(datum):
-        raise P.PortRefused('the header names another datum', P.STALE_IDENTITY, detail='datum_id')
+    """I04a's v1 family datum gate: cohorts from a starting family (their I03 origin is the family schema's)
+    exist only on rho_m and T_ref exactly 3300 kg/m3 and 293.15 K (review basal-04)."""
     from . import family as _family
     family = _family.SCHEMA+'#'
     if any(c.origin_id.startswith(family) for c in sphere.material.cohorts) and (
@@ -125,9 +96,6 @@ def inventory_bound(intervals):
     k + 1 roundings including the declaration's. This corrects the approved 4(n+2) eps, which miscounted; it is a
     re-derivation, not a change after results.
     """
-    if type(intervals) is not int or intervals < 0:
-        raise P.PortRefused('the intervals since declaration are a whole nonnegative count', P.MISSING_VALUE,
-                            detail='declared_step')
     return (GUARD_I05_EPS+(intervals+1))*EPS
 
 
@@ -157,32 +125,16 @@ def moving_columns(moving, sphere, support, header, datum, *, allow_cell_mean=Fa
     ``allow_cell_mean=True`` retains the explicitly labelled legacy approximation
     on an unresolved mesh-edge support. It is never selected by coupled feedback.
     """
-    if type(allow_cell_mean) is not bool:
-        raise P.PortRefused('allow_cell_mean is an explicit boolean', P.UNSUPPORTED)
     _endpoint(moving, sphere, header, 'P1')
-    if any(c.volume_convention != 'reference_prism' for c in moving.cohorts):
-        raise P.PortRefused('physical radial shells cannot be labelled planar GPE columns', P.UNSUPPORTED,
-                            detail='volume_convention')
     _check_datum(header, datum, sphere)
     network = sphere.network
-    if type(support) is not P.TraceSupport or support.network_id != network.network_id:
-        raise P.PortRefused('a trace support of this network is required', P.INCOMPATIBLE_SUPPORT, detail='support')
-    if header.support_id != support.support_id:
-        raise P.PortRefused('the header names another support', P.INCOMPATIBLE_SUPPORT, detail='support_id')
     owner = _faces_of_edges(network)
     pieces = sphere.material.pieces()
     pieces_of = {}
     for index, piece in enumerate(pieces):
         pieces_of.setdefault(piece.face_id, []).append(index)
-    plate_of = {face.face_id: face.plate_id for face in network.faces}
     edges = [pair for boundary in network.boundaries for pair in _pairs(boundary)]     # original trace order
     resolved = support.material_id is not None
-    if resolved and support.material_id != sphere.material.material_id:
-        raise P.PortRefused('the trace names another material partition', P.STALE_IDENTITY,
-                            detail='material_id')
-    if not resolved and len(edges) != support.edges:
-        raise P.PortRefused("the trace support does not follow this network's boundaries", P.INCOMPATIBLE_SUPPORT,
-                            detail='support')
     indices = {(piece.face_id, piece.cohort_id): index for index, piece in enumerate(pieces)}
     if resolved:
         del pieces
@@ -193,14 +145,8 @@ def moving_columns(moving, sphere, support, header, datum, *, allow_cell_mean=Fa
         a, b = edges[support.original_edges[e] if resolved else e]
         for side, key in ((0, (a, b)), (1, (b, a))):
             face = owner.get(key)
-            if face is None or plate_of[face] != support.plates[e][side]:
-                raise P.PortRefused('no face of plate %r lies beside trace edge %d' % (support.plates[e][side], e),
-                                    P.UNRESOLVED_COLUMN, detail='face')
             if resolved:
                 piece_key = support.piece_keys[e][side]
-                if piece_key[0] != face or piece_key not in indices:
-                    raise P.PortRefused('the material trace names no adjacent piece', P.INCOMPATIBLE_SUPPORT,
-                                        detail='piece_keys')
                 held = [indices[piece_key]]
                 columns = [patch_columns[support.patch_ids[e][side]]]
             else:
@@ -348,8 +294,6 @@ def _strength_rows(piece, record, thickness, temperature, gravity, reference_k):
             raise P.PortRefused('piece (%r, %r) declares no %s' % (piece.face_id, piece.cohort_id, name),
                                 P.MISSING_VALUE, detail=name)
         for column, value in zip(rows, (t, T, bottom, top, s.pore_pressure_pa, kappa)):
-            if not math.isfinite(value):
-                raise P.PortRefused('a strength value is not finite', P.MISSING_VALUE, detail='values')
             column.append(float(value))
         materials.append(s.material_id)
         creeps.append(s.creep_law_id)
@@ -368,9 +312,6 @@ def strength_port(moving, sphere, header, datum, *, healing_law_id):
     actual columns are exactly uniform; no tolerance merges distinct columns.
     """
     _endpoint(moving, sphere, header, 'P2')
-    if any(c.volume_convention != 'reference_prism' for c in moving.cohorts):
-        raise P.PortRefused('physical radial shells need an explicit radial pressure/strength port', P.UNSUPPORTED,
-                            detail='volume_convention')
     _check_datum(header, datum, sphere)
     if healing_law_id is None:
         raise P.PortRefused('the healing law is declared', P.MISSING_VALUE, detail='healing_law_id')

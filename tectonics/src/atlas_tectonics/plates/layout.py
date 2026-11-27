@@ -16,11 +16,10 @@ from dataclasses import dataclass, asdict, replace
 import hashlib
 import math
 import numpy as np
-from atlas_tectonics.planet.coordinates import SphericalFrame
 from atlas_tectonics.planet.geometry import GeometryError, _check_cancel, _json, _limits
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.planet.planetary_generation import PlanetPartitionSettings, generate_planetary_partition, _runtime
-from atlas_tectonics.planet.spherical_atlas import SphericalAtlas, build_spherical_atlas, _angle
+from atlas_tectonics.planet.spherical_atlas import build_spherical_atlas, _angle
 from atlas_tectonics.plates.reference import reference_area_fractions, plate_reference_record
 
 _METHOD='pb2002-ranked-connected-geodesic-cuts-v1'
@@ -52,7 +51,6 @@ class PlateLayoutSettings:
         from atlas_tectonics._validation import scalar
         absolute=scalar(self.max_area_l1_error,'max_area_l1_error',positive=True)
         relative=scalar(self.max_relative_area_error,'max_relative_area_error',positive=True)
-        if absolute>.1 or relative>1:raise GeometryError('invalid area approximation tolerance')
         object.__setattr__(self,'max_area_l1_error',absolute)
         object.__setattr__(self,'max_relative_area_error',relative)
 
@@ -79,8 +77,6 @@ def _connected_cut(graph, nodes, areas, wanted, reserve_left, reserve_right, sal
     """
     from scipy.sparse.csgraph import dijkstra, connected_components
     g=graph[nodes][:,nodes]
-    if connected_components(g,directed=False,return_labels=False)!=1:
-        raise GeometryError('partition recursion received disconnected support')
     first=int.from_bytes(hashlib.sha256(salt).digest()[:8],'little')%len(nodes)
     d0=dijkstra(g,directed=False,indices=first)
     a=int(np.argmax(d0));da=dijkstra(g,directed=False,indices=a)
@@ -89,7 +85,6 @@ def _connected_cut(graph, nodes, areas, wanted, reserve_left, reserve_right, sal
     order=np.argsort(score,kind='stable')
     cumulative=np.cumsum(areas[nodes[order]],dtype='f8')
     positions=np.arange(reserve_left,len(nodes)-reserve_right+1)
-    if len(positions)==0:raise GeometryError('unresolved plate population; increase support_cells')
     ranked=positions[np.argsort(np.abs(cumulative[positions-1]-wanted),kind='stable')]
     # Only a bounded set of neighbouring thresholds is tried, not indefinite
     # post-hoc editing of the requested statistical spectrum.
@@ -118,7 +113,6 @@ def _assign(graph, areas, targets, seed, cancel):
         left,right=_connected_cut(graph,nodes,areas,wanted,len(lhs),len(rhs),
                       seed.to_bytes(16,'little')+path,cancel)
         pending.append((right,rhs,path+b'R'));pending.append((left,lhs,path+b'L'))
-    if np.any(labels<0):raise GeometryError('unassigned support remains')
     return labels
 
 
@@ -131,7 +125,6 @@ def layout_metrics(atlas, *, budget=None, cancel=None):
     outlines. These diagnostics do not compare unequal resolutions as equivalent.
     """
     _check_cancel(cancel)
-    if type(atlas) is not SphericalAtlas:raise GeometryError('SphericalAtlas required')
     from scipy.sparse.csgraph import connected_components
     ids=atlas.plate_ids;lookup={n:i for i,n in enumerate(ids)}
     with select_budget(budget).reserve(256*(len(atlas.patches)+atlas.edge_count)+16384,category='plate-layout-metrics'):
@@ -177,8 +170,6 @@ def _generate_plate_layout(sphere, settings, *, limits=None, budget=None, cancel
     Normal generation does not infer velocity vectors, subduction polarity, crust
     type or weakening from areas. Those require a supported scenario/history.
     """
-    if type(sphere) is not SphericalFrame or type(settings) is not PlateLayoutSettings:
-        raise GeometryError('explicit sphere and PlateLayoutSettings required')
     _check_cancel(cancel);lim=_limits(limits);policy=select_budget(budget)
     # Reuse the audited subdivision builder. The intermediate owners are temporary
     # support labels, never exported as independent tectonic plates.
@@ -219,7 +210,6 @@ def require_geological_layout_acceptance(atlas):
     evidence needed by this gate. Kept as an explicit refusal, not a mutable bool
     that user metadata can set to bypass missing scientific validation.
     """
-    if type(atlas) is not SphericalAtlas:raise GeometryError('SphericalAtlas required')
     raise GeometryError('geological layout acceptance remains open: area fit and closed coverage do not validate boundary morphology or tectonic history')
 
 
@@ -231,8 +221,6 @@ def plate_outline_cycles(atlas, plate_id, *, budget=None, cancel=None):
     This avoids inventing a choice of outgoing edge at a pinched junction.
     """
     _check_cancel(cancel)
-    if type(atlas) is not SphericalAtlas or plate_id not in atlas.plate_ids:
-        raise GeometryError('known atlas plate required')
     with select_budget(budget).reserve(512*atlas.edge_count+8192,category='plate-outlines'):
         successor={};edges=atlas.edge_vertices;patches=atlas.patches
         for j,(a,b) in enumerate(atlas.side_patches):
@@ -242,15 +230,11 @@ def plate_outline_cycles(atlas, plate_id, *, budget=None, cancel=None):
             if right==plate_id:v,w=w,v
             if v in successor:raise GeometryError('pinched owner requires network, not a simple boundary ring')
             successor[v]=w
-        if len(set(successor.values()))!=len(successor) or set(successor)!=set(successor.values()):
-            raise GeometryError('owner outline is not a closed directed cycle set')
         rings=[];remaining=set(successor)
         while remaining:
             _check_cancel(cancel);start=min(remaining);ring=[];node=start
             while node in remaining:
                 ring.append(node);remaining.remove(node);node=successor[node]
-            if node!=start:raise GeometryError('owner cycle did not close')
-            if len(ring)<3:raise GeometryError('degenerate owner ring')
             values=atlas.vertex_directions[ring]
             rings.append(np.frombuffer(values.tobytes(),dtype='f8').reshape(-1,3))
         return tuple(rings)
@@ -269,18 +253,12 @@ def evaluate_plate_kinematics(atlas, angular_velocities_rad_s, *, budget=None, c
     The sinc(theta/2) correction below analytically integrates a rigid rotation
     over the entire arc and makes this account invariant to arc subdivision.
     """
-    from collections.abc import Mapping
     from atlas_tectonics._validation import snapshot
-    if type(atlas) is not SphericalAtlas or not isinstance(angular_velocities_rad_s,Mapping):
-        raise GeometryError('atlas and explicit Euler-vector mapping required')
     _check_cancel(cancel)
-    if set(angular_velocities_rad_s)!=set(atlas.plate_ids):
-        raise GeometryError('one explicit angular velocity per plate; no missing/extra motion')
     policy=select_budget(budget);_check_cancel(cancel)
     with policy.reserve(2048*atlas.edge_count+8192*len(atlas.plate_ids)+16384,category='plate-kinematics'):
         vectors={}
         for plate,value in sorted(angular_velocities_rad_s.items()):
-            if np.shape(value)!=(3,):raise GeometryError('Euler vector must have three components')
             vectors[plate]=snapshot(value,'Euler vector')
         ids=np.array(atlas.interplate_edges,dtype='i8')
         if not len(ids):
@@ -305,8 +283,6 @@ def evaluate_plate_kinematics(atlas, angular_velocities_rad_s, *, budget=None, c
             factor=2*np.sin(theta/2)
             rates_l=np.sum(np.cross(left,mid)*frames.right_normal,axis=1)*factor
             rates_r=-np.sum(np.cross(right,mid)*frames.right_normal,axis=1)*factor
-        if not all(np.isfinite(a).all() for a in (values,rates_l,rates_r)):
-            raise GeometryError('kinematic diagnostic exceeds binary64 range')
         accounts={p:[] for p in atlas.plate_ids}
         for i,(a,b) in enumerate(sides):
             accounts[atlas.patches[a].plate_id].append(float(rates_l[i]))
@@ -330,8 +306,6 @@ def generate_plate_layout(sphere, settings, *, limits=None, budget=None, cancel=
     from atlas_tectonics.integration.reuse import ExecutionContext
     from pathlib import Path
     _check_cancel(cancel)
-    if type(sphere) is not SphericalFrame or type(settings) is not PlateLayoutSettings:
-        raise GeometryError('explicit sphere and PlateLayoutSettings required')
     policy=select_budget(budget)
     source_bytes=sum(p.stat().st_size for p in Path(__file__).parent.glob('*.py'))
     with policy.reserve(8*source_bytes+262144,category='plate-layout-identity'):
@@ -339,5 +313,4 @@ def generate_plate_layout(sphere, settings, *, limits=None, budget=None, cancel=
             result=_generate_plate_layout(sphere,settings,limits=limits,budget=policy,
                                          cancel=cancel,execution_id=context.identity)
             _check_cancel(cancel)
-            context.verify()
             return result

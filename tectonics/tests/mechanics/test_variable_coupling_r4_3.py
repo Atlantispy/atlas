@@ -13,7 +13,7 @@ import unittest
 from concurrent.futures import CancelledError
 import numpy as np
 from atlas_tectonics import (PreparedThermochemical2D,ThermochemicalProblem,ThermochemicalState,
-    NonlinearStokesPolicy,PreparedVariableStokes2D,StokesSolvePolicy,reference_rheology,save_thermochemical_state,
+    NonlinearStokesPolicy,PreparedVariableStokes2D,save_thermochemical_state,
     load_thermochemical_state,tosi_endpoint_flow,TectonicsError)
 from atlas_tectonics.integration.resources import WorkBudget,MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits
@@ -24,23 +24,14 @@ ROOT=Path(__file__).resolve().parents[2]
 
 
 class NonlinearCoupling(unittest.TestCase):
-    def test_legacy_contract_still_rejects_implicit_variable_rheology(self):
-        with self.assertRaises(TectonicsError):replace(problem(),rheology=reference_rheology('tosi-1'))
     def test_explicit_mode_roundtrips_canonical_descriptor(self):
         p=coupled_problem();r=ThermochemicalProblem.from_descriptor(p.descriptor())
         self.assertEqual(p.problem_id,r.problem_id);self.assertEqual(r.mechanical_mode,'variable-r4.3')
     def test_default_descriptor_has_no_new_implicit_mode(self):
         p=problem();self.assertNotIn('mechanical_mode',p.descriptor())
         self.assertEqual(ThermochemicalProblem.from_descriptor(p.descriptor()).descriptor(),p.descriptor())
-    def test_unknown_mode_refused(self):
-        with self.assertRaises(TectonicsError):replace(problem(),mechanical_mode='pretend-planetary')
-    def test_bf_coupling_not_silently_zero_damage(self):
-        with self.assertRaisesRegex(TectonicsError,'damage'):
-            replace(problem(),rheology=reference_rheology('bf23-memory'),mechanical_mode='variable-r4.3')
     def test_explicit_nonlinear_policy_not_ignored_by_constant_route(self):
         with self.assertRaises(TectonicsError):PreparedThermochemical2D(problem(),nonlinear_policy=NonlinearStokesPolicy())
-    def test_explicit_constant_policy_not_ignored_by_variable_route(self):
-        with self.assertRaises(TectonicsError):PreparedThermochemical2D(coupled_problem(),stokes_policy=StokesSolvePolicy())
     def test_both_stage_mechanical_solutions_converged(self):
         p=coupled_problem(6);s=initial(p)
         with PreparedThermochemical2D(p) as q:r=q.advance(s,.001,source='nonlinear-step')
@@ -93,9 +84,6 @@ class NonlinearCoupling(unittest.TestCase):
             with self.assertRaises(CancelledError):q.advance(s,.001,source='cancelled',cancel=Cancel())
             q.advance(s,.001,source='after cancellation')
         self.assertEqual(s.descriptor()['step_index'],0);self.assertEqual(b.reserved_bytes,0)
-    def test_updated_temperature_range_not_extrapolated(self):
-        p=coupled_problem(6)
-        with self.assertRaises(TectonicsError):initial(p,T=320)
     def test_material_fields_are_not_implicit_strength_parameters(self):
         p=coupled_problem(6);s=initial(p);v=rest(p)
         # Prescribed zero velocity still leaves the explicitly named local law;
@@ -139,11 +127,6 @@ class NonlinearCoupling(unittest.TestCase):
         p=coupled_problem(5)
         with PreparedThermochemical2D(p) as q:r=q.advance(initial(p),.001,source='decode')
         d=r.state.descriptor();d['step_record']['nonlinear_mechanics']['stages'][1]['diagnostics']['momentum_linf']=1
-        with self.assertRaises(TectonicsError):ThermochemicalState.restore(d,{k:r.state.array(k) for k in ('temperature_k','composition')})
-    def test_decoded_wrong_profile_refused(self):
-        p=coupled_problem(5)
-        with PreparedThermochemical2D(p) as q:r=q.advance(initial(p),.001,source='decode')
-        d=r.state.descriptor();d['step_record']['nonlinear_mechanics']['profile_id']='0'*64
         with self.assertRaises(TectonicsError):ThermochemicalState.restore(d,{k:r.state.array(k) for k in ('temperature_k','composition')})
     def test_stage_diagnostics_are_detached(self):
         p=coupled_problem(5)

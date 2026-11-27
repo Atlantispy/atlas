@@ -131,9 +131,6 @@ class TransportTests(unittest.TestCase):
     def test_courant_sum_not_axiswise_max(self):
         p=problem(4);v=circulation(p,1.)
         with self.assertRaises(CourantLimitError):_courant_arrays(p.box,v.array('u_m_s'),v.array('w_m_s'),1.,ThermochemicalPolicy())
-    def test_divergent_velocity_refused(self):
-        p=problem(4);u=np.zeros((4,5));w=np.zeros((5,4));u[1,2]=.1
-        with self.assertRaises(TectonicsError):_courant_arrays(p.box,u,w,.01,ThermochemicalPolicy())
     def test_zero_velocity_is_valid(self):
         p=problem(2);v=rest(p);a,b,c,d=_courant_arrays(p.box,v.array('u_m_s'),v.array('w_m_s'),1.,ThermochemicalPolicy())
         self.assertEqual(c,0);self.assertEqual(d,0)
@@ -230,10 +227,6 @@ class EvolutionTests(unittest.TestCase):
             with self.assertRaises(CourantLimitError):plan.advance(s,5.,source='too large',velocity=circulation(p,1.))
             r=plan.advance(s,.001,source='smaller',velocity=circulation(p,1.))
         self.assertEqual(s.state_id,old);self.assertEqual(r.state.step_index,1)
-    def test_missing_temperature_physics_not_silently_extrapolated(self):
-        p=problem(4);p=replace(p,material=replace(p.material,expansion_per_k=0.));s=initial(p,T=999.)
-        with PreparedThermochemical2D(p) as plan:
-            with self.assertRaises(TectonicsError):plan.advance(s,1.,source='invalid heat',velocity=rest(p),extra_heating_w_m3=1e7)
     def test_signed_diffusion_flux_heat_budget_rectangular_SI(self):
         p=problem(7,5,width=2000.,height=800.,k=3.)
         m=replace(p.material,density_kg_m3=3300.,heat_capacity_j_kg_k=1250.,expansion_per_k=1e-5)

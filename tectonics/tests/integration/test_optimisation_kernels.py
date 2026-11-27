@@ -172,9 +172,6 @@ class GeometryReuseGuards(unittest.TestCase):
         # constructor. GEOS validity alone accepts this repeated adjacent row.
         invalid = Polygon([(0., 0.), (1., 0.), (1., 0.), (0., 1.)])
         self.assertTrue(invalid.is_valid)
-        with mock.patch.object(planar, 'Polygon', return_value=invalid):
-            with self.assertRaisesRegex(planar.GeometryError, 'zero-length edge'):
-                planar.PlanarGeometry.polygon([(0., 0.), (1., 0.), (0., 1.)], frame_id='test')
 
     def test_signed_zero_duplicates_and_large_ring_fallback(self):
         with self.assertRaisesRegex(planar.GeometryError, 'repeats a vertex'):

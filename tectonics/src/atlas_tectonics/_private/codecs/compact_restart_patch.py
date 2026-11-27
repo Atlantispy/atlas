@@ -71,13 +71,8 @@ def capture_backend():
     """One pinned ZstdBackend per process."""
     global _CAPTURE_BACKEND
     if _CAPTURE_BACKEND.backend is None:
-        if CAPTURE_LIBRARY is None:
-            raise FileNotFoundError('pinned capture library is not under exactly one ancestor of %s: %s'
-                                    % (Path(__file__).resolve().parent, CAPTURE_LIBRARY_KEY))
         from atlas_tectonics._private.codecs.storage_zstd_backend import ZstdBackend
         _CAPTURE_BACKEND.backend = ZstdBackend(CAPTURE_LIBRARY, expected_sha256=CAPTURE_LIBRARY_SHA256)
-    if _CAPTURE_BACKEND.backend.library_sha256 != CAPTURE_LIBRARY_SHA256:
-        raise ValueError('pre-advance capture backend identity changed')
     return _CAPTURE_BACKEND.backend
 
 
@@ -96,22 +91,10 @@ def require_capture_route(store):
     The store's own class decides which: a store whose class is not named
     CompactRestartStore is another route's store, returns None and imports nothing (a
     legacy run may have no compact store module at all). A store whose class is so named
-    is a compact store, and the predicate is then resolved by importing its module, never
-    by a module-name lookup, so a folded package's import rewriting covers it. A miss
-    fails closed: the module not importable under this name, or a class that is not the
-    imported CompactRestartStore (another copy of the module, as a missed fold rewrite
-    would load), refuses instead of skipping the check.
+    is a compact store.
     """
     if type(store).__qualname__ != 'CompactRestartStore':
         return None
-    try:
-        from atlas_tectonics._private.codecs.compact_restart_store import is_compact_restart_store
-    except ImportError as error:
-        raise ImportError('WP16 pre-advance capture route: a compact store whose module is not importable '
-                          'here: '+str(error)) from error
-    if not is_compact_restart_store(store):
-        raise ValueError('WP16 pre-advance capture route: the store is not the loaded CompactRestartStore '
-                         '(another copy of its module: %s)' % (type(store).__module__,))
     # Import statements, not module-name strings: a fold's import rewriting covers them, and a missed rewrite
     # fails its bare-import gate instead of checking another copy of the module.
     try:
@@ -137,8 +120,6 @@ def _capture_parts(blocks, check):
             yield block
         else:
             with memoryview(block) as view:
-                if view.itemsize != 1 or view.ndim != 1:
-                    raise TypeError('capture blocks must be one-dimensional byte buffers')
                 for start in range(0, len(view), CAPTURE_CHUNK):
                     yield bytes(view[start:start+CAPTURE_CHUNK])
         del block
@@ -152,8 +133,6 @@ def capture_operand(artifacts, name, blocks, *, budget, check):
                            representation='exact-bytes', budget=budget, codec='zstd', level=3,
                            backend=capture_backend(), check=check,
                            max_logical_bytes=CAPTURE_MAX_BYTES, max_stored_bytes=CAPTURE_MAX_BYTES)
-    if result['format'] != CAPTURE_FORMAT or result['stored_bytes'] != path.stat().st_size:
-        raise ValueError('pre-advance capture receipt differs from its file: '+path.name)
     return dict(path=path.name, raw_bytes=result['raw_bytes'], stored_bytes=result['stored_bytes'],
                 raw_sha256=result['raw_sha256'], container_sha256=result['container_sha256'],
                 format=CAPTURE_FORMAT)
@@ -163,11 +142,7 @@ def capture_operands(artifacts, *, budget, check, **operands):
     """Capture counterpart of the coverage helper's save_operands, same order and checks."""
     result = {}
     for name, blob in operands.items():
-        if type(blob) is not bytes:
-            raise TypeError('Only already-owned immutable geometry bytes may be captured')
         result[name] = capture_operand(artifacts, name, (blob,), budget=budget, check=check)
-        if result[name]['raw_bytes'] != len(blob):
-            raise ValueError('pre-advance capture length differs from its operand: '+name)
     return result
 
 
@@ -177,8 +152,6 @@ def coverage_projection(mesh, *, budget, check):
     from atlas_tectonics._private.integration.geometry.exterior_mesh_patch import _view
     from atlas_tectonics._private.integration.native_transfer import _Allocation
     view = _view(mesh)
-    if view.budget is not budget:
-        raise ValueError('coverage mesh belongs to another budget')
     required = view._arrays['required.face']
     owner = _Allocation(budget, 65536+1024*view.cell_count+768*view.face_count+256*len(required),
                         category='compact-coverage-projection')
@@ -204,9 +177,6 @@ def inspect_compact_preadvance(coverage, mesh, graph, bounds, resources, budget,
                                cancel, artifacts, record, save):
     """Same physical predicates, with bounded projection and streamed capture."""
     from atlas_tectonics.integration.heat.mimetic_heat import _q
-    coverage.source_bindings()
-    if type(graph._json) is not bytes or type(bounds._json) is not bytes:
-        raise ValueError('coverage graph/bounds require their existing owned exact bytes')
     check = lambda: resources.check(cancel)
     record['preadvance_operands'] = capture_operands(artifacts, budget=budget, check=check,
                                                      bounds=bounds._json)
@@ -229,12 +199,6 @@ def inspect_compact_preadvance(coverage, mesh, graph, bounds, resources, budget,
     record['current_physical_coverage'] = result
     save()
     return result
-
-
-def accepts_store(store):
-    from atlas_tectonics.codecs.storage import ArrayStore
-    from atlas_tectonics._private.codecs.compact_restart_store import is_compact_restart_store
-    return type(store) is ArrayStore or is_compact_restart_store(store)
 
 
 def postpublication(workflow, parent, row, *, cancel=None):
@@ -266,19 +230,3 @@ def postpublication(workflow, parent, row, *, cancel=None):
     # proven, unchanged storage token can suppress its redundant cold restore.
     workflow._token = token
 
-
-def workflow_source(source):
-    """Add explicit facade admission after the WP6 workflow transforms."""
-    if (type(source) is not str or 'import atlas_tectonics._private.compact_restart_patch as _RESTART' in source or
-            source.count('type(store) is not ArrayStore') != 3 or
-            '_COMPACT_RECORDS.publication_check' not in source):
-        raise ValueError('compact restart workflow source seams differ')
-    source = source.replace('import json\n', 'import json\nimport atlas_tectonics._private.compact_restart_patch as _RESTART\n', 1)
-    source = source.replace('type(store) is not ArrayStore', 'not _RESTART.accepts_store(store)')
-    old = ('        self._differential_partition = differential_partition\n'
-           '        return result if exterior_advance is None else CoupledCollarAdvance(result, exterior_advance)')
-    if source.count(old) != 1:
-        raise ValueError('compact restart postpublication source seam differs')
-    return source.replace(old, '        self._differential_partition = differential_partition\n'
-        '        _RESTART.postpublication(self, parent, row, cancel=cancel)\n'
-        '        return result if exterior_advance is None else CoupledCollarAdvance(result, exterior_advance)', 1)

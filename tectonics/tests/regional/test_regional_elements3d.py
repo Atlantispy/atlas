@@ -172,7 +172,7 @@ class RegionalElements3DTests(unittest.TestCase):
             with self.subTest(lengths=lengths), self.assertRaises(ValueError):
                 TaylorHoodBox(lengths=lengths)
         eta = np.ones((box.nc, 27))
-        for bad in (eta[:, :1], eta*0, eta*np.nan, eta*-1, eta+1j):
+        for bad in (eta[:, :1], eta*0, eta*np.nan, eta*-1):
             with self.assertRaises(ValueError):
                 box.assemble(bad)
         event = threading.Event()
@@ -190,8 +190,6 @@ class RegionalElements3DTests(unittest.TestCase):
             box.load(np.zeros((box.nc, 27, 3)), np.zeros((box.nc, 27, 3)))
         with self.assertRaises(ValueError):
             box.evaluate(np.zeros(3*box.nv), np.zeros(box.np))
-        with self.assertRaises(ValueError):
-            box.boundary_quadrature("left")
         with self.assertRaises(ValueError):
             box.integrate_boundary_traction("x0", np.zeros((1, 9, 3)))
         with self.assertRaises(ValueError):

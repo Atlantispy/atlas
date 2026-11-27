@@ -24,7 +24,7 @@ import shapely
 from shapely.strtree import STRtree
 
 from atlas_shared.formulas import sphere
-from atlas_tectonics.planet.geometry import GeometryError, _check_cancel
+from atlas_tectonics.planet.geometry import _check_cancel
 from atlas_tectonics.planet.spherical_geometry import SphericalGeometry
 from atlas_tectonics.integration.resources import select_budget, reserve_budgets
 
@@ -35,8 +35,6 @@ _PAD = float(512 * np.finfo(np.float64).eps)
 
 def spherical_cap(geometry: SphericalGeometry) -> tuple[np.ndarray, float]:
     """Return a conservative, usually local cap, including every curved edge."""
-    if type(geometry) is not SphericalGeometry or geometry.is_empty:
-        raise GeometryError('nonempty spherical footprint required for cap')
     vertices = geometry.chart._unproject(shapely.get_coordinates(geometry._projected._geom))
     centre = np.sum(vertices, axis=0)
     norm = float(np.linalg.norm(centre))
@@ -50,8 +48,6 @@ def spherical_cap(geometry: SphericalGeometry) -> tuple[np.ndarray, float]:
         # This fallback is geometric conservatism, not an approximate polygon.
         centre = np.asarray(geometry.chart.centre, dtype=np.float64)
         radius = float(np.max(sphere.angle_array(vertices, centre))) + _PAD
-    if not math.isfinite(radius) or radius >= math.pi / 2:
-        raise GeometryError('spherical footprint has no certified conditioned cap')
     return centre, radius
 
 
@@ -67,12 +63,6 @@ class SphericalCandidateIndex:
         self.budget = select_budget(budget)
         self._lock = threading.Lock(); self._active = 0; self._closed = False
         self._guard = None; self._tree = None
-        if type(geometries) is not tuple or not geometries:
-            raise GeometryError('nonempty immutable footprint tuple required')
-        first = geometries[0]
-        if any(type(g) is not SphericalGeometry or g.is_empty or
-               g.kind not in ('Polygon', 'MultiPolygon') or g.chart.sphere != first.chart.sphere for g in geometries):
-            raise GeometryError('area footprints on one reference sphere required')
         n = len(geometries)
         max_vertices = max(g.vertex_count for g in geometries)
         allowance = 1536*n + 256*max_vertices + 16384
@@ -112,8 +102,6 @@ class SphericalCandidateIndex:
 
     def close(self):
         with self._lock:
-            if self._active:
-                raise GeometryError('join active cap-index queries before close')
             if not self._closed:
                 self._tree = None
                 self._centres = self._radii = self._lower = self._upper = None
@@ -123,7 +111,6 @@ class SphericalCandidateIndex:
     @contextmanager
     def _operation(self):
         with self._lock:
-            if self._closed: raise GeometryError('spherical candidate index is closed')
             self._active += 1
         try: yield
         finally:

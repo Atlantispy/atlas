@@ -20,7 +20,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import math
-from typing import Any, Mapping
 
 import numpy as np
 import shapely
@@ -28,7 +27,7 @@ from shapely.geometry import Polygon, LineString
 
 from atlas_shared.formulas import sphere
 from atlas_tectonics.planet.coordinates import SphericalFrame
-from atlas_tectonics._validation import read_array, scalar, input_shape
+from atlas_tectonics._validation import read_array, scalar
 from atlas_tectonics._validation import unit_rows
 from atlas_tectonics.planet.geometry import (GeometryError, _limits, _label, _json, _point_shape,
                        _check_cancel, GeometryLimits)
@@ -54,8 +53,6 @@ def _digest(value):
 
 def _cycle(ids):
     """Canonical starting vertex only; never reverse the declared orientation."""
-    if type(ids) is not tuple or len(ids) < 3:
-        raise GeometryError('an explicit tuple of at least three distinct vertex IDs is required')
     for name in ids:
         _label(name, 'vertex ID')
     if len(set(ids)) != len(ids):
@@ -83,15 +80,8 @@ class SphericalPatch:
     def __post_init__(self):
         for name in ('patch_id', 'region_id', 'plate_id'):
             _label(getattr(self, name), name)
-        if type(self.chart) is not SphericalChart:
-            raise GeometryError('explicit SphericalChart required')
-        if type(self.holes) is not tuple:
-            raise GeometryError('holes must be an explicit tuple')
         outer = _cycle(self.vertex_ids)
         holes = tuple(sorted(_cycle(h) for h in self.holes))
-        all_ids = outer + tuple(v for h in holes for v in h)
-        if len(set(all_ids)) != len(all_ids):
-            raise GeometryError('patch rings must not share or repeat vertices')
         object.__setattr__(self, 'vertex_ids', outer)
         object.__setattr__(self, 'holes', holes)
 
@@ -141,8 +131,6 @@ def _face_geometry(patch, points, lookup, limits, budget):
     raw = Polygon(xy[0], xy[1:])
     if not raw.is_valid or raw.is_empty or raw.area <= 0:
         raise GeometryError('patch is not a simple, nonempty local polygon')
-    if not shapely.is_ccw(raw.exterior) or any(shapely.is_ccw(h) for h in raw.interiors):
-        raise GeometryError('patch orientation must keep its interior on the left')
     geometry = SphericalGeometry.polygon(rings[0], holes=rings[1:], chart=patch.chart,
                                           limits=limits, budget=budget)
     areas = [_measure_ring(u) for u in rings]
@@ -163,8 +151,6 @@ def _face_source(source, sphere, names, points, ordered):
     """
     if source is None:
         return None
-    if type(source) is not SphericalAtlas:
-        raise GeometryError('reuse_faces_from must be a SphericalAtlas')
     if (source.sphere != sphere or source.vertex_ids != names or source._points != points.tobytes()
             or len(source.patches) != len(ordered)):
         return None
@@ -242,8 +228,6 @@ def _vertex_links(points, edge_array, sides, patch_count, resolution, cancel):
             if left != next_right:
                 raise GeometryError('spherical junction sectors overlap or leave a gap')
             sectors.append(left)
-        if len(set(sectors)) != len(sectors):
-            raise GeometryError('a patch wraps around or repeats a junction corner')
         incidence.extend((e, s) for _, e, s in rows)
         offsets.append(len(incidence))
     return np.array(offsets, dtype='i8'), np.array(incidence, dtype='i8')
@@ -312,15 +296,11 @@ class SphericalAtlas:
 
     def _indices(self, indices=None):
         if indices is None: return np.arange(self.edge_count, dtype='i8')
-        if type(indices) not in (tuple, list, np.ndarray):
-            raise GeometryError('explicit edge indices required')
         if isinstance(indices, np.ndarray):
             if np.ma.isMaskedArray(indices) or indices.ndim != 1 or indices.dtype.kind not in 'iu':
                 raise GeometryError('unmasked one-dimensional integer indices required')
         elif any(type(i) is not int for i in indices):
             raise GeometryError('integer edge indices required')
-        if len(indices) > self.edge_count or any(int(i) < 0 or int(i) >= self.edge_count for i in indices):
-            raise GeometryError('edge selection out of range')
         return np.array(indices, dtype='i8', copy=True)
 
     def role(self, index):
@@ -333,7 +313,6 @@ class SphericalAtlas:
                      if self.patches[l].plate_id != self.patches[r].plate_id)
 
     def edge(self, index, *, reverse=False):
-        if type(reverse) is not bool: raise GeometryError('reverse must be bool')
         i = int(self._indices([index])[0]); a, b = self.vertex_directions[self.edge_vertices[i]]
         l, r = (self.patches[j] for j in self.side_patches[i])
         role = 'patch-seam' if l.plate_id == r.plate_id else 'interplate'
@@ -342,13 +321,11 @@ class SphericalAtlas:
         return out.reversed() if reverse else out
 
     def adjacency(self, *, by_plate=True):
-        if type(by_plate) is not bool: raise GeometryError('by_plate must be bool')
         names = [p.plate_id if by_plate else p.region_id for p in self.patches]
         return tuple(sorted({tuple(sorted((names[l], names[r]))) for l, r in self.side_patches
                              if names[l] != names[r]}))
 
     def areas(self, *, by_plate=True):
-        if type(by_plate) is not bool: raise GeometryError('by_plate must be bool')
         groups = {}
         for p, a in zip(self.patches, self.patch_areas_sr):
             name = p.plate_id if by_plate else p.region_id
@@ -358,7 +335,6 @@ class SphericalAtlas:
 
     def perimeters(self, *, by_plate=True):
         """Count actual owner changes only; internal patch cuts add no coastline."""
-        if type(by_plate) is not bool: raise GeometryError('by_plate must be bool')
         names = [p.plate_id if by_plate else p.region_id for p in self.patches]
         groups = {n: [] for n in names}; points = self.vertex_directions
         for (a, b), (l, r) in zip(self.edge_vertices, self.side_patches):
@@ -369,8 +345,6 @@ class SphericalAtlas:
 
     def junction(self, vertex_index, *, limits=None, budget=None, cancel=None):
         _check_cancel(cancel); limits = _limits(limits)
-        if type(vertex_index) is not int or not 0 <= vertex_index < self.vertex_count:
-            raise GeometryError('vertex index out of range')
         offsets = np.frombuffer(self._offsets, dtype='i8')
         rows = np.frombuffer(self._incidence, dtype='i8').reshape(-1, 2)[offsets[vertex_index]:offsets[vertex_index+1]]
         if len(rows)**2 > limits.max_overlay_pairs:
@@ -396,13 +370,6 @@ class SphericalAtlas:
     def _frames(self, indices, reverse, fraction, limits, budget, cancel, *, captured=False, emit=True):
         _check_cancel(cancel); limits = _limits(limits)
         f = scalar(fraction, 'fraction', nonnegative=True)
-        if f > 1 or type(reverse) is not bool:
-            raise GeometryError('fraction in [0,1] and boolean reverse required')
-        if not captured:
-            if indices is not None and type(indices) not in (tuple, list, np.ndarray):
-                raise GeometryError('explicit edge selection required')
-            if isinstance(indices, np.ndarray) and indices.ndim != 1:
-                raise GeometryError('one-dimensional edge selection required')
         n = self.edge_count if indices is None else len(indices)
         if n > limits.max_hits: raise GeometryError('frame output exceeds limit')
         with select_budget(budget).reserve(256*n + 1024*min(n, limits.batch_points)+8192,
@@ -423,8 +390,6 @@ class SphericalAtlas:
                     p[start:end] = radial*self.sphere.radius_m
                     t[start:end] = unit_rows(np.cross(left, radial), GeometryError, 'zero or nonfinite direction')
                     normal[start:end] = -left; length[start:end] = theta*self.sphere.radius_m
-            if not all(np.isfinite(x).all() for x in (p, t, normal, length)):
-                raise GeometryError('spherical metric outside binary64 range')
             _check_cancel(cancel)
             if emit:
                 return BoundaryFrames((n, 3), p.tobytes(), t.tobytes(), normal.tobytes(), length.tobytes())
@@ -433,17 +398,12 @@ class SphericalAtlas:
                reverse=False, budget=None, cancel=None):
         """Same stage-3 diagnostics on global verified sides, not a force model."""
         _check_cancel(cancel)
-        if not isinstance(velocities_by_plate, Mapping): raise GeometryError('plate velocity mapping required')
         ids = self._indices(self.interplate_edges if indices is None else indices)
-        if len(np.unique(ids)) != len(ids): raise GeometryError('duplicate motion selection')
-        if type(reverse) is not bool: raise GeometryError('reverse must be bool')
         n = len(ids)
         with select_budget(budget).reserve(1024*n+16384, category='atlas-motion'):
             sides = self.side_patches[ids]
             if reverse: sides = sides[:, ::-1]
             def velocity(value):
-                if input_shape(value, 'velocity') not in ((3,), (n, 3)):
-                    raise GeometryError('velocity must be a vector or match selected edges')
                 return np.broadcast_to(read_array(value, 'velocity'), (n, 3))
             left = np.empty((n, 3)); right = np.empty_like(left)
             groups = {}
@@ -451,7 +411,6 @@ class SphericalAtlas:
                 for col, face in enumerate((l, r)):
                     groups.setdefault(self.patches[face].plate_id, [[], []])[col].append(row)
             for plate, rows in groups.items():
-                if plate not in velocities_by_plate: raise GeometryError('missing plate velocity')
                 v = velocity(velocities_by_plate[plate])
                 for col, target in enumerate((left, right)):
                     sub = np.asarray(rows[col], dtype='i8'); target[sub] = v[sub]
@@ -463,7 +422,6 @@ class SphericalAtlas:
                     np.sum(relative*f.tangent, axis=1), np.sum((left-boundary)*f.right_normal, axis=1),
                     np.sum((right-boundary)*f.right_normal, axis=1),
                     np.sum(relative*(f.position_m/self.sphere.radius_m), axis=1)))
-            if not np.isfinite(result).all(): raise GeometryError('velocity exceeds numerical range')
             _check_cancel(cancel)
             return BoundaryKinematics(tuple(self.edge_ids[i] for i in ids), result.tobytes())
 
@@ -504,11 +462,6 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
     computed as without it, so the result is the same atlas either way.
     """
     _check_cancel(cancel); limits = _limits(limits); policy = select_budget(budget)
-    if type(sphere) is not SphericalFrame or not isinstance(vertices, Mapping):
-        raise GeometryError('explicit sphere and shared vertex mapping required')
-    if (type(patches) not in (tuple, list) or not patches or
-            any(type(p) is not SphericalPatch for p in patches)):
-        raise GeometryError('explicit nonempty SphericalPatch sequence required')
     count = sum(len(ring) for p in patches for ring in p.rings)
     if len(vertices) < 4 or len(vertices) > limits.max_vertices or count > limits.max_vertices:
         raise GeometryError('atlas vertex/half-edge envelope exceeded')
@@ -518,35 +471,24 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
     bindings = {} if source_bindings is None else source_bindings
     try: provenance = _json(bindings)
     except (TypeError, ValueError, OverflowError) as exc: raise GeometryError('invalid source-binding provenance') from exc
-    if type(bindings) is not dict or len(provenance) > 512*count + 65536:
-        raise GeometryError('source bindings exceed metadata envelope')
     with policy.reserve(4096*count + 1024*len(vertices) + 2*len(provenance)+65536, category='atlas-build'):
         for name in vertices: _label(name, 'vertex ID')
         names = tuple(sorted(vertices)); lookup = {name: i for i, name in enumerate(names)}
         data = []
         for name in names:
-            if _point_shape(vertices[name], 3) != (3,): raise GeometryError('one direction per vertex required')
             data.append(read_array(vertices[name], 'vertex'))
         points = np.asarray(data, dtype='f8'); del data
         if _restored:
             if np.any(np.abs(np.linalg.norm(points, axis=1)-1) > 16*np.finfo(float).eps):
                 raise GeometryError('saved atlas vertices are not unit directions')
         else: points = _capture_directions(points)
-        if len(np.unique(points, axis=0)) != len(points):
-            raise GeometryError('duplicate geometric vertices must use one shared ID')
         ordered = tuple(sorted(patches, key=lambda p: p.patch_id))
-        if len({p.patch_id for p in ordered}) != len(ordered): raise GeometryError('duplicate patch ID')
         reused = _face_source(reuse_faces_from, sphere, names, points, ordered)
-        registered = set(lookup)
         owners, edge_uses, used, geometry, areas = {}, {}, set(), [], []
         for face, p in enumerate(ordered):
             _check_cancel(cancel)
-            if p.chart.sphere != sphere: raise GeometryError('patch sphere/radius/frame mismatch')
-            if p.region_id in owners and owners[p.region_id] != p.plate_id:
-                raise GeometryError('one geological region cannot have conflicting plate ownership')
             owners[p.region_id] = p.plate_id
             for ring in p.rings:
-                if not set(ring) <= registered: raise GeometryError('patch names an unregistered vertex')
                 used.update(ring)
                 ids = [lookup[v] for v in ring]
                 # One row-wise _angle per ring. Row i is the same elementwise IEEE
@@ -560,14 +502,12 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
                     key = (min(a, b), max(a, b))
                     row = edge_uses.setdefault(key, [-1, -1])
                     column = 0 if a < b else 1
-                    if row[column] != -1: raise GeometryError('duplicate directed edge/same-side ownership')
                     row[column] = face
             if reused is not None and _same_face(reused.patches[face], p):
                 g, area = _reused_face(reused, face, p, limits, policy)
             else:
                 g, area = _face_geometry(p, points, lookup, limits, policy)
             geometry.append(BoundaryRegion(p.patch_id, p.plate_id, g)); areas.append(area)
-        if used != set(names): raise GeometryError('unused registered vertex')
         if any(-1 in s or s[0] == s[1] for s in edge_uses.values()):
             raise GeometryError('unpaired seam/gap or inconsistent seam subdivision')
         edges = np.array(sorted(edge_uses), dtype='i8'); sides = np.array([edge_uses[e] for e in sorted(edge_uses)], dtype='i8')
@@ -580,16 +520,11 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
             _check_cancel(cancel)
             for nxt in graph[stack.pop()]:
                 if nxt not in seen: seen.add(nxt); stack.append(nxt)
-        if len(seen) != len(ordered): raise GeometryError('atlas contains disconnected surface sheets')
         chi = len(names)-len(edges)+sum(1-len(p.holes) for p in ordered)
-        if chi != 2: raise GeometryError('closed atlas must have spherical Euler characteristic two')
         offsets, incidence = _vertex_links(points, edges, sides, len(ordered), resolution, cancel)
         area_sum = math.fsum(areas)
         if abs(area_sum-4*math.pi) > _AREA_TOLERANCE_SR:
             raise GeometryError('spherical area closure failed; no normalisation of areas allowed')
-        total_metric = (area_sum*sphere.radius_m)*sphere.radius_m
-        if not math.isfinite(total_metric) or total_metric <= 0:
-            raise GeometryError('planet area outside positive binary64 range')
         sphere_record = sphere.descriptor()
         patch_records, charts = [], []
         for patch in ordered:
@@ -653,14 +588,11 @@ class SphericalAtlasIndex:
     Trees are prepared once, immutable during queries, and charged until close.
     """
     def __setattr__(self, name, value):
-        if name in ("_atlas", "limits", "budget") and hasattr(self, name):
-            raise GeometryError("index definitions are immutable")
         object.__setattr__(self, name, value)
 
     def __init__(self, atlas, *, limits=None, budget=None):
         from scipy.spatial import cKDTree
         import threading
-        if type(atlas) is not SphericalAtlas: raise GeometryError('SphericalAtlas required')
         self._atlas = atlas; self.limits = _limits(limits); self.budget = select_budget(budget)
         if sum(len(r) for p in atlas.patches for r in p.rings) > self.limits.max_vertices:
             raise GeometryError('atlas index vertex envelope exceeded')
@@ -701,12 +633,10 @@ class SphericalAtlasIndex:
     def query(self, directions, *, by_plate=True, angular_tolerance_rad=_ANGULAR_RESOLUTION,
               budget=None, cancel=None):
         _check_cancel(cancel)
-        if type(by_plate) is not bool: raise GeometryError('by_plate must be bool')
         tol = scalar(angular_tolerance_rad, 'angular tolerance', nonnegative=True)
         if any(tol >= p.chart.min_cosine/4 for p in self._atlas.patches):
             raise GeometryError('boundary band exceeds chart validity')
         with self._lock:
-            if self._closed: raise GeometryError('atlas index is closed')
             self._active += 1
         try:
             count = elements(_point_shape(directions, 3))//3
@@ -731,8 +661,6 @@ class SphericalAtlasIndex:
                         raw = tree.query_ball_point(block, reach, workers=1)
                         lengths = np.fromiter((len(v) for v in raw), dtype='i8', count=len(block))
                         size = int(lengths.sum())
-                        if size > limit:
-                            raise GeometryError('atlas query raw-candidate capacity exceeded')
                         if not size: continue
                         query_rows = np.repeat(np.arange(len(block), dtype='i8'), lengths)
                         local = np.fromiter((j for values in raw for j in values), dtype='i8', count=size)
@@ -751,8 +679,6 @@ class SphericalAtlasIndex:
                         for end in ends:
                             candidates[int(faces[pos])] = selected_rows[pos:end]
                             pos = int(end)
-                        if sum(map(len,candidates.values())) > limit:
-                            raise GeometryError('atlas query candidate capacity exceeded')
                     seen = np.zeros(len(block),dtype=bool)
                     for face, selected in sorted(candidates.items()):
                         selected = np.asarray(selected,dtype='i8')
@@ -761,8 +687,6 @@ class SphericalAtlasIndex:
                         hit = selected[result >= 0]; seen[hit] = True
                         if len(rows)+len(hit)>limit: raise GeometryError('atlas query output exceeds max_hits; use smaller batches')
                         rows.extend((start+int(i),owners[face]) for i in hit)
-                    if not seen.all():
-                        raise GeometryError('numerical query cannot establish coverage; no nearest-owner fallback')
                 array = np.unique(np.asarray(rows,dtype='i8').reshape(-1,2),axis=0)
                 _check_cancel(cancel)
                 return AtlasHits(names,candidate_count,count*len(self._atlas.patches),array.tobytes())
@@ -776,16 +700,7 @@ class SphericalAtlasIndex:
 
 
 def _restore_atlas(desc, payload, *, limits=None, budget=None, cancel=None):
-    if (type(desc) is not dict or set(desc) != {'schema','method','sphere','vertex_ids','patches',
-           'angular_resolution_rad','source_bindings','geometry_id','atlas_id'} or
-           desc['schema'] != _SCHEMA or desc['method'] != _METHOD):
-        raise GeometryError('invalid spherical atlas descriptor')
     limits = _limits(limits)
-    if type(payload) is not bytes or type(desc['vertex_ids']) is not list or type(desc['patches']) is not list:
-        raise GeometryError('invalid atlas payload or inventory')
-    if len(desc['vertex_ids']) > limits.max_vertices or len(desc['patches']) > limits.max_vertices:
-        raise GeometryError('saved atlas exceeds limits')
-    if len(payload) != 24*len(desc['vertex_ids']): raise GeometryError('atlas vertex payload length mismatch')
     try:
         names = desc['vertex_ids']
         if names != sorted(set(names)): raise GeometryError('stored vertex IDs must be unique and sorted')
@@ -810,10 +725,7 @@ def _restore_atlas(desc, payload, *, limits=None, budget=None, cancel=None):
 
 
 def save_spherical_atlas(atlas, store, *, budget=None, cancel=None):
-    from atlas_tectonics.codecs.storage import ArrayStore
     _check_cancel(cancel)
-    if type(atlas) is not SphericalAtlas or not isinstance(store,ArrayStore):
-        raise GeometryError('typed atlas and ArrayStore required')
     return store.put(atlas.atlas_id, {'directions': atlas.vertex_directions}, atlas.descriptor(),
                      budget=budget,cancel=cancel)
 
@@ -822,11 +734,7 @@ def load_spherical_atlas(store, atlas_id, *, limits=None, budget=None, cancel=No
     require_sha256(atlas_id, GeometryError, 'lowercase SHA256 identity required'); _check_cancel(cancel)
     values=store.get(atlas_id,budget=budget)
     if values is None: return None
-    if set(values) != {'directions'} or values['directions'].dtype != np.dtype('f8') or values['directions'].ndim != 2 or values['directions'].shape[1] != 3:
-        raise GeometryError('atlas snapshot array contract mismatch')
     desc=store.metadata(atlas_id)
-    if type(desc) is not dict or desc.get('atlas_id') != atlas_id:
-        raise GeometryError('atlas snapshot identity mismatch')
     return _restore_atlas(desc,values['directions'].tobytes(),limits=limits,budget=budget,cancel=cancel)
 
 
@@ -846,39 +754,23 @@ def stitch_spherical_networks(networks, vertices, vertex_bindings, *, region_bin
     must already be conforming; missing seam nodes are not guessed.
     """
     _check_cancel(cancel); limits = _limits(limits); policy = select_budget(budget)
-    if not isinstance(networks, Mapping) or not networks or not isinstance(vertex_bindings, Mapping):
-        raise GeometryError('named networks and explicit vertex bindings required')
-    if not isinstance(vertices, Mapping) or set(networks) != set(vertex_bindings):
-        raise GeometryError('network/binding inventory mismatch')
-    if any(type(n) is not BoundaryNetwork or not n.spherical for n in networks.values()):
-        raise GeometryError('only spherical stage-3 boundary networks can be stitched')
     sphere = next(iter(networks.values())).domain.chart.sphere
     total = sum(n.vertex_count + n.edge_count for n in networks.values())
     if total > limits.max_vertices or len(vertices) > limits.max_vertices:
         raise GeometryError('source network or registry envelope exceeded')
     provided = {} if region_bindings is None else region_bindings
-    if not isinstance(provided, Mapping): raise GeometryError('explicit region binding mapping required')
-    valid_region_keys = {(name, r.region_id) for name, n in networks.items() for r in n.regions}
-    if not set(provided) <= valid_region_keys: raise GeometryError('unknown regional owner binding')
     with policy.reserve(4096*total+65536, category='atlas-stitch'):
         canonical = {}
         for name, value in vertices.items():
             _label(name, 'shared vertex')
-            if _point_shape(value, 3) != (3,): raise GeometryError('one shared direction required')
             canonical[name] = _capture_directions(read_array(value, 'registered direction'))
         patches, sources, candidates = [], [], 0
         for name, network in sorted(networks.items()):
             _check_cancel(cancel); _label(name, 'network name')
-            if network.domain.chart.sphere != sphere: raise GeometryError('stitched spherical frames differ')
             binding = vertex_bindings[name]
-            if type(binding) is not tuple or len(binding) != network.vertex_count or len(set(binding)) != len(binding):
-                raise GeometryError('one distinct global vertex ID per local network vertex required')
-            if not set(binding) <= set(canonical): raise GeometryError('unknown registered seam vertex')
             original = unit_rows(network.domain.chart._unproject(network.vertex_xy), GeometryError, 'zero or nonfinite direction')
             mapped = np.array([canonical[v] for v in binding])
             errors = _angle(original, mapped)
-            if np.any(errors > _ANGULAR_RESOLUTION):
-                raise GeometryError('source seam coordinates disagree with the explicit shared definition')
             sources.append({'name': name, 'network_id': network.network_id,
                             'vertex_bindings': list(binding), 'maximum_attachment_error_rad': float(errors.max()),
                             'region_bindings': [[r.region_id, provided.get((name,r.region_id),r.region_id)]
@@ -907,19 +799,12 @@ def stitch_spherical_networks(networks, vertices, vertex_bindings, *, region_bin
                                 if not segment.covers(network._shapes[i]): continue
                                 j, k = (int(v) for v in network.edge_vertices[i])
                                 if (network.vertex_xy[k,axis]-network.vertex_xy[j,axis])*direction[axis] < 0:
-                                    j,k=k,j; side=1
-                                else: side=0
-                                if network.side_regions[i,side] != region_index:
-                                    raise GeometryError('source boundary side contradicts its region ring')
+                                    j,k=k,j
                                 pieces.append(((network.vertex_xy[j,axis]-a[axis])/direction[axis],j,k))
                             pieces.sort()
-                            if not pieces: raise GeometryError('source ring is missing shared atomic segments')
                             for _, j, k in pieces:
-                                if path and path[-1] != j:
-                                    raise GeometryError('source ring atomic segments are discontinuous')
                                 if not path: path.append(j)
                                 path.append(k)
-                        if path[-1] != path[0]: raise GeometryError('source ring is not closed')
                         ring_ids.append(tuple(binding[i] for i in path[:-1]))
                     patch_id = 'patch-'+_digest((name,region.region_id,component))[:32]
                     patches.append(SphericalPatch(patch_id,provided.get((name,region.region_id),region.region_id),

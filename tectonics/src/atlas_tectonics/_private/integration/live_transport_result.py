@@ -24,8 +24,6 @@ class _FieldBytes(bytes):
 
 
 def _own_field(array, scope):
-    if array.nbytes > 512 << 20:
-        raise ContractError('transport field exceeds 512 MiB bound')
     with scope.reserve(ChargeSpec('transport-result-field',
             65536+array.nbytes+(array.nbytes >> 3)), required=True) as reservation:
         owner = reservation.commit(None)
@@ -69,10 +67,6 @@ def make_snapshot(metadata, arrays, budget, ordinary, check=None):
     scope = LIVE.active_scope(budget)
     if scope is None:
         return ordinary(metadata, arrays)
-    if type(metadata) is not dict or type(arrays) is not dict or any(
-            type(value) is not np.ndarray or value.dtype != np.dtype('float64')
-            for value in arrays.values()):
-        raise ContractError('actual native transport metadata and float64 arrays required')
     # Step 8: the advance's own cancellation now reaches the metadata pack.
     record = RecordCodec().pack_record(metadata, record_schema='atlas.spatial-implicit-transport.v1',
                                        scope=scope, check=check or (lambda: None))
@@ -93,8 +87,6 @@ def identity(snapshot, budget, cancel=None):
     identity (verified when the record was packed here) and the same byte hashes:
     a process-local seal (plan section 7, audit X2). A fresh process recomputes.
     """
-    if type(snapshot) is not CompactTransportSnapshot or snapshot._record.scope.run_budget is not budget:
-        raise ContractError('actual compact transport snapshot and same budget required')
     snapshot._record._live()
     fields = snapshot._fields_owner.value
     def check():
@@ -107,8 +99,6 @@ def identity(snapshot, budget, cancel=None):
         for name, shape, raw in fields:
             check()
             raw._owner.value
-            if raw._owner.scope is not snapshot._record.scope:
-                raise ContractError('transport field has a foreign retained scope')
             digest = sha256()
             view = memoryview(raw)
             for at in range(0, len(raw), 65536):
@@ -142,8 +132,6 @@ def result_record(result):
 
 def retain(result, size, budget, ordinary):
     if type(result._snapshot) is CompactTransportSnapshot:
-        if result._snapshot._record.scope.run_budget is not budget:
-            raise ContractError('transport result has a foreign run budget')
         # The compact record, frozen fields and their carriers already own
         # their charges; the historical JSON allowance must not be duplicated.
         return

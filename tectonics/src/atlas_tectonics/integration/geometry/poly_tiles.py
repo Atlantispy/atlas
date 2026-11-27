@@ -42,14 +42,6 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
     Empty and boundary-only intersections are discarded by exact predicates,
     never by a size threshold. The uncut one-tile route returns ``voxel``.
     """
-    if type(voxel) is not V.CartesianCell or not isinstance(arena, B._Arena):
-        raise V.VolumeError('tile subdivision requires a CartesianCell and geometry arena')
-    if type(subdivisions) is not int or subdivisions < 1:
-        raise V.VolumeError('tile subdivisions must be a positive integer')
-    if shared_lines is not None and (type(shared_lines) not in (tuple, list)
-                                    or len(shared_lines) != 3
-                                    or any(type(axis) not in (tuple, list) for axis in shared_lines)):
-        raise V.VolumeError('shared tile lines require three explicit axes')
     if not angular_poly:
         return
     with _scratch(arena) as setup:
@@ -66,14 +58,9 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
             values = tuple(q for axis in shared_lines for q in axis)
             setup.work(6+len(values))
             with V._work(values+voxel.lower_m+voxel.upper_m, arena.resource, convert_values=False):
-                if any(any(a >= b for a, b in zip(axis, axis[1:])) for axis in shared_lines):
-                    raise V.VolumeError('shared tile axes must be strictly increasing')
                 lines = tuple(tuple(Q(q) for q in shared_lines[j]
                                     if voxel.lower_m[j] <= q <= voxel.upper_m[j])
                               for j in range(3))
-                if any(len(axis) < 2 or axis[0] != voxel.lower_m[j]
-                       or axis[-1] != voxel.upper_m[j] for j, axis in enumerate(lines)):
-                    raise V.VolumeError('shared tile axes must include both voxel endpoints')
             setup.keep(tuple(q for axis in lines for q in axis))
 
         points = B._points(angular_poly)
@@ -83,9 +70,6 @@ def clipped_tiles(voxel, angular_poly, *, subdivisions=1, shared_lines=None,
                      arena.resource, convert_values=False):
             normals = tuple(tuple(voxel.basis[i][j] for i in range(3)) for j in range(3))
             offsets = tuple(O._dot(n, voxel.origin_m) for n in normals)
-            if any(not voxel.lower_m[j] <= O._dot(normals[j], p)-offsets[j] <= voxel.upper_m[j]
-                   for p in points for j in range(3)):
-                raise V.VolumeError('angular polyhedron is not contained in its parent voxel')
         setup.keep(tuple(q for n in normals for q in n)+offsets)
         indices = [0, 0, 0]
 

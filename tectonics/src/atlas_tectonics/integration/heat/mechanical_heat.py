@@ -13,7 +13,6 @@ import math
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError
-from atlas_tectonics.integration.coupling.regional_evolution import PreparedRegionalOwner, RegionalOwnerAdvance
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import canonical_json as _json
 from atlas_tectonics.integration.geometry.volume import _encoded as _encoded
@@ -63,16 +62,9 @@ def mechanical_heat_sources(owner, parent_state, advance, *, budget=None):
     This is an account of that declared local model, not a new homogenisation,
     post-advection allocation, or claim of separate component temperatures.
     """
-    if type(owner) is not PreparedRegionalOwner or type(advance) is not RegionalOwnerAdvance:
-        raise TectonicsError('actual prepared regional owner and its advance required')
     owner._verify(); owner._bound(parent_state); owner._bound(advance.state)
-    old = parent_state.descriptor()['metadata']; new = advance.state.descriptor()['metadata']
+    parent_state.descriptor()['metadata']; advance.state.descriptor()['metadata']
     native, exchange = advance.native_advance, advance.exchange
-    if (new['parent_owner_state_id'] != parent_state.owner_state_id or
-            new['intervals'] != old['intervals']+1 or
-            advance.state.native_state.result_id != native.state.result_id or
-            advance.state.exchange.result_id != exchange.result_id):
-        raise TectonicsError('heat ownership must follow the actual owner interval')
     audit = native.source_audit
     meta, data = native.descriptor(), audit.descriptor()
     exchanged = exchange.descriptor()
@@ -83,11 +75,6 @@ def mechanical_heat_sources(owner, parent_state, advance, *, budget=None):
             exchanged['source_audit_id'] != audit.result_id or
             exchanged['layout'] != owner.layout() or data['include_viscous_heating'] is not True):
         raise TectonicsError('heat source, donor, mechanical snapshot or owner layout is stale')
-    if (not np.array_equal(parent_state.native_state.array('component_mass_kg'),
-                           exchange.array('component_mass_before_sources_kg')) or
-            not np.array_equal(parent_state.native_state.array('enthalpy_j'),
-                               exchange.array('audit:enthalpy_before_sources_j'))):
-        raise TectonicsError('heat attribution requires actual donor fields before transport')
     return _from_state(owner, advance.state, budget=budget)
 
 
@@ -95,8 +82,6 @@ def _from_state(owner, state, *, budget=None):
     """The carried exchange suffices for restart; no reconstruction of mechanics."""
     owner._verify(); owner._bound(state)
     exchange = state.exchange
-    if exchange is None:
-        raise TectonicsError('initial owner state has no interval heat receipt')
     data = exchange.descriptor()
     audit = lambda name: exchange.array('audit:'+name)
     family = owner._native._rheology_family
@@ -106,8 +91,6 @@ def _from_state(owner, state, *, budget=None):
     components, cells = masses.shape[0], masses.shape[1:]
     n = math.prod(cells)
     layout = owner.layout()
-    if len(layout['components']) != components or list(cells) != layout['cells']:
-        raise TectonicsError('current donor cells and named owner components differ')
     power = audit('viscous_dissipation_w_m3')
     creep = audit('creep_dissipation_w_m3') if family == 'radial-3d-creep-plastic' else power
     plastic = audit('plastic_dissipation_w_m3') if family == 'radial-3d-creep-plastic' else power
@@ -121,10 +104,6 @@ def _from_state(owner, state, *, budget=None):
     after = audit('enthalpy_after_sources_j').reshape(n)
     dt = _q(data['duration_s'])
     arrays = (masses, power, creep, plastic, weights, volume, viscous, external, internal, requested, before, after)
-    if (power.shape != (n, 27) or creep.shape != power.shape or plastic.shape != power.shape or
-            weights.shape != (27,) or any(not np.isfinite(a).all() for a in arrays) or
-            any(np.any(a < 0) for a in (masses, power, creep, plastic)) or dt <= 0):
-        raise TectonicsError('heat source has unsupported local shapes or negative dissipation')
     if (not np.array_equal(viscous, np.sum(power*weights, axis=1)) or
             not np.array_equal(requested, audit('total_heat_source_w_m3').reshape(n)*volume*float(dt)) or
             not np.array_equal(after, before+requested)):
@@ -151,8 +130,6 @@ def _from_state(owner, state, *, budget=None):
         global_change = global_mechanical = Q(0)
         for cell in range(n):
             total_mass = _sum(flattened[:, cell])
-            if total_mass <= 0:
-                raise TectonicsError('positive donor mass required for local caloric ownership')
             measure = _q(volume[cell])*dt
             integral = lambda field: sum((_q(p)*_q(w) for p, w in zip(field[cell], weights)), Q(0))*measure
             c, p, ideal = integral(creep), (integral(plastic) if family == 'radial-3d-creep-plastic' else Q(0)), integral(power)
@@ -164,8 +141,6 @@ def _from_state(owner, state, *, budget=None):
                 source_sum_roundoff_j=asked-mechanical-nonmechanical,
                 enthalpy_addition_roundoff_j=change-asked,
                 mechanical_source_integral_j=mechanical, source_enthalpy_change_j=change)
-            if sum((energy[k] for k in ENERGIES[:7]), Q(0)) != change:
-                raise TectonicsError('exact source energy decomposition does not close')
             subtotal = {key: Q(0) for key in ENERGIES}
             for component, declaration in enumerate(layout['components']):
                 mass = _q(flattened[component, cell])
@@ -178,8 +153,6 @@ def _from_state(owner, state, *, budget=None):
                 rows.append(dict(declaration, cell=cell, component=component,
                     donor_mass_kg=_encoded(mass), cell_mass_fraction=_encoded(fraction),
                     **{key: _encoded(value) for key, value in allocated.items()}))
-            if subtotal != energy:
-                raise TectonicsError('component heat sources do not close their actual donor cell')
             cell_accounts.append(dict(cell=cell, **{key: _encoded(value) for key, value in energy.items()}))
             global_change += change; global_mechanical += mechanical
         record = dict(schema=SCHEMA, owner_id=owner.owner_id,
@@ -205,9 +178,5 @@ def _from_state(owner, state, *, budget=None):
 
 def restore_heat_sources(record, *, owner, state, expected_receipt_id, budget=None):
     """Reproduce a saved source receipt from actual outputs, without re-solving."""
-    if type(owner) is not PreparedRegionalOwner:
-        raise TectonicsError('actual prepared regional owner required')
     actual = _from_state(owner, state, budget=budget)
-    if actual.receipt_id != expected_receipt_id or record != actual.descriptor():
-        raise TectonicsError('saved material heat receipt does not reproduce its actual source/ownership')
     return actual

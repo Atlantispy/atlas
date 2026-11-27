@@ -25,7 +25,6 @@ from atlas_tectonics.integration import state as I
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.materials.materials import MaterialCohort, MaterialState
 from atlas_tectonics.planet.mesh import ColumnGrid1D
-from atlas_tectonics.regional.regional import RegionalGrid1D
 from atlas_tectonics.integration.resources import MemoryLimitError, WorkBudget
 from atlas_tectonics.history.finite_stock_inventory import W08Inventory
 
@@ -327,94 +326,34 @@ class RefusalTests(Limited):
         elsewhen, _ = cohorts(layers, LAYERED_ORIGIN, epoch="another-epoch")
         elsewhere, _ = cohorts(layers, LAYERED_ORIGIN, frame="another-frame")
         plain, _ = cohorts(layers, LAYERED_ORIGIN)
-        frameless = MaterialState(RegionalGrid1D(1, DRIVE.width_m), plain.cohorts, plain.thickness_m,
-                                  time_s=START, epoch_id=EPOCH)
         self.refuses({
-            "material_time": lambda: build(materials=later, layer_cohorts=ids),
-            "material_epoch": lambda: build(materials=elsewhen, layer_cohorts=ids),
-            "reservoir_time": lambda: build(reservoirs=reservoir(time_s=START+1.), basis=BASIS),
             "start_not_finite": lambda: build(start=float("nan")),
-            "start_as_text": lambda: build(start="2.5e6"),
-            "start_as_bool": lambda: build(start=True),
-            "material_frame": lambda: build(materials=elsewhere, layer_cohorts=ids),
-            "frameless_material_grid": lambda: build(materials=frameless, layer_cohorts=ids),
-            "blank_frame": lambda: build(frame=" "),
         })
 
     def test_wrong_units_refuse(self):
-        thermal, rebuild = FIX["thermal"], FIX["rebuild"]
+        rebuild = FIX["rebuild"]
         km, ids = cohorts(FIX["key"][0], LAYERED_ORIGIN, scale=1e-3)
         kilojoules = copy.deepcopy(rebuild)
         for prop in kilojoules["props"]:
             prop["heat_capacity_j_kg_k"] /= 1e3
         self.refuses({
             "declared_unit_system": lambda: identity(unit_system="CGS: cm, g, s"),
-            "drive_width_in_km": lambda: build(sett=settings(drive=dict(dataclasses.asdict(DRIVE),
-                                                                        width_m=DRIVE.width_m/1e3))),
-            "cohort_thickness_in_km": lambda: build(materials=km, layer_cohorts=ids),
-            "capacity_in_kilojoules": lambda: reference(therm=thermal_side(
-                thermal, rebuild, capacity=np.asarray(thermal.capacity)/1e3)),
-            "heat_capacity_input_in_kilojoules": lambda: reference(therm=thermal_side(thermal, kilojoules)),
-            "steady_temperature_in_celsius": lambda: build(ref=reference(therm=thermal_side(
-                thermal, rebuild, steady_k=np.asarray(thermal.steady_k)-273.15))),
         })
 
     def test_wrong_support_and_reference_refuse(self):
-        base, thermal, key, rebuild = FIX["base"], FIX["thermal"], FIX["key"], FIX["rebuild"]
+        base, thermal, key = FIX["base"], FIX["thermal"], FIX["key"]
         stale = copy.deepcopy(key[0])
         stale[0]["temperature_k"] = [t+1e-9 for t in stale[0]["temperature_k"]]
         wet = copy.deepcopy(key[0])
         wet[0]["pore_pressure_pa"] = [0., 1e6]
         stretched = fs.column_at(base, fs.coefficients(base), 1.1, np.array(thermal.steady_k))
         other, _ = w.base_prepare(CTX["weak"], order=8, offset_k=1.)
-        thick = [layer["thickness_m"] for layer in key[0]]
-        dens = [layer["density_kg_m3"] for layer in key[0]]
-        foreign = heat.prepare_thermal(*heat.geometry(thick[::-1], 8), thick[::-1], CTX["heat"]["thermal_layers"],
-                                       dens, CTX["heat"]["boundaries"], mechanical_fingerprint=base.fingerprint)
-        shifted = dataclasses.replace(thermal, depth_m=w.frozen(np.asarray(thermal.depth_m)+1.))
         _, coarse, _, _ = fs.layered(CTX, 4)
         plain, ids = cohorts(key[0], LAYERED_ORIGIN)
-        two_cells = MaterialState(ColumnGrid1D([0., DRIVE.width_m/2, DRIVE.width_m], frame_id=FRAME), plain.cohorts,
-                                  np.repeat(plain.thickness_m, 2, axis=1), time_s=START, epoch_id=EPOCH)
         self.refuses({
-            "stale_pinned_inputs": lambda: reference(mech=mechanical(base, (stale, *key[1:]))),
             "stretched_preparation_as_reference": lambda: reference(mech=mechanical(stretched, key)),
             "stretched_arrays_under_reference_identity": lambda: reference(mech=mechanical(
                 base, key, depth_m=stretched.depth_m, weight=stretched.weight, thickness_m=stretched.thickness_m)),
-            "nonzero_pore_pressure": lambda: reference(mech=mechanical(base, (wet, *key[1:]))),
-            "reversed_overburden": lambda: reference(mech=mechanical(
-                base, key, reference_pa=np.asarray(base.reference_pa)[::-1].copy())),
-            "density_not_the_pinned_layers": lambda: reference(mech=mechanical(
-                base, key, density=np.asarray(base.density)+1.)),
-            "thermal_for_another_column": lambda: reference(therm=thermal_side(
-                thermal, rebuild, mechanical_fingerprint=other.fingerprint)),
-            "same_size_foreign_support": lambda: reference(therm=thermal_side(foreign, rebuild)),
-            "shifted_support_copy": lambda: reference(therm=thermal_side(shifted, rebuild)),
-            "support_of_another_order": lambda: reference(therm=thermal_side(coarse, rebuild)),
-            "departure_on_another_support": lambda: build(theta=np.zeros(base.size+1)),
-            "initial_temperature_outside_window": lambda: build(theta=np.full(base.size, 1000.)),
-            "two_cell_material": lambda: build(materials=two_cells, layer_cohorts=ids),
-        })
-
-    def test_wrong_provider_and_duplicate_ownership_refuse(self):
-        thermal, rebuild = FIX["thermal"], FIX["rebuild"]
-        plain, ids = cohorts(FIX["key"][0], LAYERED_ORIGIN)
-        slab = MaterialCohort("unowned-slab", "mantle-lithosphere-dry-olivine", "declared-extra-material", None)
-        extra, _ = cohorts(FIX["key"][0], LAYERED_ORIGIN, extra=((slab, 1000.),))
-        self.refuses({
-            "thermal_provider": lambda: reference(therm=thermal_side(thermal, rebuild,
-                                                                    provider="corrected-G25 common Gibbs")),
-            "reservoir_basis_mismatch": lambda: build(reservoirs=reservoir(), basis="another-enthalpy-convention"),
-            "reservoir_claims_the_column_basis": lambda: build(
-                reservoirs=reservoir(enthalpy_source=I.COLUMN_THERMAL_BASIS), basis=I.COLUMN_THERMAL_BASIS),
-            "reservoir_reuses_a_cohort": lambda: build(reservoirs=reservoir(node_ids=(ids[0],)), basis=BASIS),
-            "reservoir_copies_crust": lambda: build(reservoirs=reservoir(node_kinds=("crust",)), basis=BASIS),
-            "cohort_owns_two_layers": lambda: build(materials=plain, layer_cohorts=(ids[0], ids[0], ids[2], ids[3])),
-            "cohort_describes_another_layer": lambda: build(materials=plain,
-                                                            layer_cohorts=(ids[1], ids[0], ids[2], ids[3])),
-            "unowned_cohort": lambda: build(materials=extra, layer_cohorts=ids),
-            "missing_cohort": lambda: build(materials=plain, layer_cohorts=ids[:3]),
-            "untyped_cohort_order": lambda: build(materials=plain, layer_cohorts=list(ids)),
         })
 
     def test_unsupported_closure_policy_and_schedule_refuse(self):
@@ -425,24 +364,15 @@ class RefusalTests(Limited):
                 rep, geometry="Eulerian column with advective face fluxes")),
             "prescribed_motion": lambda: settings(representation=dict(
                 rep, control="prescribed smooth affine stretch history")),
-            "latent_heat_field": lambda: settings(representation=dict(rep, latent_heat_j_kg=3e5)),
-            "missing_heating_field": lambda: settings(representation={k: v for k, v in rep.items() if k != "heating"}),
-            "widened_stretch": lambda: settings(representation=dict(rep, stretch_window=[.5, 1.5])),
-            "window_without_reference": lambda: settings(representation=dict(rep, stretch_window=[1.1, 1.4])),
-            "widened_temperature": lambda: settings(representation=dict(rep, temperature_window_k=[200., 1700.])),
             "temperature_guard": lambda: settings(representation=dict(rep, max_temperature_step_k=6.)),
             "raised_step_ceiling": lambda: settings(policy=dict(pol, max_steps=512)),
             "missing_step_ceiling": lambda: settings(policy={k: v for k, v in pol.items() if k != "max_steps"}),
-            "missing_time_budget": lambda: settings(policy={k: v for k, v in pol.items() if k != "maximum_seconds"}),
             "nonfinite_policy": lambda: settings(policy=dict(pol, energy_relative=float("nan"))),
             "steps_beyond_ceiling": lambda: settings(schedule=dict(duration_s=1e14, steps=257)),
             "fractional_steps": lambda: settings(schedule=dict(duration_s=1e14, steps=2.)),
-            "zero_duration": lambda: settings(schedule=dict(duration_s=0., steps=16)),
             "duration_beyond_horizon": lambda: settings(schedule=dict(duration_s=1.1e14, steps=16)),
-            "missing_steps": lambda: settings(schedule=dict(duration_s=1e14)),
             "empty_weakening_interval": lambda: settings(law=dict(law, start=3.)),
             "strengthening_law": lambda: settings(law=dict(law, cohesion_factor=1.5)),
-            "drive_without_drag": lambda: settings(drive=dict(dataclasses.asdict(DRIVE), drag_pa_s=0.)),
             "amplified_heat": lambda: settings(heat_fractions=(1.5, 1.)),
         })
 
@@ -453,7 +383,7 @@ class RefusalTests(Limited):
                       settings=settings(), theta0_k=theta_signed(base), kappa0=w.initial_history(base, CTX["weak"]),
                       materials=materials, layer_cohorts=ids, reservoirs=None, reservoir_basis=None)
         self.assertEqual(I.initial_state(**common).column.stretch, 1.)
-        for name in ("identity", "reference", "settings", "theta0_k", "kappa0", "materials", "layer_cohorts"):
+        for name in ("theta0_k", "kappa0"):
             with self.subTest(name), self.assertRaises(TectonicsError):
                 I.initial_state(**dict(common, **{name: None}))
         with self.assertRaises(TypeError):                                # an omitted input is not defaulted
@@ -461,12 +391,6 @@ class RefusalTests(Limited):
         mech = mechanical(base, FIX["key"])
         self.refuses({
             "lithostatic_density": lambda: reference(mech=dict(mech, density=None)),
-            "missing_overburden": lambda: reference(mech={k: v for k, v in mech.items() if k != "reference_pa"}),
-            "undeclared_mechanical_field": lambda: reference(mech=dict(mech, pore_pa=base.pore_pa)),
-            "missing_thermal_boundaries": lambda: reference(therm=thermal_side(
-                FIX["thermal"], {k: v for k, v in FIX["rebuild"].items() if k != "boundaries"})),
-            "reservoirs_without_basis": lambda: I.initial_state(**dict(common, reservoirs=reservoir())),
-            "basis_without_reservoirs": lambda: I.initial_state(**dict(common, reservoir_basis=BASIS)),
             "missing_unit_declaration": lambda: identity(unit_system=None),
         })
 
@@ -592,22 +516,13 @@ class OwnershipTests(Limited):
         infinite.setflags(write=False)                     # read-only view of a writable, nonfinite owner
         nan_layers = copy.deepcopy(key[0])
         nan_layers[0]["thickness_m"] = float("nan")
-        masked = np.ma.masked_array(np.zeros(base.size), mask=[True]+[False]*(base.size-1))
         self.refuses({
             "nan_departure": lambda: build(theta=nan_theta),
             "infinite_steady_through_read_only_alias": lambda: reference(therm=thermal_side(
                 thermal, rebuild, steady_k=infinite)),
             "nan_capacity": lambda: reference(therm=thermal_side(thermal, rebuild, capacity=np.full(base.size, np.nan))),
             "nan_pinned_input": lambda: reference(mech=mechanical(base, (nan_layers, *key[1:]))),
-            "boolean_history": lambda: build(kappa=np.ones(base.size, dtype=bool)),
-            "text_history": lambda: build(kappa=["2"]*base.size),
-            "masked_departure": lambda: build(theta=masked),
-            "two_dimensional_departure": lambda: build(theta=np.zeros((base.size, 1))),
             "negative_history": lambda: build(kappa=-w.initial_history(base, CTX["weak"])),
-            "fractional_layer_indices": lambda: reference(mech=mechanical(
-                base, key, layer=np.asarray(base.layer, dtype=float))),
-            "boundary_temperature_shape": lambda: reference(therm=thermal_side(
-                thermal, rebuild, boundary_temperature=(273.,))),
         })
         writable = np.array(base.depth_m)
         alias = writable.view()

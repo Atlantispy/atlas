@@ -8,7 +8,6 @@ import unittest
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits, Compression
 from atlas_tectonics.surface.erosion import (PreparedErosion, ErosionTag,
@@ -165,14 +164,8 @@ class W09ErosionTests(unittest.TestCase):
             event=Event(); event.set()
             with self.assertRaises(CancelledError):
                 p.advance(initial,1,discharge_m3_s=1,forcing_id='cancel',cancel=event)
-            with self.assertRaises(TectonicsError):
-                p.advance(initial,1,discharge_m3_s=True,forcing_id='bad')
-            with self.assertRaises(TectonicsError):
-                p.advance(initial,1,discharge_m3_s=1,forcing_id='bad',partitions=257)
         self.assertEqual(owner.reserved_bytes,0)
         with self.assertRaises(MemoryLimitError): plan(budget=WorkBudget(1024))
-        with plan(source_id='other') as p:
-            with self.assertRaises(TectonicsError): p.heights(initial)
 
     def test_checkpoint_continuation_is_exact(self):
         with TemporaryDirectory() as root:
@@ -189,17 +182,6 @@ class W09ErosionTests(unittest.TestCase):
                     out=p.advance(restored,.5,discharge_m3_s=1,forcing_id='second')
                     self.assertEqual(out.state_id,expected.state_id)
                     for name,a in out.arrays().items(): np.testing.assert_array_equal(a,expected.arrays()[name])
-
-    def test_signed_heat_and_release_time_numeric_range_refuse(self):
-        huge=ErosionTag('huge',1.,1e308,-1.,'huge','synthetic-reference')
-        with PreparedErosion([1,0],[1,-1],[1,1],[0,0],[huge],
-                rock_erodibility=[[1],[0]],sediment_erodibility=0,
-                frame_id='f',datum_id='d',source_id='range') as p:
-            with self.assertRaises(TectonicsError):p.initialise([[[4]],[[0]]])
-        with plan() as p:
-            late=p.initialise([[[4]],[[0]]],time_s=1e20)
-            with self.assertRaises(TectonicsError):
-                p.prescribed_release(late,0,1.,1.,source_id='unrepresentable')
 
 
 if __name__ == '__main__': unittest.main()

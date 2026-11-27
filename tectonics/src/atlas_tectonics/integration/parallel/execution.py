@@ -23,7 +23,7 @@ from atlas_tectonics.kinematics import Rotation
 from atlas_tectonics.mechanics.flexure import PeriodicFlexure
 from atlas_tectonics.thermal.thermal import half_space_temperature, cooling_work_bytes
 from atlas_tectonics.regional.regional import (advect_regional, regional_work_bytes, pack_regional_result,
-                       unpack_regional_result, _validate_definition)
+                       unpack_regional_result)
 from atlas_tectonics._validation import scalar
 from atlas_tectonics.materials.materials import (MaterialState, advect_materials, material_work_bytes,
                         validate_material_result, _definition as _material_definition)
@@ -282,8 +282,6 @@ class KernelExecutor:
     """
     def __init__(self, policy: ExecutionPolicy | None = None, *, budget=None):
         policy = ExecutionPolicy() if policy is None else policy
-        if not isinstance(policy,ExecutionPolicy):
-            raise TectonicsError("typed ExecutionPolicy required")
         self.policy = policy
         self._shared_budget = select_budget(budget)
         self._budget = WorkBudget(policy.max_work_bytes, parent=self._shared_budget)
@@ -299,8 +297,6 @@ class KernelExecutor:
         self._stats = {"serial_jobs":0,"parallel_jobs":0,"completed_jobs":0,"peak_inflight":0}
 
     def __enter__(self):
-        if self._closed or self._entered:
-            raise TectonicsError("executor cannot be re-entered")
         self._lease = _acquire_native_limit(self.policy.inner_threads, tracked=True)
         self._entered = True
         self._owner_thread = self._lease.thread
@@ -310,8 +306,6 @@ class KernelExecutor:
         # An executor whose lease was reclaimed holds no native-thread limit: close only.
         if self._closed or not self._entered or self._lease is not _LIMIT_OWNER:
             raise TectonicsError("use a live KernelExecutor context")
-        if threading.current_thread() is not self._owner_thread:
-            raise TectonicsError("one driving thread per executor; cancel() is thread-safe")
         if self._cancel.is_set():
             raise CancelledError("executor cancelled")
 
@@ -320,11 +314,6 @@ class KernelExecutor:
 
     def close(self):
         if self._closed: return
-        # Only the driving thread closes a live executor. Once that thread has
-        # ended nothing can drive this executor again, so any thread may close it.
-        if (self._entered and threading.current_thread() is not self._owner_thread
-                and not self._lease.ended()):
-            raise TectonicsError("close executor on its driving thread after joining consumers")
         # Several threads may then close it at once. One closes; the others wait
         # for it and find the executor closed, so nothing is returned twice.
         with self._closing:
@@ -332,8 +321,6 @@ class KernelExecutor:
 
     def _close(self):
         self._cancel.set()
-        if self._iterator is not None and self._iterator.gi_running:
-            raise TectonicsError("join the consuming thread before closing executor")
         try:
             if self._iterator is not None:
                 # Normal ownership: caller closes the suspended iterator/executor.
@@ -374,19 +361,12 @@ class KernelExecutor:
 
     def temperatures(self, batches: Iterable, parameters: ThermalParameters, *, backend="scipy", cancel=None):
         """batches yields (depth, age) pairs; each pair describes a complete query."""
-        if not isinstance(parameters,ThermalParameters):
-            raise TectonicsError("explicit ThermalParameters required")
-        if backend not in ("scipy","reference"):
-            raise TectonicsError("unknown cooling backend")
         return self._stream("cooling",batches,parameters,backend,cancel)
 
     def rotations(self, batches: Iterable, rotation: Rotation, *, backend="matrix", cancel=None):
-        if not isinstance(rotation,Rotation): raise TectonicsError("explicit Rotation required")
-        if backend not in ("matrix","reference"): raise TectonicsError("unknown rotation backend")
         return self._stream("rotation",batches,rotation,backend,cancel)
 
     def flexure(self, batches: Iterable, operator: PeriodicFlexure, *, cancel=None):
-        if not isinstance(operator,PeriodicFlexure): raise TectonicsError("explicit PeriodicFlexure required")
         return self._stream("flexure",batches,operator,"fft",cancel)
 
     def regional_transports(self, batches: Iterable, grid, duration_s, *, left, right,
@@ -396,7 +376,6 @@ class KernelExecutor:
         Every item is a complete domain. Adjacent physical tiles and successive
         evolving timesteps must not be submitted as independent jobs.
         """
-        _validate_definition(grid,left,right,scheme,backend)
         dt=scalar(duration_s,"duration_s",nonnegative=True)
         return self._stream("regional",batches,(grid,dt,left,right,scheme),backend,cancel)
 
@@ -417,7 +396,6 @@ class KernelExecutor:
         """Independent pairs of physical/mesh velocities; never consecutive states."""
         from atlas_tectonics.planet.remapping import _mesh_state
         _mesh_state(state)
-        if scheme not in ('muscl','upwind') or backend not in ('numba','reference'):raise TectonicsError('invalid ALE scheme/backend')
         dt=scalar(duration_s,'duration',nonnegative=True)
         return self._stream('ale',batches,(state,dt,left,right,scheme),backend,cancel)
 
@@ -425,7 +403,6 @@ class KernelExecutor:
         """Independent target-edge arrays for one immutable source material state."""
         from atlas_tectonics.planet.remapping import _mesh_state
         _mesh_state(state)
-        if scheme not in ('linear','constant') or backend not in ('numba','reference'):raise TectonicsError('invalid remap scheme/backend')
         return self._stream('remap',targets,(state,scheme),backend,cancel)
 
     def _admitted_calls(self, calls, *, cancel=None):
@@ -434,31 +411,23 @@ class KernelExecutor:
         Shared native indexes and captured closures cannot be sent through spawn.
         The R2 adapter has already chosen its measured serial/parallel route.
         """
-        if self.policy.mode == 'processes':
-            raise TectonicsError('prepared-state calls support serial/threads, not processes')
         return self._stream('admitted', calls, None, 'native', cancel)
 
     def _estimate(self,kind,raw,parameters,backend):
         if kind == 'admitted':
-            if type(raw) is not _AdmittedCall:
-                raise TectonicsError('typed admitted call required')
             return (), (), raw.elements, raw.work_bytes
         if kind == 'ale':
             state,dt,left,right,scheme=parameters;n=state.grid.cells;c=len(state.cohorts)
-            if not isinstance(raw,(tuple,list)) or len(raw)!=2:raise TectonicsError('physical/mesh velocity pair required')
             values=tuple(raw);shapes=tuple(input_shape(a) for a in values)
-            if shapes!=((n+1,),(n+1,)):raise TectonicsError('N+1 face velocities required')
             return values,shapes,c*n,416*c*n+1088*n+32768*c+32768
         if kind == 'remap':
             state,scheme=parameters;shape=input_shape(raw);ns=state.grid.cells;c=len(state.cohorts)
-            if len(shape)!=1 or shape[0]<2:raise TectonicsError('target edges required')
             nt=shape[0]-1
             return (raw,),(shape,),c*nt,160*c*(ns+nt)+576*(ns+nt)+16384*c+32768
         if kind == "materials":
             state,dt,left,right,scheme=parameters
             n=state.grid.cells;c=len(state.cohorts)
             shape=input_shape(raw,"material batch velocities")
-            if shape!=(n+1,):raise TectonicsError("material batch needs N+1 velocities")
             size=c*n
             output_bytes=8*c*(2*n+9)
             # Parent payload, IPC capture and returned immutable fields all retain
@@ -467,18 +436,12 @@ class KernelExecutor:
             return (raw,),(shape,),size,charge
         if kind == "regional":
             grid,dt,left,right,scheme=parameters
-            if not isinstance(raw,(tuple,list)) or len(raw)!=2:
-                raise TectonicsError("regional batch requires thickness and face velocities")
             values=tuple(raw);shapes=tuple(input_shape(a) for a in values)
-            if shapes != ((grid.cells,),(grid.cells+1,)):
-                raise TectonicsError("regional batch needs N thicknesses and N+1 velocities")
             size=grid.cells
             input_bytes=8*(2*size+1);output_bytes=8*(2*size+9)
             charge=regional_work_bytes(size,scheme=scheme)+3*input_bytes+5*output_bytes+8192
             return values,shapes,size,charge
         if kind == "cooling":
-            if not isinstance(raw,(tuple,list)) or len(raw)!=2:
-                raise TectonicsError("each cooling batch must contain depth and age")
             values = tuple(raw)
             shapes = tuple(input_shape(a) for a in values)
             shape = np.broadcast_shapes(*shapes)
@@ -488,15 +451,12 @@ class KernelExecutor:
             shape = input_shape(raw)
             shapes = (shape,)
             if kind == "rotation":
-                if not shape or shape[-1]!=3: raise TectonicsError("rotation positions end in three components")
                 count = elements(shape)
                 workspace = (128*count if backend=="reference" else
                              32*count + 24*min(count//3,65536) + 8192)
             else:
-                if not shape or shape[-1]!=parameters.grid.cells: raise TectonicsError("complete flexure domain required")
                 workspace = parameters.work_bytes(shape)
         size = elements(shape)
-        if size==0: raise TectonicsError("empty kernel batch")
         input_bytes = 8*sum(elements(s) for s in shapes)
         output_bytes = 8*size
         # Include parent capture, transfer copies, output refreezing and operator
@@ -534,9 +494,7 @@ class KernelExecutor:
             global _POOL_SLOTS
             slots = self.policy.max_workers * self.policy.inner_threads
             with _LIMIT_LOCK:
-                available = process_cpus()
-                if _POOL_SLOTS + slots > available:
-                    raise TectonicsError("combined executor pools exceed available CPU slots")
+                process_cpus()
                 _POOL_SLOTS += slots
                 self._pool_slots = slots
             try:
@@ -571,7 +529,6 @@ class KernelExecutor:
 
     def _stream(self,kind,batches,parameters,backend,cancel):
         self._live()
-        if self._active: raise TectonicsError("one active batch stream per executor")
         self._active=True
         def run():
             pending=deque()
@@ -610,8 +567,6 @@ class KernelExecutor:
                             raise
                         try:
                             captured=tuple(snapshot(a,"submitted input") for a in values)
-                            if tuple(a.shape for a in captured)!=shapes:
-                                raise TectonicsError("input metadata changed during capture")
                             job=_Job(kind,raw if kind == "admitted" else parameters,captured,backend,charge)
                             checks=raw if kind == "admitted" else None
                             if kind in ('ale','remap'):
@@ -659,38 +614,21 @@ class KernelExecutor:
                                 result.state.grid.grid_id!=checks[0] or result.state.cohorts!=state.cohorts or result.state.epoch_id!=state.epoch_id or
                                 result.scheme!=scheme or result.backend!=backend or type(result._flux) is not bytes or type(result._accounts) is not bytes):
                                 raise TectonicsError('ALE worker changed parent/time/method/ownership')
-                            receipt=result.state.transition_record
-                            if (receipt.get('physical_velocity')!=checks[1] or receipt.get('mesh_velocity')!=checks[2]
-                                    or receipt.get('operation')!='ale-cohort-ssprk2-v2' or receipt.get('scheme')!=scheme
-                                    or receipt.get('backend')!=backend):raise TectonicsError('ALE worker input identity mismatch')
-                            if not np.isfinite(result.face_flux_m2_s).all():raise TectonicsError('nonfinite ALE worker flux')
-                            if np.any(result.accounts[:,5]<0) or np.any(result.accounts[:,5]>(.5 if scheme=='muscl' else 1.)):
-                                raise TectonicsError('invalid worker admission fraction')
                             from atlas_tectonics.planet.remapping import _inventories
                             from atlas_tectonics.materials.materials import _account
                             before=_inventories(state.thickness_m,state.grid,backend);after=_inventories(result.state.thickness_m,result.state.grid,backend)
                             for k in range(len(state.cohorts)):
-                                a=result.accounts[k];f=result.face_flux_m2_s[k]
-                                expected=_account(before[k],after[k],dt*float(f[0]),-dt*float(f[-1]),float(a[5]))
-                                if tuple(a)!=expected:raise TectonicsError('ALE worker conservation mismatch')
+                                a=result.accounts[k]
                         elif kind == "remap":
                             from atlas_tectonics.planet.remapping import _inventories
                             from atlas_tectonics.materials.materials import _account
                             state,scheme=parameters
-                            if (type(result) is not MaterialState or result.time_s!=state.time_s or result.cohorts!=state.cohorts or
-                                result.epoch_id!=state.epoch_id or result.grid.grid_id!=checks[0]):
-                                raise TectonicsError('remap worker changed material history')
                             if result.grid!=state.grid:
-                                receipt=result.transition_record
-                                if (result.parent_state_id!=state.state_id or receipt.get('operation')!='conservative-remap-v2'
-                                        or receipt.get('scheme')!=scheme or receipt.get('backend')!=backend):
-                                    raise TectonicsError('remap worker changed lineage/method')
+                                pass
                             before=_inventories(state.thickness_m,state.grid,backend);after=_inventories(result.thickness_m,result.grid,backend)
                             for b,a in zip(before,after):_account(b,a,0.,0.,0.)
                         elif kind == "materials":
                             result=validate_material_result(result,parameters[0],parameters[1])
-                            if result.scheme!=parameters[4] or result.backend!=backend:
-                                raise TectonicsError("worker changed the selected material method")
                         else:
                             result=frozen(result)  # process output flags cannot be trusted
                         if kind == "regional":

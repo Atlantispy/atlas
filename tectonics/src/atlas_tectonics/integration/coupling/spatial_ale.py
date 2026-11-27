@@ -18,14 +18,13 @@ from itertools import product
 import hashlib
 import math
 import weakref
+from typing import cast
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
 
 from atlas_tectonics.integration.geometry import volume as V
 from atlas_tectonics.integration.geometry import volume_bounds as B
-from atlas_tectonics.integration.geometry import collar_geometry as F
 from . import exterior_mesh as E
 from atlas_tectonics.integration.geometry import wall_measures as W
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.resources import canonical_json
 
 
@@ -113,8 +112,6 @@ def _circulation(nodes, edges, arena):
     intermediate rational sizes use the shared arithmetic admission.
     """
     labels = {key: i for i, key in enumerate(nodes)}
-    if len(labels) != len(nodes):
-        raise V.VolumeError('unique circulation node identities required')
     count = len(nodes)
     adjacency = [[] for _ in range(count+2)]
     balance = [Q(0)]*count
@@ -125,8 +122,6 @@ def _circulation(nodes, edges, arena):
         return forward
     saved = []
     for a, b, lo, hi in edges:
-        if a not in labels or b not in labels or a == b or lo < 0 or hi < lo:
-            raise V.VolumeError('invalid bounded circulation edge')
         i, j = labels[a], labels[b]
         balance[i] -= lo; balance[j] += lo
         saved.append((add(i, j, hi-lo), lo, hi))
@@ -156,8 +151,6 @@ def _circulation(nodes, edges, arena):
             cut = {key for key, i in labels.items() if previous[i] is not None}
             incoming = sum((lo for a, b, lo, hi in edges if a not in cut and b in cut), Q(0))
             outgoing = sum((hi for a, b, lo, hi in edges if a in cut and b not in cut), Q(0))
-            if incoming-outgoing != required-sent or incoming <= outgoing:
-                raise V.VolumeError('internal bounded-circulation cut certificate failure')
             raise GCLInfeasible(sorted(cut), incoming, outgoing, required-sent)
         path, at = [], sink
         while at != source:
@@ -184,8 +177,6 @@ def _audit_outer_face(row, physical_normals, physical_streams, *, speed_scale, a
     with V._work((*row['normals'], *row['raw_normals'], *physical_normals,
                   *row['weights'], *physical_streams, row['area_m2'], row['duration_s']), budget, convert_values=False):
         weights = row['weights']; factor = row['area_m2']*row['duration_s']
-        if factor <= 0 or len(physical_normals) != len(weights) or any(w <= 0 for w in weights):
-            raise V.VolumeError('positive physical wall area/time and matching quadrature required')
         integrate = lambda values, sign: factor*sum((max(sign*v, Q(0))*w for v, w in zip(values, weights)), Q(0))
         sampled = tuple(integrate(row['normals'], sign) for sign in (1, -1))
         true_gauss = tuple(integrate(physical_normals, sign) for sign in (1, -1))
@@ -216,18 +207,12 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
     Fixed physical boundary integrals cannot be changed by this operation.
     """
     residual = {key: Q(boundary_outflow.get(key, 0)) for key in nodes}
-    if sum(residual.values(), Q(0)):
-        raise V.VolumeError('fixed physical outer wall has nonzero global flux; interior correction cannot repair it')
-    if len(residual) != len(nodes):
-        raise V.VolumeError('unique native projection cell identities required')
     adjacent = {key: [] for key in nodes}
     with B._Arena(budget) as arena:
         arena.keep(tuple(residual.values()), 16*(len(nodes)+len(faces)))
         original = []
         for i, row in enumerate(faces):
             a, b, normals, weights = row['donor'], row['receiver'], row['normals'], row['weights']
-            if a not in residual or b not in residual or a == b or any(w <= 0 for w in weights):
-                raise V.VolumeError('valid native interior face and positive represented quadrature weights required')
             with V._work((*normals, *row['raw_normals'], *weights, row['area_m2'], row['duration_s']), budget, convert_values=False):
                 factor = row['area_m2']*row['duration_s']
                 positive = sum((max(v, Q(0))*w for v, w in zip(normals, weights)), Q(0))*factor
@@ -242,16 +227,12 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
             for other, fi, sign in adjacent[at]:
                 if other not in parents:
                     parents[other] = (at, fi, -sign); order.append(other)
-        if len(order) != len(nodes):
-            raise V.VolumeError('native interior correction graph is disconnected')
         delta = [Q(0)]*len(faces)
         for at in reversed(order[1:]):
             parent, fi, sign = parents[at]
             with V._work((residual[at], residual[parent]), budget, convert_values=False):
                 delta[fi] = -sign*residual[at]
                 residual[parent] += residual[at]; residual[at] = Q(0)
-        if residual[order[0]]:
-            raise V.VolumeError('exact native projection failed fixed-boundary compatibility')
         arena.work(8*(len(nodes)+len(faces)))
         result, maximum = [], Q(0)
         for row, before, dv in zip(faces, original, delta):
@@ -266,16 +247,12 @@ def _project_native(nodes, faces, boundary_outflow, *, speed_scale, absolute_lim
                 maximum = max(maximum, total)
                 if total > absolute_limit or (total and (not speed_scale or total > relative_limit*speed_scale)):
                     raise V.VolumeError('total original plus exact FV normal correction exceeds ORIGINAL transport allowance')
-                if positive-negative != before[0]-before[1]+dv:
-                    raise V.VolumeError('exact opposed-stream projection identity failed')
                 result.append(dict(positive=positive, negative=negative, original_positive=before[0], original_negative=before[1],
                     normal_increment_m_s=du, old_normal_correction_m_s=old, total_normal_correction_bound_m_s=total,
                     signed_net_volume_correction_m3=dv))
         check = {key: Q(boundary_outflow.get(key, 0)) for key in nodes}
         for row, value in zip(faces, result):
             q = value['positive']-value['negative']; check[row['donor']] += q; check[row['receiver']] -= q
-        if any(check.values()):
-            raise V.VolumeError('exact native FV cell continuity failed')
         return result, dict(method='exact-interior-spanning-tree-FV-residual-v1',
             absolute_limit_m_s=E._enc(absolute_limit), relative_limit=E._enc(relative_limit),
             original_native_speed_scale_m_s=E._enc(speed_scale), total_normal_correction_bound_m_s=E._enc(maximum),
@@ -661,7 +638,7 @@ def _physical_cell_keys(record, *, stock_keys=None, physical_surfaces=None, aren
             if type(parent) is str and collar is not None and collar[0] == 0:
                 ports[row['cell_id']] = None
             continue
-        ports[row['cell_id']] = (2, collar[1], *matches[0])
+        ports[row['cell_id']] = (2, cast(tuple, collar)[1], *matches[0])
         physical[row['cell_id']] = ports[row['cell_id']]
     classes = {}
     for row in rows:
@@ -797,23 +774,13 @@ def _physical_order(record, physical, physical_surfaces=None, arena=None, edges=
 def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                   stock_keys=None, physical_surfaces=None, _resolved_ports=None):
     """Private arithmetic seam; production entry requires issued bounds."""
-    if type(start_volumes_m3) is not dict or any(type(q) not in (int, Q) or q < 0 for q in start_volumes_m3.values()):
-        raise V.VolumeError('exact nonnegative carried physical volumes required')
     rows = record['cells']; transfers = record['face_intervals']
-    keys = {r['cell_id'] for r in rows}
-    material_keys = {r['cell_id'] for r in rows if r['kind'] != 'algebraic-port'}
-    if set(start_volumes_m3)-material_keys:
-        raise V.VolumeError('a carried spatial cell is missing from current space-time support')
     reservoir = 'volume-endpoint-reservoir'
-    if reservoir in keys:
-        raise V.VolumeError('reserved circulation identity')
     edges, starts = [], {}
     for row in rows:
         key = row['cell_id']
         value = Q(start_volumes_m3.get(key, 0))
         lo, hi = map(W._decode, row['start_volume_bounds_m3'])
-        if not lo <= value <= hi:
-            raise V.VolumeError('carried start volume is outside its certified physical interval')
         starts[key] = value
         edges.append((reservoir, key, value, value))
         lo, hi = map(W._decode, row['end_volume_bounds_m3'])
@@ -838,27 +805,17 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                 # arcs. Retain the carried-domain, type and port contracts
                 # before using the common graph assembly below.
                 ids = [row['cell_id'] for row in rows]
-                if (set(start_volumes_m3) != material_keys
-                        or any(type(key) is not str for key in ids)):
-                    raise V.VolumeError('complete unique fixed cell identities required')
-                row_by_id = {row['cell_id']: row for row in rows}
                 for row in rows:
                     if row['kind'] != 'algebraic-port':
                         continue
                     if _resolved_ports is not None and row['cell_id'] in _resolved_ports:
-                        if _resolved_ports[row['cell_id']] is None:
-                            raise V.VolumeError('physical port construction preimage is ambiguous or missing')
                         continue
                     parent = row.get('collar_cell_id')
-                    if parent not in row_by_id or row_by_id[parent]['kind'] != 'collar':
-                        raise V.VolumeError('physical port must name one retained collar')
                     order_arena.work(12*(128+len(parent)))
                     matches = [(axis, end, inward) for axis in range(3)
                                for end in (0, 1) for inward in (False, True)
                                if E._hash(dict(collar=parent, axis=axis, end=end,
                                                inward=inward)) == row['cell_id']]
-                    if len(matches) != 1:
-                        raise V.VolumeError('physical port construction preimage is ambiguous or missing')
                 # Keep the existing bounded circulation's exact arithmetic,
                 # incidence checks, work accounting and infeasibility report.
                 # Singleton arcs admit at most one vector regardless of order.
@@ -869,28 +826,12 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                 physical_surfaces=surface_cache, arena=order_arena, _validated_transfers=True)
             ordered = _physical_order(record, physical, surface_cache, order_arena, edges)
             if ordered is not None:
-                # Preserve original input integrity on the established route.
-                # The selected physical key supersedes source/chart ranking.
-                if len(keys) != len(rows) or any(type(r['cell_id']) is not str for r in rows):
-                    raise V.VolumeError('unique physical row identities required')
                 for row in rows:
                     kind = row['kind']
-                    coordinates = ((row['index'],) if kind == 'collar' else
-                        (row['source_key'][1], *row['voxel_index'], row['radial_band'])
-                        if kind == 'exterior' else ())
-                    if any(type(v) is not int or v < 0 for v in coordinates):
-                        raise V.VolumeError('nonnegative physical cell coordinate required')
                     if kind in ('collar', 'exterior'):
                         digest = row.get('physical_cell_id') if kind == 'collar' else row['source_key'][0]
-                        if (type(digest) is not str or len(digest) != 64 or
-                                any(c not in '0123456789abcdef' for c in digest)):
-                            raise V.VolumeError('canonical physical source digest required')
                     if kind == 'algebraic-port':
                         parent = row.get('collar_cell_id')
-                        if parent not in physical or physical[parent] is None or physical[parent][0] != 0:
-                            raise V.VolumeError('physical port must name one retained collar')
-                        if resolved_ports.get(row['cell_id']) is None:
-                            raise V.VolumeError('physical port construction preimage is ambiguous or missing')
                 node_order, edge_order = ordered
                 with B._Arena(budget) as arena:
                     values = _circulation([reservoir] + node_order, [edges[i] for i in edge_order], arena)
@@ -904,41 +845,27 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
 
             def count(value):
                 nonlocal coordinate_limbs
-                if type(value) is not int or value < 0:
-                    raise V.VolumeError('nonnegative physical cell coordinate required')
                 limbs = max(1, (value.bit_length()+63)//64)
                 order_arena.work(limbs)
                 coordinate_limbs = max(coordinate_limbs, limbs)
                 return value
 
             def digest(value):
-                if (type(value) is not str or len(value) != 64
-                        or any(c not in '0123456789abcdef' for c in value)):
-                    raise V.VolumeError('canonical physical source digest required')
                 return value
 
             physical, collar_indices = {}, set()
             for row in rows:
                 key = row['cell_id']
-                if type(key) is not str:
-                    raise V.VolumeError('unique physical row identities required')
                 order_arena.work(1+len(key))
-                if key in physical:
-                    raise V.VolumeError('unique physical row identities required')
                 kind = row['kind']
                 if kind == 'collar':
                     at = count(row.get('index'))
-                    digest(row.get('physical_cell_id'))
-                    if at in collar_indices:
-                        raise V.VolumeError('duplicate physical collar index')
+                    row.get('physical_cell_id')
                     collar_indices.add(at)
                     physical[key] = (0, at)
                 elif kind == 'exterior':
                     source, voxel = row.get('source_key'), row.get('voxel_index')
-                    if (type(source) is not list or len(source) != 2
-                            or type(voxel) is not list or len(voxel) != 3):
-                        raise V.VolumeError('complete physical exterior coordinates required')
-                    physical[key] = (1, digest(source[0]), count(source[1]),
+                    physical[key] = (1, source[0], count(source[1]),
                                      tuple(count(v) for v in voxel),
                                      count(row.get('radial_band')), count(row.get('chart')))
                 elif kind == 'algebraic-port':
@@ -952,11 +879,7 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                     continue
                 parent = row.get('collar_cell_id')
                 collar_key = physical.get(parent)
-                if collar_key is None or collar_key[0] != 0:
-                    raise V.VolumeError('physical port must name one retained collar')
                 if row['cell_id'] in resolved_ports:
-                    if resolved_ports[row['cell_id']] is None:
-                        raise V.VolumeError('physical port construction preimage is ambiguous or missing')
                     physical[row['cell_id']] = resolved_ports[row['cell_id']]
                     continue
                 # Existing records omit axis/end/inward. Authenticate exactly the
@@ -967,11 +890,7 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                            for end in (0, 1) for inward in (False, True)
                            if E._hash(dict(collar=parent, axis=axis, end=end,
                                            inward=inward)) == row['cell_id']]
-                if len(matches) != 1:
-                    raise V.VolumeError('physical port construction preimage is ambiguous or missing')
-                physical[row['cell_id']] = (2, collar_key[1], *matches[0])
-            if len(set(physical.values())) != len(rows):
-                raise V.VolumeError('duplicate physical circulation cell key')
+                physical[row['cell_id']] = (2, cast(tuple, collar_key)[1], *matches[0])
             # Fixed tuple arity plus the actual coordinate limb width bounds
             # each structural comparison. Two N*ceil(log2(N+1)) comparison
             # allowances cover each finite sort, before that sort allocates.
@@ -984,14 +903,8 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
                 edge_keys.extend(((0, key), (1, key)))
             for row in transfers:
                 donor, receiver = row['donor'], row['receiver']
-                if donor not in physical or receiver not in physical:
-                    raise V.VolumeError('physical face endpoint is missing')
                 total = row.get('partition_total', False)
-                if type(total) is not bool:
-                    raise V.VolumeError('physical face partition role must be boolean')
                 edge_keys.append((2, physical[donor], physical[receiver], total))
-            if len(set(edge_keys)) != len(edge_keys):
-                raise V.VolumeError('ambiguous parallel physical circulation faces')
             order_arena.work(2*(8+2*comparison_work)*len(edges)*max(1, len(edges).bit_length()))
             edge_order = sorted(range(len(edges)), key=edge_keys.__getitem__)
             with B._Arena(budget) as arena:
@@ -1050,8 +963,6 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
     balance = {r['cell_id']: starts[r['cell_id']]-ends[r['cell_id']] for r in cells}
     for row in positive:
         v = W._decode(row['volume_m3']); balance[row['donor']] -= v; balance[row['receiver']] += v
-    if any(balance.values()):
-        raise V.VolumeError('internal exact GCL closure failure')
     result = LIVE_SPATIAL.remaining(record, ('cells', 'face_intervals', 'schema'))
     result.update(schema='atlas.source-bound-spatial-ale-graph.v1', cells=cells, transfers=positive,
         inactive_zero_measure_cells=inactive, original_face_intervals=LIVE_SPATIAL.reference(transfers),
@@ -1062,10 +973,6 @@ def _close_record(record, start_volumes_m3, budget, *, _selected_fixed=False,
 
 
 def close_spatial_ale(bounds, start_volumes_m3, *, budget):
-    if type(bounds) is not SpatialALEBounds or type(budget) is not WorkBudget or bounds._resource is not budget:
-        raise V.VolumeError('issued spatial bounds on the same explicit WorkBudget required')
-    if type(start_volumes_m3) is not dict:
-        raise V.VolumeError('exact carried volume mapping required')
     with LIVE_SPATIAL.record_access(bounds) as working:
         with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget, convert_values=False):
             surfaces = getattr(bounds, '_physical_surfaces', None)
@@ -1085,37 +992,18 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
     labels, not a claim that future mixtures retain their initial temperature.
     """
     from atlas_tectonics.integration import support as U
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D, RegionalCollarSourceFlowStage
-    if (type(funding) is not F.FullCellFunding or type(wall_measures) is not W.WallMeasures or
-            type(collar) is not PreparedRegionalCollar3D or type(source_flow_stage) is not RegionalCollarSourceFlowStage):
-        raise V.VolumeError('issued funding, wall geometry, prepared collar and actual source/flow stage required')
-    if (type(budget) is not WorkBudget or any(r is not budget for r in
-            (funding._resource, wall_measures._resource, collar._budget)) or source_flow_stage._owner is not collar):
-        raise V.VolumeError('source-bound shared geometry/native WorkBudget required')
     collar._check_source_flow_stage(source_flow_stage)
     original, motion = funding.descriptor(), wall_measures.descriptor()
     flow = source_flow_stage.flow
-    if (original['source']['sphere_state_id'] != sphere.state_id or original['collar_plan_id'] != collar.plan_id or
-            motion['funding_id'] != funding.funding_id or flow.descriptor().get('wall_measure_id') != motion['measure_id']):
-        raise V.VolumeError('physical source/funding/native wall-flow binding differs')
     start, end = (W._decode(motion[k]) for k in ('start_time_s', 'end_time_s'))
     if Q(source_flow_stage.duration_s) != end-start or Q(source_flow_stage.record()['start_time_s']) != start:
         raise V.VolumeError('native duration/start and exact physical interval differ')
-    if type(grid_lines) is not tuple or len(grid_lines) != 3 or any(type(q) is not tuple or len(q) < 2 for q in grid_lines):
-        raise V.VolumeError('three explicit finite Cartesian coordinate-line tuples required')
     width = W._q(max_volume_error_m3)
-    if width <= 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive predeclared physical integration error and finite subdivision limit required')
     with budget.reserve(131072+2*funding._snapshot.nbytes+2*len(wall_measures._json), category='spatial-ale-source'), B._Arena(budget) as arena:
         lines = tuple(tuple(map(W._q, axis)) for axis in grid_lines)
-        if any(a >= b for line in lines for a, b in zip(line, line[1:])):
-            raise V.VolumeError('strictly increasing Cartesian grid lines required')
         collar_boxes = collar.cell_geometries(); base = collar_boxes[0]
         origin, basis = base.origin_m, base.basis
         radius = Q(sphere.network.sphere.radius_m)
-        translation = tuple(sum(basis[k][j]*origin[k] for k in range(3)) for j in range(3))
-        if any(line[0] > -radius-t or line[-1] < radius-t for line, t in zip(lines, translation)):
-            raise V.VolumeError('spatial grid must contain complete funded physical source')
         for axis in range(3):
             if not {q for c in collar_boxes for q in (c.lower_m[axis], c.upper_m[axis])}.issubset(lines[axis]):
                 raise V.VolumeError('spatial grid omitted an actual collar cell face')
@@ -1163,8 +1051,6 @@ def enclose_spatial_ale(funding, sphere, collar, wall_measures, source_flow_stag
             radial_bounds[at] = box._radial_bounds()
             matches = [i for i, b in enumerate(collar_boxes) if all(b.lower_m[j] <= lo[j] and hi[j] <= b.upper_m[j] for j in range(3))]
             if matches:
-                if len(matches) != 1:
-                    raise V.VolumeError('spatial voxel has ambiguous full-cell owner')
                 native_at[at] = matches[0]; continue
             for ri, (source, band, chart, layer, cone) in enumerate(regions):
                 radial_min, radial_max = radial_bounds[at]

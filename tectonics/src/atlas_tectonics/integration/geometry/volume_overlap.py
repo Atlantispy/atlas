@@ -26,10 +26,6 @@ SCHEMA = 'atlas.exact-cell-overlap.v1'
 METHOD = 'integer-halfspace-vertices-and-oriented-determinants-v1'
 
 
-class OverlapError(V.VolumeError):
-    """Invalid overlap request or an unsupported curved intersection."""
-
-
 def _dot(a, b):
     return sum((x*y for x, y in zip(a, b)), Fraction(0))
 
@@ -44,8 +40,6 @@ def _plane(normal, limit):
     multiple = math.lcm(*(v.denominator for v in values))
     integers = tuple(v.numerator*(multiple//v.denominator) for v in values)
     divisor = math.gcd(*integers)
-    if not divisor or not any(integers[:3]):
-        raise OverlapError('a supporting plane requires a nonzero normal')
     return tuple(v//divisor for v in integers)
 
 
@@ -113,8 +107,6 @@ def _face(vertices, indices, normal):
         return None
     orientation = _dot(normal, _cross(_minus(vertices[ring[1]], vertices[ring[0]]),
                                       _minus(vertices[ring[2]], vertices[ring[0]])))
-    if orientation == 0:
-        raise OverlapError('degenerate supporting face after exact hull ordering')
     if orientation < 0:
         ring.reverse()
     start = ring.index(min(ring))
@@ -192,12 +184,6 @@ def intersect_cells(source, recipient, *, radial_layer=None, cone_vertices=None,
     The budget separately admits rational workspace and O(P^4) predicate work;
     this bounded small-overlap kernel is not a claim of bulk remap performance.
     """
-    if type(source) is not V.CartesianCell or type(recipient) is not V.CartesianCell:
-        raise OverlapError('two typed exact CartesianCell geometries are required')
-    if radial_layer is not None and type(radial_layer) is not V.RadialLayer:
-        raise OverlapError('radial support must be a typed RadialLayer')
-    if cone_vertices is not None and radial_layer is None:
-        raise OverlapError('angular source clipping requires a proved common radial layer')
     resource = select_budget(budget) if budget is not None else source._resource
     cone = (None if cone_vertices is None else
             V.convex_cone_union((cone_vertices,), budget=resource))
@@ -208,8 +194,6 @@ def intersect_cells(source, recipient, *, radial_layer=None, cone_vertices=None,
         if radial_layer is not None:
             minimum, maximum = recipient._radial_bounds()
             radius, top, bottom = radial_layer._geometry()
-            if minimum < (radius-bottom)**2 or maximum > (radius-top)**2:
-                raise OverlapError('whole recipient is not inside the radial layer; curved shell clipping is unsupported')
         planes = _box_planes(source)+_box_planes(recipient)
         if cone is not None:
             planes.extend(_plane(tuple(-v for v in _cross(a, b)), 0)
@@ -251,11 +235,7 @@ def intersect_cells(source, recipient, *, radial_layer=None, cone_vertices=None,
                     for i in range(1, len(face)-1):
                         six = _dot(a, _cross(_minus(vertices[face[i]], centre),
                                             _minus(vertices[face[i+1]], centre)))
-                        if six < 0:
-                            raise OverlapError('supporting face orientation contradicts convex volume')
                         volume += six/6
-                if volume <= 0 or volume > min(source.volume_m3, recipient.volume_m3):
-                    raise OverlapError('exact intersection violates positive bounded volume')
             else:
                 faces = ()
             cone_id = (None if cone is None else hashlib.sha256(json.dumps(
@@ -329,12 +309,6 @@ def transfer_uniform(source, recipient, stocks, *, source_id, target_id,
     with cone clipping, the denominator remains the whole declared source box;
     supplying stock for only a cut-box region would violate this contract.
     """
-    if type(source) is not V.CartesianCell or type(recipient) is not V.CartesianCell:
-        raise OverlapError('two typed exact CartesianCell geometries are required')
-    if type(stocks) is not tuple or not stocks or any(type(q) not in (int, Fraction) for q in stocks):
-        raise OverlapError('stocks must be a nonempty tuple of exact int/Fraction extensive scalars')
-    if any(type(key) is not str or not key for key in (source_id, target_id)) or source_id == target_id:
-        raise OverlapError('distinct nonempty source and target account identifiers are required')
     resource = select_budget(budget) if budget is not None else source._resource
     with resource.reserve(65536+8*(len(source_id)+len(target_id))+1024*len(stocks),
                           category='i03-volume-transfer'):

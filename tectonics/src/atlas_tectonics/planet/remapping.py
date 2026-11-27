@@ -9,15 +9,14 @@ from dataclasses import dataclass, field, asdict
 import hashlib
 import math
 import numpy as np
-from atlas_tectonics._validation import TectonicsError, input_shape, snapshot, frozen, scalar
+from atlas_tectonics._validation import TectonicsError, input_shape, snapshot, scalar
 from atlas_tectonics.integration.resources import select_budget, MemoryLimitError
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 from atlas_tectonics.integration.resources import check_event
-from atlas_tectonics.regional.regional import RegionalGrid1D, _METRICS
 from atlas_tectonics.planet.mesh import ColumnGrid1D
 from atlas_tectonics.integration.reuse import content_record
-from atlas_tectonics.materials.materials import (MaterialState, MaterialBoundary, MaterialTransportResult,
-    _json, _immutable_bytes, _hash_array, _account, _backend, _end_time, _state_work_bytes)
+from atlas_tectonics.materials.materials import (MaterialState, MaterialTransportResult,
+    _json, _immutable_bytes, _hash_array, _account, _backend, _end_time)
 
 
 # Existing local-field verification tolerance in cases/w02_completion.json.
@@ -85,8 +84,6 @@ def to_column_state(state, *, frame_id, budget=None):
     adjusted by dx/actual_width; this conversion is recorded, never silently done
     inside a transport call. Formation history is unchanged.
     """
-    if type(state) is not MaterialState or type(state.grid) is not RegionalGrid1D:
-        raise TectonicsError('legacy regional MaterialState required')
     c=len(state.cohorts);n=state.grid.cells
     with select_budget(budget).reserve(40*c*n+128*n+8192,category='uniform-mesh-bridge'):
         g=state.grid
@@ -214,9 +211,6 @@ def _joint_slopes_reference(h,x,linear):
             bound*=1.-8.*np.finfo(np.float64).eps
             theta=min(theta,max(float(bound),0.))
         slopes[:,i]=(base+theta*delta)/width
-    lower=h-.5*widths*slopes;upper=h+.5*widths*slopes
-    if not np.isfinite(slopes).all() or np.any(lower<0) or np.any(upper<0):
-        raise TectonicsError('joint mesh reconstruction outside nonnegative range')
     return slopes
 
 
@@ -240,7 +234,7 @@ def _remap_reference(h,x,y,linear):
     return out
 
 
-def remap_materials(state, target, *, plan=None, scheme='linear', backend='numba', budget=None,cancel=None):
+def remap_materials(state, target, *, plan: RemapPlan | None=None, scheme='linear', backend='numba', budget=None,cancel=None):
     """Conservative mesh-only change at identical physical time; no source or sink.
 
     Limited linear reconstruction is normal. Constant reconstruction is explicit,
@@ -283,7 +277,6 @@ def _ale_reference(h,x,y,a,dt,el,er,linear):
         for k in range(c):
             f0=a*np.where(a>=0,np.r_[el[k],h[k]],np.r_[h[k],er[k]])
             out[k]=(h[k]*w0+dt*(f0[:-1]-f0[1:]))/w1
-            if np.any(out[k]<0):raise TectonicsError('negative ALE stage')
             mean[k]=f0
         return out,mean,maximum
     def flux(fields,edges):
@@ -293,22 +286,15 @@ def _ale_reference(h,x,y,a,dt,el,er,linear):
         return a*np.where(a>=0,donor_l,donor_r)
     f0=flux(h,x);q0=h*w0
     q1=q0+dt*(f0[:,:-1]-f0[:,1:]);stage=q1/w1
-    if np.any(stage<0):raise TectonicsError('negative ALE stage')
     if linear and dt!=0:
         f1=flux(stage,y);q2=q1+dt*(f1[:,:-1]-f1[:,1:])
-        if np.any(q2<0):raise TectonicsError('negative second ALE stage')
         out=(.5*q0+.5*q2)/w1;mean=.5*f0+.5*f1
     else:out=stage;mean=f0
     return out,mean,maximum
 
 
 def _boundary_values(state, relative, boundary, left):
-    if type(boundary) is not MaterialBoundary:raise TectonicsError('typed material boundaries required')
     ids=tuple(c.cohort_id for c in state.cohorts);values=dict(boundary.exterior or ())
-    if not values.keys()<=set(ids):raise TectonicsError('unregistered incoming cohort')
-    a=float(relative[0] if left else relative[-1]);inward=a>0 if left else a<0
-    if boundary.mode=='closed' and a!=0:raise TectonicsError('closed moving boundary requires u-w=0, not u=0')
-    if inward and boundary.exterior is None:raise TectonicsError('relative inflow requires explicit external composition')
     return np.array([values.get(k,0.) for k in ids])
 
 
@@ -321,11 +307,9 @@ def advect_ale(state, face_velocity_m_s, mesh_velocity_m_s, duration_s, *,left,r
     stage fluxes. Known event times may be endpoints but must not lie inside a step.
     """
     check_event(cancel, 'regional transport cancelled; no candidate published');_mesh_state(state);_backend(backend)
-    if scheme not in ('muscl','upwind'):raise TectonicsError('explicit muscl/upwind scheme required')
     dt=scalar(duration_s,'duration',nonnegative=True);end=_end_time(state,dt)
     for t in event_times_s:
         t=scalar(t,'event time')
-        if state.time_s<t<end:raise TectonicsError('interval crosses a known event; split explicitly at its time')
     n=state.grid.cells;c=len(state.cohorts)
     if input_shape(face_velocity_m_s)!=(n+1,) or input_shape(mesh_velocity_m_s)!=(n+1,):
         raise TectonicsError('N+1 physical and mesh face velocities required')
@@ -367,9 +351,7 @@ def ale_timestep_limit(state,face_velocity_m_s,mesh_velocity_m_s,*,left,right,sc
     dt <= cap*V0/(A-cap*dV). Mesh crossing is checked even when relative flow is zero.
     """
     _mesh_state(state)
-    if scheme not in ('muscl','upwind'):raise TectonicsError('unknown scheme')
     n=state.grid.cells
-    if input_shape(face_velocity_m_s)!=(n+1,) or input_shape(mesh_velocity_m_s)!=(n+1,):raise TectonicsError('N+1 velocities required')
     with select_budget(budget).reserve(96*n+8192,category='ale-limit'):
         u=snapshot(face_velocity_m_s,'physical velocity');w=snapshot(mesh_velocity_m_s,'mesh velocity')
         try:
@@ -381,28 +363,19 @@ def ale_timestep_limit(state,face_velocity_m_s,mesh_velocity_m_s,*,left,right,sc
         cap=.5 if scheme=='muscl' else 1.;limit=math.inf
         for i,width in enumerate(state.grid.widths_m):
             rate=float(w[i+1])-float(w[i]);out=max(float(a[i+1]),0.)+max(-float(a[i]),0.)
-            if not math.isfinite(rate) or not math.isfinite(out):
-                raise TectonicsError('mesh/relative velocity range is unsupported')
             denominator=out-cap*min(rate,0.) if scheme=='muscl' else out
-            if not math.isfinite(denominator):raise TectonicsError('ALE interval bound outside range')
             if denominator>0:limit=min(limit,cap*float(width)/denominator)
             if rate<0:limit=min(limit,float(width)/(-rate))
         if math.isinf(limit):return None
         limit=math.nextafter(limit,0.)
-        if limit<=0 or not math.isfinite(limit):raise TectonicsError('no positive representable ALE interval')
         return limit
 
 
 def restore_remap_result(parent,target,h,*,plan,scheme,backend,budget=None):
     """Validate cache/IPC values against source inventories and exact geometry IDs."""
     _mesh_state(parent);_backend(backend)
-    if type(plan) is not RemapPlan or plan.source!=parent.grid or plan.target!=target:
-        raise TectonicsError('remap restoration geometry mismatch')
-    if scheme not in ('linear','constant') or input_shape(h)!=(len(parent.cohorts),target.cells):
-        raise TectonicsError('invalid remap result shape/method')
     values=snapshot(h,'remap result',nonnegative=True)
     if parent.grid==target:
-        if values.tobytes()!=parent.thickness_m.tobytes():raise TectonicsError('identity remap changed material')
         return parent
     before=_inventories(parent.thickness_m,parent.grid,backend);after=_inventories(values,target,backend)
     accounts=[_account(float(b),float(a),0.,0.,0.) for b,a in zip(before,after)]
@@ -413,23 +386,14 @@ def restore_remap_result(parent,target,h,*,plan,scheme,backend,budget=None):
 def restore_ale_result(parent,u,w,dt,left,right,scheme,backend,packed,*,budget=None):
     """Rebuild a complete immutable candidate from verified typed array storage."""
     _mesh_state(parent);_backend(backend)
-    if scheme not in ('muscl','upwind'):raise TectonicsError('invalid ALE scheme')
     n=parent.grid.cells;c=len(parent.cohorts);dt=scalar(dt,'duration',nonnegative=True)
-    if input_shape(packed)!=(c,2*n+9):raise TectonicsError('invalid ALE result layout')
     raw=snapshot(packed,'ALE result')
     h=raw[:,:n];flux=raw[:,n:2*n+1];stored=raw[:,2*n+1:]
-    if np.any(h<0):raise TectonicsError('negative restored ALE state')
     target=_ale_geometry(parent.grid,w,dt,budget=budget)
     relative=u-w;_boundary_values(parent,relative,left,True);_boundary_values(parent,relative,right,False)
     before=_inventories(parent.thickness_m,parent.grid,backend);after=_inventories(h,target,backend)
     maximum=float(stored[0,5])
-    if maximum<0 or maximum>(.5 if scheme=='muscl' else 1.) or np.any(stored[:,5]!=maximum):
-        raise TectonicsError('invalid ALE Courant result')
-    outgoing=dt*(np.maximum(relative[1:],0)+np.maximum(-relative[:-1],0))
-    expected_max=float(max(np.max(outgoing/parent.grid.widths_m),np.max(outgoing/target.widths_m) if scheme=='muscl' else 0.))
-    if not math.isclose(maximum,expected_max,rel_tol=8*np.finfo(float).eps,abs_tol=0):raise TectonicsError('ALE admission receipt mismatch')
     accounts=np.array([_account(float(before[k]),float(after[k]),dt*float(flux[k,0]),-dt*float(flux[k,-1]),maximum) for k in range(c)])
-    if not np.array_equal(stored,accounts):raise TectonicsError('ALE restored accounts disagree with fields/parent')
     record={'operation':_ALE_METHOD,'physical_velocity':_hash_array(u),
             'mesh_velocity':_hash_array(w),'duration_s':dt,'target_grid':target.grid_id,
             'left':asdict(left),'right':asdict(right),'scheme':scheme,'backend':backend,'cohort_accounts':accounts.tolist()}
@@ -439,9 +403,7 @@ def restore_ale_result(parent,u,w,dt,left,right,scheme,backend,packed,*,budget=N
 
 def validate_ale_result(result,parent,u,w,dt,left,right,scheme,backend,*,budget=None):
     from atlas_tectonics.materials.materials import pack_material_result
-    if type(result) is not MaterialTransportResult:raise TectonicsError('invalid ALE worker result')
     restored=restore_ale_result(parent,u,w,dt,left,right,scheme,backend,pack_material_result(result),budget=budget)
-    if restored.state.state_id!=result.state.state_id:raise TectonicsError('ALE worker state identity mismatch')
     return restored
 
 

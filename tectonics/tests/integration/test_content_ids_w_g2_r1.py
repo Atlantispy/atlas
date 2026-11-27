@@ -2,6 +2,7 @@
   python -B -I test_content_ids_w_g2_r1.py <package parent folder>"""
 import math
 import sys
+import threading
 import unittest
 from unittest import mock
 
@@ -20,8 +21,9 @@ A, B = 'a'*64, 'b'*64
 def ctx(identity, backend='reference'):
     """A real ExecutionContext on a given identity (the adopted-worker route), no source capture."""
     c = object.__new__(ExecutionContext)
-    c._adopt(backend, identity)
-    c._mode = 'release'
+    c.backend, c._identity = backend, identity
+    c._closed = c._close_verified = False
+    c._close_lock = threading.RLock()
     return c
 
 

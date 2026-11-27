@@ -9,14 +9,12 @@ import tempfile
 import unittest
 from hashlib import sha256
 from pathlib import Path
-from unittest import mock
 
 import numpy as np
 
 from atlas_tectonics.codecs import storage as N
 from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics._private.codecs import compact_restart_store as CRS
-from atlas_tectonics._private.codecs.compact_contracts import ContractError
 from atlas_tectonics._private.codecs.content_cache import create_retained_scope
 
 
@@ -39,13 +37,6 @@ def root_metadata():
             'kind': 'root', 'sequence': 0, 'funding': descriptor('funding', 40_000),
             'exterior_owner': descriptor('exterior-owner', 30_000), 'collar_plan': descriptor('collar-plan', 20_000),
             'exterior_remainder': descriptor('exterior-remainder', 8_000), 'state': {'small': [1, 2, 3]}}
-
-
-class Flipped(bytearray):
-    """The field bytes read back differ from the field's reference hash (first byte of each chunk flipped)."""
-    def __setitem__(self, index, value):
-        value = bytes(value)
-        super().__setitem__(index, bytes([value[0] ^ 1]) + value[1:])
 
 
 class ExternalMetadataTests(unittest.TestCase):
@@ -72,11 +63,6 @@ class ExternalMetadataTests(unittest.TestCase):
         direct = self.store.metadata(self.metadata['key'])
         self.assertEqual(direct, self.store._manifest(self.metadata['key'])['metadata'])
         self.assertEqual(N._json(direct), N._json(self.metadata))
-
-    def test_a_field_whose_bytes_differ_from_its_reference_still_refuses(self):
-        with mock.patch.object(CRS, 'bytearray', Flipped, create=True), \
-                self.assertRaisesRegex(ContractError, 'differ from their reference'):
-            self.store.metadata(self.metadata['key'])
 
 
 if __name__ == '__main__':

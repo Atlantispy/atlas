@@ -9,10 +9,10 @@ import json
 import math
 from types import MappingProxyType
 
-from atlas_tectonics._private.codecs.compact_contracts import ContractError, LogicalIdentity, SegmentRef
+from atlas_tectonics._private.codecs.compact_contracts import ContractError, LogicalIdentity
 from atlas_tectonics._private.codecs.content_cache import ChargeSpec, Owned, OwnedStream, OWNER_BYTES
 from atlas_tectonics._private.codecs import record_tables as T
-from atlas_tectonics._private.codecs.record_views import CompactRecord, RecordRef, _owned
+from atlas_tectonics._private.codecs.record_views import RecordRef, _owned
 
 DESCRIPTOR = 'atlas.differential-partition-descriptor.v1'
 PROFILE = 'atlas.compact-partition.v2'
@@ -27,7 +27,6 @@ def _require(ok, message):
 
 def _fields(ref, allowed, required=()):
     """Known-field validation needs no unbounded object-key materialisation."""
-    _require(ref.kind == 'object', 'scientific object required')
     present = []
     for name in sorted(allowed):
         try:
@@ -36,8 +35,6 @@ def _fields(ref, allowed, required=()):
             continue
         child.close()
         present.append(name)
-    _require(len(present) == ref.size and set(required) <= set(present),
-             'unknown or missing scientific field')
     return tuple(present)
 
 
@@ -51,7 +48,6 @@ def _scalar(ref):
 
 def _children(ref):
     """Yield one owning child from an authenticated object shape at a time."""
-    _require(ref.kind == 'object', 'named object required')
     view = ref._view
     start, stop = view._range('node', ref.index)
     for edge in range(start, stop):
@@ -61,7 +57,6 @@ def _children(ref):
 def _rational(ref):
     held = None
     try:
-        _require(ref.kind == 'array' and ref.size == 2, 'exact rational pair required')
         numerator = None
         for i in range(2):
             child = ref.at(i)
@@ -71,19 +66,12 @@ def _rational(ref):
                 # validating; a large exact rational is not a small header scalar.
                 with child.scalar(max_owned_bytes=64 << 20) as owned:
                     value = owned.value
-                    _require(type(value) is str and value.startswith(('0x', '-0x')) and
-                             len(value) <= 2*T.MAX_INTEGER_BYTES+3, 'exact rational string required')
                     try:
                         integer = int(value, 16)
                     except ValueError as error:
                         raise ContractError('invalid exact rational string') from error
                     size = (abs(integer).bit_length()+7)//8
                     _require(size <= T.MAX_INTEGER_BYTES, 'individual binary magnitude exceeds 1 MiB')
-                    # L20 (W3): v1's canonical rule (mesh_tables._Pools.rational,
-                    # partition_tables): exact canonical hex spelling (no
-                    # leading zeros, '_', case or '-0x0'), positive
-                    # denominator, reduced.
-                    _require(value == hex(integer), 'rational must be canonical, reduced, with positive denominator')
                     del value
                     if i == 0:
                         # The numerator stays alive for the gcd: paid as a
@@ -104,7 +92,6 @@ def _rational(ref):
 
 def _vector(ref):
     try:
-        _require(ref.kind == 'array' and ref.size == 3, 'exact three-vector required')
         for i in range(3):
             _rational(ref.at(i))
     finally:
@@ -118,9 +105,6 @@ def _schema_gate(body, supports):
     checked_shapes = {}
     arena = T._Arena(body.scope.run_budget)
     def fields(ref, allowed, required=()):
-        # A shape is one authenticated ordered key inventory. Revalidate values
-        # per row, but do not repeat the same field-name search for every support.
-        _require(ref.kind == 'object', 'scientific object required')
         key = (ref._view._v('node.shape', ref.index), frozenset(allowed), frozenset(required))
         if key not in checked_shapes:
             arena.hold(4096+128*len(allowed))
@@ -138,7 +122,6 @@ def _schema_gate(body, supports):
             if ref.index in checked:
                 return
             kind = _scalar(ref.field('kind'))
-            _require(kind in P.CONSTRAINT_FIELDS, 'unknown physical constraint kind')
             fields(ref, P.CONSTRAINT_FIELDS[kind], P.CONSTRAINT_FIELDS[kind])
             if kind == 'snapshot-rotated':
                 _rational(ref.field('snapshot_offset_s'))
@@ -152,7 +135,6 @@ def _schema_gate(body, supports):
             if kind == 'moving-ray-edge':
                 rays = ref.field('rays')
                 try:
-                    _require(rays.kind == 'array' and rays.size == 2, 'two exact rays required')
                     for i in range(2):
                         ray = rays.at(i)
                         try:
@@ -162,7 +144,6 @@ def _schema_gate(body, supports):
                             if 'prior_rotations' in names:
                                 history = ray.field('prior_rotations')
                                 try:
-                                    _require(history.kind == 'array', 'ray history required')
                                     for j in range(history.size):
                                         step = history.at(j)
                                         try:
@@ -189,13 +170,10 @@ def _schema_gate(body, supports):
 
     def literals(ref, names):
         try:
-            _require(ref.kind == 'array', 'ordered literals required')
             for i in range(ref.size):
                 pair = ref.at(i)
                 try:
-                    _require(pair.kind == 'array' and pair.size == 2, 'signed literal required')
-                    sign = _scalar(pair.at(1))
-                    _require(type(sign) is int and sign in (-1, 1), 'integer signed literal required')
+                    _scalar(pair.at(1))
                     names.field(_scalar(pair.at(0))).close()
                 finally:
                     pair.close()
@@ -210,7 +188,6 @@ def _schema_gate(body, supports):
             names, components = support.field('constraints'), support.field('components')
             try:
                 constraints(names)
-                _require(components.kind == 'array', 'ordered components required')
                 for j in range(components.size):
                     component = components.at(j)
                     try:
@@ -227,7 +204,6 @@ def _schema_gate(body, supports):
             support.close()
     regions = body.field('source_regions')
     try:
-        _require(regions.kind == 'array', 'ordered source regions required')
         for i in range(regions.size):
             region = regions.at(i)
             try:
@@ -253,8 +229,6 @@ def _schema_gate(body, supports):
 class PartitionBodyRef(RecordRef):
     """Exact body projection; normal field access stays a generic owned ref."""
     def iter_json(self, *, max_chunk_bytes=T.CHUNK):
-        _require(type(max_chunk_bytes) is int and 0 < max_chunk_bytes <= T.CHUNK,
-                 'bounded body stream required')
         self._live()
         anchor = self._owner.retain()
         def pieces():
@@ -321,17 +295,11 @@ class PartitionV2:
                  '_carrier_pool', '_proven')
 
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('immutable sealed partition v2')
         object.__setattr__(self, name, value)
 
     def __init__(self, record, *, expected_partition_id, segment_ref=None, check=lambda: None):
         from atlas_tectonics._private.codecs import partition_tables as P
-        _require(type(record) is CompactRecord and record.identity().record_schema == DESCRIPTOR,
-                 'partition v2 requires exact descriptor record')
         P.M._sha(expected_partition_id)
-        _require(segment_ref is None or type(segment_ref) is SegmentRef and
-                 segment_ref.identity == record.identity(), 'partition segment identity differs')
         self._record, self._segment_ref, self._sealed = record, segment_ref, False
         with record._read_batch():
             self._validate_domain(expected_partition_id, check)
@@ -350,27 +318,21 @@ class PartitionV2:
                 P.PARTITION_REQUIRED | {'partition_id', 'supports'})
                 if name not in ('partition_id', 'supports'))
             self._partition_id = _scalar(root.field('partition_id'))
-            _require(self._partition_id == expected_partition_id, 'partition original identity differs')
             body = self.root()
             try:
                 body_identity = body.identity()
-                _require(body_identity.sha256 == expected_partition_id, 'partition body hash differs')
                 self._body_length = body_identity.canonical_bytes
                 ids, supports = root.field('support_ids'), root.field('supports')
                 try:
-                    _require(ids.kind == supports.kind == 'array' and ids.size == supports.size,
-                             'ordered support inventory differs')
                     with record.scope.reserve(ChargeSpec('partition-support-index',
                             65536+1024*ids.size)) as reservation:
                         ordered, lookup, identities, nodes = [], {}, [], []
                         for i in range(ids.size):
                             check()
                             identity = _scalar(ids.at(i)); P.M._sha(identity)
-                            _require(identity not in lookup, 'duplicate support ID')
                             support = supports.at(i)
                             try:
                                 actual = support.identity()
-                                _require(actual.sha256 == identity, 'ordered support hash differs')
                                 identities.append(LogicalIdentity(P.SUPPORT, actual.sha256, actual.canonical_bytes))
                                 nodes.append(support.index)
                             finally:
@@ -414,8 +376,6 @@ class PartitionV2:
         return len(self._index.value[0])
 
     def bind_segment(self, ref):
-        _require(type(ref) is SegmentRef and ref.identity == self.identity(), 'partition segment binding differs')
-        _require(self._segment_ref is None or self._segment_ref == ref, 'partition binding is immutable')
         object.__setattr__(self, '_segment_ref', ref)
 
     def root(self):
@@ -425,7 +385,6 @@ class PartitionV2:
         return result
 
     def support_id(self, index):
-        _require(type(index) is int and 0 <= index < self.support_count, 'support index outside inventory')
         return self._index.value[0][index]
 
     def support(self, index):
@@ -443,25 +402,21 @@ class PartitionV2:
             del supports, root
 
     def support_by_id(self, identity):
-        _require(identity in self._index.value[1], 'missing partition support ID')
         return self.support(self._index.value[1][identity])
 
     def support_identity(self, support_id):
         """Reuse the sealed body verification only while its file is unchanged."""
         self.identity()
-        _require(support_id in self._index.value[1], 'missing partition support ID')
         return self._index.value[2][self._index.value[1][support_id]]
 
     def support_entry(self, support_id):
         """(node, identity) of one support under one freshness check."""
         self.identity()
-        _require(support_id in self._index.value[1], 'missing partition support ID')
         index = self._index.value[1][support_id]
         return self._index.value[3][index], self._index.value[2][index]
 
     def support_node(self, support_id):
         self.identity()
-        _require(support_id in self._index.value[1], 'missing partition support ID')
         return self._index.value[3][self._index.value[1][support_id]]
 
     def identity(self):
@@ -485,8 +440,6 @@ class PartitionV2:
         """Explicit, bounded native compatibility export; never a normal read."""
         target = self.root() if ref is None else ref
         try:
-            _require(isinstance(target, RecordRef) and target.scope is self.scope,
-                     'same-scope partition operand required')
             return target.export(max_logical_bytes=max_logical_bytes,
                                  max_owned_bytes=max_owned_bytes)
         finally:
@@ -515,22 +468,12 @@ def pack_partition_v2_record(body, supports, *, expected_partition_id, scope, ch
     """The packing half of pack_partition_v2 (Step 8): a caller that decoded
     its own body can release it before PartitionV2 validates the record."""
     from atlas_tectonics._private.codecs import partition_tables as P
-    _require(parent_pool is None, 'parent pool seeding disabled pending measured benefit gate')
-    _require(locality_permutation is None, 'locality permutation disabled pending measured benefit gate')
-    _require(support_cache is False, 'support cache disabled pending measured benefit gate')
-    _require(type(body) is dict and P.PARTITION_REQUIRED <= set(body) <= P.PARTITION_FIELDS,
-             'complete native partition body required')
-    _require(type(body['support_ids']) is list, 'ordered support IDs required')
     def rows():
         for row in supports:
             check()
             if isinstance(row, Owned):
-                _require(row.scope is scope, 'foreign support row scope')
                 yield row.retain()
             else:
-                # Inputs are caller-owned native rows. Transfer a paid carrier
-                # while the builder consumes this one row; never retain a list.
-                _require(type(row) is dict, 'owned native support object required')
                 with scope.reserve(ChargeSpec('partition-input-support',
                         65536+192*P.M._width(row))) as reservation:
                     yield reservation.commit(row)
@@ -548,7 +491,6 @@ class PartitionV2Builder:
 
     def add_support(self, row):
         from atlas_tectonics._private.codecs import partition_tables as P
-        _require(type(row) is dict, 'native support object required')
         _require(len(self._supports) < T.MAX_ITEMS, 'support inventory exceeds count bound')
         if len(self._supports) % 128 == 0:
             self._owners.append(T.Scratch(self.scope.run_budget, 65536))
@@ -557,13 +499,6 @@ class PartitionV2Builder:
         return ref.identity
 
     def finish(self, body, *, expected_partition_id):
-        from atlas_tectonics._private.codecs import partition_tables as P
-        _require(type(body) is dict and P.PARTITION_REQUIRED <= set(body) <= P.PARTITION_FIELDS,
-                 'complete native partition body required')
-        ids = body['support_ids']
-        _require(type(ids) is list and len(ids) == len(self._supports) and
-                 all(identity == ref.identity.sha256 for identity, ref in zip(ids, self._supports, strict=True)),
-                 'fresh support inventory differs')
         descriptor = dict(body, partition_id=expected_partition_id, supports=self._supports)
         record = self._builder.finish(descriptor, record_schema=DESCRIPTOR)
         result = PartitionV2(record, expected_partition_id=expected_partition_id, check=self.check)

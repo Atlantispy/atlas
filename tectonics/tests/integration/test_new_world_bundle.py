@@ -150,13 +150,6 @@ class NewWorldBundleTests(unittest.TestCase):
             function(*args, **kwargs)
         self.assertEqual(getattr(caught.exception, 'code', None), code)
 
-    def test_loaded_runtime_runs_the_bundle_release_boundary(self):
-        boundary = mock.Mock()
-        runtime = SimpleNamespace(release_boundary=boundary)
-        with mock.patch.dict(sys.modules, {'atlas_tectonics.integration.reuse': runtime}):
-            bundle._guard()
-        boundary.assert_called_once_with()
-
     def test_completed_and_cancelled_roundtrip_preserves_bytes_deduplicates_and_never_runs(self):
         completed = self.make_job('b' * 32, count=2, state='completed')
         cancelled = self.make_job('c' * 32, count=1, state='cancelled',

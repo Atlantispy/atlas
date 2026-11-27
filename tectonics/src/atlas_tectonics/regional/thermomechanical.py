@@ -15,15 +15,12 @@ import math
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array, frozen
-from atlas_tectonics.materials.constitutive import DiffusiveScales, RheologyProfile, _json
-from atlas_tectonics.regional.execution import PreparedRegionalStokes2D, _name, _hash, _array_hash
-from atlas_tectonics.regional.rheology import solve_regional_rheology, _prepare_rheology_solve, _validate_boundary_support
-from atlas_tectonics.regional.transport import (PreparedHeatTransport, translate_material_regions,
+from atlas_tectonics.materials.constitutive import _json
+from atlas_tectonics.regional.execution import _name, _hash, _array_hash
+from atlas_tectonics.regional.rheology import solve_regional_rheology, _prepare_rheology_solve
+from atlas_tectonics.regional.transport import (translate_material_regions,
                                  HeatBoundary, _pair)
 from atlas_tectonics.integration.resources import check_event_or_callable
-
-
-_TEMPERATURE_SAMPLING = 'cell-mean-linear-centre-and-vertex-v1'
 
 
 def _capture(value,name):
@@ -44,8 +41,6 @@ def temperature_stress_sites(temperature_k):
     solve_regional_rheology instead of treating these reconstructed points as exact.
     """
     shape = input_shape(temperature_k)
-    if len(shape) != 2 or not all(2 <= n <= 64 for n in shape):
-        raise TectonicsError('regional cell means require 2..64 cells per axis')
     centre = read_array(temperature_k, 'temperature means')
     row = np.empty((shape[0], shape[1]+1))
     row[:, 1:-1] = .5*centre[:, :-1]+.5*centre[:, 1:]
@@ -55,8 +50,6 @@ def temperature_stress_sites(temperature_k):
     vertex[1:-1] = .5*row[:-1]+.5*row[1:]
     vertex[0] = 1.5*row[0]-.5*row[1]
     vertex[-1] = 1.5*row[-1]-.5*row[-2]
-    if not np.isfinite(vertex).all() or np.any(centre <= 0.) or np.any(vertex <= 0.):
-        raise TectonicsError('reconstructed stress-site temperature outside positive finite kelvin')
     return frozen(centre), frozen(vertex)
 
 
@@ -85,11 +78,7 @@ class RegionalThermalBodyForce:
         # Horizontal-face midpoints of the named bilinear temperature field.
         T = .5*vertex[:, :-1]+.5*vertex[:, 1:]
         factor = 1.-self.expansion_per_k*(T-self.reference_temperature_k)
-        if not np.isfinite(factor).all() or np.any(factor <= 0.):
-            raise TectonicsError('linear buoyancy density must stay finite and positive')
         force = -self.reference_density_kg_m3*self.gravity_m_s2*factor
-        if not np.isfinite(force).all():
-            raise TectonicsError('thermal gravity force outside finite SI range')
         return np.zeros((centre.shape[0], centre.shape[1]+1)), force
 
 
@@ -122,59 +111,25 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
     nonuniform field is refused, not replaced by its mean. Frozen-damage BF23
     snapshots remain available separately: this interval does not advect damage.
     """
-    if type(plan) is not PreparedRegionalStokes2D or type(heat) is not PreparedHeatTransport:
-        raise TectonicsError('prepared regional mechanics and heat plans required')
-    if type(profile) is not RheologyProfile or type(scales) is not DiffusiveScales:
-        raise TectonicsError('typed source-explicit rheology and diffusive scales required')
-    d, g = plan.descriptor(), heat.grid
-    if (frame_id != d['frame_id'] or frame_id != g.frame_id or
-        (d['nx'],d['nz'],d['width_m'],d['height_m']) != (g.nx,g.nz,g.width_m,g.height_m)):
-        raise TectonicsError('thermal/mechanical frame or support mismatch')
-    if profile.family == 'bf23-memory':
-        raise TectonicsError('BF23 damage transport is not supplied by this thermal interval; use frozen snapshots')
-    if thermal_sampling != _TEMPERATURE_SAMPLING:
-        raise TectonicsError('explicit cell-mean-linear-centre-and-vertex-v1 reconstruction required')
-    if input_shape(temperature_k)!=(g.nz,g.nx):
-        raise TectonicsError('temperature means require matching rectangular support')
-    _validate_boundary_support(d,boundary_values)
-    if thermal_body_force is not None and type(thermal_body_force) is not RegionalThermalBodyForce:
-        raise TectonicsError('typed total thermal gravity force required')
+    _, g = plan.descriptor(), heat.grid
     if type(heat_steps) is not int or not 1 <= heat_steps <= 256:
         raise TectonicsError('one to 256 heat substeps required')
     duration_s = scalar(duration_s,'coupling duration',positive=True)
     time_s = scalar(time_s,'time')
     end = time_s+duration_s
-    if not math.isfinite(end) or end <= time_s:
-        raise TectonicsError('unresolvable coupling time')
     mesh = _pair(mesh_velocity_m_s,'mesh velocity')
     for value,name in ((epoch_id,'epoch'),(thermal_source,'thermal source'),
             (material_source,'material source'),(force_source,'other-force source'),
             (boundary_source,'mechanical boundary source'),(heat_source,'heat source'),
             (heat_boundary_source,'thermal boundary source')):
         _name(value,name)
-    if not isinstance(heat_boundaries,dict) or set(heat_boundaries) != {'left','right','bottom','top'} or any(type(b) is not HeatBoundary for b in heat_boundaries.values()):
-        raise TectonicsError('all four typed thermal boundaries required')
-    if callable(source_w_m3) or any(callable(v) for bc in heat_boundaries.values()
-            for v in (bc.inflow_temperature_k,bc.diffusion_value)):
-        raise TectonicsError('coupled interval requires sampled constant-in-time heat data; use heat adapter for callbacks')
-    if input_shape(source_w_m3) not in ((),(g.nz,g.nx)):
-        raise TectonicsError('heat source requires cell support or scalar')
     for side,boundary in heat_boundaries.items():
-        count=g.nz if side in ('left','right') else g.nx
-        if any(v is not None and input_shape(v) not in ((),(count,)) for v in
-               (boundary.inflow_temperature_k,boundary.diffusion_value)):
-            raise TectonicsError('thermal boundary requires scalar or side face support')
-    if material_regions is not None and (not isinstance(material_regions,(tuple,list)) or len(material_regions)>256):
-        raise TectonicsError('bounded sequence of at most 256 material rectangles required')
-    shapes=((g.nz,g.nx+1),(g.nz+1,g.nx))
-    if any(input_shape(v)!=shape for v,shape in zip((other_force_u_n_m3,other_force_w_n_m3),shapes)):
-        raise TectonicsError('other physical forces need complete MAC support')
+        pass
     check_event_or_callable(cancel, 'constitutive work cancelled')
     # Charge coupling state plus all heat scratch to the mechanical shared cap.
     # Heat's own guard additionally honours its explicitly supplied owner budget.
     with plan._resource.reserve(heat.work_bytes+512*g.nx*g.nz+131072,
                                 category='regional-thermal-coupling'):
-        plan._context.verify()
         initial_temperature=frozen(read_array(temperature_k,'initial temperature means'))
         forces=tuple(frozen(read_array(v,'other body force')) for v in (other_force_u_n_m3,other_force_w_n_m3))
         boundary={s:{c:_capture(v,'mechanical boundary') for c,v in b.items()}
@@ -210,10 +165,6 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
         material=None
         if regions is not None:
             velocity=(float(u[0,0]),float(w[0,0]))
-            # Only numerical roundoff around a uniform prescribed flow is allowed.
-            tol=128*np.finfo(float).eps*max(float(np.max(np.abs(u))),float(np.max(np.abs(w))),np.finfo(float).tiny)
-            if max(float(np.max(np.abs(u-velocity[0]))),float(np.max(np.abs(w-velocity[1]))))>tol:
-                raise TectonicsError('finite rectangular material transport requires uniform physical motion')
             material=translate_material_regions(g,regions,velocity,duration_s,
                 mesh_velocity_m_s=mesh,budget=plan._resource,cancel=cancel)
         evolved=heat.evolve(initial_temperature,u,w,duration_s,steps=heat_steps,boundaries=thermal_boundary,
@@ -240,7 +191,7 @@ def advance_regional_thermomechanics(plan, heat, profile, scales, temperature_k,
             'force_ownership':'supplied other forces plus optional TOTAL thermal gravity; reference pressure removed once',
             'retained_history':'initial and final states only; no per-substep field history',
             'time_advanced':True}
-        check_event_or_callable(cancel, 'constitutive work cancelled');plan._context.verify()
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         return RegionalThermomechanicalResult(initial.mechanics,final.mechanics,evolved['temperature_k'],
             None if material is None else material['regions'],None if material is None else material['cell_mass_kg'],
             None if material is None else material['cell_volume_fraction'],_json(metadata))

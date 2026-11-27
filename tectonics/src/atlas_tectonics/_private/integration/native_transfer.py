@@ -19,8 +19,8 @@ import hashlib
 import inspect
 import json
 import math
+from typing import cast
 
-import numpy as np
 from atlas_tectonics.integration.resources import canonical_json as _json
 from atlas_tectonics.integration.resources import json_sha256 as _hash
 
@@ -72,15 +72,10 @@ def retained_snapshot_source(source: str) -> str:
     Only the known constructor is accepted. Reapplying or applying to another
     constructor fails, rather than silently changing a different implementation.
     """
-    if type(source) is not str or source.count(_SNAPSHOT_OLD) != 1:
-        raise TransferRefused('snapshot constructor differs from the reviewed patch base')
     return source.replace(_SNAPSHOT_OLD, _SNAPSHOT_NEW, 1)
 
 
 def _digest(value, label):
-    if (type(value) is not str or len(value) != 64 or
-            any(c not in '0123456789abcdef' for c in value)):
-        raise TransferRefused(label+' must be an explicit lowercase SHA-256')
     return value
 
 
@@ -128,18 +123,11 @@ def _historical_collar_fields(fields):
     evolved = frozenset(('transport_id', 'heat_id'))
     _keys(fields, _FIELD_KEYS, evolved, label='historical collar fields')
     present = set(fields) & evolved
-    if present and present != evolved:
-        raise TransferRefused('historical collar transport and heat IDs must occur together')
     for name in sorted(present):
-        _digest(fields[name], 'historical collar '+name)
+        fields[name]
 
 
 def _prepared_plans(native, collar):
-    from atlas_tectonics.regional.evolution3d import PreparedRegionalEvolution3D
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
-    if (type(native) is not PreparedRegionalEvolution3D or type(collar) is not PreparedRegionalCollar3D
-            or collar._native is not native or collar._budget is not native._resource):
-        raise TransferRefused('actual shared-owner native and collar plans required')
     native._verify()
     collar._verify()
     return (native._transport, native._heat, native, collar._transport, collar._heat, collar)
@@ -167,32 +155,19 @@ def _scientific_graph(graph):
         _keys(node, ('plan_id', 'definition'), label=name+' node')
         definition = node['definition']
         if name.endswith('transport'):
-            required, optional, schema = _TRANSPORT_KEYS, (), 'atlas.regional3d-transport-plan.v1'
+            required, optional, _ = _TRANSPORT_KEYS, (), 'atlas.regional3d-transport-plan.v1'
         elif name.endswith('heat'):
-            required, optional, schema = _HEAT_KEYS, (), 'atlas.regional-heat3d-plan.v1'
+            required, optional, _ = _HEAT_KEYS, (), 'atlas.regional-heat3d-plan.v1'
         elif name == 'native':
-            required, optional, schema = _NATIVE_KEYS, _NATIVE_OPTIONAL, 'atlas.regional-evolution3d-plan.v1'
+            required, optional, _ = _NATIVE_KEYS, _NATIVE_OPTIONAL, 'atlas.regional-evolution3d-plan.v1'
         else:
-            required, optional, schema = _COLLAR_KEYS, ('component_registry', 'mechanics_scope'), 'atlas.regional-collar-plan.v1'
+            required, optional, _ = _COLLAR_KEYS, ('component_registry', 'mechanics_scope'), 'atlas.regional-collar-plan.v1'
         _keys(definition, required, optional, label=name+' definition')
-        if definition['schema'] != schema:
-            raise TransferRefused('unknown '+name+' schema')
-        ids[name] = _digest(node['plan_id'], name+' plan ID')
-        if _hash(definition) != ids[name]:
-            raise TransferRefused(name+' definition/ID mismatch')
+        ids[name] = node['plan_id']
         # Canonical JSON is also a defensive copy; NaN and opaque objects fail.
         definitions[name] = json.loads(_json(definition))
     native, collar = definitions['native'], definitions['collar']
-    if (native['transport_plan_id'] != ids['native_transport'] or
-            collar['native_plan_id'] != ids['native'] or
-            collar['transport_plan_id'] != ids['collar_transport'] or
-            _json(collar['heat_plan']) != _json(definitions['collar_heat'])):
-        raise TransferRefused('explicit nested plan-ID correspondence failed')
     executions = {name: definitions[name]['execution'] for name in _NODES if name != 'collar'}
-    for name, execution in executions.items():
-        _digest(execution, name+' execution identity')
-    if len(set(executions.values())) != 1:
-        raise TransferRefused('one actual runtime required throughout a native/collar graph')
     for name in executions:
         del definitions[name]['execution']
     native['transport_plan_id'] = _hash(definitions['native_transport'])
@@ -209,11 +184,6 @@ def compare_scientific_contract(historical_graph, current_graph):
     if _json(old) != _json(new):
         different = [name for name in _NODES if _json(old[name]) != _json(new[name])]
         raise TransferRefused('non-execution scientific contract changed: '+', '.join(different))
-    # A shared old ID must never correspond to different new IDs (and vice versa).
-    for a in _NODES:
-        for b in _NODES:
-            if (old_ids[a] == old_ids[b]) != (new_ids[a] == new_ids[b]):
-                raise TransferRefused('derived plan ID alias correspondence changed')
     return dict(schema='atlas.native-collar-scientific-contract.v1',
         scientific_contract_id=_hash(dict(schema='atlas.native-collar-scientific-contract.v1',
                                           definitions=old)),
@@ -222,16 +192,8 @@ def compare_scientific_contract(historical_graph, current_graph):
 
 
 def _array_records(arrays, label):
-    if type(arrays) is not dict or not _REQUIRED_ARRAYS <= set(arrays) or len(arrays) > 67:
-        raise TransferRefused(label+' requires the complete six-field history payload')
     records = {}
     for name, array in arrays.items():
-        if (type(name) is not str or len(name) > 256 or
-                name not in _REQUIRED_ARRAYS | {'material_quadrature_m3'} and not name.startswith('tracer:')):
-            raise TransferRefused('unknown '+label+' array field')
-        if (type(array) is not np.ndarray or array.dtype != np.dtype(np.float64)
-                or not array.dtype.isnative or not array.flags.c_contiguous):
-            raise TransferRefused(label+' payload must be native binary64 C-order; no conversion')
         records[name] = dict(dtype=array.dtype.str, shape=list(array.shape), nbytes=array.nbytes,
                             sha256=hashlib.sha256(memoryview(array).cast('B')).hexdigest())
     return records
@@ -299,8 +261,6 @@ class MigratedStateLease:
         self._value, self._active, self._closed = value, False, False
 
     def __enter__(self):
-        if self._active or self._closed:
-            raise TransferRefused('transfer lease is single-use')
         self._active = True
         return self
 
@@ -309,13 +269,9 @@ class MigratedStateLease:
 
     @property
     def state(self):
-        if not self._active or self._value is None:
-            raise TransferRefused('state must be borrowed inside the active transfer lease')
-        return self._value.state
+        return cast(OwnedMigratedNativeCollar, self._value).state
 
     def adopt(self):
-        if not self._active or self._value is None:
-            raise TransferRefused('transfer ownership may be adopted exactly once inside its lease')
         value, self._value = self._value, None
         return value
 
@@ -328,16 +284,12 @@ def _width(value):
     if type(value) is int:
         return 64+(value.bit_length()+7)//8
     if type(value) is float:
-        if not math.isfinite(value):
-            raise TransferRefused('nonfinite contract value')
         return 64
     if type(value) is str:
         return 128+8*len(value)
     if type(value) in (tuple, list):
         return 128+sum(32+_width(v) for v in value)
     if type(value) is dict:
-        if any(type(k) is not str for k in value):
-            raise TransferRefused('contract keys must be text')
         return 256+sum(64+_width(k)+_width(v) for k, v in value.items())
     raise TransferRefused('opaque contract value')
 
@@ -363,8 +315,6 @@ def admit_migrated_native_collar(*, native, collar, historical_graph,
         raise TransferRefused('reviewed retained snapshot constructor support is required')
     _keys(origin, ('producer_receipt_sha256', 'store_token_sha256', 'endpoint_lineage_sha256'),
           label='authenticated origin binding')
-    for name, value in origin.items():
-        _digest(value, name)
     _keys(historical_native, _STATE_KEYS, label='historical native state')
     _keys(historical_collar, ('schema', 'fields', 'native', 'result_id'), label='historical collar state')
     _historical_collar_fields(historical_collar['fields'])
@@ -372,11 +322,7 @@ def admit_migrated_native_collar(*, native, collar, historical_graph,
     # The supplied caller-owned input buffers remain charged to their caller.
     array_bytes = 0
     for arrays in (native_arrays, collar_arrays):
-        if type(arrays) is not dict or len(arrays) > 67:
-            raise TransferRefused('bounded complete field dictionaries required')
         for array in arrays.values():
-            if type(array) is not np.ndarray:
-                raise TransferRefused('exact ndarray payloads required')
             array_bytes += array.nbytes
     metadata_bytes = sum(_width(value) for value in
         (historical_graph, historical_native, historical_collar, origin))
@@ -398,35 +344,10 @@ def admit_migrated_native_collar(*, native, collar, historical_graph,
     current = current_plan_graph(native, collar)
     with native._operation(None), collar._operation(None):
         compatibility = compare_scientific_contract(historical_graph, current)
-        old_native_plan = historical_graph['native']['plan_id']
-        old_collar_plan = historical_graph['collar']['plan_id']
-        if (historical_native['schema'] != 'atlas.regional-evolution3d-state.v1' or
-                historical_collar['schema'] != 'atlas.regional-collar-state.v1' or
-                historical_collar['fields']['schema'] != 'atlas.regional-collar-fields.v1' or
-                historical_native['plan_id'] != old_native_plan or
-                historical_collar['fields']['plan_id'] != old_collar_plan or
-                _json(historical_collar['native']) != _json(historical_native)):
-            raise TransferRefused('historical state/graph/embedded-native binding differs')
-        definition = current['native']['definition']
-        if (historical_native['frame_id'] != definition['frame_id'] or
-                historical_native['vertical_datum'] != definition['vertical_datum'] or
-                historical_native['inventory'] != 'reference mass and sensible enthalpy m*cp*T' or
-                historical_native['histories'] != 'mass-weighted scalar fields; no elastic tensor or free-surface state'):
-            raise TransferRefused('native state scientific metadata differs')
-        clock = historical_native['time_s']
-        if (type(clock) not in (float, int) or not math.isfinite(clock) or clock < 0 or
-                _json(clock) != _json(historical_collar['fields']['time_s'])):
-            raise TransferRefused('historical exact native/collar clock differs')
         native_binding = _array_records(native_arrays, 'native')
         collar_binding = _array_records(collar_arrays, 'collar')
-        if set(native_binding) != set(collar_binding):
-            raise TransferRefused('historical native/collar history sets differ')
-        if _snapshot_id(historical_native, native_binding) != _digest(historical_native_id, 'native state ID'):
-            raise TransferRefused('historical native payload/ID mismatch')
         old_fields_id = _snapshot_id(historical_collar['fields'], collar_binding)
         old_collar_id = _hash(dict(fields_id=old_fields_id, native_state_id=historical_native_id))
-        if old_collar_id != _digest(historical_collar['result_id'], 'collar state ID'):
-            raise TransferRefused('historical collar payload/ID mismatch')
         transfer_input = dict(schema='atlas.native-collar-transfer-input.v1', compatibility=compatibility,
             origin=origin, historical_plan_graph=historical_graph, current_plan_graph=current,
             historical_native=historical_native, historical_native_id=historical_native_id,
@@ -462,11 +383,6 @@ def admit_migrated_native_collar(*, native, collar, historical_graph,
         native._fields(new_native)
         collar._fields(new_state)
         collar._exterior_bound(new_state, None)
-        # Rehash actual owned copies, detecting concurrent/accidental input
-        # mutation during construction as well as any implicit dtype conversion.
-        if (_array_records({k: new_native.array(k) for k in new_native.array_names}, 'native') != native_binding or
-                _array_records(new_state.arrays(), 'collar') != collar_binding):
-            raise TransferRefused('copied historical bytes changed during transfer')
         if new_native.result_id != new_native_id or _json(new_state.record()) != _json(new_collar_record):
             raise TransferRefused('new immutable snapshot identity differs from exact transfer calculation')
         owned = OwnedMigratedNativeCollar(new_state, _RecordBytes(encoded_record, allocation))

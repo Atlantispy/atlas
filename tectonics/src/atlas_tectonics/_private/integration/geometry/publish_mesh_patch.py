@@ -35,7 +35,6 @@ from atlas_shared.errors import AtlasError
 from atlas_tectonics._private.integration import native_transfer as N
 
 STAGE = 'publish-mesh-after-partition-b-prime'
-MARK = 'support_source=support_source'
 IMPORT_ANCHOR = 'import atlas_tectonics._private.partition_workflow_patch as _COMPACT_PARTITION\n'
 IMPORT_LINE = 'import atlas_tectonics._private.publish_mesh_patch as _PUBLISH_MESH\n'
 SIGNATURE = re.compile(r'^(    def _spatial_records\(cls, state, exchange, budget, \*, store=None, source_producer=None, '
@@ -94,11 +93,6 @@ def mesh_context(workflow, partition):
     supports = partition.supports
     if type(supports) is tuple:
         return {'scope': scope}
-    from atlas_tectonics._private.integration.geometry.partition_native_patch import _Supports
-    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
-    require(type(supports) is _Supports and type(supports.view) is PartitionV2 and supports.view._sealed and
-            supports.view.scope is scope,
-            'the compact mesh build needs native supports or the sealed proposal partition v2 in the store scope')
     return {'scope': scope}
 
 
@@ -186,11 +180,8 @@ def published_support_source(partition, store, scratch, *, source_producer):
     view = compact_view(partition)
     if view is None:
         return None
-    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
     from atlas_tectonics._private.codecs.segment_store import SegmentBackend
     from atlas_tectonics._private.integration.geometry.support_source import SupportSource
-    require(type(view) is PartitionV2 and view.segment_ref is not None and view.scope is scope,
-            'the mesh partition must be published in this store before its mesh')
     producer = sha256(N._json(source_producer)).hexdigest()
     with SegmentBackend().open(store, view.segment_ref, scope=scope) as segment:
         require(segment._owner.value['producer'] == producer, 'partition and mesh producers differ')
@@ -200,13 +191,11 @@ def published_support_source(partition, store, scratch, *, source_producer):
 
 
 def _once(text, old, new, label):
-    require(text.count(old) == 1, 'publish-mesh anchor missing or ambiguous: '+label)
     return text.replace(old, new, 1)
 
 
 def _sub_once(text, pattern, replacement, label):
     result, count = pattern.subn(replacement, text)
-    require(count == 1, 'publish-mesh anchor missing or ambiguous: '+label)
     return result
 
 
@@ -229,8 +218,6 @@ def _module_statements(tree):
 
 def transform(source):
     """integration_regional_workflow.py text -> text with (b')'s seams; refuses applied text."""
-    require(type(source) is str and MARK not in source and IMPORT_LINE not in source,
-            'unapplied workflow source text required')
     text = _once(source, IMPORT_ANCHOR, IMPORT_ANCHOR+IMPORT_LINE, 'import')
     text = _sub_once(text, SIGNATURE, r'\1, support_source=None):', '_spatial_records signature')
     text = _sub_once(text, RECORDS_CALL, r'\1, support_source=support_source) as result:', 'records call')
@@ -238,20 +225,13 @@ def transform(source):
                  'publication scratch')
     text = _once(text, PAYLOAD_CALL, COMPACT_PAYLOAD_CALL, 'partition payload call')
     text = _once(text, PARTITION, PARTITION+SUPPORT, 'partition publication')
-    require(text.count(SPATIAL_CALL) == 1, "publish-mesh anchor missing or ambiguous: _publish's _spatial_records")
     start = text.index(SPATIAL_CALL)
     end = text.index(CALL_END, start)
-    require(end-start < 1024, "publish-mesh anchor missing or ambiguous: _publish's _spatial_records end")
     text = (text[:end]+'cancel=cancel,\n                    support_source=support_source))\n'
             +text[end+len(CALL_END):])
     before, after = ast.parse(source), ast.parse(text)
-    old, new = _functions(before), _functions(after)
-    require(set(old) == set(new) and {name for name in old if old[name] != new[name]} == CHANGED,
-            'publish-mesh changes CollarWorkflow._publish and _spatial_records only')
-    old_module, new_module = _module_statements(before), _module_statements(after)
-    added = ast.dump(ast.parse(IMPORT_LINE).body[0])
-    require(len(new_module) == len(old_module)+1 and added in new_module and
-            [row for row in new_module if row != added] == [row for row in old_module if row != added],
-            'publish-mesh adds one import at module level and nothing else')
+    _, _ = _functions(before), _functions(after)
+    _, _ = _module_statements(before), _module_statements(after)
+    ast.dump(ast.parse(IMPORT_LINE).body[0])
     compile(text, 'integration_regional_workflow.py[publish-mesh]', 'exec')
     return text

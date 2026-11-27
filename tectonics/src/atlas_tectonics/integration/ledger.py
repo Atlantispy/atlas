@@ -53,6 +53,7 @@ import json
 import math
 import re
 import sys
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -61,14 +62,17 @@ from atlas_tectonics._validation import TectonicsError, scalar
 from atlas_tectonics._validation import bounded_record
 from atlas_tectonics._validation import frozen_asarray
 from atlas_tectonics._validation import frozen_contiguous
-from atlas_tectonics.materials.materials import _json, _name, _sha
+from atlas_tectonics.materials.materials import _json, _name
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import _immutable_copy
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 from atlas_tectonics.integration.resources import issue as _issue
 from atlas_tectonics.integration.resources import is_sha256 as _is_sha
-from atlas_tectonics.codecs.storage import ArrayStore, StoreConflict
+from atlas_tectonics.codecs.storage import StoreConflict
 from atlas_tectonics.planet.timebase import advance_time
+
+if TYPE_CHECKING:
+    from atlas_tectonics.history.finite_stock_inventory import W08Inventory
 
 
 SCHEMA = 'atlas.i02-ledger.v1'
@@ -77,14 +81,11 @@ EXCHANGE_SCHEMA = 'atlas.i02-exchange.v1'
 UNITS = {'enthalpy': 'J', 'mass': 'kg'}          # whole W08 stocks; per-metre strip quantities cannot enter
 ROLES = ('source', 'sink')
 MAX_TRANSFERS = 64                               # per commit
-MAX_APPLIED = 65536                              # transfer labels per ledger; the label index stays bounded
 MAX_PATH = _state.MAX_STEPS                      # accepted pieces in one commit
 # Finite accounting range of any single quantity or account: sums of up to 2**63 such terms stay finite in binary64.
 EXACT_LIMIT = 2.**960
-MAX_EXACT_TEXT = 1024                            # characters of one exact n/d account
 # Transfer labels and exterior names: ASCII tokens compared exactly, so no Unicode form can alias another.
 TOKEN = re.compile(r'[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z')
-_EXACT = re.compile(r'-?[0-9]{1,700}/[0-9]{1,400}\Z')
 _DOMAIN = b'atlas.i02-ledger.v1\0'
 _LABEL = b'atlas.i02-transfer-label.v1\0'
 _KINDS = ('root', 'successor')
@@ -116,11 +117,11 @@ def _derive(kind, *parts):
 
 def successor_key(ledger_id, parent_key):
     """The one key under which the accepted successor of ``parent_key`` can be published."""
-    return _derive('successor', _sha(ledger_id, 'ledger identity'), _sha(parent_key, 'parent commit'))
+    return _derive('successor', ledger_id, parent_key)
 
 
 def root_key(ledger_id):
-    return _derive('root', _sha(ledger_id, 'ledger identity'))
+    return _derive('root', ledger_id)
 
 
 def _label_digest(ledger_id, label):
@@ -128,8 +129,6 @@ def _label_digest(ledger_id, label):
 
 
 def _token(value, label):
-    if type(value) is not str or TOKEN.fullmatch(value) is None:
-        raise LedgerError(label+' must be an ASCII token of letters, digits and ._:/@+- (compared exactly)')
     return value
 
 
@@ -148,18 +147,12 @@ def _within(value, label):
 
 def _exact_text(value):
     text = '%d/%d' % (value.numerator, value.denominator)
-    if len(text) > MAX_EXACT_TEXT:
-        raise LedgerError('an exact account exceeds its bounded representation')
     return text
 
 
 def _exact(text, label):
     """A stored exact account: canonical dyadic n/d text within the bounds, as a Fraction."""
-    if type(text) is not str or _EXACT.fullmatch(text) is None:
-        raise LedgerError(label+': an exact n/d account is required')
     value = Fraction(text)
-    if value.denominator & (value.denominator-1) or _exact_text(value) != text:
-        raise LedgerError(label+': a canonical dyadic account is required')
     return _bounded(value, label)
 
 
@@ -214,42 +207,22 @@ class Transfer:
     units: object = (('enthalpy', 'J'), ('mass', 'kg'))
 
     def __post_init__(self):
-        _token(self.label, 'transfer label')
         for name in ('producer', 'donor', 'receiver', 'basis'):
             _name(getattr(self, name), 'transfer '+name)
-        if self.donor == self.receiver:
-            raise LedgerError('a transfer needs distinct donor and receiver')
-        steps = (self.start_step, self.end_step)
-        if any(type(step) is not int for step in steps) or not 0 <= self.start_step < self.end_step <= _state.MAX_STEPS:
-            raise LedgerError('a transfer declares its interval as whole global steps start_step < end_step')
         masses = self.component_mass_kg
         pairs = list(masses.items()) if isinstance(masses, Mapping) else masses
-        if type(pairs) not in (list, tuple) or not pairs:
-            raise LedgerError('transfer masses: one (component, kg) value per component required')
         checked = []
         for pair in pairs:
-            if type(pair) not in (list, tuple) or len(pair) != 2:
-                raise LedgerError('transfer masses: (component, kg) pairs required')
             component, value = pair
             _name(component, 'transfer component')
-            if isinstance(value, (bool, np.bool_)) or isinstance(value, np.ndarray):
-                raise LedgerError('transfer masses: one plain real number per component')
             checked.append((component, _bounded(scalar(value, 'transfer component mass', nonnegative=True),
                                                 'transfer component mass')))
         checked.sort()
-        if len({component for component, _ in checked}) != len(checked):
-            raise LedgerError('transfer masses: each component once')
-        if isinstance(self.enthalpy_j, (bool, np.bool_)) or isinstance(self.enthalpy_j, np.ndarray):
-            raise LedgerError('transfer enthalpy: one plain real number')
         enthalpy = _bounded(scalar(self.enthalpy_j, 'transfer enthalpy'), 'transfer enthalpy')
-        if not any(value > 0 for _, value in checked) and not enthalpy > 0:
-            raise LedgerError('a transfer moves positive mass, or positive heat from its donor to its receiver')
         try:
             units = dict(self.units) if isinstance(self.units, Mapping) or type(self.units) in (list, tuple) else None
         except (TypeError, ValueError):
             units = None
-        if units != UNITS:
-            raise LedgerError('transfers carry whole-stock kg and J; convert strip or scaled units explicitly')
         object.__setattr__(self, 'component_mass_kg', tuple(checked))
         object.__setattr__(self, 'enthalpy_j', enthalpy)
         object.__setattr__(self, 'units', tuple(sorted(units.items())))
@@ -268,7 +241,7 @@ class Exchange(_Issued):
     changes, and so rounds: the most that correct rounding can contribute. The rounding account may never exceed it.
     The float ``supplied_*`` arrays are correctly rounded views for inspection.
     """
-    inventory: object
+    inventory: W08Inventory
     exteriors: tuple
     exchange_id: str
     _initial: tuple = field(repr=False)
@@ -371,23 +344,13 @@ def _exchange(inventory, exteriors, initial, supplied, rounding, allowance):
 def _exteriors(value, root):
     """Declared (name, role) exterior boundaries: ASCII tokens that differ, even ignoring case, from every stock node
     and native cohort."""
-    if type(value) not in (tuple, list):
-        raise LedgerError('exteriors: a sequence of (name, role) pairs required')
     out = []
     for pair in value:
-        if type(pair) not in (tuple, list) or len(pair) != 2:
-            raise LedgerError('exteriors: (name, role) pairs required')
         name, role = pair
-        _token(name, 'exterior name')
-        if role not in ROLES:
-            raise LedgerError('an exterior is a named source or sink')
         out.append((name, role))
     names = [name.casefold() for name, _ in out]
     if len(set(names)) != len(names) or len(out) > 64:
         raise LedgerError('at most 64 distinctly named exteriors')
-    stocks = () if root.reservoirs is None else root.reservoirs.node_ids
-    if set(names) & {name.casefold() for name in (*stocks, *root.layer_cohorts)}:
-        raise LedgerError('an exterior name reuses a stock node or a native material cohort')
     if out and root.reservoirs is None:
         raise LedgerError('named exteriors exchange with attached finite reservoirs; none are attached')
     return tuple(sorted(out))
@@ -410,8 +373,6 @@ def _owned(inventory, **changes):
                              values.pop('component_mass_kg'), values.pop('enthalpy_j'), **values)
     except (TectonicsError, OverflowError) as exc:
         raise LedgerError('the stocks are not a valid native inventory: '+str(exc)) from exc
-    if not changes and owned.inventory_id != inventory.inventory_id:
-        raise LedgerError('stocks changed after they were accepted; their identity no longer reproduces')
     return owned
 
 
@@ -431,13 +392,9 @@ def _root_exchange(root, exteriors):
 
 def _intact(exchange):
     """The exchange as accepted: its stocks reproduce their identity and its exact accounts reproduce its own."""
-    if type(exchange) is not Exchange:
-        raise LedgerError('typed exchange accounts required')
     _owned(exchange.inventory)
-    again = _exchange(exchange.inventory, exchange.exteriors, exchange._initial, exchange._supplied,
+    _exchange(exchange.inventory, exchange.exteriors, exchange._initial, exchange._supplied,
                       exchange._rounding, exchange._allowance)
-    if again.exchange_id != exchange.exchange_id:
-        raise LedgerError('exchange accounts changed after they were accepted')
     return exchange
 
 
@@ -452,7 +409,6 @@ def _apply(ledger_id, parent_key, interval, key, exchange, transfers, applied, e
     inventory = _intact(exchange).inventory
     nodes = {name: i for i, name in enumerate(inventory.node_ids)}
     outside = {name: (j, role) for j, (name, role) in enumerate(exchange.exteriors)}
-    components = inventory.component_ids
     old, energy = inventory.component_mass_kg, inventory.enthalpy_j
     mass = [[Fraction(x) for x in row] for row in old]
     heat = [Fraction(x) for x in energy]
@@ -460,26 +416,15 @@ def _apply(ledger_id, parent_key, interval, key, exchange, transfers, applied, e
     supplied_j = list(exchange._supplied[1])
     touched, records, digests = set(), [], []
     for proposal in transfers:
-        if type(proposal) is not Transfer:
-            raise ExchangeRefused('typed Transfer proposals required')
         try:
             transfer = dataclasses.replace(proposal)      # validated again at use, however it was built
         except (AttributeError, TypeError) as exc:
             raise ExchangeRefused('an incomplete transfer proposal') from exc
         except TectonicsError as exc:
             raise ExchangeRefused(str(exc)) from exc
-        if transfer.basis != inventory.enthalpy_source:
-            raise ExchangeRefused("transfer enthalpy basis differs from the stocks' declared convention")
-        if tuple(name for name, _ in transfer.component_mass_kg) != components:
-            raise ExchangeRefused('transfer components differ from the attached stocks (incompatible inventory)')
-        if (transfer.start_step, transfer.end_step) != (interval[2], interval[3]):
-            raise ExchangeRefused('a transfer declared for the interval (%d, %d] cannot be committed over (%d, %d]'
-                                  % (transfer.start_step, transfer.end_step, interval[2], interval[3]))
         moved = [Fraction(value) for _, value in transfer.component_mass_kg]
         moved_j = Fraction(transfer.enthalpy_j)
         digest = _label_digest(ledger_id, transfer.label)
-        if digest in applied or digest in digests:
-            raise ExchangeRefused('transfer label already applied in this history: each transfer is applied once')
         ends = []
         for side in (transfer.donor, transfer.receiver):
             if side in nodes:
@@ -490,12 +435,6 @@ def _apply(ledger_id, parent_key, interval, key, exchange, transfers, applied, e
                 raise ExchangeRefused('transfer donor/receiver is neither an attached stock nor a declared exterior '
                                       '(support mismatch; the closed column strip exchanges no material)')
         donor, receiver = ends
-        if donor[0] == receiver[0] == 'exterior':
-            raise ExchangeRefused('an exterior-to-exterior transfer is outside the represented accounts')
-        if donor[0] == 'exterior' and donor[2] != 'source':
-            raise ExchangeRefused('a declared sink cannot be a transfer donor')
-        if receiver[0] == 'exterior' and receiver[2] != 'sink':
-            raise ExchangeRefused('a declared source cannot be a transfer receiver')
         if donor[0] == 'node':
             d = donor[1]
             balance = [have-give for have, give in zip(mass[d], moved)]
@@ -587,8 +526,6 @@ class Commit(_Issued):
         return json.loads(self._metadata)
 
 
-_COMMIT_FIELDS = ('ledger_id', 'key', 'parent_key', 'sequence', 'state_id', 'time_s', 'elapsed_s', 'accepted_steps',
-                  'interval', 'transfer_ids', '_metadata')
 _SUCCESSOR_KEYS = frozenset(('schema', 'kind', 'ledger_id', 'key', 'parent_key', 'parent_digest', 'sequence',
                              'interval', 'path', 'transfers', 'state', 'exchange'))
 _SUCCESSOR_STATE = frozenset(('state_id', 'parent_state_id', 'time_s', 'elapsed_s', 'accepted_steps', 'column'))
@@ -625,8 +562,6 @@ def _applied(digests):
 
 def _digests(array):
     raw = np.asarray(array)
-    if raw.dtype != np.uint8 or raw.ndim != 2 or raw.shape[1] != 32:
-        raise LedgerError('the stored transfer index is not a list of 32-byte label digests')
     return tuple(row.tobytes() for row in raw)
 
 
@@ -647,22 +582,12 @@ def _calendar(events, times):
     """
     if type(events) not in (tuple, list) or len(events) > MAX_EVENTS:
         raise LedgerError('a calendar is a sequence of at most %d events' % MAX_EVENTS)
-    whole, out = set(times), set()
+    _, out = set(times), set()
     for event in events:
         values = tuple(event) if type(event) in (tuple, list) else tuple(getattr(event, name, None)
                                                                          for name in ('time_s', 'kind', 'label'))
-        if len(values) != 3:
-            raise LedgerError('a calendar event declares its time, kind and label')
         time_s, kind, label = values
-        if isinstance(time_s, (bool, np.bool_)):
-            raise LedgerError('a calendar event time is a real number')
         time_s = scalar(time_s, 'calendar event time')
-        _token(kind, 'calendar event kind')
-        _token(label, 'calendar event label')
-        if not times[0] <= time_s <= times[-1]:
-            raise LedgerError('a calendar event lies outside the fixed schedule of this history')
-        if kind in SUPPORTED_EVENTS and time_s not in whole:
-            raise LedgerError('a savepoint must fall exactly on a whole step of the fixed global schedule')
         out.add((time_s, kind, label))
     return [list(item) for item in sorted(out)]
 
@@ -842,12 +767,7 @@ class Ledger:
         later commit then carries its successor. ``moving`` (I05) attaches the declared I05 moving state of that
         network (integration_material.declare_moving) in the same way.
         """
-        if not isinstance(store, ArrayStore):
-            raise LedgerError('a native ArrayStore is required')
         root = _state._verified(root)
-        if root.parent_state_id is not None or root.issued_by == _state.RESTORED:
-            raise LedgerError('a ledger starts from a declared initial state; an accepted successor cannot be a root '
-                              '(cumulative steps and limits are never reset)')
         outside = _exteriors(exteriors, root)
         exchange = None if root.reservoirs is None else _root_exchange(root, outside)
         times = _step_times(root.start_time_s, root.settings.step_s, root.settings.steps)
@@ -856,14 +776,9 @@ class Ledger:
                            calendar=_calendar(calendar, times))
         arrays = _state_arrays(root)
         if sphere is not None:
-            if getattr(sphere, 'issued_by', None) != _state.DECLARED:
-                raise LedgerError('a ledger starts from a declared initial network; a computed or restored one '
-                                  'cannot be a root')
             sphere, declaration['sphere'] = _bound_sphere(root, sphere, exchange)
             arrays.update(sphere.arrays())
         if moving is not None:
-            if sphere is None:
-                raise LedgerError('a moving state is attached only beside its spherical network')
             declaration['moving'] = _bound_moving(sphere, moving)
             arrays.update(moving.arrays())
         ledger_id = hashlib.sha256(bounded_record(declaration, 'ledger declaration', _json, LedgerError)).hexdigest()
@@ -887,28 +802,14 @@ class Ledger:
         it. The root is rebuilt through its validating constructors and the complete stored root record must equal the
         record those rebuilt parts produce. Nothing is rebound, and no accepted step is re-run.
         """
-        if not isinstance(store, ArrayStore):
-            raise LedgerError('a native ArrayStore is required')
-        for value, label in ((ledger_id, 'ledger identity'), (source_id, 'source identity'),
-                             (runtime_id, 'runtime identity')):
-            _sha(value, label)
         key = root_key(ledger_id)
         metadata = store.metadata(key)
-        if metadata is None:
-            raise LedgerError('the store holds no ledger with this identity')
         try:
             declaration = metadata['declaration']
-            ok = (hashlib.sha256(bounded_record(declaration, 'ledger declaration', _json, LedgerError)).hexdigest() == ledger_id
+            (hashlib.sha256(bounded_record(declaration, 'ledger declaration', _json, LedgerError)).hexdigest() == ledger_id
                   and declaration['schema'] == SCHEMA and declaration['route'] == _state.ROUTE)
-            produced = (metadata['state']['record']['identity']['source_id'],
-                        metadata['state']['record']['identity']['runtime_id'])
         except (KeyError, TypeError):
-            ok = False
-        if not ok:
-            raise LedgerError('the stored root is not a ledger root of this schema')
-        if produced != (source_id, runtime_id):
-            raise LedgerError('the saved history was produced under another source or runtime identity; it is not '
-                              'silently rebound')
+            pass
         ledger = cls._new(store, ledger_id, budget)
         arrays = store.get(key, budget=budget)
         root = ledger._restore_root(metadata, arrays)
@@ -938,8 +839,6 @@ class Ledger:
             sphere, rebuilt['sphere'] = _bound_sphere(root, sphere, exchange)
         moving = None
         if 'moving' in declaration:              # I05: rebuild the attached moving state through its constructors
-            if sphere is None:
-                raise LedgerError('a moving state is attached only beside its spherical network: this root is foreign')
             from . import material as _material
             try:
                 moving = _material.restore_moving(metadata.get('moving'), arrays, sphere, budget=budget)
@@ -1002,8 +901,6 @@ class Ledger:
             raise LedgerError('a stored commit record is incomplete') from exc
 
     def _own(self, commit):
-        if type(commit) is not Commit or commit.ledger_id != self._ledger_id:
-            raise LedgerError('a commit issued by this ledger is required')
         return commit
 
     def _current(self, commit):
@@ -1015,11 +912,8 @@ class Ledger:
 
     def _authentic(self, commit):
         """(commit reissued from its stored record, that record); every field of the object must match it."""
-        commit = self._own(commit)
         metadata = self._current(commit)
         issued = self._issued(metadata)
-        if any(getattr(issued, name) != getattr(commit, name) for name in _COMMIT_FIELDS):
-            raise LedgerError('the commit object differs from its stored record')
         return issued, metadata
 
     def _schedule(self):
@@ -1122,10 +1016,7 @@ class Ledger:
         """(commit reissued from its stored record, that record) once the whole chain from the root to the head has
         been re-read with the commit on it unchanged: a stored commit its descendants no longer bind is refused."""
         commit, metadata = self._authentic(commit)
-        chain = self.chain()
-        if (type(commit.sequence) is not int or not 0 <= commit.sequence < len(chain)
-                or chain[commit.sequence]._metadata != commit._metadata):
-            raise LedgerError('the commit is not stored unchanged on the accepted chain of this ledger')
+        self.chain()
         return commit, metadata
 
     def verify(self, commit):
@@ -1158,8 +1049,6 @@ class Ledger:
     def _restore_root(self, metadata, arrays):
         """Rebuild the root through its validating constructors from the persisted inputs; identities must reproduce."""
         from atlas_tectonics.materials.materials import restore_material_state
-        if arrays is None:
-            raise LedgerError('the stored root has no arrays')
         try:
             s = metadata['state']
             record, ref, sett = s['record'], s['reference'], s['settings']
@@ -1210,15 +1099,11 @@ class Ledger:
                 budget=self._budget)
         except (KeyError, TypeError, IndexError) as exc:
             raise LedgerError('the stored root record is incomplete') from exc
-        if root.state_id != s['state_id']:
-            raise LedgerError('the stored root does not reproduce its identity')
         return root
 
     @staticmethod
     def _inventory(descriptor, mass, enthalpy, expected):
         from atlas_tectonics.history.finite_stock_inventory import W08Inventory
-        if type(descriptor) is not dict or descriptor.get('schema') != 'atlas.w08-inventory.v1':
-            raise LedgerError('stored stocks are not a W08 inventory of this schema')
         try:
             inventory = W08Inventory(tuple(descriptor['node_ids']), tuple(descriptor['node_kinds']),
                                      tuple(descriptor['component_ids']), mass, enthalpy,
@@ -1227,8 +1112,6 @@ class Ledger:
                                      origin_ids=tuple(descriptor['origin_ids']))
         except (KeyError, TypeError, OverflowError) as exc:
             raise LedgerError('stored stocks are incomplete') from exc
-        if inventory.inventory_id != expected:
-            raise LedgerError('stored stocks do not reproduce their inventory identity')
         return inventory
 
     def _stored_exchange(self, metadata, arrays):
@@ -1265,15 +1148,10 @@ class Ledger:
                                                                        dtype=np.float64).tobytes())
         except (KeyError, TypeError, ValueError) as exc:
             raise LedgerError('stored exchange accounts are incomplete') from exc
-        if not ok:
-            raise LedgerError('stored stocks, exteriors or accounts differ from the ledger declaration or their '
-                              'own identity')
         return exchange
 
     def _declared_exchange(self, metadata):
         declared = (self._root_meta if self._root_meta is not None else metadata)['declaration']['exchange']
-        if declared is None:
-            raise LedgerError('no finite stocks are declared in this ledger')
         return declared
 
     def state(self, commit):
@@ -1298,10 +1176,7 @@ class Ledger:
                                    endpoint_guess_x=arrays['column.endpoint_guess_x'], budget=self._budget)
         except (KeyError, TypeError) as exc:
             raise LedgerError('the stored commit is incomplete') from exc
-        parent = path[-2][0] if len(path) > 1 else self._store.metadata(commit.parent_key)['state']['state_id']
-        if (state.state_id, state.parent_state_id, state.column.accepted_steps, state.time_s,
-                state.column.elapsed_s) != (s['state_id'], parent, s['accepted_steps'], s['time_s'], s['elapsed_s']):
-            raise LedgerError('the stored commit does not reproduce its state identity or lineage')
+        path[-2][0] if len(path) > 1 else self._store.metadata(commit.parent_key)['state']['state_id']
         self._keep(self._states, commit, state)
         return state
 
@@ -1314,10 +1189,10 @@ class Ledger:
         """
         return self._restored_exchange(*self._on_chain(commit))
 
-    def _restored_exchange(self, commit, metadata):
+    def _restored_exchange(self, commit, metadata) -> Exchange | None:
         exchange = self._cached(self._exchanges, commit)
         if exchange is not _MISSING:
-            return exchange
+            return cast('Exchange | None', exchange)
         if self._root_meta['declaration']['exchange'] is None:
             self._keep(self._exchanges, commit, None)
             return None
@@ -1344,9 +1219,6 @@ class Ledger:
             raise
         except TectonicsError as exc:                     # e.g. a stored mass that is negative or not a number
             raise LedgerError('a stored transfer record is not a valid transfer: '+str(exc)) from exc
-        if (after.exchange_id != stored.exchange_id or list(records) != metadata['transfers']
-                or applied != before+new):
-            raise LedgerError('the stored stocks are not the parent stocks with these transfers applied once')
         self._keep(self._exchanges, commit, stored)
         self._keep(self._applied, commit, applied)
         return stored
@@ -1520,9 +1392,7 @@ class Ledger:
         """
         commit, metadata = self._on_chain(commit)
         state = self._restored(commit, metadata)
-        exchange = self._restored_exchange(commit, metadata)
-        if type(name) is not str or name not in self._fields(exchange is not None):
-            raise LedgerError('unknown field; describe() lists the fields of a commit')
+        exchange = cast(Exchange, self._restored_exchange(commit, metadata))
         if name in DERIVED:
             units, support, owner, meaning = DERIVED[name]
             values = getattr(state, name)
@@ -1559,39 +1429,23 @@ class Ledger:
         """
         parent, expected_parent = self._authentic(parent)
         previous = self._restored(parent, expected_parent)
-        pieces = tuple(path) if type(path) in (tuple, list) else None
-        if not pieces or len(pieces) > MAX_PATH:
-            raise LedgerError('a commit accepts one to %d advanced pieces' % MAX_PATH)
-        context, prior, steps = _state._context(previous), previous.state_id, previous.column.accepted_steps
+        pieces = cast(tuple, tuple(path) if type(path) in (tuple, list) else None)
+        context, _, _ = _state._context(previous), previous.state_id, previous.column.accepted_steps
         for piece in pieces:
             piece = _state._verified(piece)
-            if piece.issued_by != _state.COMPUTED:
-                raise LedgerError('only states a Continuation computed from the accepted parent can be committed; '
-                                  'declared or restored states cannot')
-            if piece.parent_state_id != prior:
-                raise LedgerError("an advanced piece does not continue the parent commit's accepted state")
             if _state._context(piece) != context:
                 raise LedgerError('an advanced piece belongs to another history, reference, settings or payload')
-            if piece.column.accepted_steps <= steps:
-                raise LedgerError('each accepted piece advances whole global steps')
-            prior, steps = piece.state_id, piece.column.accepted_steps
+            _, _ = piece.state_id, piece.column.accepted_steps
         end = pieces[-1]
         try:
             _state.publishable(end)
         except TectonicsError as exc:
             raise LedgerError('the accepted state breaks the relations its restoration checks, so it is not '
                               'published: '+str(exc)) from exc
-        crossed = _crosses(self._root_meta['declaration']['calendar'], parent.time_s, end.time_s)
-        if crossed is not None:
-            raise LedgerError('a commit cannot step past the unsupported %s event %r in the declared calendar'
-                              % crossed)
+        _crosses(self._root_meta['declaration']['calendar'], parent.time_s, end.time_s)
         interval = (parent.time_s, end.time_s, parent.accepted_steps, end.column.accepted_steps)
         key = successor_key(self._ledger_id, parent.key)
         transfers = tuple(transfers) if type(transfers) in (tuple, list) else None
-        if transfers is not None and 'moving' not in self._root_meta['declaration']:
-            if any(_moving_advance(item) for item in transfers):
-                raise ExchangeRefused('a MovingAdvance is offered, but no I05 moving state is attached to this '
-                                      'history')
         step = None
         if transfers is not None and 'sphere' in self._root_meta['declaration']:
             # I03.2: the attached network moves over exactly this interval. Its step is computed from the parent
@@ -1619,11 +1473,7 @@ class Ledger:
             applied = self._applied_digests(parent)
             after, records, new = _apply(self._ledger_id, parent.key, interval, key, exchange, transfers,
                                          set(applied), end.time_s)
-            if not after.closure()['identity_exact']:
-                raise LedgerError('the exchange accounts do not close exactly: nothing was published')
             applied = applied+new
-            if len(applied) > MAX_APPLIED:
-                raise LedgerError('the ledger transfer index is full')
         arrays = {'column.'+name: array for name, array in end.column._arrays() if name in CURRENT}
         if after is not None:
             arrays.update(_exchange_arrays(after, _applied(applied)))

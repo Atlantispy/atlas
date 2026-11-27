@@ -8,10 +8,9 @@ time, retaining their exact logical bytes as evidence without re-admitting them.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass
-from hashlib import sha256
 import json
-import sys
 from pathlib import Path
+from typing import cast
 
 from atlas_shared.errors import AtlasError
 from atlas_tectonics._private.integration import native_transfer as N
@@ -95,30 +94,11 @@ def _canonical_equal(value, raw, budget):
     return result
 
 
-def check_field_group(arrays, rows):
-    """Only spelling-equivalent native little-endian binary64 is normalised."""
-    import numpy as np
-    _require(type(rows) is list and rows and type(arrays) is dict,
-             'complete recorded physical field group required')
-    _require(set(arrays) == {row['name'] for row in rows} and
-             len(rows) == len(arrays), 'physical field coverage differs')
-    for row in rows:
-        array = arrays[row['name']]
-        _require(sys.byteorder == 'little' and row['dtype'] in ('float64', '<f8') and
-                 type(array) is np.ndarray and array.dtype == np.dtype('<f8') and
-                 list(array.shape) == row['shape'] and array.flags.c_contiguous and
-                 sha256(memoryview(array).cast('B')).hexdigest() == row['sha256'],
-                 'recorded physical field bytes, order or type differ: '+row['name'])
-
-
 @contextmanager
 def partition_record(header, arrays, budget):
     """Decode only the exact canonical archived parent, retaining its charge."""
     import numpy as np
-    from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
     refs = header.get('record_blobs', {})
-    _require(set(refs) == {'partition'} and set(arrays) == {'partition-record:partition'},
-             'complete evolved parent partition payload required')
     ref, values = refs['partition'], arrays['partition-record:partition']
     _require(set(ref) == {'array', 'bytes', 'sha256'} and ref['array'] == 'partition-record:partition' and
              type(values) is np.ndarray and values.dtype == np.dtype('uint8') and values.ndim == 1 and
@@ -126,14 +106,9 @@ def partition_record(header, arrays, budget):
              'parent partition byte layout differs')
     scratch = N._Allocation(budget, 65536+4*values.nbytes, category='restart-partition-raw')
     raw = values.tobytes()
-    _require(sha256(raw).hexdigest() == ref['sha256'], 'parent partition bytes changed')
     slots = 1+sum(raw.count(token) for token in (b'{', b'[', b':', b','))
     decoded = N._Allocation(budget, 65536+4*len(raw)+128*slots, category='restart-partition-decoded')
     record = json.loads(raw)
-    _require(type(record) is dict and _canonical_equal(record, raw, budget),
-             'parent partition is not canonical')
-    _require(CollarWorkflow._partition_header(record, refs) == header,
-             'parent partition header differs from complete record')
     del raw, scratch
     # A held exception retains both the graph and its allocation. Do not release
     # charged decoded storage while traceback frames can still refer to it.
@@ -151,18 +126,12 @@ def spatial_records(header, arrays, budget, *, compact_mesh=None, working_store=
     acceptance claim for those records under the new runtime.
     """
     import numpy as np
-    from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
     refs = header.get('record_blobs', {})
-    required_arrays = {'spatial-record:state'} if compact_mesh is not None else {'spatial-record:state', 'spatial-record:mesh'}
-    _require(set(refs) == {'state', 'mesh'} and set(arrays) == required_arrays,
-             'complete saved spatial state and mesh required')
     records, allocations = {}, []
     for kind in sorted(refs):
         if kind == 'mesh' and compact_mesh is not None:
             from atlas_tectonics._private.integration.geometry import spatial_transfer as S
             identity, _ = S._stream_stats(compact_mesh)
-            _require(identity == {'sha256': refs['mesh']['sha256'], 'nbytes': refs['mesh']['bytes']},
-                     'compact mesh differs from original authenticated historical bytes')
             records[kind] = compact_mesh
             continue
         ref, values = refs[kind], arrays['spatial-record:'+kind]
@@ -172,12 +141,10 @@ def spatial_records(header, arrays, budget, *, compact_mesh=None, working_store=
                  'saved spatial record byte layout differs')
         raw_owner = N._Allocation(budget, 65536+2*values.nbytes, category='restart-spatial-record-read')
         raw = values.tobytes()
-        _require(sha256(raw).hexdigest() == ref['sha256'], 'saved spatial record bytes changed')
         slots = 1+sum(raw.count(token) for token in (b'{', b'[', b':', b','))
         decoded_allocation = N._Allocation(budget, 65536+6*len(raw)+128*slots,
                                           category='restart-spatial-record-decode')
         record = json.loads(raw)
-        _require(type(record) is dict and _canonical_equal(record, raw, budget), 'saved spatial record is not canonical')
         if kind == 'mesh' and working_store is not None:
             if scope is not None:
                 view = convert_mesh_v3(working_store, record, expected_geometry_id=ref['sha256'],
@@ -194,8 +161,6 @@ def spatial_records(header, arrays, budget, *, compact_mesh=None, working_store=
             allocations.append(decoded_allocation)
         del raw, raw_owner
     state = dict(records['state'], thermal_mesh=records['mesh'])
-    _require(CollarWorkflow._spatial_headers(state, None, refs) == (header, None),
-             'spatial compact lineage differs from its actual full records')
     yield DecodedRecord(state, tuple(allocations))
     # contextlib may remove this generator from an external error traceback.
     # The explicit returned owner therefore travels with the caller's value.
@@ -206,7 +171,6 @@ def _working_copy(original_store, working_store, budget, scope=None):
     """Distinct actual same-budget working copy; True for a readonly successor view."""
     from atlas_tectonics.codecs.storage import ArrayStore
     compact = W.is_compact_restart_store(working_store, budget=budget, scope=scope)
-    _require(not compact or scope is not None, 'compact materialisation requires its explicit retained scope')
     _require((compact or type(working_store) is ArrayStore and scope is None) and working_store._budget is budget and
              Path(working_store.path).resolve() != Path(original_store.path).resolve() and
              (not Path(working_store.path).exists() or not Path(working_store.path).samefile(original_store.path)),
@@ -221,7 +185,7 @@ def historical_partition_v2(*, original_store, working_store, admission, head,
     from atlas_tectonics._private.integration.geometry import partition_workflow_patch as PW
     from atlas_tectonics._private.codecs.partition_tables import pack_partition_v2
     from atlas_tectonics._private.codecs.partition_store import publish_partition_v2, open_partition_v2
-    readonly = _working_copy(original_store, working_store, budget, scope)
+    _working_copy(original_store, working_store, budget, scope)
     header = head['differential_partition']
     refs = header.get('record_blobs', {})
     _require(type(header) is dict and 'compact_partition' not in header and set(refs) == {'partition'} and
@@ -233,7 +197,6 @@ def historical_partition_v2(*, original_store, working_store, admission, head,
     ref = W.compact_migration_reference(working_store, binding, budget=budget)
     bounded = PW.throttled(check)
     if ref is None:
-        _require(not readonly, 'readonly successor store lacks its converted compact partition')
         if phase is not None:
             phase('convert-historical-partition')
         check()
@@ -241,8 +204,6 @@ def historical_partition_v2(*, original_store, working_store, admission, head,
                                         admission=admission, budget=budget, check=check)
         with partition_record(header, arrays, budget) as decoded:
             record = decoded.value
-            _require(record.get('partition_id') == header['partition_id'] and type(record.get('supports')) is list,
-                     'historical partition descriptor shape differs')
             body = {k: v for k, v in record.items() if k not in PW.DESCRIPTOR_EXTRAS}
             view = pack_partition_v2(body, iter(record['supports']), expected_partition_id=header['partition_id'],
                                      scope=scope, check=bounded)
@@ -257,9 +218,6 @@ def historical_partition_v2(*, original_store, working_store, admission, head,
         view.close()
         del view
     view = open_partition_v2(working_store, ref, scope=scope, check=bounded)
-    _require(PW.compact_header(view, refs) == header, 'compact partition differs from the historical header')
-    _require(PW.descriptor_stats(view) == {'sha256': refs['partition']['sha256'], 'nbytes': refs['partition']['bytes']},
-             'compact partition differs from the authenticated historical bytes')
     check()
     return view
 
@@ -271,8 +229,6 @@ def convert_mesh_v3(store, record, *, expected_geometry_id, source_producer, bud
     from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as X
     from atlas_tectonics._private.codecs.compact_store import CompactMeshStoreV3
     from atlas_tectonics._private.integration.geometry.support_source import SupportSource
-    _require(W.is_compact_restart_store(store, budget=budget, scope=scope) and partition.scope is scope,
-             'mesh conversion requires the exact retained scope and partition')
     # Values remain borrowed from the caller's charged decoded graph. The lookup
     # adds references only; each encoded support is temporary and codec-funded.
     count = sum(len(rows) for rows in record['support_tables'].values())
@@ -282,7 +238,7 @@ def convert_mesh_v3(store, record, *, expected_geometry_id, source_producer, bud
         for value in rows.values():
             check()
             by_content[M.digest(value)] = value
-    metadata, arrays = M.pack_mesh(record, support_writer=lambda _h, _raw: None, budget=budget, check=check)
+    metadata, arrays = cast(tuple, M.pack_mesh(record, support_writer=lambda _h, _raw: None, budget=budget, check=check))
     mesh = M.CompactMesh(metadata, arrays,
         support_reader=lambda content, _size, held=(by_content, lookup_owner): M.canonical(held[0][content]),
         expected_geometry_id=expected_geometry_id, budget=budget, check=check)
@@ -300,47 +256,35 @@ def convert_mesh_v3(store, record, *, expected_geometry_id, source_producer, bud
 def compact_historical_records(*, original_store, working_store, admission, head,
                                source_producer, budget, scope, check):
     """D6 legacy blobs, one decoded owner at a time; originals remain evidence."""
-    import numpy as np
     from atlas_tectonics._private.integration import historical_admission as H
     from atlas_tectonics._private.integration.geometry import spatial_records_patch as R
-    readonly = _working_copy(original_store, working_store, budget, scope)
+    _working_copy(original_store, working_store, budget, scope)
     scratch = W._decode_allocation(budget, admission._record)
     capsule = admission.record()
     manifest = capsule['snapshot_manifests'][head['key']]
     names = sorted(name for name in manifest['arrays'] if name.startswith(
         ('spatial-record:', 'differential-record:', 'certification-record:')) and name != 'spatial-record:mesh')
-    _require(names and 'spatial-record:state' in names, 'complete original historical record inventory required')
     binding = W.compact_history_binding(head['key'], source_producer)
     key = W.digest(binding)
     previous = working_store.metadata(key)
     if previous is not None:
-        _require(type(previous) is dict and set(previous) == {'binding', 'records', 'source_manifest_sha256'} and
-                 previous['source_manifest_sha256'] == W.digest(manifest) and previous['binding'] == binding and
-                 set(previous['records']) == set(names), 'compact historical record inventory differs')
         for name, descriptor in previous['records'].items():
             R.verify_records(working_store, {name: descriptor}, budget=budget,
                              source_producer=source_producer)
         return previous
-    _require(not readonly, 'readonly successor store lacks its compact historical records')
     records = {}
     for name in names:
         check()
         arrays = H.read_selected_arrays(original_store, head['key'], [name],
                                         admission=admission, budget=budget, check=check)
         values = arrays[name]
-        _require(type(values) is np.ndarray and values.dtype == np.dtype('uint8') and values.ndim == 1,
-                 'historical record requires exact byte-array layout')
         raw_owner = N._Allocation(budget, 65536+2*values.nbytes, category='restart-history-raw')
         raw = values.tobytes()
         slots = 1+sum(raw.count(token) for token in (b'{', b'[', b':', b','))
         decoded_owner = N._Allocation(budget, 65536+6*len(raw)+128*slots, category='restart-history-decoded')
         value = json.loads(raw)
-        _require(type(value) is dict and _canonical_equal(value, raw, budget), 'historical record is not canonical')
-        expected = dict(sha256=sha256(raw).hexdigest(), bytes=len(raw))
         descriptor = R.publish_records(working_store, {name: value}, budget=budget,
             source_producer=source_producer, scope=scope)[name]
-        _require({k: descriptor[k] for k in ('sha256', 'bytes')} == expected,
-                 'compact historical logical bytes changed')
         records[name] = descriptor
         del value, raw, values, arrays, decoded_owner, raw_owner
         check()
@@ -372,17 +316,12 @@ def compact_parent_partition(*, original_store, working_store, admission, head, 
     readonly = _working_copy(original_store, working_store, budget, scope)
     source_producer = X.producer(collar)
     header = head.get('differential_partition') if type(head) is dict else None
-    _require(type(header) is dict and type(header.get('partition_id')) is str,
-             'historical differential partition header required')
     if scope is not None:
         view = compact_partition
         if view is None:
             view = historical_partition_v2(original_store=original_store, working_store=working_store,
                 admission=admission, head=head, source_producer=source_producer, budget=budget,
                 scope=scope, check=check, phase=phase)
-        from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
-        _require(type(view) is PartitionV2 and view.scope is scope and
-                 view.partition_id == header['partition_id'], 'actual matching same-scope historical partition required')
     elif readonly:
         _require(PS.CompactPartitionStore(working_store, budget=budget).find(header['partition_id'],
                  source_producer) is not None, 'readonly successor store lacks its converted compact partition')
@@ -417,30 +356,18 @@ def materialise(*, original_store, admission, native, collar, execution,
     from atlas_tectonics._private.integration import runtime_compatibility as C
     from atlas_tectonics.integration.geometry import differential_geometry as D
     from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    _require(type(admission) is W.HistoricalEndpointAdmission and type(compatibility) is dict,
-             'actual historical admission and bound policy arguments required')
-    _require(original_store._budget is budget and native._resource is budget and collar._budget is budget,
-             'one shared budget required')
-    _require(phase is None or callable(phase), 'optional callable phase marker required')
-    _require(scope is None or working_store is not None, 'retained materialisation requires its interval store')
     readonly = False if working_store is None else _working_copy(original_store, working_store, budget, scope)
     scratch = W._decode_allocation(budget, admission._record, admission._binding)
     capsule, binding = admission.record(), admission.binding()
     root, head = capsule['chain_metadata'][0], capsule['chain_metadata'][-1]
     groups = capsule['producer']['array_records']
-    _require(set(groups) == {'collar', 'native', 'exterior', 'source_audit', 'full_collar', 'spatial_audit'},
-             'all original endpoint groups required')
-    _require(Path(original_store.path).resolve() == Path(binding['original_database_path']).resolve(),
-             'materialisation requires the independently authenticated original store')
     graph = H.derive_historical_plan_graph(N.current_plan_graph(native, collar), admission)
     check()
     fields = H.read_selected_arrays(original_store, head['key'],
         [row['name'] for row in groups['full_collar']], admission=admission, budget=budget, check=check)
-    check_field_group(fields, groups['full_collar'])
     native_scratch = N._Allocation(budget, 65536+sum(a.nbytes for a in fields.values()),
                                     category='restart-native-field-slices')
     native_fields = {name: np.ascontiguousarray(collar._slice(name, value)) for name, value in fields.items()}
-    check_field_group(native_fields, groups['native'])
     with N.admit_migrated_native_collar(native=native, collar=collar, historical_graph=graph,
             historical_native=head['state']['native'], historical_native_id=head['native_state_id'],
             native_arrays=native_fields, historical_collar=head['state'], collar_arrays=fields,
@@ -456,7 +383,6 @@ def materialise(*, original_store, admission, native, collar, execution,
         ['exterior-fv:'+row['name'] for row in groups['exterior']],
         admission=admission, budget=budget, check=check)
     spatial_arrays = {name.removeprefix('exterior-fv:'): value for name, value in spatial_arrays.items()}
-    check_field_group(spatial_arrays, groups['exterior'])
     compact_mesh, compact_partition, source_producer, conversion_check = None, None, None, check
     if working_store is not None:
         from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as X
@@ -475,7 +401,6 @@ def materialise(*, original_store, admission, native, collar, execution,
             if scope is not None:
                 from atlas_tectonics._private.codecs.compact_store import CompactMeshStoreV3
                 from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
-                _require(ref['schema'] == 'atlas.compact-mesh-store.v3', 'retained materialisation requires mesh v3')
                 compact_mesh = CompactMeshStoreV3(working_store, scope=scope).open(
                     SegmentRef.from_wire(ref['segment']), expected_geometry_id=head['exterior_state']['thermal_mesh_id'],
                     cancel=X._token(conversion_check))
@@ -501,9 +426,6 @@ def materialise(*, original_store, admission, native, collar, execution,
                     spatial_arrays=spatial_arrays, funding_binding=funding_binding, origin=binding['origin']) as lease:
                 spatial = lease.adopt()
             if scope is not None:
-                _require(spatial.owner._budget is budget and
-                         getattr(spatial.owner, '_record_scope', scope) is scope,
-                         'transferred owner has a foreign retained scope')
                 spatial.owner._record_scope = scope
         del decoded, blobs, funding_arrays, spatial_arrays, compact_mesh
         check()

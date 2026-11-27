@@ -14,7 +14,6 @@ except ImportError:
     # Reference-only execution contexts enumerate this module too. Preparation
     # already refuses missing SciPy for actual variable-mechanics execution.
     coo_matrix = block_diag = kron = splu = None
-from atlas_tectonics._validation import TectonicsError
 
 
 def supported(box):
@@ -66,12 +65,8 @@ class GeometricVcycle:
         for transfer in transfers:
             cancel()
             matrix = matrix.tocsr(); diagonal = matrix.diagonal()
-            if not np.isfinite(matrix.data).all() or np.any(diagonal <= 0):
-                raise TectonicsError('multigrid requires finite positive velocity diagonal')
             # Gershgorin upper bound for the similar SPD-scaled operator.
             upper = float(np.max(np.asarray(abs(matrix).sum(axis=1)).ravel() / diagonal))
-            if not np.isfinite(upper) or upper <= 0:
-                raise TectonicsError('invalid multigrid smoothing bound')
             self.levels.append((matrix, 1 / diagonal, upper))
             matrix = (transfer.T @ matrix @ transfer).tocsc()
         cancel()

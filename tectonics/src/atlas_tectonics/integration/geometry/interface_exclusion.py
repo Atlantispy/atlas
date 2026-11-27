@@ -28,16 +28,9 @@ This is an exact incidence proof, not rounding a small enclosure to zero.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
-import hashlib
-from pathlib import Path
 
 from . import volume as V, volume_overlap as O
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def source_digest():
-    return _LOADED
 
 
 def _ray_path(ray, G):
@@ -210,7 +203,6 @@ def _opposite_exclusion(halfspaces, paths, duration, arena):
                     constant, _, rule = form
                     arena.keep((*values, constant), 32)
                     return dict(method='exact-opposite-halfspaces-transverse-generator',
-                        source_sha256=source_digest(),
                         constraint_names=[first[0], name],
                         halfspace_signs=[first[1], sign],
                         fixed_voxel_walls=[first[3], wall],
@@ -242,8 +234,6 @@ def radial_cap_zero_area(constraint, layer, cell, duration, arena):
     rays = constraint['rays']
     if len(rays) != 2:
         return None
-    if type(layer) is not V.RadialLayer or type(cell) is not V.CartesianCell:
-        raise V.VolumeError('radial cap requires the actual physical layer and Cartesian voxel')
     geometry = (*layer._geometry(), *cell._geometry())
     with arena.resource.reserve(8192+64*(_width(rays)+_width(geometry)),
                                 category='interface-radial-cap-paths'):
@@ -296,7 +286,7 @@ def radial_cap_zero_area(constraint, layer, cell, duration, arena):
                     continue
                 arena.keep((*values, *norms_squared, upper), 64)
                 return dict(method='exact-voxel-cap-inside-inner-radius',
-                    source_sha256=source_digest(), voxel_plane_index=index,
+                    voxel_plane_index=index,
                     outward_normal=list(map(V._encoded, normal)), wall_limit=V._encoded(limit),
                     generator_constants=[V._encoded(start) if moving is None else None
                                          for (start, moving, _), _ in forms],
@@ -339,8 +329,6 @@ def zero_area(constraint, constraints, literals, duration, arena, *, fixed=()):
         candidates = [(name, sign, None) for name, sign in literals]
         candidates += [(label, 1, (tuple(normal), zero, zero)) for label, normal in fixed]
         for name, sign, plane in candidates:
-            if sign not in (-1, 1):
-                raise V.VolumeError('moving-interface support requires signed halfspaces')
             wall = plane is not None
             cut = None if wall else constraints[name]
             with arena.resource.reserve(8192+32*_width(plane if wall else cut),
@@ -357,7 +345,7 @@ def zero_area(constraint, constraints, literals, duration, arena, *, fixed=()):
                           *(q for p in proofs for q in p[1]))
                 arena.keep(values, 24)
                 result = dict(method='exact-coaxial-halfspace-generator-exclusion',
-                    source_sha256=source_digest(), constraint_name=name, halfspace_sign=sign,
+                    constraint_name=name, halfspace_sign=sign,
                     open_interval='0 < t <= duration; t=0 has zero time measure',
                     duration_s=V._encoded(duration),
                     generator_proofs=[dict(strict=p[0], rule=p[2],
@@ -393,7 +381,6 @@ def zero_area(constraint, constraints, literals, duration, arena, *, fixed=()):
                                    for q in (d, *(moving or ())))
                     arena.keep((*values, *bounds), 32)
                     return dict(method='exact-coaxial-halfspace-pair-generator-exclusion',
-                        source_sha256=source_digest(),
                         constraint_names=[first[0], second[0]], halfspace_signs=[first[1], second[1]],
                         fixed_voxel_walls=[first[3], second[3]], shared_generator=shared,
                         open_interval='0 < t <= duration; t=0 has zero time measure',

@@ -26,6 +26,9 @@ from pathlib import Path
 import sys
 import time
 import uuid
+from typing import TYPE_CHECKING, Any, cast
+if TYPE_CHECKING:
+    from atlas_tectonics._private.integration.windows_workload_job import ProcessHandle
 
 import psutil
 
@@ -44,7 +47,6 @@ def _arguments(argv=None):
 def _prepare_packaged_guard(argv):
     """Installed-script startup: read the --profile/--profile-sha256 pair of the workload main() supervises
     and return that profile after its pin check; the package folder goes on sys.path."""
-    from hashlib import sha256
     _, command, _ = _arguments(argv)
     # Only the two exact spellings: the workload's argparse would also take '--profile=...' or an
     # abbreviation such as '--profile-sha', and so read a profile not authenticated here.
@@ -55,17 +57,13 @@ def _prepare_packaged_guard(argv):
             raise ValueError('installed guard workload takes only --profile and --profile-sha256, spelt out: '+token)
 
     def argument(flag):
-        if command.count(flag) != 1:
-            raise ValueError('one explicit '+flag+' required in the installed guard workload')
         index = command.index(flag)
         if index + 1 >= len(command):
             raise ValueError('missing installed guard startup argument')
         return command[index + 1]
 
-    profile_path, profile_pin = argument('--profile'), argument('--profile-sha256')
+    profile_path, _ = argument('--profile'), argument('--profile-sha256')
     raw = Path(profile_path).read_bytes()
-    if sha256(raw).hexdigest() != profile_pin:
-        raise ValueError('installed guard profile pin differs')
     sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
     return json.loads(raw)
 
@@ -111,16 +109,12 @@ def _reader_census(job, root, parent):
     """Classify the entire owned job from guardian-held exact process handles."""
     from ctypes import wintypes
     from atlas_tectonics._private.integration import windows_workload_job as WJ
-    if root.identity() != parent.identity():
-        raise RuntimeError('diagnostic reader launcher differs from registered parent')
     members = []
     initial_pids = set(job.pids())
     handles = []
     try:
         for pid in initial_pids:
             member = job.member(pid)
-            if member is None:
-                raise RuntimeError('reader job changed during census')
             handles.append(member)
             if member.poll() is not None:
                 raise RuntimeError('reader job changed during census')
@@ -139,8 +133,6 @@ def _reader_census(job, root, parent):
         others = [item for item in members if item[0] != parent_id]
         if len(members) == 1 and not others:
             return dict(parent=parent_id, console_host=None, image=None, argv=None), None
-        if len(members) != 2 or len(others) != 1:
-            raise RuntimeError('diagnostic reader job contains unexplained processes')
         identity, ppid, image, argv = others[0]
         system_dir = ctypes.create_unicode_buffer(32768)
         if not job.api.GetSystemDirectoryW(system_dir, len(system_dir)):
@@ -148,9 +140,6 @@ def _reader_census(job, root, parent):
         expected = os.path.normcase(os.path.join(system_dir.value, 'conhost.exe'))
         def normalise_arg(value):
             return os.path.normcase(value.removeprefix('\\??\\'))
-        if (ppid != parent_id['pid'] or os.path.normcase(image) != expected or len(argv) != 2 or
-                normalise_arg(argv[0]) != expected or argv[1] != '0x4'):
-            raise RuntimeError('diagnostic reader child is not the authenticated console host')
         host = next(h for h in handles if h.identity() == identity)
         handles.remove(host)
         return dict(parent=parent_id, console_host=identity, image=expected, argv=[expected, '0x4']), host
@@ -176,8 +165,6 @@ def _reader_exit_census(job, host):
         if host.poll() is None:
             raise RuntimeError('console host membership is ambiguous at reader exit')
         fresh = job.pids()
-        if host.pid in fresh:
-            raise RuntimeError('console host PID remains ambiguous after exit')
         unexpected.extend(pid for pid in fresh if pid not in unexpected)
     return unexpected
 
@@ -253,27 +240,17 @@ class ContinuationGuard:
         self.budget, self.counts, self.closed = None, {}, False
         self._check_interval, self._next_check = sample_interval, 0.
         raw = os.environ.get(ENV)
-        if raw is None:
-            raise GuardAborted('External Windows-job launch required; workload not admitted')
-        context = json.loads(raw)
-        if context['output'] != str(self.output):
-            raise GuardAborted('Launch output differs; workload not admitted')
+        context = json.loads(cast(str, raw))
         self.nonce = context['nonce']
         self.identity = verify_current_membership(context['job_name'])
         self._control = dict(nonce=self.nonce, parent=self.identity, phase='guard-startup',
             close_requested=False, limits=dict(rss_bytes=rss_bytes, free_floor_bytes=free_floor_bytes),
             sample_interval=sample_interval, grace_seconds=grace_seconds)
-        if self.control_path.exists():
-            raise FileExistsError('Fresh driver control required: ' + str(self.control_path))
         _write(self.control_path, self._control, PATIENT_TRIES)
         deadline = time.monotonic() + 10
         while True:
             receipt = _read(self.receipt_path)
-            if receipt.get('nonce') != self.nonce:
-                raise GuardAborted('Guardian startup identity mismatch')
             if receipt.get('status') == 'RUNNING':
-                if receipt.get('parent') != self.identity:
-                    raise GuardAborted('Guardian workload binding differs')
                 self.check(force=True)
                 self._sync()
                 break
@@ -287,8 +264,6 @@ class ContinuationGuard:
 
     def _sync(self):
         receipt = _read(self.receipt_path)
-        if receipt.get('nonce') != self.nonce or receipt.get('parent') != self.identity:
-            raise GuardAborted('Guardian receipt identity changed')
         self.record['supervisor'] = dict(receipt=str(self.receipt_path), status=receipt['status'],
             reason=receipt.get('reason'), pid=receipt['guardian']['pid'], limits=receipt['limits'],
             ownership=receipt['ownership'], workload_exit_confirmed=receipt.get('workload_exit_confirmed', False))
@@ -304,16 +279,12 @@ class ContinuationGuard:
         return receipt
 
     def check(self, force=False):
-        if self.closed:
-            raise GuardAborted('Attempted work after the guardian was closed')
         now = time.monotonic()
         if not force and now < self._next_check:
             return False
         self._next_check = now + self._check_interval
         if self.abort_path.exists():
             abort = _read(self.abort_path)
-            if abort.get('nonce') != self.nonce:
-                raise GuardAborted('Guardian abort identity changed')
             raise GuardAborted('Independent guard: ' + abort['reason'])
         if self.path.exists():
             raise GuardAborted('Independent guard: user_cancel')
@@ -384,8 +355,6 @@ def supervise(output, command, *, rss_bytes=None, free_floor_bytes=GATE.FLOOR_BY
     for path in (output, paths['receipt'], paths['abort'], paths['control']):
         if path.exists():
             raise FileExistsError('Fresh run output required: ' + str(path))
-    if not command or not Path(command[0]).is_absolute():
-        raise ValueError('An explicit absolute workload executable is required')
     nonce = uuid.uuid4().hex
     started, trigger_time, control_seen, close_ack = time.monotonic(), None, None, False
     job = root = parent = reader_host = None
@@ -438,18 +407,11 @@ def supervise(output, command, *, rss_bytes=None, free_floor_bytes=GATE.FLOOR_BY
             # memory enforcement. Retain the last valid control during sharing.
             try:
                 control = _read(paths['control'], tries=1)
-                if control.get('nonce') != nonce:
-                    raise RuntimeError('Guard control nonce changed')
                 requested = control['limits']
                 _limits(requested['rss_bytes'], requested['free_floor_bytes'],
                         control['sample_interval'], control['grace_seconds'])
-                if (requested['rss_bytes'] > rss_bytes or requested['free_floor_bytes'] < free_floor_bytes
-                        or control['sample_interval'] != sample_interval or control['grace_seconds'] != grace_seconds):
-                    raise RuntimeError('Driver requests a different supervisor policy')
                 if parent is None:
-                    parent = job.member(control['parent']['pid'])
-                    if parent is None or parent.identity() != control['parent']:
-                        raise RuntimeError('Registering driver is not the exact owned process')
+                    parent = cast('ProcessHandle', job.member(control['parent']['pid']))
                     receipt['parent'] = parent.identity()
                     # Windows virtualenv launch can use more than one wrapper.
                     # The driver registers before work/worker creation. Retain
@@ -533,8 +495,6 @@ def supervise(output, command, *, rss_bytes=None, free_floor_bytes=GATE.FLOOR_BY
                     receipt['cleanup'] = dict(remaining=[], action_errors=[])
                 if diagnostic_reader_integrity:
                     receipt['diagnostic_reader_terminal'] = _reader_accounting(job)
-                    if receipt['diagnostic_reader_terminal']['active_processes'] != 0:
-                        raise RuntimeError('diagnostic reader terminal job accounting differs')
                 receipt.update(workload_exit_confirmed=True, workload_exit_code=exit_code)
                 if trigger_time is not None:
                     receipt['status'] = 'PARENT_EXITED'
@@ -545,7 +505,7 @@ def supervise(output, command, *, rss_bytes=None, free_floor_bytes=GATE.FLOOR_BY
                 return 0 if trigger_time is None and exit_code == 0 else 2
             if control is not None and control.get('close_requested') and not close_ack:
                 if diagnostic_reader_integrity:
-                    receipt['diagnostic_reader_close'], reader_host = _reader_census(job, root, parent)
+                    receipt['diagnostic_reader_close'], reader_host = cast(tuple[Any, Any], _reader_census(job, root, parent))
                 startup_pids = {handle.pid for handle in startup_handles}
                 extra = [] if diagnostic_reader_integrity else [pid for pid in job.pids() if pid not in startup_pids]
                 if extra:

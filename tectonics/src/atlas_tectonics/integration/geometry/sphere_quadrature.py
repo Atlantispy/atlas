@@ -125,8 +125,6 @@ corners. Returned values become caller-owned; no cache or scratch is retained.
         m4 = 3*sphere*(sphere+4*ymax)/alpha**7
         hi, hj = halves
         error = m4*((hi**4+hj**4)/5+2*hi*hi*hj*hj/9)/24
-        if error <= 0:
-            raise V.VolumeError('clean nondegenerate sphere leaf requires positive remainder bound')
 
         # Derived rationals remain charged while the root and output stages run.
         with V._work((alpha, beta, ymin, ymax, area, volume, g, coefficient, m4, error,
@@ -144,12 +142,8 @@ corners. Returned values become caller-owned; no cache or scratch is retained.
                     low, high = beta*area-integral_high, beta*area-integral_low
                     delta = (beta*beta-sphere+ymin)/(2*beta)
                     axial = (beta-delta, beta)
-                if not 0 <= delta <= beta-alpha:
-                    raise V.VolumeError('inner witness box escaped its clean leaf')
                 witness_volume = area*delta
                 low, high = max(Q(0), low, witness_volume), min(volume, high)
-                if not 0 <= low <= high <= volume:
-                    raise V.VolumeError('inconsistent clean-sphere enclosure or inner witness')
                 point, witness_box = None, None
                 if delta:
                     witness_box = tuple(axial if j == axis else ends[j] for j in range(3))

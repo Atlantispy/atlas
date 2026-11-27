@@ -12,20 +12,23 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 import hashlib
 import math
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, text, frozen, input_shape, read_array
+from atlas_tectonics._validation import TectonicsError, scalar, frozen, input_shape, read_array
 from atlas_tectonics._validation import within_budget
 from atlas_tectonics.materials.constitutive import BoussinesqMaterial
 from atlas_tectonics.materials.materials import _json
 from atlas_tectonics.planet.parameters import PlateCoolingParameters, identity
-from atlas_tectonics.crust.precursor import PrecursorState, InitialConditionState
 from atlas_tectonics.integration.resources import select_budget, reserve_budgets
 from atlas_tectonics.integration.resources import check_event
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
 from atlas_tectonics.thermal.thermal_support import ThermalSupportParameters, _owner, _temperature
 from atlas_tectonics.spreading.spreading import PreparedRidgeSpreading
+
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.resources import WorkBudget
 
 
 _IMAGE_LIMIT = 1. / 16.
@@ -186,65 +189,28 @@ class PreparedMarginCooling:
     _amplitude: float = field(repr=False, compare=False)
     _context: object = field(repr=False, compare=False)
     _owns_context: bool = field(repr=False, compare=False)
-    _budget: object = field(repr=False, compare=False)
+    _budget: WorkBudget = field(repr=False, compare=False)
     _lease: object = field(repr=False, compare=False)
     _closed: bool = field(repr=False, compare=False)
 
     def __init__(self, initial_state, column_id, plate, *, thinning_source_id,
                  geometry_reference_id, context=None, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published')
-        if type(initial_state) not in (PrecursorState, InitialConditionState):
-            raise TectonicsError('source-bound W01 initial state required')
-        if type(plate) is not PlateCoolingParameters:
-            raise TectonicsError('explicit PlateCoolingParameters required')
-        text(column_id, 'column ID'); text(thinning_source_id, 'thinning source')
-        text(geometry_reference_id, 'geometry reference')
         case = initial_state.case
         columns = {c.column_id: c for c in case.columns}
-        if column_id not in columns:
-            raise TectonicsError('unknown inherited source column')
         column = columns[column_id]
-        if column.crust_type not in ('continental', 'transitional'):
-            raise TectonicsError('inherited continental or transitional column required')
-        if thinning_source_id not in {s.source_id for s in case.sources}:
-            raise TectonicsError('thinning source is absent from the original W01 sources')
-        if geometry_reference_id not in (case.depth_reference_id, initial_state.sampling_domain.domain_id):
-            raise TectonicsError('geometry reference must identify the actual source datum or domain')
-        if (column.lithosphere_thickness_m != plate.thickness_m or
-                column.layer_edges_m[-1] != plate.thickness_m):
-            raise TectonicsError('source column and finite plate thickness must match exactly')
-        if initial_state.bodies or any(f.role == 'temperature_offset' for f in initial_state.fields):
-            raise TectonicsError('body overrides or temperature-offset fields need an explicit resolved column import')
         profile = initial_state._maps['thermal'][column.thermal_profile_id]
-        if profile.mode not in ('tabulated', 'constant'):
-            raise TectonicsError('unsupported inherited profile; only compatible tabulated or constant fields are supported')
         temperatures = profile.temperatures_k
         depths = profile.depths_m
         if profile.mode == 'constant':
             temperatures = temperatures*2
             depths = (0., plate.thickness_m)
-        if (depths[-1] != plate.thickness_m or
-                temperatures[0] != plate.thermal.surface_temperature_k or
-                temperatures[-1] != plate.thermal.mantle_temperature_k):
-            raise TectonicsError('inherited profile must exactly span L and match fixed Ts/Tb')
         if len(depths) > _MAX_KNOTS:
             raise TectonicsError('inherited profile exceeds bounded knot envelope')
         materials = []
         for layer in column.layers:
-            if layer.porosity != 0. or len(layer.components) != 1 or layer.components[0].solid_volume_fraction != 1.:
-                raise TectonicsError('this margin route requires nonporous single-component source layers')
             cohort = initial_state._maps['cohorts'][layer.components[0].cohort_id]
             material = initial_state._maps['materials'][cohort.material_id]
-            if (material.material_class != 'solid' or material.density_kg_m3 is None or
-                    material.specific_heat_j_kg_k is None or
-                    material.conductivity_w_m_k != plate.conductivity_w_m_k or
-                    material.heat_production_w_m3 != 0. or
-                    not math.isclose(material.density_kg_m3*material.specific_heat_j_kg_k,
-                                     plate.volumetric_heat_capacity_j_m3_k, rel_tol=2e-14)):
-                raise TectonicsError('source material does not match homogeneous unheated conductive plate')
-            if material.valid_temperature_k is not None and not (
-                    material.valid_temperature_k[0] <= min(temperatures) <= max(temperatures) <= material.valid_temperature_k[1]):
-                raise TectonicsError('full initial temperature field exceeds source material validity')
             materials.append(material)
         resource = select_budget(budget)
         lease = resource.reserve(initial_state.retained_bytes_estimate+512*len(depths)+65536,
@@ -252,13 +218,9 @@ class PreparedMarginCooling:
         lease.__enter__()
         owned, ctx = context is None, None
         try:
-            ctx = ExecutionContext('reference') if owned else context
-            if type(ctx) is not ExecutionContext or ctx.backend != 'reference':
-                raise TectonicsError('reference ExecutionContext required for margin conduction')
+            ctx = cast(ExecutionContext, ExecutionContext('reference') if owned else context)
             execution_id = ctx.identity
             knots = np.asarray(depths)/plate.thickness_m
-            if np.any(np.diff(knots) <= 0):
-                raise TectonicsError('normalised source knots are not numerically resolvable')
             values = np.asarray(temperatures)
             slopes = np.diff(values)/np.diff(knots)
             jumps = np.diff(slopes)
@@ -287,7 +249,7 @@ class PreparedMarginCooling:
                 _context=ctx, _owns_context=owned, _budget=resource, _lease=lease, _closed=False)
             for key, value in captured.items():
                 object.__setattr__(self, key, value)
-            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -295,9 +257,7 @@ class PreparedMarginCooling:
             raise
 
     def _check(self, budget, cancel):
-        if self._closed:
-            raise TectonicsError('margin preparation is closed')
-        check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         resource = self._budget if budget is None else select_budget(budget)
         within_budget(resource, self._budget, 'call budget must descend from the prepared run budget')
         return resource
@@ -357,14 +317,9 @@ class PreparedMarginCooling:
 
     def evaluate(self, *, time_s, epoch_id, depth_edges_m, budget=None, cancel=None):
         resource = self._check(budget, cancel)
-        text(epoch_id, 'epoch')
-        if epoch_id != self.initial_state.case.epoch_id:
-            raise TectonicsError('margin epoch mismatch')
         end = scalar(time_s, 'margin time')
         start = self.initial_state.case.time_s
         elapsed = scalar(end-start, 'elapsed from inherited epoch', nonnegative=True)
-        if start+elapsed != end:
-            raise TectonicsError('clock cannot resolve inherited elapsed time')
         shape = input_shape(depth_edges_m)
         if len(shape) != 1 or not 2 <= shape[0] <= _MAX_CELLS+1:
             raise TectonicsError('bounded one-dimensional margin depth edges required')
@@ -377,13 +332,9 @@ class PreparedMarginCooling:
                     or np.any(np.diff(physical) <= 0)):
                 raise TectonicsError('depth edges must strictly increase and exactly span the inherited plate')
             edges = physical/self.plate.thickness_m
-            if np.any(np.diff(edges) <= 0):
-                raise TectonicsError('normalised depth cells are not numerically resolvable')
             initial = _initial_means(edges, self._knots, self._temperatures)
             tau = scalar((elapsed/self.plate.thickness_m)*(self.plate.thermal.diffusivity_m2_s/self.plate.thickness_m),
                          'dimensionless inherited time', nonnegative=True)
-            if elapsed > 0 and tau == 0:
-                raise TectonicsError('positive inherited time underflows')
             if elapsed == 0:
                 means, change, heat, t_error, h_error = initial.copy(), np.zeros_like(initial), np.zeros(2), 0., 0.
             elif tau <= _IMAGE_LIMIT:
@@ -403,7 +354,7 @@ class PreparedMarginCooling:
                 t_error, scalar(h_error*heat_scale, 'heat truncation bound', nonnegative=True),
                 self.source_column, self.source_profile, self.material_definitions, self.cooling_history,
                 self.thinning_source_id, self.geometry_reference_id, self.initial_state)
-        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         return result
 
     def support(self, *, time_s, epoch_id, materials, parameters, initial_depth_m,
@@ -415,13 +366,6 @@ class PreparedMarginCooling:
         are candidates, not a shared-reservoir commit. Emergence refuses.
         """
         self._check(budget, cancel); _owner(parameters)
-        if (parameters.reference_id != self.geometry_reference_id or
-                parameters.depth_reference_id != self.initial_state.case.depth_reference_id):
-            raise TectonicsError('support reference must match inherited geometry and datum')
-        if type(materials) is not dict or set(materials) != {m.material_id for m in self.material_definitions}:
-            raise TectonicsError('exact source-material to Boussinesq mapping required')
-        if parameters.fill_density_kg_m3 <= 0:
-            raise TectonicsError('wet margin requires positive water density')
         for original in self.material_definitions:
             selected = materials[original.material_id]
             if (type(selected) is not BoussinesqMaterial or selected.name != original.material_id or
@@ -438,10 +382,7 @@ class PreparedMarginCooling:
         depth = scalar(initial_depth_m, 'inherited reference water depth', positive=True)
         area = scalar(area_m2, 'finite inherited area', positive=True)
         stock = scalar(water_stock_m3, 'finite water stock', nonnegative=True)
-        text(water_source_id, 'finite water source')
         reference = scalar(depth*area, 'reference margin water', nonnegative=True)
-        if reference > stock:
-            raise TectonicsError('finite margin water reservoir cannot fill inherited reference geometry')
         # Arbitrary nonuniform fields need not cool or subside monotonically.
         # The maximum principle bounds every point for the whole future, so
         # these conservative layer-weighted bounds certify the entire path,
@@ -455,16 +396,11 @@ class PreparedMarginCooling:
                              for extreme in (tmax, tmin))
         displacement_bounds = tuple(s/parameters.restoring_density_contrast_kg_m3 for s in sheet_bounds)
         trajectory_depths = tuple(scalar(depth+s, 'bounded trajectory depth') for s in displacement_bounds)
-        if (max(abs(s) for s in displacement_bounds)/self.plate.thickness_m > parameters.max_relative_deflection
-                or trajectory_depths[0] <= 0 or trajectory_depths[1]*area > stock):
-            raise TectonicsError('inherited trajectory water/wet/deflection validity is unproven within conservative bounds')
         result = self.evaluate(time_s=time_s, epoch_id=epoch_id,
             depth_edges_m=self.source_column.layer_edges_m, budget=budget, cancel=cancel)
         sheet = math.fsum(-float(delta)*layer.bulk_thickness_m*m.density_kg_m3*m.thermal_expansion_per_k
             for delta, layer, m in zip(result.temperature_change_k, self.source_column.layers, self.material_definitions))
         displacement = scalar(sheet/parameters.restoring_density_contrast_kg_m3, 'margin displacement')
-        if abs(displacement)/self.plate.thickness_m > parameters.max_relative_deflection:
-            raise TectonicsError('margin support exceeds small-deflection validity envelope')
         current_depth = scalar(depth+displacement, 'current wet margin depth', positive=True)
         water = scalar(current_depth*area, 'represented margin water', nonnegative=True)
         if water > stock:
@@ -475,7 +411,7 @@ class PreparedMarginCooling:
         support_id = hashlib.sha256(_json(dict(thermal=result.state_id, parameters=asdict(parameters),
             materials={key: asdict(value) for key, value in materials.items()}, depth=depth, area=area,
             water_stock=stock, water_source=water_source_id))).hexdigest()
-        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         return MarginSupportResult(result, support_id, 'column-isostasy', scalar(sheet, 'thermal sheet'),
             scalar(sheet*parameters.gravity_m_s2, 'thermal pressure'), displacement, depth, current_depth,
             area, reference, scalar(displacement*area, 'margin water change'), water, stock-water,

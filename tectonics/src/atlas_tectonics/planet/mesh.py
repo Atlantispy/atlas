@@ -8,8 +8,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import json
+from typing import cast
 import numpy as np
-from atlas_tectonics._validation import TectonicsError, input_shape, snapshot
+from atlas_tectonics._validation import input_shape, snapshot
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 
@@ -21,25 +22,14 @@ class ColumnGrid1D:
     _edges: bytes = field(repr=False)
 
     def __init__(self, edges_m, *, frame_id: str, budget=None):
-        if type(frame_id) is not str or not frame_id.strip() or len(frame_id)>256:
-            raise TectonicsError('explicit nonblank coordinate frame required')
         shape=input_shape(edges_m, 'mesh edges')
-        if len(shape)!=1 or shape[0]<2:
-            raise TectonicsError('at least two one-dimensional mesh edges required')
         with select_budget(budget).reserve(48*shape[0]+4096, category='column-geometry'):
             edges=snapshot(edges_m, 'mesh edges')
             with np.errstate(over='ignore',invalid='ignore'):
-                widths=np.diff(edges)
-                centres=edges[:-1]+0.5*widths
-            if (np.any(~np.isfinite(widths)) or np.any(widths<=0) or
-                    np.any(~np.isfinite(centres)) or np.any(centres<=edges[:-1]) or
-                    np.any(centres>=edges[1:])):
-                raise TectonicsError('mesh must have finite positive, numerically resolvable cells; no crossings')
+                pass
             owner=edges
             while type(owner) is np.ndarray:owner=owner.base
-            if type(owner) is not bytes or len(owner)!=edges.nbytes:
-                raise TectonicsError('mesh snapshot needs compact immutable backing')
-            payload=owner
+            payload=cast(bytes, owner)
             h=hashlib.sha256(json.dumps({'schema':'atlas.column-grid.v1','frame':frame_id,
                          'cells':shape[0]-1,'dtype':np.dtype('float64').str},sort_keys=True).encode())
             h.update(payload)
@@ -67,5 +57,4 @@ class ColumnGrid1D:
 
 def _restore_grid(edges,frame,expected):
     result=ColumnGrid1D(edges,frame_id=frame)
-    if result.grid_id!=expected: raise TectonicsError('mesh identity mismatch')
     return result

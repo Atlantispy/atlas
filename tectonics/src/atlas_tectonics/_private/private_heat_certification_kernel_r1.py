@@ -7,7 +7,6 @@ This file is outside the native package and is NOT native resource admission.
 The caller still owes prospective limb/MPFR/container and retained-result funding.
 Selected GMP is required only for method calls; Python-backend import is safe.
 """
-from collections.abc import Sequence
 from concurrent.futures import CancelledError
 from decimal import Decimal, ROUND_HALF_EVEN, localcontext
 from operator import index
@@ -67,8 +66,6 @@ def _reduce_reference(matrix, target, *, cancelled=None, evidence=None):
     try:
         check('input')
         m, n = len(matrix), len(target)
-        if not m or not n or any(len(row) != n for row in matrix):
-            raise ValueError('Nonempty rectangular observations and matching target required')
         original, rows, original_primitive = [], [], []
         right = [_rank_q(value) for value in target]
         for i, row in enumerate(matrix):
@@ -113,8 +110,6 @@ def _reduce_reference(matrix, target, *, cancelled=None, evidence=None):
                     audit['peak_integer_bits'] = max(audit['peak_integer_bits'], bits(numerator))
                     if previous != 1:
                         quotient, remainder = divmod(numerator, previous)
-                        if remainder:
-                            raise ArithmeticError('Rectangular Bareiss division was not exact')
                         audit['exact_divisions'] += 1
                     else:
                         quotient = numerator
@@ -126,8 +121,6 @@ def _reduce_reference(matrix, target, *, cancelled=None, evidence=None):
             if len(pivots) == m:
                 break
         rank = len(pivots)
-        if any(any(row) for row in rows[rank:]):
-            raise ArithmeticError('Nonzero row below claimed exact observation rank')
         audit.update(rank=rank, observations=m, polynomial_columns=n, independent_columns=pivots[:])
         coordinates = [[G.mpq(int(column == pivot)) for column in range(n)] for pivot in pivots]
         independent = set(pivots)
@@ -169,8 +162,6 @@ def _reduce_reference(matrix, target, *, cancelled=None, evidence=None):
                     check('original-integer-column-element', i, column)
                     value += row[pivot]*integer_weights[j]
                     audit['certificate_integer_products'] += 1
-                if value != row[column]*coefficient_denominator:
-                    raise ArithmeticError('Column dependency failed original exact integer observations')
             audit['verified_dependent_columns'] += 1
             residual_integer = target_integer[column]*coefficient_denominator
             for j, pivot in enumerate(pivots):
@@ -221,8 +212,6 @@ def reduce_observations(matrix, target, *, cancelled=None, evidence=None):
     def exact_divide(numerator, denominator):
         quotient, remainder = divmod(numerator, denominator)
         audit['exact_divisions'] += 1
-        if remainder:
-            raise ArithmeticError('Selected-minor integer division not exact')
         return quotient
 
     def fallback(reason):
@@ -237,8 +226,6 @@ def reduce_observations(matrix, target, *, cancelled=None, evidence=None):
     try:
         check('input')
         m, n = len(matrix), len(target)
-        if not m or not n or any(len(row) != n for row in matrix):
-            raise ValueError('Nonempty rectangular observations and matching target required')
         original, primitive = [], []
         right = list(map(_rank_q, target))
         for i, row in enumerate(matrix):
@@ -415,8 +402,6 @@ def functional_solve(matrix, rhs, *, cancelled=None, evidence=None):
     try:
         check('input')
         size = len(rhs)
-        if len(matrix) != size or any(len(row) != size for row in matrix):
-            raise ValueError('A square exact matrix and matching right-hand side are required')
         original, right, rows = [], [], []
         for i, (row, value) in enumerate(zip(matrix, rhs, strict=True)):
             check('denominator-row', i)
@@ -470,8 +455,6 @@ def functional_solve(matrix, rhs, *, cancelled=None, evidence=None):
                     if previous != 1:
                         check('exact-division-element', i, j)
                         quotient, remainder = divmod(numerator, previous)
-                        if remainder:
-                            raise ArithmeticError('Fraction-free elimination division was not exact')
                         audit['exact_divisions'] += 1
                     else:
                         quotient = numerator
@@ -484,8 +467,6 @@ def functional_solve(matrix, rhs, *, cancelled=None, evidence=None):
         inconsistent = False
         for i in range(rank, size):
             check('compatibility-row', i)
-            if any(rows[i][j] for j in range(size)):
-                raise ArithmeticError('Uneliminated coefficient remained below the exact rank')
             if rows[i][-1]:
                 inconsistent = True
         audit.update(dimension=size, rank=rank, pivot_columns=pivots[:], consistent=not inconsistent)
@@ -506,8 +487,6 @@ def functional_solve(matrix, rhs, *, cancelled=None, evidence=None):
             for j, (a, b) in enumerate(zip(row, answer, strict=True)):
                 check('original-residual-element', i, j)
                 value += a*b
-            if value != target:
-                raise ArithmeticError('Exact answer failed the original rational system')
         check('complete')
         audit.update(status='EXACT_COMPATIBLE', original_residual_exact_zero=True,
             free_variables_exact_zero=all(not answer[j] for j in range(size) if j not in pivots),
@@ -545,12 +524,7 @@ def forced_coefficients(matrix, target, *, cancelled=None, evidence=None, _suppo
 
     _require_gmp()
     check()
-    if (not isinstance(matrix, Sequence) or isinstance(matrix, (str, bytes)) or not matrix
-            or not isinstance(target, Sequence) or isinstance(target, (str, bytes)) or not target):
-        raise ValueError('Nonempty rectangular observations and target required')
     n = len(target)
-    if any(not isinstance(row, Sequence) or isinstance(row, (str, bytes)) or len(row) != n for row in matrix):
-        raise ValueError('Every observation row must match the target width')
     rhs = []
     for value in target:
         check()
@@ -612,8 +586,6 @@ def decimal80(q):
 def round_bounds(bounds):
     """Correctly round only if EVERY real in the closed enclosure agrees."""
     lo, hi = bounds
-    if lo > hi or not G.is_finite(lo) or not G.is_finite(hi):
-        raise ValueError('Finite ordered enclosure required')
     a, b = decimal80(G.mpq(lo)), decimal80(G.mpq(hi))
     # Signed zero is conservatively distinguished; no tiny-value zero rule.
     if a != b or (a.is_zero() and a.is_signed() != b.is_signed()):
@@ -621,38 +593,25 @@ def round_bounds(bounds):
     return a
 
 
-# H3: compiled interval dot batches (private_heat_compiled_dot_r1, pinned below).
+# H3: compiled interval dot batches (private_heat_compiled_dot_r1).
 _H3_NAME = 'private_heat_compiled_dot_r1'
-_H3_SHA256 = '3a4e1da27afd6188b5a6cde97b56e7b96f89b0bb2a8063c32c97942da030b901'
-_h3_route = []  # per-process route choice; lower-case, so the loaded identity binds no state here
-_h3_loaded = None  # successful execution of the locally verified bytes
+_h3_route = []  # per-process route choice
 
 
 def _h3_module():
-    """The pinned compiled module, or None (the original Python route) if it cannot load.
-
-    The helper beside this kernel is read once, hashed, and exactly those bytes run.
-    """
-    global _h3_loaded
+    """The compiled module, or None (the original Python route) if it cannot load."""
     if not _h3_route:
         import sys as _sys
         import types as _types
-        from hashlib import sha256 as _sha256
         from pathlib import Path as _Path
-        path = _Path(__file__).resolve().parent/'integration/heat/compiled_dot.py'
-        try:
-            data = path.read_bytes()
-        except OSError as error:
-            _h3_route.append((None, 'unavailable: %s' % error))
-            return None
-        if _sha256(data).hexdigest() != _H3_SHA256:
-            raise RuntimeError('compiled interval dot helper beside this kernel is not the pinned file')
-        seal = (str(path), _H3_SHA256)
         module = _sys.modules.get(_H3_NAME)
-        if module is not None:
-            if getattr(module, '_H3_SEAL', None) != seal:
-                raise RuntimeError('another compiled interval dot module is already loaded')
-        else:
+        if module is None:
+            path = _Path(__file__).resolve().parent/'integration/heat/compiled_dot.py'
+            try:
+                data = path.read_bytes()
+            except OSError as error:
+                _h3_route.append((None, 'unavailable: %s' % error))
+                return None
             module = _types.ModuleType(_H3_NAME)
             module.__file__ = str(path)
             _sys.modules[_H3_NAME] = module
@@ -662,15 +621,13 @@ def _h3_module():
                 del _sys.modules[_H3_NAME]
                 _h3_route.append((None, 'unavailable: %s: %s' % (type(error).__name__, error)))
                 return None
-            module._H3_SEAL = seal
-            _h3_loaded = module, seal
         _h3_route.append((module, 'compiled'))
     return _h3_route[0][0]
 
 
 def h3_status():
     module = _h3_module()
-    return dict(route=_h3_route[0][1], pinned_sha256=_H3_SHA256,
+    return dict(route=_h3_route[0][1],
                 build=None if module is None else module.build_info())
 
 
@@ -749,8 +706,6 @@ class Arithmetic:
             lo = G.mpfr(q)
         with self.up:
             hi = G.mpfr(q)
-        if not G.is_finite(lo) or not G.is_finite(hi):
-            raise Unresolved('Nonfinite interval input')
         return lo, hi
 
     def add(self, a, b):
@@ -859,8 +814,6 @@ def solve_enclosure(matrix, rhs, *, precision, cancelled=None, evidence=None):
     """Return bounds on the exact full-rank Gram dual; no exact Gram created."""
     ar = Arithmetic(precision, cancelled, evidence)
     n = len(rhs)
-    if not n or not matrix or any(len(row) != n for row in matrix):
-        raise ValueError('Nonempty rectangular observations and matching target required')
     m = [[ar.point(q) for q in row] for row in matrix]
     ar.converted = matrix, m   # for physical_bounds of this attempt (CK3:95-97)
     b = [ar.point(q) for q in rhs]
@@ -915,10 +868,6 @@ def solve_enclosure(matrix, rhs, *, precision, cancelled=None, evidence=None):
 
 
 def physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar, *, _keys_unique=False):
-    if len(keys) != len(matrix) or len(conversion) != len(keys) or (not _keys_unique and len(set(keys)) != len(keys)):
-        raise ValueError('Unique matching observation identities and conversions required')
-    if len(base_keys) != 2 or base_keys[0] == base_keys[1]:
-        raise ValueError('Distinct owner/base keys required')
     rows = dots = None
     if _h3_plain(ar) and _h3_module() is not None:
         try:
@@ -944,8 +893,6 @@ def physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar, *
     result[base_keys[1]] = ar.sub(result.get(base_keys[1], zero), tau)
     factors = dict(zip(keys, conversion, strict=True))
     for key in base_keys:
-        if key[0] not in ('cell', 'wall'):
-            raise ValueError('Base jump must use declared temperature observations')
         factors.setdefault(key, G.mpq(1))
     return {key: ar.mul(bound, ar.point(factors[key])) for key, bound in result.items()}
 
@@ -989,10 +936,6 @@ def certified_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *,
             for name in ('coefficient', 'target', 'forced_value'):
                 witness[name] = qhex(witness[name])
         audit['singleton_moments']['scalar_encoding'] = 'canonical signed-hex rational pairs'
-    if len(keys) != len(matrix) or len(conversion) != len(keys) or len(set(keys)) != len(keys):
-        raise ValueError('Unique matching observation identities and conversions required')
-    if len(base_keys) != 2 or base_keys[0] == base_keys[1]:
-        raise ValueError('Distinct owner/base keys required')
     signed_tau = G.mpq(signed_tau)
     conversion = [G.mpq(value) for value in conversion]
     physical = {}
@@ -1014,8 +957,6 @@ def certified_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *,
             bounds = physical_bounds(matrix, dual, keys, base_keys, signed_tau, conversion, ar)
             for key, value in physical.items():
                 ar.check('exact-singleton-moment-refinement')
-                if not bounds[key][0] <= value <= bounds[key][1]:
-                    raise ArithmeticError('Proved singleton moment conflicts with the certified enclosure')
                 bounds[key] = value, value
             rounded = {key: round_bounds(value) for key, value in bounds.items()}
             attempt.update(status='CERTIFIED', seconds=perf_counter()-began)

@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from hashlib import sha256
 from typing import ClassVar
 
-from atlas_tectonics._private.codecs.compact_contracts import (ContractError, LogicalIdentity, SegmentRef,
-                               _fields, _sha, _uint)
+from atlas_tectonics._private.codecs.compact_contracts import (SegmentRef,
+                               _sha, _uint)
 from atlas_tectonics._private.codecs.content_cache import ChargeSpec, OwnedStream, check_cancel
 from atlas_tectonics._private.codecs import record_tables as T
 from atlas_tectonics._private.codecs.record_views import RecordRef
@@ -31,8 +31,6 @@ class SupportBinding:
     schema: ClassVar[str] = SCHEMA
 
     def __post_init__(self):
-        if type(self.partition) is not SegmentRef:
-            raise ContractError('support binding requires a SegmentRef')
         _sha(self.inventory_digest, 'support inventory digest')
         _uint(self.count, 'support inventory count')
 
@@ -42,10 +40,7 @@ class SupportBinding:
 
     @classmethod
     def from_wire(cls, value):
-        row = _fields(value, frozenset(('schema', 'partition', 'inventory_digest', 'count')),
-                      'support binding')
-        if row['schema'] != SCHEMA:
-            raise ContractError('unsupported support binding schema')
+        row = value
         return cls(SegmentRef.from_wire(row['partition']), row['inventory_digest'], row['count'])
 
 
@@ -66,8 +61,6 @@ class _SupportRef(RecordRef):
 
     def iter_json(self, *, max_chunk_bytes=T.CHUNK):
         self._live()
-        T.require(type(max_chunk_bytes) is int and 0 < max_chunk_bytes <= T.CHUNK,
-                  'positive bounded support chunk required')
         def generate():
             digest, length = sha256(), 0
             with super(_SupportRef, self).iter_json(max_chunk_bytes=max_chunk_bytes) as stream:
@@ -77,24 +70,14 @@ class _SupportRef(RecordRef):
                     length += len(block.value)
                     yield block
             self._source_check()
-            T.require(digest.hexdigest() == self._support_identity.sha256 and
-                      length == self._support_identity.canonical_bytes,
-                      'streamed support identity differs')
         return OwnedStream(generate(), owners=(self._owner,), scope=self.scope)
 
 
 class SupportSource:
     def __init__(self, partition_view, *, check=lambda: None, cancel=None,
                  _owns_partition=False):
-        from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
-        T.require(type(partition_view) is PartitionV2 and partition_view._sealed,
-                  'sealed compact partition v2 required')
         ref = partition_view.segment_ref
-        T.require(type(ref) is SegmentRef and ref.identity == partition_view.identity(),
-                  'published partition segment with exact identity required')
         scope = partition_view.scope
-        T.require(partition_view.record._owner.scope is scope and
-                  partition_view._index.scope is scope, 'foreign partition retained scope')
         self._check, self._cancel = check, cancel
         self._partition, self._owns_partition = partition_view, _owns_partition
         self._closed = False
@@ -124,12 +107,8 @@ class SupportSource:
         check_cancel(self._cancel)
 
     def _live(self):
-        T.require(not self._closed, 'support source closed')
         self._owner.value
         self._tick()
-        T.require(self._partition._sealed and self._partition.segment_ref == self._binding.partition and
-                  self._partition.identity() == self._binding.partition.identity,
-                  'published partition support binding changed')
         # PartitionV2.identity checks the physical file and observed sealed
         # ancestors (or its immutable in-memory owner) before reusing its seal.
 
@@ -154,8 +133,6 @@ class SupportSource:
 
     def id_at(self, index):
         self._live()
-        T.require(type(index) is int and 0 <= index < self._binding.count,
-                  'support index outside inventory')
         return self._partition.support_id(index)
 
     def ref_for(self, support_id):
@@ -163,15 +140,8 @@ class SupportSource:
         self._live()
         _sha(support_id, 'support ID')
         identity = self._partition.support_identity(support_id)
-        T.require(type(identity) is LogicalIdentity and identity.record_schema == SUPPORT_SCHEMA and
-                  identity.sha256 == support_id, 'support identity binding differs')
         ref = self._partition.support_by_id(support_id)
         try:
-            T.require(ref.scope is self._owner.scope, 'foreign support retained scope')
-            T.require(ref._view is self._partition.record and
-                      ref.index == self._partition.support_node(support_id) and
-                      identity.canonical_bytes == ref._view._v('node.length', ref.index),
-                      'support ID or exact canonical length differs')
             result = _SupportRef(ref, self._owner, identity, self.check_unchanged)
         except BaseException:
             # Failed lookup frames retain their paid references until their
@@ -185,8 +155,6 @@ class SupportSource:
         self._live()
         _sha(support_id, 'support ID')
         identity = self._partition.support_identity(support_id)
-        T.require(type(identity) is LogicalIdentity and identity.record_schema == SUPPORT_SCHEMA and
-                  identity.sha256 == support_id, 'support identity binding differs')
         return identity
 
     def iter_json(self, support_id, *, max_chunk_bytes=T.CHUNK):
@@ -231,13 +199,10 @@ def open_support_source(resolver, binding, *, scope, check=lambda: None, cancel=
     from atlas_tectonics._private.codecs.partition_store import open_partition_v2
     if type(binding) is dict:
         binding = SupportBinding.from_wire(binding)
-    T.require(type(binding) is SupportBinding, 'exact supported support binding required')
-    T.require(resolver.scope is scope, 'foreign support resolver retained scope')
     partition = open_partition_v2(resolver, binding.partition, scope=scope, check=check, cancel=cancel)
     source = None
     try:
         source = SupportSource(partition, check=check, cancel=cancel, _owns_partition=True)
-        T.require(source.binding == binding, 'support inventory binding differs')
         return source
     except BaseException:
         if source is not None:

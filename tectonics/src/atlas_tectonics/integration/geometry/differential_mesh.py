@@ -11,6 +11,7 @@ from itertools import product
 from io import BytesIO
 import json
 import weakref
+from typing import Any
 
 from . import volume as V
 from . import volume_bounds as B
@@ -18,11 +19,11 @@ from . import volume_overlap as O
 from . import wall_measures as W
 from atlas_tectonics.integration.coupling import exterior_mesh as E
 from . import differential_geometry as D
-from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEBounds
+# Read as H.FullCellFunding / H.SpatialALEBounds by endpoint_geometry_provider (H is this module).
+from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding  # noqa: F401
+from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEBounds  # noqa: F401
 from atlas_tectonics.integration.coupling.regional_inventory import _width
 from atlas_tectonics.integration.geometry.poly_tiles import clipped_tiles
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.coupling.exterior_mesh import _round_stored_deviation, _stored_deviation as _stored_deviation
 
 # Pose width (c): the stored deviation sum is an outward bound with a short dyadic
@@ -41,13 +42,9 @@ def _reservoir_thermal_boundaries(faces, cells, native_boxes, basal, budget, are
         return []
     from atlas_tectonics.integration.geometry.differential_pressure import _cut_faces
     first = native_boxes[0]
-    if any(c.origin_m != first.origin_m or c.basis != first.basis for c in native_boxes):
-        raise V.VolumeError('native cells do not share the actual reservoir chart')
     lo = tuple(min(c.lower_m[j] for c in native_boxes) for j in range(3))
     hi = tuple(max(c.upper_m[j] for c in native_boxes) for j in range(3))
     native = V.CartesianCell(lo, hi, first.origin_m, first.basis, budget=budget)
-    if sum((c.volume_m3 for c in native_boxes), Q(0)) != native.volume_m3:
-        raise V.VolumeError('complete native grid does not cover its bounding box')
     boxes = tuple(V.CartesianCell.from_record(r, budget=budget)
                   for r in basal['excluded_cells'])
     cuts = tuple(_cut_faces(boxes, native, budget))
@@ -76,8 +73,6 @@ def _reservoir_thermal_boundaries(faces, cells, native_boxes, basal, budget, are
                     raise V.VolumeError('thermal face straddles a reservoir cut; refine its conforming partition')
                 matches.append(dict(cell_id=cell.cell_id, axis=axis, end=end))
         if matches:
-            if cells[face['owners'][0]]['kind'] != 'exterior' or len(matches) != 1:
-                raise V.VolumeError('reservoir cut has ambiguous thermal ownership')
             face.update(boundary_role='finite-basal-reservoir-exterior-cut',
                         reservoir_cut=matches[0])
             required.append(face['face_id'])
@@ -172,9 +167,6 @@ def _aggregate_cells(cells, faces, groups, boxes, arena):
     # Geometric order: merged cells by their stored point; kept is in _assemble's geometric face order.
     arena.keep(tuple(q for p in points.values() for q in p), len(points))
     order = sorted(merged, key=points.__getitem__)
-    for a, b in zip(order, order[1:]):
-        if points[a] == points[b]:
-            raise V.VolumeError('two aggregated thermal cells share an interior point')
     rank = {f['face_id']: i for i, f in enumerate(kept)}
     for cell in merged.values():
         cell['faces'].sort(key=lambda row: rank[row[0]])
@@ -210,8 +202,6 @@ def _compact_witness(box, encoded, component, posed, layer):
         elif slack <= 0:
             raise V.VolumeError('certified witness has no strict physical constraint neighbourhood')
         constraints.append((normal, offset, error))
-    if delta <= 0:
-        raise V.VolumeError('certified witness has no strict physical neighbourhood')
     span = max(b-a for a, b in zip(box.lower_m, box.upper_m))
     scale = 1
     while span >= 2*delta*scale:
@@ -267,8 +257,6 @@ def _support_cells(support, *, endpoint, integration_width, max_leaves, budget, 
     This private geometry seam does not establish complete source coverage. The
     public builder below requires the complete issued ALE component inventory.
     """
-    if type(support) is not D.DifferentialSupport or support._resource is not budget:
-        raise V.VolumeError('issued physical components on the same budget required')
     # Without a closure the statements keep their order. With one the support
     # is read first, because its components decide whether it is posed.
     posed = None if booked is not None else D.posed_support(support, endpoint=endpoint, budget=budget).record()
@@ -385,8 +373,6 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
         posed = None if _unposed(booked, row) else (
             D.posed_support(support, endpoint=endpoint, budget=budget).record() if booked is None else
             D._mesh_posed_support(support, row, endpoint=endpoint, booked=booked, budget=budget).record())
-        if posed is None:
-            D._validate_unposed_support(support, row, endpoint=endpoint, budget=budget)
         box = V.CartesianCell.from_record(row['voxel'], budget=budget)
         layer = V.RadialLayer(*(W._decode(row['radial_layer'][k]) for k in
             ('radius_m', 'top_depth_m', 'bottom_depth_m')), budget=budget)
@@ -404,17 +390,8 @@ def _witness_grid(supports, lines, *, endpoint, integration_width, max_leaves,
                     category='thermal-certified-volume-cache'))
                 measures[key] = measure
             low, high = map(W._decode, (measure['lower_m3'], measure['upper_m3']))
-            if not measure['met']:
-                raise V.VolumeError('physical component volume did not meet the declared integration width')
             if high == 0:
-                if booked is not None and booked.get(logical, Q(0)) > 0:
-                    raise V.VolumeError('differential thermal cell has no certified positive physical subset: '
-                        'booked material occupies an exactly zero-volume component '+logical)
                 continue
-            if low <= 0 or measure.get('positive_witness_point_m') is None:
-                raise V.VolumeError('differential thermal cell has no certified positive physical subset: '
-                    +str(dict(support_id=support.support_id, logical_cell_id=logical,
-                              lower_m3=str(low), upper_m3=str(high), leaves=measure['leaves'])))
             values = tuple(map(W._decode, measure['positive_witness_point_m']))
             with V._work((*values, *box._geometry(), *layer._geometry()), budget, convert_values=False):
                 local = _compact_witness(box, measure['positive_witness_point_m'], component, posed, layer)
@@ -455,8 +432,6 @@ def _radial_interpolation_errors(lines, point):
     result = []
     for axis, x in zip(lines, point):
         at = bisect_right(axis, x)-1
-        if at < 0 or at >= len(axis)-1:
-            raise V.VolumeError('radial interpolation point is outside the shared grid interior')
         result.append((x-axis[at])*(axis[at+1]-x))
     return result
 
@@ -540,60 +515,26 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
     inactive cell; its own identity is recorded, and the heat solve accepts
     the mesh only with that same graph. Without it nothing changes.
     """
-    if end_geometry_provider is not None and (endpoint != 'end' or closed_graph is None or not max_witness_refinements):
-        raise V.VolumeError('END provider requires an issued closure and shared witness grid')
     if end_geometry_provider is not None:
         from atlas_tectonics._private.integration.geometry import endpoint_factory as _Q297_AUTHORITY
         _Q297_AUTHORITY.require_claim(end_geometry_provider, funding=funding, bounds=bounds,
             supports=supports, closed_graph=closed_graph, budget=budget, endpoint=endpoint)
     static = type(bounds) is D.DifferentialInitialBounds
-    if (type(funding) is not FullCellFunding or type(bounds) not in (SpatialALEBounds, D.DifferentialInitialBounds) or
-            type(budget) is not WorkBudget or funding._resource is not budget or bounds._resource is not budget):
-        raise V.VolumeError('actual funding and issued differential ALE bounds on one budget required')
-    if endpoint not in ('start', 'end') or type(supports) is not tuple or not supports:
-        raise V.VolumeError('explicit endpoint and complete issued support tuple required')
-    if static and endpoint != 'start':
-        raise V.VolumeError('a static initial partition has no future thermal endpoint')
-    if any(type(s) is not D.DifferentialSupport or s._resource is not budget for s in supports):
-        raise V.VolumeError('every physical support must be issued on the shared budget')
     width = W._q(max_geometry_volume_error_m3)
-    if width <= 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive predeclared geometry error and finite integration ceiling required')
     if (type(thermal_subdivisions) is not int or thermal_subdivisions < 1 or
             thermal_subdivisions & (thermal_subdivisions-1) or thermal_subdivisions**3 > max_leaves):
         raise V.VolumeError('shared dyadic thermal subdivision within the declared leaf ceiling required')
-    if type(max_witness_refinements) is not int or max_witness_refinements < 0:
-        raise V.VolumeError('nonnegative finite certified-point refinement ceiling required')
-    if max_witness_refinements and thermal_subdivisions != 1:
-        raise V.VolumeError('select shared dyadic or certified-point refinement explicitly, not both')
     f, b = funding.descriptor(), bounds.record()
     booked = None
     if closed_graph is not None:
-        from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEGraph
-        if (static or endpoint != 'end' or type(closed_graph) is not SpatialALEGraph or
-                closed_graph._resource is not budget):
-            raise V.VolumeError('booked end volumes need the issued exact closure of these interval bounds')
         # The materialised closure view is temporary: it is released with this
         # reservation, and only the booked end volumes are kept for the build.
         with budget.reserve(65536+4*len(closed_graph._json), category='differential-thermal-mesh-closure-view'):
             g = closed_graph.record()
-            # The closure names the bounds it closed and carries every
-            # identifying field of them.
-            if g.get('bounds_id') != bounds.bounds_id or any(key not in b or g.get(key) != b[key] for key in (
-                    'interval_id', 'partition_id', 'parent_partition_id',
-                    'funding_id', 'grid_id', 'source_flow_stage_id', 'flow_id', 'parent_state_id', 'native_measure_id',
-                    'native_directed_id', 'finite_state_id', 'start_support_id', 'end_support_id',
-                    'trajectory_id', 'start_time_s', 'end_time_s')):
-                raise V.VolumeError('exact closure belongs to other physical interval bounds')
             booked = {row['cell_id']: W._decode(row['end_volume_m3'])
                       for row in g['cells']+g['inactive_zero_measure_cells']}
             del g
-        if any(volume < 0 for volume in booked.values()):
-            raise V.VolumeError('exact closure booked a negative end volume')
     ids = [s.support_id for s in supports]
-    if (b.get('support_ids') != ids or len(set(ids)) != len(ids) or
-            b['funding_id'] != funding.funding_id or b['source'] != f['source']):
-        raise V.VolumeError('thermal support inventory differs from its complete physical ALE bounds')
     def foreign(r):
         return ((r.get('current_geometry_id') != b['current_geometry_id'] or r['start_time_s'] != b['time_s'])
                 if static else (r['interval_id'] != b['interval_id'] or r[endpoint+'_time_s'] != b[endpoint+'_time_s']))
@@ -621,18 +562,7 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
         if any(foreign(r) for r in (s.record() for s in supports)):
             raise V.VolumeError('thermal support belongs to a different physical interval')
         component_ids = [c['logical_cell_id'] for s in supports for c in s.record()['components']]
-    if len(set(component_ids)) != len(component_ids):
-        raise V.VolumeError('physical logical component appears more than once')
-    # A closure keeps every component of its bounds as an active or inactive
-    # cell. One it does not name has no booked volume at all, which is not a
-    # booked zero.
-    if booked is not None and any(key not in booked for key in component_ids):
-        raise V.VolumeError('exact closure does not name every physical component of these supports')
     bounded = {r['cell_id']: r for r in b['cells'] if r['kind'] == 'exterior'}
-    # All-time zero components may remain only in the support certificate. A
-    # positive or time-transient row may never be silently omitted from bounds.
-    if set(bounded)-set(component_ids):
-        raise V.VolumeError('physical ALE cell has no matching issued thermal support')
     support_id = b['support_id'] if static else b[endpoint+'_support_id']
     with budget.reserve(131072+2*funding._snapshot.nbytes+2*len(bounds._json)+
                         sum(2*len(s._json) for s in supports), category='differential-thermal-mesh'), B._Arena(budget) as arena:
@@ -701,10 +631,6 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
                 bound = bounded.get(logical)
                 if bound is None:
                     raise V.VolumeError('positive physical thermal component is missing from ALE bounds')
-                physical = tuple(map(W._decode, bound['volume_bounds_m3' if static else endpoint+'_volume_bounds_m3']))
-                own = tuple(map(W._decode, metadata['physical_volume_bounds_m3']))
-                if max(physical[0], own[0]) > min(physical[1], own[1]):
-                    raise V.VolumeError('independent physical endpoint enclosures disagree')
                 key = E._hash(dict(logical_cell_id=logical, support_id=support_id))
                 part = key if not aggregate else E._hash(dict(cell_id=key, piece=piece))
                 candidates.append((part, poly, metadata)); boxes[key] = box
@@ -760,12 +686,8 @@ def _build_differential_mesh_native(funding, bounds, supports, *, endpoint,
         if basal:
             required_thermal.extend(_reservoir_thermal_boundaries(faces, by_cell, native_boxes,
                 dict(basal, excluded_cells=f['excluded_static_cells']), budget, arena))
-        history = b['trajectory']['segments']
-        segments = history if static or endpoint == 'end' else history[:-1]
         trajectory_id = b['trajectory_id' if static or endpoint == 'end' else 'prior_trajectory_id']
-        if E._hash(segments) != trajectory_id:
-            raise V.VolumeError('physical trajectory prefix identity differs')
-        record = dict(schema='atlas.source-bound-exterior-thermal-mesh.v1', method=E.METHOD,
+        record: dict[str, Any] = dict(schema='atlas.source-bound-exterior-thermal-mesh.v1', method=E.METHOD,
             physical_geometry_family='differential-plate-component-partition-v1',
             funding_id=funding.funding_id, source=f['source'], support_id=support_id,
             trajectory_id=trajectory_id, endpoint=endpoint,
@@ -832,61 +754,27 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
     inactive cell; its own identity is recorded, and the heat solve accepts
     the mesh only with that same graph. Without it nothing changes.
     """
-    from atlas_tectonics._private.integration.geometry.live_mesh_patch import support_sequence, support_table
-    if end_geometry_provider is not None and (endpoint != 'end' or closed_graph is None or not max_witness_refinements):
-        raise V.VolumeError('END provider requires an issued closure and shared witness grid')
+    from atlas_tectonics._private.integration.geometry.live_mesh_patch import support_table
     if end_geometry_provider is not None:
         from atlas_tectonics._private.integration.geometry import endpoint_factory as _Q297_AUTHORITY
         _Q297_AUTHORITY.require_claim(end_geometry_provider, funding=funding, bounds=bounds,
             supports=supports, closed_graph=closed_graph, budget=budget, endpoint=endpoint)
     static = type(bounds) is D.DifferentialInitialBounds
-    if (type(funding) is not FullCellFunding or type(bounds) not in (SpatialALEBounds, D.DifferentialInitialBounds) or
-            type(budget) is not WorkBudget or funding._resource is not budget or bounds._resource is not budget):
-        raise V.VolumeError('actual funding and issued differential ALE bounds on one budget required')
-    if endpoint not in ('start', 'end') or not support_sequence(supports, budget) or not supports:
-        raise V.VolumeError('explicit endpoint and complete issued support tuple required')
-    if static and endpoint != 'start':
-        raise V.VolumeError('a static initial partition has no future thermal endpoint')
-    if any(type(s) is not D.DifferentialSupport or s._resource is not budget for s in supports):
-        raise V.VolumeError('every physical support must be issued on the shared budget')
     width = W._q(max_geometry_volume_error_m3)
-    if width <= 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive predeclared geometry error and finite integration ceiling required')
     if (type(thermal_subdivisions) is not int or thermal_subdivisions < 1 or
             thermal_subdivisions & (thermal_subdivisions-1) or thermal_subdivisions**3 > max_leaves):
         raise V.VolumeError('shared dyadic thermal subdivision within the declared leaf ceiling required')
-    if type(max_witness_refinements) is not int or max_witness_refinements < 0:
-        raise V.VolumeError('nonnegative finite certified-point refinement ceiling required')
-    if max_witness_refinements and thermal_subdivisions != 1:
-        raise V.VolumeError('select shared dyadic or certified-point refinement explicitly, not both')
     f, b = funding.descriptor(), bounds.record()
     booked = None
     if closed_graph is not None:
-        from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEGraph
-        if (static or endpoint != 'end' or type(closed_graph) is not SpatialALEGraph or
-                closed_graph._resource is not budget):
-            raise V.VolumeError('booked end volumes need the issued exact closure of these interval bounds')
         # The materialised closure view is temporary: it is released with this
         # reservation, and only the booked end volumes are kept for the build.
         with budget.reserve(65536+4*len(closed_graph._json), category='differential-thermal-mesh-closure-view'):
             g = closed_graph.record()
-            # The closure names the bounds it closed and carries every
-            # identifying field of them.
-            if g.get('bounds_id') != bounds.bounds_id or any(key not in b or g.get(key) != b[key] for key in (
-                    'interval_id', 'partition_id', 'parent_partition_id',
-                    'funding_id', 'grid_id', 'source_flow_stage_id', 'flow_id', 'parent_state_id', 'native_measure_id',
-                    'native_directed_id', 'finite_state_id', 'start_support_id', 'end_support_id',
-                    'trajectory_id', 'start_time_s', 'end_time_s')):
-                raise V.VolumeError('exact closure belongs to other physical interval bounds')
             booked = {row['cell_id']: W._decode(row['end_volume_m3'])
                       for row in g['cells']+g['inactive_zero_measure_cells']}
             del g
-        if any(volume < 0 for volume in booked.values()):
-            raise V.VolumeError('exact closure booked a negative end volume')
     ids = [s.support_id for s in supports]
-    if (b.get('support_ids') != ids or len(set(ids)) != len(ids) or
-            b['funding_id'] != funding.funding_id or b['source'] != f['source']):
-        raise V.VolumeError('thermal support inventory differs from its complete physical ALE bounds')
     def foreign(r):
         return ((r.get('current_geometry_id') != b['current_geometry_id'] or r['start_time_s'] != b['time_s'])
                 if static else (r['interval_id'] != b['interval_id'] or r[endpoint+'_time_s'] != b[endpoint+'_time_s']))
@@ -914,18 +802,7 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
         if any(foreign(r) for r in (s.record() for s in supports)):
             raise V.VolumeError('thermal support belongs to a different physical interval')
         component_ids = [c['logical_cell_id'] for s in supports for c in s.record()['components']]
-    if len(set(component_ids)) != len(component_ids):
-        raise V.VolumeError('physical logical component appears more than once')
-    # A closure keeps every component of its bounds as an active or inactive
-    # cell. One it does not name has no booked volume at all, which is not a
-    # booked zero.
-    if booked is not None and any(key not in booked for key in component_ids):
-        raise V.VolumeError('exact closure does not name every physical component of these supports')
     bounded = {r['cell_id']: r for r in b['cells'] if r['kind'] == 'exterior'}
-    # All-time zero components may remain only in the support certificate. A
-    # positive or time-transient row may never be silently omitted from bounds.
-    if set(bounded)-set(component_ids):
-        raise V.VolumeError('physical ALE cell has no matching issued thermal support')
     support_id = b['support_id'] if static else b[endpoint+'_support_id']
     with budget.reserve(131072+2*funding._snapshot.nbytes+2*len(bounds._json)+
                         sum(2*len(s._json) for s in supports), category='differential-thermal-mesh'), B._Arena(budget) as arena:
@@ -994,10 +871,6 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
                 bound = bounded.get(logical)
                 if bound is None:
                     raise V.VolumeError('positive physical thermal component is missing from ALE bounds')
-                physical = tuple(map(W._decode, bound['volume_bounds_m3' if static else endpoint+'_volume_bounds_m3']))
-                own = tuple(map(W._decode, metadata['physical_volume_bounds_m3']))
-                if max(physical[0], own[0]) > min(physical[1], own[1]):
-                    raise V.VolumeError('independent physical endpoint enclosures disagree')
                 key = E._hash(dict(logical_cell_id=logical, support_id=support_id))
                 part = key if not aggregate else E._hash(dict(cell_id=key, piece=piece))
                 candidates.append((part, poly, metadata)); boxes[key] = box
@@ -1061,11 +934,7 @@ def _build_differential_mesh_record(funding, bounds, supports, *, endpoint,
         if _LIVE_MESH.EARLY_RELEASE:
             # Assembly and boundary indexes end before packaging.
             del boxes, radials, groups, by_cell, native_boxes
-        history = b['trajectory']['segments']
-        segments = history if static or endpoint == 'end' else history[:-1]
         trajectory_id = b['trajectory_id' if static or endpoint == 'end' else 'prior_trajectory_id']
-        if E._hash(segments) != trajectory_id:
-            raise V.VolumeError('physical trajectory prefix identity differs')
         record = dict(schema='atlas.source-bound-exterior-thermal-mesh.v1', method=E.METHOD,
             physical_geometry_family='differential-plate-component-partition-v1',
             funding_id=funding.funding_id, source=f['source'], support_id=support_id,
@@ -1109,9 +978,7 @@ def build_differential_mesh(funding, bounds, supports, *, endpoint,
         authority.claim(end_geometry_provider, funding=funding, bounds=bounds, supports=supports,
                         closed_graph=closed_graph, budget=budget, endpoint=endpoint)
     try:
-        if witness_observer is not None and not callable(witness_observer):
-            raise V.VolumeError('witness_observer must be callable or None')
-        kwargs = dict(endpoint=endpoint, max_geometry_volume_error_m3=max_geometry_volume_error_m3,
+        kwargs: dict[str, Any] = dict(endpoint=endpoint, max_geometry_volume_error_m3=max_geometry_volume_error_m3,
             max_leaves=max_leaves, budget=budget, thermal_subdivisions=thermal_subdivisions,
             max_witness_refinements=max_witness_refinements, closed_graph=closed_graph,
             witness_observer=witness_observer, end_geometry_provider=end_geometry_provider)

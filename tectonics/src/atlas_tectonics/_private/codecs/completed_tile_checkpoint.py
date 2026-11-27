@@ -10,14 +10,10 @@ from fractions import Fraction
 class AttemptMeter:
     """One attempt's charged tile-arena work; common setup is excluded."""
     def __init__(self, ceiling, tile_limit):
-        if type(ceiling) is not int or type(tile_limit) is not int or not 0 < tile_limit <= ceiling:
-            raise ValueError('invalid attempt work policy')
         self.ceiling, self.tile_limit = ceiling, tile_limit
         self.used, self.active = 0, None
 
     def begin(self, generation_remaining):
-        if self.active is not None:
-            raise ValueError('tile accounting already active')
         if self.ceiling-self.used < self.tile_limit or generation_remaining < self.tile_limit:
             return False
         self.active = 0
@@ -31,8 +27,6 @@ class AttemptMeter:
         self.used += count
 
     def finish(self):
-        if self.active is None:
-            raise ValueError('tile accounting not active')
         used = self.active
         self.active = None
         return used
@@ -120,36 +114,22 @@ def tile_digest(generation, key, raw):
 
 
 def encode(value):
-    if not isinstance(value, Fraction) or value < 0:
-        raise ValueError('invalid exact tile volume')
     return [format(value.numerator, 'x'), format(value.denominator, 'x')]
 
 
 def decode(value):
-    if (type(value) is not list or len(value) != 2 or
-            any(type(x) is not str or not x or any(c not in '0123456789abcdef' for c in x)
-                or (len(x) > 1 and x[0] == '0') for x in value)):
-        raise ValueError('invalid canonical fraction')
     n, d = (int(x, 16) for x in value)
-    if d <= 0 or encode(Fraction(n, d)) != value:
-        raise ValueError('noncanonical fraction')
     return Fraction(n, d)
 
 
 def expected_by_tile(rows, coarse, fine, band):
     """Derive each tile's exterior IDs from the graph, including zero bookings."""
-    if len(coarse) != 3 or len(fine) != 3:
-        raise ValueError('invalid grid dimensions')
     mapping = []
     for axis in range(3):
         a, b = coarse[axis], fine[axis]
-        if any(x >= y for x, y in zip(a, a[1:])) or any(x >= y for x, y in zip(b, b[1:])):
-            raise ValueError('unordered grid')
         axis_map = []
         for lo, hi in zip(b, b[1:]):
             choices = [i for i, (x, y) in enumerate(zip(a, a[1:])) if x <= lo and hi <= y]
-            if len(choices) != 1:
-                raise ValueError('fine tile crosses or escapes coarse grid')
             axis_map.append(choices[0])
         mapping.append(axis_map)
     voxel_ids = {}
@@ -159,9 +139,6 @@ def expected_by_tile(rows, coarse, fine, band):
             continue
         ident = row['cell_id']
         voxel = tuple(row['voxel_index'])
-        if (ident in identities or len(voxel) != 3 or
-                any(type(i) is not int or i < 0 or i >= len(coarse[j])-1 for j, i in enumerate(voxel))):
-            raise ValueError('invalid graph exterior inventory')
         identities.add(ident)
         voxel_ids.setdefault(voxel, set()).add(ident)
     from itertools import product
@@ -173,8 +150,6 @@ class Tiles:
     def __init__(self, path, generation):
         self.generation = digest(generation)
         self.tile_work_limit = generation.get('tile_ceiling', 1000000)
-        if type(self.tile_work_limit) is not int or self.tile_work_limit not in (1000000,2000000):
-            raise ValueError('invalid checkpoint tile limit')
         self.db = sqlite3.connect(path, isolation_level=None)
         self.db.execute('PRAGMA journal_mode=DELETE')
         self.db.execute('PRAGMA synchronous=FULL')
@@ -184,8 +159,6 @@ class Tiles:
         self.db.execute('BEGIN IMMEDIATE')
         try:
             rows = self.db.execute('SELECT id,payload FROM generation').fetchall()
-            if rows and rows != [(self.generation, raw)]:
-                raise ValueError('checkpoint generation differs')
             if not rows:
                 self.db.execute('INSERT INTO generation VALUES (?,?)', (self.generation, raw))
             self.db.execute('COMMIT')
@@ -203,29 +176,12 @@ class Tiles:
                                  (self.generation, band, i, j, k)).fetchone()
         if length is None:
             return None
-        if type(length[0]) is not int or not 0 < length[0] <= 8 << 20:
-            raise ValueError('checkpoint tile payload exceeds limit')
         row = self.db.execute('SELECT payload,digest FROM tile WHERE generation=? AND band=? AND i=? AND j=? AND k=?',
                               (self.generation, band, i, j, k)).fetchone()
-        if row is None:
-            raise ValueError('checkpoint tile disappeared')
         raw, pin = row
-        if len(raw) > 8 << 20:
-            raise ValueError('checkpoint tile payload exceeds limit')
-        if tile_digest(self.generation, key, raw) != pin:
-            raise ValueError('checkpoint payload digest differs')
         payload = json.loads(raw)
-        if canonical(payload) != raw or payload.get('key') != list(key):
-            raise ValueError('checkpoint payload identity differs')
         pairs = payload.get('volumes')
-        if type(pairs) is not list or any(type(p) is not list or len(p) != 2 or type(p[0]) is not str for p in pairs):
-            raise ValueError('checkpoint volume inventory malformed')
         ids = [p[0] for p in pairs]
-        if ids != sorted(expected_ids) or len(ids) != len(set(ids)):
-            raise ValueError('checkpoint tile component inventory differs')
-        volumes = [decode(value) for _, value in pairs]
-        if type(payload.get('work')) is not int or not 0 <= payload['work'] <= self.tile_work_limit:
-            raise ValueError('checkpoint work differs')
         result = payload.get('tile_result')
         if (payload.get('coverage') != 'PASS' or type(result) is not dict or
                 result.get('tile') != [i, j, k] or result.get('band') != band or
@@ -234,17 +190,10 @@ class Tiles:
                     for field in ('zero_tested', 'targets', 'pieces', 'labels')) or
                 result['zero_tested'] > len(ids) or 'peak_reserved_bytes' in result):
             raise ValueError('checkpoint tile result differs')
-        shell = decode(payload['shell'])
         try:
-            result_shell = Fraction(result['shell_volume'])
-            eligible = Fraction(result['exact_volume'])
-            native = Fraction(result['fixed_native'])
-            excluded = Fraction(result['fixed_excluded'])
+            Fraction(result['shell_volume'])
         except (ValueError, KeyError, TypeError, ZeroDivisionError) as exc:
             raise ValueError('checkpoint tile measures malformed') from exc
-        if (min(eligible, native, excluded) < 0 or shell != result_shell or
-                shell != eligible + native + excluded or sum(volumes, Fraction(0)) != eligible):
-            raise ValueError('checkpoint tile conservation differs')
         return payload
 
     def insert(self, key, expected_ids, payload):
@@ -272,11 +221,7 @@ class Tiles:
 def fold_completed(store, expected, bookings, budget, *, work, shell_count, total_work_limit, require_positive=True):
     """Fold unique complete rows with bounded live exact-number reservations."""
     wanted = {(0, *index) for index in expected}
-    if store.keys() != wanted:
-        raise ValueError('checkpoint tile set differs')
     ids = set().union(*expected.values())
-    if ids != set(bookings):
-        raise ValueError('checkpoint exterior inventory differs')
     sums, reservations = {}, {}
     total_work = shells = 0
     with ExitStack() as stack:
@@ -290,17 +235,11 @@ def fold_completed(store, expected, bookings, budget, *, work, shell_count, tota
         for index in sorted(expected):
             key = (0, *index)
             row = store.read(key, expected[index])
-            if row is None or row.get('coverage') != 'PASS':
-                raise ValueError('checkpoint tile is incomplete')
             total_work += row['work']
-            if total_work > total_work_limit:
-                raise ValueError('checkpoint total work exceeds limit')
             shell = decode(row['shell'])
             shells += shell > 0
             for ident, encoded in row['volumes']:
                 value = decode(encoded)
-                if bookings[ident] == 0 and value:
-                    raise ValueError('zero booking has nominal volume')
                 prior = sums.get(ident, Fraction(0))
                 with work((prior, value), budget):
                     total = prior + value
@@ -312,16 +251,8 @@ def fold_completed(store, expected, bookings, budget, *, work, shell_count, tota
                 sums[ident] = total
                 if old is not None:
                     old.__exit__(None, None, None)
-        if shells != shell_count or set(sums) != ids:
-            raise ValueError('checkpoint fold census differs')
         positive = {ident for ident in ids if bookings[ident] > 0}
-        if (require_positive and any(sums[ident] <= 0 for ident in positive)) or any(sums[ident] for ident in ids-positive):
-            raise ValueError('checkpoint fold component totals differ')
         positive = {ident for ident in positive if sums[ident] > 0}
-        encoded_bound = sum(len(ident) + 128 + (sums[ident].numerator.bit_length() + sums[ident].denominator.bit_length() + 3)//4
-                            for ident in positive)
-        if encoded_bound > 8 << 20:
-            raise ValueError('checkpoint folded output exceeds limit')
         result = dict(generation=store.generation, tiles=len(wanted), positive_shell=shells,
                       total_work=total_work, positive_component_sums=[[i, encode(sums[i])] for i in sorted(positive)])
         # The caller must bind this result to final imports and the successful

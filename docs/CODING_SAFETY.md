@@ -155,40 +155,24 @@ verification retains the full suite; a selected pass is not a full-suite pass.
 
 ## 4. Migration and source-identity boundaries
 
-### Strict checkout and packaged release execution
+### Release and Debug runs
 
-The reviewed [Plan39 source selection](../tectonics/optimisation/workbench/plan39/README.md)
-extends this policy in a separate combined source generation. It connects full
-publication/worker boundaries and lifetime holds, with open-verified store sessions.
-Its stricter closure checker still refuses the generation; dependency promotion,
-runner wiring, folded helper pins, desktop build integration, measured peaks and
-real packaged parity remain pending. Release is not made the default. The focused
-Windows payload and sizing tests require the compatible scientific interpreter;
-the closure and source-builder controls use only the standard library.
+Atlas has one execution. A checkout, a test, a worker, the queue and the desktop
+start the same way; no marker file, flag or environment variable selects another
+checking policy. Each backend's execution identity is captured once per process and
+reused. It is a key for caches and checkpoints and is recorded in project/store
+manifests and `ExecutionContext.provenance`. Older manifests may carry an
+`execution_mode` field; readers accept and ignore it.
 
-The checkout, tests, scientific benchmarks and evidence producers stay in
-**strict** mode. Every existing per-operation check still reads all package
-source bytes and checks loaded functions, defaults and constants. Only normalised
-deeply immutable constants are reused; mutable values are checked every time.
-
-A fresh desktop build writes an exclusive `.desktop-runtime.json` inside its
-payload. Release mode additionally requires the packaged interpreter, supported
-desktop command and plain payload paths. An environment variable cannot enable
-it in a checkout. Verification and before-commit commands refuse release mode.
-No installed EXE was rebuilt by this source change.
-
-In **release** mode, each backend's first capture and full verification are shared
-under a process lock. Inner checks are cheap, but save/commit, store reopen and
-cache reads perform full checks again. Source or callable drift refuses publication
-or reuse. Scientific identity excludes the policy mode, so equivalent strict and
-release results share their identity. Mode is separate producer provenance in
-project/store manifests and `ExecutionContext.provenance`; old manifests imply
-strict. Existing source/runtime compatibility rules still apply: this does not
-make old-version saves restartable under new code.
-
-Release-mode diagnostic timings are not strict scientific acceptance evidence.
-No change to physical equations, tolerances, reduction order, step limits or
-native thread ownership is permitted by this execution policy.
+A **Debug** run is an ordinary run started with `--run-profile` set to anything but
+`off`. `stages` writes per-stage timing (`dev-stage-timing.jsonl`), `stacks` starts
+the stack sampler, and `tree`, given together with `--profile-tool <sampler>`,
+records a whole-process-tree profile that `tools/atlas.py profile` reads offline.
+The run's receipt records `run_mode: debug`. Debug changes no physical equation,
+tolerance, reduction order, step limit, native thread ownership or check; its
+timings are diagnostics, not scientific acceptance evidence. Existing
+source/runtime compatibility rules still apply: old-version saves are not made
+restartable under new code.
 
 - R31 topography source changes require explicit new recipe identities for the
   changed operations. Other producers are not automatically re-versioned.
@@ -296,9 +280,7 @@ files; it is useful before staging, not an additional mandatory pass.
 `--staged` checks exactly the index and names each working-tree change it leaves
 out. Reuse an earlier result only when the final candidate bytes, relevant tools,
 dependencies, configuration and external bindings are demonstrably identical.
-If they differ, check the affected final candidate. The guard refuses to run while
-`tectonics/.desktop-runtime.json` exists: a packaged desktop runtime cannot produce
-strict commit evidence.
+If they differ, check the affected final candidate.
 
 Both forms copy the index to a temporary file, export
 the Git-normalised candidate bytes and always run `tools/check_current_evidence.py`

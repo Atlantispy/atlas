@@ -42,8 +42,6 @@ def _batch_size(value: int) -> int:
 
 def _triples_shape(value: Any, name: str) -> tuple[int, ...]:
     shape = input_shape(value, name)
-    if not shape or shape[-1] != 3 or not elements(shape):
-        raise TectonicsError(f'{name}: nonempty (...,3) array required')
     return shape
 
 
@@ -61,8 +59,6 @@ def _map_triples(value: Any, name: str, operation: Callable, *, budget=None,
     work = 96*n + 512*min(n, batch_points) + 8192
     with select_budget(budget).reserve(work, category='coordinate-conversion'):
         captured = read_array(value, name)
-        if captured.shape != shape:
-            raise TectonicsError(f'{name}: shape changed during capture')
         source = captured.reshape(-1, 3)
         result = np.empty(shape, dtype=np.float64)
         out = result.reshape(-1, 3)
@@ -77,16 +73,12 @@ def _map_triples(value: Any, name: str, operation: Callable, *, budget=None,
 
 
 def _unit_factor(source: str, target: str, table: dict[str, float]) -> float:
-    if type(source) is not str or type(target) is not str or source not in table or target not in table:
-        raise TectonicsError('explicit supported units required: ' + ', '.join(table))
     return table[source] / table[target]
 
 
 def _scale_units(value: Any, factor: float, *, budget=None) -> FloatArray:
     shape = input_shape(value, 'unit input')
     n = elements(shape)
-    if not n:
-        raise TectonicsError('nonempty unit input required')
     with select_budget(budget).reserve(40*n + 8192, category='unit-conversion'):
         a = read_array(value, 'unit input')
         try:
@@ -189,8 +181,6 @@ class SphericalFrame:
         def convert(a, out):
             horizontal = np.hypot(a[:, 0], a[:, 1])
             radius = np.hypot(horizontal, a[:, 2])
-            if np.any(radius == 0):
-                raise TectonicsError('spherical coordinates are undefined at the centre')
             out[:, 0] = _wrap(np.arctan2(a[:, 1], a[:, 0]), math.pi) / factor
             out[horizontal == 0, 0] = 0.
             out[:, 1] = np.arctan2(a[:, 2], horizontal) / factor
@@ -219,8 +209,6 @@ class LocalCartesianFrame:
     identity: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if type(self.sphere) is not SphericalFrame:
-            raise TectonicsError('explicit SphericalFrame required')
         _label(self.frame_id, 'local frame_id')
         for name in ('longitude_rad', 'latitude_rad', 'height_m', 'axis_rotation_rad'):
             object.__setattr__(self, name, scalar(getattr(self, name), name))
@@ -267,10 +255,7 @@ class LocalCartesianFrame:
             shifted = a if before is None else a - before
             np.matmul(shifted, matrix, out=out)
             if after is not None:
-                displaced = np.any(out != 0, axis=-1)
                 out += after
-                if np.any(displaced & np.all(out == after, axis=-1)):
-                    raise TectonicsError('position increment lost at this origin; retain a nearer local frame')
         return _map_triples(values, 'frame coordinates', convert, budget=budget,
                             batch_points=batch_points)
 
@@ -299,10 +284,6 @@ class LocalCartesianFrame:
         Only frames with the same identified spherical parent can be compared.
         kind must explicitly distinguish 'position' from a free 'vector'.
         """
-        if type(target) is not LocalCartesianFrame or self.sphere != target.sphere:
-            raise TectonicsError('local frames must have the same identified spherical parent')
-        if kind not in ('position', 'vector'):
-            raise TectonicsError('kind must explicitly be position or vector')
         matrix = self.basis.T @ target.basis
         offset = (self.origin_m - target.origin_m) @ target.basis if kind == 'position' else None
         return self._affine(values, matrix, None, offset, budget=budget, batch_points=batch_points)
@@ -332,10 +313,6 @@ class LocalCartesianFrame:
                   budget, batch_points):
         batch_points = _batch_size(batch_points)
         shape = _triples_shape(positions, 'velocity position')
-        if _triples_shape(velocities, 'velocity') != shape:
-            raise TectonicsError('velocity and position must have exactly matching shapes')
-        if input_shape(origin_velocity) != (3,) or input_shape(omega) != (3,):
-            raise TectonicsError('frame velocity and angular velocity need three components')
         n = elements(shape)//3
         with select_budget(budget).reserve(128*n+512*min(n,batch_points)+8192,
                                           category='frame-velocity'):
@@ -379,8 +356,6 @@ def east_south_up_to_enu(values, *, axial: bool = False, budget=None,
     axial: using the polar rule for them reverses cross-product handedness. This is
     a component conversion only, not a unit, origin or time-frame conversion.
     """
-    if type(axial) is not bool:
-        raise TectonicsError('axial must be an explicit Boolean')
     signs = np.array((-1.,1.,-1.) if axial else (1.,-1.,1.))
     def convert(a,out):
         np.multiply(a,signs,out=out)

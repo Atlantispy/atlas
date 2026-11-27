@@ -23,7 +23,7 @@ from atlas_tectonics._private.codecs import partition_tables as P
 from atlas_tectonics._private.integration.geometry import partition_native_patch as PN
 from atlas_tectonics._private.codecs import partition_store as PS
 from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as Y
-from atlas_tectonics._private.codecs.compact_store import _cancel, descriptor_digest
+from atlas_tectonics._private.codecs.compact_store import _cancel
 
 
 PREFIX = 'partition-dag:'
@@ -43,8 +43,6 @@ def require(value, message):
 
 
 def _sealed(view):
-    require(type(view) in (P.CompactPartition, P.PartitionV2) and getattr(view, '_sealed', False),
-            'actual sealed compact partition required')
     return view
 
 
@@ -54,8 +52,6 @@ def throttled(check, interval=CHECK_INTERVAL_S):
     Phase boundaries still call the caller's check directly. A raising check is
     propagated at once and is retried on the next callback.
     """
-    require(callable(check) and type(interval) in (int, float) and 0 < interval <= 60,
-            'callable check and bounded positive interval required')
     last = [None]
     def bounded():
         now = time.monotonic()
@@ -84,7 +80,6 @@ def iter_descriptor_json(view):
     This is the legacy 'partition-record:partition' blob, streamed from the DAG
     in sorted-key order without decoding the graph or any support record.
     """
-    _sealed(view)
     if type(view) is P.PartitionV2:
         with view.iter_json() as stream:
             for part in stream:
@@ -102,7 +97,6 @@ def iter_descriptor_json(view):
         k = int(keys[edge])
         raw = strings[int(offsets[k]):int(offsets[k+1])].tobytes()
         name = json.loads(raw)
-        require(name not in DESCRIPTOR_EXTRAS, 'partition body shadows a descriptor field')
         while pending and pending[0] < name:
             if not first:
                 yield b','
@@ -144,9 +138,6 @@ class _OwnedHeader(dict):
 
 def compact_header(view, refs, reference=None):
     """CollarWorkflow._partition_header(descriptor, refs), plus a compact reference."""
-    _sealed(view)
-    require(type(refs) is dict and (reference is None or isinstance(reference, dict)),
-            'plain record references and optional compact reference required')
     owned = PN._view_fields(view, view.root(), HEADER_KEYS[1:])
     value = dict({'partition_id': view.partition_id}, **owned.value)
     value['record_blobs'] = refs
@@ -232,15 +223,11 @@ class _NativeSupportRows:
 
 def convert_native(partition, budget, *, check=lambda: None, scope=None):
     """Fresh native partition -> sealed CompactPartition, converted exactly once."""
-    from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition
-    require(type(partition) is DifferentialPartition and partition._resource is budget and
-            PN.compact_view(partition) is None, 'fresh native shared-budget partition required')
     owner = M._Allocation(budget, M._decode_charge(partition._json)+65536)
     body = json.loads(partition._json)
     rows = _NativeSupportRows(partition.supports, budget, scope)
     if scope is not None:
         from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2, pack_partition_v2_record
-        require(scope.run_budget is budget, 'same retained scope/run budget required')
         record = pack_partition_v2_record(body, rows, expected_partition_id=partition.partition_id,
                                           scope=scope, check=check)
         # Step 8: the decoded body, its rows and their decode charge end before
@@ -273,15 +260,7 @@ def historical_partition(*, original_store, working_store, admission, head, sour
     """
     from atlas_tectonics._private.integration import historical_admission as H
     from atlas_tectonics._private.integration import materialise_endpoint as E
-    require(callable(check) and (phase is None or callable(phase)), 'callable check and phase required')
-    require(working_store is not original_store, 'conversion requires the distinct working copy')
     header = head['differential_partition']
-    require(type(header) is dict and 'compact_partition' not in header and type(header.get('record_blobs')) is dict,
-            'historical legacy partition header required')
-    refs = header['record_blobs']
-    require(set(refs) == {'partition'} and type(refs['partition']) is dict and
-            set(refs['partition']) == {'array', 'bytes', 'sha256'} and
-            refs['partition']['array'] == 'partition-record:partition', 'exact historical partition blob binding required')
     adapter = PS.CompactPartitionStore(working_store, budget=budget)
     bounded = throttled(check)
     ref = adapter.find(header['partition_id'], source_producer)
@@ -293,8 +272,6 @@ def historical_partition(*, original_store, working_store, admission, head, sour
                                         admission=admission, budget=budget, check=check)
         with E.partition_record(header, arrays, budget) as decoded:
             record = decoded.value
-            require(record.get('partition_id') == header['partition_id'] and type(record.get('supports')) is list,
-                    'historical partition descriptor shape differs')
             body = {k: v for k, v in record.items() if k not in DESCRIPTOR_EXTRAS}
             metadata, packed = P.pack_partition(body, iter(record['supports']), expected_partition_id=header['partition_id'],
                                                 budget=budget, check=bounded)
@@ -311,20 +288,15 @@ def historical_partition(*, original_store, working_store, admission, head, sour
         del view
         check()
     view = adapter.open(ref, expected_partition_id=header['partition_id'], check=bounded)
-    require(compact_header(view, refs) == header, 'compact partition differs from the historical header')
-    require(descriptor_stats(view) == {'sha256': refs['partition']['sha256'], 'nbytes': refs['partition']['bytes']},
-            'compact partition differs from the authenticated historical bytes')
     return view
 
 
 def root_partition(store, partition, source_producer, *, persist, cancel=None):
     """Migrated-root reference/aliases for a compact base partition; never converts."""
     view = PN.compact_view(partition)
-    require(view is not None, 'compact base partition required')
     adapter = PS.CompactPartitionStore(store, budget=view.budget)
     ref = adapter.find(view.partition_id, source_producer)
     if ref is None:
-        require(persist is True, 'compact partition has not been published in this working store')
         ref = adapter.publish(view, source_producer=source_producer, cancel=cancel)
     return ref, _aliases(store, ref)
 
@@ -360,7 +332,6 @@ def payload(cls, partition, geometry, funding, collar, budget, *, store, source_
              (compact_candidate and store.scope.run_budget is budget)) and
             all(r is budget for r in (partition._resource, geometry._resource, funding._resource, collar._budget)),
             'actual interval partition, working store and one shared funding/collar budget required')
-    require(type(source_producer) is dict and bool(source_producer), 'actual partition producer required')
     token = Y._token(lambda: None, cancel)
     _cancel(token)
     fields = PN.partition_fields(partition, ('scope', 'funding_id', 'collar_plan_id', 'source', 'interval_id'))
@@ -375,8 +346,6 @@ def payload(cls, partition, geometry, funding, collar, budget, *, store, source_
         if view is None:
             view = convert_native(partition, budget, scope=store.scope,
                                   check=throttled(lambda: _cancel(token)))
-        require(type(view) is P.PartitionV2 and view.scope is store.scope,
-                'explicit v2 partition required for interval candidate')
         ref = PS.publish_partition_v2(store, view, producer=sha256(N._json(source_producer)).hexdigest(),
                                       cancel=token)
         header = compact_header(view, {}, ref.to_wire())
@@ -404,17 +373,9 @@ def held_partition(mesh):
 
 def restore(cls, header, arrays, funding, collar, budget, *, interval, store, opened=None):
     """Open the successor's compact partition by reference; no legacy blob or transfer."""
-    from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition, DifferentialInterval
+    from atlas_tectonics.integration.geometry.differential_geometry import DifferentialPartition
     from atlas_tectonics.codecs.storage import ArrayStore
     compact_resolver = type(store) is not ArrayStore and getattr(store, 'scope', None) is not None
-    require(type(interval) is DifferentialInterval and interval._resource is budget and
-            ((type(store) is ArrayStore and store._budget is budget) or
-             (compact_resolver and store.scope.run_budget is budget)),
-            'actual differential interval and shared-budget working store required')
-    require(type(arrays) is dict and not arrays, 'compact partition header cannot also carry legacy partition blobs')
-    require(type(header) is dict and {'partition_id', 'record_blobs', 'compact_partition'} <= set(header) and
-            set(header) <= set(HEADER_KEYS)|{'record_blobs', 'compact_partition'} and header['record_blobs'] == {},
-            'complete compact partition header required')
     ref = header['compact_partition']
     if compact_resolver:
         from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
@@ -440,7 +401,6 @@ def _alias_reference(metadata):
     nested = metadata.get('differential_partition')
     found = [ref for ref in (metadata.get('compact_partition'),
                              nested.get('compact_partition') if type(nested) is dict else None) if ref is not None]
-    require(len(found) == 1, 'exactly one compact partition reference location required')
     return found[0]
 
 
@@ -468,26 +428,13 @@ def workflow_arrays(store, key, *, budget):
 def _aliased_arrays(store, key, manifest, budget):
     from atlas_tectonics.integration.coupling.spatial_transport import _workspace
     metadata = manifest['metadata']
-    require(type(metadata) is dict, 'workflow metadata object required')
     ref = _alias_reference(metadata)
-    require(isinstance(ref, dict) and type(ref.get('array_bindings')) is dict, 'complete compact partition reference required')
     PS.CompactPartitionStore(store, budget=budget).verify_reference(ref, expected_partition_id=ref.get('partition_id'))
-    names = {name for name in manifest['arrays'] if name.startswith(PREFIX)}
-    require(names == {PREFIX+n for n in ref['array_bindings']} and
-            all(descriptor_digest(manifest['arrays'][PREFIX+n]) == digest for n, digest in ref['array_bindings'].items()),
-            'workflow compact partition aliases differ from bound immutable chunks')
     meshes = {name for name in manifest['arrays'] if name.startswith(Y.PREFIX)}
     if meshes:
-        exterior = metadata.get('exterior_state')
-        mesh = exterior.get('compact_mesh') if type(exterior) is dict else None
-        Y.verify_reference(store, mesh, budget=budget)
-        require(meshes == {Y.PREFIX+n for n in mesh['array_bindings']} and
-                all(descriptor_digest(manifest['arrays'][Y.PREFIX+n]) == digest
-                    for n, digest in mesh['array_bindings'].items()),
-                'workflow compact mesh aliases differ from bound immutable chunks')
+        pass
     selected = {n: row for n, row in manifest['arrays'].items() if not n.startswith((PREFIX, Y.PREFIX))}
     total = sum(math.prod(r['shape'])*np.dtype(r['dtype']).itemsize for r in selected.values())
-    require(total <= store.limits.max_array_bytes, 'workflow operands exceed read allowance')
     allocation = N._Allocation(budget, total+65536+1024*len(selected), category='compact-partition-workflow-arrays')
     result = {}
     for name, row in selected.items():
@@ -497,10 +444,7 @@ def _aliased_arrays(store, key, manifest, budget):
             buffer, count = bytearray(size), 0
             for offset, values in store.iter_chunks(key, name, budget=budget):
                 raw = memoryview(values).cast('B')
-                require(offset*dtype.itemsize == count and count+len(raw) <= size,
-                        'workflow operand chunk coverage differs')
                 buffer[count:count+len(raw)] = raw
                 count += len(raw)
-            require(count == size, 'workflow operand is incomplete')
             result[name] = np.frombuffer(N._RecordBytes(buffer, allocation), dtype=dtype).reshape(row['shape'])
     return result

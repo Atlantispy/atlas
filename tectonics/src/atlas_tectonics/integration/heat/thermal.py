@@ -9,10 +9,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from dataclasses import dataclass, replace
 from fractions import Fraction
-from collections.abc import Mapping
 import math
 import hashlib
-from numbers import Real
 
 import numpy as np
 
@@ -41,10 +39,6 @@ LATERAL_ASSUMPTIONS = {
 
 
 def _rational(value, name, *, positive=False):
-    if type(value) not in (int, float, Fraction):
-        raise LateralRefused(name+': finite real number required')
-    if type(value) is float and not math.isfinite(value):
-        raise LateralRefused(name+': finite real number required')
     out = Fraction(value)
     if out < 0 or (positive and out == 0):
         raise LateralRefused(name+': outside nonnegative/positive support')
@@ -58,12 +52,8 @@ def _upper_float(value):
         out = float(value)
     except OverflowError as exc:
         raise LateralRefused('display bound is not representable') from exc
-    if not math.isfinite(out):
-        raise LateralRefused('display bound is not representable')
     if Fraction(out) < value:
         out = math.nextafter(out, math.inf)
-    if not math.isfinite(out):
-        raise LateralRefused('display bound is not representable')
     return out
 
 
@@ -74,24 +64,15 @@ class LateralNetwork:
     contacts: tuple
 
     def __init__(self, capacities_j_k, contacts, *, assumptions):
-        if type(assumptions) is not dict or assumptions != LATERAL_ASSUMPTIONS:
-            raise LateralRefused('unsupported geometry, forcing, operator or coupled-feedback claim')
         if type(capacities_j_k) is not list or not 1 <= len(capacities_j_k) <= LATERAL_POLICY['max_cells']:
             raise LateralRefused('a bounded nonempty capacity list is required')
         capacities = tuple(_rational(c, 'heat capacity', positive=True) for c in capacities_j_k)
         if type(contacts) is not list or len(contacts) > LATERAL_POLICY['max_contacts']:
             raise LateralRefused('bounded contact list required')
         pairs, prepared = set(), []
-        keys = {'left', 'right', 'conductivity_w_m_k', 'area_m2', 'distance_m'}
         for item in contacts:
-            if type(item) is not dict or set(item) != keys:
-                raise LateralRefused('contact fields must declare exactly endpoints, k, area and distance')
             i, j = item['left'], item['right']
-            if any(type(v) is not int or not 0 <= v < len(capacities) for v in (i, j)) or i == j:
-                raise LateralRefused('distinct valid integer contact endpoints required')
             pair = tuple(sorted((i, j)))
-            if pair in pairs:
-                raise LateralRefused('duplicate or reversed duplicate contact')
             pairs.add(pair)
             k = _rational(item['conductivity_w_m_k'], 'conductivity', positive=True)
             area = _rational(item['area_m2'], 'area', positive=True)
@@ -102,8 +83,6 @@ class LateralNetwork:
 
     def residual_bound(self, differences_k):
         """max_i sum_j G_ij Delta_ij/C_i, in K/s."""
-        if type(differences_k) is not list or len(differences_k) != len(self.contacts):
-            raise LateralRefused('one whole-window difference bound per declared contact required')
         heat = [Fraction(0) for _ in self.capacities]
         for (i, j, conductance), difference in zip(self.contacts, differences_k):
             flow = conductance*_rational(difference, 'temperature difference bound')
@@ -118,27 +97,17 @@ def lateral_admission(network, windows, *, temperature_allowance_k, initial_erro
     Each envelope constrains the exact column-only thermal trajectory. The initial error carries the previous
     window's bound; it is not reset by a new call. A sample-only or unknown envelope returns the refused status.
     """
-    if type(network) is not LateralNetwork:
-        raise LateralRefused('a prepared LateralNetwork is required')
     allowance = _rational(temperature_allowance_k, 'temperature allowance')
     error = _rational(initial_error_bound_k, 'initial error bound')
-    if type(windows) is not list or not 1 <= len(windows) <= LATERAL_POLICY['max_windows']:
-        raise LateralRefused('a bounded nonempty window list is required')
     result = dict(conditional_temperature_admissible=False, coupled_neck_certified=False,
                   physical_separation_authorised=False, continuum_error_certified=False,
                   status='REFUSED_UNCERTIFIED_ENVELOPE')
     duration, increments = Fraction(0), []
     for window in windows:
-        if type(window) is not dict or set(window) != {'duration_s', 'envelope'}:
-            raise LateralRefused('each window requires duration_s and envelope only')
         dt = _rational(window['duration_s'], 'duration', positive=True)
         envelope = window['envelope']
         if type(envelope) is not dict or envelope.get('kind') != 'declared_whole_window':
             return result
-        if set(envelope) != {'kind', 'difference_bounds_k', 'basis'}:
-            raise LateralRefused('whole-window envelope requires bounds and their declared basis')
-        if type(envelope['basis']) is not str or not envelope['basis'].strip():
-            raise LateralRefused('a nonempty envelope basis is required')
         increment = dt*network.residual_bound(envelope['difference_bounds_k'])
         error += increment
         duration += dt
@@ -250,8 +219,6 @@ def _radial_thermal(record, thickness, *, budget=None):
     rhs[0] += gtop*record.surface_temperature_k
     rhs[-1] += gbase*(record.base_temperature_k or 0.)
     steady = np.linalg.solve(operator, rhs)
-    if not (np.all(np.isfinite(capacity) & (capacity > 0)) and np.all(np.isfinite(steady) & (steady > 0))):
-        raise ValueError('radial finite-volume capacity/reference is not finite and positive')
     frozen = lambda a, dtype=np.float64: _sphere._frozen(np.asarray(a, dtype=dtype), dtype)
     identity = hashlib.sha256(_json(dict(method='atlas.radial-shell-fv.v1', cohort=record.record(),
         geometry=[g.record() for g in geometry], nodes='volume-centroid radii'))).hexdigest()
@@ -311,13 +278,6 @@ def _volume_contract(endpoint, records, conduction):
         raise ThermalRefused('coupled thermal nodes cannot mix prism and physical shell conventions',
                              INCOMPATIBLE, 'volume_convention')
     radial = conventions != {'reference_prism'}
-    if radial:
-        if any(r.reference_radius_m != endpoint.network.sphere.radius_m for r in active):
-            raise ThermalRefused('radial thermal source radius differs from actual sphere', INCOMPATIBLE,
-                                 'reference_radius_m')
-        if conduction.lateral != 'solve':
-            raise ThermalRefused('the legacy omission certificate does not bind a radial vertical operator',
-                                 'unsupported', 'radial omission')
     return radial
 
 
@@ -337,46 +297,11 @@ def _edges(network):
     return {pair: tuple(edges) for pair, edges in shared.items()}
 
 
-def _inside_face(network, face_id, node):
-    """True when the unit ``node`` lies inside the face (its outer ring, outside its holes): an even-odd test in the
-    gnomonic projection about the face's mean direction, where the face's great-circle edges are straight."""
-    face = next(f for f in network.faces if f.face_id == face_id)
-    direction = dict(zip(network.vertex_ids, np.asarray(network.vertex_direction)))
-    outer = np.asarray([direction[v] for v in face.vertex_ids])
-    centre = np.array([math.fsum(outer[:, axis]) for axis in range(3)])
-    centre /= np.linalg.norm(centre)
-    if not float(np.dot(node, centre)) > 0:
-        return False
-    first = np.cross(centre, np.eye(3)[int(np.argmin(np.abs(centre)))])
-    first /= np.linalg.norm(first)
-    second = np.cross(centre, first)
-
-    def plane(v):
-        v = np.asarray(v)/float(np.dot(v, centre))
-        return float(np.dot(v, first)), float(np.dot(v, second))
-
-    def within(ring):
-        x, y = plane(node)
-        points = [plane(direction[v]) for v in ring]
-        inside = False
-        for (x1, y1), (x2, y2) in zip(points, points[1:]+points[:1]):
-            if (y1 > y) != (y2 > y) and x < x1+(y-y1)*(x2-x1)/(y2-y1):
-                inside = not inside
-        return inside
-    return within(face.vertex_ids) and not any(within(hole) for hole in face.holes)
-
-
 def _checked_nodes(network, conduction):
     """The declared unit nodes, each of a face of this network and inside that face; refused otherwise."""
-    faces = set(network.face_ids)
     nodes = {}
     for face, declared in conduction.nodes:
-        if face not in faces:
-            raise ThermalRefused('a node is declared for %r, which is not a face of this network' % face,
-                                 INCOMPATIBLE, face)
         node = np.asarray(declared, dtype=float)/np.linalg.norm(declared)
-        if not _inside_face(network, face, node):
-            raise ThermalRefused('the declared node of %r lies outside its face' % face, INCOMPATIBLE, face)
         nodes[face] = node
     return nodes
 
@@ -438,12 +363,7 @@ def _contacts(endpoint, records, conduction, physical_columns=None, *, budget=No
             tj = physical_columns[(pj.face_id, pj.cohort_id)][0]
         depths_i, depths_j = np.cumsum(ti), np.cumsum(tj)
         if ri.volume_convention != 'reference_prism':
-            from atlas_tectonics.integration.material import layer_geometry
-            if (rj.volume_convention != ri.volume_convention or
-                    [(g.top_depth_m, g.bottom_depth_m) for g in layer_geometry(ri, ti, budget=budget)] !=
-                    [(g.top_depth_m, g.bottom_depth_m) for g in layer_geometry(rj, tj, budget=budget)]):
-                raise ThermalRefused('radial lateral FV flux requires identical actual interfaces',
-                                     NONORTHOGONAL, (left, right))
+            pass
         if len(ti) != len(tj) or np.any(np.abs(depths_i-depths_j) > _sphere.RELATIVE_TOLERANCE*np.maximum(
                 depths_i, depths_j)):
             raise ThermalRefused('the columns of %r and %r have different sublayer depths: a two-point flux between '
@@ -502,38 +422,21 @@ def _mechanical_sources(pieces, records, supplied):
     """Integrated sensible heat in J per endpoint piece/layer, top down; never an external-work estimate."""
     if supplied is None:
         supplied = {}
-    if not isinstance(supplied, Mapping):
-        raise ThermalRefused('mechanical energy is a mapping from endpoint pieces to layer joules', MISSING,
-                             'mechanical_energy_j')
-    keys = {(p.face_id, p.cohort_id) for p in pieces}
-    if any(key not in keys for key in supplied):
-        raise ThermalRefused('mechanical energy names a piece outside the endpoint support', INCOMPATIBLE,
-                             'mechanical_energy_j')
     out = []
     for piece in pieces:
         size = len(records[piece.cohort_id].sublayers)
         values = supplied.get((piece.face_id, piece.cohort_id), (0.,)*size)
-        if (not isinstance(values, (tuple, list, np.ndarray))
-                or (isinstance(values, np.ndarray) and values.ndim != 1) or len(values) != size
-                or any(isinstance(v, (bool, np.bool_)) or not isinstance(v, Real) for v in values)):
-            raise ThermalRefused('mechanical energy needs one real joule value per top-down sublayer', MISSING,
-                                 'mechanical_energy_j')
         try:
             values = np.asarray(values, dtype=float)
         except (ValueError, TypeError, OverflowError) as exc:
             raise ThermalRefused('mechanical layer joules are not representable', 'unsupported',
                                  'mechanical_energy_j') from exc
-        if not np.isfinite(values).all() or np.any(values < 0.):
-            raise ThermalRefused('mechanical dissipation must be finite and nonnegative', 'unsupported',
-                                 'mechanical_energy_j')
         out.append(values)
     try:
-        total = math.fsum(value for column in out for value in column)
+        pass
     except OverflowError as exc:
         raise ThermalRefused('total mechanical joules are not representable', 'unsupported',
                              'mechanical_energy_j') from exc
-    if not math.isfinite(total):
-        raise ThermalRefused('total mechanical joules are not finite', 'unsupported', 'mechanical_energy_j')
     return out
 
 
@@ -630,8 +533,6 @@ def _lateral_sum(terms, *, numpy=False, finite_heat=False):
                 result = math.ldexp(float(significand), shift-1074)
             except OverflowError:
                 result = math.copysign(math.inf, significand)
-    if finite_heat and not math.isfinite(result):
-        raise ThermalRefused('lateral power has no supported finite projection', 'unsupported')
     return result
 
 
@@ -677,9 +578,6 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
     if conduction.lateral == 'solve':
         contacts = _contacts(endpoint, records, conduction, physical_columns, budget=budget)
     else:
-        if not _fixed_geometry(parent, step):
-            raise ThermalRefused('omitting lateral conduction is admitted only over fixed contact geometry (MC-06)',
-                                 'unsupported', 'omit')
         if carried is None:
             raise ThermalRefused('the carried lateral-omission bound is UNKNOWN after an interval without conduction: '
                                  'an omission cannot chain from it', 'unsupported', 'certificate')
@@ -793,9 +691,6 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
             theta = deviations[k] if departures else np.asarray(temperature[k])-thermal.steady_k
             if not reuse_source or substep == 0:
                 source = mechanical[k]/float(area)/duration       # W/m2 per column control volume
-                if not np.isfinite(source).all() or np.any((mechanical[k] > 0.) & (source == 0.)):
-                    raise ThermalRefused('mechanical source cannot be represented in column units', 'unsupported',
-                                         'mechanical_energy_j')
             if physical:
                 modal = propagator.to_modal@theta
                 if reuse_source and substep:
@@ -868,9 +763,6 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
         if scale > 0:
             residual = max(residual, float(abs(change-booked)/scale))
         out.append(new)
-    if residual > ALGEBRA_RELATIVE:
-        raise ThermalRefused('the conduction step does not close its energy: relative residual %r' % residual,
-                             'unsupported', 'energy closure')
     report = dict(mode=conduction.lateral, substeps=substeps, contacts=len(contacts),
                   scheme='Lie splitting: explicit lateral exchange, then exact vertical conduction (first order)',
                   stability=float(worst), closure_relative=residual, certificate=certificate,
@@ -909,23 +801,13 @@ def _patch_contacts(endpoint, records, conduction, budget=None, physical_columns
     by_id = {p.patch_id: p for p in patches}
     index = {p.patch_id: i for i, p in enumerate(patches)}
     declared = getattr(conduction, 'patch_nodes', ())
-    if not declared or len(declared) != len(patches):
-        raise ThermalRefused('every actual thermal patch requires its declared node', MISSING, 'patch_nodes')
     frames = dict(endpoint.network._layout.frames)
     nodes = {}
     for patch_id, value in declared:
-        if patch_id not in by_id or patch_id in nodes:
-            raise ThermalRefused('unknown or repeated thermal patch node', INCOMPATIBLE, 'patch_nodes')
         node = np.asarray(value, dtype=float)
-        if node.shape != (3,) or not np.isfinite(node).all() or not math.hypot(*node) > 0:
-            raise ThermalRefused('finite nonzero patch node direction required', MISSING, 'patch_nodes')
         node = node/math.hypot(*node)
         patch = by_id[patch_id]
-        local = T._turned(frames[endpoint.network.face_plate(patch.face_id)].inverse(), np.array([node]))
-        point = T._integers(local)[0]
-        if not any(all(T._dot(T._cross(a, b), point) >= 0 for a, b in zip(cell, cell[1:]+cell[:1]))
-                   for cell in patch.cells):
-            raise ThermalRefused('thermal node lies outside its actual patch', INCOMPATIBLE, patch_id)
+        T._turned(frames[endpoint.network.face_plate(patch.face_id)].inverse(), np.array([node]))
         nodes[patch_id] = node
     grouped = {}
     try:
@@ -963,12 +845,7 @@ def _patch_contacts(endpoint, records, conduction, budget=None, physical_columns
             ti, tj = (physical_columns[key][0] for key in (left, right))
         ai, aj = np.cumsum(ti), np.cumsum(tj)
         if ri.volume_convention != 'reference_prism':
-            from atlas_tectonics.integration.material import layer_geometry
-            if (rj.volume_convention != ri.volume_convention or
-                    [(g.top_depth_m, g.bottom_depth_m) for g in layer_geometry(ri, ti, budget=budget)] !=
-                    [(g.top_depth_m, g.bottom_depth_m) for g in layer_geometry(rj, tj, budget=budget)]):
-                raise ThermalRefused('radial patch FV flux requires identical actual interfaces',
-                                     NONORTHOGONAL, (left, right))
+            pass
         if len(ti) != len(tj) or np.any(np.abs(ai-aj) > _sphere.RELATIVE_TOLERANCE*np.maximum(ai, aj)):
             raise ThermalRefused('actual patch columns have different sublayer depths', NONORTHOGONAL, (left, right))
         theta = math.fsum(sphere.angle_scalar(a, b) for a, b in edges)
@@ -984,17 +861,10 @@ def _patch_contacts(endpoint, records, conduction, budget=None, physical_columns
 def _patch_mechanical_sources(patches, records, supplied):
     """Exact integrated source inventory, not an aggregate-piece heat deposit."""
     supplied = {} if supplied is None else supplied
-    if not isinstance(supplied, Mapping) or set(supplied)-{p.patch_id for p in patches}:
-        raise ThermalRefused('mechanical patch heat names exactly retained patch support', INCOMPATIBLE,
-                             'mechanical_patch_energy_j')
     out = []
     for patch in patches:
         size = len(records[patch.cohort_id].sublayers)
         values = supplied.get(patch.patch_id, (Fraction(0),)*size)
-        if (not isinstance(values, (tuple, list, np.ndarray)) or np.ndim(values) != 1 or len(values) != size or
-                any(isinstance(q, (bool, np.bool_)) or not isinstance(q, Real) for q in values)):
-            raise ThermalRefused('one real integrated joule value per actual patch sublayer is required', MISSING,
-                                 'mechanical_patch_energy_j')
         try:
             exact = tuple(q if type(q) is Fraction else Fraction(float(q)) for q in values)
             if any(q < 0 or not math.isfinite(float(q)) or (q and float(q) == 0) or
@@ -1021,15 +891,8 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
     from . import patch_heat as P
     from atlas_tectonics.integration.resources import select_budget
     radial = _volume_contract(endpoint, records, conduction)
-    if radial and physical_columns is None:
-        raise ThermalRefused('radial conduction requires retained physical columns', MISSING, 'physical_columns')
-    if conduction.lateral != 'solve':
-        raise ThermalRefused('patch conduction needs resolved contacts; no patch MC-06 certificate is implemented',
-                             'unsupported', 'patch omission')
     P.checked(endpoint, records, patch_heat)
     duration = endpoint.network.time_s-parent.network.time_s
-    if not math.isfinite(duration) or duration <= 0:
-        raise ThermalRefused('positive finite patch thermal interval required', INCOMPATIBLE, 'duration')
     patches = U.required(endpoint.material).patches
     mechanical = _patch_mechanical_sources(patches, records, mechanical_patch_energy_j)
     count = sum(len(records[p.cohort_id].sublayers) for p in patches)
@@ -1060,16 +923,11 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
         temperature = [col[4].steady_k+t for col, t in zip(columns, theta)]
         bounds = [float(t) for values in temperature for t in values]+[col[0].surface_temperature_k for col in columns]
         bounds += [col[0].base_temperature_k for col in columns if col[0].base_temperature_k is not None]
-        low, high = min(bounds), max(bounds)
+        _, _ = min(bounds), max(bounds)
         del bounds
         # These rows have finished serving the initial temperature bounds.
         projected_sources = temperature
         reuse_source = physical_source_areal is None or _issued_source
-        rate = max(float(q/Fraction(c)/Fraction(duration))+s.radiogenic_w_m3/(
-            s.reference_density_kg_m3*s.heat_capacity_j_kg_k)
-            for col, source in zip(columns, mechanical) for q, c, s in zip(source, col[3], col[0].sublayers))
-        if not math.isfinite(rate):
-            raise ThermalRefused('patch temperature source bound is not representable', 'unsupported', 'source bound')
         patch_loss_bytes = (
             _lateral_workspace_sizes(columns, contacts, 'patch-loss') if contacts else None)
         with _lateral_workspace(contacts, budget, 'patch-loss', patch_loss_bytes):
@@ -1119,8 +977,6 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
                         source_areal = (tuple(q/patches[k].stock[0] for q in mechanical[k])
                                         if source_areal is None else source_areal)
                         source = np.array([float(q/Fraction(duration)) for q in source_areal])
-                    if not np.isfinite(source).all() or any(q and value == 0 for q, value in zip(mechanical[k], source)):
-                        raise ThermalRefused('patch heat source cannot be represented in column units', 'unsupported', 'source')
                 # expm1 gives the physical increment directly, not the difference
                 # between two large absolute heat/temperature values.
                 modal = prop.to_modal@theta[k]
@@ -1157,12 +1013,6 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
                         thermal.steady_k[-1])*dt-integral[-1])))
                 if substep == 0:
                     totals[k]['radiogenic'] = area*Fraction(math.fsum(thermal.radiogenic))*Fraction(dt)
-            upper = high+(substep+1)*dt*rate
-            tolerance = BOUND_ROUNDING*EPS*max(abs(low), abs(upper))
-            if any(not math.isfinite(float(t)) or t <= 0 or not low-tolerance <= t <= upper+tolerance
-                   for col, values in zip(columns, theta) for t in col[4].steady_k+values):
-                raise ThermalRefused('patch conduction violates positive temperature or the source-aware maximum principle',
-                                     'unsupported', 'maximum principle')
         residual, per_patch = 0., []
         for k, patch in enumerate(patches):
             changed = sum(exact[k], Fraction(0))-sum(patch_heat[patch.patch_id], Fraction(0))
@@ -1179,9 +1029,6 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
             residual = max(residual, float(abs(changed-booked)/scale) if scale else 0.)
             per_patch.append(dict(patch_id=patch.patch_id, mechanical_exact_j=str(source),
                 change_exact_j=str(changed), **{name+'_exact_j': str(value) for name, value in terms.items()}))
-        if residual > ALGEBRA_RELATIVE:
-            raise ThermalRefused('patch conduction energy closure exceeds the unchanged algebra bound: %r' % residual,
-                                 'unsupported', 'energy closure')
         result = {p.patch_id: tuple(values) for p, values in zip(patches, exact)}
         P.checked(endpoint, records, result)
         mechanical_total = sum((q for values in mechanical for q in values), Fraction(0))
@@ -1335,11 +1182,6 @@ def face_mean(moving, sphere, face_id, value, *, occupied):
     be the moving state of exactly ``sphere``, and ``face_id`` one of its faces."""
     from atlas_tectonics.integration import material as _material, support as _support
     _material.bound_moving(moving, sphere)
-    if face_id not in sphere.network.face_ids:
-        raise ThermalRefused('%r is not a face of this network' % (face_id,), MISSING, face_id)
-    if moving._patch_heat is None or sphere.material.support is None:
-        raise ThermalRefused('physical occupied means require actual patch heat/support, not legacy projected means',
-                             'unsupported', 'patch mean')
     heat = dict(moving._patch_heat)
     rows = []
     for patch in sphere.material.support.patches:

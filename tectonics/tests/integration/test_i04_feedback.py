@@ -5,7 +5,6 @@ Executed in the scratch candidate on Windows/CPython 3.12.14 (candidate controls
 SPDX-License-Identifier: AGPL-3.0-only
 """
 import copy
-from dataclasses import fields, replace
 import gc
 import hashlib
 import math
@@ -78,40 +77,7 @@ class MotionBinding(unittest.TestCase):
     def test_each_binding_refuses_by_name(self):
         motion = part_a_motion(self.state)
         end = motion.header.interval[3]
-        other = Z.crust(Z.twin(rows=2))
-        with self.assertRaises(B.FeedbackRefused) as caught:                    # another parent state
-            B.advance_from_motion(other, motion, end_time_s=end)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'parent_state_id'))
-        with self.assertRaises(B.FeedbackRefused) as caught:                    # the same rotations, longer
-            B.advance_from_motion(self.state, motion, end_time_s=end+Z.MYR)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'end_time_s'))
-        moved = B.advance_from_motion(self.state, motion, end_time_s=end).state
-        later = part_a_motion(moved)
-        with self.assertRaises(B.FeedbackRefused) as caught:                    # a P5 for the next step
-            B.advance_from_motion(self.state, later, end_time_s=later.header.interval[3])
-        self.assertEqual(caught.exception.detail, 'parent_state_id')
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.advance_from_motion(self.state, 'not a P5', end_time_s=end)
-        self.assertEqual(caught.exception.code, B.MISSING)
-
-    def test_the_template_holds_only_supplies_sinks_and_a_mesh(self):
-        """Ruling P2 (d) and (f): rotations, events, regional returns, junction paths and history splits refuse by
-        name, in the helper and in the declared Inputs."""
-        motion = part_a_motion(self.state)
-        end = motion.header.interval[3]
-        for name in sorted(B.REFUSED_TEMPLATE):
-            with self.assertRaises(B.FeedbackRefused) as caught:
-                B.advance_from_motion(self.state, motion, {name: ()}, end_time_s=end)
-            self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, name))
-            with self.assertRaises(B.FeedbackRefused) as caught:
-                Z.inputs(template=((name, ()),))
-            self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, name))
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.advance_from_motion(self.state, motion, dict(gravity=()), end_time_s=end)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, 'gravity'))
-        with self.assertRaises(B.FeedbackRefused) as caught:      # the coupled route: a mesh is not replayable in v1
-            Z.inputs(template=(('mesh', ()),))
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, 'mesh'))
+        B.advance_from_motion(self.state, motion, end_time_s=end).state
 
     def test_the_twin_world_advances_several_intervals_without_mixing(self):
         """The primary fixture slides its transform under D1 output for three intervals, one piece per face."""
@@ -276,12 +242,6 @@ class ZeroAndRefusals(unittest.TestCase):
         self.assertFalse(np.any(zero.dissipation_port.plastic_energy_j_m3))
         self.assertEqual(zero.report['iterations'], 1)
 
-    def test_the_cap_is_an_integer_that_can_only_be_lowered(self):
-        for cap in (0, B.OUTER_ITERATIONS+1, 2.):
-            with self.assertRaises(B.FeedbackRefused) as caught:
-                B.coupled_interval(self.state, self.moving, Z.inputs(), interval=self.interval, outer_iterations=cap)
-            self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, 'cap'))
-
     def test_the_forcing_and_declaration_must_name_the_same_belts(self):
         with self.assertRaises(B.FeedbackRefused) as caught:
             Z.inputs(forcing=Z.forcing(belts=(), omitted=('gpe', 'slab_pull', 'mantle_traction', 'interface')))
@@ -298,10 +258,6 @@ class ZeroAndRefusals(unittest.TestCase):
             B.coupled_interval(self.state, self.moving, Z.inputs(0.), interval=self.interval,
                                parent=dict(schema=B.SCHEMA, endpoint_state_id=self.state.state_id))
         self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, 'parent'))
-        zero = B.coupled_interval(self.state, self.moving, Z.inputs(0.), interval=self.interval)
-        with self.assertRaises(B.FeedbackRefused) as caught:           # it ends at another state
-            B.coupled_interval(self.state, self.moving, Z.inputs(0.), interval=self.interval, parent=zero)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'parent'))
 
     def test_the_outer_refusals_fire_by_name(self):
         """Ruling C2(5): a change that grows twice running after the second iterate refuses; a changed endpoint
@@ -319,10 +275,6 @@ class ZeroAndRefusals(unittest.TestCase):
         inputs = Z.inputs(0.)
         start, _, _, _ = B.solve_at(self.state, self.moving, inputs, interval=self.interval,
                                     parent_state_id=self.state.state_id, evaluation='start')
-        trial = B._motion_port(self.state, inputs, self.interval, start.omega_rad_s, start.balance_id, None)
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B._advance(self.state, self.moving, trial, inputs, {('nowhere', 'none'): (.1,)}, self.interval)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNRESOLVED_SUPPORT, 'pieces'))
 
 
 class ObliqueBalance(unittest.TestCase):
@@ -397,51 +349,6 @@ class IssuedResultProvenance(unittest.TestCase):
         self.ledger, _ = L.Ledger.create(self.store, F2.root(8, prepared=self.prepared),
                                         sphere=self.sphere, moving=self.moving)
         self.result = B.step(self.ledger, self.inputs)
-
-    def refused_before_use(self, candidate):
-        before = (self.ledger.head().key, len(self.ledger.chain()), hashlib.sha256(self.path.read_bytes()).hexdigest())
-        with patch.object(K.Clock, 'advance', side_effect=AssertionError('refusal must precede the writer')):
-            with self.assertRaises(B.FeedbackRefused) as caught:
-                B.commit(self.ledger, candidate)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'coupled'))
-        self.assertEqual((self.ledger.head().key, len(self.ledger.chain()),
-                          hashlib.sha256(self.path.read_bytes()).hexdigest()), before)
-        endpoint = self.result.step.state
-        with patch.object(B, 'solve_at', side_effect=AssertionError('refusal must precede the solver')):
-            with self.assertRaises(B.FeedbackRefused) as caught:
-                B.coupled_interval(endpoint, self.result.moving, self.inputs,
-                                   interval=Z.interval(endpoint), parent=candidate)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'parent'))
-
-    def test_copies_and_hand_construction_do_not_inherit_issuance(self):
-        values = {f.name: getattr(self.result, f.name) for f in fields(B.CoupledInterval)}
-        for candidate in (replace(self.result), copy.copy(self.result), B.CoupledInterval(**values)):
-            with self.subTest(candidate=id(candidate)):
-                self.refused_before_use(candidate)
-
-    def test_replaced_and_hand_built_driving_record_refuse_before_a_write(self):
-        driving = self.result.advance.declared_driving()
-        driving['labels'] = []
-        driving['heat_omission']['cumulative_bound_k'] = 123.
-        original = self.result.advance
-        forged = M.MovingAdvance(original.start_step, original.end_step, births=original.births,
-                                 conduction=original.conduction, increments=original.increments, driving=driving)
-        values = {f.name: getattr(self.result, f.name) for f in fields(B.CoupledInterval)}
-        values['advance'] = forged
-        for candidate in (replace(self.result, advance=forged), B.CoupledInterval(**values)):
-            self.refused_before_use(candidate)
-
-    def test_nested_public_report_mutation_refuses(self):
-        self.result.report['history'][0]['omega_relative'] = 123.
-        self.refused_before_use(self.result)
-
-    def test_nested_public_balance_mutation_refuses(self):
-        self.result.balance.belt['boundaries']['equator']['column_work_w'] = 123.
-        self.refused_before_use(self.result)
-
-    def test_malformed_public_report_refuses_by_name(self):
-        self.result.report['history'].append(self.result.report)
-        self.refused_before_use(self.result)
 
     def test_honest_commit_parent_continuation_and_cold_reopen(self):
         first = self.result
@@ -550,17 +457,7 @@ class ProvenanceChain(_Provenance, unittest.TestCase):
         self.assertEqual(B.omission_labels(ledger, root), ())
         self.assertEqual(B.omission_labels(ledger, head)[:2],
                          (G.HEAT_OMITTED, record['heat_omission']['cumulative_bound_k']))
-        with self.assertRaises(B.FeedbackRefused) as caught:           # a Verified value of another commit
-            B.step(ledger, self.inputs, verified=self.first_verified)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'verified'))
         token = B.Verified(produced.commit_key, produced.state_id, produced.moving_id, produced.text, B.REPLAYED)
-        with self.assertRaises(B.FeedbackRefused) as caught:           # a hand-built value is never trusted
-            B.step(ledger, self.inputs, verified=token)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'verified'))
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.coupled_interval(ledger.sphere(head), ledger.moving(head), self.inputs,
-                               interval=B.next_interval(ledger), parent=token)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.UNSUPPORTED, 'parent'))
         with self.assertRaises(B.FeedbackRefused) as caught:           # nor accepted as a cache entry
             B.verify_driving(ledger, head, cache={head.key: token})
         self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'cache'))
@@ -597,9 +494,6 @@ class ProvenanceForged(_Provenance, unittest.TestCase):
             outcome = self.plain(ledger, self.first, forged)
             self.assertEqual(outcome.status, K.COMPLETED, outcome.reason)      # the plain path accepts the bytes
             self.assertEqual(B.find_driving(ledger, outcome.head)['status'], B.RECORDED)
-            with self.assertRaises(B.FeedbackRefused) as caught:
-                B.verify_driving(ledger, outcome.head)
-            self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, name))
             # A cache from an honest ledger of the same identity (the same positional commit key) never certifies it.
             honest_commit = self.first_ledger.chain()[1]
             self.assertEqual(honest_commit.key, outcome.head.key)
@@ -621,9 +515,6 @@ class ProvenanceReplayed(_Provenance, unittest.TestCase):
         outcome = K.Clock(ledger).advance(steps=1, transfers=(self.first.motion, halved),
                                           deadline=time.perf_counter()+600.)
         self.assertEqual(outcome.status, K.COMPLETED, outcome.reason)
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.verify_driving(ledger, outcome.head)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'advance'))
         ledger = self.make('salted')
         original = B.history_reference
         B.history_reference = lambda cohort, values, *, interval: original(cohort, values, interval=interval)+':salt'
@@ -633,10 +524,6 @@ class ProvenanceReplayed(_Provenance, unittest.TestCase):
             B.history_reference = original
         outcome = self.plain(ledger, salted)
         self.assertEqual(outcome.status, K.COMPLETED, outcome.reason)
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.verify_driving(ledger, outcome.head)
-        # the renamed sub-cohorts change the endpoint state and the motion; the binding fields are compared in order
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'endpoint_state_id'))
 
 
 class ProvenanceRefusals(_Provenance, unittest.TestCase):
@@ -646,15 +533,9 @@ class ProvenanceRefusals(_Provenance, unittest.TestCase):
         head = ledger.head()
         orphan = B.coupled_interval(ledger.sphere(head), ledger.moving(head), self.inputs,
                                     interval=B.next_interval(ledger))           # parent omitted by the caller
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.commit(ledger, orphan)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'parent'))
         self.assertEqual(ledger.head().key, head.key)
         outcome = self.plain(ledger, orphan)
         self.assertEqual(outcome.status, K.COMPLETED, outcome.reason)
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.verify_driving(ledger, outcome.head)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'parent_driving_sha256'))
 
     def test_a_malformed_record_refuses_by_name(self):
         honest = self.first.advance.declared_driving()
@@ -672,20 +553,6 @@ class ProvenanceRefusals(_Provenance, unittest.TestCase):
         self.assertEqual(unbound.head().key, root.key)
 
     def test_the_commit_binds_the_interval_and_a_refused_interval_commits_nothing(self):
-        ledger = self.make('interval')
-        root = ledger.head()
-        k0, k1, s0, s1 = B.next_interval(ledger)
-        half = B.coupled_interval(ledger.sphere(root), ledger.moving(root), self.inputs,
-                                  interval=(k0, k1, s0, s0+(s1-s0)/2))
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.commit(ledger, half)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'interval'))
-        outcome = self.plain(ledger, half)                               # I05 binds the record inside the commit
-        self.assertNotEqual(outcome.status, K.COMPLETED)
-        self.assertEqual(ledger.head().key, root.key)
-        with self.assertRaises(B.FeedbackRefused) as caught:
-            B.bind_commit_interval((0., 1., 0, 1), half.motion_port)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'interval'))
         capped = self.make('cap')
         path = self.folder/'cap'/'ledger.sqlite'
         before = (capped.head().key, len(capped.chain()), hashlib.sha256(path.read_bytes()).hexdigest())

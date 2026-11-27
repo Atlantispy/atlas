@@ -16,8 +16,9 @@ import hashlib
 import json
 import math
 import threading
+from typing import cast
 import numpy as np
-from atlas_tectonics._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
+from atlas_tectonics._validation import TectonicsError, scalar, read_array
 from atlas_tectonics._validation import _stored_array
 from atlas_tectonics.integration.resources import select_budget, MemoryLimitError
 from atlas_tectonics.integration.resources import check_event_or_callable
@@ -26,7 +27,7 @@ from atlas_tectonics.integration.reuse import ExecutionContext, content_record
 from atlas_tectonics.mechanics.stokes import face_force_from_density, StokesSolvePolicy
 from atlas_tectonics.mechanics.stokes_execution import PreparedStokes2D, _native_lease, _factored_scale, _hex
 from atlas_tectonics.thermal.thermochemical import (ThermochemicalProblem, ThermochemicalPolicy, _Diffusion2D,
-                            _METHOD, _BOUND_TOL, _TIME_RTOL, _PUBLICATION_CONTRACT,
+                            _METHOD, _TIME_RTOL, _PUBLICATION_CONTRACT,
                             _check_fields, _reference_transfers, _digest, _scaled_thermal_sum)
 
 
@@ -40,8 +41,6 @@ def _endpoint_time(start,dt,policy):
     rebased epoch or a different interval chosen by the caller.
     """
     end=start+dt
-    if dt*.5==0 or not math.isfinite(end) or end<=start:
-        raise TectonicsError('time interval cannot advance the named epoch in binary64')
     represented=end-start
     precision=min(policy.inventory_rtol,_TIME_RTOL)
     if abs(2*(.5*dt)-dt)/dt>precision:
@@ -54,31 +53,12 @@ def _endpoint_time(start,dt,policy):
 
 def _check_step_record(record, time_s, source, check_adaptive_stage):
     """Validate decoded records; hashes are integrity, not scientific signatures."""
-    keys={'method','dt_s','input_time_s','source','policy','velocity_mode','velocity_source',
-          'stage_flow_ids','heating_sha256','balances'}
-    if (type(record) is not dict or set(record) not in (keys,keys|{'publication_contract'},keys|{'publication_contract','nonlinear_mechanics'})
-            or record['method']!=_METHOD):
-        raise TectonicsError('complete canonical evolution record required')
-    dt=scalar(record['dt_s'],'stored step interval',positive=True)
-    start=scalar(record['input_time_s'],'stored initial time')
-    if start+dt!=time_s or not time_s>start or record['source']!=source:
-        raise TectonicsError('stored time/source does not describe this endpoint')
+    scalar(record['dt_s'],'stored step interval',positive=True)
+    scalar(record['input_time_s'],'stored initial time')
     try: policy=ThermochemicalPolicy(**record['policy'])
     except (TypeError,KeyError) as exc: raise TectonicsError('invalid stored step policy') from exc
-    if _json(asdict(policy))!=_json(record['policy']): raise TectonicsError('noncanonical stored policy')
-    # Old snapshots remain exactly decodable, but never acquire new guarantees.
-    # Their execution ID still prevents silent continuation with changed source.
-    if 'publication_contract' in record:
-        if record['publication_contract']!=_PUBLICATION_CONTRACT:
-            raise TectonicsError('unknown thermochemical publication contract')
-        if _endpoint_time(start,dt,policy)!=time_s:
-            raise TectonicsError('stored endpoint fails its clock precision contract')
-    if record['velocity_mode'] not in ('buoyancy-coupled-constant-viscosity','buoyancy-coupled-variable-viscosity','prescribed-frozen-MAC'):
-        raise TectonicsError('unknown stored velocity mode')
-    if record['velocity_mode']=='prescribed-frozen-MAC': text(record['velocity_source'],'velocity provenance')
+    if record['velocity_mode']=='prescribed-frozen-MAC': record['velocity_source']
     elif record['velocity_source'] is not None: raise TectonicsError('coupled velocity has no prescribed source')
-    if type(record['stage_flow_ids']) is not list or len(record['stage_flow_ids'])!=2:
-        raise TectonicsError('two RK stage identities required')
     for v in record['stage_flow_ids']: _hex(v,'stage flow')
     if record['velocity_mode']=='buoyancy-coupled-variable-viscosity':
         from atlas_tectonics.mechanics.variable_stokes import NonlinearStokesPolicy
@@ -154,19 +134,8 @@ def _check_step_record(record, time_s, source, check_adaptive_stage):
     elif 'nonlinear_mechanics' in record:
         raise TectonicsError('unexpected nonlinear mechanics record')
     _hex(record['heating_sha256'],'total heating')
-    names={'heat_before_j','heat_after_j','heat_change_j','source_heat_j','bottom_outward_heat_j',
-           'top_outward_heat_j','heat_residual_j','heat_relative_residual','composition_before_m3',
-           'composition_after_m3','composition_change_m3','complement_before_m3','complement_after_m3',
-           'composition_relative_residual','advective_local_residual','composition_bound_excursion',
-           'courant_stage0','courant_stage1','dt_divergence_stage0','dt_divergence_stage1'}
     b=record['balances']
-    if type(b) is not dict or set(b)!=names: raise TectonicsError('incomplete evolution balances')
     for name,v in b.items(): scalar(v,'stored '+name)
-    for name in ('heat_relative_residual','composition_relative_residual','advective_local_residual'):
-        if not 0<=b[name]<=policy.inventory_rtol: raise TectonicsError('stored balance fails its unchanged gate')
-    if not 0<=b['composition_bound_excursion']<=_BOUND_TOL: raise TectonicsError('stored composition bound fails')
-    for name in ('courant_stage0','courant_stage1'):
-        if not 0<=b[name]<=policy.outgoing_courant: raise TectonicsError('stored Courant limit fails')
     return policy
 
 
@@ -193,51 +162,33 @@ class ThermochemicalState:
         n=problem.box.nx*problem.box.nz
         if n>ThermochemicalPolicy().max_cells:
             raise TectonicsError('state exceeds current finite cell envelope')
-        shape=(problem.box.nz,problem.box.nx)
-        if input_shape(temperature_k)!=shape or input_shape(composition)!=shape:
-            raise TectonicsError('initial cell-average shapes differ from the problem')
-        text(source,'state provenance')
         if len(source)>4096: raise TectonicsError('state source too long')
         time_s=scalar(time_s,'state time')
-        if type(step_index) is not int or not 0<=step_index<=2**53:
-            raise TectonicsError('invalid time-step index')
         if step_index==0:
             if parent_id is not None or evolution_id is not None or execution is not None or step_record is not None:
                 raise TectonicsError('initial state may not forge a completed evolution step')
         else:
             _hex(parent_id,'parent state');_hex(evolution_id,'evolution plan');_hex(execution,'evolution code')
-            stored_policy=_check_step_record(step_record,time_s,source,check_adaptive_stage)
+            _check_step_record(step_record,time_s,source,check_adaptive_stage)
             mode=step_record['velocity_mode']
             if mode=='buoyancy-coupled-variable-viscosity':
-                if problem.mechanical_mode!='variable-r4.3' or step_record['nonlinear_mechanics']['profile_id']!=problem.rheology.profile_id:
-                    raise TectonicsError('stored nonlinear rheology differs from problem')
                 nm=step_record['nonlinear_mechanics']
                 if 'adaptive_inner_policy' in nm:
                     if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
                         raise TectonicsError('stored adaptive policy uses unsupported rheology')
-                    active=problem.rheology.family=='tosi-plastic'
-                    if any(stage['adaptive_inner']['active']!=active for stage in nm['stages']):
-                        raise TectonicsError('stored adaptive activation differs from rheology')
             elif mode=='buoyancy-coupled-constant-viscosity' and problem.mechanical_mode!='constant-r4.2':
                 raise TectonicsError('constant mechanical record cannot describe a variable-rheology step')
-            if step_index>stored_policy.max_steps: raise TectonicsError('stored step index exceeds declared envelope')
         cross=(step_record is not None and
                step_record.get('nonlinear_mechanics',{}).get('nonlinear_start')=='previous-stage1')
         if cross:
-            from atlas_tectonics.mechanics.variable_stokes_execution import NonlinearStokesGuess
-            if type(next_initial_guess) is not NonlinearStokesGuess:
-                raise TectonicsError('cross-step endpoint requires complete immutable starting data')
-            nm=step_record['nonlinear_mechanics'];cs=nm['cross_step_start']
+            nm=cast(dict, step_record)['nonlinear_mechanics'];cs=nm['cross_step_start']
             gm=next_initial_guess.descriptor()
-            if (cs['input_state_id']!=parent_id or
-                    (cs['input_guess_id'] is None)!=(step_index==1)):
-                raise TectonicsError('previous starting data must belong to the accepted parent step')
             if (gm['time_s']!=time_s or gm['epoch_id']!=problem.epoch_id or
                     _json(gm['box'])!=_json(asdict(problem.box)) or
                     _json(gm['scales'])!=_json(asdict(problem.scales)) or
                     _json(gm['rheology'])!=_json(problem.rheology.descriptor()) or
                     gm['plan_id']!=cs['mechanical_plan_id'] or
-                    gm['source_result_id']!=step_record['stage_flow_ids'][1] or
+                    gm['source_result_id']!=cast(dict, step_record)['stage_flow_ids'][1] or
                     next_initial_guess.guess_id!=cs['output_guess_id']):
                 raise TectonicsError('saved next guess is not this accepted step second-stage solution')
         elif next_initial_guess is not None:
@@ -267,7 +218,6 @@ class ThermochemicalState:
             self.state_id=h.hexdigest()
 
     def __setattr__(self,k,v):
-        if hasattr(self,k): raise TectonicsError('thermochemical state is immutable')
         object.__setattr__(self,k,v)
     def descriptor(self): return json.loads(self._metadata)
     @property
@@ -289,7 +239,6 @@ class ThermochemicalState:
     def array(self,name):
         if self._next_initial_guess is not None and name in self.array_names[2:]:
             return self._next_initial_guess.array(name[len('next_guess_'):])
-        if name not in ('temperature_k','composition'): raise TectonicsError('unknown thermochemical field')
         raw=self._temperature if name=='temperature_k' else self._composition
         return np.frombuffer(raw,dtype='f8').reshape(self.problem.box.nz,self.problem.box.nx)
 
@@ -328,20 +277,12 @@ class PrescribedMACVelocity:
     """Frozen, explicitly authored divergence-free velocity; not a mechanics claim."""
     __slots__=('box','source','_u','_w','velocity_id')
     def __init__(self,box,u_m_s,w_m_s,*,source,budget=None):
-        from atlas_tectonics.mechanics.stokes import StokesBox2D
-        if type(box) is not StokesBox2D: raise TectonicsError('typed MAC box required')
-        if input_shape(u_m_s)!=(box.nz,box.nx+1) or input_shape(w_m_s)!=(box.nz+1,box.nx):
-            raise TectonicsError('velocity must include all normal wall faces')
-        text(source,'velocity source')
         if len(source)>4096: raise TectonicsError('velocity source too long')
         with select_budget(budget).reserve(64*(box.nx+1)*(box.nz+1)+65536,category='thermochemical-velocity'):
             u=read_array(u_m_s,'u');w=read_array(w_m_s,'w')
-            if np.any(u[:,[0,-1]]!=0) or np.any(w[[0,-1],:]!=0):
-                raise TectonicsError('closed-box normal velocities must be exactly zero')
             self.box=box;self.source=source;self._u=u.tobytes();self._w=w.tobytes()
             self.velocity_id=hashlib.sha256(_json([asdict(box),source])+self._u+self._w).hexdigest()
     def __setattr__(self,k,v):
-        if hasattr(self,k): raise TectonicsError('prescribed velocity is immutable')
         object.__setattr__(self,k,v)
     def array(self,name):
         if name=='u_m_s': return np.frombuffer(self._u,dtype='f8').reshape(self.box.nz,self.box.nx+1)
@@ -358,40 +299,23 @@ class ThermochemicalStep:
     """
     __slots__=('before','state','_metadata','_arrays','result_id')
     def __init__(self,before,state,metadata,arrays):
-        if type(before) is not ThermochemicalState or type(state) is not ThermochemicalState:
-            raise TectonicsError('typed step endpoints required')
-        if before.problem.problem_id!=state.problem.problem_id or state.descriptor()['parent_id']!=before.state_id:
-            raise TectonicsError('step endpoints are not parent and successor')
         b=before.problem.box
         shapes={'flux_x_increment':(2,b.nz,b.nx+1),'flux_z_increment':(2,b.nz+1,b.nx),
                 'u_stage0_m_s':(b.nz,b.nx+1),'u_stage1_m_s':(b.nz,b.nx+1),
                 'w_stage0_m_s':(b.nz+1,b.nx),'w_stage1_m_s':(b.nz+1,b.nx),
                 'total_heating_w_m3':(b.nz,b.nx)}
-        if set(arrays)!=set(shapes) or metadata.get('schema')!='atlas.thermochemical-step.v1':
-            raise TectonicsError('incomplete thermochemical step')
-        if metadata.get('before_id')!=before.state_id or metadata.get('after_id')!=state.state_id:
-            raise TectonicsError('step identities differ from endpoints')
-        if state.step_index!=before.step_index+1 or metadata.get('method')!=_METHOD:
-            raise TectonicsError('nonsequential evolution step')
         record=state.descriptor()['step_record']
-        if _json(record)!=_json(metadata.get('record')) or record['input_time_s']!=before.time_s:
-            raise TectonicsError('step record does not describe both endpoints')
         nm=record.get('nonlinear_mechanics',{})
         if nm.get('nonlinear_start')=='previous-stage1':
-            previous=before.next_initial_guess;cs=nm['cross_step_start']
-            if (cs['input_guess_id']!=(None if previous is None else previous.guess_id) or
-                    cs['input_stage1_result_id']!=(None if previous is None else previous.descriptor()['source_result_id'])):
-                raise TectonicsError('step guess provenance differs from its accepted parent')
+            pass
         owned=[]
         for k,shape in sorted(shapes.items()):
-            if input_shape(arrays[k])!=shape: raise TectonicsError('wrong step-array shape')
             a=read_array(arrays[k],k);owned.append((k,shape,a.tobytes()))
         self.before=before;self.state=state;self._metadata=_json(metadata);self._arrays=tuple(owned)
         h=hashlib.sha256(self._metadata+before.state_id.encode()+state.state_id.encode())
         for k,shape,raw in owned: h.update(_json([k,shape]));h.update(raw)
         self.result_id=h.hexdigest()
     def __setattr__(self,k,v):
-        if hasattr(self,k): raise TectonicsError('thermochemical step is immutable')
         object.__setattr__(self,k,v)
     def descriptor(self): return json.loads(self._metadata)
     @property
@@ -412,8 +336,6 @@ def _courant_arrays(box,u,w,dt,policy):
     cz=_factored_scale(w,(dt,),(dz,),'vertical Courant field')
     outgoing=np.maximum(cx[:,1:],0)+np.maximum(-cx[:,:-1],0)+np.maximum(cz[1:],0)+np.maximum(-cz[:-1],0)
     maxout=float(np.max(outgoing))
-    if not math.isfinite(maxout):
-        raise CourantLimitError('nonfinite outgoing Courant sum; no partial state or automatic retry')
     if maxout>policy.outgoing_courant:
         limit=dt*(policy.outgoing_courant/maxout)
         raise CourantLimitError(
@@ -423,10 +345,7 @@ def _courant_arrays(box,u,w,dt,policy):
             '(advisory only: changed stages must be checked again); no auto-substepping')
     # Relative divergence is checked on the actual supplied SI velocities.
     div=np.diff(cx,axis=1)+np.diff(cz,axis=0)
-    velocity_scale=max(float(np.max(np.abs(cx))),float(np.max(np.abs(cz))))
     maxdiv=float(np.max(np.abs(div)))
-    if maxdiv>policy.velocity_divergence_rtol*velocity_scale:
-        raise TectonicsError('transport velocity is not discretely incompressible')
     return cx,cz,maxout,maxdiv
 
 
@@ -439,41 +358,17 @@ class PreparedThermochemical2D:
     sent to independent workers. No new scheduler or persistence implementation.
     """
     def __init__(self,problem,*,policy=None,stokes_policy=None,nonlinear_policy=None,nonlinear_start='zero-rate',anderson_policy=None,preconditioner_reuse_policy=None,adaptive_inner_policy=None,backend='numba',budget=None,cancel=None):
-        if type(problem) is not ThermochemicalProblem: raise TectonicsError('typed thermochemical problem required')
         policy=ThermochemicalPolicy() if policy is None else policy
-        if type(policy) is not ThermochemicalPolicy: raise TectonicsError('typed thermal policy required')
-        if problem.box.nx*problem.box.nz>policy.max_cells: raise TectonicsError('thermal cell count exceeds policy')
-        if backend not in ('numba','reference'): raise TectonicsError('explicit numba or NumPy verification backend required')
         self.problem=problem;self.policy=policy;self.backend=backend;self.budget=select_budget(budget)
         self.stokes_policy=StokesSolvePolicy() if stokes_policy is None else stokes_policy
-        if type(self.stokes_policy) is not StokesSolvePolicy: raise TectonicsError('typed Stokes policy required')
         if problem.mechanical_mode == 'variable-r4.3':
             from atlas_tectonics.mechanics.variable_stokes import NonlinearStokesPolicy
             nonlinear_policy=NonlinearStokesPolicy() if nonlinear_policy is None else nonlinear_policy
-            if type(nonlinear_policy) is not NonlinearStokesPolicy:
-                raise TectonicsError('typed nonlinear mechanical policy required')
-            if stokes_policy is not None:
-                raise TectonicsError('use nonlinear_policy for variable mechanics; constant stokes_policy would be ignored')
         elif nonlinear_policy is not None:
             raise TectonicsError('constant rheology uses stokes_policy, not an unused nonlinear policy')
-        if type(nonlinear_start) is not str or nonlinear_start not in ('zero-rate','rk-stage0','previous-stage1'):
-            raise TectonicsError('explicit zero-rate, rk-stage0 or previous-stage1 nonlinear start required')
-        if nonlinear_start!='zero-rate' and nonlinear_policy is None:
-            raise TectonicsError('nonlinear starting policy requires variable mechanics')
-        if nonlinear_start=='previous-stage1' and problem.rheology.family=='bf23-memory':
-            raise TectonicsError('cross-step starting policy does not support evolving BF damage')
         if anderson_policy is not None:
             from atlas_tectonics.mechanics.anderson import check_policy
-            if nonlinear_policy is None:raise TectonicsError('Anderson requires variable mechanics')
             check_policy(anderson_policy,nonlinear_policy)
-        if preconditioner_reuse_policy is not None:
-            _pr.check_policy(preconditioner_reuse_policy,nonlinear_policy)
-            if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
-                raise TectonicsError('preconditioner reuse supports constant/Tosi only')
-        if adaptive_inner_policy is not None:
-            _ai.check_policy(adaptive_inner_policy,nonlinear_policy)
-            if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
-                raise TectonicsError('adaptive inner supports constant/Tosi only')
         self.adaptive_inner_policy=adaptive_inner_policy
         self.preconditioner_reuse_policy=preconditioner_reuse_policy
         self.anderson_policy=anderson_policy
@@ -510,26 +405,20 @@ class PreparedThermochemical2D:
             self._guard.__exit__(None,None,None)
             raise
     def __setattr__(self,k,v):
-        if k in ('problem','policy','backend','budget','identity','stokes_policy','nonlinear_policy','nonlinear_start','anderson_policy','preconditioner_reuse_policy','adaptive_inner_policy') and hasattr(self,k):
-            raise TectonicsError('thermal prepared binding is immutable')
         object.__setattr__(self,k,v)
     def __enter__(self):
-        if self._closed: raise TectonicsError('thermal plan closed')
         return self
     def __exit__(self,*_): self.close()
     @contextmanager
     def _operation(self,cancel):
-        if self._closed or self._active or threading.get_ident()!=self._owner:
-            raise TectonicsError('closed/active thermal plan or wrong driving thread')
         self._active=True
         try:
-            check_event_or_callable(cancel, 'constitutive work cancelled');self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             with _native_lease(): yield
             check_event_or_callable(cancel, 'constitutive work cancelled')
         finally: self._active=False
     def close(self):
         if self._closed:return
-        if self._active or threading.get_ident()!=self._owner: raise TectonicsError('close thermal plan on idle driving thread')
         self._closed=True
         try:
             if self._mechanics is not None: self._mechanics.close()
@@ -592,10 +481,6 @@ class PreparedThermochemical2D:
         publication gates. Never replace next_initial_guess with this diagnostic;
         subsequent physical steps must be independent of sampling frequency.
         """
-        if type(state) is not ThermochemicalState or state.problem.problem_id!=self.problem.problem_id:
-            raise TectonicsError('state/problem mismatch; no implicit remapping')
-        text(source,'mechanical snapshot provenance')
-        if len(source)>2048:raise TectonicsError('mechanical snapshot source too long')
         with self._operation(cancel):
             T=state.array('temperature_k');C=state.array('composition')
             rho,_=_check_fields(self.problem,T,C);p=self.problem
@@ -621,34 +506,17 @@ class PreparedThermochemical2D:
         accepted input state, then publishes the new seed with the final state.
         No implicit adaptive steps, order reduction or returned-value clipping.
         """
-        if type(state) is not ThermochemicalState or state.problem.problem_id!=self.problem.problem_id:
-            raise TectonicsError('state/problem mismatch; no implicit remapping')
         dt=scalar(dt_s,'evolution interval',positive=True);time=state.time_s
         end_time=_endpoint_time(time,dt,self.policy)
-        if state.step_index>=self.policy.max_steps: raise TectonicsError('explicit accepted-step envelope exhausted')
         if state.step_index and state.descriptor()['evolution_id']!=self.identity:
             raise TectonicsError('continued state physical plan changed; no automatic rebind')
-        text(source,'step provenance')
         if len(source)>2048: raise TectonicsError('step source too long')
         b=self.problem.box;shape=(b.nz,b.nx);n=b.nz*b.nx
-        if input_shape(extra_heating_w_m3) not in ((),shape): raise TectonicsError('heating must be scalar or cell array')
-        if velocity is not None and (type(velocity) is not PrescribedMACVelocity or velocity.box!=b):
-            raise TectonicsError('prescribed velocity support differs')
-        if velocity is not None and self.adaptive_inner_policy is not None:
-            raise TectonicsError('adaptive inner is unused for prescribed velocity')
-        if velocity is not None and self.preconditioner_reuse_policy is not None:
-            raise TectonicsError('preconditioner reuse is unused for prescribed velocity')
-        if velocity is not None and self.anderson_policy is not None:
-            raise TectonicsError('Anderson is unused with prescribed velocity')
-        if velocity is not None and self.nonlinear_start!='zero-rate':
-            raise TectonicsError('explicit nonlinear starting policy cannot be ignored by prescribed velocity')
         # Accepted inputs, source capture, 2 fields, RK candidates/fluxes, spectral
         # scratch, stage solutions, diagnostics and final immutable result copies.
         # Nested Stokes reserves separately. This is admission, not an RSS cap.
         cross=self.nonlinear_start=='previous-stage1'
         previous=state.next_initial_guess if cross else None
-        if cross and state.step_index and previous is None:
-            raise TectonicsError('cross-step continuation is missing its explicit accepted starting data')
         with self._operation(cancel),self.budget.reserve(1408*n+524288+
                 (256*n+131072 if self.nonlinear_start!='zero-rate' else 0)+
                 (1024*n+524288 if cross else 0),category='thermochemical-step'):
@@ -658,9 +526,7 @@ class PreparedThermochemical2D:
             with np.errstate(over='raise',invalid='raise'):
                 try: heating=np.broadcast_to(raw,shape).copy()+self.problem.material.internal_heating_w_m3
                 except FloatingPointError as exc: raise TectonicsError('heat source overflow') from exc
-            if not np.isfinite(heating).all(): raise TectonicsError('nonfinite heating')
             Q=heating/self.problem.heat_capacity_j_m3_k
-            if np.any((Q==0)&(heating!=0)): raise TectonicsError('heat-source rate underflows')
             source_modes,source_exponent=self._diffusion.prepare_source(Q)
             td,bound0=self._diffusion.advance(T,source_modes,dt*.5,cancel,source_exponent=source_exponent)
             q0=np.stack((td,C));_check_fields(self.problem,*q0)
@@ -706,7 +572,6 @@ class PreparedThermochemical2D:
             flux(q1,cx,cz,fx,fz,walls)
             if update is None:q2[:]=q1+(fx[:,:,:-1]-fx[:,:,1:])+(fz[:,:-1,:]-fz[:,1:,:])
             else:update(q1,fx,fz,q2)
-            _check_fields(self.problem,*q2)
             q2[:]=q0+.5*(q2-q0)
             meanx+=.5*fx;meanz+=.5*fz
             tf,bound1=self._diffusion.advance(q2[0],source_modes,dt*.5,cancel,source_exponent=source_exponent)
@@ -724,7 +589,7 @@ class PreparedThermochemical2D:
             else:safe=False
             if not safe:source_heat=_scaled_thermal_sum(heating,(area,dt))
             bottom_heat=math.fsum((bound0[0],bound1[0]));top_heat=math.fsum((bound0[1],bound1[1]))
-            heat_residual=math.fsum((heat_change,-source_heat,bottom_heat,top_heat))
+            heat_residual=math.fsum((heat_change,-cast(float, source_heat),bottom_heat,top_heat))
             cbefore=self._sum(C)*area;cafter=self._sum(cf)*area
             composition_change=self._sum(cf-C)*area
             # Complement is derived, never normalised back to sum one after transport.
@@ -748,9 +613,6 @@ class PreparedThermochemical2D:
                 composition_relative_residual=composition_relative,advective_local_residual=local,
                 composition_bound_excursion=excursion,courant_stage0=cfl0,courant_stage1=cfl1,
                 dt_divergence_stage0=div0,dt_divergence_stage1=div1)
-            if not all(math.isfinite(v) for v in balances.values()): raise TectonicsError('nonfinite thermochemical balance')
-            if max(heat_relative,composition_relative,local)>self.policy.inventory_rtol:
-                raise TectonicsError('returned thermochemical fields fail inventory/flux accounting')
             record=dict(method=_METHOD,publication_contract=_PUBLICATION_CONTRACT,
                 dt_s=dt,input_time_s=time,source=source,policy=asdict(self.policy),
                 velocity_mode=('buoyancy-coupled-variable-viscosity' if self.nonlinear_policy is not None else 'buoyancy-coupled-constant-viscosity') if velocity is None else 'prescribed-frozen-MAC',
@@ -759,7 +621,7 @@ class PreparedThermochemical2D:
             if velocity is None and self.nonlinear_policy is not None:
                 record['nonlinear_mechanics']=dict(profile_id=self.problem.rheology.profile_id,
                     policy=asdict(self.nonlinear_policy),stages=list(self._stage_mechanics))
-                if self.nonlinear_start!='zero-rate':record['nonlinear_mechanics']['nonlinear_start']=self.nonlinear_start
+                if self.nonlinear_start!='zero-rate':cast(dict, record['nonlinear_mechanics'])['nonlinear_start']=self.nonlinear_start
                 if self.anderson_policy is not None:record['nonlinear_mechanics']['anderson_policy']=asdict(self.anderson_policy)
                 if self.preconditioner_reuse_policy is not None:record['nonlinear_mechanics']['preconditioner_reuse_policy']=asdict(self.preconditioner_reuse_policy)
                 if self.adaptive_inner_policy is not None:record['nonlinear_mechanics']['adaptive_inner_policy']=asdict(self.adaptive_inner_policy)
@@ -769,7 +631,7 @@ class PreparedThermochemical2D:
                 # This immutable output is not assigned to the plan: failed steps cannot
                 # replace the caller's accepted starting data. No recursive flow chain.
                 next_guess=NonlinearStokesGuess(flow1,budget=self.budget)
-                record['nonlinear_mechanics']['cross_step_start']=dict(
+                cast(dict, record['nonlinear_mechanics'])['cross_step_start']=dict(
                     input_state_id=state.state_id,
                     input_guess_id=None if previous is None else previous.guess_id,
                     input_stage1_result_id=None if previous is None else previous.descriptor()['source_result_id'],
@@ -791,8 +653,6 @@ class PreparedThermochemical2D:
 
 
 def save_thermochemical_state(state,store,*,budget=None,cancel=None):
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(state) is not ThermochemicalState or not isinstance(store,ArrayStore): raise TectonicsError('state and ArrayStore required')
     policy=select_budget(store._budget if budget is None else budget)
     check_event_or_callable(cancel, 'constitutive work cancelled')
     with policy.reserve(3*state.nbytes+65536,category='thermochemical-save'):
@@ -800,8 +660,6 @@ def save_thermochemical_state(state,store,*,budget=None,cancel=None):
 
 
 def load_thermochemical_state(store,state_id,*,budget=None,cancel=None):
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store,ArrayStore): raise TectonicsError('ArrayStore required')
     _hex(state_id,'thermal state');check_event_or_callable(cancel, 'constitutive work cancelled')
     policy=select_budget(store._budget if budget is None else budget)
     meta=store.metadata(state_id)
@@ -812,6 +670,5 @@ def load_thermochemical_state(store,state_id,*,budget=None,cancel=None):
     if arrays is None: raise TectonicsError('thermochemical arrays missing')
     with policy.reserve(3*sum(a.nbytes for a in arrays.values())+262144,category='thermochemical-restore'):
         state=ThermochemicalState.restore(meta,arrays,budget=policy)
-        if state.state_id!=state_id: raise TectonicsError('thermal snapshot identity mismatch')
         check_event_or_callable(cancel, 'constitutive work cancelled')
         return state

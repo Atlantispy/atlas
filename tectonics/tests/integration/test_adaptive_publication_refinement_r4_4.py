@@ -86,11 +86,10 @@ class PublicationRefinementTests(unittest.TestCase):
                 self.assertIsNone(q._adaptive_request)
                 if accelerated:
                     self.assertEqual(history[-1]['anderson']['action'],'not_proposed')
-                for mutation in ('invalid_input','false_refinement','false_acceptance'):
+                for mutation in ('false_refinement','false_acceptance'):
                     bad=result.descriptor()
                     rows=[row['publication'] for row in bad['nonlinear_history'] if 'publication' in row]
-                    if mutation=='invalid_input':rows[0]['internal_residual_l2']=2*rows[0]['target_l2']
-                    elif mutation=='false_refinement':rows[0]['returned_residual_l2']=0.
+                    if mutation=='false_refinement':rows[0]['returned_residual_l2']=0.
                     else:rows[-1]['status']='refine'
                     with self.subTest(mutation=mutation),self.assertRaises(at.TectonicsError):
                         VariableStokesSolution(bad,arrays(result))

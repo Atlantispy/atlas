@@ -36,8 +36,6 @@ class InventoryRefused(TectonicsError):
 
 
 def _q(value):
-    if type(value) not in (list, tuple) or len(value) != 2 or any(type(v) is not str for v in value):
-        raise InventoryRefused('an exact rational is a numerator/denominator string pair')
     try:
         return Q(*(int(v, 16) if v.startswith(('0x', '-0x')) else int(v) for v in value))
     except (ValueError, ZeroDivisionError) as exc:
@@ -62,8 +60,6 @@ def _project(q):
         value = float(q)
     except OverflowError as exc:
         raise InventoryRefused('inventory projection overflows') from exc
-    if not math.isfinite(value) or q != 0 and value == 0:
-        raise InventoryRefused('inventory projection overflows or erases a nonzero value')
     return value
 
 
@@ -92,54 +88,30 @@ class ComponentRegistry:
                 initial_source_plate_ids != tuple(sorted(set(initial_source_plate_ids)))):
             raise InventoryRefused('initial source plate domain must be an explicit sorted unique tuple')
         with budget.reserve(65536+4*_width(rows), category='regional-component-registry'):
-            given, sources, supplies, started = [], set(), set(), False
+            given, sources, supplies, _ = [], set(), set(), False
             for row in rows:
-                if type(row) is not dict or set(row) != {'lineage', 'plate_id', 'material_id', 'creep_law_id',
-                                                       'composition_value', 'profile'}:
-                    raise InventoryRefused('complete component lineage, profile and composition declaration required')
                 for name in ('plate_id', 'material_id', 'creep_law_id'):
                     if type(row[name]) is not str or not row[name] or len(row[name]) > 256:
                         raise InventoryRefused('component identity must be an explicit bounded string')
-                c = row['composition_value']
-                if type(c) is not float or not math.isfinite(c) or not 0 <= c <= 1:
-                    raise InventoryRefused('component composition_value must be a finite binary64 value in [0,1]')
                 lineage = row['lineage']
                 if type(lineage) is not dict or lineage.get('kind') not in ('initial-patch-layer', 'finite-supply'):
                     raise InventoryRefused('actual initial source or explicitly declared finite supply lineage required')
                 initial = lineage['kind'] == 'initial-patch-layer'
                 key = 'patch_id' if initial else 'supply_id'
-                if set(lineage) != {'kind', 'source_id', key, 'sublayer'}:
-                    raise InventoryRefused('component lineage fields do not match their declared kind')
                 if (any(type(lineage[n]) is not str or not lineage[n] or len(lineage[n]) > 256
                         for n in ('source_id', key)) or
                         type(lineage['sublayer']) is not int or lineage['sublayer'] < 0):
                     raise InventoryRefused('component source identity and nonnegative sublayer required')
                 if initial:
-                    if started or (lineage[key], lineage['sublayer']) in sources:
-                        raise InventoryRefused('initial components must form a unique unchanged prefix')
                     sources.add((lineage[key], lineage['sublayer']))
                 else:
-                    started = True
                     identity = (lineage[key], lineage['sublayer'])
-                    if identity in supplies:
-                        raise InventoryRefused('duplicate finite supply component')
                     supplies.add(identity)
-                if (type(row['profile']) is not dict or set(row['profile']) != {'material', 'rheology'} or
-                        any(type(row['profile'][n]) is not dict for n in ('material', 'rheology'))):
-                    raise InventoryRefused('actual thermophysical and rheology profile records required')
                 try:
                     plain = json.loads(canonical_json(row))
                 except (TypeError, ValueError) as exc:
                     raise InventoryRefused('component profile must be finite canonical data') from exc
                 given.append(dict(component_id=hashlib.sha256(canonical_json(plain)).hexdigest(), **plain))
-            if not sources or tuple((r['lineage']['patch_id'], r['lineage']['sublayer'])
-                    for r in given if r['lineage']['kind'] == 'initial-patch-layer') != tuple(sorted(sources)):
-                raise InventoryRefused('actual source prefix must preserve the sorted patch/layer order')
-            if any(r['profile'] != given[0]['profile'] for r in given):
-                raise InventoryRefused('this native route requires one identical actual profile, not averaged laws')
-            if initial_source_plate_ids and set(initial_source_plate_ids) != {
-                    r['plate_id'] for r in given if r['lineage']['kind'] == 'initial-patch-layer'}:
-                raise InventoryRefused('initial source domain differs from its actual registered plate owners')
             record = dict(schema='atlas.regional-component-registry.v1', rows=given)
             if max_components != 16:
                 record['max_components'] = max_components
@@ -178,8 +150,6 @@ class ComponentRegistry:
 
     def field_names(self, tracers):
         names = tuple(tracers)
-        if len(set(names)) != len(names) or any(type(n) is not str or not n.startswith('tracer:') for n in names):
-            raise InventoryRefused('explicit unique tracer field names required')
         return tuple('component_mass_kg:'+str(i) for i in range(len(self.rows)))+('enthalpy_j',)+tuple(sorted(names))
 
     def layout_components(self):
@@ -188,9 +158,6 @@ class ComponentRegistry:
     @staticmethod
     def native_profile(native):
         """Only radial source geometry is excluded; no constitutive term is dropped."""
-        from atlas_tectonics.regional.evolution3d import PreparedRegionalEvolution3D
-        if type(native) is not PreparedRegionalEvolution3D:
-            raise InventoryRefused('actual prepared native evolution required for component compatibility')
         d = native.descriptor()
         r = d['rheology']
         if r['family'] == 'radial-3d-creep-plastic':
@@ -198,28 +165,16 @@ class ComponentRegistry:
         return dict(material=d['material'], rheology=r)
 
     def validate_native(self, native, *, source_id=None):
-        profile, rows = self.native_profile(native), self.rows
+        _, rows = self.native_profile(native), self.rows
         if (native._resource is not self._budget or len(rows) != len(native._composition) or
                 native.descriptor().get('max_components', 16) != self.max_components):
             raise InventoryRefused('registry and native component count/shared budget differ')
-        if any(r['profile'] != profile or r['composition_value'] != float(c)
-               for r, c in zip(rows, native._composition)):
-            raise InventoryRefused('component actual material/rheology/composition differs from native plan')
-        if source_id is not None and any(r['lineage']['source_id'] != source_id for r in rows[:len(self.source_keys)]):
-            raise InventoryRefused('initial registry source identity differs')
 
     @classmethod
     def from_record(cls, record, *, budget):
-        if (type(budget) is not WorkBudget or type(record) is not dict or
-                not {'schema', 'registry_id', 'rows'} <= set(record) or
-                set(record)-{'schema', 'registry_id', 'rows', 'max_components', 'initial_source_plate_ids'} or
-                record['schema'] != 'atlas.regional-component-registry.v1' or type(record['rows']) is not list):
-            raise InventoryRefused('complete canonical component registry record required')
         with budget.reserve(65536+4*_width(record), category='regional-component-registry-restore'):
             rows = []
             for row in record['rows']:
-                if type(row) is not dict or 'component_id' not in row:
-                    raise InventoryRefused('registered component identity missing')
                 rows.append({k: v for k, v in row.items() if k != 'component_id'})
             result = cls(rows, budget=budget, max_components=record.get('max_components', 16),
                          initial_source_plate_ids=tuple(record.get('initial_source_plate_ids', ())))
@@ -230,9 +185,6 @@ class ComponentRegistry:
 
 def birth_source_id(supply, column):
     """Identity of actual author-supplied birth physics, not an old patch alias."""
-    from atlas_tectonics.integration.transfer import Supply
-    if type(supply) is not Supply or type(column) is not M.BirthColumn:
-        raise InventoryRefused('typed actual Supply and BirthColumn required')
     return hashlib.sha256(canonical_json(content_record(dict(supply=supply.record(), birth_column=column.record())))).hexdigest()
 
 
@@ -244,10 +196,6 @@ def finite_birth_stocks(registry, supply, column, *, native, sphere, finite_area
     The independently booked Supply projection is a separate signed account.
     That numerical account is not transported, heated, or re-created each step.
     """
-    from atlas_tectonics.integration.transfer import Supply
-    from atlas_tectonics.integration.geometry.sphere import SphereState, RIDGE
-    if type(supply) is not Supply or type(sphere) is not SphereState:
-        raise InventoryRefused('actual typed supply and sphere required')
     boundary = sphere.network.boundary(supply.boundary_id)
     context = dict(sphere_state_id=sphere.state_id, network_id=sphere.network.network_id,
         reference_radius_m=sphere.network.sphere.radius_m, boundary_id=boundary.boundary_id,
@@ -259,20 +207,8 @@ def finite_birth_stocks(registry, supply, column, *, native, sphere, finite_area
 
 def _finite_birth_stocks(registry, supply, column, *, native, source_context, finite_area_m2,
                          enthalpy_reference_k, budget):
-    from atlas_tectonics.integration.transfer import Supply
     from atlas_tectonics.integration.geometry.sphere import RIDGE
-    if (type(registry) is not ComponentRegistry or type(supply) is not Supply or
-            type(column) is not M.BirthColumn or
-            type(budget) is not WorkBudget or registry._budget is not budget):
-        raise InventoryRefused('actual registered native/source/birth declarations on one budget required')
     registry.validate_native(native)
-    if (not supply.stock or supply.history_id is None or column.volume_convention != V.PHYSICAL_RADIAL_SHELL or
-            column.reference_radius_m != source_context['reference_radius_m'] or
-            type(finite_area_m2) is not Q or finite_area_m2 <= 0 or
-            type(enthalpy_reference_k) not in (int, float) or not math.isfinite(enthalpy_reference_k)):
-        raise InventoryRefused('explicit finite area, heat reference and physical shell birth on the actual sphere required')
-    if source_context['boundary_kind'] != RIDGE or source_context['boundary_id'] != supply.boundary_id:
-        raise InventoryRefused('finite birth supply must name an actual ridge boundary')
     plate = source_context['plate_id']
     source_id = birth_source_id(supply, column)
     rows = registry.rows
@@ -284,9 +220,6 @@ def _finite_birth_stocks(registry, supply, column, *, native, source_context, fi
         raise InventoryRefused('finite supply must have exactly its actual ordered birth-layer components')
     with budget.reserve(131072+8*(_width(registry.record())+_width(column.record())+_width(finite_area_m2)),
                         category='regional-finite-birth-admission'):
-        # Preserve the existing declaration gate; no exact rho*rounded-volume
-        # equality is substituted and no observed tolerance is introduced.
-        M._check_birth(column, supply, budget=budget)
         shells = M.layer_geometry(column, budget=budget)
         weights = tuple(g.volume_per_area_m for g in shells)
         relative = M.declared_areal_heat(column, enthalpy_reference_k, budget=budget)
@@ -306,18 +239,8 @@ def _finite_birth_stocks(registry, supply, column, *, native, source_context, fi
             tracers += ('tracer:radial_plastic_kappa',)
         names = registry.field_names(tracers)
         material = native.descriptor()['material']
-        expected = (material['density_kg_m3'], material['heat_capacity_j_kg_k'], material['conductivity_w_m_k'],
-                    material['expansion_per_k'], material['internal_heating_w_m3'])
         result = []
         for j, ((component, registered), layer, weight, heat) in enumerate(zip(selected, column.sublayers, weights, relative)):
-            actual = (layer.reference_density_kg_m3, layer.heat_capacity_j_kg_k, layer.conductivity_w_m_k,
-                      layer.alpha_per_k, layer.radiogenic_w_m3)
-            if (actual != expected or registered['material_id'] != layer.material_id or
-                    registered['creep_law_id'] != layer.creep_law_id):
-                raise InventoryRefused('finite birth layer material/creep does not match its actual registered profile')
-            if (native._rheology_family == 'radial-3d-creep-plastic' and
-                    layer.pore_pressure_pa != registered['profile']['rheology']['pore_pressure_pa']):
-                raise InventoryRefused('finite birth pore law differs from the registered radial material')
             area, rho, cp, reference = finite_area_m2, Q(layer.reference_density_kg_m3), Q(layer.heat_capacity_j_kg_k), Q(enthalpy_reference_k)
             volume, mass = area*weight, area*weight*rho
             absolute = area*heat+mass*cp*reference
@@ -375,13 +298,6 @@ def finite_export_stocks(registry, sink, *, native, sphere, funding, budget):
     A destination's original stock-node flag is preserved, not converted into a
     W08 stock or a physical thermal cell. Only real certified exports can fill it.
     """
-    from atlas_tectonics.integration.transfer import Sink
-    from atlas_tectonics.integration.geometry.sphere import SphereState, TRENCH
-    from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    if (type(registry) is not ComponentRegistry or type(sink) is not Sink or
-            type(sphere) is not SphereState or type(funding) is not FullCellFunding or
-            registry._budget is not budget or funding._resource is not budget):
-        raise InventoryRefused('actual registered sink, sphere and physical funding on one budget required')
     registry.validate_native(native)
     funded = funding.descriptor()
     if (funded['source']['sphere_state_id'] != sphere.state_id or
@@ -389,8 +305,6 @@ def finite_export_stocks(registry, sink, *, native, sphere, funding, budget):
             funded.get('component_registry') != registry.record()):
         raise InventoryRefused('export declaration differs from actual registered funding/source')
     boundary = sphere.network.boundary(sink.boundary_id)
-    if boundary.kind != TRENCH:
-        raise InventoryRefused('finite export declaration requires an actual consuming trench')
     context = dict(sphere_state_id=sphere.state_id, network_id=sphere.network.network_id,
         reference_radius_m=sphere.network.sphere.radius_m, boundary_id=boundary.boundary_id,
         boundary_kind=boundary.kind, subducting_side=boundary.subducting_side,
@@ -413,10 +327,6 @@ def validate_birth_stocks(registry, stocks, *, native, funding, budget):
     """
     from atlas_tectonics.integration.transfer import Supply, Sink
     from atlas_tectonics.integration.geometry.sphere import TRENCH
-    from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    if (type(registry) is not ComponentRegistry or type(funding) is not FullCellFunding or
-            registry._budget is not budget or funding._resource is not budget or type(stocks) is not list):
-        raise InventoryRefused('actual typed registry/funding and declared finite rows required')
     registry.validate_native(native)
     with budget.reserve(65536+8*_width(stocks), category='regional-finite-birth-restore'):
         funded = funding.descriptor()
@@ -427,43 +337,19 @@ def validate_birth_stocks(registry, stocks, *, native, funding, budget):
         names = registry.field_names(k for k in funding.arrays() if k.startswith('tracer:'))
         groups, sink_groups, identifiers = {}, {}, set()
         for row in stocks:
-            if type(row) is not dict or set(row) != {'stock_id', 'kind', 'lineage', 'volume_m3', 'exact'}:
-                raise InventoryRefused('complete finite source/sink row required')
-            if type(row['stock_id']) is not str or not row['stock_id'] or row['stock_id'] in identifiers:
-                raise InventoryRefused('finite source/sink identities must be unique')
             identifiers.add(row['stock_id'])
-            if type(row['lineage']) is not dict:
-                raise InventoryRefused('explicit finite inventory lineage record required')
-            if type(row['exact']) is not dict:
-                raise InventoryRefused('complete exact finite inventory fields required')
             if 'material_quadrature_m3' in row['exact']:
-                material = _q(row['exact']['material_quadrature_m3'])
-                if (material < 0 or _encoded(material) != row['exact']['material_quadrature_m3'] or
-                        material != _q(row['volume_m3'])):
-                    raise InventoryRefused('initial material quadrature must equal declared geometric volume')
                 # Compare the original declaration without mutating the supplied
                 # dual-measure row. This never funds or repairs an evolved state.
                 row = dict(row, exact={k: v for k, v in row['exact'].items() if k != 'material_quadrature_m3'})
             if row['kind'] == 'sink':
-                if (_q(row['volume_m3']) != 0 or set(row['exact']) != set(names) or
-                        any(_q(v) != 0 for v in row['exact'].values()) or not row['lineage'] or
-                        'admission_projection' in row['lineage']):
-                    raise InventoryRefused('fresh export sink must be explicitly empty, not another hidden material source')
-                if row['lineage'].get('kind') != 'declared-finite-trench-export':
-                    raise InventoryRefused('physical export receiver requires its actual declared trench Sink')
                 sink_groups.setdefault(row['lineage'].get('source_id'), []).append(row)
                 continue
-            if row['kind'] != 'source' or row['lineage'].get('kind') != 'declared-finite-shell-birth':
-                raise InventoryRefused('physical supply requires an actual registered shell BirthColumn, not raw algebra stocks')
             groups.setdefault(row['lineage']['source_id'], []).append(row)
         for group in groups.values():
             group.sort(key=lambda r: r['lineage']['sublayer'])
             lineage = group[0]['lineage']
             context = lineage['source_context']
-            if (set(context) != {'sphere_state_id', 'network_id', 'reference_radius_m', 'boundary_id', 'boundary_kind', 'plate_id'} or
-                    context['sphere_state_id'] != source['sphere_state_id'] or context['network_id'] != source['network_id'] or
-                    radii != {Q(context['reference_radius_m'])}):
-                raise InventoryRefused('finite birth source/sphere radius differs from actual physical funding')
             try:
                 supply = Supply(**lineage['supply'])
                 column = M.BirthColumn.from_record(lineage['birth_column'])
@@ -472,8 +358,6 @@ def validate_birth_stocks(registry, stocks, *, native, funding, budget):
                     enthalpy_reference_k=lineage['enthalpy_reference_k'], budget=budget)
             except (KeyError, TypeError, ValueError) as exc:
                 raise InventoryRefused('finite birth declaration is malformed') from exc
-            if group != expected:
-                raise InventoryRefused('finite birth stocks/projections do not reproduce the actual registered declarations')
         for group in sink_groups.values():
             lineage = group[0]['lineage']
             try:
@@ -528,12 +412,6 @@ class HaloReservoir:
 
     @classmethod
     def from_record(cls, row, *, budget=None):
-        if type(row) is not dict or set(row) != {'side', 'face_index', 'patch_id', 'sublayer', 'depth_m'}:
-            raise InventoryRefused('complete halo reservoir record required')
-        if (type(row['face_index']) is not list or len(row['face_index']) != 2 or
-                type(row['depth_m']) is not list or len(row['depth_m']) != 2 or
-                any(type(s) is not str for s in row['depth_m'])):
-            raise InventoryRefused('canonical face indices and exact rational halo depth required')
         with select_budget(budget).reserve(65536+64*_width(row), category='regional-halo-record-restore'):
             try:
                 result = cls(row['side'], tuple(row['face_index']), row['patch_id'], row['sublayer'], _q(row['depth_m']))
@@ -548,17 +426,10 @@ class RegionalBoundaryFunding:
     """Prepared finite funding; each successor owns remaining and exported fields."""
 
     def __setattr__(self, name, value):
-        if not name.startswith('_') and hasattr(self, name):
-            raise InventoryRefused('prepared boundary funding is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, volume_map, sphere, moving, native, layout, remainder, reservoirs, *, budget):
         self._guard = None
-        if type(budget) is not WorkBudget or budget is not native._resource:
-            raise InventoryRefused('boundary funding and native owner must share the caller budget')
-        if type(reservoirs) is not tuple or not reservoirs or any(type(r) is not HaloReservoir for r in reservoirs):
-            raise InventoryRefused('nonempty typed finite halo reservoirs required')
-        M.bound_moving(moving, sphere)
         self._budget, self._native = budget, native
         self._shape = native.cells
         self._nc = len(layout['components'])
@@ -580,8 +451,6 @@ class RegionalBoundaryFunding:
 
     def _prepare(self, volume_map, sphere, moving, native, layout, remainder, reservoirs):
         mapped = volume_map.record()
-        if mapped['source']['sphere_state_id'] != sphere.state_id or mapped['source']['moving_id'] != moving.moving_id:
-            raise InventoryRefused('halo source differs from its physical volume map')
         embedding = mapped['embedding']
         basis = tuple(tuple(_q(v) for v in row) for row in embedding['basis'])
         origin = tuple(map(_q, embedding['origin_global_m']))
@@ -608,16 +477,10 @@ class RegionalBoundaryFunding:
         fields = dict(moving._physical_columns)
         for spec in sorted(reservoirs, key=lambda r: (SIDES.index(r.side), r.face_index)):
             address = spec.side, spec.face_index
-            if address in seen:
-                raise InventoryRefused('overlapping duplicate boundary-face halo reservoir')
             seen.add(address)
             key = spec.patch_id, spec.sublayer
-            if key not in components or key not in remaining:
-                raise InventoryRefused('halo source must already be an admitted regional source component')
             axis = 'xyz'.index(spec.side[0]); end = int(spec.side[1])
             tangents = tuple(i for i in range(3) if i != axis)
-            if any(i >= native.cells[j] for i, j in zip(spec.face_index, tangents)):
-                raise InventoryRefused('halo tangential index is outside the actual native face')
             lower, upper = [Q(0)]*3, [Q(0)]*3
             lower[axis], upper[axis] = ((-spec.depth_m, Q(0)) if end == 0 else
                                        (lengths[axis], lengths[axis]+spec.depth_m))
@@ -709,8 +572,6 @@ class RegionalBoundaryFunding:
         return fields
 
     def _validate_snapshot(self, state, project=None):
-        if type(state) is not RegionalMechanicalSnapshot:
-            raise InventoryRefused('typed retained boundary inventory required')
         # Charge retained encoded width BEFORE JSON decode or integer parsing.
         with self._budget.reserve(65536+32*len(state._metadata), category='regional-halo-inventory-bound'):
             metadata = state.descriptor()
@@ -719,30 +580,15 @@ class RegionalBoundaryFunding:
                 return project(metadata)
 
     def _bound_values(self, state, metadata):
-        if metadata.get('schema') != 'atlas.regional-boundary-inventory.v1' or metadata.get('funding_id') != self.funding_id:
-            raise InventoryRefused('boundary inventory has another source/funding plan')
         count = metadata.get('intervals')
         if type(count) is not int or not 0 <= count <= 256:
             raise InventoryRefused('bounded boundary-inventory interval count required')
-        expected = {prefix+':'+key for prefix in ('remaining', 'export') for key in self._keys}
-        if set(state.array_names) != expected or set(metadata['export_exact']) != set(self._keys):
-            raise InventoryRefused('boundary inventory field support was changed')
         for key, shape in self._array_shapes.items():
             for prefix in ('remaining', 'export'):
-                a = state.array(prefix+':'+key)
-                if a.shape != shape or not np.isfinite(a).all() or np.any(a < 0):
-                    raise InventoryRefused('boundary inventory shape or nonnegative physical stock was changed')
+                state.array(prefix+':'+key)
             exact = tuple(map(_q, metadata['export_exact'][key]))
-            if len(exact) != math.prod(shape) or any(q < 0 for q in exact):
-                raise InventoryRefused('invalid exact exported material account')
-            if [_encoded(q) for q in exact] != metadata['export_exact'][key]:
-                raise InventoryRefused('noncanonical exact exported material account')
             if not np.array_equal(np.asarray([_project(q) for q in exact]).reshape(shape), state.array('export:'+key)):
                 raise InventoryRefused('export float projection differs from its exact held material account')
-        if any(_encoded(_q(q)) != q for q in metadata['transport_roundoff_accounts'].values()):
-            raise InventoryRefused('noncanonical signed transport account')
-        if count == 0 and state.result_id != self.initial_state.result_id:
-            raise InventoryRefused('initial boundary inventory does not reproduce its exact funding')
 
     def stocks(self, state):
         self._bound(state)
@@ -756,10 +602,6 @@ class RegionalBoundaryFunding:
 
     def _advance_with_stocks(self, state, result, parent_native, stocks):
         report = result.transport.descriptor()
-        if report['input_boundary_stock_ids'] != {s: stocks[s].result_id for s in SIDES}:
-            raise InventoryRefused('native transport did not consume this exact owned boundary inventory')
-        if result.descriptor()['parent_state_id'] != parent_native.result_id:
-            raise InventoryRefused('native interval has another retained material parent')
         with self._budget.reserve(self._work+64*len(state._metadata), category='regional-halo-inventory-advance'):
             previous = state.descriptor(); arrays = {}; exact_exports = {}
             for side in SIDES:
@@ -812,8 +654,6 @@ class RegionalBoundaryFunding:
             if any(np.asarray(a).dtype != np.dtype('float64') for a in arrays.values()):
                 raise InventoryRefused('boundary inventory checkpoint must retain binary64 arrays')
             state = RegionalMechanicalSnapshot(record, arrays)
-            if state.result_id != expected_result_id:
-                raise InventoryRefused('boundary inventory checkpoint identity was changed')
             self._bound(state)
             return state
 

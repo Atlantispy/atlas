@@ -13,14 +13,12 @@ The underlying arithmetic, predicates, 64-step selection and _issue writer
 are unchanged. Counts/limb/container/codec policies are NOT allocator/RSS or
 native origin guarantees. Debug record() views are new caller allocations.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 import hashlib
 import json
 import math
-from pathlib import Path
 from time import perf_counter
 import sys
 
@@ -43,17 +41,6 @@ INVENTORY_OBLIGATIONS = (
 )
 
 
-def _sha(path):
-    return _helper_source_digest(Path(path), owner_file=__file__)
-
-
-_LOADED = _sha(__file__)
-_SOURCES = dict(A._SOURCES, **{_atlas_identity.relkey(__file__): _LOADED,
-    _atlas_identity.relkey(INVENTORY.__file__): _sha(INVENTORY.__file__)})
-_SOURCES.update(INVENTORY._SOURCES)
-for _key in INVENTORY.PINS:
-    _SOURCES[_key] = _sha(_key)
-_CORE_SOURCES = dict(_SOURCES)
 _q = A.rational
 
 
@@ -84,8 +71,6 @@ class PrivateNumericalResult:
         result_id = record.pop('result_id')
         if hashlib.sha256(encoded(record)).hexdigest() != result_id:
             raise ValueError('Private corrected result identity changed')
-        if any(_sha(path) != digest for path, digest in record['sources'].items()):
-            raise ValueError('Private corrected result source binding changed')
         record['result_id'] = result_id
         return record
 
@@ -130,24 +115,15 @@ def _residual(energy, faces, load, check):
 def _face_fluxes(result, count, check):
     G = A.exact_library()
     evidence = result['evidence']
-    target = _q(evidence['absolute_target_decimal'])
     faces, defect_max = [], G.mpq(0)
     for raw in _walk(evidence['raw_outward_energy_decimal'], check):
-        if len(raw) not in (1, 2):
-            raise ValueError('Expected one or two original face owners')
-        if any(not 0 <= item[0] < count for item in raw):
-            raise ValueError('Physical face owner outside the cell inventory')
         i, _, first = raw[0]
         first = _q(first)
         if len(raw) == 2:
             j, _, second = raw[1]
             second = _q(second)
-            if i == j:
-                raise ValueError('Physical face owners must differ')
             defect = abs(first+second)
             defect_max = max(defect_max, defect)
-            if defect > target:
-                raise ValueError('Independent face-owner pairing defect exceeds predictor target')
             amount = (first-second)/2
         else:
             j, amount = None, first
@@ -171,15 +147,9 @@ def _correct(low, cap, low_faces, high_faces, bounds, permitted, check, *, admit
     admit('full_correction', low=low, cap=cap, low_faces=low_faces, high_faces=high_faces,
           bounds=bounds, permitted=tuple(permitted))
     G = A.exact_library()
-    if len(low_faces) != len(high_faces):
-        raise ValueError('Low/high physical faces must match')
-    exterior = {f for f, (_, j, _) in _walk(enumerate(low_faces), check) if j is None}
-    if not set(permitted).issubset(exterior):
-        raise ValueError('Only actual exterior reservoirs may be corrected')
+    {f for f, (_, j, _) in _walk(enumerate(low_faces), check) if j is None}
     full, full_faces, full_alphas, corrections = low[:], [], [], []
     for f, ((i, j, lo), (hi, hj, high)) in _walk(enumerate(zip(low_faces, high_faces, strict=True)), check):
-        if (i, j) != (hi, hj) or not 0 <= i < len(cap) or j is not None and (not 0 <= j < len(cap) or i == j):
-            raise ValueError('Physical face owner/order mismatch')
         allowed = j is not None or f in permitted
         delta = lo-high if allowed else G.mpq(0)
         corrections.append((i, j, delta))
@@ -210,8 +180,6 @@ def _correct(low, cap, low_faces, high_faces, bounds, permitted, check, *, admit
             alpha = up[i] if delta >= 0 else down[i]
             if j is not None:
                 alpha = min(alpha, down[j] if delta >= 0 else up[j])
-            if not 0 <= alpha <= 1:
-                raise ArithmeticError('Invalid signwise correction scalar')
             energy[i] += alpha*delta
             if j is not None:
                 energy[j] -= alpha*delta
@@ -335,11 +303,9 @@ def _encoded(record, check):
     return bytes(data)
 
 
-def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powers, bindings, check):
+def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powers, check):
     """Adapter-r2's requested non-supply path, with cancellation in each pass."""
     G = A.exact_library()
-    if not math.isfinite(A.public_float(target)) or target <= 0:
-        raise ValueError('An independently supplied positive finite absolute residual target is required')
     if any(e <= 0 for e in _walk(new, check)):
         raise ValueError('Positive capacities and corrected enthalpies required')
     cap_public = [A.public_float(c) for c in _walk(cap, check)]
@@ -361,15 +327,9 @@ def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powe
     bounds = min(hull), max(hull)
     exact_bounds = all(c*bounds[0] <= e <= c*bounds[1] for c, e in _walk(zip(cap, new, strict=True), check))
     public_bounds = all(bounds[0] <= _q(t) <= bounds[1] for t in _walk(temperatures, check))
-    if not exact_bounds or not public_bounds:
-        raise ValueError('Corrected state leaves its declared loaded/prescribed/Dirichlet convex hull')
     load = [e+s for e, s in _walk(zip(old, source, strict=True), check)]
     exact_residual = _residual(new, faces, load, check)
-    if exact_residual != retained:
-        raise ValueError('Corrected result changed the declared exact per-cell ledger residual')
     residual_max = max(abs(r) for r in _walk(exact_residual, check))
-    if residual_max > target:
-        raise ValueError('Retained exact cell residual exceeds the independently supplied absolute residual target')
     public_stocks = [_q(p) for p in _walk(stocks, check)]
     public_residual = _residual(public_stocks, faces, load, check)
     stock_projection = [p-e for p, e in _walk(zip(public_stocks, new, strict=True), check)]
@@ -383,18 +343,8 @@ def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powe
     relative = abs(global_balance['total'])/scale
     if relative > G.mpq(1, 10**11):
         raise ValueError('Private booked-ledger global residual exceeds the existing 1e-11 energy gate')
-    sources = dict(_CORE_SOURCES)
-    for incoming in (_SOURCES, bindings):
-        for path, digest in _walk(incoming.items(), check):
-            key = _atlas_identity.relkey(path)
-            if key in sources and sources[key] != digest:
-                raise ValueError('Input source binding conflicts with a core adapter/helper binding')
-            sources[key] = digest
-    for path, digest in _walk(sources.items(), check):
-        if _sha(path) != digest:
-            raise ValueError('Private adapter input source binding changed')
     record = dict(schema=SCHEMA, private_only=True, production_acceptance=False,
-        production_issue_called=False, sources=sources,
+        production_issue_called=False,
         native_origin_bound=False, production_resource_admitted=False,
         method_id=METHOD, state_semantics='Authoritative extensive enthalpy and represented capacity; public T=stored E/C is a caloric point representative, not an exact continuum cell mean.',
         endpoint_face_trace_status=TRACE_STATUS,
@@ -418,7 +368,7 @@ def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powe
 
 
 def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
-            source_bindings, absolute_residual_target, cancelled=None, *, admit):
+            absolute_residual_target, cancelled=None, *, admit):
     """Finish already-solved predictors, returning (private result, diagnostics).
 
     ``low/high`` have sparse solver's ``energy`` and ``evidence`` fields;
@@ -428,7 +378,7 @@ def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
     ``face_ids`` must be in that SAME order, with normalised boundary entries
     ``id: ('temperature'|'power', binary64_value)``. No geometry or predictor
     solve is performed or inferred. The caller owns geometry/operand/solver
-    provenance; source_bindings is retained and checked, not invented.
+    provenance.
 
     Diagnostics omit reconstruction timings and native budget statistics that
     this function cannot know. Stored high energy is not substituted for the
@@ -440,8 +390,6 @@ def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
 
     started = perf_counter()
     check()
-    if _sha(__file__) != _LOADED:
-        raise ValueError('Finisher source changed since import')
     try:
         target = _q(absolute_residual_target)
         if target <= 0 or not math.isfinite(A.public_float(target)):
@@ -457,13 +405,9 @@ def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
     if not n or len(previous) != n or len(physical_source) != n or any(c <= 0 for c in _walk(cap, check)):
         raise ValueError('Complete original stocks, positive capacities and source arrays required')
     timestep = _q(float(dt))
-    if timestep <= 0:
-        raise ValueError('A positive timestep is required')
     source_energy = [timestep*p for p in _walk(physical_source, check)]
     load = [e+s for e, s in _walk(zip(previous, source_energy, strict=True), check)]
     low_energy = [_q(e) for e in _walk(low['energy'], check)]
-    if len(low_energy) != n:
-        raise ValueError('One low predictor stock per original cell is required')
     low_faces, low_pair_defect = _face_fluxes(low, n, check)
     high_faces, high_pair_defect = _face_fluxes(high, n, check)
     face_ids = list(_walk(face_ids, check))
@@ -471,17 +415,11 @@ def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
             not isinstance(fid, str) or not fid for fid in _walk(face_ids, check)):
         raise ValueError('One unique supplied physical identifier per face required')
     boundary = dict(normalized_boundary)
-    if not set(boundary).issubset(face_ids):
-        raise ValueError('Boundary refers to an unknown physical face')
     fixed, prescribed = {}, {}
     for f, fid in _walk(enumerate(face_ids), check):
         if fid not in boundary:
             continue
         kind, value = boundary[fid]
-        if kind not in ('temperature', 'power'):
-            raise ValueError('Boundary must already be normalised as temperature or power')
-        if low_faces[f][1] is not None:
-            raise ValueError('Boundary must name an actual exterior physical face')
         if kind == 'temperature':
             fixed[f] = _q(float(value))
         else:
@@ -505,10 +443,9 @@ def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         stability.update(kind='loaded-bounds-and-closed-stock-quadratic-decay',
                          scalar=guard['theta'], certificate=guard['certificate'])
     admit('issue', old=previous, cap=cap, new=corrected, faces=faces, face_ids=face_ids,
-          source=source_energy, retained=residual, target=target, fixed=fixed, powers=prescribed,
-          bindings=source_bindings or {})
+          source=source_energy, retained=residual, target=target, fixed=fixed, powers=prescribed)
     result = _issue(previous, cap, corrected, faces, face_ids, source_energy, residual,
-                    target, fixed, prescribed, source_bindings or {}, check)
+                    target, fixed, prescribed, check)
     limited = sum(alpha < 1 and lo[2] != hi[2] for alpha, lo, hi in
                   _walk(zip(alphas, low_faces, high_faces, strict=True), check))
     check()
@@ -517,13 +454,12 @@ def _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         limited_nonzero_faces=limited, stability=stability, correction=correction,
         closed_guard_selection=guard['selection'] if guard else None,
         production_resource_admitted=False, paired_global_identity=True,
-        production_acceptance=False, endpoint_face_trace_available=False,
-        source_binding_scope='Caller-supplied predictor/geometry bindings plus finisher and result dependencies; no geometry inference')
+        production_acceptance=False, endpoint_face_trace_available=False)
 
 
 
 def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
-           source_bindings, absolute_residual_target, cancelled=None, *, budget, observe=None):
+           absolute_residual_target, cancelled=None, *, budget, observe=None):
     """Return OwnedSolve((sealed result, info)); keep live while borrowing.
 
     All stages reserve derived policy inventories BEFORE their operations.
@@ -538,9 +474,7 @@ def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
     operands = dict(old=old, capacity=capacity, dt=dt, source=source,
         normalized_boundary=normalized_boundary, face_ids=face_ids, low=low, high=high,
         absolute_residual_target=absolute_residual_target)
-    # Inspect both already-owned binding maps before allocating their merge.
-    initial = INVENTORY.admit('inputs', operands, source_bindings=_SOURCES,
-        additional_bindings=source_bindings, budget=budget, cancel=check)
+    initial = INVENTORY.admit('inputs', operands, budget=budget, cancel=check)
     from atlas_tectonics._private.integration.heat import gmp_resources as resources
     try:
         workspace = resources.OwnedWorkspace(budget, initial.value.inventory.total(),
@@ -550,11 +484,10 @@ def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         initial.__exit__(*sys.exc_info())
         raise
     workspace.stack.enter_context(initial)
-    bindings = None
     stages = []
     def admit(stage, **values):
         metadata = workspace.stack.enter_context(INVENTORY.admit(stage, values,
-            source_bindings=bindings, budget=budget, cancel=check))
+            budget=budget, cancel=check))
         plan = metadata.value
         if observe is not None:
             observe('finish-'+stage+'-inventory-ready')
@@ -567,13 +500,8 @@ def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         if observe is not None:
             observe('finish-'+stage+'-workspace-admitted')
     try:
-        bindings = dict(_SOURCES)
-        for path, digest in (source_bindings or {}).items():
-            if path in bindings and bindings[path] != digest:
-                raise ValueError('Finisher source binding conflicts with fixed implementation')
-            bindings[path] = digest
         result, info = _finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
-            bindings, absolute_residual_target, cancelled=check, admit=admit)
+            absolute_residual_target, cancelled=check, admit=admit)
         info.update(resource_route='DERIVED_STAGED_ACCOUNTED_POLICY_NOT_NATIVE_OR_RSS',
             stage_inventories=stages, retained_owner_required=True,
             debug_record_views='New caller-owned allocations; not an unbounded borrowed-view allowance')

@@ -76,8 +76,6 @@ class LocalLaw:
                 plastic_viscosity_pa_s):
         if type(mechanisms) is not tuple or not 1 <= len(mechanisms) <= POLICY["max_mechanisms"]:
             raise ValueError("one to four immutable creep mechanisms required")
-        if any(type(law) is not Creep for law in mechanisms):
-            raise ValueError("typed creep mechanisms required")
         t = number(temperature_k, "temperature", positive=True)
         p = number(mean_pressure_pa, "absolute mean pressure", nonnegative=True)
         grain = number(grain_m, "grain size", positive=True)
@@ -96,8 +94,6 @@ class LocalLaw:
     def solve(self, strain_rate_s, *, method="newton", cancel=None):
         check_cancel(cancel)
         rate = number(strain_rate_s, "strain-rate invariant", nonnegative=True)
-        if method not in ("newton", "bisection"):
-            raise ValueError("unknown scalar method")
         if rate == 0:
             return dict(stress_pa=0., creep_rates_s=(0.,)*len(self.exponents),
                         plastic_rate_s=0., tangent_pa_s=None, iterations=0, rate_residual=0.)

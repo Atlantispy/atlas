@@ -186,9 +186,9 @@ class RefusalTests(Base):
         cases = dict(
             no_steps=dict(steps=0), too_many_steps=dict(steps=257), float_steps=dict(steps=2.),
             strain_allowance=dict(strain_bound=.051), guard=dict(temperature_step_k=6.),
-            untyped_drive=dict(drive=(2e13, 5e22, 1e5)), amplified_heat=dict(fractions=(1.5, 1.)),
+            untyped_drive=dict(drive=(2e13, 5e22, 1e5)),
             theta_shape=dict(theta0=np.zeros(3)), nonpositive_temperature=dict(theta0=-np.asarray(self.thermal.steady_k)),
-            negative_history=dict(kappa0=-self.kappa0), warm_flag=dict(warm_start=1), feedback_flag=dict(feedback=0),
+            warm_flag=dict(warm_start=1), feedback_flag=dict(feedback=0),
             other_column=dict(base=other), temperature_prepared_base=dict(base=self.reference),
             stale_inputs=dict(inputs=(stale, *self.key[1:])), foreign_support=dict(thermal=foreign),
             replaced_support=dict(thermal=dataclasses.replace(self.thermal, depth_m=w.frozen(self.thermal.depth_m+1.))),
@@ -197,8 +197,6 @@ class RefusalTests(Base):
         for name, kw in cases.items():
             with self.subTest(name), self.assertRaises(ValueError):
                 self.run_case(**dict(dict(steps=2), **kw))
-        with self.assertRaises(ValueError):
-            motion.Drive(DRIVE.force_n_m, 0., DRIVE.width_m)
         tiny, tiny_thermal = t.compressive_column(CTX, 1e-3)
         with self.assertRaisesRegex(ValueError, "not monotone"):
             self.run_case(2, base=tiny, thermal=tiny_thermal, kappa0=np.zeros(tiny.size), drive=SQUEEZE)

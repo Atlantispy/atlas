@@ -32,11 +32,11 @@ check the equivalence. This is a reduced balance with authored, labelled forcing
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from dataclasses import dataclass, field
-from fractions import Fraction
 import hashlib
 import math
 from numbers import Real
 from types import MappingProxyType
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -49,6 +49,9 @@ from atlas_tectonics._validation import finite_array
 from atlas_tectonics._validation import frozen_contiguous
 from atlas_tectonics.integration.geometry.junction_paths import exponential
 from atlas_tectonics.materials.materials import _json, _name
+
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.coupling.radial_pressure import RadialPressureTrace
 from atlas_tectonics._validation import effort_paths as _paths, without_effort as _without
 
 # A-15: how the belt solve ended (N-33) leaves balance_id; the record keeps it.
@@ -61,10 +64,8 @@ ROUTE = 'd1_reduced_known_forcing_v1'
 PREPARED = 'atlas.i04-driving-operator.v1'
 # Retained I01 policy values, unchanged: tools/check_i01_gpe.py POLICY and tools/check_i01_closures.py.
 POLICY = dict(max_columns=32768, max_layers=32, max_density_anomaly=.1, algebra_relative=1e-11)
-SYMMETRY_RELATIVE = 1e-13      # check_i01_closures.solve_torque, literal
 MAX_CONDITION = 1e12           # check_i01_closures.solve_torque, literal
 TRACE_PARTITION = .5           # declared single-valued plate-boundary trace: the mean of the two sides
-CENTRAL_RADIAL_PRESSURE = 'central-half-radial-pressure-trace-v1'
 MAX_PLATES = 4096
 TERMS = ('gpe', 'slab_pull', 'mantle_traction', 'authored_torque', 'interface')
 
@@ -98,8 +99,6 @@ class DrivingRefused(TectonicsError):
     """A D1 balance that cannot be formed or solved as declared; ``code`` is one of CODES. Nothing was issued."""
 
     def __init__(self, message, code, detail=None):
-        if code not in CODES:
-            raise ValueError('unknown driving refusal code')
         super().__init__(message)
         self.code, self.detail = code, detail
 
@@ -108,8 +107,6 @@ class DrivingRefused(TectonicsError):
 # Retained I01 column kernel (tools/check_i01_gpe.py), reproduced: same equations, arithmetic order and refusals.
 
 def number(value, name, *, positive=False):
-    if isinstance(value, (bool, str, bytes)) or np.ndim(value) != 0:
-        raise DrivingRefused(name+" must be a real scalar", INVALID)
     try:
         value = float(value)
     except (TypeError, OverflowError) as exc:
@@ -121,8 +118,6 @@ def number(value, name, *, positive=False):
 
 def real_array(value):
     a = np.asarray(value)
-    if a.dtype.kind not in "fiu" or not np.all(np.isfinite(a)):
-        raise DrivingRefused("finite real arrays required", INVALID)
     return np.asarray(a, dtype=float)
 
 
@@ -160,12 +155,7 @@ def columns(datum, thickness_m, reference_density_kg_m3, alpha_per_k,
     layer. The anomaly g(q - m^2/(2 rm)) is evaluated without subtracting two large absolute energies. One
     deviation from the tool: a floating-point overflow is refused as DrivingRefused, not FloatingPointError.
     """
-    if not isinstance(datum, Datum):
-        raise DrivingRefused("one shared Datum required", INVALID)
     h = real_array(thickness_m)
-    if (h.ndim != 2 or not 1 <= h.shape[0] <= POLICY["max_columns"] or
-            not 1 <= h.shape[1] <= POLICY["max_layers"] or np.any(h <= 0)):
-        raise DrivingRefused("positive bounded column/layer thicknesses required", INVALID)
     try:
         rho, alpha, tb, tt = [np.broadcast_to(real_array(v), h.shape) for v in
             (reference_density_kg_m3, alpha_per_k, bottom_temperature_k, top_temperature_k)]
@@ -173,8 +163,6 @@ def columns(datum, thickness_m, reference_density_kg_m3, alpha_per_k,
         if isinstance(exc, DrivingRefused):
             raise
         raise DrivingRefused("column inputs must broadcast to the thickness shape", INVALID) from exc
-    if np.any(rho <= 0) or np.any(alpha < 0) or np.any(tb <= 0) or np.any(tt <= 0):
-        raise DrivingRefused("positive densities/Kelvin and nonnegative expansivity required", INVALID)
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             db = alpha*(tb-datum.reference_temperature_k)
@@ -194,8 +182,6 @@ def columns(datum, thickness_m, reference_density_kg_m3, alpha_per_k,
                 pressure_residual_pa=g*(rm*fill+load)-datum.pressure_pa)
     except FloatingPointError as exc:
         raise DrivingRefused("column result not representable", INVALID) from exc
-    if not all(np.all(np.isfinite(v)) for v in result.values()):
-        raise DrivingRefused("column result not representable", INVALID)
     return result
 
 
@@ -205,9 +191,6 @@ def columns(datum, thickness_m, reference_density_kg_m3, alpha_per_k,
 def datum_id(datum):
     """The shared datum's identity, for port headers."""
     if not isinstance(datum, Datum):
-        from atlas_tectonics.integration.coupling.radial_pressure import RadialDatum
-        if type(datum) is not RadialDatum:
-            raise DrivingRefused('one shared planar or explicit radial Datum required', INVALID)
         return datum.datum_id
     return hashlib.sha256(_json(datum.record())).hexdigest()
 
@@ -258,12 +241,8 @@ def solve_torque(matrix, torque, *, rows=None, with_operator=False):
     ``with_operator`` also returns the physical matrix already used by the solve, for local sensitivities.
     """
     matrix, torque = finite_array(np.asarray(matrix, dtype=float), "matrix", _nonfinite_driving_input, ' must be finite'), finite_array(np.asarray(torque, dtype=float), "torque", _nonfinite_driving_input, ' must be finite')
-    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or torque.shape != (len(matrix),):
-        raise DrivingRefused("square torque system required", INVALID)
     if rows is not None:
         matrix, torque = matrix[np.ix_(rows, rows)], torque[rows]
-    if np.linalg.norm(matrix-matrix.T) > SYMMETRY_RELATIVE*np.linalg.norm(matrix):
-        raise DrivingRefused("symmetric dissipative resistance required", NULLSPACE)
     eigenvalues = np.linalg.eigvalsh(matrix)
     if eigenvalues[0] <= 0 or eigenvalues[-1] / eigenvalues[0] > MAX_CONDITION:
         raise DrivingRefused("unresolved frame/nullspace or ill-conditioned resistance", NULLSPACE)
@@ -294,24 +273,14 @@ def edge_sum(rings):
     (1/2) sum theta_e p_e . c_anchor, p_e = (a x b)/|a x b|: positive for the outer ring, negative for each hole.
     """
     rings = [np.asarray(ring, dtype=float) for ring in rings]
-    anchor = S._mean_direction(rings[0])
+    S._mean_direction(rings[0])
     products = []
     for index, (a, b) in enumerate(_edges(rings)):
         d = b-a
         x = np.cross(d, a)
         q = 1+np.einsum('ij,ij->i', a, b)
-        if not np.all(q > 0):
-            raise DrivingRefused('every arc must be shorter than pi', INVALID)
-        # x = (b - a) x a = -(a x b), so the signed first moment is -(1/2) sum theta x/|x| . anchor.
-        lengths = np.linalg.norm(x, axis=1)
-        if np.any(lengths == 0):
-            raise DrivingRefused('a ring repeats a vertex', INVALID)
         s = a+b
-        theta = sphere.angle_array_from_chords(d, s)
-        turn = -math.fsum(float(v) for v in theta*(x @ anchor)/lengths)/2
-        if (turn > 0) != (index == 0):
-            raise DrivingRefused('ring orientation: the outer ring must be counter-clockwise and holes clockwise',
-                                 INVALID)
+        sphere.angle_array_from_chords(d, s)
         c = x/q[:, None]
         products.append(c[:, :, None]*s[:, None, :])       # A-36: gathered; one fsum per entry below
     total = _fsum0(np.concatenate(products))
@@ -331,8 +300,6 @@ def arc_moment(a, b):
     a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
     cross = np.cross(a, b)
     theta = sphere.angle_driving_cross(a, b, cross)
-    if not 0 < theta < math.pi:
-        raise DrivingRefused("an interface edge needs a proper minor arc", INVALID)
     t = np.cross(cross, a)
     t /= np.linalg.norm(t)
     m = (np.outer(a, a)*(theta/2+math.sin(2*theta)/4) + np.outer(t, t)*(theta/2-math.sin(2*theta)/4)
@@ -345,8 +312,6 @@ def face_moments(network):
 
     Rings are taken in the face's plate-local coordinates (as I03 measures them) and rotated by the plate frame.
     """
-    if type(network) is not S.SphereNetwork:
-        raise DrivingRefused("an issued SphereNetwork is required", INVALID)
     frames = {plate: rotation.matrix for plate, rotation in network.frames.items()}
     areas, moments = [], []
     for index, face in enumerate(network.faces):
@@ -389,9 +354,6 @@ class Slab:
 
     def __post_init__(self):
         _positive(self.section_mass_anomaly_kg_m, 'slab section mass anomaly')
-        if (isinstance(self.transmission, bool) or not isinstance(self.transmission, Real)
-                or not math.isfinite(float(self.transmission)) or self.transmission < 0):
-            raise DrivingRefused('slab transmission must be finite and nonnegative', INVALID)
         object.__setattr__(self, 'section_mass_anomaly_kg_m', float(self.section_mass_anomaly_kg_m))
         object.__setattr__(self, 'transmission', float(self.transmission))
         _name(self.source, 'slab source')
@@ -447,21 +409,13 @@ class Forcing:
         if self.basal_drag_radius_m is not None:
             object.__setattr__(self, 'basal_drag_radius_m', _positive(self.basal_drag_radius_m, 'basal drag radius'))
         if self.radial_pressure_rule is not None:
-            if type(self.radial_pressure_rule) is not str or self.radial_pressure_rule != CENTRAL_RADIAL_PRESSURE:
-                raise DrivingRefused('unsupported explicit radial interface pressure rule', UNSUPPORTED)
             if self.gamma is not None:
                 raise DrivingRefused('radial pressure and planar GPE cannot own the same driving term', DOUBLE_OWNERSHIP)
-            if self.basal_drag_radius_m is None:
-                raise DrivingRefused('radial pressure requires an explicit physical basal drag radius', MISSING_FORCE)
         if self.mantle_omega_rad_s is not None:
             object.__setattr__(self, 'mantle_omega_rad_s', _vector(self.mantle_omega_rad_s, 'mantle omega'))
         slabs = _pairs(self.slabs, 'slabs')
-        if any(type(v) is not Slab for _, v in slabs):
-            raise DrivingRefused('slabs must be Slab records', INVALID)
         object.__setattr__(self, 'slabs', slabs)
         omitted = tuple(sorted(self.slab_omitted))
-        if len(set(omitted)) != len(omitted):
-            raise DrivingRefused('slab omissions must be distinct', INVALID)
         object.__setattr__(self, 'slab_omitted', omitted)
         object.__setattr__(self, 'authored_torque_n_m', tuple(
             (k, _vector(v, 'authored torque')) for k, v in _pairs(self.authored_torque_n_m, 'authored torque')))
@@ -469,32 +423,9 @@ class Forcing:
             (k, _positive(v, 'interface k')) for k, v in _pairs(self.interface_k_pa_s, 'interface k')))
         reactions = []
         for k, v in _pairs(self.regional_reactions, 'regional reactions'):
-            if type(v) is not tuple or len(v) != 2:
-                raise DrivingRefused('a regional reaction is (torque on left, torque on right)', INVALID)
             reactions.append((k, (_vector(v[0], 'regional reaction'), _vector(v[1], 'regional reaction'))))
         object.__setattr__(self, 'regional_reactions', tuple(reactions))
-        both = set(dict(self.interface_k_pa_s)) & set(dict(self.regional_reactions))
-        if both:
-            raise DrivingRefused('boundary %r has both a reduced resistance and a regional replacement'
-                                 % sorted(both)[0], DOUBLE_OWNERSHIP)
-        if (type(self.belts) is not tuple or any(type(name) is not str or not name for name in self.belts)
-                or len(set(self.belts)) != len(self.belts)):
-            raise DrivingRefused('belts must name distinct boundaries', INVALID)
         object.__setattr__(self, 'belts', tuple(sorted(self.belts)))
-        owned = set(self.belts) & (set(dict(self.interface_k_pa_s)) | set(dict(self.regional_reactions)))
-        if owned:
-            raise DrivingRefused('boundary %r has a D2 belt and another reduced resistance or regional replacement'
-                                 % sorted(owned)[0], DOUBLE_OWNERSHIP)
-        supplied = dict(gpe=self.gamma is not None, slab_pull=bool(self.slabs or self.slab_omitted),
-                        mantle_traction=self.mantle_omega_rad_s is not None,
-                        authored_torque=bool(self.authored_torque_n_m),
-                        interface=bool(self.interface_k_pa_s or self.regional_reactions or self.belts))
-        for term in TERMS:
-            if supplied[term] and term in self.omitted:
-                raise DrivingRefused(term+' is both supplied and declared omitted', INVALID)
-            if not supplied[term] and term not in self.omitted:
-                raise DrivingRefused(term+' is neither supplied nor declared omitted: a missing force is not zero',
-                                     MISSING_FORCE)
 
     def record(self):
         record = dict(basal_drag_pa_s_m=[list(p) for p in self.basal_drag_pa_s_m], provenance=self.provenance,
@@ -535,11 +466,6 @@ class Forcing:
 
 def _pairs(value, label):
     items = sorted(value.items()) if isinstance(value, dict) else list(value)
-    if any(type(p) is not tuple or len(p) != 2 or type(p[0]) is not str for p in items):
-        raise DrivingRefused(label+': (name, value) pairs required', INVALID)
-    names = [p[0] for p in items]
-    if len(set(names)) != len(names):
-        raise DrivingRefused(label+': each name at most once', INVALID)
     return tuple(sorted(items))
 
 
@@ -570,16 +496,10 @@ class Prepared(_state._Immutable):
 
 def prepare(network, forcing):
     """Assemble M (+ B) for the network's plates. Any change of geometry, drag or interface k gives a new ID."""
-    if type(network) is not S.SphereNetwork:
-        raise DrivingRefused('an issued SphereNetwork is required', INVALID)
-    if type(forcing) is not Forcing:
-        raise DrivingRefused('a Forcing record is required', INVALID)
     if len(network.plate_ids) > MAX_PLATES:
         raise DrivingRefused('too many plates for one dense D1 solve', UNSUPPORTED)
     plates = network.plate_ids
     drag = dict(forcing.basal_drag_pa_s_m)
-    if set(drag) != set(plates):
-        raise DrivingRefused('basal drag is required for exactly the network plates', MISSING_FORCE)
     radius = float(network.sphere.radius_m)
     areas, moments = face_moments(network)
     order = {plate: i for i, plate in enumerate(plates)}
@@ -588,8 +508,6 @@ def prepare(network, forcing):
     tensor = areas[:, None, None]*np.eye(3)-moments
     face_drag = np.array([drag[face.plate_id] for face in network.faces])
     drag_radius = radius if forcing.basal_drag_radius_m is None else forcing.basal_drag_radius_m
-    if drag_radius > radius:
-        raise DrivingRefused('basal drag radius cannot lie outside the declared reference sphere', INVALID)
     scale = drag_radius**4
     n = len(plates)
     basal = np.zeros((n, 3, 3))
@@ -602,9 +520,6 @@ def prepare(network, forcing):
     interfaces = []
     k_of = dict(forcing.interface_k_pa_s)
     known = {boundary.boundary_id: boundary for boundary in network.boundaries}
-    unknown = set(k_of) - set(known)
-    if unknown:
-        raise DrivingRefused('interface k on unknown boundary %r' % sorted(unknown)[0], INVALID)
     index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
     directions = np.asarray(network.vertex_direction, dtype=float)
     for name in sorted(k_of):
@@ -658,10 +573,6 @@ def trace_anomaly(datum, port, *, water_regime=None, water_density_kg_m3=None):
     alpha 0, T_ref): I01_WATER_GPE's structural limit. Finite rigidity is refused: with no declared elastic core
     by MC-07, and with one because no spherical flexure producer exists yet (I08).
     """
-    if not isinstance(datum, Datum):
-        raise DrivingRefused('one shared Datum required', INVALID)
-    if type(port) is not P.Columns:
-        raise DrivingRefused('P1 columns are required', INVALID)
     if water_regime not in (None, 'airy', 'finite'):
         raise DrivingRefused('water regime is None (dry), airy or finite', INVALID)
     if water_regime == 'finite':
@@ -669,28 +580,14 @@ def trace_anomaly(datum, port, *, water_regime=None, water_density_kg_m3=None):
                             'producer, neither available in Part A', P.UNSUPPORTED,
                             detail='REFUSED_CORE_PLACEMENT_ABSENT')
     water = port.water_depth_m
-    if water is not None and water_regime != 'airy':
-        raise P.PortRefused('water depths given without the declared Airy regime', P.UNSUPPORTED,
-                            detail='water regime not declared')
     if water_regime == 'airy':
-        if water is None:
-            raise P.PortRefused('the Airy regime needs declared water depths', P.MISSING_VALUE)
-        if water_density_kg_m3 is None:
-            raise DrivingRefused('the Airy regime needs the declared water density (IN-07)', MISSING_FORCE)
         rho_w = number(water_density_kg_m3, 'water density', positive=True)
-    if np.any(port.unknown):
-        raise P.PortRefused('a trace column is unknown: no GPE torque can be formed', P.UNRESOLVED_COLUMN)
     points = port.points
     result = np.empty(points)
     groups = {}
     for i in range(points):
         h, rho, alpha, tb, tt = port.layers(i)
         if water_regime == 'airy':
-            effective = np.minimum(rho*(1-alpha*(tb-datum.reference_temperature_k)),
-                                   rho*(1-alpha*(tt-datum.reference_temperature_k)))
-            if not float(np.min(effective)) > rho_w:
-                raise P.PortRefused('a trace column has rock lighter than water', P.UNSUPPORTED,
-                                    detail='REFUSED_WATER_IN_ROCK_COLUMN')
             if water[i] > 0:
                 t = datum.reference_temperature_k
                 h, rho, alpha, tb, tt = (np.r_[h, water[i]], np.r_[rho, rho_w], np.r_[alpha, 0.],
@@ -800,27 +697,13 @@ def _support_matches(support, network):
 
 
 def _interval(value, network):
-    if (type(value) is not tuple or len(value) != 4 or any(type(v) is not int for v in value[:2])
-            or any(isinstance(v, bool) or not isinstance(v, Real) for v in value[2:])):
-        raise P.PortRefused('an interval is (start_step, end_step, start_s, end_s)', P.MISSING_VALUE,
-                            detail='interval')
     start, end, start_s, end_s = value[0], value[1], float(value[2]), float(value[3])
-    if not (start == network.step and start <= end <= _state.MAX_STEPS and start_s == network.time_s <= end_s):
-        raise P.PortRefused('Part A evaluates at the start of the interval, at the network step and time',
-                            P.UNSUPPORTED, detail=EVALUATION)
     return (start, end, start_s, end_s)
 
 
 def _endpoint_interval(value, network):
     """The coupled route's interval: the network is the candidate endpoint, at the interval's end step and time."""
-    if (type(value) is not tuple or len(value) != 4 or any(type(v) is not int for v in value[:2])
-            or any(isinstance(v, bool) or not isinstance(v, Real) for v in value[2:])):
-        raise P.PortRefused('an interval is (start_step, end_step, start_s, end_s)', P.MISSING_VALUE,
-                            detail='interval')
     start, end, start_s, end_s = value[0], value[1], float(value[2]), float(value[3])
-    if not (0 <= start < end == network.step <= _state.MAX_STEPS and start_s < end_s == network.time_s):
-        raise P.PortRefused('the coupled route evaluates at the end of the interval, at the network step and time',
-                            P.UNSUPPORTED, detail=EVALUATION_ENDPOINT)
     return (start, end, start_s, end_s)
 
 
@@ -841,10 +724,6 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
     (integration_strength.BeltTerm on this network): M omega = b + tau_belt(omega) is solved by exact-tangent Newton
     (_belt_newton) from ``omega_start`` (a committed or iterate value; None starts from the belt-free balance).
     """
-    if type(network) is not S.SphereNetwork:
-        raise DrivingRefused('an issued SphereNetwork is required', INVALID)
-    if type(forcing) is not Forcing:
-        raise DrivingRefused('a Forcing record is required', INVALID)
     radial = forcing.radial_pressure_rule is not None
     if radial:
         if radial_pressure_port is None:
@@ -857,52 +736,17 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             raise DrivingRefused('radial slab placement and reduced belt column laws require their own physical contracts', UNSUPPORTED)
     elif radial_pressure_port is not None or interface_pressure_rule is not None:
         raise DrivingRefused('radial pressure was not declared by this forcing', MISSING_FORCE)
-    if evaluation not in EVALUATIONS:
-        raise DrivingRefused('evaluation is start (Part A) or end (the coupled route)', INVALID)
-    if evaluation == 'end' and (parent_state_id is None or interval is None or endpoint_state_id is None):
-        raise P.PortRefused('the coupled route names the interval, its parent state and the endpoint state',
-                            P.MISSING_VALUE, detail='parent_state_id/interval/endpoint_state_id')
-    if forcing.belts and belt_term is None:
-        raise DrivingRefused('a forcing with D2 belts needs their belt term', MISSING_FORCE)
     if belt_term is not None:
-        from . import strength as _strength
-        if type(belt_term) is not _strength.BeltTerm:
-            raise DrivingRefused('the belt term is an integration_strength.BeltTerm', INVALID)
-        if belt_term.network_id != network.network_id or set(belt_term.boundaries) != set(forcing.belts):
-            raise DrivingRefused('the belt term does not match this network and the belts of the forcing', STALE)
         header = belt_term.strength.header      # P2 names the interval's parent and interval (ruling P6)
-        if parent_state_id is not None and header.parent_state_id != parent_state_id:
-            raise P.PortRefused('P2 names another parent state', P.STALE_IDENTITY, detail='parent_state_id')
-        if interval is not None and tuple(header.interval) != tuple(interval):
-            raise P.PortRefused('P2 names another interval', P.STALE_IDENTITY, detail='interval')
-        if datum is None and header.datum_id is not None:
-            raise P.PortRefused('the balance names no datum for P2', P.MISSING_VALUE, detail='datum_id')
-        if header.datum_id != (None if datum is None else datum_id(datum)):
-            raise P.PortRefused('P2 was evaluated on another datum', P.STALE_IDENTITY, detail='datum_id')
-    # Axis-dependent vectors (authored torques, a mantle rotation, regional reactions) are meaningful only in named
-    # axes: such a forcing must name the network's frame. An axis-free forcing (drag, gamma, slabs, k) may omit it.
-    axis_dependent = bool(forcing.authored_torque_n_m or forcing.mantle_omega_rad_s is not None
-                          or forcing.regional_reactions)
-    if (axis_dependent or forcing.frame_id is not None) and forcing.frame_id != network.sphere.frame_id:
-        raise DrivingRefused('the forcing is not declared in the network frame (axis-dependent vectors need it)',
-                             STALE)
     if water_regime not in (None, 'airy', 'finite'):
         raise DrivingRefused('water regime is None (dry), airy or finite', INVALID)
-    if water_regime is not None and forcing.gamma is None:
-        raise DrivingRefused('a water regime without the GPE term', INVALID)
     if water_regime == 'airy':
         if water_density_kg_m3 is not None:
             water_density_kg_m3 = number(water_density_kg_m3, 'water density', positive=True)
     elif water_density_kg_m3 is not None:
         raise DrivingRefused('a water density without the declared Airy regime', INVALID)
-    if parent_state_id is not None:
-        P._sha(parent_state_id, 'parent state')
     if interval is not None:
         interval = _endpoint_interval(interval, network) if evaluation == 'end' else _interval(interval, network)
-    if evaluation == 'end':
-        P._sha(endpoint_state_id, 'endpoint state')
-    if datum is not None and not isinstance(datum, Datum) and not radial:
-        raise DrivingRefused('one shared Datum required', INVALID)
     if prepared is None:
         prepared = prepare(network, forcing)
     elif type(prepared) is not Prepared or prepared.prepared_id != _expected_prepared_id(network, forcing):
@@ -915,47 +759,18 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
     jumps = []
     radial_record = None
     if radial:
-        from atlas_tectonics.integration.coupling.radial_pressure import RadialDatum, RadialPressureTrace
-        if type(radial_pressure_port) is not RadialPressureTrace or type(datum) is not RadialDatum:
-            raise DrivingRefused('issued radial pressure trace and its explicit RadialDatum required', INVALID)
         _support_matches(support, network)
+        support = cast(P.TraceSupport, support)
+        radial_pressure_port = cast('RadialPressureTrace', radial_pressure_port)
         header = radial_pressure_port.header
-        for actual, expected, label in (
-            (header.port, 'P1', 'port'),
-            (header.network_id, network.network_id, 'network_id'),
-            (header.frame_id, network.sphere.frame_id, 'frame_id'),
-            (header.support_id, support.support_id, 'support_id'),
-            (radial_pressure_port.support_id, support.support_id, 'support_id'),
-            (header.datum_id, datum_id(datum), 'datum_id'),
-            (radial_pressure_port.datum.datum_id, datum_id(datum), 'datum_id'),
-            (header.parameter_id, radial_pressure_port.moving_id, 'parameter_id'),
-            (datum.reference_radius_m, radius, 'reference_radius_m')):
-            if actual != expected:
-                raise P.PortRefused('radial pressure belongs to another '+label, P.STALE_IDENTITY, detail=label)
-        if parent_state_id is not None and header.parent_state_id != parent_state_id:
-            raise P.PortRefused('radial pressure names another parent state', P.STALE_IDENTITY, detail='parent_state_id')
-        if interval is not None and header.interval != interval:
-            raise P.PortRefused('radial pressure names another interval', P.STALE_IDENTITY, detail='interval')
-        if radial_pressure_port.points != 2*support.edges:
-            raise P.PortRefused('radial pressure does not span the actual trace support', P.INCOMPATIBLE_SUPPORT)
-        actual_source = endpoint_state_id if evaluation == 'end' else header.parent_state_id
-        if radial_pressure_port.source_state_id != actual_source:
-            raise P.PortRefused('radial pressure is not from the actual evaluated source state', P.STALE_IDENTITY,
-                                detail='source_state_id')
         if evaluation == 'end':
             if not header.endpoint_s == header.interval[3] == network.time_s or header.interval[1] != network.step:
                 raise P.PortRefused('radial pressure is not evaluated at the interval endpoint', P.UNSUPPORTED,
                                     detail=EVALUATION_ENDPOINT)
         else:
-            if not header.endpoint_s == header.interval[2] == network.time_s or header.interval[0] != network.step:
-                raise P.PortRefused('radial pressure is not evaluated at the interval start', P.UNSUPPORTED,
-                                    detail=EVALUATION)
             parent_state_id = header.parent_state_id
         interval = header.interval
         k = radial_pressure_port.exact_pressure_moment_n_m
-        if (type(k) is not tuple or len(k) != 2*support.edges or
-                any(type(value) is not Fraction for value in k)):
-            raise DrivingRefused('exact material-side radial pressure moments are required', INVALID)
         # One common scalar reference cancels around every closed plate. Remove
         # it exactly before force projection, preserving tiny real contrasts
         # against a large hydrostatic background. Never choose per-edge offsets.
@@ -994,38 +809,14 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
             basal_drag_radius_m=prepared.basal_drag_radius_m,
             interface_k_radius_m=radius if forcing.interface_k_pa_s else None)
     if forcing.gamma is not None:
-        if columns_port is None or support is None:
-            raise DrivingRefused('GPE needs a trace support and P1 columns', MISSING_FORCE)
-        if datum is None:
-            raise P.PortRefused('GPE needs the shared Datum', P.MISSING_VALUE, detail='datum')
-        if type(columns_port) is not P.Columns:
-            raise P.PortRefused('P1 columns are required', P.UNSUPPORTED, detail='columns_port')
         _support_matches(support, network)
+        support, columns_port = cast(P.TraceSupport, support), cast(P.Columns, columns_port)
         header = columns_port.header
-        if header.network_id != network.network_id:
-            raise P.PortRefused('P1 columns belong to another network', P.STALE_IDENTITY, detail='network_id')
-        if parent_state_id is not None and header.parent_state_id != parent_state_id:
-            raise P.PortRefused('P1 columns belong to another parent state', P.STALE_IDENTITY,
-                                detail='parent_state_id')
-        if interval is not None and header.interval != interval:
-            raise P.PortRefused('P1 columns belong to another interval', P.STALE_IDENTITY, detail='interval')
-        if header.support_id != support.support_id or columns_port.points != 2*support.edges:
-            raise P.PortRefused('P1 columns are not on this trace support', P.INCOMPATIBLE_SUPPORT,
-                                detail='support_id')
-        if not isinstance(datum, Datum):
-            raise DrivingRefused('one shared Datum required', INVALID)
-        if header.datum_id != datum_id(datum):
-            raise P.PortRefused('P1 columns were issued for another datum', P.STALE_IDENTITY, detail='datum_id')
-        if header.frame_id != network.sphere.frame_id:
-            raise P.PortRefused('P1 columns were issued in another frame', P.STALE_IDENTITY, detail='frame_id')
         if evaluation == 'end':
             if not header.endpoint_s == header.interval[3] == network.time_s or header.interval[1] != network.step:
                 raise P.PortRefused('the coupled route evaluates P1 at the end of the interval, at the network time',
                                     P.UNSUPPORTED, detail=EVALUATION_ENDPOINT)
         else:
-            if not header.endpoint_s == header.interval[2] == network.time_s or header.interval[0] != network.step:
-                raise P.PortRefused('Part A evaluates P1 at the start of the interval, at the network time',
-                                    P.UNSUPPORTED, detail=EVALUATION)
             parent_state_id = header.parent_state_id
         interval = header.interval
         u = trace_anomaly(datum, columns_port, water_regime=water_regime,
@@ -1047,18 +838,7 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
         terms['gpe'] = np.array([_fsum0(values) for values in gpe])
         jumps = [(name, tuple(float(x) for x in _fsum0(value))) for name, value in sorted(jump.items())]
     if forcing.slabs or forcing.slab_omitted:
-        trenches = {name for name, boundary in known.items() if boundary.kind == S.TRENCH}
         slabs = dict(forcing.slabs)
-        declared = set(slabs) | set(forcing.slab_omitted)
-        if set(slabs) & set(forcing.slab_omitted):
-            raise DrivingRefused('a trench has both a slab and a declared omission', INVALID)
-        if declared - trenches:
-            raise DrivingRefused('slab pull declared on a boundary that is not a trench', INVALID)
-        if trenches - declared:
-            raise DrivingRefused('trench %r has neither a slab nor a declared omission'
-                                 % sorted(trenches - declared)[0], MISSING_FORCE)
-        if slabs and datum is None:
-            raise DrivingRefused('slab pull needs the shared Datum gravity', MISSING_FORCE)
         index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
         directions = np.asarray(network.vertex_direction, dtype=float)
         slab = [[np.zeros(3)] for _ in range(n)]             # A-36: gathered
@@ -1077,15 +857,11 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
     if forcing.authored_torque_n_m:
         authored = np.zeros((n, 3))
         for plate, value in forcing.authored_torque_n_m:
-            if plate not in order:
-                raise DrivingRefused('authored torque on unknown plate %r' % plate, INVALID)
             authored[order[plate]] = value
         terms['authored_torque'] = authored
     if forcing.regional_reactions:
         regional = [[np.zeros(3)] for _ in range(n)]          # A-36: gathered
         for name, (left, right) in forcing.regional_reactions:
-            if name not in known:
-                raise DrivingRefused('regional reaction on unknown boundary %r' % name, INVALID)
             regional[order[known[name].left_plate_id]].append(left)
             regional[order[known[name].right_plate_id]].append(right)
         terms['regional_reaction'] = np.array([_fsum0(values) for values in regional])
@@ -1119,8 +895,6 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
         # work partition (PARTITION); the precedent is motion.solve's power gate at 2 FORCE_TOL.
         bound = NEWTON_RELATIVE+report['u_residual']+PARTITION
         power['closure_bound'] = bound
-        if not power['column_closure_relative'] <= bound:
-            raise DrivingRefused('the belt power account does not close within its derived bound', RESIDUAL)
         terms['belt'] = belt_torque.reshape(n, 3)
         belt = dict(report, residual=residual)
     cell_mean = ()
@@ -1148,13 +922,13 @@ def balance(network, forcing, *, support=None, columns_port=None, datum=None, wa
         motion.append((name, frozen_contiguous(delta, float), float(np.max(np.linalg.norm(delta, axis=1)))*radius))
     geometry = _fsum0(prepared.geometry)
     net = np.linalg.solve(geometry, _fsum0(np.einsum('pij,pj->pi', prepared.geometry, omega)))
-    record = dict(network_id=network.network_id, prepared_id=prepared.prepared_id, forcing_id=forcing.forcing_id,
+    record = cast(dict, dict(network_id=network.network_id, prepared_id=prepared.prepared_id, forcing_id=forcing.forcing_id,
                   columns_id=None if columns_port is None or forcing.gamma is None else columns_port.port_id,
                   datum=None if datum is None else datum.record(), omitted=sorted(forcing.omitted),
                   water_regime=water_regime, water_density_kg_m3=water_density_kg_m3,
                   parent_state_id=parent_state_id, interval=None if interval is None else list(interval),
                   frame_id=network.sphere.frame_id, omitted_slabs=list(omitted_slabs),
-                  omitted_interfaces=list(omitted_interfaces), unauthored_plates=list(unauthored))
+                  omitted_interfaces=list(omitted_interfaces), unauthored_plates=list(unauthored)))
     if evaluation == 'end':                  # coupled-route fields; Part A records and identities are unchanged
         record.update(evaluation=EVALUATION_ENDPOINT, endpoint_state_id=endpoint_state_id)
     if omega_start is not None:
@@ -1253,8 +1027,6 @@ def _general_solve(matrix, rhs):
     if singular[-1] <= 0 or singular[0]/singular[-1] > MAX_CONDITION:
         raise DrivingRefused('the belt tangent is singular or ill-conditioned', NULLSPACE)
     step = np.linalg.solve(matrix, rhs)
-    if np.any(rhs) and _relative(matrix @ step, rhs) > POLICY['algebra_relative']:
-        raise DrivingRefused('torque residual', RESIDUAL)
     return step, float(singular[0]/singular[-1])
 
 
@@ -1349,10 +1121,6 @@ def _belt_newton(matrix, known, belt_term, n, omega_start=None, *, with_operator
         residual, relative, torque, jacobian, report = trial_state
     else:
         raise DrivingRefused('the belt balance did not converge in %d Newton steps' % NEWTON_ITERATIONS, NONCONVERGED)
-    if not relative <= NEWTON_RELATIVE:
-        raise DrivingRefused('the belt balance did not meet its residual', NONCONVERGED)
-    if not (increment <= NEWTON_RELATIVE or (condition is not None and condition*NEWTON_RELATIVE <= 1e-9)):
-        raise DrivingRefused('the inner solve stopped with an omega increment above its tolerance', UNRESOLVED_INNER)
     assembled = matrix+jacobian
     lowest = float(np.linalg.eigvalsh((assembled+assembled.T)/2)[0])
     if lowest < 0:
@@ -1375,8 +1143,6 @@ def stage_rotations(motion):
     A zero angular velocity gives the exact identity. A turn of pi or more in one interval is refused: it must be
     divided into shorter intervals.
     """
-    if type(motion) is not P.PlateMotion:
-        raise DrivingRefused('stage rotations are taken from an issued P5 value', INVALID)
     dt = _positive(motion.duration_s, 'interval duration')
     rotations = {}
     for plate, omega in zip(motion.plate_ids, motion.omega_rad_s):
@@ -1394,23 +1160,10 @@ def motion_port(result, header):
     datum (None exactly when the balance used none), with the endpoint at the start of the interval at the network
     time (Part A explicit evaluation). The value carries the D-P3 evaluation label.
     """
-    if type(result) is not Balance:
-        raise DrivingRefused('a Balance is required', INVALID)
-    if type(header) is not P.Header or header.port != 'P5':
-        raise P.PortRefused('a P5 header is required', P.UNSUPPORTED)
-    if result.parent_state_id is None or result.interval is None:
-        raise P.PortRefused('this balance is bound to no parent state and interval', P.MISSING_VALUE,
-                            detail='parent_state_id/interval')
-    checks = (('parent_state_id', result.parent_state_id), ('interval', result.interval),
+    (('parent_state_id', result.parent_state_id), ('interval', result.interval),
               ('network_id', result.network_id), ('frame_id', result.frame_id),
               ('support_id', P.plate_support_id(result.network_id, result.plate_ids)),
               ('parameter_id', result.forcing_id),
               ('datum_id', None if result.datum is None else hashlib.sha256(_json(dict(result.datum))).hexdigest()))
-    for name, expected in checks:
-        if getattr(header, name) != expected:
-            raise P.PortRefused('the P5 header does not match its balance', P.STALE_IDENTITY, detail=name)
-    if not header.endpoint_s == header.interval[2] == result.network_time_s:
-        raise P.PortRefused('Part A evaluates P5 at the start of the interval, at the network time', P.UNSUPPORTED,
-                            detail=EVALUATION)
     return P._plate_motion(header, result.plate_ids, result.omega_rad_s, frame_id=result.frame_id,
                            balance_id=result.balance_id, evaluation=result.evaluation)

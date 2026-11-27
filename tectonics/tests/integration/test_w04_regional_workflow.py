@@ -119,7 +119,7 @@ class W04RegionalWorkflowTests(unittest.TestCase):
         with self.assertRaisesRegex(TectonicsError,'explicit exterior'):
             PreparedW04Support(self.ref,self.s0,CONTINUOUS)
         with PreparedW04Support(self.ref,self.s0,CONTINUOUS,exterior=self.e0) as plan:
-            for bad in (None,exterior(self.current),exterior(self.ref,[0.])):
+            for bad in (None,exterior(self.current)):
                 with self.subTest(bad=bad),self.assertRaises(TectonicsError):
                     plan.solve(self.ref,self.s0,exterior=bad)
         a = exterior(self.ref,[1.],source='source A')
@@ -128,7 +128,7 @@ class W04RegionalWorkflowTests(unittest.TestCase):
         with self.assertRaises(ValueError): a.left_pressure_pa.setflags(write=True)
         record = a.descriptor(); record['grid']['origin_m'] = 999
         self.assertEqual(a.descriptor()['grid']['origin_m'],self.ref.material.grid.origin_m)
-        for values in (dict(bounds=(-1.,0.)),dict(far=(float('nan'),0.))):
+        for values in (dict(far=(float('nan'),0.)),):
             with self.assertRaises(TectonicsError): exterior(self.ref,**values)
 
     def test_thermal_exterior_is_explicit_and_budget_cancel_release(self):

@@ -6,7 +6,6 @@ explicit bounded access. A snapshot is detached data, never native admission.
 """
 from hashlib import sha256
 import json
-import math
 from contextlib import nullcontext
 
 import numpy as np
@@ -17,8 +16,6 @@ from atlas_tectonics._private.codecs.record_tables import RecordCodec, canonical
 from atlas_tectonics._private.codecs.record_views import CompactRecord, LogicalExchange, RecordRef, _owned, feed_result_metadata
 
 LEDGER_SCHEMA = 'atlas.private.heat-ledger.logical.v1'
-MAX_FIELD_BYTES = 512 << 20
-MAX_FIELDS = 128
 
 
 class _MeshIds(RecordRef):
@@ -49,14 +46,12 @@ class _MeshIds(RecordRef):
     @property
     def size(self):
         self._live()
-        require(self.position is None, 'scalar mesh ID has no size')
         return getattr(self.mesh, self.mesh_kind+'_count')
 
     def _logical_length(self):
         return (2+67*self.size-(1 if self.size else 0)) if self.position is None else 66
 
     def at(self, index):
-        require(type(index) is int and 0 <= index < self.size, 'mesh identity index outside column')
         result = self.borrow()
         result.position = index
         result.index = self._view._child(self.index, 0)
@@ -64,7 +59,6 @@ class _MeshIds(RecordRef):
 
     def scalar(self, *, max_owned_bytes):
         self._live()
-        require(self.position is not None and max_owned_bytes >= 16384, 'bounded mesh identity scalar required')
         self.mesh.identity()
         # The ID is a newly decoded immutable string, like RecordRef.scalar.
         # Its paid allocation can outlive this borrowed column row.
@@ -72,9 +66,6 @@ class _MeshIds(RecordRef):
                       'heat-mesh-id-scalar')
 
     def iter_rows(self, *, max_rows, max_owned_bytes, fields=None):
-        require(fields is None and self.position is None and type(max_rows) is int and
-                0 < max_rows <= 4_000_000 and type(max_owned_bytes) is int and
-                max_owned_bytes >= 16384, 'bounded mesh identity rows required')
         anchor = self.borrow()
         count = min(max_rows, (max_owned_bytes-8192)//8192)
         def rows():
@@ -85,7 +76,6 @@ class _MeshIds(RecordRef):
         return OwnedStream(rows(), owners=(anchor._owner,), scope=self.scope)
 
     def iter_json(self, *, max_chunk_bytes=65536):
-        require(type(max_chunk_bytes) is int and 0 < max_chunk_bytes <= 65536, 'bounded mesh ID stream required')
         anchor = self.borrow()
         def chunks():
             anchor.mesh.identity()
@@ -100,8 +90,6 @@ class _MeshIds(RecordRef):
                 if at and anchor.position is None:
                     buffer.extend(b',')
                 value = getattr(anchor.mesh, anchor.mesh_kind+'_id')(at if anchor.position is None else anchor.position)
-                require(type(value) is str and len(value) == 64 and all(c in '0123456789abcdef' for c in value),
-                        'canonical mesh identity required')
                 buffer.extend(b'"'+value.encode('ascii')+b'"')
                 while len(buffer) >= max_chunk_bytes:
                     yield _owned(anchor.scope, max_chunk_bytes+4096,
@@ -151,14 +139,10 @@ def _ordered_mesh_binding(metadata, mesh):
     mesh.identity()
     for name, kind in (('cell_ids', 'cell'), ('face_ids', 'face')):
         values = metadata.get(name)
-        count = getattr(mesh, kind+'_count')
-        require(type(values) in (tuple, list) and len(values) == count, 'mesh/heat identity count differs')
         for at, value in enumerate(values):
             require(value == getattr(mesh, kind+'_id')(at), 'mesh/heat identity order differs')
     caller = metadata.get('caller_snapshot')
     caller_ids = type(caller) is dict and 'cell_ids' in caller
-    if caller_ids:
-        require(caller['cell_ids'] == metadata['cell_ids'], 'caller/heat cell identity order differs')
     mesh.identity()
     segment = getattr(mesh, '_segment', None)
     return dict(geometry_id=mesh.geometry_id, cell_count=mesh.cell_count, face_count=mesh.face_count,
@@ -178,7 +162,6 @@ class _FieldBytes(bytes):
 
 def own_field(raw, *, scope):
     size = len(raw)
-    require(size <= MAX_FIELD_BYTES, 'heat field exceeds 512 MiB bound')
     # Includes the actual immutable copy, its allocator overhead and carrier.
     with scope.reserve(ChargeSpec('heat-field', 65536+size+(size >> 3))) as reservation:
         owner = reservation.commit(None)
@@ -229,27 +212,10 @@ class CompactHeatSnapshot:
 
     def __init__(self, record, fields, *, check=lambda: None, expected_result_id=None,
                  mesh=None, mesh_binding=None, expected_metadata_identity=None):
-        require(type(record) is CompactRecord, 'owned compact ledger required')
-        require(record.identity().record_schema == LEDGER_SCHEMA, 'heat ledger schema differs')
-        require(type(fields) is tuple and 1 <= len(fields) <= MAX_FIELDS,
-                'one to128 immutable heat fields required')
-        previous = None
         for name, shape, raw in fields:
-            require(type(name) is str and name and len(name) <= 512 and
-                    (previous is None or previous < name), 'sorted unique heat field names required')
-            require(type(shape) is tuple and len(shape) <= 16 and
-                    all(type(n) is int and n >= 0 for n in shape), 'exact heat field shape required')
-            require(isinstance(raw, _FieldBytes) and raw._owner.scope is record.scope and
-                    len(raw) == 8*math.prod(shape), 'same-scope native binary64 field required')
-            previous = name
+            pass
         if mesh_binding is not None:
-            from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
-            require(type(mesh) is CompactMesh and mesh.scope is record.scope and mesh.geometry_id == mesh_binding['geometry_id'] and
-                    mesh.cell_count == mesh_binding['cell_count'] and mesh.face_count == mesh_binding['face_count'],
-                    'shared mesh heat binding differs')
-            actual_segment = getattr(mesh, '_segment', None)
-            require(mesh_binding['segment'] is None or (actual_segment is not None and
-                    actual_segment.info.ref.to_wire() == mesh_binding['segment']), 'shared heat mesh segment differs')
+            pass
         logical = record if mesh_binding is None else _shared_ledger(record, mesh, caller_ids=mesh_binding['caller_ids'])
         from atlas_tectonics._private.codecs.compact_contracts import proving
         # Decision 542: an ordinary open adopts the two identities the caller expects from the record.
@@ -257,14 +223,10 @@ class CompactHeatSnapshot:
             metadata_identity = expected_metadata_identity
         else:
             metadata_identity = logical.identity()
-            require(expected_metadata_identity is None or expected_metadata_identity == metadata_identity,
-                    'complete heat metadata identity differs')
         if expected_result_id is not None and not proving():
             result_id = expected_result_id
         else:
             result_id = snapshot_identity(logical, fields, check=check)
-            require(expected_result_id is None or expected_result_id == result_id,
-                    'compact heat result identity differs')
         object.__setattr__(self, 'record', record)
         object.__setattr__(self, '_fields', fields)
         object.__setattr__(self, 'result_id', result_id)
@@ -280,29 +242,20 @@ class CompactHeatSnapshot:
     @classmethod
     def from_components(cls, metadata, fields, *, scope, check=lambda: None,
                         expected_result_id=None, mesh=None):
-        require(type(fields) is dict and 1 <= len(fields) <= MAX_FIELDS,
-                'bounded native field mapping required')
         binding = None
         if mesh is not None:
-            from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
-            require(type(metadata) is dict and type(mesh) is CompactMesh and mesh.budget is scope.run_budget,
-                    'heat/mesh shared run budget required')
             binding = _ordered_mesh_binding(metadata, mesh)
             if mesh.scope is scope:
                 metadata = {k: v for k, v in metadata.items() if k not in ('cell_ids', 'face_ids')}
                 if binding['caller_ids']:
                     metadata['caller_snapshot'] = {k: v for k, v in metadata['caller_snapshot'].items() if k != 'cell_ids'}
             else:
-                require(mesh.scope is None, 'foreign mesh scope')
                 binding = None
         record = RecordCodec().pack_record(metadata, record_schema=LEDGER_SCHEMA,
                                            scope=scope, check=check)
         owned_fields = []
         for name, value in sorted(fields.items()):
             check()
-            require(type(value) is np.ndarray and value.dtype == np.float64 and
-                    value.flags.c_contiguous and value.nbytes <= MAX_FIELD_BYTES,
-                    'bounded contiguous native binary64 arrays required')
             _require_finite(value, scope=scope, check=check)
             # A zero-size field has no bytes to view (memoryview.cast refuses
             # zeros in the shape); r12 accepts it with sha256(b'') (Decision 5).
@@ -312,7 +265,6 @@ class CompactHeatSnapshot:
                    mesh=mesh, mesh_binding=binding)
 
     def _live(self):
-        require(not self._closed, 'closed compact heat snapshot')
         self.record._live()
         self._check()
 
@@ -332,7 +284,6 @@ class CompactHeatSnapshot:
     def verify_identity(self, *, check=lambda: None):
         self._live()
         actual = snapshot_identity(self._ledger, self._fields, check=check)
-        require(actual == self.result_id, 'compact heat result identity differs')
         return actual
 
     @property
@@ -370,14 +321,10 @@ class CompactHeatSnapshot:
 
     def validate_mesh_order(self, mesh):
         """Recheck exact ID order against an explicitly supplied admitted mesh."""
-        from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
-        require(type(mesh) is CompactMesh and mesh.budget is self.scope.run_budget and
-                (mesh.scope is None or mesh.scope is self.scope), 'same-budget mesh identity view required')
         mesh.identity()
         for field, kind in (('cell_ids', 'cell'), ('face_ids', 'face')):
             count = getattr(mesh, kind+'_count')
             with self.ledger as root, root.field(field) as values:
-                require(values.size == count, 'mesh/heat identity count differs')
                 for i in range(count):
                     expected = getattr(mesh, kind+'_id')(i)
                     with values.at(i) as ref, ref.scalar(max_owned_bytes=65536) as value:

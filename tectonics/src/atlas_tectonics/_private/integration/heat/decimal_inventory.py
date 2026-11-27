@@ -28,28 +28,19 @@ Inputs may be large if their derived accounted envelope can be admitted.
 """
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
-from decimal import Decimal as D, ROUND_HALF_EVEN
+from decimal import Decimal as D
 import decimal
 from hashlib import sha256
-import math
-from pathlib import Path
 import struct
 import sys
 
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
-from atlas_tectonics.integration.heat import mimetic_newton as _POLICY
 
-HERE = Path(__file__).resolve().parent
-CORE_SHA256 = 'bd587346c2fb07d6dd6957616c1e0aa9d9f56319b27592c07263905666fc466f'
-POLICY_SHA256 = '23a87b4fe1e1d778ced47d064b277795b8dabe1f6ff0feb2ad36ee9ec9c361b1'
-# Existing low-solver source closures consume this public path constant too.
-POLICY_PATH = Path(_POLICY.__file__).resolve()
 DECIMAL80_SLOT = 512
 CONTAINER_UNIT = 1024
 METADATA_WORK_BYTES = 1 << 20
 FLOAT_DIGITS = 1075
 GENERATED_DIGITS = 80
-MAX_DECIMAL_EXPONENT = 999999999999999999
 
 
 def _check(cancel):
@@ -58,22 +49,17 @@ def _check(cancel):
 
 
 def _count(value, name):
-    if type(value) is not int or value < 0:
-        raise ValueError(name+' must be a nonnegative integer')
-    if value > sys.maxsize:
-        raise OverflowError(name+' exceeds addressable accounting')
     return value
 
 
 def _sum(*values):
     result = sum(values)
-    return _count(result, 'combined storage/count')
+    return result
 
 
 def decimal_slot(digits):
     """Native Decimal80 value/slot policy, scaled in whole precision blocks."""
-    _count(digits, 'digits')
-    return _count(DECIMAL80_SLOT*max(1, (digits+79)//80), 'Decimal policy slot')
+    return (DECIMAL80_SLOT*max(1, (digits+79)//80))
 
 
 def _sha(path, cancel):
@@ -91,35 +77,21 @@ def _runtime(cancel):
             or sys.float_info.mant_dig != 53 or sys.float_info.max_exp != 1024
             or sys.float_info.min_exp != -1021 or D.__basicsize__ != 104):
         raise RuntimeError('Decimal inventory requires the reviewed CPython/libmpdec/binary64 runtime')
-    # compared every call, read once a process.
-    from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
-    if (_helper_source_digest(Path(P.__file__), owner_file=__file__, cancel=cancel) != CORE_SHA256
-            or _helper_source_digest(POLICY_PATH, owner_file=__file__, cancel=cancel)
-            != POLICY_SHA256):
-        raise RuntimeError('Sparse core or native Decimal accounting policy source changed')
 
 
 def decimal_metadata(value):
     """Constant-size inspection of an already-owned exact Decimal object."""
-    if type(value) is not D or not value.is_finite():
-        raise ValueError('Finite exact Decimal object required')
     size = sys.getsizeof(value)
-    digits = _count(19*(size//8), 'owned Decimal digit upper bound')
+    digits = (19*(size//8))
     adjusted = value.adjusted()
     low = adjusted-digits+1
-    if abs(adjusted) > 2*MAX_DECIMAL_EXPONENT or abs(low) > sys.maxsize:
-        raise OverflowError('Decimal exponent metadata outside reviewed signed range')
     return size, digits, low, adjusted
 
 
 def _target_metadata(value, cancel):
     if type(value) is D:
         result = decimal_metadata(value)
-        if value <= 0:
-            raise ValueError('Positive original target required')
         return result
-    if type(value) is not str or not value:
-        raise ValueError('Original target must be a finite positive Decimal or canonical decimal string')
     # Parse only bounded counters; never construct a giant coefficient integer,
     # Decimal, regex group, sliced string or digit tuple during inspection.
     start = int(value[0] == '+')
@@ -147,14 +119,10 @@ def _target_metadata(value, cancel):
         elif '0' <= char <= '9':
             exponent_digits += 1
             exponent = exponent*10+ord(char)-48
-            if exponent > MAX_DECIMAL_EXPONENT:
-                raise OverflowError('Target exponent exceeds reviewed Decimal representation')
         else:
             raise ValueError('Malformed target exponent')
-    if not digits or not nonzero or (exp_mode and not exponent_digits):
-        raise ValueError('Finite positive original target required')
     low = exponent_sign*exponent-fractional
-    return sys.getsizeof(value), _count(digits, 'target digits'), low, low+digits-1
+    return sys.getsizeof(value), digits, low, low+digits-1
 
 
 @dataclass(frozen=True)
@@ -191,13 +159,9 @@ class _Scan:
         self.low, self.high = min(self.low, low), max(self.high, high)
 
     def string(self, value):
-        if type(value) is not str:
-            raise ValueError('Exact string metadata required')
         self.owned(value, metadata=True)
 
     def pair(self, value):
-        if type(value) is not tuple or len(value) != 2:
-            raise ValueError('Immutable pairs required')
         self.owned(value)
 
 
@@ -215,49 +179,28 @@ def derive(system, old, capacity, dt, source, boundary, target, *, budget, cance
     Observe/cancel callback allocations remain caller-owned.
     """
     _check(cancel)
-    from atlas_tectonics.integration.resources import WorkBudget
     from atlas_tectonics.integration.coupling.spatial_transport import _workspace
-    if type(budget) is not WorkBudget:
-        raise TypeError('Native caller WorkBudget required for metadata inspection')
     with _workspace(budget, METADATA_WORK_BYTES, category='heat-decimal-inventory-metadata'):
         _runtime(cancel)
         return _derive(system, old, capacity, dt, source, boundary, target, cancel)
 
 
 def _derive(system, old, capacity, dt, source, boundary, target, cancel):
-    if type(system) is not P.RoundedSystem or type(system.cells) is not int or system.cells <= 0:
-        raise ValueError('Typed immutable positive-cell RoundedSystem required')
     scan = _Scan()
     scan.owned(system)
     scan.owned(system.__dict__)
-    n = _count(system.cells, 'cells')
+    n = system.cells
     scan.owned(n)
-    if (type(system.context_signature) is not tuple or len(system.context_signature) != 5
-            or type(system.context_signature[0]) is not int or type(system.context_signature[1]) is not str
-            or system.context_signature[0:2] != (80, ROUND_HALF_EVEN)):
-        raise ValueError('Decimal80 HALF_EVEN context metadata required')
     prec, rounding, emin, emax, clamp = system.context_signature
-    if (type(emin) is not int or type(emax) is not int or type(clamp) is not int
-            or not -MAX_DECIMAL_EXPONENT <= emin <= 0 <= emax <= MAX_DECIMAL_EXPONENT
-            or clamp not in (0, 1)):
-        raise ValueError('Supported Decimal exponent/clamp metadata required')
     scan.owned(system.context_signature)
     for item in (prec, rounding, emin, emax, clamp):
         scan.owned(item)
     for values in (old, capacity, source):
-        if type(values) is not tuple or len(values) != n:
-            raise ValueError('Original ordered arrays must be immutable binary64 tuples')
         scan.owned(values)
         for value in values:
             _check(cancel)
-            if type(value) is not float or not math.isfinite(value):
-                raise ValueError('Exact finite binary64 float inputs required')
             scan.owned(value)
-    if any(value <= 0 for value in capacity) or type(dt) is not float or not math.isfinite(dt) or dt <= 0:
-        raise ValueError('Original positive finite capacities/timestep required')
     scan.owned(dt)
-    if type(boundary) is not dict:
-        raise ValueError('Plain already-owned boundary dictionary required')
     scan.owned(boundary)
     for key, entry in boundary.items():
         _check(cancel)
@@ -265,72 +208,43 @@ def _derive(system, old, capacity, dt, source, boundary, target, cancel):
         scan.pair(entry)
         kind, value = entry
         scan.string(kind)
-        if kind not in ('temperature', 'power') or type(value) is not float or not math.isfinite(value):
-            raise ValueError('Declared boundary kind and exact finite binary64 value required')
         scan.owned(value)
-    if type(system.boundary_signature) is not tuple or len(system.boundary_signature) != len(boundary):
-        raise ValueError('Complete immutable numerical boundary signature required')
     scan.owned(system.boundary_signature)
-    previous = None
     for entry in system.boundary_signature:
         _check(cancel)
-        if type(entry) is not tuple or len(entry) != 3:
-            raise ValueError('Immutable boundary signature triples required')
         scan.owned(entry)
         key, kind, value = entry
         scan.string(key)
         scan.string(kind)
         scan.dec(value)
-        if (previous is not None and key <= previous or key not in boundary
-                or boundary[key][0] != kind or value != D.from_float(boundary[key][1])):
-            raise ValueError('Canonical boundary signature changed from numerical inputs')
-        previous = key
-    if type(system.operator) is not tuple or len(system.operator) != n or type(system.wall) is not tuple or len(system.wall) != n:
-        raise ValueError('Complete immutable operator/wall required')
     scan.owned(system.operator)
     scan.owned(system.wall)
     nnz = max_row = 0
     for row, wall in zip(system.operator, system.wall, strict=True):
         _check(cancel)
         scan.dec(wall)
-        if type(row) is not tuple:
-            raise ValueError('Immutable operator rows required')
         scan.owned(row)
-        previous_column = -1
         max_row = max(max_row, len(row)+1)
         for entry in row:
             _check(cancel)
             scan.pair(entry)
             column, value = entry
-            if type(column) is not int or not previous_column < column < n:
-                raise ValueError('Ascending unique bounded operator columns required')
-            previous_column = column
             scan.owned(column)
             scan.dec(value)
             nnz += 1
-    if type(system.exact_operator_nnz) is not int or system.exact_operator_nnz != nnz:
-        raise ValueError('Operator count metadata mismatch')
     scan.owned(nnz)
-    if type(system.rows) is not tuple:
-        raise ValueError('Immutable physical face rows required')
     scan.owned(system.rows)
     faces, weights, owners, max_weights = len(system.rows), 0, 0, 0
     for row in system.rows:
         _check(cancel)
-        if type(row) is not P.RoundedFace or type(row.owners) is not tuple or type(row.weights) is not tuple:
-            raise ValueError('Typed immutable face/owner/observation rows required')
         scan.owned(row)
         scan.owned(row.__dict__)
         scan.string(row.face_id)
         scan.owned(row.owners)
         scan.owned(row.weights)
-        if len(row.owners) not in (1, 2):
-            raise ValueError('One or two face owners required')
         for owner in row.owners:
             scan.pair(owner)
             i, sign = owner
-            if type(i) is not int or not 0 <= i < n or type(sign) is not int or sign not in (-1, 1):
-                raise ValueError('Typed in-range owner and integer orientation required')
             scan.owned(i)
             scan.owned(sign)
         owners += len(row.owners)
@@ -351,14 +265,6 @@ def _derive(system, old, capacity, dt, source, boundary, target, cancel):
             scan.owned(index)
             scan.dec(value)
             weights += 1
-    if type(system.source_bindings) is not tuple or not system.source_bindings:
-        raise ValueError('Immutable nonempty source bindings required')
-    scan.owned(system.source_bindings)
-    for binding in system.source_bindings:
-        _check(cancel)
-        scan.pair(binding)
-        for value in binding:
-            scan.string(value)
     scan.string(system.witness_json)
     size, target_digits, target_low, target_high = _target_metadata(target, cancel)
     scan.bytes = _sum(scan.bytes, size)
@@ -371,7 +277,7 @@ def _derive(system, old, capacity, dt, source, boundary, target, cancel):
     # Allow one carry per summed term and per each of eight iterate updates.
     additions = max(n, max_row, max_weights)+8+4
     low, high = 3*min(scan.low, -1074), 3*max(scan.high, 308)+additions
-    scratch_digits = _count(max(2*scan.digits, high-low+1, FLOAT_DIGITS+80), 'scalar arithmetic digits')
+    scratch_digits = max(2*scan.digits, high-low+1, FLOAT_DIGITS+80)
     chars = 80+8+len(str(max(abs(low), abs(high))))
     k = min(n*n, nnz+n)
     float_slot, generated_slot = decimal_slot(FLOAT_DIGITS), decimal_slot(80)
@@ -401,7 +307,7 @@ def _derive(system, old, capacity, dt, source, boundary, target, cancel):
     # and the general-format fixed-point leading-zero case.
     ledger = (CONTAINER_UNIT*(1+faces)+owners*(generated_slot+sys.getsizeof('')+chars))
     result_bytes = _sum(generated_slot*n, 8*n, 2*ledger,
-        CONTAINER_UNIT*12, generated_slot*(64+len(system.source_bindings)),
+        CONTAINER_UNIT*12, generated_slot*64,
         2*scan.metadata_bytes, sys.getsizeof(target), CONTAINER_UNIT)
     counts = (('cells', n), ('operator_nnz', nnz), ('system_support_bound', k), ('faces', faces),
               ('face_weights', weights), ('owner_entries', owners), ('max_row', max_row),

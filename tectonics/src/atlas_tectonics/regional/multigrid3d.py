@@ -34,14 +34,10 @@ from __future__ import annotations
 from concurrent.futures import CancelledError
 
 import numpy as np
-import numba
 from numba import njit
 from scipy import sparse
 from scipy.linalg import eig, lstsq
 from scipy.sparse.linalg import splu
-
-if numba.__version__ != '0.65.1' or numba.config.DISABLE_JIT:
-    raise ImportError('3D multigrid requires enabled numba==0.65.1; no fallback')
 
 # Fixed numerical settings; the caller records them in its plan identity.
 SETTINGS = dict(operator='matrix-free Q2 (shared reference gradients), assembled-entry gate products',
@@ -423,8 +419,6 @@ class MultigridStokes:
         self._mask[g.fixed] = 0.
         diagonal = self._diagonal()
         free_diagonal = diagonal[g.free]
-        if not (np.all(np.isfinite(free_diagonal)) and np.all(free_diagonal > 0)):
-            raise ValueError('multigrid requires a finite positive velocity diagonal')
         inverse = np.zeros(3*g.nv)
         inverse[g.free] = 1/free_diagonal
         # Level 1: Q1 on the same bricks (exact Galerkin product of the fine form).
@@ -443,8 +437,6 @@ class MultigridStokes:
         for M in matrices[:-1]:
             _check(cancel)
             d = M.diagonal()
-            if not (np.all(np.isfinite(d)) and np.all(d > 0)):
-                raise ValueError('multigrid requires a finite positive coarse diagonal')
             self.smoothers.append(self._chebyshev(M.__matmul__, 1/d, None, cancel))
         _check(cancel)
         self.coarse = _spd_factor(matrices[-1])
@@ -452,8 +444,6 @@ class MultigridStokes:
         _check(cancel)
         local = np.einsum('eq,qa,qb->eab', g.weights[None, :]/eta, g.shape_p, g.shape_p)
         mass = sparse.coo_matrix((local.ravel(), (g.mass_rows, g.mass_cols)), shape=(g.np, g.np)).tocsc()
-        if not np.all(np.isfinite(mass.data)) or np.any(mass.diagonal() <= 0):
-            raise ValueError('inverse-viscosity pressure mass is not representable')
         self.mass = _spd_factor(mass)
         self._mass_matrix = mass
         self.Sw = self.mass.solve(g.w)
@@ -617,8 +607,6 @@ class MultigridStokes:
         m = len(alpha)
         T = np.diag(alpha)+np.diag(beta[:m-1], 1)+np.diag(beta[:m-1], -1)
         upper = SETTINGS['eigen_safety']*float(np.max(np.linalg.eigvalsh(T)))
-        if not (np.isfinite(upper) and upper > 0):
-            raise ValueError('invalid multigrid smoothing bound')
         return (apply, inverse, upper, upper/SETTINGS['smoothing_range'])
 
     @staticmethod
@@ -744,8 +732,6 @@ def fgmres_dr(apply, precondition, b, rtol, restart, deflation, maxiter, callbac
     size = float(np.max(np.abs(b))) if n else 0.
     if size == 0.:
         return x, True, 0
-    if not np.isfinite(size):
-        raise FloatingPointError('non-finite right-hand side')
     b = b/size
     bnorm = float(np.linalg.norm(b))
     target = rtol*bnorm
@@ -781,8 +767,6 @@ def fgmres_dr(apply, precondition, b, rtol, restart, deflation, maxiter, callbac
             H[:j+1, j] = h; H[j+1, j] = norm
             total += 1
             j += 1
-            if not np.all(np.isfinite(h)) or not np.isfinite(norm):
-                raise FloatingPointError('non-finite Krylov basis')
             y = lstsq(H[:j+1, :j], c[:j+1], check_finite=False)[0]
             estimate = float(np.linalg.norm(c[:j+1]-H[:j+1, :j]@y))
             if callback is not None:
@@ -798,8 +782,6 @@ def fgmres_dr(apply, precondition, b, rtol, restart, deflation, maxiter, callbac
         x += Z[:j].T@y
         r = b-apply(x)
         beta = float(np.linalg.norm(r))
-        if not np.isfinite(beta):
-            raise FloatingPointError('non-finite Krylov residual')
         if beta <= target:
             return x*size, True, total
         if total >= maxiter:

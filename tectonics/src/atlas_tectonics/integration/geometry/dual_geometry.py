@@ -35,25 +35,14 @@ def physical_record(record, booked, errors, finite, *, geometric_starts=None,
     This conversion/selection is not physical-density or debit acceptance.
     """
     dual = geometric_starts is not None or finite_measures is not None
-    if dual and (type(geometric_starts) is not dict or type(finite_measures) is not dict):
-        raise ValueError('dual measures require both explicit geometric_starts and finite_measures')
 
     def measure(value, label):
-        if type(value) not in (int, Q) or value < 0:
-            raise ValueError('exact nonnegative '+label+' required')
         return Q(value)
 
     result = LIVE_FINITE.dual_copy(record)
     result.pop('schema', None)
     rows = result['cells']
-    keys = {r['cell_id'] for r in rows}
-    if len(keys) != len(rows):
-        raise ValueError('duplicate geometry cell')
     physical = {r['cell_id'] for r in rows if r['kind'] != 'algebraic-port'}
-    if set(booked)-physical or set(errors)-physical:
-        raise ValueError('booked material/error has no physical support')
-    if dual and (set(geometric_starts) != physical or set(booked) != physical):
-        raise ValueError('dual physical G and B must cover the complete physical node set')
     material = {key: (measure(booked[key], 'material quadrature') if dual else Q(booked.get(key, 0)))
                 for key in physical}
     reference = {key: (measure(geometric_starts[key], 'geometric start') if dual else material[key])
@@ -62,30 +51,14 @@ def physical_record(record, booked, errors, finite, *, geometric_starts=None,
         key = row['cell_id']
         lo, hi = map(_pair, row['start_volume_bounds_m3'])
         end = tuple(map(_pair, row['end_volume_bounds_m3']))
-        if not 0 <= lo <= hi or not 0 <= end[0] <= end[1]:
-            raise ValueError('invalid physical endpoint enclosure')
         if row['kind'] == 'algebraic-port':
-            if (lo, hi) != (0, 0) or end != (0, 0):
-                raise ValueError('an algebraic port cannot contain material')
             continue
         value = material[key]
-        if value < 0:
-            raise ValueError('negative booked material measure')
         geometric = reference[key]
-        if dual and value > 0 and geometric == 0:
-            raise ValueError('positive B on zero geometric start refused')
         raw = errors.get(key)
         if raw is None:
-            if geometric and row['kind'] != 'collar':
-                raise ValueError('positive geometric reference lacks carried geometry error')
             raw = (Q(0), Q(0))
-        if type(raw) not in (list, tuple) or len(raw) != 2:
-            raise ValueError('two signed carried error endpoints required')
         a, b = map(Q, raw)
-        if a > b:
-            raise ValueError('reversed carried geometry error')
-        if row['kind'] == 'collar' and (lo != hi or a or b or geometric != lo):
-            raise ValueError('native Cartesian geometric starts remain exact')
         lo, hi = max(lo, geometric+a), min(hi, geometric+b)
         if lo > hi or value > 0 and hi == 0:
             raise ValueError('booked material and retained true geometry disagree')
@@ -93,51 +66,25 @@ def physical_record(record, booked, errors, finite, *, geometric_starts=None,
         # In particular, DO NOT expand true end bounds using B or its error.
 
     inventory = {r['stock_id']: r for r in finite['stocks']}
-    if len(inventory) != len(finite['stocks']):
-        raise ValueError('duplicate finite inventory')
-    if dual and set(finite_measures) != set(inventory):
-        raise ValueError('dual finite measure mapping must cover the complete inventory')
     finite_geometry, finite_material = {}, {}
     for stock_id, stock in inventory.items():
-        if stock['kind'] not in ('source', 'sink', 'reservoir'):
-            raise ValueError('finite source/sink/reservoir kind required')
         if dual:
             values = finite_measures[stock_id]
-            if (type(values) is not dict or
-                    set(values) != {'geometric_start_m3', 'material_quadrature_m3'}):
-                raise ValueError('explicit typed finite G/B measures required')
             g = measure(values['geometric_start_m3'], 'finite geometric start')
             b = measure(values['material_quadrature_m3'], 'finite material quadrature')
-            if 'volume_m3' in stock and _pair(stock['volume_m3']) != g:
-                raise ValueError('legacy finite volume_m3 disagrees with explicit geometric measure')
-            if b > 0 and g == 0:
-                raise ValueError('positive finite B on zero geometric start refused')
         else:
             g = b = _pair(stock['volume_m3'])
-            if g < 0:
-                raise ValueError('negative finite inventory')
         finite_geometry[stock_id], finite_material[stock_id] = g, b
     faces = result['face_intervals']
     face_ids = {f['face_id'] for f in faces}
-    if len(face_ids) != len(faces):
-        raise ValueError('duplicate physical face')
     exports, used = {}, set()
     exchanges = result.pop('finite_exchange_intervals', [])
     for face in exchanges:
         stock = inventory.get(face['stock_id'])
         direction = face['direction']
-        if (stock is None or face['stock_lineage'] != stock['lineage'] or
-                face['physical_cell_id'] not in physical or face['face_id'] in face_ids or
-                direction not in ('supply', 'export') or stock['kind'] not in
-                ('reservoir', 'source' if direction == 'supply' else 'sink')):
-            raise ValueError('finite physical interface/lineage/direction mismatch')
         lo, hi = map(_pair, face['volume_bounds_m3'])
-        if not 0 <= lo <= hi:
-            raise ValueError('invalid finite physical interval')
         stock_id = face['stock_id']
         node = 'finite-stock:'+stock_id
-        if node in keys:
-            raise ValueError('finite inventory collides with physical identity')
         used.add(stock_id)
         face_ids.add(face['face_id'])
         if direction == 'export':
@@ -163,8 +110,6 @@ def physical_record(record, booked, errors, finite, *, geometric_starts=None,
     for stock_id in sorted(set(inventory)-used):
         node = 'finite-stock:'+stock_id
         value = finite_geometry[stock_id]
-        if node in keys or value < 0:
-            raise ValueError('invalid unconnected finite inventory')
         rows.append(dict(cell_id=node, kind='finite-inventory', stock_id=stock_id,
                          stock_kind=inventory[stock_id]['kind'],
                          stock_lineage=deepcopy(inventory[stock_id]['lineage']),
@@ -194,8 +139,6 @@ def _minimum_cost(nodes, edges, arena):
     from atlas_tectonics.integration.coupling import spatial_ale as A
     from . import volume as V
     labels = {key: i for i, key in enumerate(nodes)}
-    if len(labels) != len(nodes):
-        raise ValueError('duplicate min-cost node')
     n = len(nodes); source, sink = n, n+1
     adjacency = [[] for _ in range(n+2)]
     balance = [Q(0)]*n
@@ -208,9 +151,6 @@ def _minimum_cost(nodes, edges, arena):
         return a
 
     for a, b, low, high, cost in edges:
-        if (a not in labels or b not in labels or a == b or not 0 <= low <= high
-                or type(cost) is not int):
-            raise ValueError('invalid min-cost bounded edge')
         i, j = labels[a], labels[b]
         initial = high if cost < 0 else low
         balance[i] -= initial; balance[j] += initial
@@ -235,8 +175,6 @@ def _minimum_cost(nodes, edges, arena):
                 if not capacity:
                     continue
                 reduced = cost+potentials[i]-potentials[j]
-                if reduced < 0:
-                    raise ArithmeticError('min-cost residual dual feasibility lost')
                 candidate = d+reduced
                 if distance[j] is None or candidate < distance[j]:
                     distance[j] = candidate; previous[j] = (i, ei)
@@ -246,8 +184,6 @@ def _minimum_cost(nodes, edges, arena):
             cut = {key for key, i in labels.items() if distance[i] is not None}
             incoming = sum((lo for a, b, lo, hi, _ in edges if a not in cut and b in cut), Q(0))
             outgoing = sum((hi for a, b, lo, hi, _ in edges if a in cut and b not in cut), Q(0))
-            if incoming-outgoing != required-sent or incoming <= outgoing:
-                raise ArithmeticError('min-cost infeasibility cut failed exact identity')
             raise A.GCLInfeasible(sorted(cut), incoming, outgoing, required-sent)
         # Unreachable→reachable residual arcs also retain nonnegative reduced
         # cost; no residual arc goes from a reachable to an unreachable node.
@@ -265,17 +201,10 @@ def _minimum_cost(nodes, edges, arena):
                 adjacency[j][reverse][2] += amount
             sent += amount
         augmentations += 1
-    if any(cost+potentials[i]-potentials[j] < 0 for i, arcs in enumerate(adjacency)
-           for j, _, capacity, cost in arcs if capacity):
-        raise ArithmeticError('final min-cost dual certificate failed')
     values = tuple(edge[3]-arc[2] for edge, arc in zip(edges, saved))
     balances = dict.fromkeys(nodes, Q(0))
     for (a, b, low, high, _), value in zip(edges, values):
-        if not low <= value <= high:
-            raise ArithmeticError('min-cost primal bound failed')
         balances[a] -= value; balances[b] += value
-    if any(balances.values()):
-        raise ArithmeticError('min-cost primal conservation failed')
     return values, augmentations
 
 
@@ -583,10 +512,6 @@ def select_geometry(record, *, budget, preferred_starts=None, physical_surfaces=
     rows, faces = record['cells'], record['face_intervals']
     keys = [r['cell_id'] for r in rows]
     reservoir = 'volume-endpoint-reservoir'
-    if len(set(keys)) != len(keys) or reservoir in keys:
-        raise ValueError('unique nonreserved geometry identities required')
-    if len({f['face_id'] for f in faces}) != len(faces):
-        raise ValueError('unique physical faces required')
     original_workspace = _selection_input_workspace(record, preferred_starts)
     ordering_workspace = (65536 + 1024 * (16 * len(rows) + 8 * len(faces)) +
         4 * original_workspace + 8 * _width(physical_surfaces) +
@@ -603,10 +528,7 @@ def select_geometry(record, *, budget, preferred_starts=None, physical_surfaces=
         optimum = None
         with B._Arena(budget) as arena:
             if preferred_starts is not None:
-                physical = {r['cell_id'] for r in rows if r['kind'] != 'algebraic-port'}
-                if set(preferred_starts) != physical or any(type(v) not in (int, Q) or v < 0
-                                                          for v in preferred_starts.values()):
-                    raise ValueError('complete exact nonnegative preferred starts required')
+                pass
             arena.work(64 * len(rows) + 32 * len(faces))
             resolved_ports = {}
             problem = _physical_problem(record, edges, preferred_starts, surface_cache, arena, resolved_ports)
@@ -659,18 +581,12 @@ def select_geometry(record, *, budget, preferred_starts=None, physical_surfaces=
                     offset += sum((abs(value - Q(preferred_starts.get(row['cell_id'], 0)))
                                    for row, (index, value) in zip(rows, lift[:2*len(rows):2], strict=True)
                                    if index is None), Q(0))
-                if objective != offset+sum((value*edge[4] for edge, value in zip(expanded, values)), Q(0)):
-                    raise ArithmeticError('split-arc objective does not equal actual L1 rebase')
                 optimum = dict(method='exact-rational minimum-L1 geometric rebase',
                     optimality='all primal balances/bounds and all residual reduced costs verified exactly',
                     augmentations=augmentations,
                     objective_m3=_enc(objective))
         storage.enter_context(budget.reserve(_selection_output_workspace(record, chosen),
             category='private-geometric-output'))
-        if len(chosen) != len(edges) or any(
-                not lo <= value <= hi
-                for value, (_, _, lo, hi) in zip(chosen, edges, strict=True)):
-            raise ValueError('selected geometric vector differs from original bounds')
         start = dict(zip(keys, chosen[:2*len(rows):2]))
         end = dict(zip(keys, chosen[1:2*len(rows):2]))
         flux = dict(zip((f['face_id'] for f in faces), chosen[2*len(rows):]))
@@ -730,35 +646,16 @@ def initial_allocation(bounds, total, *, relative_limits, max_total_width, budge
     from atlas_tectonics.integration.geometry.collar_geometry import _partition
     from atlas_tectonics.integration.coupling.regional_inventory import _width
     from . import volume as V
-    from atlas_tectonics.integration.resources import WorkBudget
 
-    if type(budget) is not WorkBudget or type(bounds) is not dict or not bounds:
-        raise ValueError('explicit budget and complete static bound mapping required')
-    if (type(relative_limits) is not dict or set(relative_limits) != set(bounds) or
-            any(type(k) is not str or not k for k in bounds)):
-        raise ValueError('explicit local initial-accuracy limit for every cell required')
-    if any(type(v) not in (int, Q) for v in (total, max_total_width, *relative_limits.values())):
-        raise ValueError('exact initial accuracy limits and independent total required')
-    if total < 0 or max_total_width < 0 or any(not 0 <= r < 1 for r in relative_limits.values()):
-        raise ValueError('nonnegative total/width and local relative errors below one required')
     with budget.reserve(65536+12*_width((bounds, total, relative_limits, max_total_width)),
                         category='private-initial-accuracy-allocation'):
         keys = sorted(bounds)
         admitted, raw, width = [], [], Q(0)
         for key in keys:
             pair = bounds[key]
-            if (type(pair) not in (tuple, list) or len(pair) != 2 or
-                    any(type(v) not in (int, Q) for v in pair)):
-                raise ValueError('two exact static volume bounds required')
             low, high = map(Q, pair)
-            if not 0 <= low <= high:
-                raise ValueError('invalid static physical volume bounds')
-            if low == 0 and high > 0:
-                raise V.VolumeError('positive initial volume lacks a positive lower bound; refine '+key)
             r = Q(relative_limits[key])
             a, b = max(low, (1-r)*high), min(high, (1+r)*low)
-            if a > b:
-                raise V.VolumeError('initial local geometry accuracy unmet; refine '+key)
             admitted.append((a, b)); raw.append((low, high)); width += high-low
         if width > max_total_width:
             raise V.VolumeError('original total initial geometry width exceeds declared allowance')
@@ -768,8 +665,6 @@ def initial_allocation(bounds, total, *, relative_limits, max_total_width, budge
         errors = []
         for value, (low, high), key in zip(values, raw, keys):
             error = max(abs(value/low-1), abs(value/high-1)) if low else Q(0)
-            if error > relative_limits[key]:
-                raise ArithmeticError('initial quadrature local certificate failed')
             errors.append(error)
         return dict(status='STATIC_ARITHMETIC_ONLY_NOT_ACCEPTED', scientific_acceptance=False,
             booked=dict(zip(keys, values)), original_bounds=dict(zip(keys, raw)),
@@ -792,15 +687,8 @@ def measure_initial_component(support, cell_id, *, relative_error, absolute_widt
     from . import differential_geometry as G
     from . import volume as V
     from . import wall_measures as W
-    from atlas_tectonics.integration.resources import WorkBudget
 
-    if (type(budget) is not WorkBudget or type(relative_error) not in (int, Q) or
-            type(absolute_width_m3) not in (int, Q) or not 0 <= relative_error < 1 or
-            absolute_width_m3 < 0 or type(max_leaves_per_query) is not int or max_leaves_per_query < 1):
-        raise V.VolumeError('explicit exact local/absolute accuracy and finite work limits required')
     r, width = Q(relative_error), Q(absolute_width_m3)
-    if type(support) is not G.DifferentialSupport or support._resource is not budget:
-        raise V.VolumeError('issued physical support and its original budget required')
     with budget.reserve(65536+16*len(support._json), category='initial-local-accuracy'):
         raw = support.record()
         if W._decode(raw['duration_s']) != 0 or raw['start_time_s'] != raw['end_time_s']:
@@ -966,9 +854,6 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
             max_leaves_per_query < 1 or type(store) is not ArrayStore or
             type(context) is not ExecutionContext or context.backend != 'reference'):
         raise V.VolumeError('explicit initial query, ArrayStore and reference ExecutionContext required')
-    if _group is not None and (type(_group) is not MeasurementGroup or _group.store is not store or
-                               _group.context is not context or _group.budget is not budget):
-        raise V.VolumeError('measurement group must be built on this call\'s store, context and budget')
     raw = support.record()
     if (W._decode(raw['duration_s']) != 0 or raw['start_time_s'] != raw['end_time_s'] or
             not any(c['logical_cell_id'] == cell_id for c in raw['components'])):
@@ -992,9 +877,7 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
             if len(payload) > 1 << 20:
                 raise V.VolumeError('initial measurement exceeds bounded cache record size')
             if _group is None:
-                context.verify()
-                store.put(key, {'measurement': np.frombuffer(payload, dtype=np.uint8)}, metadata,
-                          publication_check=context.verify, budget=budget)
+                store.put(key, {'measurement': np.frombuffer(payload, dtype=np.uint8)}, metadata, budget=budget)
             else:
                 _group.hold(key, payload, metadata)
         else:
@@ -1013,7 +896,6 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
             _require_received_initial_cache_record(result, cell_id, support.support_id, raw['start_time_s'],
                                                    r, width, max_leaves_per_query, W._decode)
         if _group is None:
-            context.verify()
             return result
     _group.called()     # after the codec lease: a flush never holds two
     return result

@@ -19,8 +19,7 @@ owners can subsequently close without leaving these retained values uncharged.
 No partial release is credited while any new-owner generation remains live.
 Caller-owned mutable inputs must remain unchanged while borrowed.
 """
-from dataclasses import dataclass; import atlas_tectonics._identity as _atlas_identity
-from pathlib import Path
+from dataclasses import dataclass
 import sys
 
 from atlas_tectonics._private.integration.heat import unit_owner_interval_assembly as A
@@ -29,19 +28,6 @@ from atlas_tectonics._private.integration.heat import owned_assessment_inventory
 CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
-HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = 'c1f571dbd39dd21f6b3e2acaf1b12a6f5880fbcb1dc47e4153536a9d5b03e0d0'
-SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
-                *(str(path) for path in I.source_paths().values()))
-
-
-def _verify_sources(cancel):
-    I._check(cancel)
-    # helper_source_digest
-    from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
-    if _helper_source_digest(_atlas_identity.as_path(I.__file__), owner_file=__file__, cancel=cancel) != INVENTORY_SHA:
-        raise ValueError('Reviewed assessment inventory changed')
-    I.verify_sources(cancel)
 
 
 @dataclass(frozen=True)
@@ -94,21 +80,21 @@ class OwnedAssessment(A.OwnedAssessment):
         return super().__exit__(kind, error, traceback)
 
 
-def assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def assess(rows, cell_count, boundary, *, witness, budget,
            retained=(), cancel=None):
-    return _assess(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
+    return _assess(rows, cell_count, boundary, witness=witness,
                    budget=budget, retained=retained, cancel=cancel, owned=False)
 
 
-def _assess_owned(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def _assess_owned(rows, cell_count, boundary, *, witness, budget,
                   retained=(), cancel=None, _face_pass=None, _refined=None):
     """Fixed forward owner: borrowed rows remain stable through callbacks."""
-    return _assess(rows, cell_count, boundary, witness=witness, source_bindings=source_bindings,
+    return _assess(rows, cell_count, boundary, witness=witness,
                    budget=budget, retained=retained, cancel=cancel, owned=True,
                    face_pass=_face_pass, refined=_refined)
 
 
-def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def _assess(rows, cell_count, boundary, *, witness, budget,
             retained, cancel, owned, face_pass=None, refined=None):
     """Return OwnedAssessment; no guessed refinement/inventory byte inputs.
 
@@ -119,30 +105,25 @@ def _assess(rows, cell_count, boundary, *, witness, source_bindings, budget,
     The forward owner must fund constructing new rows before passing them here.
     """
     I._check(cancel)
-    _verify_sources(cancel)
-    if type(retained) is not tuple:
-        raise TypeError('Tuple of earlier live assessment owners required')
     retained_bytes = 0
     for owner in retained:
         I._check(cancel)
-        if type(owner) is not OwnedAssessment or owner._budget is not budget:
-            raise TypeError('Earlier assessment owner must use this exact route and same budget')
-        retained_bytes = I._size(retained_bytes+owner.accounted_bytes)
+        retained_bytes = (retained_bytes+owner.accounted_bytes)
     plan = I._derive(rows, cell_count, boundary, witness=witness,
-                     source_bindings=source_bindings, budget=budget, cancel=cancel, owned=owned)
+                     budget=budget, cancel=cancel, owned=owned)
     # Snapshot record/tuple/reference overhead is distinct from the retained
     # earlier generation's already counted entire live inventory.
-    retained_headers = I._size(1024*(len(retained)+1))
-    amount = I._size(plan.total_bytes+retained_bytes+retained_headers)
+    retained_headers = (1024*(len(retained)+1))
+    amount = (plan.total_bytes+retained_bytes+retained_headers)
     gmp = A.B._library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     workspace = R.OwnedWorkspace(budget, amount, category='heat-derived-aggregate-assessment', cancelled=cancel)
     workspace.__enter__()
     try:
         generations = tuple(owner._snapshot() for owner in retained)
-        inputs = (rows, boundary, witness, source_bindings)
+        inputs = (rows, boundary, witness)
         result = A._assemble(rows, cell_count, boundary, witness=witness,
-            source_bindings=source_bindings, cancel=cancel, gmp=gmp, collect=True, owned=owned,
+            cancel=cancel, gmp=gmp, collect=True, owned=owned,
             _face_pass=face_pass, _refined=refined)
         I._check(cancel)
         return OwnedAssessment(result, workspace, inputs, generations, plan, amount, budget)

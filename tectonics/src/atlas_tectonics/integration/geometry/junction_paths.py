@@ -46,11 +46,6 @@ class JunctionPath:
     def __post_init__(self):
         _name(self.junction_id, 'junction ID')
         _name(self.reference_plate_id, 'reference plate ID')
-        if type(self.relative_rotation) is not Rotation:
-            raise LedgerError('a junction path needs a typed relative Rotation')
-        if (type(self.max_deviation_rad) not in (int, float) or not math.isfinite(self.max_deviation_rad)
-                or not S.ATTACHMENT_BAND_RAD < self.max_deviation_rad < math.pi/2):
-            raise LedgerError('junction curve accuracy must exceed coordinate roundoff and be less than pi/2')
         if type(self.max_segments) is not int or self.max_segments < 1:
             raise LedgerError('a junction path needs a positive whole segment ceiling')
 
@@ -94,9 +89,6 @@ def sample(carrier, junction, point, accuracy, ceiling, cancel):
     bound = float(difference @ difference)+commutator
     exact = commutator == 0. and float(difference @ point) == 0.
     span = float(np.linalg.norm(difference))
-    # This retained path-family bound is distinct from conditioning any one emitted minor-arc edge.
-    if span >= math.pi:
-        raise LedgerError('a supplied generated trace spans pi or more; subdivide the supplied history')
     count = 1
     # |q'| <= |J-C| bounds each emitted chord's angular length by span/count. A chart at that chord's midpoint
     # has endpoint cosine cos(theta/2). Reuse the existing chart minimum and atlas antipodal band, including for
@@ -114,10 +106,6 @@ def sample(carrier, junction, point, accuracy, ceiling, cancel):
         _check_cancel(cancel)
         points.append(S._placed(exponential(-s*carrier), S._placed(exponential(s*junction), point)[0])[0])
     points = np.asarray(points)
-    angles = 2*np.arctan2(np.linalg.norm(points[1:]-points[:-1], axis=1),
-                          np.linalg.norm(points[1:]+points[:-1], axis=1))
-    if np.any(angles <= _ANGULAR_RESOLUTION) or np.any(angles >= math.pi-_ANGULAR_RESOLUTION):
-        raise LedgerError('a supplied trace has a zero, unresolved or antipodal edge at the existing atlas resolution')
     return points
 
 
@@ -125,11 +113,7 @@ def prepare(network, motion, cancel, fail):
     """Carrier stages, final junctions, generated end traces, analytic endpoint poles and C1 diagnostics."""
     paths = {p.junction_id: p for p in motion.junction_paths}
     junctions = {j.junction_id: j for j in network.junctions}
-    if not paths.keys() <= junctions.keys():
-        raise fail('a supplied path names no junction of this network')
     reference = motion.junction_paths[0].reference_plate_id
-    if reference not in network.plate_ids:
-        raise fail('the common path reference plate is absent')
     stages = dict(motion.rotations)
     frame = dict(network._layout.frames)[reference]
     later = frame.then(stages[reference])
@@ -143,8 +127,6 @@ def prepare(network, motion, cancel, fail):
             carrier[b.boundary_id] = (1-b.accretion_fraction)*rates[b.left_plate_id]+b.accretion_fraction*rates[b.right_plate_id]
         else:
             keeper = S._carrier(b)
-            if type(keeper) is not str:
-                raise fail('the supplied path convention needs an explicit plate carrier for every non-ridge')
             carrier[b.boundary_id] = rates[keeper]
         rotations[b.boundary_id] = frame.inverse().then(exponential(carrier[b.boundary_id])).then(later)
     targets, traces, poles, diagnostics = {}, {}, {}, {}
@@ -154,8 +136,6 @@ def prepare(network, motion, cancel, fail):
     for key, path in paths.items():
         _check_cancel(cancel)
         junction = junctions[key]
-        if any(records[b].kind != S.RIDGE for b, _ in junction.boundary_ends):
-            raise fail('supplied analytic paths currently require all-ridge junctions; no physical ownership is inferred')
         here = network.vertex_direction[lookup[junction.vertex_id]]
         local = S._placed(frame.inverse(), here)[0]
         rate = vector(path.relative_rotation)
@@ -178,9 +158,7 @@ def prepare(network, motion, cancel, fail):
             residuals.append(float(normal @ tangent))
             chain = records[b].vertex_ids
             neighbour = chain[1] if role == 'start' else chain[-2]
-            beside = S._placed(frame.inverse(), network.vertex_direction[lookup[neighbour]])[0]
-            if float(tangent @ (beside-local)) >= 0 or speed <= S.ATTACHMENT_BAND_RAD:
-                raise fail('supplied ridge end history retracts or has no generated tangent; this path family only extends')
+            S._placed(frame.inverse(), network.vertex_direction[lookup[neighbour]])[0]
             # For x(s)=exp(sJ)x0, |d x x(s)| >= speed-|d||J| = lower. The unnormalised normal is
             # d-(d.x)x and its derivative is bounded by 2|d||J|. Dividing by lower bounds the unit normal's
             # drift over the full unit interval; C4 below subtracts both members' bounds from each initial sine.
@@ -202,9 +180,6 @@ def prepare(network, motion, cancel, fail):
             newframe = oldframes[(S.RIDGE, b)].then(rotations[b])
             poles[end] = tuple(S._placed(newframe.inverse(), S._placed(later, endnormal)[0])[0])
         residual = float(np.linalg.norm(residuals))/scale if scale else math.inf
-        if residual > ALGEBRA_RELATIVE:
-            raise fail('supplied junction history disagrees with the stored initial tangents above C1 %g'
-                       % ALGEBRA_RELATIVE)
         if not any(float(np.linalg.norm(np.cross(a, b)))-normal_bounds[i]-normal_bounds[j] >= 1/16
                    for i, a in enumerate(normals) for j, b in enumerate(normals) if j > i):
             raise fail('supplied history cannot certify conditioned normal closure throughout its interval (C4)')

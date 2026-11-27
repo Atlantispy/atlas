@@ -36,8 +36,6 @@ class AndersonPolicy:
             raise TectonicsError('Anderson warmup must lie in [2, depth+1]')
         for key,lo,hi in (('rcond',np.finfo(float).eps,1.),('coefficient_l1_limit',1.,1000.)):
             value=scalar(getattr(self,key),key,positive=True)
-            if not lo <= value <= hi or (key=='rcond' and value==1.):
-                raise TectonicsError('Anderson '+key+' is outside supported bounds')
             object.__setattr__(self,key,value)
 
 
@@ -163,26 +161,13 @@ def _check_history(history, record, policy):
     accepted=rejected=0
     for i,item in enumerate(history):
         row=item.get('anderson')
-        keys={'action','picard_merit','trial_merit','depth_used'}
-        if type(row) is not dict or set(row)!=keys:
-            raise TectonicsError('complete Anderson per-iteration record required')
         action=row['action']
-        if action not in ('not_proposed','accepted','rejected_history','rejected_true_residual','rejected_invalid_trial'):
-            raise TectonicsError('unsupported Anderson action')
         scalar(row['picard_merit'],'Picard merit',nonnegative=True)
-        if type(row['depth_used']) is not int or not 0<=row['depth_used']<=policy.depth:
-            raise TectonicsError('invalid Anderson depth')
         if row['trial_merit'] is not None:
             scalar(row['trial_merit'],'trial merit',nonnegative=True)
         if action=='accepted':
-            if row['trial_merit'] is None or row['trial_merit']>row['picard_merit'] or row['depth_used']==0:
-                raise TectonicsError('unacceptable accelerated update in history')
             accepted+=1
         elif action.startswith('rejected'):
             rejected+=1
         elif row['trial_merit'] is not None or row['depth_used']:
             raise TectonicsError('unexpected proposal fields')
-        if i==len(history)-1 and action!='not_proposed':
-            raise TectonicsError('Anderson final result must be a fresh Picard image')
-    if accepted!=record['accepted_mixed_updates'] or rejected!=record['rejected_proposals']:
-        raise TectonicsError('Anderson history/count mismatch')

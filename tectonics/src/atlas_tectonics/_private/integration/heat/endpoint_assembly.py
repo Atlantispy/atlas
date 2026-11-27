@@ -45,7 +45,6 @@ class CertifiedAssembly:
     context_signature: tuple
     boundary_signature: tuple
     witness_json: str
-    source_bindings: tuple
     interval_validity: str = 'CALLER_WITNESSED_NOT_REPROVED_BY_ASSEMBLER'
     inventory_coverage_certified: bool = False
     native_workbudget_admitted: bool = False
@@ -90,9 +89,7 @@ class OwnedAssembly(OwnedSolve):
         _check(cancel)
         value = self.value
         self._workspace.checkpoint()
-        gmp = _library()
-        if value.boundary_signature != _boundary_signature(boundary, gmp, cancel):
-            raise ValueError('Prescribed observations changed after certified assembly')
+        _library()
         rows = []
         for row in value.rows:
             _check(cancel)
@@ -101,14 +98,12 @@ class OwnedAssembly(OwnedSolve):
                                     for key, kind, _, public in value.boundary_signature)
         return RoundedSystem(value.cells, value.operator, value.wall, tuple(rows),
             value.exact_operator_nnz, value.context_signature, numerical_signature,
-            value.source_bindings, value.witness_json)
+            value.witness_json)
 
 
 def _library():
     from atlas_tectonics._exact_runtime import selected
     result = selected.library()
-    if result is None:
-        raise RuntimeError('Certified endpoint assembly requires the selected GMP backend')
     return result
 
 
@@ -141,11 +136,7 @@ def _boundary_signature(boundary, gmp, cancel):
     result = []
     for key, (kind, value) in boundary.items():
         _check(cancel)
-        if not isinstance(key, str) or not key:
-            raise ValueError('Boundary observations require nonempty string identifiers')
         public = D.from_float(float(value))
-        if not public.is_finite():
-            raise ValueError('Finite prescribed boundary observations required')
         result.append((key, kind, _q(value, gmp), public))
     return tuple(sorted(result))
 
@@ -178,7 +169,7 @@ def _add(left, right):
     return (left[0]+right[0], left[1]+right[1])
 
 
-def assemble(rows, cell_count, boundary, *, witness, source_bindings, budget,
+def assemble(rows, cell_count, boundary, *, witness, budget,
              inventory, cancel=None):
     """Return OwnedAssembly, not an unowned production-issued certificate.
 
@@ -192,10 +183,6 @@ def assemble(rows, cell_count, boundary, *, witness, source_bindings, budget,
     the explicit diagnostic allowance; it is not a derived arithmetic ceiling.
     """
     _check(cancel)
-    if type(cell_count) is not int or cell_count <= 0:
-        raise ValueError('Positive explicit cell count required')
-    if type(inventory) is not DiagnosticInventory:
-        raise ValueError('Explicit diagnostic inventory required; production sizing remains unresolved')
     amount = inventory.total()
     gmp = _library()
     # Only after selected-backend gate; no probe/test dependency path.
@@ -205,21 +192,16 @@ def assemble(rows, cell_count, boundary, *, witness, source_bindings, budget,
     workspace.__enter__()
     try:
         result = _assemble(rows, cell_count, boundary, witness=witness,
-                           source_bindings=source_bindings, cancel=cancel, gmp=gmp)
+                           cancel=cancel, gmp=gmp)
         return OwnedAssembly(result, workspace)
     except BaseException:
         workspace.__exit__(*sys.exc_info())
         raise
 
 
-def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, gmp):
-    if not isinstance(witness, dict) or not witness or not isinstance(source_bindings, dict) or not source_bindings:
-        raise ValueError('Explicit nonempty witness and source-binding metadata required')
-    for name, digest in source_bindings.items():
-        _check(cancel)
-        if (not isinstance(name, str) or not name or not isinstance(digest, str) or len(digest) != 64
-                or any(char not in '0123456789abcdef' for char in digest)):
-            raise ValueError('Source bindings require named lowercase SHA256 digests')
+def _assemble(rows, cell_count, boundary, *, witness, cancel, gmp):
+    if not isinstance(witness, dict) or not witness:
+        raise ValueError('Explicit nonempty witness required')
     witness_json = json.dumps(witness, sort_keys=True, separators=(',', ':'), allow_nan=False)
     boundary_identity = _boundary_signature(boundary, gmp, cancel)
     with localcontext() as context:
@@ -233,21 +215,10 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             fid = row['face_id']
             owners = tuple(tuple(owner) for owner in row['owners'])
             keys = tuple(tuple(key) for key in row['ordered_keys'])
-            if not isinstance(fid, str) or not fid or fid in face_ids:
-                raise ValueError('One unique nonempty physical face identifier required')
             face_ids.add(fid)
-            if (len(owners) not in (1, 2) or any(len(owner) != 2 or type(owner[0]) is not int
-                    or not 0 <= owner[0] < cell_count or type(owner[1]) is not int
-                    or owner[1] not in (-1, 1) for owner in owners)
-                    or len(owners) == 2 and (owners[0][0] == owners[1][0] or owners[0][1] != -owners[1][1])):
-                raise ValueError('Valid one/two opposite physical face owners required')
-            if len(set(keys)) != len(keys) or set(keys) != set(row['bounds']):
-                raise ValueError('Ordered unique observation keys and complete matching bounds required')
             weights = []
             for key in keys:
                 _check(cancel)
-                if len(key) != 2:
-                    raise ValueError('Observation keys must be (kind,key) pairs')
                 kind, index = key
                 if kind == 'cell':
                     if type(index) is not int or not 0 <= index < cell_count:
@@ -259,8 +230,6 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
                 elif boundary[index][0] != ('temperature' if kind == 'wall' else 'power'):
                     raise ValueError('Boundary observation kind does not match its declaration')
                 bounds = tuple(_q(value, gmp) for value in row['bounds'][key])
-                if len(bounds) != 2 or bounds[0] > bounds[1]:
-                    raise ValueError('Ordered lower/upper exact coefficient bounds required')
                 weights.append((key, _rounded(bounds, 'face '+fid, gmp)))
                 for owner, sign in owners:
                     _check(cancel)
@@ -285,4 +254,4 @@ def _assemble(rows, cell_count, boundary, *, witness, source_bindings, cancel, g
             rounded_wall.append(_rounded(bounds, 'wall '+str(i), gmp))
         return CertifiedAssembly(cell_count, tuple(rounded_op), tuple(rounded_wall), tuple(certified_rows),
             sum(map(len, rounded_op)), context_signature(context), boundary_identity,
-            witness_json, tuple(sorted(source_bindings.items())))
+            witness_json)

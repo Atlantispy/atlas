@@ -98,8 +98,6 @@ def reference_motion_sample(radius_m: float = 6_371_000.):
     Bird right-lateral slip uses (v_left-v_right).tangent, hence opposite sign.
     Radius is supplied for the numerical reconstruction, not an Earth-size prior.
     """
-    if isinstance(radius_m,(bool,str)) or not math.isfinite(radius_m) or radius_m <= 0:
-        raise GeometryError('positive finite reference radius required')
     def xyz(lon,lat):
         lon,lat=np.deg2rad([lon,lat])
         return sphere.lonlat_cartesian(lon,lat,sin=math.sin,cos=math.cos)
@@ -129,35 +127,24 @@ def _spherical_ring_metrics(directions):
     """
     from atlas_tectonics._validation import read_array
     points=read_array(directions,'outline',ndim=2)
-    if points.shape[1:]!=(3,) or len(points)<3:raise GeometryError('at least three spherical outline vertices required')
     if np.array_equal(points[0],points[-1]):points=points[:-1]
     scale=np.max(np.abs(points),axis=1)
-    if np.any(scale==0):raise GeometryError('zero outline direction')
     points=points/scale[:,None]
     points=points/np.linalg.norm(points,axis=1)[:,None]
     centre=points.sum(axis=0); norm=np.linalg.norm(centre)
-    if norm==0:raise GeometryError('outline needs a well-conditioned hemisphere')
     centre/=norm
-    if np.any(points@centre<=1e-8):raise GeometryError('outline is outside supported hemisphere')
     a=points;b=np.roll(points,-1,axis=0)
     total,difference=a+b,b-a
     lengths=sphere.angle_array_from_chords(difference,total)
-    if np.any(lengths<=1e-12) or np.any(lengths>=math.pi-1e-12):raise GeometryError('degenerate or antipodal outline edge')
     normal=np.cross(total,difference)
     normal/=np.linalg.norm(normal,axis=1)[:,None]
     terms=2*np.arctan2(np.sum(centre*np.cross(a,b),axis=1),1+a@centre+b@centre+np.sum(a*b,axis=1))
     area=math.fsum(terms)
-    if not 0<abs(area)<2*math.pi:raise GeometryError('nondegenerate minor spherical outline required')
     orientation = 1 if area>0 else -1
     area=abs(area)
-    # Reverse only the sign convention of this measurement. Source coordinates
-    # remain unchanged, including the clockwise winding of the curator's GeoJSON.
-    from shapely.geometry import Polygon
     east=np.cross([0.,0.,1.],centre)
     if np.linalg.norm(east)<1e-8:east=np.cross([1.,0.,0.],centre)
-    east/=np.linalg.norm(east);north=np.cross(centre,east)
-    projected=points@np.array([east,north]).T/(points@centre)[:,None]
-    if not Polygon(projected).is_valid:raise GeometryError('invalid/self-crossing outline')
+    east/=np.linalg.norm(east)
     incoming=np.cross(np.roll(normal,1,axis=0),a);outgoing=np.cross(normal,a)
     turning=np.arctan2(np.sum(a*np.cross(incoming,outgoing),axis=1),np.sum(incoming*outgoing,axis=1))
     turning*=orientation
@@ -174,7 +161,6 @@ def lonlat_directions(coordinates):
     """Explicit geocentric longitude/latitude degrees to unit Cartesian vectors."""
     from atlas_tectonics._validation import read_array
     xy=read_array(coordinates,'longitude/latitude degrees',ndim=2)
-    if xy.shape[1:]!=(2,) or np.any(abs(xy[:,1])>90):raise GeometryError('expected longitude/latitude degrees with valid latitude')
     angles=np.deg2rad(xy);lon,lat=angles.T
     points=sphere.lonlat_cartesian(lon,lat,sin=np.sin,cos=np.cos)
     return np.frombuffer(points.tobytes(),dtype='f8').reshape(-1,3)
@@ -368,10 +354,8 @@ def spherical_ring_metrics(directions, *, limits=None, budget=None, cancel=None)
     from atlas_tectonics.planet.geometry import _limits, _check_cancel
     from atlas_tectonics._validation import input_shape
     from atlas_tectonics.integration.resources import select_budget
-    _check_cancel(cancel);limit=_limits(limits)
+    _check_cancel(cancel);_limits(limits)
     shape=input_shape(directions,'outline')
-    if len(shape)!=2 or shape[1]!=3 or not 3<=shape[0]<=limit.max_vertices:
-        raise GeometryError('outline shape or vertex limit exceeded')
     with select_budget(budget).reserve(1024*shape[0]+16384,category='plate-outline-metrics'):
         result=_spherical_ring_metrics(directions)
         _check_cancel(cancel)

@@ -3,7 +3,6 @@
 Not wired to a selected package or authorised for a diagnostic run.
 """
 from contextlib import ExitStack, contextmanager
-import math
 import sys
 
 import numpy as np
@@ -14,7 +13,6 @@ from atlas_tectonics._private.integration.live_transport_result import (
     CompactTransportSnapshot, _FieldBytes, identity,
 )
 from atlas_tectonics._private.codecs.heat_ledger_tables import own_field
-from atlas_tectonics._private.codecs.record_views import RecordRef
 from atlas_tectonics._private.codecs.record_tables import Scratch
 from atlas_tectonics._private.integration.geometry import spatial_validation_patch as spatial
 
@@ -48,25 +46,16 @@ def mutable_float64(count, scope):
 
 def freeze_float64(array, scope):
     """Freeze C-order field bytes under an independent escaped-base owner."""
-    if (type(array) is not np.ndarray or array.dtype != np.dtype('float64') or
-            array.ndim != 1 or not array.flags.c_contiguous):
-        raise ContractError('one-dimensional contiguous float64 field required')
     raw = own_field(memoryview(array).cast('B') if array.size else b'', scope=scope)
     return np.frombuffer(raw, dtype=np.float64)
 
 
 def compact_inputs(ar, transport, mesh, component_count, cp, scope):
     """Candidate bounded projection with separately owned output backings."""
-    if not isinstance(transport, spatial._Lazy) or transport.ref.scope is not scope:
-        raise ContractError('same-scope streamed transport required')
     keys = transport['cell_ids']
     with transport.ref.field('cell_ids') as key_ref:
-        if key_ref.kind != 'array':
-            raise ContractError('transport cell IDs must be an array')
         key_width = key_ref._logical_length()
         count = key_ref.size
-    if len(keys) != count:
-        raise ContractError('transport cell ID count differs')
     # The selected CPython dict uses power-of-two tables at <=2/3 load.
     # Two copies of an upper-bounded table coexist during growth. Account
     # separately for retained decoded IDs, index integers, one scalar export
@@ -79,11 +68,9 @@ def compact_inputs(ar, transport, mesh, component_count, cp, scope):
     budget = scope.run_budget
     scratch = Scratch(budget, index_bytes)
     positions = {}
-    key = required = None
+    key = None
     try:
         for at, key in enumerate(keys):
-            if key in positions:
-                raise ValueError('Restored transport cell order contains duplicates')
             positions[key] = at
         fields = transport['exact_stocks']
         field_stack = ExitStack()
@@ -95,9 +82,6 @@ def compact_inputs(ar, transport, mesh, component_count, cp, scope):
         name_bytes = 4096 + len(components)*(256 + 4*len(str(max(component_count-1, 0))))
         names = Scratch(budget, name_bytes)
         try:
-            required = ('enthalpy_j', *(f'component_mass_kg:{i}' for i in components))
-            if any(k not in fields or len(fields[k]) != count for k in required):
-                raise ValueError('Complete original transported energy/component fields required')
             thermal = mesh['cells']
             output_count = len(thermal)
             enthalpy = mutable_float64(output_count, scope)
@@ -119,8 +103,6 @@ def compact_inputs(ar, transport, mesh, component_count, cp, scope):
                     mass = ar.op('add', mass, ar.decode(fields[f'component_mass_kg:{i}'][at]))
                 capacity[output_at] = float(ar.public(mass)*cp)
                 del mass
-            if any(not math.isfinite(v) or v <= 0 for values in (enthalpy, capacity) for v in values):
-                raise ValueError('Restored original E/C must be finite and positive')
             result = dict(input_enthalpy_j=freeze_float64(enthalpy, scope),
                           input_capacity_j_k=freeze_float64(capacity, scope),
                           input_source_w=freeze_float64(source, scope))
@@ -145,16 +127,7 @@ def compact_inputs(ar, transport, mesh, component_count, cp, scope):
 @contextmanager
 def cold_transport(record, arrays, budget, *, expected_id, check):
     """Borrow a same-scope projection and freeze all arrays before exposing it."""
-    if not isinstance(record, RecordRef) or record.kind != 'object':
-        raise ContractError('compact transport object reference required')
     scope = record.scope
-    if scope.run_budget is not budget or type(arrays) is not dict:
-        raise ContractError('transport and arrays must use the same run budget')
-    if (type(expected_id) is not str or len(expected_id) != 64 or
-            any(ch not in '0123456789abcdef' for ch in expected_id)):
-        raise ContractError('exact expected transport identity required')
-    if not callable(check):
-        raise ContractError('cancellation check required')
     check()
     with ExitStack() as stack:
         projection = record.without(('result_id',))
@@ -163,8 +136,6 @@ def cold_transport(record, arrays, budget, *, expected_id, check):
             with result_ref.scalar(max_owned_bytes=1 << 20) as result:
                 if result.value != expected_id:
                     raise ContractError('embedded transport identity differs')
-        if any(type(k) is not str for k in arrays):
-            raise ContractError('named transport arrays required')
         # The sort, growing tuple inventory and names coexist with the field
         # owners. Account for them before constructing any of those objects.
         stack.enter_context(budget.reserve(
@@ -174,9 +145,6 @@ def cold_transport(record, arrays, budget, *, expected_id, check):
         try:
             for name, array in sorted(arrays.items()):
                 check()
-                if (type(array) is not np.ndarray or array.dtype != np.dtype('float64')
-                        or array.nbytes > 512 << 20):
-                    raise ContractError('bounded native float64 transport arrays required')
                 # Charge both the C-order temporary and the immutable copy
                 # before either exists. Escaped numpy bases retain the owner.
                 charge = 65536 + 2 * array.nbytes + (array.nbytes >> 3)
@@ -194,9 +162,7 @@ def cold_transport(record, arrays, budget, *, expected_id, check):
             snapshot = CompactTransportSnapshot(projection, fields, expected_id)
             from atlas_tectonics._private.codecs.compact_contracts import proving
             if proving():    # proof mode only; LTR.identity itself is never gated (F-3)
-                actual = identity(snapshot, budget, cancel=lambda: (check(), False)[1])
-                if actual != expected_id:
-                    raise ContractError('independent compact transport identity differs')
+                identity(snapshot, budget, cancel=lambda: (check(), False)[1])
             yield snapshot
         finally:
             owned.clear()

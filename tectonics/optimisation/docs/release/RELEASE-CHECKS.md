@@ -1,5 +1,11 @@
 # Release-mode check policy for the generator composition (composed-r2)
 
+**Superseded (27 Nov 2026).** Strict and packaged-release execution no longer exist: every run executes the
+same way, and Debug is selected by `--run-profile` (see
+[Release and Debug runs](../../../../docs/CODING_SAFETY.md#release-and-debug-runs)). `ATLAS_DEV_STAGE_TIMING`,
+`ATLAS_PROFILE_SAMPLER` and `--dev-timing` below are historical. The text is kept as the record of the
+16 October decision.
+
 Thread "Release-mode check policy", 16 Oct 2026. Answers Atlan's request: decide which checks stay on in the
 packaged **release** build and which run only in **strict** (debug, checkout, tests, scientific evidence).
 This retains the 16 October decision/design baseline for the original composed-r2

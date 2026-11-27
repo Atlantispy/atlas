@@ -4,7 +4,6 @@ from hashlib import sha256
 from itertools import islice
 import json
 
-from atlas_tectonics._private.codecs.compact_contracts import ContractError
 from atlas_tectonics._private.codecs.record_views import RecordRef
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as L
 from atlas_tectonics._private.integration.geometry import spatial_validation_patch as V
@@ -16,8 +15,6 @@ proposal_stack = _close_consumed_stack
 
 class _Rows(V._Rows):
     def __getitem__(self, index):
-        if type(index) is not int:
-            raise TypeError('an individual collar row index is required')
         if index < 0:
             index += len(self)
         with self.ref.at(index) as child:
@@ -33,12 +30,8 @@ class _Object(L._Object):
             if key == 'stocks':
                 value = child
             elif key == 'graph':
-                if child.kind != 'object':
-                    raise ContractError('complete finite graph object required')
                 value = _Object(child, self.stack)
             else:
-                if child.kind != 'array':
-                    raise ContractError('complete collar row array required')
                 value = _Rows(child)
             self.cache[key] = value
         return super().__getitem__(key)
@@ -51,8 +44,6 @@ def _reference(value):
 def _access(value, budget):
     if not isinstance(value, RecordRef):
         return value
-    if value.scope.run_budget is not budget:
-        raise ContractError('collar record requires its exact run budget')
     stack = ExitStack()
     stack.callback(value.close)
     return _Object(value, stack)
@@ -70,9 +61,7 @@ def _release(value):
 
 
 def same_scope(*values):
-    scopes = [ref.scope for value in values if isinstance(ref := _reference(value), RecordRef)]
-    if scopes and any(scope is not scopes[0] for scope in scopes[1:]):
-        raise ContractError('collar inputs require one shared retained scope')
+    [ref.scope for value in values if isinstance(ref := _reference(value), RecordRef)]
 
 
 @contextmanager
@@ -203,9 +192,7 @@ class _Mesh:
 def heat_inputs(stage, mesh):
     geometry = graph_rows(stage.spatial_graph)
     if mesh.is_compact:
-        graph_ref = _reference(geometry)
-        if isinstance(graph_ref, RecordRef) and mesh._compact.scope is not graph_ref.scope:
-            raise ContractError('collar graph and mesh require the same retained scope')
+        _reference(geometry)
         thermal = _Mesh(mesh)
     else:
         thermal = mesh.record()

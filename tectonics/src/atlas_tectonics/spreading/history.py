@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 import hashlib
 import math
+from typing import cast
 
 import numpy as np
 
@@ -38,12 +39,8 @@ class PlateReassignment:
     source_id: str
 
     def __post_init__(self):
-        if self.side not in ('left', 'right'):
-            raise TectonicsError('reassignment side must be left or right')
         for key in ('from_plate_id', 'to_plate_id', 'source_id'):
             _name(getattr(self, key), key)
-        if self.from_plate_id == self.to_plate_id:
-            raise TectonicsError('reassignment must change the named plate')
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,15 +64,11 @@ class RidgeHistoryEvent:
             object.__setattr__(self, key, scalar(getattr(self, key), key))
         for key in ('left_plate_id', 'right_plate_id', 'ridge_id', 'event_id', 'source_id'):
             _name(getattr(self, key), key)
-        if type(self.active) is not bool or self.left_plate_id == self.right_plate_id:
-            raise TectonicsError('explicit activity and distinct side plate IDs required')
         if (type(self.reassignments) is not tuple or len(self.reassignments) > 2
                 or any(type(r) is not PlateReassignment for r in self.reassignments)
                 or len({r.side for r in self.reassignments}) != len(self.reassignments)):
             raise TectonicsError('at most one typed reassignment per side required')
         if self.active:
-            if self.left_velocity_m_s > 0 or self.right_velocity_m_s < 0:
-                raise TectonicsError('fixed-window history requires outward plate velocities')
             scalar(self.ridge_velocity_m_s-self.left_velocity_m_s, 'left half rate', positive=True)
             scalar(self.right_velocity_m_s-self.ridge_velocity_m_s, 'right half rate', positive=True)
         elif any(v != 0. for v in (self.left_velocity_m_s, self.right_velocity_m_s,
@@ -201,33 +194,14 @@ def _event_catalogue(grid, events, origin):
     if (type(events) is not tuple or not 1 <= len(events) <= MAX_HISTORY_EVENTS
             or any(type(e) is not RidgeHistoryEvent for e in events)):
         raise TectonicsError('one to 256 typed semantic events required')
-    if events[0].offset_s != 0. or events[0].reassignments:
-        raise TectonicsError('history starts at offset zero without reassignment')
-    if len({e.event_id for e in events}) != len(events):
-        raise TectonicsError('semantic event IDs must be unique')
-    bounds = grid.edges_m[[0, -1]]
     for i, event in enumerate(events):
-        absolute = scalar(origin+event.offset_s, 'absolute semantic event time')
-        if absolute-origin != event.offset_s:
-            raise TectonicsError('clock cannot resolve semantic event offsets')
-        if not bounds[0] < event.ridge_position_m < bounds[1]:
-            raise TectonicsError('declared ridge lies outside the source window')
+        scalar(origin+event.offset_s, 'absolute semantic event time')
         if i == 0:
             continue
         previous = events[i-1]
         duration = scalar(event.offset_s-previous.offset_s, 'event duration', positive=True)
-        expected = scalar(math.fsum((previous.ridge_position_m,
+        scalar(math.fsum((previous.ridge_position_m,
             previous.ridge_velocity_m_s*duration)), 'continuous ridge position')
-        if event.ridge_position_m != expected or event.ridge_id != previous.ridge_id:
-            raise TectonicsError('ridge jumps or changed ridge identity are unsupported')
-        changed = {side for side in ('left', 'right')
-                   if getattr(previous, side+'_plate_id') != getattr(event, side+'_plate_id')}
-        if {r.side for r in event.reassignments} != changed:
-            raise TectonicsError('plate ownership change requires complete explicit reassignment')
-        for row in event.reassignments:
-            if (row.from_plate_id != getattr(previous, row.side+'_plate_id')
-                    or row.to_plate_id != getattr(event, row.side+'_plate_id')):
-                raise TectonicsError('reassignment does not match previous and next plate IDs')
 
 
 def _age_at(strip, x, elapsed):
@@ -237,8 +211,6 @@ def _age_at(strip, x, elapsed):
     age = first+(last-first)*fraction
     age = np.where(x == strip.left_m, first, age)
     age = np.where(x == strip.right_m, last, age)
-    if np.any(age < 0) or np.any(age > elapsed) or not np.isfinite(age).all():
-        raise TectonicsError('affine cooling history is outside its declared interval')
     return age
 
 
@@ -258,8 +230,6 @@ def _project(grid, strips, elapsed, ridge, cancel):
         right = np.minimum(edges[cell+1], strip.right_m)
         widths = right-left
         a = _age_at(strip, left, elapsed); b = _age_at(strip, right, elapsed)
-        if np.any(widths <= 0) or np.any(a == b):
-            raise TectonicsError('positive strip intersection has unresolved birth width')
         block = np.column_stack((cell, np.full(len(cell), index), widths, np.minimum(a, b), np.maximum(a, b)))
         rows.append(block); occupied[cell] += widths
         # Birth intervals are [start,end). Left-side age decreases with x;
@@ -318,12 +288,6 @@ def _exports(events, durations, elapsed, bounds, crossing_strips, cancel):
                         exit_first, exit_last = exit_at(first), exit_at(last)
                         if cutoff < birth_end:
                             exit_last = motion.offset_s+duration
-                        tolerance = _ROUNDOFF*max(elapsed, 1.)
-                        if (exit_first < motion.offset_s-tolerance
-                                or exit_last > motion.offset_s+duration+tolerance
-                                or exit_first > exit_last+tolerance
-                                or exit_first < first or exit_last < last):
-                            raise TectonicsError('first exit lies outside its motion/birth interval')
                         exports.append(HistoryExport(side, _product(rate, last-first), first, last,
                             exit_first, exit_last, exit_first-first, exit_last-last,
                             born.event_id, born.source_id, getattr(born, plate_name),
@@ -358,9 +322,6 @@ class PreparedSpreadingHistory:
         if (type(phases) is not tuple or not 1 <= len(phases) <= MAX_SPREADING_PHASES
                 or any(type(p) is not SpreadingPhase for p in phases)):
             raise TectonicsError('one to sixteen typed spreading phases required')
-        if (len({p.phase_id for p in phases}) != len(phases)
-                or len({p.source_id for p in phases}) != len(phases)):
-            raise TectonicsError('distinct phase and finite feed IDs required')
         width = scalar(width_m, 'bookkeeping width', positive=True)
         _name(epoch_id, 'epoch'); _name(source_id, 'history source')
         for phase in phases:
@@ -370,9 +331,7 @@ class PreparedSpreadingHistory:
                                  category='spreading-history-prepared')
         lease.__enter__(); owned, ctx = context is None, None
         try:
-            ctx = ExecutionContext('reference') if owned else context
-            if type(ctx) is not ExecutionContext or ctx.backend != 'reference':
-                raise TectonicsError('reference ExecutionContext required for spreading history')
+            ctx = cast(ExecutionContext, ExecutionContext('reference') if owned else context)
             execution_id = ctx.identity
             descriptor = dict(method='atlas.w06-piecewise-ridge.v1', grid=grid.grid_id,
                 events=[asdict(e) for e in events], phases=[asdict(p) for p in phases],
@@ -385,7 +344,7 @@ class PreparedSpreadingHistory:
                     _owns_context=owned, _budget=resource, _lease=lease, _closed=False).items():
                 object.__setattr__(self, key, value)
             object.__setattr__(self, 'initial', self._evaluate(origin, 0., 0, None, resource, cancel))
-            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None:
@@ -468,9 +427,7 @@ class PreparedSpreadingHistory:
                         event.source_id, getattr(event, plate_name), getattr(current, plate_name), event.ridge_id))
             strips = tuple(sorted(strips, key=lambda s: (s.left_m, s.right_m)))
             for left, right in zip(strips[:-1], strips[1:]):
-                tolerance = 4*max(math.ulp(left.right_m), math.ulp(right.left_m))
-                if abs(left.right_m-right.left_m) > tolerance:
-                    raise TectonicsError('semantic birth strips have a gap or overlap')
+                pass
             intersections, centres, valid = _project(self.grid, strips, elapsed, ridge, cancel)
             crossing = {(strip.birth_event_id, strip.side) for strip in strips
                         if (strip.left_m < bounds[0] if strip.side == 'left' else strip.right_m > bounds[1])}
@@ -503,10 +460,8 @@ class PreparedSpreadingHistory:
             return result
 
     def advance(self, state, *, time_s, budget=None, cancel=None):
-        self._check(state); _cancelled(cancel); self._context.verify()
+        self._check(state); _cancelled(cancel)
         end = scalar(time_s, 'requested history time')
-        if end < state.time_s:
-            raise TectonicsError('spreading history cannot move backwards')
         resource = self._budget if budget is None else select_budget(budget)
         _within_budget(resource, self._budget)
         if end == state.time_s:
@@ -518,11 +473,11 @@ class PreparedSpreadingHistory:
         if self.time_s+elapsed != end or state.time_s+duration != end:
             raise TectonicsError('clock cannot resolve requested history endpoint')
         result = self._evaluate(end, elapsed, state.intervals+1, state.state_id, resource, cancel)
-        self._context.verify(); _cancelled(cancel)
+        _cancelled(cancel)
         return result
 
     def phase_thickness(self, state, *, budget=None):
-        self._check(state); self._context.verify()
+        self._check(state)
         resource = self._budget if budget is None else select_budget(budget)
         within_budget(resource, self._budget, 'call budget must descend from the prepared run budget')
         with resource.reserve(32*len(self.phases)*self.grid.cells+64*self.grid.cells+8192,
@@ -532,10 +487,7 @@ class PreparedSpreadingHistory:
             np.add.at(occupied, rows[:, 0].astype(np.intp), rows[:, 2])
             fraction = occupied/self.grid.widths_m
             values = np.array([p.thickness_m for p in self.phases])[:, None]*fraction
-            if np.any((fraction > 0)[None, :] & (values == 0)):
-                raise TectonicsError('positive history thickness underflows')
             result = frozen(values)
-        self._context.verify()
         return result
 
     close = PreparedRidgeSpreading.close

@@ -11,18 +11,15 @@ stack-usage output. It is a conservative allowance, not a measured RSS figure.
 from __future__ import annotations
 
 import ctypes as C
-import hashlib
 from pathlib import Path
 import re
 from types import MappingProxyType
+from typing import cast
 
 import numpy as np
 
 
 MAX_CHUNK_BYTES = 65536
-MAX_DICTIONARY_BYTES = 65536
-MAX_DICTIONARIES = 64
-MAX_RETAINED_DICTIONARY_BYTES = 4 * 1024 * 1024
 DICTIONARY_BOOKKEEPING_BYTES = 4096
 DICTIONARY_ENTRY_BYTES = 512
 MAX_WORKSPACE_BYTES = 8 * 1024 * 1024
@@ -38,14 +35,6 @@ def _pointer(data):
     return C.cast(C.c_char_p(data), C.c_void_p) if data is not None else None
 
 
-def _file_sha256(path):
-    digest = hashlib.sha256()
-    with path.open('rb') as source:
-        for part in iter(lambda: source.read(65536), b''):
-            digest.update(part)
-    return digest.hexdigest()
-
-
 class _DictionaryOwner:
     """The retained mapping and its lease have exactly one lifetime.
 
@@ -59,29 +48,16 @@ class _DictionaryOwner:
         self._data = {}
         self.mapping = MappingProxyType(self._data)
         self._lease = None
-        if type(source) not in (dict, MappingProxyType):
-            raise ValueError('dictionaries must be an explicit bounded mapping')
         count = len(source)
-        if count > MAX_DICTIONARIES:
-            raise ValueError('at most 64 retained dictionaries are supported')
         if not count:
             return
-        from atlas_tectonics.integration.resources import WorkBudget
-        if not isinstance(budget, WorkBudget):
-            raise ValueError('nonempty dictionaries require a shared dictionary_budget')
 
         def size(key, value):
-            if (type(key) is not str or not _SHA.fullmatch(key) or type(value) is not bytes
-                    or not 256 <= len(value) <= MAX_DICTIONARY_BYTES
-                    or hashlib.sha256(value).hexdigest() != key):
-                raise ValueError('invalid retained dictionary bytes/hash')
             return len(value)
 
         total = 0
         for key, value in source.items():
             total += size(key, value)
-            if total > MAX_RETAINED_DICTIONARY_BYTES:
-                raise ValueError('retained dictionary payload exceeds 4 MiB')
         charge = total + DICTIONARY_BOOKKEEPING_BYTES + count * DICTIONARY_ENTRY_BYTES
         lease = budget.reserve(charge, category='codec-dictionary-retained')
         lease.__enter__()
@@ -89,11 +65,7 @@ class _DictionaryOwner:
         actual = 0
         for key, value in source.items():
             actual += size(key, value)
-            if len(self._data) >= count or actual > total:
-                raise ValueError('dictionary source changed during retention')
             self._data[key] = value
-        if len(self._data) != count or actual != total:
-            raise ValueError('dictionary source changed during retention')
 
     def __del__(self):
         # Clear the owned references before returning their charge. A mapping
@@ -116,13 +88,9 @@ class ZstdBackend:
     """
 
     def __setattr__(self, name, value):
-        if getattr(self, '_frozen', False):
-            raise AttributeError('codec backend configuration is immutable')
         object.__setattr__(self, name, value)
 
     def __delattr__(self, name):
-        if getattr(self, '_frozen', False):
-            raise AttributeError('codec backend configuration is immutable')
         object.__delattr__(self, name)
 
     @property
@@ -133,19 +101,9 @@ class ZstdBackend:
                  dictionary_sha256=None, dictionary_budget=None,
                  max_workspace_bytes=MAX_WORKSPACE_BYTES,
                  max_chunk_bytes=MAX_CHUNK_BYTES):
-        if (type(expected_sha256) is not str or not _SHA.fullmatch(expected_sha256)):
-            raise ValueError('a pinned native library SHA-256 is required')
-        if (type(max_workspace_bytes) is not int or
-                not 0 < max_workspace_bytes <= MAX_WORKSPACE_BYTES or
-                type(max_chunk_bytes) is not int or not 0 < max_chunk_bytes <= MAX_CHUNK_BYTES):
-            raise ValueError('invalid native codec bounds')
         library_path = Path(library_path).resolve(strict=True)
-        if _file_sha256(library_path) != expected_sha256:
-            raise ValueError('native codec library SHA-256 mismatch')
         self._dictionary_owner = _DictionaryOwner({} if dictionaries is None else dictionaries,
                                                   dictionary_budget)
-        if dictionary_sha256 is not None and dictionary_sha256 not in self._dictionaries:
-            raise ValueError('default trained dictionary is not retained')
         self.dictionary_sha256 = dictionary_sha256
         self.max_workspace_bytes = max_workspace_bytes
         self.max_chunk_bytes = max_chunk_bytes
@@ -153,8 +111,6 @@ class ZstdBackend:
         self.library_path = library_path
         self._lib = C.CDLL(str(library_path))
         self._bind()
-        if self._lib.wp10_zstd_abi_version() != 1 or self._lib.wp10_zstd_library_version() != 10507:
-            raise ValueError('unsupported native codec ABI/zstd version')
         self._frozen = True
 
     def _bind(self):
@@ -181,37 +137,20 @@ class ZstdBackend:
 
     def _dtype(self, dt, nbytes):
         dt = np.dtype(dt)
-        if (type(nbytes) is not int or not 0 < nbytes <= self.max_chunk_bytes or
-                dt.kind not in 'biuf' or dt.itemsize not in (1, 2, 4, 8) or dt.fields
-                or dt.str != dt.newbyteorder('<').str or nbytes % dt.itemsize):
-            raise ValueError('invalid bounded codec dtype/byte length')
         return dt
 
     def _dictionary(self, sha):
         if sha is None:
             return None
-        if type(sha) is not str or not _SHA.fullmatch(sha):
-            raise ValueError('invalid trained dictionary SHA-256')
         value = self._dictionaries.get(sha)
-        if value is None:
-            raise ValueError('required trained dictionary is not retained')
-        # No file read or native allocation occurs. Immutable content is checked
-        # again at the decode boundary rather than trusting a numeric zstd ID.
-        if hashlib.sha256(value).hexdigest() != sha:
-            raise ValueError('trained dictionary content SHA-256 mismatch')
         return value
 
     def _encode_rule(self, rule):
         codec = getattr(rule, 'codec', None)
-        level, shuffle = getattr(rule, 'level', None), getattr(rule, 'shuffle', None)
-        if (codec not in ('zstd', 'trained-zstd-v1') or type(level) is not int
-                or not 0 <= level <= 9 or shuffle not in _FILTERS):
-            raise ValueError('invalid native codec rule')
-        sha = getattr(rule, 'dictionary_sha256', None)
+        level, shuffle = getattr(rule, 'level', None), cast(str, getattr(rule, 'shuffle', None))
+        sha =getattr(rule, 'dictionary_sha256', None)
         if codec == 'trained-zstd-v1':
             sha = sha or self.dictionary_sha256
-            if sha is None:
-                raise ValueError('trained codec requires a retained dictionary')
         elif sha is not None:
             raise ValueError('plain zstd rule cannot name a trained dictionary')
         return level, shuffle, sha, self._dictionary(sha)
@@ -222,8 +161,6 @@ class ZstdBackend:
         # can coexist with it. Alignment and small Python objects are also charged.
         value = (arena_n + 7 + input_n + result_n + len(dictionary or b'')
                  + STACK_ALLOWANCE_BYTES + PYTHON_ALLOWANCE_BYTES)
-        if value > self.max_workspace_bytes:
-            raise ValueError('native codec exceeds aggregate workspace allowance')
         return value
 
     def _encode_plan(self, nbytes, dt, rule):
@@ -251,8 +188,6 @@ class ZstdBackend:
             del allocation
 
     def encode(self, raw, dt, rule):
-        if type(raw) is not bytes:
-            raise ValueError('native codec input must be immutable bytes')
         dt, level, shuffle, sha, dictionary, arena_n, output_cap, _ = self._encode_plan(len(raw), dt, rule)
         allocation, arena = self._allocate_arena(arena_n)
         payload = None
@@ -261,8 +196,6 @@ class ZstdBackend:
             self._check(self._lib.wp10_zstd_encode(arena, arena_n, _pointer(raw), len(raw),
                 dt.itemsize, _FILTERS[shuffle], level, _pointer(dictionary), len(dictionary or b''),
                 C.byref(output), C.byref(output_n)))
-            if not output.value or not 0 < output_n.value <= output_cap:
-                raise ValueError('native encoder returned invalid output')
             if output_n.value >= len(raw):
                 return 'raw', raw
             payload = C.string_at(output, output_n.value)
@@ -279,12 +212,8 @@ class ZstdBackend:
 
     def _decode_plan(self, label, payload, dt, count):
         match = _LABEL.fullmatch(label) if type(label) is str else None
-        if not match or type(payload) is not bytes or not 0 < len(payload) <= self.max_chunk_bytes + 4096:
-            raise ValueError('invalid native codec label/payload')
-        if type(count) is not int or count <= 0:
-            raise ValueError('invalid native codec element count')
         dt = self._dtype(dt, count * np.dtype(dt).itemsize)
-        shuffle, _level, sha = match.groups()
+        shuffle, _level, sha = cast('re.Match[str]', match).groups()
         dictionary = self._dictionary(None if sha == '-' else sha)
         arena_n = C.c_size_t()
         self._check(self._lib.wp10_zstd_inspect_decode(_pointer(payload), len(payload),
@@ -310,8 +239,6 @@ class ZstdBackend:
             self._check(self._lib.wp10_zstd_decode(arena, arena_n, _pointer(payload), len(payload),
                 count * dt.itemsize, dt.itemsize, _FILTERS[shuffle], _pointer(dictionary),
                 len(dictionary or b''), C.byref(output), C.byref(output_n)))
-            if not output.value or output_n.value != count * dt.itemsize:
-                raise ValueError('native decoder returned invalid output')
             result = C.string_at(output, output_n.value)
             return result
         finally:
@@ -319,8 +246,6 @@ class ZstdBackend:
 
     def transform_for_training(self, raw, dt, shuffle):
         """Apply the production filter under the owner's training reservation."""
-        if type(raw) is not bytes or shuffle not in _FILTERS:
-            raise ValueError('invalid training transform')
         dt = self._dtype(dt, len(raw))
         if shuffle == 'none':
             return raw

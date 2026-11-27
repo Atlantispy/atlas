@@ -6,7 +6,6 @@ caller owns source selection, interval/funding/closure bindings, budgets and
 the lifetime of the supplied arena and candidate contexts.
 """
 from fractions import Fraction as Q
-from types import MappingProxyType
 
 from atlas_tectonics.integration.coupling.routing_views import (
     _decoded_json_capacity, _decode_workspace,
@@ -18,23 +17,16 @@ def _actual_planes(row, component, rays, context, *, D, W):
     issue = rays.record
     path = component['partition_path']
     fans = [r['ray_ids'] for r in issue['ownership_fans'] if r['plate_id'] == row['plate_id']]
-    if (len(path) < 2 or path[0] != 'owner-fan' or type(path[1]) is not int or
-            not 0 <= path[1] < len(fans) or component['owner_ray_ids'] != fans[path[1]]):
-        raise ValueError('issued owner path differs ' + component['logical_cell_id'])
     fan = fans[path[1]]
     pairs = list(zip(fan, fan[1:] + fan[:1], strict=True))
     owner = [rays.edge(a, b) for a, b in pairs]
     cuts = []
     for name, sign in component['constraints']:
-        if sign not in (-1, 1):
-            raise ValueError('invalid signed material literal')
         literal = row['constraints'][name]
         if name.startswith('owner:'):
             legacy = name.count('>') > 1 and not name.startswith('owner:>')
             indexes = [i for i, (a, b) in enumerate(pairs) if name ==
                        ('owner:' + a + '>' + b if legacy else D._directed_edge_name('owner', a, b))]
-            if len(indexes) != 1 or sign != 1:
-                raise ValueError('issued current-owner literal differs')
             normal, error, offset = owner[indexes[0]]
         else:
             old = D._constraint_pose(literal, context.duration, context.duration, 24, context.arena)
@@ -42,8 +34,6 @@ def _actual_planes(row, component, rays, context, *, D, W):
                 normal, error, offset = old
             else:
                 key = context.start_and_key(literal)
-                if key is None:
-                    raise ValueError('unproved material literal')
                 value, changed = context.place(literal, {key[0]}, old, expected=True)
                 if not changed:
                     raise ValueError('material placement refused')
@@ -84,16 +74,7 @@ def build_support_pieces(support, *, endpoint, integration_width, max_leaves, bu
                          interval_rays, context, nominal_totals, piece_builder, D, H, W, V, B, E,
                          endpoint_pass=None):
     """Construct H-shaped ordered pieces; caller must separately bind all inputs."""
-    if (endpoint != 'end' or subdivisions != 1 or type(support) is not D.DifferentialSupport or
-            support._resource is not budget or arena.resource is not budget or
-            interval_rays.arena.resource is not budget or context.arena.resource is not budget or
-            type(booked) is not dict or type(nominal_totals) not in (dict, MappingProxyType) or shared_lines is None):
-        raise ValueError('issued shared-budget END support and reviewed grid required')
     row = support.record()
-    if row['interval_id'] != interval_rays.interval.interval_id:
-        raise ValueError('support belongs to another interval')
-    if any(part['logical_cell_id'] not in booked for part in row['components']):
-        raise ValueError('issued component is missing from the closure booking')
     voxel = V.CartesianCell.from_record(row['voxel'], budget=budget)
     layer = V.RadialLayer(*(W._decode(row['radial_layer'][key]) for key in
                             ('radius_m', 'top_depth_m', 'bottom_depth_m')), budget=budget)
@@ -111,8 +92,6 @@ def build_support_pieces(support, *, endpoint, integration_width, max_leaves, bu
             if unbooked is not None:
                 unbooked.append(logical)
             continue
-        if logical not in nominal_totals:
-            raise ValueError('booked logical component lacks a qualified nominal total')
         cache_key = (support.support_id, logical, endpoint)
         issued_measure = None
         measure = None if measures is None else measures.get(cache_key)
@@ -152,11 +131,6 @@ def build_support_pieces(support, *, endpoint, integration_width, max_leaves, bu
                         with B._Arena(budget) as scratch:
                             built = piece_builder.build_piece(support, logical, tile, shared_lines, booked,
                                 interval_rays, context, budget=budget, arena=scratch, D=D, V=V, B=B, E=E, W=W)
-                            if (built['logical_id'] != logical or built['support_id'] != support.support_id or
-                                    built['source_chart_id'] != row['source_chart_id'] or
-                                    built['source_key'] != row['source_key'] or built['plate_id'] != row['plate_id'] or
-                                    built['path'] != tuple(component['partition_path']) or built['booking'] != booked[logical]):
-                                raise ValueError('returned piece ownership or booking differs')
                             amount = built['volume']
                             if amount:
                                 poly = built['poly']

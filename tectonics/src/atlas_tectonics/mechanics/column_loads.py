@@ -14,7 +14,7 @@ import json
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar, text
+from atlas_tectonics._validation import TectonicsError, read_array, scalar
 from atlas_tectonics.materials.constitutive import BoussinesqMaterial
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import check_event
@@ -22,8 +22,6 @@ from atlas_tectonics.thermal.thermal_support import _temperature
 from atlas_tectonics.mechanics.stokes_execution import _factored_scale
 
 _METHOD = 'atlas.fixed-column-loads.v1'
-_MAX_COLUMNS = 2_097_152
-_MAX_PHASES = 256
 
 
 def _identity(record, *buffers):
@@ -32,15 +30,6 @@ def _identity(record, *buffers):
     for buffer in buffers:
         h.update(buffer)
     return h.hexdigest()
-
-
-def _ids(values, name, maximum):
-    if type(values) is not tuple or not 0 < len(values) <= maximum:
-        raise TectonicsError(name+' must be a bounded nonempty tuple')
-    for value in values:
-        text(value, name)
-    if len(set(values)) != len(values):
-        raise TectonicsError(name+' must be unique')
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -61,17 +50,8 @@ class LoadSupport:
 
     def __init__(self, column_ids, area_m2, height_m, *, geometry_source,
                  frame_id, datum_id, budget=None):
-        _ids(column_ids, 'column IDs', _MAX_COLUMNS)
-        for name, value in (('geometry_source', geometry_source), ('frame_id', frame_id),
-                            ('datum_id', datum_id)):
-            text(value, name)
-        shape = (len(column_ids),)
-        if input_shape(area_m2) != shape or input_shape(height_m) != shape:
-            raise TectonicsError('area and finite support height must have one value per column')
         with select_budget(budget).reserve(96*len(column_ids)+8192, category='load-support'):
             a = read_array(area_m2, 'area'); h = read_array(height_m, 'height')
-            if a.shape != shape or h.shape != shape or np.any(a <= 0) or np.any(h <= 0):
-                raise TectonicsError('positive, unchanged support shapes required')
             with np.errstate(over='ignore', under='ignore'):
                 volume = a*h
             if not np.isfinite(volume).all() or np.any(volume == 0):
@@ -109,20 +89,11 @@ class LoadPhase:
     thermal_coverage_source: str | None = None
 
     def __post_init__(self):
-        text(self.phase_id, 'phase ID'); text(self.source, 'phase source')
-        if self.kind not in ('rock', 'sediment-grain', 'pore-water', 'water', 'other'):
-            raise TectonicsError('unknown inventory phase kind')
         object.__setattr__(self, 'density_kg_m3', scalar(self.density_kg_m3, 'inventory density', positive=True))
         m = self.thermal_material
         if m is None:
             if self.thermal_coverage_source is not None:
                 raise TectonicsError('thermal coverage without a thermal material')
-        else:
-            if type(m) is not BoussinesqMaterial:
-                raise TectonicsError('typed Boussinesq material required')
-            text(self.thermal_coverage_source, 'fixed thermal coverage source')
-            if m.density_kg_m3 != self.density_kg_m3 or m.composition_density_contrast_kg_m3 != 0:
-                raise TectonicsError('thermal phase needs its uncorrected reference density and no composition anomaly')
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -149,23 +120,11 @@ class ColumnLoadState:
     def __init__(self, support, phases, volume_m3, fill_density_kg_m3, *,
                  source_id, epoch_id, temperature_k=None, budget=None, cancel=None):
         check_event(cancel, 'column load construction cancelled')
-        if type(support) is not LoadSupport:
-            raise TectonicsError('explicit LoadSupport required')
-        if type(phases) is not tuple or not 0 < len(phases) <= _MAX_PHASES or any(type(p) is not LoadPhase for p in phases):
-            raise TectonicsError('bounded tuple of LoadPhase required')
-        _ids(tuple(p.phase_id for p in phases), 'phase IDs', _MAX_PHASES)
-        text(source_id, 'state source'); text(epoch_id, 'epoch identity')
         n, p = len(support.column_ids), len(phases)
         thermal = tuple(x for x in phases if x.thermal_material is not None)
-        if input_shape(volume_m3) != (n, p) or input_shape(fill_density_kg_m3) != (n,):
-            raise TectonicsError('expected (columns, phases) volumes and per-column replacement density')
-        if (thermal and (temperature_k is None or input_shape(temperature_k) != (n, len(thermal)))) or (not thermal and temperature_k is not None):
-            raise TectonicsError('temperatures must match exactly the thermal phase catalogue')
         with select_budget(budget).reserve(48*n*(p+len(thermal)+3)+8192, category='load-state'):
             v = read_array(volume_m3, 'phase volume', nonnegative=True)
             f = read_array(fill_density_kg_m3, 'replacement density', nonnegative=True)
-            if v.shape != (n,p) or f.shape != (n,):
-                raise TectonicsError('input shapes changed during capture')
             with np.errstate(over='ignore'):
                 occupied = np.sum(v, axis=1)
             capacity = support.area_m2*support.height_m
@@ -175,8 +134,6 @@ class ColumnLoadState:
             tb = b''
             if thermal:
                 t = read_array(temperature_k, 'phase temperature')
-                if t.shape != (n,len(thermal)):
-                    raise TectonicsError('temperature shape changed during capture')
                 for j, phase in enumerate(thermal):
                     _temperature(t[:,j], phase.thermal_material)
                 tb = t.tobytes()
@@ -204,12 +161,6 @@ class ColumnLoadState:
 
 
 def _compatible(reference, current, gravity_m_s2, batch_columns):
-    if type(reference) is not ColumnLoadState or type(current) is not ColumnLoadState:
-        raise TectonicsError('two explicit ColumnLoadState snapshots required')
-    if reference.support.support_id != current.support.support_id or reference.phases != current.phases:
-        raise TectonicsError('identical support and phase catalogue required; no implicit remapping')
-    if type(batch_columns) is not int or not 0 < batch_columns <= _MAX_COLUMNS:
-        raise TectonicsError('bounded positive batch_columns required')
     return scalar(gravity_m_s2, 'gravity magnitude', positive=True)
 
 
@@ -222,15 +173,11 @@ def _add(total, correction, term):
 
 def _multiply(left, right):
     result = left*right
-    if np.any((result == 0) & (left != 0) & (right != 0)):
-        raise TectonicsError('column load product underflows binary64')
     return result
 
 
 def _divide(left, right):
     result = left/right
-    if np.any((result == 0) & (left != 0)):
-        raise TectonicsError('column load quotient underflows binary64')
     return result
 
 
@@ -289,6 +236,4 @@ def column_load_change(reference, current, gravity_m_s2, *, budget=None,
         except FloatingPointError as exc:
             raise TectonicsError('column load arithmetic outside finite binary64 range') from exc
         check_event(cancel, 'column load construction cancelled')
-        if not np.isfinite(output).all():
-            raise TectonicsError('nonfinite column load')
         return np.frombuffer(output.tobytes(), dtype=np.float64).reshape(n,4)

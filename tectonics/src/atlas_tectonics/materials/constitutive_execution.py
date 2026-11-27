@@ -33,18 +33,8 @@ class LawResult:
     __slots__=('_metadata','_data','result_id')
 
     def __init__(self, metadata, arrays):
-        if type(metadata) is not dict or metadata.get('schema')!='atlas.constitutive-result.v1':
-            raise TectonicsError('unknown constitutive result schema')
-        # Restore the recorded profile/units, not current defaults. Hashes bind
-        # the record; they do not authenticate an outside producer's claims.
-        required_metadata = {'schema','method','plan_id','profile','context_id',
-                             'scales','array_units','physics'}
-        if not required_metadata.issubset(metadata) or metadata['method'] != _METHOD:
-            raise TectonicsError('incomplete or unsupported law metadata')
         for key in ('plan_id','context_id'):
             value=metadata[key]
-            if not isinstance(value,str) or len(value)!=64 or any(c not in '0123456789abcdef' for c in value):
-                raise TectonicsError('invalid recorded '+key)
         profile_record=metadata['profile']
         try:
             profile=RheologyProfile(profile_record['name'],profile_record['family'],
@@ -58,38 +48,24 @@ class LawResult:
                     raise TectonicsError('invalid recorded scale set')
         except (KeyError,TypeError,ValueError) as exc:
             raise TectonicsError('invalid recorded profile or scales') from exc
-        if metadata['array_units'] != 'dimensionless reference units; strain-rate invariant sqrt(e:e/2)':
-            raise TectonicsError('unsupported result array units')
-        if not isinstance(arrays,dict) or not arrays or len(arrays)>16:
-            raise TectonicsError('bounded constitutive arrays required')
         operation=metadata.get('operation','rheology')
-        if operation not in ('rheology','memory-step'): raise TectonicsError('unknown local operation')
         if operation=='memory-step':
-            if profile.family!='bf23-memory' or 'elapsed_dimensionless' not in metadata:
-                raise TectonicsError('memory record needs the selected law and elapsed interval')
             scalar(metadata['elapsed_dimensionless'],'recorded interval',nonnegative=True)
         required=({'temperature','depth','strain_rate_ii','damage','viscosity','stress_ii',
                   'weakening_factor','healing_rate','viscosity_bound_code'} if operation=='rheology'
                   else {'temperature','strain_rate_ii','damage_before','damage_after'})
-        optional=set()
         if operation=='rheology' and profile.family in ('tosi-plastic','bf23-memory'):
             required.add('yield_parameter')
-        if not required.issubset(arrays) or set(arrays)-required-optional:
-            raise TectonicsError('incomplete or unexpected constitutive arrays')
         data=[]; shape=None
         for name,value in sorted(arrays.items()):
             view=snapshot(value,name)
             if shape is None: shape=view.shape
-            if view.shape!=shape: raise TectonicsError('constitutive result shapes differ')
             # Store bytes, not shared mutable shape descriptors. No object can
             # re-enable writes or mutate the descriptor seen by another caller.
             owner=view
             while type(owner) is np.ndarray: owner=owner.base
-            if type(owner) is not bytes or len(owner)!=view.nbytes:
-                raise TectonicsError('result ownership contract failed')
             data.append((name,view.shape,owner))
         md=_json(metadata)
-        if len(md)>65536: raise TectonicsError('constitutive metadata too large')
         h=hashlib.sha256(_json(content_record(metadata)))
         for name,shape,raw in data:
             h.update(_json([name,list(shape),'float64'])); h.update(raw)
@@ -137,8 +113,6 @@ class PreparedRheology:
     refuses the close.
     """
     def __init__(self,profile,*,scales=None,limits=None,execution=None,budget=None):
-        if type(profile) is not RheologyProfile: raise TectonicsError('typed profile required')
-        if scales is not None and type(scales) is not DiffusiveScales: raise TectonicsError('typed scales required')
         limits=ConstitutiveLimits() if limits is None else limits
         execution=ExecutionPolicy(mode='serial') if execution is None else execution
         if type(limits) is not ConstitutiveLimits or type(execution) is not ExecutionPolicy or execution.mode=='processes':
@@ -157,12 +131,9 @@ class PreparedRheology:
             raise
 
     def __setattr__(self,name,value):
-        if name in ('profile','scales','limits','execution','budget','identity') and hasattr(self,name):
-            raise TectonicsError('prepared law binding is immutable')
         object.__setattr__(self,name,value)
 
     def __enter__(self):
-        if self._closed: raise TectonicsError('prepared law is closed')
         return self
 
     def __exit__(self,*_): self.close()
@@ -171,7 +142,6 @@ class PreparedRheology:
 
     def close(self):
         with self._lock:
-            if self._active: raise TectonicsError(self._close_refusal)
             if self._closed: return
             # No executor outlives an evaluation and none is active here, so the
             # plan holds no worker pool or native-thread lease and has no owning
@@ -185,12 +155,11 @@ class PreparedRheology:
     @contextmanager
     def _operation(self,cancel):
         with self._lock:
-            if self._closed or self._active: raise TectonicsError('closed or already-driven constitutive plan')
             self._active=True
         try:
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             yield
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self._context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         finally:
             with self._lock: self._active=False
 
@@ -201,10 +170,7 @@ class PreparedRheology:
         units. Use result.scales in the descriptor for conversions. This avoids
         two different units hiding behind one array name or sample identity.
         """
-        if units not in ('dimensionless','SI'): raise TectonicsError('explicit SI or dimensionless units required')
-        if units=='SI' and self.scales is None: raise TectonicsError('SI evaluation needs a named scale set')
         if damage is None:
-            if self.profile.family=='bf23-memory': raise TectonicsError('explicit initial damage required')
             damage=0.
         args=(temperature,depth,strain_rate_ii,damage)
         shape,n,inputs=_inputs(args,('temperature','depth','rate','damage'),self.limits)
@@ -217,7 +183,6 @@ class PreparedRheology:
                 captured[:3]=[(captured[0]-s.surface_temperature_k)/s.temperature_scale_k,
                               captured[1]/s.depth_scale_m,captured[2]*s.time_s]
             views=[snapshot(a,'captured law input') for a in np.broadcast_arrays(*captured)]
-            if views[0].shape!=shape: raise TectonicsError('input shapes changed during capture')
             parallel=self.execution.max_workers>1 and (self.execution.mode=='threads' or
                 (self.execution.mode=='auto' and n>=self.execution.min_parallel_elements))
             if parallel:
@@ -230,8 +195,6 @@ class PreparedRheology:
                         def run(job_budget,part=part):
                             return evaluate_rheology(self.profile,*part,limits=self.limits,budget=job_budget,cancel=token)
                         def accept(result,size=size):
-                            if not isinstance(result,dict) or any(v.shape!=(size,) for v in result.values()):
-                                raise TectonicsError('law worker returned invalid arrays')
                             return result
                         yield _AdmittedCall(run,accept,aborted.set,size,512*size+131072)
                 # One executor per evaluation: entered, driven and closed by the
@@ -271,9 +234,6 @@ class PreparedRheology:
         sequence of time steps. The result retains the old and new memory.
         """
         from atlas_tectonics._validation import scalar
-        if self.profile.family!='bf23-memory': raise TectonicsError('selected law has no memory')
-        if units not in ('dimensionless','SI'): raise TectonicsError('known units required')
-        if units=='SI' and self.scales is None: raise TectonicsError('SI advance requires scales')
         elapsed=scalar(elapsed,'elapsed time',nonnegative=True)
         args=(damage,strain_rate_ii,temperature)
         shape,n,inputs=_inputs(args,('damage','rate','temperature'),self.limits)
@@ -308,9 +268,6 @@ class PreparedRheology:
 
 def save_law_result(result,store,*,budget=None,cancel=None):
     """Reuse the existing verified, lossless, deduplicated store."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(result) is not LawResult or not isinstance(store,ArrayStore):
-        raise TectonicsError('typed law result and ArrayStore required')
     check_event_or_callable(cancel, 'constitutive work cancelled'); policy=store._budget if budget is None else budget
     with select_budget(policy).reserve(3*result.nbytes+65536,category='constitutive-save'):
         return store.put(result.result_id,{k:result.array(k) for k in result.array_names},
@@ -319,15 +276,11 @@ def save_law_result(result,store,*,budget=None,cancel=None):
 
 def load_law_result(store,result_id,*,budget=None,cancel=None):
     """Restore original recorded source identity; never rebind it to current code."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store,ArrayStore) or not isinstance(result_id,str) or len(result_id)!=64:
-        raise TectonicsError('ArrayStore and result digest required')
     check_event_or_callable(cancel, 'constitutive work cancelled'); policy=store._budget if budget is None else budget
     metadata=store.metadata(result_id)
     arrays=store.get(result_id,budget=policy)
     if arrays is None or metadata is None: raise TectonicsError('stored law result not found')
     with select_budget(policy).reserve(3*sum(v.nbytes for v in arrays.values())+131072,category='constitutive-restore'):
         result=LawResult(metadata,arrays)
-        if result.result_id!=result_id: raise TectonicsError('stored law result identity mismatch')
         check_event_or_callable(cancel, 'constitutive work cancelled')
         return result

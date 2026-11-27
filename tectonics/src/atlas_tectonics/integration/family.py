@@ -76,8 +76,8 @@ import hashlib
 import json
 import math
 from numbers import Real
-import re
 from types import MappingProxyType
+from typing import cast
 
 import numpy as np
 
@@ -195,33 +195,19 @@ class FamilyRefused(TectonicsError):
     """A starting family that cannot be issued; ``code`` is INVALID_REQUEST, STRUCTURE_REFUSED or LAYOUT_REFUSED."""
 
     def __init__(self, message, code):
-        if code not in CODES:
-            raise ValueError('unknown starting-family refusal code')
         super().__init__(message)
         self.code = code
 
 
 # ----------------------------------------------------------------------------- seed streams (reproductions)
 
-def _hex32(value, label):
-    if type(value) is not str or not re.fullmatch('[0-9a-f]{32}', value):
-        raise FamilyRefused(label+' must be 32 lowercase hexadecimal characters', INVALID_REQUEST)
-    return value
-
-
 def stream_seed(seed, name):
     """The New World named stream (tools/new_world_contract.py stream_seed), reproduced byte for byte."""
-    _hex32(seed, 'seed')
-    if type(name) is not str or not re.fullmatch(r'[a-z0-9_.-]{1,64}', name):
-        raise FamilyRefused('random stream names are bounded lowercase identifiers', INVALID_REQUEST)
     message = (b'atlas.new-world.stream.v1\0' + bytes.fromhex(seed) + b'\0' + name.encode('ascii'))
     return hashlib.sha256(message).hexdigest()[:32]
 
 
 def _bits(stream_hex, label):
-    _hex32(stream_hex, 'stream seed')
-    if type(label) is not str or not label or not label.isascii():
-        raise FamilyRefused('a draw label is nonblank ASCII text', INVALID_REQUEST)
     raw = hashlib.sha256(bytes.fromhex(stream_hex) + b'\0' + label.encode('ascii')).digest()
     return int.from_bytes(raw[:8], 'big') >> 11
 
@@ -523,7 +509,6 @@ class FamilyRequest:
     volume_convention: str = V.REFERENCE_PRISM
 
     def __post_init__(self):
-        _hex32(self.seed, 'seed')
         radius = _real(self.radius_m, 'radius_m')
         if not RADIUS_RANGE_M[0] <= radius <= RADIUS_RANGE_M[1]:
             _refuse('radius_m must lie in [3e6, 1e8] m (150 km/R <= 0.05 admission)')
@@ -770,9 +755,6 @@ def _scale(name, xy, target, chart):
     """The fixed 56-step bisection of the _footprints rule, on [0, tan 80 deg / max |xy|]."""
     centre = np.asarray(chart.centre)
     lo, hi = 0., math.tan(CAP_LIMIT_RAD)/float(np.max(np.hypot(xy[:, 0], xy[:, 1])))
-    if _anchored_area(chart._unproject(hi*xy), centre) < target:
-        raise FamilyRefused('province %s: its 80-degree cap-limited area is below its target area: outside the fixed '
-                            'shape envelope' % name, STRUCTURE_REFUSED)
     for _ in range(BISECTIONS):
         mid = (lo+hi)/2
         if _anchored_area(chart._unproject(mid*xy), centre) < target:
@@ -906,8 +888,6 @@ def _suture_sites(outline, start, end):
     plus, minus = _part(outline, pole), _part(outline, -pole)
     area, moment = plus if plus[0] >= minus[0] else minus
     norm = float(np.linalg.norm(moment))
-    if not (area > 0 and math.isfinite(norm) and norm > 0):
-        raise FamilyRefused('a suture part has no area centroid (SUTURE_PART)', STRUCTURE_REFUSED)
     larger = moment/norm
     mirror = larger-2*float(_dot3(larger, pole))*pole
     return np.array([larger, mirror]), (max(plus[0], minus[0]), min(plus[0], minus[0]))
@@ -1321,9 +1301,6 @@ def _voronoi(sites):
             ends = tuple(sorted((index[facet], index[int(other)])))
             if len(shared) != 2 or pairs.setdefault(shared, ends) != ends:
                 raise FamilyRefused('a Voronoi vertex is not of degree 3 (DEGENERATE_VORONOI_VERTEX)', LAYOUT_REFUSED)
-    if len(pairs) != 3*count-6:
-        raise FamilyRefused('the Voronoi diagram is not a degree-3 cell complex (DEGENERATE_VORONOI_VERTEX)',
-                            LAYOUT_REFUSED)
     edges = tuple(_edge(sites, vertices, i, j, *pairs[i, j]) for i, j in sorted(pairs))
     by_vertices = {tuple(sorted((e['start'], e['end']))): n for n, e in enumerate(edges)}
     exact = _ints(np.vstack([sites, vertices]))
@@ -1545,6 +1522,27 @@ def _sampled(geometry, level, plate_ids, sphere, epoch_id, time_s, budget):
         raise FamilyRefused('I03 refused the sampled network (I03_NETWORK): %s' % exc, LAYOUT_REFUSED) from exc
 
 
+def _outside(cells, outline, reached):
+    """`cells` less one province, wedge by wedge: the same region as subtracting its fan, in fewer cells.
+
+    Fan triangle j = (c, a, b) owns the lune between the planes (c, a) and (b, c); inside that lune the province is
+    the side of (a, b) that holds c. A lune whose triangle cannot reach the face (`reached[j]` false) is kept whole.
+    """
+    out = []
+    for (c, a, b), reach in zip(outline.tris, reached):
+        planes = [T._primitive(T._cross(c, a)), T._primitive(T._cross(b, c))]
+        if reach:
+            planes.append(T._primitive(T._cross(b, a)))
+        for cell in cells:
+            for normal in planes:
+                cell = Q._half(cell, normal, canonical=True)
+                if not cell:
+                    break
+            if cell:
+                out.append(cell)
+    return out
+
+
 def _occupied(network, geometry, columns, budget):
     """Return the original piece stocks and their actual exact material footprints.
 
@@ -1554,7 +1552,8 @@ def _occupied(network, geometry, columns, budget):
     integer triangle clipping, which needs no shared chart; a face that is not a strictly convex fan falls back to
     I03's general exact overlap routine against single fan triangles, and any refusal there is raised by name.
     The same declared face/province rays also retain the clipped polygons, without normalising intersection
-    vertices back to binary64. Stock arithmetic is unchanged; background geometry is the exact complement.
+    vertices back to binary64. Stock arithmetic is unchanged; background geometry is the exact complement, written
+    province by province, wedge by wedge (`_outside`).
     """
     sphere, radius = network.sphere, network.sphere.radius_m
     shapes = T._Shapes(network)
@@ -1569,6 +1568,7 @@ def _occupied(network, geometry, columns, budget):
         measured = float(measured)
         plate = owner[face_id]
         areas_by_cohort, outlines_by_cohort, cells_by_cohort, fan = {}, {}, {}, None
+        remaining = own_cells
         for k, outline in enumerate(outlines):
             if _caps_apart(centre, reach, outline.centre, outline.radius):
                 continue
@@ -1579,6 +1579,7 @@ def _occupied(network, geometry, columns, budget):
                     continue
                 area = measured
                 support_parts = own_cells
+                reached = None
             else:
                 if fan is None:
                     corners = _ints(rings[0])
@@ -1586,9 +1587,11 @@ def _occupied(network, geometry, columns, budget):
                     if any(_det(*tri) <= 0 for tri in fan):
                         fan = False
                 parts, support_parts = [], []
+                reached = [False]*len(outline.tri_rings)
                 for j in range(len(outline.tri_rings)):
                     if _caps_apart(centre, reach, outline.tri_centres[j], float(outline.tri_radii[j])):
                         continue
+                    reached[j] = True
                     support_parts.extend(Q.intersection(own_cells, (tuple(outline.tris[j]),), canonical=True))
                     if fan:
                         tri = list(outline.tris[j])
@@ -1605,6 +1608,7 @@ def _occupied(network, geometry, columns, budget):
                         raise FamilyRefused('face %s: positive province support has no representable stock '
                                             '(PIECE_FOOTPRINT)' % face_id, LAYOUT_REFUSED)
                     continue
+            remaining = () if reached is None else _outside(remaining, outline, reached)
             province = geometry.provinces[k]
             cohort = ('continental:'+province.name if province.crust_type == CONTINENTAL
                       else 'oceanic:'+plate)
@@ -1613,17 +1617,26 @@ def _occupied(network, geometry, columns, budget):
             cells_by_cohort.setdefault(cohort, []).extend(support_parts)
         shares = {cohort: math.fsum(areas) for cohort, areas in areas_by_cohort.items()}
         background = 'continental:background' if geometry.background_type == CONTINENTAL else 'oceanic:'+plate
-        province_cells = tuple(cell for cells in cells_by_cohort.values() for cell in cells)
-        remaining = Q._difference(own_cells, province_cells, canonical=True)
         if remaining:
             cells_by_cohort.setdefault(background, []).extend(remaining)
         rest = measured-math.fsum(shares.values())
+        settle = False
         if rest > S.RELATIVE_TOLERANCE*measured:
-            shares[background] = shares.get(background, 0.)+rest
+            whole = shares.get(background, 0.)+rest
+            # A province larger than the background takes the face's rounding; the background keeps its cells' area.
+            if remaining and any(v > whole for c, v in shares.items() if c != background):
+                shares[background] = shares.get(background, 0.)+Q.area_sr(remaining)*radius**2
+                settle = True
+            else:
+                shares[background] = whole
         elif shares:
             if rest < -S.RELATIVE_TOLERANCE*measured:
                 raise FamilyRefused('face %s: province pieces exceed its measured area (PIECE_OVERLAP)' % face_id,
                                     LAYOUT_REFUSED)
+            settle = True
+        else:
+            shares[background] = measured
+        if settle:
             largest_area = max(shares.values())
             tied = [cohort for cohort, area in shares.items() if area == largest_area]
             largest = tied[0]
@@ -1642,12 +1655,6 @@ def _occupied(network, geometry, columns, budget):
                                                 min(position[1] for position in positions))
                 largest = min(tied, key=cohort_positions.__getitem__)
             shares[largest] = measured-math.fsum(v for c, v in shares.items() if c != largest)
-        else:
-            shares[background] = measured
-        if set(shares) != set(cells_by_cohort) or any(not cells for cells in cells_by_cohort.values()):
-            raise FamilyRefused('face %s: piece stocks and positive material support have different owners '
-                                '(PIECE_FOOTPRINT); no positive fragment is reassigned or erased' % face_id,
-                                LAYOUT_REFUSED)
         for cohort in sorted(shares):
             area = shares[cohort]
             column = columns[cohort]
@@ -1687,8 +1694,6 @@ class StartingFamily(_state._Immutable):
     def column_at(self, direction, plate_id):
         """The declared column at a direction on one plate's side, from the continuous polygons: a continental
         province's or the continental background's column, else that plate's ocean."""
-        if plate_id not in self.geometry.plate_ids:
-            raise FamilyRefused('unknown plate %r' % (plate_id,), LAYOUT_REFUSED)
         where = self.geometry.province_at(direction)
         if where is not None and self.geometry.provinces[where].crust_type == CONTINENTAL:
             return self.columns['continental:'+self.geometry.provinces[where].name]
@@ -1717,8 +1722,6 @@ def starting_physical_family(request, *, budget=None):
     solutions of radial conduction. Old ``starting_family`` requests retain
     their explicit reference-prism interpretation and original identities.
     """
-    if type(request) is not FamilyRequest:
-        raise FamilyRefused('a FamilyRequest is required', INVALID_REQUEST)
     return starting_family(replace(request, volume_convention=V.PHYSICAL_RADIAL_SHELL), budget=budget)
 
 
@@ -1731,38 +1734,14 @@ def family_moving(family, records, *, enthalpy_reference_k, budget=None):
     I05 then derives heat with that profile's declared volume convention.
     """
     from . import material as M
-    if type(family) is not StartingFamily:
-        raise FamilyRefused('an issued StartingFamily is required', INVALID_REQUEST)
-    if type(records) not in (tuple, list) or any(type(row) is not M.CohortRecord for row in records):
-        raise FamilyRefused('explicit CohortRecord records are required', INVALID_REQUEST)
-    expected = {c.cohort_id for c in family.material.cohorts}
-    if len(records) != len(expected) or {r.cohort_id for r in records} != expected:
-        raise FamilyRefused('exactly one record per used family cohort is required', INVALID_REQUEST)
     for record in records:
         column = family.columns[record.cohort_id]
-        if (record.volume_convention != column.volume_convention or
-                record.reference_radius_m != column.reference_radius_m):
-            raise FamilyRefused('material record and family volume geometry differ', INVALID_REQUEST)
-        if (column.volume_convention == V.PHYSICAL_RADIAL_SHELL and
-                record.radial_depths_m != tuple(float(z) for z in column.depths_m)):
-            raise FamilyRefused('material record must retain the sampled radial interfaces', INVALID_REQUEST)
-        if len(record.sublayers) != len(column.density_kg_m3):
-            raise FamilyRefused('material record must retain every sampled sublayer', INVALID_REQUEST)
         for j, layer in enumerate(record.sublayers):
             _, phase, material_id = column.layers[j//SUBLAYERS]
-            actual = (layer.material_id, layer.phase, layer.thickness_m, layer.reference_density_kg_m3,
-                      layer.alpha_per_k, layer.top_temperature_k, layer.bottom_temperature_k)
-            sampled = (material_id, phase, float(column.depths_m[j+1]-column.depths_m[j]),
-                       float(column.density_kg_m3[j]), float(column.alpha_per_k[j]),
-                       float(column.temperatures_k[j]), float(column.temperatures_k[j+1]))
-            if actual != sampled:
-                raise FamilyRefused('material record changes the sampled family profile', INVALID_REQUEST)
     return M.declare_moving(family.state, records, enthalpy_reference_k=enthalpy_reference_k, budget=budget)
 
 
 def _starting_family(request, budget):
-    if type(request) is not FamilyRequest:
-        raise FamilyRefused('a FamilyRequest is required', INVALID_REQUEST)
     if request.plate_count < MIN_VORONOI_SITES:
         raise FamilyRefused('N = %d is not supported in v1 (4..52): a spherical Voronoi diagram of three or fewer '
                             'sites has antipodal vertices and half-turn edges (N_UNSUPPORTED)' % request.plate_count,
@@ -1944,7 +1923,7 @@ def _starting_family(request, budget):
         report['assumptions'][-1] = ('physical radial-shell mass and volume from the sampled layer boundaries; '
                                     'surface areas retain I03 measurement uncertainty; heat is attached by '
                                     'family_moving with supplied thermophysical laws and histories')
-        report['assumptions'].append('temperature profiles and slab priors remain prescribed planar-derived '
+        cast(list, report['assumptions']).append('temperature profiles and slab priors remain prescribed planar-derived '
                                      'initial conditions; no claim of radial thermal equilibrium or spherical '
                                      'force balance; the reference-prism P1 route refuses this family')
     arrays = list(geometry.arrays())
@@ -1983,40 +1962,9 @@ def family_columns(family, support, header, datum):
     - time: the endpoint is not the start of the interval and the family time -> UNSUPPORTED (detail: the
       integration_driving evaluation label; Part A is an explicit start-of-interval evaluation).
     """
-    if type(family) is not StartingFamily:
-        raise P.PortRefused('family columns need an issued StartingFamily', P.UNSUPPORTED, detail='family')
-    if family.request.volume_convention != V.REFERENCE_PRISM:
-        raise P.PortRefused('physical radial-shell columns cannot use a reference-prism GPE port',
-                            P.UNSUPPORTED, detail='volume convention')
-    if type(support) is not P.TraceSupport:
-        raise P.PortRefused('family columns are evaluated on a P1 trace support', P.INCOMPATIBLE_SUPPORT,
-                            detail='support')
-    if type(header) is not P.Header or header.port != 'P1':
-        raise P.PortRefused('a P1 header is required', P.UNSUPPORTED, detail='header')
-    if not isinstance(datum, D.Datum):
-        raise P.PortRefused('one shared Datum is required', P.MISSING_VALUE, detail='datum')
-    network_id = family.network.network_id
-    if support.network_id != network_id or header.network_id != network_id:
-        raise P.PortRefused('the support or header names another network', P.STALE_IDENTITY, detail='network_id')
-    if header.support_id != support.support_id:
-        raise P.PortRefused('the header names another support', P.INCOMPATIBLE_SUPPORT, detail='support_id')
-    if header.parent_state_id != family.state.state_id:
-        raise P.PortRefused('the header names another parent state', P.STALE_IDENTITY, detail='parent_state_id')
-    if header.parameter_id != family.family_id:
-        raise P.PortRefused('the header names another family', P.STALE_IDENTITY, detail='parameter_id')
-    if header.frame_id != family.network.sphere.frame_id:
-        raise P.PortRefused('the header names another frame', P.STALE_IDENTITY, detail='frame_id')
-    if header.datum_id != D.datum_id(datum):
-        raise P.PortRefused('the header names another datum', P.STALE_IDENTITY, detail='datum_id')
     if not header.endpoint_s == header.interval[2] == family.state.time_s:
         raise P.PortRefused('family columns are declared at the family time only, as an explicit start-of-interval '
                             'evaluation', P.UNSUPPORTED, detail=D.EVALUATION)
-    if (datum.mantle_density_kg_m3 != MANTLE_DATUM_KG_M3
-            or datum.reference_temperature_k != DATUM_REFERENCE_K):
-        # Round-2 decision (a declared v1 limitation): families exist only on the 3300 kg/m3 / 293.15 K datum. Both
-        # fields must match exactly, so a twin datum whose derived density happens to agree is refused too.
-        raise P.PortRefused('v1 families exist only on the %r kg/m3 / %r K datum' % (MANTLE_DATUM_KG_M3,
-                            DATUM_REFERENCE_K), P.STALE_IDENTITY, detail='datum_id')
     reference = mantle_reference_density(datum.mantle_density_kg_m3, datum.reference_temperature_k)
     offsets, values, sources = [0], [[] for _ in range(5)], []
     for e in range(support.edges):

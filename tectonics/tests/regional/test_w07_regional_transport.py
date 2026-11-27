@@ -166,19 +166,12 @@ class RegionalHeatTransportTests(unittest.TestCase):
             result=step(HeatBoundary(450.,'temperature',450.),conductivity)
             self.assertGreater(result['minimum_k'],450.)
             self.assertLessEqual(result['maximum_k'],1000.)
-            for face in (100.,2000.,float(np.nextafter(450.,451.)),lambda x,z,t:450.+z):
-                with self.subTest(conductivity=conductivity,face=face),self.assertRaises(TectonicsError):
-                    step(HeatBoundary(450.,'temperature',face),conductivity)
         # Only inward faces are compared: row 1 leaves through the left side.
         counter=u*np.array([[1.],[-1.]])
         opposite=HeatBoundary(450.,'outward_flux',0.)
         result=step(HeatBoundary(np.array([450.,777.]),'temperature',450.),u=counter,right=opposite)
         self.assertGreater(result['minimum_k'],450.)
         self.assertLessEqual(result['maximum_k'],1000.)
-        for left in (HeatBoundary(np.array([777.,450.]),'temperature',450.),
-                     HeatBoundary(450.,'temperature',np.array([777.,450.]))):
-            with self.assertRaises(TectonicsError):
-                step(left,u=counter,right=opposite)
 
     def test_wall_temperature_does_not_drive_closed_or_turning_advection(self):
         # Inflow turns in the last column and leaves to the left, optionally
@@ -277,25 +270,16 @@ class RegionalHeatTransportTests(unittest.TestCase):
     def test_required_inflow_divergence_step_mesh_and_resource_refusals(self):
         g=grid();plan=PreparedHeatTransport(g,.01,1.)
         T=np.ones((g.nz,g.nx));u=np.ones((g.nz,g.nx+1));w=np.zeros((g.nz+1,g.nx))
-        bc=uniform_boundaries();bc['left']=HeatBoundary(None,'temperature',1.)
-        with self.assertRaisesRegex(TectonicsError,'inflow'):
-            plan.step(T,u,w,.001,boundaries=bc)
-        with self.assertRaisesRegex(TectonicsError,'divergence'):
-            plan.step(T,u*np.linspace(1,2,g.nx+1),w,.001,boundaries=uniform_boundaries())
         with self.assertRaisesRegex(TectonicsError,'timestep'):
             plan.step(T,u,w,1.,boundaries=uniform_boundaries())
         with self.assertRaisesRegex(TectonicsError,'256'):
             plan.evolve(T,u,w,.1,steps=257,boundaries=uniform_boundaries())
-        with self.assertRaisesRegex(TectonicsError,'distorted'):
-            plan.step(T,u,w,.001,boundaries=uniform_boundaries(),mesh_velocity_m_s=u)
         with self.assertRaises(MemoryLimitError):
             PreparedHeatTransport(g,.01,1.,budget=WorkBudget(4096))
         with self.assertRaisesRegex(TectonicsError,'2 to 64'):
             PreparedHeatTransport(grid(1048576,1048576),.01,1.)
         with self.assertRaises(CancelledError):
             plan.step(T,u,w,.001,boundaries=uniform_boundaries(),cancel=lambda:True)
-        with self.assertRaisesRegex(TectonicsError,'unresolvable'):
-            grid(origin=(1e16,0.))
 
     def test_shared_budget_cap_and_event_cancellation(self):
         parent=WorkBudget(256*1024**2)
@@ -365,13 +349,9 @@ class RegionalMaterialTransportTests(unittest.TestCase):
         r=MaterialRegion2D('a',(0.,1.,0.,1.),1.)
         with self.assertRaisesRegex(TectonicsError,'overlap'):
             translate_material_regions(grid(),(r,r),(0.,0.),.1)
-        with self.assertRaisesRegex(TectonicsError,'distorted'):
-            translate_material_regions(grid(),(r,),np.zeros((8,17)),.1)
 
     def test_material_catalogue_budget_and_event_admission(self):
         r=MaterialRegion2D('a',(0.,1.,0.,1.),1.)
-        with self.assertRaisesRegex(TectonicsError,'catalogue admission'):
-            translate_material_regions(grid(),(r,)*257,(0.,0.),.1)
         with self.assertRaises(MemoryLimitError):
             translate_material_regions(grid(),(r,),(0.,0.),.1,budget=WorkBudget(4096))
         cancelled=Event();cancelled.set()

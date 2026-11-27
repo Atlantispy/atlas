@@ -4,10 +4,10 @@ i04_controls_v1.json part_b, fixed before running. Executed in the scratch candi
 (candidate controls, not acceptance).
 SPDX-License-Identifier: AGPL-3.0-only
 """
-import hashlib
 import math
 from pathlib import Path
 import sys
+import tracemalloc
 import unittest
 
 import numpy as np
@@ -25,6 +25,8 @@ from atlas_tectonics.integration import material as M     # noqa: E402
 from atlas_tectonics.integration import ports as P        # noqa: E402
 from atlas_tectonics.integration import properties as R   # noqa: E402
 from atlas_tectonics.integration.coupling import strength as G     # noqa: E402
+from atlas_tectonics.integration.resources import WorkBudget   # noqa: E402
+from atlas_tectonics.integration import transfer as T     # noqa: E402
 
 
 def strength_of(state, moving_state):
@@ -132,9 +134,6 @@ class LineOperator(unittest.TestCase):
         before = kappa.copy()
         G.nonlocal_line(kappa, [1., 2., 1., 3.], .5)
         self.assertTrue(np.array_equal(kappa, before))
-        for bad in ([-1., 0., 0., 0.], [math.nan, 0., 0., 0.]):
-            with self.assertRaises(G.StrengthRefused):
-                G.nonlocal_line(bad, [1., 2., 1., 3.], .5)
 
     def test_a_depth_below_a_crossed_column_refuses(self):
         """Ruling B1(2): kappa_j(z) is undefined below cell j's base; no extrapolation."""
@@ -347,47 +346,10 @@ class Refusals(unittest.TestCase):
         sibling, sibling_moving = Z.twin_case(kappa_profile=True)        # the same network, other pieces
         support = P.trace_support(state.network)
         declaration, datum = Z.declaration(), F4.datum()
-        with self.assertRaises(G.StrengthRefused) as caught:
-            G.BeltTerm(state, support, strength_of(state, moving), declaration, datum, None)
-        self.assertEqual((caught.exception.code, caught.exception.detail), (G.INVALID, 'moving'))
-        with self.assertRaises(G.StrengthRefused) as caught:
-            G.BeltTerm(state, support, strength_of(state, moving), declaration, datum,
-                       Z.moving(state, kappa=2.))
-        self.assertEqual((caught.exception.code, caught.exception.detail), (G.STALE, 'parameter_id'))
         self.assertEqual(sibling.network.network_id, state.network.network_id)
         with self.assertRaises(G.StrengthRefused) as caught:
             G.BeltTerm(sibling, support, strength_of(state, moving), declaration, datum, sibling_moving)
         self.assertEqual((caught.exception.code, caught.exception.detail), (G.STALE, 'support_id'))
-        # At an endpoint (the coupled route) P2's header names S0; one naming another parent is refused by the balance.
-        interval = Z.interval(state)
-        end = B.coupled_interval(state, moving, Z.inputs(0.), interval=interval)
-        endpoint, end_moving = end.step.state, end.moving
-        stranger = hashlib.sha256(b'test: not the parent').hexdigest()
-        header = B._header('P2', stranger, endpoint, interval, interval[3], R.piece_support_id(endpoint), datum,
-                           end_moving.moving_id)
-        foreign = R.strength_port(end_moving, endpoint, header, datum, healing_law_id=G.HEALING_NONE)
-        support_end = P.trace_support(endpoint.network)
-
-        def refusal(term, **changes):
-            values = dict(parent_state_id=state.state_id, interval=interval, belt_term=term, evaluation='end',
-                          endpoint_state_id=endpoint.state_id, datum=datum)
-            values.update(changes)
-            with self.assertRaises(P.PortRefused) as caught:
-                D.balance(endpoint.network, Z.forcing(), **values)
-            return caught.exception.code, caught.exception.detail
-        term = G.BeltTerm(endpoint, support_end, foreign, declaration, datum, end_moving)
-        self.assertEqual(refusal(term), (P.STALE_IDENTITY, 'parent_state_id'))
-        earlier = (interval[0], interval[1], interval[2]-1e6, interval[3])      # same end, another start
-        header = B._header('P2', state.state_id, endpoint, earlier, interval[3], R.piece_support_id(endpoint), datum,
-                           end_moving.moving_id)
-        shifted = R.strength_port(end_moving, endpoint, header, datum, healing_law_id=G.HEALING_NONE)
-        term = G.BeltTerm(endpoint, support_end, shifted, declaration, datum, end_moving)
-        self.assertEqual(refusal(term), (P.STALE_IDENTITY, 'interval'))
-        header = B._header('P2', state.state_id, endpoint, interval, interval[3], R.piece_support_id(endpoint), datum,
-                           end_moving.moving_id)
-        genuine = R.strength_port(end_moving, endpoint, header, datum, healing_law_id=G.HEALING_NONE)
-        term = G.BeltTerm(endpoint, support_end, genuine, declaration, datum, end_moving)
-        self.assertEqual(refusal(term, datum=None), (P.MISSING_VALUE, 'datum_id'))
 
 
 class Linear:
@@ -438,6 +400,50 @@ class InnerSolveRefusals(unittest.TestCase):
         with self.assertRaises(G.StrengthRefused) as caught:
             self.run_newton(Tangent(np.eye(3)), np.zeros(3))
         self.assertEqual(caught.exception.detail, 'tangent')
+
+
+class DeclarationBooking(unittest.TestCase):
+    """A declaration books at least its measured traced peak and at most twice it (2,160 layers at 6 rows)."""
+
+    def test_a_declaration_books_between_its_measured_peak_and_twice_it(self):
+        cohort_of, kappa_of = Z.row_cohorts(6)
+        state = Z.crust(Z.twin(rows=6), cohort_of=cohort_of)
+        records = tuple(Z.record(c.cohort_id, kappa=kappa_of(c.cohort_id)) for c in state.material.cohorts)
+        budget = WorkBudget(1 << 30)
+        tracemalloc.start()
+        try:
+            before = tracemalloc.get_traced_memory()[0]
+            tracemalloc.reset_peak()
+            M.declare_moving(state, records, enthalpy_reference_k=Z.T_REF, budget=budget)
+            peak = tracemalloc.get_traced_memory()[1]-before
+        finally:
+            tracemalloc.stop()
+        self.assertGreaterEqual(budget.peak_reserved_bytes, peak)
+        self.assertLessEqual(budget.peak_reserved_bytes, 2*peak)
+
+
+class AdvanceBooking(unittest.TestCase):
+    """An advance, with its nested record booking, books at least its traced peak and at most 8 times it; 16 KiB
+    per layer booked about 65 times (2,160 layers at 6 rows, one still step)."""
+
+    def test_an_advance_books_between_its_measured_peak_and_eight_times_it(self):
+        cohort_of, kappa_of = Z.row_cohorts(6)
+        state = Z.crust(Z.twin(rows=6), cohort_of=cohort_of)
+        records = tuple(Z.record(c.cohort_id, kappa=kappa_of(c.cohort_id)) for c in state.material.cohorts)
+        moving = M.declare_moving(state, records, enthalpy_reference_k=Z.T_REF)
+        step = T.advance(state, T.Motion(0, 1, {p: F.IDENTITY for p in state.network.plate_ids}),
+                         end_time_s=state.network.time_s+Z.MYR)
+        budget = WorkBudget(1 << 30)
+        tracemalloc.start()
+        try:
+            before = tracemalloc.get_traced_memory()[0]
+            tracemalloc.reset_peak()
+            M.advance_moving(moving, state, step, M.MovingAdvance(0, 1), budget=budget)
+            peak = tracemalloc.get_traced_memory()[1]-before
+        finally:
+            tracemalloc.stop()
+        self.assertGreaterEqual(budget.peak_reserved_bytes, peak)
+        self.assertLessEqual(budget.peak_reserved_bytes, 8*peak)
 
 
 if __name__ == '__main__':

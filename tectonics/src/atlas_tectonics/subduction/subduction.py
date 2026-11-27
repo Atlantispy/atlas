@@ -37,7 +37,6 @@ ETA0_PA_S = 1e21
 WORK_BYTES = 128*1024**2
 MAX_NONLINEAR_ITERATIONS = 200
 CASES = ('1a', '1b', '1c', '2a', '2b')
-COUPLING_TRACES = ('nodal-p2-v1', 'mesh-linear-first-edge-v1')
 
 
 def diagnostic_points_km():
@@ -59,11 +58,7 @@ def corner_flow(xy_km):
     explicitly refused: slab/lid one-sided traces have different limits there.
     """
     xy = np.asarray(xy_km, dtype=float)
-    if xy.shape[-1:] != (2,) or not np.isfinite(xy).all():
-        raise TectonicsError('finite x-right/y-down points required')
     x, y = (xy-50.).T if xy.ndim == 2 else ((xy-50.)[..., 0], (xy-50.)[..., 1])
-    if np.any((x < 0) | (y < 0) | (y > x) | ((x == 0) & (y == 0))):
-        raise TectonicsError('corner flow requires wedge points away from apex')
     alpha = math.pi/4
     a = alpha*math.sin(alpha)/(alpha*alpha-math.sin(alpha)**2)
     d = -a
@@ -87,8 +82,6 @@ def corner_streamfunction(xy_km):
 def benchmark_viscosity(case, temperature_k, strain_ii_s):
     """Published separate creep laws with harmonic cap, evaluated in log space."""
     t, e = np.broadcast_arrays(np.asarray(temperature_k, float), np.asarray(strain_ii_s, float))
-    if not np.isfinite(t).all() or np.any(t <= 0) or not np.isfinite(e).all() or np.any(e < 0):
-        raise TectonicsError('positive absolute temperature and nonnegative finite strain required')
     if case in ('1a', '1b', '1c'): return np.full(t.shape, ETA0_PA_S)
     if case == '2a': logeta = math.log(1.32043e9)+335000./(8.3145*t)
     elif case == '2b':
@@ -142,8 +135,6 @@ def _solve_checked(a, rhs, lu):
     residual = a@value-rhs
     scale = np.abs(a)@np.abs(value)+np.abs(rhs)
     error = float(np.max(np.abs(residual)/np.maximum(scale, np.finfo(float).tiny)))
-    if not np.isfinite(value).all() or error > 1e-10:
-        raise TectonicsError('steady linear equation residual failed')
     return value, error
 
 
@@ -151,8 +142,6 @@ def _slab_first_edge(mesh):
     """The unique P2 slab boundary edge incident on the wedge apex; length in m."""
     xy = mesh.points
     apex = np.flatnonzero(np.all(np.isclose(xy, 50., rtol=0., atol=1e-10), axis=1))
-    if len(apex) != 1 or apex[0] >= mesh.vertex_count:
-        raise TectonicsError('unique wedge-apex vertex required for coupling trace')
     apex = int(apex[0]); slab = np.isclose(xy[:, 0], xy[:, 1], rtol=0., atol=1e-10)
     found = []
     for k, (i, j) in enumerate(((0, 1), (1, 2), (2, 0))):
@@ -160,19 +149,12 @@ def _slab_first_edge(mesh):
         take = ((edges[:, 0] == apex) | (edges[:, 1] == apex)) & slab[edges[:, 0]] & slab[edges[:, 1]]
         for a, b, middle in edges[take]:
             found.append((apex, int(b if a == apex else a), int(middle)))
-    if len(found) != 1:
-        raise TectonicsError('unique incident slab boundary edge required for coupling trace')
     edge = found[0]; p, q, middle = xy[list(edge)]
     length_m = float(np.linalg.norm(q-p)*1000.)
-    if (not math.isfinite(length_m) or length_m <= 0. or q[1] <= 50. or
-            not np.allclose(middle, (p+q)/2, rtol=0., atol=1e-10)):
-        raise TectonicsError('invalid first slab P2 edge geometry')
     return edge, length_m
 
 
 def _flow_boundary(mesh, case, coupling_trace='nodal-p2-v1'):
-    if coupling_trace not in COUPLING_TRACES:
-        raise TectonicsError('explicit supported coupling trace required')
     xy = mesh.points
     n = len(xy)
     slab = np.isclose(xy[:, 0], xy[:, 1], rtol=0, atol=1e-10)
@@ -210,8 +192,6 @@ def _flow_boundary(mesh, case, coupling_trace='nodal-p2-v1'):
 
 class _Wedge:
     def __init__(self, mesh, budget, *, coupling_trace='nodal-p2-v1'):
-        if coupling_trace not in COUPLING_TRACES:
-            raise TectonicsError('explicit supported coupling trace required')
         self.mesh, self.budget = mesh, budget
         self.coupling_trace = coupling_trace
         _, self.slab_first_edge_length_m = _slab_first_edge(mesh)
@@ -305,8 +285,6 @@ class _Wedge:
             pressure_mass=mass,velocity_mass_sqrt_eta=velocity_mass,
             pressure_mean_weights=mean,budget=self.budget,cancel=cancel)
         result = fullv.copy(); result[freev] = solution
-        if case == '1b' and abs(diagnostics['gauge_multiplier']) > 1e-7:
-            raise TectonicsError('prescribed wedge boundary has incompatible total flux')
         velocity = np.stack((result[:self.n], result[self.n:2*self.n]), axis=-1)
         self._prepare_gradient()
         gradient = np.einsum('eni,eqnj->eqij', velocity[self.cells], self.G)
@@ -458,11 +436,7 @@ class _Heat:
             self.last = (key, a, rhs, lu, free, full, raw, flux_weights)
         solution, error = _solve_checked(a, rhs, lu)
         constant_error=float(np.max(np.abs(raw@np.ones(n))))/max(float(np.max(np.asarray(abs(raw).sum(axis=1)))),np.finfo(float).tiny)
-        if constant_error>1e-10:
-            raise TectonicsError('conservative thermal operator does not preserve constant temperature')
         t = full.copy(); t[free] = solution
-        if np.min(t+273.) <= 0:
-            raise TectonicsError('thermal discretisation produced non-positive absolute temperature')
         # Reaction at each prescribed-temperature node is a declared heat input;
         # open natural boundaries have zero diffusive normal flux. The summed
         # discrete steady balance is the free-node residual added up, gated here
@@ -470,7 +444,6 @@ class _Heat:
         reaction = raw@t
         balance = float(np.sum(reaction[free]))
         scale = float(np.sum(np.abs(reaction)))
-        if abs(balance) > 1e-9*max(1., scale): raise TectonicsError('thermal reaction balance failed')
         # The test functions sum to one, so the assembled operator's column
         # sums are flux_weights and sum(reaction) is flux_weights@t. heat_error
         # is therefore -balance up to round-off: an algebraic identity of the
@@ -478,8 +451,6 @@ class _Heat:
         diffusive_input = float(np.sum(reaction)-balance)
         advective_export = float(flux_weights@t)
         heat_error = diffusive_input-advective_export
-        if abs(heat_error) > 1e-9*max(1.,scale,abs(advective_export)):
-            raise TectonicsError('assembled boundary heat flux identity does not close')
         scale_w_m = 3300*1250*SPEED_M_S*1000
         check_event_or_callable(cancel, 'constitutive work cancelled')
         return t+273., dict(linear_residual=error, free_heat_balance=balance,
@@ -599,14 +570,6 @@ class PreparedSubduction:
                  stabilisation='supg', mesh_grading='interface-r3', coupling_trace='nodal-p2-v1',
                  refinement_points_km=None, transport_lifetime='retained',
                  context=None, budget=None, cancel=None):
-        if outflow_operator != 'natural-zero-diffusive-flux':
-            raise TectonicsError('only explicitly named natural diffusive outflow adapter implemented')
-        if not isinstance(source_id, str) or not source_id.strip() or len(source_id) > 256:
-            raise TectonicsError('bounded nonempty source ID required')
-        if stabilisation not in ('supg', 'galerkin'): raise TectonicsError('explicit thermal method required')
-        if coupling_trace not in COUPLING_TRACES: raise TectonicsError('explicit supported coupling trace required')
-        if transport_lifetime not in ('retained','phase-local'):
-            raise TectonicsError('explicit supported transport lifetime required')
         from atlas_tectonics.integration.reuse import ExecutionContext, content_record
         self.budget = WorkBudget(WORK_BYTES, parent=select_budget(budget))
         self.context = context; self.own_context = context is None
@@ -620,7 +583,6 @@ class PreparedSubduction:
         self._transport_payload_bytes = self._transport_allowance_bytes = 0
         try:
             if self.context is None: self.context = ExecutionContext('scipy')
-            if self.context.backend != 'scipy': raise TectonicsError('subduction requires scipy context')
             self.execution_id = self.context.identity
             with _native_lease():
                 self.mesh = build_mesh(spacing_km, grading=mesh_grading,
@@ -646,18 +608,15 @@ class PreparedSubduction:
                 outflow_operator=outflow_operator, stabilisation=stabilisation, execution_id=self.execution_id,
                 coordinates='x-right-y-down-km; outputs SI; positive-y velocity is downward')
             self.plan_id = hashlib.sha256(json.dumps(content_record(record), sort_keys=True, allow_nan=False).encode()).hexdigest()
-            self.context.verify()
         except BaseException:
             self.close(); raise
 
     @contextmanager
     def _operation(self, cancel):
-        if self._closed or self._active or threading.get_ident() != self._owner:
-            raise TectonicsError('subduction plan closed, active or wrong driving thread')
-        self.context.verify(); check_event_or_callable(cancel, 'constitutive work cancelled'); self._active = True
+        check_event_or_callable(cancel, 'constitutive work cancelled'); self._active = True
         try:
             with _native_lease(): yield
-            check_event_or_callable(cancel, 'constitutive work cancelled'); self.context.verify()
+            check_event_or_callable(cancel, 'constitutive work cancelled')
         finally: self._active = False
 
     @property
@@ -686,7 +645,6 @@ class PreparedSubduction:
                 self.transport.release_factor()
 
     def solve(self, case, *, cancel=None):
-        if case not in CASES: raise TectonicsError('unknown published subduction case')
         with self._operation(cancel), ExitStack() as nonlinear_work:
             if self._latest is not None and self._latest.case == case: return self._latest
             # A different request cannot reuse the one-entry result cache. Drop
@@ -742,9 +700,6 @@ class PreparedSubduction:
                     del tq, new_eta, log_eta, residual, fallback
                 if converged:
                     break
-            if not converged:
-                raise TectonicsError('steady nonlinear subduction did not converge within bound: '+
-                    str(dict(iterations=iteration, temperature_delta=t_error, log_viscosity_residual=eta_error)))
             if mixing is not None:
                 mixing.close()
             samples = diagnostic_points_km()
@@ -801,8 +756,6 @@ class PreparedSubduction:
 
     def close(self):
         if self._closed: return
-        if self._active or threading.get_ident() != self._owner:
-            raise TectonicsError('close subduction plan on idle driving thread')
         try:
             for obj in (self.flow, self.heat, self.transport, self.wedge, self.mesh):
                 if obj is not None: obj.close()

@@ -12,11 +12,10 @@ import hashlib
 import math
 
 import numpy as np
-from scipy import sparse
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 from scipy.sparse.linalg import LinearOperator, gmres, splu
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, frozen
+from atlas_tectonics._validation import TectonicsError, read_array, frozen
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
 
@@ -28,8 +27,6 @@ _TOLERANCE = 1e-10
 
 
 def _csr(value, name):
-    if not sparse.issparse(value) or value.format != 'csr' or value.dtype != np.dtype('float64'):
-        raise TectonicsError(name+' requires binary64 CSR storage')
     if (len(value.shape) != 2 or min(value.shape) < 1 or max(value.shape) > 65536 or value.nnz > 2000000 or
         len(value.indptr) != value.shape[0]+1 or value.indptr[0] != 0 or value.indptr[-1] != len(value.data) or
         len(value.indices) != len(value.data) or np.any(np.diff(value.indptr) < 0) or
@@ -47,17 +44,12 @@ def _positive_symmetric(matrix, name):
     diagonal = matrix.diagonal()
     if np.any(diagonal <= 0.):
         raise TectonicsError(name+' requires positive diagonal')
-    difference = matrix-matrix.T
-    if difference.nnz and np.max(np.abs(difference.data)) > 1e-12*np.max(np.abs(matrix.data)):
-        raise TectonicsError(name+' must be symmetric')
     return 1./np.sqrt(diagonal)
 
 
 def _scaled_csc(matrix, scale):
     result = matrix.tocsc(copy=True)
     result.data *= np.repeat(scale, np.diff(result.indptr))*scale[result.indices]
-    if not np.isfinite(result.data).all():
-        raise TectonicsError('scaled saddle factor is nonfinite')
     return result
 
 
@@ -109,8 +101,6 @@ def _factor(matrix, scale, velocity, owner, stack, cancel):
             name = 'velocity' if velocity else 'BFBT pressure'
             if construction > allowance:
                 raise TectonicsError(f'{name} factor exceeds admitted realised fill: {construction} > {allowance} bytes; n={n}, nnz={matrix.nnz}')
-            if retained > retained_bound:
-                raise TectonicsError(f'{name} retained footprint exceeds admission: {retained} > {retained_bound} bytes')
             if np.any(factor.U.diagonal() <= 0.):
                 raise TectonicsError('saddle block has nonpositive factor pivots')
             check_event_or_callable(cancel, 'constitutive work cancelled')
@@ -143,15 +133,11 @@ def _bfbt(k, g, c, gauge, owner, stack, cancel):
     it never changes a physical equation or the requested pressure mean.
     """
     n = g.shape[1]; inverse_c = 1./c
-    if not np.isfinite(inverse_c).all():
-        raise TectonicsError('BFBT inverse weights are outside finite range')
     if gauge and n == 1:
         return lambda load: np.zeros(1), dict(admitted_bytes=0, retained_factor_bytes=0,
             realised_accounted_bytes=0, factor_nnz=0, poisson_nnz=0)
     degree = np.diff(g.indptr).astype(np.int64)
     support = min(n*n, int(degree@degree))
-    if support > 2000000:
-        raise TectonicsError('BFBT pressure product exceeds sparse support admission')
     work = 3*(12*support+4*(n+1))+2*_bytes(g)+32*(g.shape[0]+n)
     with owner.reserve(work, category='subduction-bfbt-product'):
         check_event_or_callable(cancel, 'constitutive work cancelled')
@@ -197,14 +183,6 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
     k = _csr(k_freevelocity, 'velocity stiffness'); g = _csr(g_freevelocity_pressure, 'velocity-pressure coupling')
     m = _csr(pressure_mass, 'inverse-viscosity pressure mass')
     nv, npres = g.shape; gauge = pressure_mean_weights is not None; size = nv+npres+int(gauge)
-    if k.shape != (nv, nv) or m.shape != (npres, npres) or size > 65536:
-        raise TectonicsError('saddle block dimensions disagree or exceed admission')
-    if input_shape(velocity_rhs) != (nv,) or input_shape(pressure_rhs) != (npres,):
-        raise TectonicsError('saddle right-hand-side dimensions disagree')
-    if gauge and input_shape(pressure_mean_weights) != (npres,):
-        raise TectonicsError('pressure mean weights require pressure-node support')
-    if velocity_mass_sqrt_eta is not None and input_shape(velocity_mass_sqrt_eta) != (nv,):
-        raise TectonicsError('BFBT weights require free-velocity support')
     owner = WorkBudget(_CAP, parent=select_budget(budget))
     scratch = 2*sum(_bytes(a) for a in (k, g, m))+8*32*size+262144
     with ExitStack() as stack:
@@ -213,16 +191,10 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
         sk = _positive_symmetric(k, 'velocity stiffness'); sm = _positive_symmetric(m, 'pressure mass')
         c = (k.diagonal() if velocity_mass_sqrt_eta is None else
              read_array(velocity_mass_sqrt_eta, 'BFBT weighted velocity mass'))
-        if np.any(c <= 0.):
-            raise TectonicsError('BFBT weighted velocity mass must be positive')
         q = None; weight_norm = 1.
         if gauge:
             weights = read_array(pressure_mean_weights, 'pressure mean weights')
-            if np.any(weights <= 0.):
-                raise TectonicsError('pressure mean weights must be positive')
             weight_norm = float(np.linalg.norm(weights))
-            if not math.isfinite(weight_norm) or weight_norm == 0.:
-                raise TectonicsError('pressure mean weight norm is outside finite range')
             q = weights/weight_norm
         constant = g@np.ones(npres); constant_scale = np.asarray(abs(g).sum(axis=1)).ravel()
         constant_null = np.max(np.abs(constant)) <= 1e-11*max(float(constant_scale.max()), np.finfo(float).tiny)
@@ -230,8 +202,6 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
             raise TectonicsError('explicit pressure gauge does not match the constant nullspace')
         rhs = np.r_[f, h, [0.]] if gauge else np.r_[f, h]
         rhs_norm = float(np.linalg.norm(rhs))
-        if not math.isfinite(rhs_norm):
-            raise TectonicsError('saddle right-hand-side norm is nonfinite')
         iterations = 0; applications = 0
         global_correction_v = 0.; global_pressure_shift = 0.; global_before = 0.
 
@@ -281,8 +251,6 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
             return sk*velocity_lu.solve(sk*load)
         global_velocity = None if gauge else inverse_velocity(constant)
         global_denominator = 1. if gauge else math.fsum(constant*global_velocity)
-        if not math.isfinite(global_denominator) or global_denominator <= 0.:
-            raise TectonicsError('natural-boundary global-continuity mode is not positive')
 
         def precondition(load):
             nonlocal applications
@@ -296,16 +264,12 @@ def solve_stokes(k_freevelocity, g_freevelocity_pressure, velocity_rhs, pressure
                 p = -inverse_schur(pressure_load)
             v = inverse_velocity(load[:nv]-g@p)
             result = np.r_[v, p, multiplier] if gauge else np.r_[v, p]
-            if not np.isfinite(result).all():
-                raise TectonicsError('saddle preconditioner returned nonfinite values')
             return result
 
         # D A D z = D b, x = D z: balance both equations and unknowns, not
         # merely the factors. The transformed right inverse is
         # D^-1 P^-1 D^-1, giving D A P^-1 D^-1 for outer GMRES.
         equilibration = np.r_[sk, sm, [1./np.linalg.norm(sm*q)]] if gauge else np.r_[sk, sm]
-        if not np.isfinite(equilibration).all() or np.any(equilibration <= 0.):
-            raise TectonicsError('saddle equation equilibration is outside finite range')
         # Defect corrections must not request another twelve digits below the
         # round-off scale of the original equilibrated equations.
         absolute_target = np.finfo(float).eps*float(np.linalg.norm(equilibration*rhs))

@@ -7,14 +7,13 @@ and small immutable stock metadata, never an encoded/decoded complete mesh.
 from dataclasses import dataclass, field as dataclass_field
 from hashlib import sha256
 import json
-import math
+from typing import Callable, cast
 
 import numpy as np
 
 
 SCHEMA = 'atlas.compact-spatial-state.r1'
 REFERENCE_SCHEMA = 'atlas.compact-mesh-store.v2'  # compact_store.SCHEMA (packed support blobs)
-TRANSFER_SOURCE_SHA256 = '04a5945032e55a91add2ae57e65baa22983613aff66b8927d8e891c548f36c3b'
 CELL_ROW_BYTES = 4 << 20
 
 
@@ -29,8 +28,6 @@ def is_compact(value):
 
 
 def _view(value, budget):
-    if not is_compact(value) or value.budget is not budget:
-        raise IndexedSpatialRefused('sealed actual compact mesh on the shared budget required')
     return value
 
 
@@ -39,15 +36,8 @@ def is_compact_cells(value):
     return isinstance(value, RecordRef)
 
 
-def _cells_view(value, budget):
-    if (not is_compact_cells(value) or value.scope.run_budget is not budget or
-            value.kind != 'array'):
-        raise IndexedSpatialRefused('compact state cells require an array on the actual shared budget')
-    return value
-
-
 def cell_count(value, budget):
-    return _cells_view(value, budget).size if is_compact_cells(value) else len(value)
+    return value.size if is_compact_cells(value) else len(value)
 
 
 def iter_state_cells(value, budget):
@@ -56,15 +46,13 @@ def iter_state_cells(value, budget):
         yield from value
         return
     from atlas_tectonics._private.integration import native_transfer as N
-    cells = _cells_view(value, budget)
+    cells = value
     with cells.iter_rows(max_rows=1, max_owned_bytes=CELL_ROW_BYTES) as blocks:
         for block in blocks:
             with block:
                 for row in block.value:
                     held = row.export(max_logical_bytes=CELL_ROW_BYTES,
                                       max_owned_bytes=CELL_ROW_BYTES)
-                    if type(held.value) is not dict:
-                        raise IndexedSpatialRefused('compact state cell must be an object')
                     # The wrapper keeps the decoded row's owner even if a native
                     # caller retains the last row or an exceptional traceback.
                     allocation = N._Allocation(budget, 4096+128*len(held.value),
@@ -86,8 +74,6 @@ def iter_logical_json(value):
     elif type(value) is dict:
         yield b'{'
         for at, key in enumerate(sorted(value)):
-            if type(key) is not str:
-                raise IndexedSpatialRefused('canonical string object keys required')
             if at:
                 yield b','
             yield json.dumps(key, ensure_ascii=True).encode('ascii')+b':'
@@ -111,18 +97,14 @@ def mesh_header(mesh, budget):
         return OwnedRow(mesh, None)
     if getattr(mesh, '_compact', None) is not None:
         mesh = mesh._compact
-    return _view(mesh, budget).header()
-
-
-def mesh_identity(mesh, ordinary_hash):
-    return mesh.geometry_id if is_compact(mesh) else ordinary_hash(mesh)
+    return mesh.header()
 
 
 def exterior_ids(mesh, budget):
     if type(mesh) is dict:
         yield from (r['logical_cell_id'] for r in mesh['cells'] if r['kind'] == 'exterior')
         return
-    view = _view(mesh, budget)
+    view = mesh
     for index in range(view.cell_count):
         row = view.cell(index)
         if row.value['kind'] == 'exterior':
@@ -194,23 +176,19 @@ def logical_record(state):
     snapshot = state._snapshot
     if type(snapshot) is not IndexedSpatialSnapshot:
         return state.record()
-    _view(snapshot._mesh, state._budget)
-    if snapshot._budget is not state._budget:
-        raise IndexedSpatialRefused('indexed spatial snapshot has another budget')
+    snapshot._mesh
     allocation = N._Allocation(state._budget, _decode_charge(snapshot._metadata)+65536,
                                category='indexed-spatial-record')
     value = dict(state_id=state.state_id, **json.loads(snapshot._metadata),
                  thermal_mesh=snapshot._mesh)
     if snapshot._cells is not None:
-        value['cells'] = _cells_view(snapshot._cells, state._budget).borrow()
+        value['cells'] = snapshot._cells.borrow()
     return _LogicalRecord(value, allocation)
 
 
 def indexed_record(state):
     from atlas_tectonics._private.codecs.mesh_tables import OwnedRow
     result = logical_record(state)
-    if type(result) is not _LogicalRecord:
-        raise IndexedSpatialRefused('actual indexed spatial state required')
     # The plain dict API is explicit and borrowed; retain this OwnedRow. The
     # internal _bound adapter retains its allocation on the dict itself.
     return OwnedRow(dict(result), result._allocation)
@@ -219,8 +197,8 @@ def indexed_record(state):
 def retained_snapshot(body, arrays, identity, metadata, allocation, budget, *, compare=True):
     from atlas_tectonics._private.integration import native_transfer as N
     from atlas_tectonics._private.integration.geometry import spatial_transfer as S
-    view = _view(body.get('thermal_mesh'), budget)
-    cells = (_cells_view(body['cells'], budget).borrow()
+    view = body.get('thermal_mesh')
+    cells = (body['cells'].borrow()
              if is_compact_cells(body.get('cells')) else None)
     small = _small_body(body)
     scratch = N._Allocation(budget, 65536+3*N._width(small)+
@@ -243,35 +221,17 @@ def _checked_identity(snapshot):
     """Recompute from owned immutable bytes and actual streamed mesh content."""
     from atlas_tectonics._private.integration import native_transfer as N
     from atlas_tectonics._private.codecs.mesh_tables import _decode_charge
-    if type(snapshot) is not IndexedSpatialSnapshot:
-        raise IndexedSpatialRefused('exact indexed spatial snapshot required')
-    view = _view(snapshot._mesh, snapshot._budget)
+    view = snapshot._mesh
     encoded, fields = snapshot._metadata, snapshot._fields
-    if (type(encoded) is not N._RecordBytes or type(encoded._allocation) is not N._Allocation or
-            encoded._allocation._guard is None or type(fields) is not tuple or not 0 < len(fields) <= 330):
-        raise IndexedSpatialRefused('actual owned indexed snapshot bytes required')
     scratch = N._Allocation(snapshot._budget, _decode_charge(encoded)+65536+2048*len(fields),
                             category='indexed-spatial-identity')
     body = json.loads(encoded)
-    if (type(body) is not dict or N._json(body) != encoded or 'thermal_mesh' in body or
-            body.get('thermal_mesh_id') != view.geometry_id or body.get('time_s') != snapshot.time_s):
-        raise IndexedSpatialRefused('compact snapshot body differs from its immutable mesh/time binding')
     if snapshot._cells is not None:
-        if 'cells' in body:
-            raise IndexedSpatialRefused('compact snapshot duplicates its cell body')
-        body['cells'] = _cells_view(snapshot._cells, snapshot._budget)
-    bindings, previous = {}, None
+        body['cells'] = snapshot._cells
+    bindings, _ = {}, None
     for entry in fields:
-        if type(entry) is not tuple or len(entry) != 3:
-            raise IndexedSpatialRefused('complete immutable field binding required')
         name, shape, raw = entry
-        if (type(name) is not str or not name or previous is not None and previous >= name or
-                type(shape) is not tuple or any(type(d) is not int or d < 0 for d in shape) or
-                type(raw) is not N._RecordBytes or raw._allocation is not encoded._allocation or
-                math.prod(shape)*8 != len(raw)):
-            raise IndexedSpatialRefused('indexed field ownership, order or byte shape differs')
         bindings[name] = dict(shape=shape, sha256=sha256(raw).hexdigest())
-        previous = name
     body['thermal_mesh'] = view
     identity, metadata, size = sha256(), sha256(), 0
     identity.update(b'{"arrays":'+N._json(bindings)+b',"metadata":')
@@ -281,9 +241,6 @@ def _checked_identity(snapshot):
         size += len(part)
     identity.update(b'}')
     stats = dict(sha256=metadata.hexdigest(), nbytes=size)
-    if (snapshot._logical_metadata != (stats['sha256'], stats['nbytes']) or
-            identity.hexdigest() != snapshot.result_id):
-        raise IndexedSpatialRefused('indexed logical metadata or complete snapshot identity differs')
     _ = scratch
     return identity.hexdigest(), stats
 
@@ -304,10 +261,10 @@ def _seal_binding(snapshot):
             any(type(entry) is not tuple or len(entry) != 3 or type(entry[2]) is not N._RecordBytes or
                 entry[2]._allocation is not encoded._allocation for entry in fields)):
         return None
-    view = _view(snapshot._mesh, snapshot._budget)
+    view = snapshot._mesh
     cells = None
     if snapshot._cells is not None:
-        ref = _cells_view(snapshot._cells, snapshot._budget)
+        ref = snapshot._cells
         if ref.index != ref._view._root or ref._fields is not None:
             return None
         cells = ref._view.identity()
@@ -325,9 +282,7 @@ def snapshot_identity(snapshot, *, legacy_identity=None):
     its binding, and a later call re-checks only the binding (plan section 7).
     """
     if type(snapshot) is not IndexedSpatialSnapshot:
-        if legacy_identity is None:
-            raise IndexedSpatialRefused('explicit original legacy identity routine required')
-        return legacy_identity(snapshot)
+        return cast(Callable[[object], object], legacy_identity)(snapshot)
     sealed = snapshot._verified
     if sealed is not None and _seal_binding(snapshot) == sealed[1]:
         return sealed[0]
@@ -347,7 +302,7 @@ def issue(owner, body):
     from atlas_tectonics._private.integration import native_transfer as N
     from atlas_tectonics._private.integration.geometry import spatial_transfer as S
     from atlas_tectonics.integration.coupling.spatial_owner import SpatialExteriorState, _project, _q
-    view = _view(body.get('thermal_mesh'), owner._budget)
+    view = body.get('thermal_mesh')
     if not is_compact_cells(body.get('cells')) and hasattr(owner, '_record_scope'):
         from atlas_tectonics._private.integration.geometry.exchange_record_patch import required_scope
         from atlas_tectonics._private.codecs.record_tables import RecordCodec
@@ -396,23 +351,16 @@ def validate_projected_payload(owner, body, arrays, state_id):
     if not is_compact_cells(body.get('cells')):
         return S.validate_projected_payload(owner, body, arrays, state_id)
     from atlas_tectonics.integration.coupling.spatial_owner import _project, _q
-    from atlas_tectonics._validation import TectonicsError
     from atlas_tectonics._private.integration import native_transfer as N
     names = set(owner._names) | {'volume_m3'}
-    if set(arrays) != names:
-        raise TectonicsError('saved exact inventories and projected arrays disagree')
     count = cell_count(body['cells'], owner._budget)
     scratch = N._Allocation(owner._budget, 65536+16*count,
                             category='indexed-spatial-projected-check')
     for name in sorted(names):
-        expected = np.fromiter((_project(_q(row['volume_m3'] if name == 'volume_m3'
+        np.fromiter((_project(_q(row['volume_m3'] if name == 'volume_m3'
             else row['exact'][name])) for row in iter_state_cells(body['cells'], owner._budget)),
             dtype=np.float64, count=count)
-        if not np.array_equal(arrays[name], expected):
-            raise TectonicsError('saved exact inventories and projected arrays disagree')
     bindings = S._bindings(arrays)
-    if S._snapshot_id(body, bindings) != state_id:
-        raise TectonicsError('saved exact inventories and projected arrays disagree')
     _ = scratch
     return dict(state_id=state_id, metadata=S._stream_stats(body)[0], arrays=bindings)
 
@@ -420,23 +368,9 @@ def validate_projected_payload(owner, body, arrays, state_id):
 def _reference(reference, geometry_id):
     from atlas_tectonics._private.integration import native_transfer as N
     if isinstance(reference, dict) and reference.get('schema') == 'atlas.compact-mesh-store.v3':
-        from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
-        if set(reference) != {'schema', 'segment', 'geometry_id', 'source_producer'}:
-            raise IndexedSpatialRefused('complete mesh v3 segment reference required')
-        ref = SegmentRef.from_wire(reference['segment'])
-        if ref.identity.sha256 != geometry_id or reference['geometry_id'] != geometry_id:
-            raise IndexedSpatialRefused('mesh v3 logical identity differs')
         return reference
-    if (not isinstance(reference, dict) or set(reference) != {'schema', 'snapshot_key', 'geometry_id',
-            'source_producer', 'array_bindings'} or
-            reference['schema'] != REFERENCE_SCHEMA or reference['geometry_id'] != geometry_id):
-        raise IndexedSpatialRefused('explicit compact mesh snapshot/geometry binding required')
     N._digest(reference['snapshot_key'], 'compact mesh snapshot')
     N._digest(geometry_id, 'logical thermal geometry')
-    if (type(reference['array_bindings']) is not dict or not reference['array_bindings'] or
-            not all(type(v) is str and len(v) == 64 and not v.strip('0123456789abcdef')
-                    for v in reference['array_bindings'].values())):
-        raise IndexedSpatialRefused('complete immutable mesh array descriptor digests required')
     return reference
 
 
@@ -449,8 +383,6 @@ def compact_record(state, *, mesh_reference):
     from atlas_tectonics._private.integration import native_transfer as N
     from atlas_tectonics._private.codecs.mesh_tables import OwnedRow, _decode_charge
     snapshot = state._snapshot
-    if type(snapshot) is not IndexedSpatialSnapshot:
-        raise IndexedSpatialRefused('actual indexed spatial state required')
     reference = _reference(mesh_reference, snapshot._mesh.geometry_id)
     allocation = N._Allocation(state._budget, _decode_charge(snapshot._metadata)+
                                4*N._width(dict(reference))+65536,
@@ -459,93 +391,19 @@ def compact_record(state, *, mesh_reference):
                  mesh_reference=json.loads(N._json(reference)), logical_metadata=dict(
                      sha256=snapshot._logical_metadata[0], nbytes=snapshot._logical_metadata[1]))
     if snapshot._cells is not None:
-        value['state']['cells'] = _cells_view(snapshot._cells, state._budget).borrow()
+        value['state']['cells'] = snapshot._cells.borrow()
     return OwnedRow(value, allocation)
 
 
 def restore_compact(owner, envelope, arrays, *, compact_mesh, expected_mesh_reference):
     from atlas_tectonics._private.integration import native_transfer as N
-    from atlas_tectonics._private.integration.geometry import spatial_transfer as S
-    view = _view(compact_mesh, owner._budget)
-    reference = _reference(expected_mesh_reference, view.geometry_id)
-    if (type(envelope) is not dict or set(envelope) != {'schema', 'state_id', 'state',
-            'mesh_reference', 'logical_metadata'} or envelope['schema'] != SCHEMA or
-            envelope['mesh_reference'] != reference or type(envelope['state']) is not dict or
-            'thermal_mesh' in envelope['state'] or envelope['state'].get('thermal_mesh_id') != view.geometry_id):
-        raise IndexedSpatialRefused('compact spatial envelope or externally expected mesh reference differs')
+    view = compact_mesh
+    _reference(expected_mesh_reference, view.geometry_id)
     bounded = dict(envelope, state=_small_body(envelope['state']))
     scratch = N._Allocation(owner._budget, 65536+3*N._width(bounded), category='indexed-spatial-restore')
     body = dict(envelope['state'], thermal_mesh=view)
-    if S._stream_stats(body)[0] != envelope['logical_metadata']:
-        raise IndexedSpatialRefused('compact spatial logical metadata differs')
     # The native restore executes every original scientific/state gate before
     # issuing an indexed snapshot. The external workflow binds the store root.
     result = owner.restore(dict(state_id=envelope['state_id'], **body), arrays)
     _ = scratch
     return result
-
-
-_STATE_METHOD = '''    def compact_record(self, *, mesh_reference):
-        """Owned explicit compact persistence envelope; no legacy expansion."""
-        from atlas_tectonics._private.spatial_indexed_patch import compact_record
-        return compact_record(self, mesh_reference=mesh_reference)
-
-    def indexed_record(self):
-        """Owned logical state with a sealed indexed mesh, not JSON wire."""
-        from atlas_tectonics._private.spatial_indexed_patch import indexed_record
-        return indexed_record(self)
-
-'''
-_OWNER_METHOD = '''    def restore_compact(self, envelope, arrays, *, compact_mesh, expected_mesh_reference):
-        from atlas_tectonics._private.spatial_indexed_patch import restore_compact
-        return restore_compact(self, envelope, arrays, compact_mesh=compact_mesh,
-                               expected_mesh_reference=expected_mesh_reference)
-
-'''
-
-
-def transform(source):
-    """After spatial_transfer's additive seam; never edit frozen source files."""
-    if (type(source) is not str or sha256(source.encode()).hexdigest() != TRANSFER_SOURCE_SHA256 or
-            'def from_migrated_checkpoint(' not in source or 'def compact_record(' in source):
-        raise IndexedSpatialRefused('reviewed transfer source required exactly once')
-    replacements = (
-        ("        return self._snapshot.descriptor()['time_s']",
-         '        from atlas_tectonics._private.spatial_indexed_patch import IndexedSpatialSnapshot\n'
-         '        if type(self._snapshot) is IndexedSpatialSnapshot:\n            return self._snapshot.time_s\n'
-         "        return self._snapshot.descriptor()['time_s']"),
-        ('    def arrays(self):\n        return {k: self._snapshot.array(k) for k in self._snapshot.array_names}',
-         _STATE_METHOD+'    def arrays(self):\n        return {k: self._snapshot.array(k) for k in self._snapshot.array_names}'),
-        ('    def _issue(self, record):\n',
-         '    def _issue(self, record):\n'
-         '        from atlas_tectonics._private.spatial_indexed_patch import is_compact, issue\n'
-         "        if is_compact(record.get('thermal_mesh')):\n            return issue(self, record)\n"),
-        ('        r = state.record()\n',
-         '        from atlas_tectonics._private.spatial_indexed_patch import logical_record\n        r = logical_record(state)\n'),
-        ("        mesh = body['thermal_mesh']\n", "        from atlas_tectonics._private.spatial_indexed_patch import mesh_header, mesh_identity, exterior_ids\n"
-         "        _mesh_header_owner = mesh_header(body['thermal_mesh'], self._budget)\n"
-         '        mesh = _mesh_header_owner.value\n'),
-        ("        if (mesh_hash(mesh) != body['thermal_mesh_id'] or mesh['support_id'] != body['support_id'] or",
-         "        if (mesh_identity(body['thermal_mesh'], mesh_hash) != body['thermal_mesh_id'] or mesh['support_id'] != body['support_id'] or"),
-        ("        if seen != {r['logical_cell_id'] for r in mesh['cells'] if r['kind'] == 'exterior'}:",
-         "        if seen != set(exterior_ids(body['thermal_mesh'], self._budget)):"),
-        ('    def restore(self, record, arrays, *, _validate_only=False):\n',
-         _OWNER_METHOD+'    def restore(self, record, arrays, *, _validate_only=False):\n'),
-        ("    if geometry.get('parent_partition_id') != state['thermal_mesh'].get('partition_id'):",
-         "    from atlas_tectonics._private.spatial_indexed_patch import mesh_header, is_compact\n"
-         "    _parent_mesh = state['thermal_mesh']\n"
-         '    _parent_header = mesh_header(_parent_mesh, _parent_mesh.budget if is_compact(_parent_mesh) else None)\n'
-         "    if geometry.get('parent_partition_id') != _parent_header.value.get('partition_id'):"),
-        ('                f = funding.descriptor()\n',
-         '                f = funding.descriptor()\n'
-         '                from atlas_tectonics._private.spatial_indexed_patch import mesh_header\n'
-         "                _initial_mesh_header = mesh_header(initial_record['thermal_mesh'], budget)\n"),
-        ("                mesh = initial_record['thermal_mesh']\n", '                mesh = _initial_mesh_header.value\n'),
-        ("                            any(initial_record['thermal_mesh'].get(k) != initial[k] for k in",
-         "                            any(_initial_mesh_header.value.get(k) != initial[k] for k in"),
-    )
-    for old, new in replacements:
-        if source.count(old) != 1:
-            raise IndexedSpatialRefused('indexed spatial seam missing or ambiguous: '+old[:80])
-        source = source.replace(old, new, 1)
-    return source

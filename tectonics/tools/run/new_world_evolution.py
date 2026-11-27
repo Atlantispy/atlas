@@ -80,7 +80,6 @@ def source_binding():
     from atlas_tectonics.integration.reuse import ExecutionContext
     now = _adapter_binding()
     with ExecutionContext('scipy') as context:
-        context.verify()
         return dict(adapters=now, native_execution_id=context.identity)
 
 

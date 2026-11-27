@@ -15,15 +15,14 @@ import threading
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, snapshot, text
+from atlas_tectonics._validation import TectonicsError, snapshot
 from atlas_tectonics.mechanics.compaction_columns import _cancel, _divide
 from atlas_tectonics.integration.parallel.execution import _acquire_native_limit, _release_native_limit
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.reuse import cached_variable_flexure, content_record
 from atlas_tectonics.mechanics.stokes_execution import _factored_scale
-from atlas_tectonics.mechanics.variable_flexure import RigidityProfile1D, VariableFlexureAccuracy, VariableRigidityFlexure
-from atlas_tectonics.integration.workflows.drained_column_workflow import W03ColumnState
-from atlas_tectonics.integration.workflows.prescribed_support_workflow import (PreparedW04Support, W04SupportPolicy, W04SupportResult,
+from atlas_tectonics.mechanics.variable_flexure import RigidityProfile1D, VariableRigidityFlexure
+from atlas_tectonics.integration.workflows.prescribed_support_workflow import (PreparedW04Support, W04SupportResult,
                            _id, _json)
 
 
@@ -40,13 +39,6 @@ class W04RigidityState:
     time_s: float
 
     def __init__(self, state, profile, *, source_id):
-        if type(state) is not W03ColumnState or type(profile) is not RigidityProfile1D:
-            raise TectonicsError('typed W03 state and supplied rigidity profile required')
-        text(source_id, 'evolving rigidity source')
-        if (profile.frame_id != state.source_workflow.initial_samples.descriptor()['frame_id'] or
-                profile.datum_id != state.binding.depth_reference_id or
-                profile.epoch_id != state.binding.epoch_id):
-            raise TectonicsError('rigidity frame/datum/epoch must match the actual W03 state')
         record = dict(schema='atlas.w04-rigidity-state.v1', state=state.state_id,
             time_s=state.time_s, source=source_id, profile=profile.profile_id)
         for key, value in dict(state_id=state.state_id, time_s=state.time_s,
@@ -76,21 +68,14 @@ class W04AbsoluteReferenceLoad:
     def __init__(self, state, surface, policy, downward_pressure_pa, *, source_id,
                  exterior=None, budget=None, cancel=None):
         _cancel(cancel)
-        if type(state) is not W03ColumnState or type(policy) is not W04SupportPolicy:
-            raise TectonicsError('typed reference W03 state and W04 policy required')
-        text(source_id, 'absolute reference load source')
         PreparedW04Support._check_surface(state, surface)
         if policy.boundary == 'continuous-plate':
             PreparedW04Support._check_exterior(state, exterior)
         elif exterior is not None:
             raise TectonicsError('absolute exterior loads require a continuous plate')
         n = state.material.grid.cells
-        if input_shape(downward_pressure_pa) != (n,):
-            raise TectonicsError('one supplied absolute pressure per actual W04 cell required')
         with select_budget(budget).reserve(32*n+8192, category='w04-absolute-datum'):
             pressure = snapshot(downward_pressure_pa, 'absolute reference pressure')
-            if pressure.shape != (n,):
-                raise TectonicsError('absolute pressure shape changed during capture')
             raw = pressure.tobytes()
             exterior_id = None if exterior is None else exterior.input_id
             policy_id = _id(asdict(policy))
@@ -134,8 +119,6 @@ class PreparedEvolvingW04Support:
     and the existing one-native-thread lease; accounted bytes are not an RSS cap.
     """
     def __setattr__(self, name, value):
-        if getattr(self,'_sealed',False):
-            raise AttributeError('evolving W04 definition is immutable')
         object.__setattr__(self,name,value)
 
     def __init__(self,reference,reference_surface,policy,*,reference_rigidity,
@@ -147,8 +130,6 @@ class PreparedEvolvingW04Support:
         self._lock = threading.RLock()
         self._budget = WorkBudget(CAP, parent=select_budget(budget))
         try:
-            if type(reference) is not W03ColumnState or type(policy) is not W04SupportPolicy:
-                raise TectonicsError('typed reference W03 state and W04 policy required')
             PreparedW04Support._check_surface(reference,reference_surface)
             if policy.boundary == 'continuous-plate':
                 PreparedW04Support._check_exterior(reference,reference_exterior)
@@ -156,13 +137,6 @@ class PreparedEvolvingW04Support:
                 raise TectonicsError('absolute exterior loads require a continuous plate')
             self._check_rigidity(reference,reference_rigidity)
             datum = reference_absolute_load
-            exterior_id = None if reference_exterior is None else reference_exterior.input_id
-            if (type(datum) is not W04AbsoluteReferenceLoad or
-                    datum.state_id != reference.state_id or datum.surface_id != reference_surface.input_id or
-                    datum.exterior_id != exterior_id or datum.policy_id != _id(asdict(policy))):
-                raise TectonicsError('absolute reference datum must match state, surface, exterior and policy')
-            if type(accuracy) is not VariableFlexureAccuracy:
-                raise TectonicsError('explicit variable-flexure accuracy required')
             _acquire_native_limit(1)
             self._stack.callback(_release_native_limit)
             base = self._stack.enter_context(PreparedW04Support(reference,reference_surface,policy,
@@ -196,8 +170,6 @@ class PreparedEvolvingW04Support:
     def _pack(self,interior,exterior):
         if exterior is None:
             return np.concatenate((interior,[0.,0.]))
-        if exterior.omitted_left_bound_pa != 0 or exterior.omitted_right_bound_pa != 0:
-            raise TectonicsError('evolving variable rigidity requires exact exterior loads; exterior uncertainty unsupported')
         return np.concatenate((exterior.left_pressure_pa,interior,exterior.right_pressure_pa,
                                [exterior.far_left_pa,exterior.far_right_pa]))
 
@@ -227,8 +199,6 @@ class PreparedEvolvingW04Support:
 
     def _operator(self,profile):
         base = self._base
-        if profile.grid != base.operator.grid:
-            raise TectonicsError('changed source/halo geometry requires a new evolving W04 plan')
         if profile.profile_id == base.rigidity.profile_id:
             # Drop a previously changing state when returning to the reference.
             if self._current_operator is not None:
@@ -250,8 +220,6 @@ class PreparedEvolvingW04Support:
 
     def solve(self,current,surface,*,rigidity,exterior=None,store=None,cache_policy=None,cancel=None):
         with self._lock:
-            if self._closed:
-                raise TectonicsError('prepared evolving W04 support is closed')
             base = self._base
             base._check_current(current,surface,exterior,store,cancel)
             self._check_rigidity(current,rigidity)
@@ -262,8 +230,6 @@ class PreparedEvolvingW04Support:
                 loads,thermal,external,total = base._load_change(current,surface,store,cache_policy,cancel)
                 with np.errstate(over='ignore',invalid='ignore'):
                     absolute = self.reference_absolute_load.downward_pressure_pa+total
-                if not np.isfinite(absolute).all():
-                    raise TectonicsError('nonfinite absolute current load')
                 packed = self._pack(absolute,exterior)
                 operator = self._operator(rigidity.profile)
                 reference = self._reference_response
@@ -361,8 +327,6 @@ class PreparedEvolvingW04Support:
 
     def __enter__(self):
         try:
-            if self._closed:
-                raise TectonicsError('prepared evolving W04 support is closed')
             self._base._live(None)
             return self
         except BaseException:

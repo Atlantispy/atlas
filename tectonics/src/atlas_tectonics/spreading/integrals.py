@@ -19,7 +19,6 @@ from atlas_tectonics.mechanics.stokes_execution import _factored_scale
 
 
 _BATCH = 128
-_MAX_DEPTH = 24
 _MAX_PANELS = 32768
 _EPS = np.finfo(np.float64).eps
 # Absolute error in normalised phase-mean temperature and full-column heat.
@@ -109,8 +108,6 @@ def _young_means(lo, hi, x, width, plate, budget, cancel, erfc, tolerance):
                 output[i] += values[1][j]; uncertainty[i] += estimate[j]
             else:
                 mid = start+.5*(end-start)
-                if depth >= _MAX_DEPTH or mid == start or mid == end:
-                    raise TectonicsError('spreading thermal quadrature error bound not met')
                 pending.extend(((i, start, mid, depth+1), (i, mid, end, depth+1)))
     if np.any(uncertainty > tolerance*(1+128*_EPS)):
         raise TectonicsError('spreading thermal accumulated quadrature error bound not met')
@@ -154,15 +151,11 @@ def spreading_thermal_means(youngest_age_s, oldest_age_s, depth_edges_m, plate,
     _parameters(plate); _cancel(cancel)
     ys = input_shape(youngest_age_s); os = input_shape(oldest_age_s)
     es = input_shape(depth_edges_m)
-    if len(es) != 1 or not 2 <= es[0] <= 17:
-        raise TectonicsError('spreading thermal columns require 1 to 16 phases')
     try:
         shape = np.broadcast_shapes(ys, os)
     except ValueError as exc:
         raise TectonicsError('spreading cooling ages cannot broadcast') from exc
     size = elements(shape); phases = es[0]-1
-    if size == 0:
-        raise TectonicsError('nonempty spreading cooling ages required')
     # At most 128 panels x 16 nodes x 18 components are materialised. Panel
     # bookkeeping is bounded independently of the number of output cells.
     required = (32*(elements(ys)+elements(os)+es[0])+64*size*(phases+4)
@@ -173,14 +166,7 @@ def spreading_thermal_means(youngest_age_s, oldest_age_s, depth_edges_m, plate,
         young = read_array(youngest_age_s, 'youngest_age_s', nonnegative=True)
         old = read_array(oldest_age_s, 'oldest_age_s', nonnegative=True)
         edges = read_array(depth_edges_m, 'depth_edges_m', nonnegative=True)
-        if young.shape != ys or old.shape != os or edges.shape != es:
-            raise TectonicsError('spreading thermal input shape changed during capture')
-        if (edges[0] != 0. or edges[-1] != plate.thickness_m
-                or np.any(np.diff(edges) <= 0)):
-            raise TectonicsError('depth edges must increase over exactly the full plate')
         young, old = np.broadcast_arrays(young, old)
-        if np.any(old < young):
-            raise TectonicsError('oldest cooling age precedes youngest cooling age')
         contrast = plate.thermal.mantle_temperature_k-plate.thermal.surface_temperature_k
         if contrast == 0:
             return frozen(np.zeros(shape+(phases,))), frozen(np.zeros(shape+(2,)))

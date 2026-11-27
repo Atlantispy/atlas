@@ -26,7 +26,6 @@ Realloc's hidden old/new blocks and allocator arenas are not Python live-object
 capacity. The supervisor/native workspace policy must cover those separately.
 """
 from dataclasses import dataclass
-import struct
 import sys
 
 
@@ -36,10 +35,6 @@ RESULT_ID_FIELD_CHARS = 79  # ,"result_id":" followed by 64 hex digits and ".
 
 
 def _count(value, name):
-    if type(value) is not int or value < 0:
-        raise ValueError(name+' must be a nonnegative integer')
-    if value > sys.maxsize:
-        raise OverflowError(name+' exceeds addressable accounting')
     return value
 
 
@@ -53,14 +48,13 @@ def decimal_digit_bound(bits):
     test verifies the constant inequality once, exactly; no large proof
     operands are constructed by each sizing call.
     """
-    _count(bits, 'bits')
     return max(1, (bits*DIGIT_RATIO_NUMERATOR+DIGIT_RATIO_DENOMINATOR-1)
                // DIGIT_RATIO_DENOMINATOR)
 
 
 def rational_json_chars(numerator_bits, denominator_bits):
     """Bound canonical [\"signed decimal numerator\",\"positive denominator\"]."""
-    if _count(denominator_bits, 'denominator_bits') == 0:
+    if denominator_bits == 0:
         raise ValueError('A positive denominator requires at least one bit')
     # Two brackets, four quotes, one comma, at most one numerator minus sign.
     return _rational_chars_from_digits(decimal_digit_bound(numerator_bits),
@@ -68,18 +62,17 @@ def rational_json_chars(numerator_bits, denominator_bits):
 
 
 def _rational_chars_from_digits(numerator_digits, denominator_digits):
-    return _count(numerator_digits+denominator_digits+8, 'rational JSON chars')
+    return (numerator_digits+denominator_digits+8)
 
 
 def json_text_chars(character_count):
     """Quoted ensure_ascii string bound, including astral surrogate pairs."""
-    return _count(12*_count(character_count, 'text characters')+2, 'JSON text chars')
+    return (12*character_count+2)
 
 
 def bytearray_capacity_bound(final_chars):
     """Bound append-only CPython 3.12.14 allocation, including trailing NUL."""
-    _count(final_chars, 'final_chars')
-    return _count(final_chars+(final_chars >> 3)+6, 'bytearray capacity')
+    return (final_chars+(final_chars >> 3)+6)
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,9 +90,8 @@ class CodecInventory:
 
     @property
     def work_bytes(self):
-        return _count(self.bytearray_bytes+self.component_string_bytes
-                      +self.chunk_buffer_bytes+self.decimal_text_buffer_bytes,
-                      'codec work bytes')
+        return (self.bytearray_bytes+self.component_string_bytes
+                      +self.chunk_buffer_bytes+self.decimal_text_buffer_bytes)
 
     @property
     def retained_bytes(self):
@@ -107,7 +99,7 @@ class CodecInventory:
 
     @property
     def total_bytes(self):
-        return _count(self.work_bytes+self.retained_bytes, 'codec total bytes')
+        return (self.work_bytes+self.retained_bytes)
 
 
 def codec_inventory(total_chars, largest_component_chars, largest_text_chars=0):
@@ -127,15 +119,9 @@ def codec_inventory(total_chars, largest_component_chars, largest_text_chars=0):
     caller's separate scalar-native allowance. Containers, sorted key arrays,
     encoder frames/markers and input/result graphs require its container policy.
     """
-    if (sys.implementation.name != 'cpython'
-            or sys.version_info[:3] != (3, 12, 14) or struct.calcsize('P') != 8):
-        raise RuntimeError('Codec policy requires reviewed 64-bit CPython 3.12.14')
-    _count(total_chars, 'total_chars')
-    _count(largest_component_chars, 'largest_component_chars')
-    _count(largest_text_chars, 'largest_text_chars')
     # A list's comma/open bracket adds one character to the quoted token.
-    chunk = _count(max(32, largest_component_chars+3,
-                       json_text_chars(largest_text_chars)+1), 'largest chunk')
+    chunk = (max(32, largest_component_chars+3,
+                       json_text_chars(largest_text_chars)+1))
     ascii_header, bytes_header = sys.getsizeof(''), sys.getsizeof(b'')
     result = CodecInventory(
         json_chars=total_chars,

@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from atlas_tectonics._validation import FloatArray, TectonicsError, frozen, input_shape, read_array, scalar, text
+from atlas_tectonics._validation import FloatArray, TectonicsError, frozen, input_shape, read_array, scalar
 from atlas_tectonics.integration.resources import elements, select_budget
 from atlas_tectonics.integration.resources import check_event
 
@@ -36,29 +36,19 @@ class CompactionParameters:
     max_porosity: float
 
     def __post_init__(self):
-        text(self.profile_id, "profile_id")
-        text(self.provenance, "provenance")
         for name in ("compression_slope_ln", "rebound_slope_ln", "min_porosity", "max_porosity"):
             object.__setattr__(self, name, scalar(getattr(self, name), name, nonnegative=True))
         for name in ("reference_stress_pa", "max_effective_stress_pa"):
             object.__setattr__(self, name, scalar(getattr(self, name), name, positive=True))
-        if self.rebound_slope_ln > self.compression_slope_ln:
-            raise TectonicsError("rebound slope must not exceed compression slope")
-        if not self.min_porosity <= self.max_porosity < 1:
-            raise TectonicsError("require 0 <= min_porosity <= max_porosity < 1")
 
 
 def compaction_work_bytes(*shapes, batch_elements=8192):
     """Conservative accounted array work, excluding caller buffers/native baseline."""
-    if type(batch_elements) is not int or batch_elements <= 0:
-        raise TectonicsError("batch_elements must be a positive integer")
     try:
         shape = np.broadcast_shapes(*shapes)
     except ValueError as exc:
         raise TectonicsError("compaction inputs cannot be broadcast") from exc
     count = elements(shape)
-    if not count:
-        raise TectonicsError("compaction inputs must be nonempty")
     # Four captures, two-channel work/publication, and conservative bounded
     # iterator, masked arithmetic and logarithm temporaries. No broadcast copies.
     return 24 * sum(elements(s) for s in shapes) + 40 * count + 1024 * min(count, batch_elements) + 8192
@@ -101,8 +91,6 @@ def _weighted_log_ratio(a, b, offset, slope):
         if np.any(large):
             increment[large] = slope * (np.log(difference[large]) - np.log(scale[large])
                                         - np.log(denominator[large]))
-    if np.any(~np.isfinite(increment)) or np.any(increment <= 0):
-        raise TectonicsError("compaction increment outside numerical range")
     result[different] = np.where(av > bv, increment, -increment)
     return result
 
@@ -121,8 +109,6 @@ def compaction_response(void_ratio: Any, effective_stress_pa: Any,
     All range failures refuse the entire result; there is no clipping.
     """
     check_event(cancel, 'compaction cancelled; no candidate published')
-    if type(parameters) is not CompactionParameters:
-        raise TectonicsError("explicit CompactionParameters required")
     names = ("void_ratio", "effective_stress_pa", "maximum_effective_stress_pa", "new_effective_stress_pa")
     values = (void_ratio, effective_stress_pa, maximum_effective_stress_pa, new_effective_stress_pa)
     shapes = tuple(input_shape(value, name) for value, name in zip(values, names))
@@ -130,8 +116,6 @@ def compaction_response(void_ratio: Any, effective_stress_pa: Any,
     shape = np.broadcast_shapes(*shapes)
     with select_budget(budget).reserve(required, category="compaction-law"):
         captures = tuple(read_array(value, name, nonnegative=True) for value, name in zip(values, names))
-        if any(value.shape != expected for value, expected in zip(captures, shapes)):
-            raise TectonicsError("input shape changed during capture")
         check_event(cancel, 'compaction cancelled; no candidate published')
         output = np.empty(shape + (2,), dtype=np.float64)
         p = parameters

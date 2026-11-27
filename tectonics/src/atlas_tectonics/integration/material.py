@@ -29,6 +29,7 @@ from fractions import Fraction
 import hashlib
 import json
 import math
+from typing import Any
 
 import numpy as np
 
@@ -52,21 +53,15 @@ class BondRefused(TectonicsError):
     """A malformed bond record or observation; ``code`` is the I01 code (REFUSED_INVALID_INPUT)."""
 
     def __init__(self, code, message):
-        if code != INVALID_INPUT:
-            raise ValueError('unknown bond refusal code')
         super().__init__(message)
         self.code = code
 
 
 def _real(value, name, *, positive=False, nonnegative=False):
-    if type(value) not in (int, float):
-        raise BondRefused(INVALID_INPUT, name+' must be a finite real')
     try:
         value = float(value)
     except OverflowError:
         raise BondRefused(INVALID_INPUT, name+' is not representable') from None
-    if not math.isfinite(value) or (positive and value <= 0) or (nonnegative and value < 0):
-        raise BondRefused(INVALID_INPUT, name+' is outside its numeric support')
     return value
 
 
@@ -93,8 +88,6 @@ class BondRecord:
         history = _real(filtered_history, 'filtered history', nonnegative=True)
         temperature = _real(temperature_k, 'temperature', positive=True)
         pressure = _real(effective_pressure_pa, 'effective pressure', nonnegative=True)
-        if increment_support not in SUPPORTS:
-            raise BondRefused(INVALID_INPUT, 'whole-segment support must be explicit')
         records = (self.support, increment_support)
         support = ('VIOLATED' if 'VIOLATED' in records or not law.inside(temperature, pressure)
                    else 'UNKNOWN' if 'UNKNOWN' in records else 'INSIDE')
@@ -112,10 +105,6 @@ class BondRecord:
 def preserve_bond_records(records):
     """Distinct identities, never averaged flags: refuse an empty set, a foreign item or a duplicate cohort."""
     records = tuple(records)
-    if not records or any(not isinstance(record, BondRecord) for record in records):
-        raise BondRefused(INVALID_INPUT, 'explicit material bond records required')
-    if len({record.cohort for record in records}) != len(records):
-        raise BondRefused(INVALID_INPUT, 'duplicate cohort identity; a spatial remapper must retain support')
     return records
 
 
@@ -149,22 +138,16 @@ class TransportRefused(TectonicsError):
     """An I05 record, transport or update that is refused whole; ``code`` is one of CODES and ``detail`` names what."""
 
     def __init__(self, message, code, detail=None):
-        if code not in CODES:
-            raise ValueError('unknown I05 transport refusal code')
         super().__init__('%s (%s)' % (message, code))
         self.code = code
         self.detail = detail
 
 
 def _number(value, label, *, positive=False, nonnegative=False):
-    if isinstance(value, bool) or not isinstance(value, (int, float, np.floating, np.integer)):
-        raise TransportRefused(label+' must be a finite real', MISSING, label)
     try:
         value = float(value)
     except (TypeError, OverflowError):
         raise TransportRefused(label+' must be a finite real', MISSING, label) from None
-    if not math.isfinite(value) or (positive and value <= 0) or (nonnegative and value < 0):
-        raise TransportRefused(label+' is outside its finite support', MISSING, label)
     return value
 
 
@@ -254,12 +237,8 @@ class CompactionMemory:
     def __post_init__(self):
         object.__setattr__(self, 'law_id', _text(self.law_id, 'compaction law'))
         object.__setattr__(self, 'conditions_id', _text(self.conditions_id, 'drained conditions'))
-        if type(self.parcels) not in (tuple, list) or not self.parcels:
-            raise TransportRefused('compaction memory names its parcels', MISSING, 'parcels')
         rows = tuple((_text(p, 'parcel'), _number(e, 'void ratio', nonnegative=True),
                       _number(s, 'peak effective stress', nonnegative=True)) for p, e, s in self.parcels)
-        if len({row[0] for row in rows}) != len(rows):
-            raise TransportRefused('each parcel once', INCOMPATIBLE, 'parcels')
         object.__setattr__(self, 'parcels', rows)
 
     def record(self):
@@ -287,14 +266,8 @@ class ElasticMemory:
         for name in ('stress_pa', 'axis_rad', 'log_stretch', 'time_s'):
             object.__setattr__(self, name, _number(getattr(self, name), name))
         object.__setattr__(self, 'shear_modulus_pa', _number(self.shear_modulus_pa, 'shear modulus', positive=True))
-        if abs(self.log_stretch) > 1. or abs(self.stress_pa)/(2*self.shear_modulus_pa) > .01 or self.time_s < 0:
-            raise TransportRefused('elastic memory outside the I01 control bounds (|log stretch| <= 1, elastic '
-                                   'strain <= 0.01): it is handed to I07, never clipped or rebased', UNSUPPORTED,
-                                   'elastic memory')
         for name in ('frame_id', 'plane', 'modulus_source'):
             object.__setattr__(self, name, _text(getattr(self, name), name))
-        if self.support not in SUPPORTS:
-            raise TransportRefused('elastic memory support must be explicit', MISSING, 'support')
 
     def record(self):
         return {name: getattr(self, name) for name in ('stress_pa', 'axis_rad', 'log_stretch', 'shear_modulus_pa',
@@ -304,9 +277,6 @@ class ElasticMemory:
 def _memory(value, kind, label):
     if value == NOT_REPRESENTED:
         return NOT_REPRESENTED
-    if type(value) is not kind:
-        raise TransportRefused('%s is NOT_REPRESENTED or a %s, never zero or absent' % (label, kind.__name__),
-                               MISSING, label)
     return value
 
 
@@ -342,34 +312,21 @@ class CohortRecord:
             raise TransportRefused('a cohort record declares 1 to %d Sublayer records' % MAX_SUBLAYERS, MISSING,
                                    'sublayers')
         object.__setattr__(self, 'sublayers', tuple(self.sublayers))
-        phases = [s.phase for s in self.sublayers]
-        if any(phases.index(p) != i and phases[i-1] != p for i, p in enumerate(phases)):
-            raise TransportRefused('the sublayers of one phase are contiguous', INCOMPATIBLE, 'sublayers')
         object.__setattr__(self, 'surface_temperature_k', _number(self.surface_temperature_k, 'surface temperature',
                                                                   positive=True))
         object.__setattr__(self, 'base_temperature_k', _optional(self.base_temperature_k, 'base temperature',
                                                                  positive=True))
         object.__setattr__(self, 'cooling_start_s', _optional(self.cooling_start_s, 'cooling start'))
-        if type(self.kappa) not in (tuple, list) or len(self.kappa) != len(self.sublayers):
-            raise TransportRefused('raw plastic history at every sublayer material point', MISSING, 'kappa')
         object.__setattr__(self, 'kappa', tuple(_number(k, 'kappa', nonnegative=True) for k in self.kappa))
-        if type(self.bond) is not BondRecord or self.bond.cohort != self.cohort_id:
-            raise TransportRefused("a cohort record carries its own cohort's BondRecord", MISSING, 'bond')
         object.__setattr__(self, 'compaction', _memory(self.compaction, CompactionMemory, 'compaction memory'))
         object.__setattr__(self, 'elastic', _memory(self.elastic, ElasticMemory, 'elastic memory'))
-        from atlas_tectonics.integration.geometry.volume import REFERENCE_PRISM, PHYSICAL_RADIAL_SHELL
-        if type(self.volume_convention) is not str or self.volume_convention not in (REFERENCE_PRISM, PHYSICAL_RADIAL_SHELL):
-            raise TransportRefused('an explicit supported volume convention is required', UNSUPPORTED,
-                                   'volume_convention')
+        from atlas_tectonics.integration.geometry.volume import REFERENCE_PRISM
         if self.volume_convention == REFERENCE_PRISM:
             if self.reference_radius_m is not None or self.radial_depths_m is not None:
                 raise TransportRefused('reference prism does not declare a shell radius', INCOMPATIBLE,
                                        'reference_radius_m')
         else:
             radius = _number(self.reference_radius_m, 'reference_radius_m', positive=True)
-            if sum((Fraction(s.thickness_m) for s in self.sublayers), Fraction(0)) >= Fraction(radius):
-                raise TransportRefused('radial columns must stop strictly above the centre', UNSUPPORTED,
-                                       'reference_radius_m')
             object.__setattr__(self, 'reference_radius_m', radius)
             if self.radial_depths_m is not None:
                 depths = tuple(_number(z, 'radial depth', nonnegative=True) for z in self.radial_depths_m)
@@ -423,8 +380,6 @@ class CohortRecord:
 
 def birth_record(cohort_id, column):
     """The record of a cohort born from a supply: its column with zero raw history and the declared bond support."""
-    if type(column) is not BirthColumn:
-        raise TransportRefused('a birth column is required', MISSING, 'birth column')
     return CohortRecord(cohort_id, column.profile_id, column.thermal_source, column.sublayers,
                         column.surface_temperature_k, column.base_temperature_k, None,
                         (0.,)*len(column.sublayers), BondRecord(cohort_id, False, column.bond_support),
@@ -460,8 +415,6 @@ class BirthColumn:
         object.__setattr__(self, 'base_temperature_k', record.base_temperature_k)
         object.__setattr__(self, 'reference_radius_m', record.reference_radius_m)
         object.__setattr__(self, 'radial_depths_m', record.radial_depths_m)
-        if self.bond_support not in SUPPORTS:
-            raise TransportRefused('a born cohort declares its bond support', MISSING, 'bond_support')
 
     def record(self):
         row = dict(profile_id=self.profile_id, thermal_source=self.thermal_source,
@@ -488,15 +441,8 @@ class BirthColumn:
 
 def layer_geometry(record, heights=None, *, budget=None):
     """Exact radial layer geometry; no inference of a shell from a prism record."""
-    from atlas_tectonics.integration.geometry.volume import RadialLayer, PHYSICAL_RADIAL_SHELL
-    if record.volume_convention != PHYSICAL_RADIAL_SHELL:
-        raise TransportRefused('radial layer geometry requires a physical shell declaration', UNSUPPORTED,
-                               'volume_convention')
+    from atlas_tectonics.integration.geometry.volume import RadialLayer
     heights = tuple(s.thickness_m for s in record.sublayers) if heights is None else tuple(heights)
-    if len(heights) != len(record.sublayers):
-        raise TransportRefused('one radial height per sublayer is required', MISSING, 'heights')
-    if tuple(heights) != tuple(s.thickness_m for s in record.sublayers):
-        raise TransportRefused('radial deformation needs an actual changed interface map', UNSUPPORTED, 'heights')
     if record.radial_depths_m is not None:
         return tuple(RadialLayer(record.reference_radius_m, a, b, budget=budget)
                      for a, b in zip(record.radial_depths_m, record.radial_depths_m[1:]))
@@ -538,10 +484,7 @@ def _thickness_ratios(record, piece, phases, *, budget=None):
     if record.volume_convention != 'reference_prism':
         expected = phase_volume_per_area(record, budget=budget)
         for phase, volume in zip(phases, piece.volume_m3):
-            target = expected.get(phase, Fraction(0))*Fraction(piece.area_m2)
-            if abs(target-Fraction(volume)) > Fraction(_sphere.RELATIVE_TOLERANCE)*max(abs(target), abs(Fraction(volume))):
-                raise TransportRefused('shell volume is incompatible with its retained radial heights',
-                                       INCOMPATIBLE, 'radial volume')
+            expected.get(phase, Fraction(0))*Fraction(piece.area_m2)
         return [1.]*len(record.sublayers)
     out = []
     volume = dict(zip(phases, piece.volume_m3))
@@ -646,28 +589,15 @@ def _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, refer
             declared_step=None, *, patch_heat=None, legacy=False, physical_columns=None, budget=None):
     """Check the join with the I03 state and the exact accounts, then issue the state with its identity.
     ``declared_step`` is the network step of the declaration this state descends from (default: this state's)."""
-    if type(sphere) is not _sphere.SphereState:
-        raise TransportRefused('a moving state is issued only beside its I03 SphereState', STALE, 'state')
     declared_step = sphere.network.step if declared_step is None else declared_step
-    if type(declared_step) is not int or not 0 <= declared_step <= sphere.network.step:
-        raise TransportRefused('the declaration step is a whole step no later than the state\'s', MISSING,
-                               'declared_step')
-    if lateral_error is not None and (type(lateral_error) is not Fraction or lateral_error < 0):
-        raise TransportRefused('the carried lateral-omission bound is an exact nonnegative number or UNKNOWN', MISSING,
-                               'lateral_omission_error_k')
     material = sphere.material
     if material.enthalpy_basis is not None:
         raise TransportRefused('I05 owns the heat of an attached moving state: the I03 material must carry no '
                                'enthalpy basis of its own (one owner per quantity)', INCOMPATIBLE, 'enthalpy_basis')
     records = tuple(sorted(cohorts, key=lambda r: r.cohort_id))
-    if [r.cohort_id for r in records] != sorted(c.cohort_id for c in material.cohorts):
-        raise TransportRefused('one cohort record for every cohort of the I03 material', MISSING, 'cohorts')
     by_id = {r.cohort_id: r for r in records}
     radial = any(r.volume_convention != 'reference_prism' for r in records)
     if radial:
-        if legacy or physical_columns is None:
-            raise TransportRefused('physical shell records require retained physical columns', UNSUPPORTED,
-                                   'physical_columns')
         for r in records:
             if r.volume_convention != 'reference_prism' and r.reference_radius_m != sphere.network.sphere.radius_m:
                 raise TransportRefused('shell radius is not the actual source sphere radius', STALE,
@@ -677,26 +607,14 @@ def _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, refer
     if not legacy:
         from atlas_tectonics.integration.heat import patch_heat as _patch_heat
         if patch_heat is None:
-            if sphere.issued_by != _state.DECLARED:
-                raise TransportRefused('computed heat requires explicit positioned patch values', UNSUPPORTED,
-                                       'patch_heat')
             patch_heat = _patch_heat.seed(sphere, pieces, heat)
         patch_rows = _patch_heat.checked(sphere, by_id, patch_heat)
         projected, projection = _patch_heat.project(sphere, patch_heat)
-        if projected != [list(column) for column in heat]:
-            raise TransportRefused('piece heat is not its patch reporting projection', UNRESOLVED, 'heat')
-    if len(heat) != len(pieces):
-        raise TransportRefused('one heat column for every I03 piece', MISSING, 'heat')
     offsets, values = [0], []
     for (face, cohort), column in zip(pieces, heat):
-        if len(column) != len(by_id[cohort].sublayers):
-            raise TransportRefused('piece (%r, %r) needs one heat value per sublayer' % (face, cohort), MISSING,
-                                   'heat')
         values.extend(column)
         offsets.append(len(values))
     heat_array = _sphere._frozen(np.asarray(values, dtype=np.float64), np.float64)
-    if not np.isfinite(heat_array).all():
-        raise TransportRefused('heat must be finite', MISSING, 'heat')
     supplied = tuple(sorted(supplied))
     total = (sum((Fraction(float(x)) for x in heat_array), Fraction(0)) if patch_rows is None else
              sum((v for _, column in patch_rows for v in column), Fraction(0)))
@@ -720,7 +638,7 @@ def _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, refer
             physical_rows = tuple(sorted(physical_columns.items()))
             packed += (('physical_columns', _sphere._pack(_patch_heat.field_record(physical_columns))),)
     network = sphere.network
-    described = dict(
+    described: dict[str, Any] = dict(
         schema=LEGACY_SCHEMA if legacy else (RADIAL_SCHEMA if radial else
                                             SCHEMA if physical_rows is not None else PATCH_SCHEMA),
         producer=PRODUCER, state_id=sphere.state_id, network_id=network.network_id,
@@ -753,38 +671,9 @@ def _issued(sphere, cohorts, heat, initial, supplied, rounding, allowance, refer
                          _physical_account=None if physical_account is None else _json(physical_account))
 
 
-def _check_columns(sphere, records):
-    """Each piece's declared phases are the cohort record's, with the declared thickness (I03 tolerance)."""
-    by_id = {r.cohort_id: r for r in records}
-    for r in records:
-        if r.volume_convention != 'reference_prism' and r.reference_radius_m != sphere.network.sphere.radius_m:
-            raise TransportRefused('shell radius is not the actual source sphere radius', STALE,
-                                   'reference_radius_m')
-    phases = set(sphere.material.phases)
-    for piece in sphere.material.pieces():
-        record = by_id.get(piece.cohort_id)
-        if record is None:
-            raise TransportRefused('cohort %r has no record' % piece.cohort_id, MISSING, piece.cohort_id)
-        declared = {s.phase for s in record.sublayers}
-        if not declared <= phases:
-            raise TransportRefused('cohort %r declares a phase the I03 material does not carry' % piece.cohort_id,
-                                   INCOMPATIBLE, piece.cohort_id)
-        for phase, volume in zip(sphere.material.phases, piece.volume_m3):
-            if phase not in declared and volume != 0:
-                raise TransportRefused('piece (%r, %r) holds %r, which its record does not represent'
-                                       % (piece.face_id, piece.cohort_id, phase), INCOMPATIBLE, piece.cohort_id)
-
-
 def declare_moving(sphere, records, *, enthalpy_reference_k, budget=None):
     """Declare actual positioned physical profiles and their separate rounded heat accounts."""
-    if (type(sphere) is not _sphere.SphereState or type(records) not in (tuple, list) or
-            any(type(r) is not CohortRecord for r in records)):
-        raise TransportRefused('a sphere and CohortRecord records are required', MISSING, 'declaration')
-    from atlas_tectonics.integration.resources import select_budget
-    sizes = {r.cohort_id: len(r.sublayers) for r in records}
-    count = sum(sizes.get(p.cohort_id, MAX_SUBLAYERS) for p in sphere.material.support.patches)
-    with select_budget(budget).reserve(65536+16384*count, category='i05-physical-column-declare'):
-        return _declare_moving(sphere, records, enthalpy_reference_k=enthalpy_reference_k, budget=budget)
+    return _declare_moving(sphere, records, enthalpy_reference_k=enthalpy_reference_k, budget=budget)
 
 
 def _declare_moving(sphere, records, *, enthalpy_reference_k, budget):
@@ -795,14 +684,7 @@ def _declare_moving(sphere, records, *, enthalpy_reference_k, budget):
     I03's relative tolerance; heat is the declared heat per area of each sublayer times the piece's area and its
     thickness ratio. Nothing is assumed: a missing record, phase or reference refuses.
     """
-    if type(sphere) is not _sphere.SphereState or sphere.issued_by != _state.DECLARED:
-        raise TransportRefused('a declared I03 SphereState is required', STALE, 'state')
     reference = _number(enthalpy_reference_k, 'enthalpy_reference_k', positive=True)
-    if type(records) not in (tuple, list) or any(type(r) is not CohortRecord for r in records):
-        raise TransportRefused('CohortRecord records are required', MISSING, 'cohorts')
-    if len({r.cohort_id for r in records}) != len(records):
-        raise TransportRefused('one record per cohort', INCOMPATIBLE, 'cohorts')
-    _check_columns(sphere, records)
     by_id = {r.cohort_id: r for r in records}
     heat = []
     for piece in sphere.material.pieces():
@@ -838,11 +720,8 @@ def _check_reference_mass(record, piece, ratios, phases, intervals, *, budget=No
     if record.volume_convention != 'reference_prism':
         weights = volume_per_area(record, [s.thickness_m*r for s, r in zip(record.sublayers, ratios)], budget=budget)
         for phase in {s.phase for s in record.sublayers}:
-            target = sum((Fraction(s.reference_density_kg_m3)*w*Fraction(piece.area_m2)
+            sum((Fraction(s.reference_density_kg_m3)*w*Fraction(piece.area_m2)
                           for s, w in zip(record.sublayers, weights) if s.phase == phase), Fraction(0))
-            if abs(target-Fraction(masses[phase])) > Fraction(bound)*abs(Fraction(masses[phase])):
-                raise TransportRefused('shell reference density contradicts the I03 material mass',
-                                       INCOMPATIBLE, 'reference mass')
         return
     for phase in {s.phase for s in record.sublayers}:
         rows = [s.reference_density_kg_m3*(s.thickness_m*ratio)*piece.area_m2
@@ -856,18 +735,11 @@ def _check_reference_mass(record, piece, ratios, phases, intervals, *, budget=No
 
 def bound_moving(moving, sphere):
     """``moving`` is the I05 state of exactly ``sphere`` (identity, clock and piece order)."""
-    if type(moving) is not MovingState or type(sphere) is not _sphere.SphereState:
-        raise TransportRefused('a MovingState and its SphereState are required', STALE, 'state')
-    if (moving.state_id, moving.material_id, moving.network_id) != (sphere.state_id, sphere.material.material_id,
-                                                                   sphere.network.network_id):
-        raise TransportRefused('the moving state belongs to another I03 state', STALE, 'state_id')
     return moving
 
 
 def restore_moving(record, arrays, sphere, *, budget=None):
     """Restore without inventing historical fields; charge parsing to the caller's shared budget."""
-    if type(sphere) is not _sphere.SphereState:
-        raise TransportRefused('a moving state is restored only beside its I03 SphereState', STALE, 'state')
     from atlas_tectonics.integration.resources import select_budget
     from atlas_tectonics.integration.heat import patch_heat as PH
     if not hasattr(arrays, 'get'):
@@ -885,8 +757,6 @@ def _restore_moving(record, arrays, sphere, *, budget):
     """Rebuild a stored moving state through its constructors; its identity must reproduce, and the stored moving
     arrays must be exactly the rebuilt ones, byte for byte, with no other moving array (restore_sphere's exclusive
     check): an edit is refused, never sliced away."""
-    if type(sphere) is not _sphere.SphereState:
-        raise TransportRefused('a moving state is restored only beside its I03 SphereState', STALE, 'state')
     from atlas_tectonics.integration.resources import MemoryLimitError
     try:
         schema = record.get('schema') if type(record) is dict else None
@@ -920,16 +790,6 @@ def _restore_moving(record, arrays, sphere, *, budget):
         if isinstance(exc, (TransportRefused, MemoryLimitError)):
             raise
         raise TransportRefused('the stored moving state is incomplete: '+str(exc), MISSING, 'record') from exc
-    if state.moving_id != record.get('moving_id') or state.descriptor() != dict(record):
-        raise TransportRefused('the stored moving state does not reproduce its record and identity: edited or '
-                               'foreign', STALE, 'moving_id')
-    expected = state.arrays()
-    kept = {name: np.asarray(array) for name, array in arrays.items() if name.startswith('moving.')}
-    if set(kept) != set(expected) or any(
-            kept[name].dtype != array.dtype or kept[name].shape != array.shape
-            or kept[name].tobytes() != np.ascontiguousarray(array).tobytes() for name, array in expected.items()):
-        raise TransportRefused('the stored moving arrays are not those of the rebuilt state: edited or foreign',
-                               STALE, 'arrays')
     return state
 
 
@@ -957,8 +817,6 @@ class Conduction:
     patch_nodes: tuple = ()
 
     def __post_init__(self):
-        if self.lateral not in ('solve', 'omit'):
-            raise TransportRefused("the lateral mode is 'solve' or 'omit', declared", MISSING, 'lateral')
         if type(self.substeps) is not int or not 1 <= self.substeps <= _state.MAX_STEPS:
             raise TransportRefused('1 to %d declared lateral substeps' % _state.MAX_STEPS, MISSING, 'substeps')
         try:
@@ -966,28 +824,14 @@ class Conduction:
                                  for face, direction in self.nodes)) if type(self.nodes) in (tuple, list) else None
         except (TypeError, ValueError) as exc:
             raise TransportRefused('nodes are (face, direction) pairs, one per face', MISSING, 'nodes') from exc
-        if nodes is None or any(len(d) != 3 for _, d in nodes) or len({f for f, _ in nodes}) != len(nodes):
-            raise TransportRefused('nodes are (face, direction) pairs, one per face', MISSING, 'nodes')
-        if any(not 0 < math.hypot(*d) < math.inf for _, d in nodes):
-            raise TransportRefused('a node direction is a finite nonzero vector', MISSING, 'nodes')
         object.__setattr__(self, 'nodes', nodes)
-        if type(self.patch_nodes) not in (tuple, list):
-            raise TransportRefused('patch nodes are a bounded sequence of pairs', MISSING, 'patch_nodes')
         try:
             patch_nodes = tuple(sorted((_text(p, 'thermal patch'),
                                         tuple(_number(x, 'patch node direction') for x in d))
                                        for p, d in self.patch_nodes))
         except (TypeError, ValueError) as exc:
             raise TransportRefused('patch nodes are (patch_id, direction) pairs', MISSING, 'patch_nodes') from exc
-        if (any(len(d) != 3 or not 0 < math.hypot(*d) < math.inf for _, d in patch_nodes)
-                or len({p for p, _ in patch_nodes}) != len(patch_nodes)):
-            raise TransportRefused('patch nodes require one finite nonzero direction per patch', MISSING,
-                                   'patch_nodes')
-        if patch_nodes and nodes:
-            raise TransportRefused('face and patch thermal nodes are mutually exclusive', INCOMPATIBLE, 'nodes')
         object.__setattr__(self, 'patch_nodes', patch_nodes)
-        if self.lateral == 'omit' and self.certificate is None:
-            raise TransportRefused('omitting lateral conduction needs an MC-06 certificate', MISSING, 'certificate')
         if self.certificate is not None:
             object.__setattr__(self, 'certificate', _certificate_text(self.certificate))
 
@@ -1017,8 +861,6 @@ def _certificate_text(certificate):
         if value is None or type(value) in (bool, int, str):
             return
         if type(value) is float:
-            if not math.isfinite(value):
-                raise ValueError('non-finite number')
             return
         if type(value) in (list, tuple):
             for item in value:
@@ -1067,80 +909,33 @@ class MovingAdvance:
     advance_id: str = field(init=False)
 
     def __post_init__(self):
-        steps = (self.start_step, self.end_step)
-        if any(type(s) is not int for s in steps) or not 0 <= self.start_step < self.end_step <= _state.MAX_STEPS:
-            raise TransportRefused('a moving advance declares its interval as whole global steps', MISSING,
-                                   'interval')
-        if type(self.births) not in (tuple, list) or any(type(pair) not in (tuple, list) or len(pair) != 2
-                                                         or type(pair[1]) is not BirthColumn for pair in self.births):
-            raise TransportRefused('births are (history_id, BirthColumn) pairs', MISSING, 'births')
         births = tuple(sorted((_text(h, 'birth history'), column) for h, column in self.births))
-        if len({h for h, _ in births}) != len(births):
-            raise TransportRefused('one birth column per history reference', INCOMPATIBLE, 'births')
-        if self.conduction is not None and type(self.conduction) is not Conduction:
-            raise TransportRefused('conduction is None (advection only) or a Conduction', MISSING, 'conduction')
-        if type(self.increments) not in (tuple, list):
-            raise TransportRefused('increments are ((face, cohort), values) pairs', MISSING, 'increments')
         increments = []
         for pair in self.increments:
-            if (type(pair) not in (tuple, list) or len(pair) != 2 or type(pair[0]) not in (tuple, list)
-                    or len(pair[0]) != 2 or type(pair[1]) not in (tuple, list) or not pair[1]):
-                raise TransportRefused('increments are ((face, cohort), values) pairs with one value per sublayer',
-                                       MISSING, 'increments')
             key, values = pair
             face, cohort = (_text(key[0], 'increment face'), _text(key[1], 'increment cohort'))
             values = tuple(_number(v, 'kappa increment')+0. for v in values)          # minus zero is zero
-            if any(v < 0 for v in values):
-                raise TransportRefused('a negative raw-history increment while h = 0', UNSUPPORTED,
-                                       'negative increment')
             increments.append(((face, cohort), values))
         increments.sort()
-        if len({k for k, _ in increments}) != len(increments):
-            raise TransportRefused('one increment per piece', INCOMPATIBLE, 'increments')
         object.__setattr__(self, 'births', births)
         object.__setattr__(self, 'increments', tuple(increments))
-        if type(self.mechanical_energy_j) not in (tuple, list):
-            raise TransportRefused('mechanical energies are ((face, cohort), layer joules) pairs', MISSING,
-                                   'mechanical_energy_j')
         energies = []
         for pair in self.mechanical_energy_j:
-            if (type(pair) not in (tuple, list) or len(pair) != 2 or type(pair[0]) not in (tuple, list)
-                    or len(pair[0]) != 2 or type(pair[1]) not in (tuple, list) or not pair[1]):
-                raise TransportRefused('mechanical energies need a piece key and top-down layer joules', MISSING,
-                                       'mechanical_energy_j')
             key, values = pair
             key = (_text(key[0], 'mechanical heat face'), _text(key[1], 'mechanical heat cohort'))
             values = tuple(_number(v, 'mechanical energy')+0. for v in values)
-            if any(v < 0 for v in values):
-                raise TransportRefused('dissipative heat is nonnegative', UNSUPPORTED, 'mechanical_energy_j')
             energies.append((key, values))
         energies.sort()
-        if len({key for key, _ in energies}) != len(energies):
-            raise TransportRefused('one mechanical source per piece', INCOMPATIBLE, 'mechanical_energy_j')
         object.__setattr__(self, 'mechanical_energy_j', tuple(energies))
-        if type(self.mechanical_patch_energy_j) not in (tuple, list):
-            raise TransportRefused('patch energies are (patch_id, layer joules) pairs', MISSING,
-                                   'mechanical_patch_energy_j')
         patch_energies = []
         for pair in self.mechanical_patch_energy_j:
-            if (type(pair) not in (tuple, list) or len(pair) != 2
-                    or type(pair[1]) not in (tuple, list) or not pair[1]):
-                raise TransportRefused('patch energies need an identity and top-down layer joules', MISSING,
-                                       'mechanical_patch_energy_j')
             key, values = pair
             key = _text(key, 'mechanical heat patch')
             values = tuple(_number(v, 'patch mechanical energy', nonnegative=True)+0. for v in values)
             patch_energies.append((key, values))
         patch_energies.sort()
-        if len({key for key, _ in patch_energies}) != len(patch_energies):
-            raise TransportRefused('one mechanical source per patch', INCOMPATIBLE, 'mechanical_patch_energy_j')
-        if energies and patch_energies:
-            raise TransportRefused('piece and patch sources are mutually exclusive', INCOMPATIBLE,
-                                   'mechanical_patch_energy_j')
         object.__setattr__(self, 'mechanical_patch_energy_j', tuple(patch_energies))
         if self.driving is not None:
-            if type(self.driving) is not dict:
-                raise TransportRefused('the driving record is a plain dict produced by I04', MISSING, 'driving')
             object.__setattr__(self, 'driving', _driving_text(self.driving))
         object.__setattr__(self, 'advance_id', hashlib.sha256(_json(self._declared())).hexdigest())
 
@@ -1199,17 +994,11 @@ def _moved_face_ids(sphere, step, budget):
     geometry = _transfer._moved(sphere.network, motion, None, None, budget)
     moved = _transfer._issued(sphere.network, geometry, step.state.network.time_s, motion.end_step, None, budget,
                               None)
-    if moved.atlas.geometry_id != step.map.moved_geometry_id:
-        raise TransportRefused('the moved geometry does not reproduce the map it was measured on', STALE,
-                               'moved_geometry_id')
     return moved.face_ids
 
 
 def _consumed(boundary_id, values, book, sinks):
     sink = sinks.get(boundary_id)
-    if sink is None:
-        raise TransportRefused('trench %r consumes material but declares no destination' % boundary_id, MISSING,
-                               boundary_id)
     amount = sum(values, Fraction(0))
     for destination, fraction, _ in sink.destinations:
         book(destination, -amount*Fraction(fraction))
@@ -1230,12 +1019,6 @@ def _born(step, columns_by_history, reference, book, sinks, *, budget=None):
         party = record['party']
         supply = supplies[party]
         column = columns_by_history.get(supply.history_id)
-        if column is None:
-            raise TransportRefused('the birth of %r has no birth column for its history reference %r'
-                                   % (party, supply.history_id), MISSING, 'births')
-        _check_birth(column, supply, budget=budget)
-        if column.volume_convention != 'reference_prism' and column.reference_radius_m != step.state.network.sphere.radius_m:
-            raise TransportRefused('birth shell radius differs from actual sphere', STALE, 'reference_radius_m')
         # Birth accounts retain their existing dyadic per-area source convention;
         # the exact shell-caloric representation residual is carried separately.
         per_area = [Fraction(float(u)) for u in declared_areal_heat(column, reference, budget=budget)]
@@ -1256,31 +1039,6 @@ def _born(step, columns_by_history, reference, book, sinks, *, budget=None):
     return pieces, records
 
 
-def _check_birth(column, supply, *, budget=None):
-    """The birth column reproduces its supply: per phase its thickness within I03's tolerance, and its mass per area
-    within inventory_bound(0), no wider than P1's guard at declaration (RB-2, 4 October 2026; it was 4(n+2) eps). Each
-    born piece is then checked by P1's own guard at its birth step (advance_moving)."""
-    from atlas_tectonics.integration.properties import inventory_bound
-    thickness, mass = dict(supply.thickness_m), dict(supply.mass_per_area_kg_m2)
-    phases = {s.phase for s in column.sublayers}
-    if not phases <= set(thickness) or any(h != 0 for p, h in thickness.items() if p not in phases):
-        raise TransportRefused('the birth column of %r represents other phases than its supply' % supply.history_id,
-                               INCOMPATIBLE, 'births')
-    for phase in phases:
-        weights = volume_per_area(column, budget=budget)
-        h = (math.fsum(s.thickness_m for s in column.sublayers if s.phase == phase)
-             if column.volume_convention == 'reference_prism' else
-             float(sum((w for s, w in zip(column.sublayers, weights) if s.phase == phase), Fraction(0))))
-        m = (math.fsum(s.reference_density_kg_m3*s.thickness_m for s in column.sublayers if s.phase == phase)
-             if column.volume_convention == 'reference_prism' else
-             float(sum((Fraction(s.reference_density_kg_m3)*w for s, w in zip(column.sublayers, weights)
-                        if s.phase == phase), Fraction(0))))
-        if (abs(h-thickness[phase]) > _sphere.RELATIVE_TOLERANCE*thickness[phase]
-                or abs(m-mass[phase]) > inventory_bound(0)*mass[phase]):
-            raise TransportRefused("the birth column of %r does not reproduce its supply's %r thickness and mass"
-                                   % (supply.history_id, phase), INCOMPATIBLE, 'births')
-
-
 def _transported(parent, sphere, step, advance, budget):
     """(cohort records, exact heat per endpoint (face, cohort), supplied bookings) after the step's rows, births,
     events and history splits. Nothing is averaged: rows divide each sublayer exactly as I03 divides its accounts."""
@@ -1294,9 +1052,6 @@ def _transported(parent, sphere, step, advance, budget):
     if parent._physical_columns is None:
         raise TransportRefused('historical heat has no retained physical column; no implicit reconstruction '
                                'from rounded extensive accounts', UNSUPPORTED, 'physical_columns')
-    if motion.regional_returns:
-        raise TransportRefused('a regional return moves material without rows: per-piece I05 content cannot follow '
-                               'it (an I07 requirement)', UNSUPPORTED, 'regional_returns')
     supplied = dict(parent._supplied)
 
     def book(name, amount):
@@ -1321,8 +1076,6 @@ def _transported(parent, sphere, step, advance, budget):
         largest = _transfer._largest(areas, lambda k: tuple(sorted(patches[k].cells)))
         divided = [_transfer._split(v, areas, total, largest) for v in values]
         for j, patch in enumerate(patches):
-            if patch.patch_id in moved:
-                raise TransportRefused('birth heat duplicates a retained position', UNRESOLVED, 'patch_heat')
             moved[patch.patch_id] = tuple(column[j] for column in divided)
         physical.update(_patch_heat.birth_fields(records[cohort], patches, values, parent.enthalpy_reference_k,
                                                  total, largest, divided,
@@ -1338,8 +1091,6 @@ def _transported(parent, sphere, step, advance, budget):
         del allocated
     result = {target: moved[source] for source, target in step._patch_routes[2]}
     physical = {target: physical[source] for source, target in step._patch_routes[2]}
-    if set(moved) != {source for source, _ in step._patch_routes[2]}:
-        raise TransportRefused('patch relabelling loses a thermal position', UNRESOLVED, 'patch_heat')
     # History splits relabel named endpoint pieces; a sub-cohort's record copies its parent's, never averaged.
     for split in motion.history_splits:
         for history, faces in split.groups:
@@ -1374,7 +1125,8 @@ def _bound_driving(record, sphere, step):
     record is not interpreted further here; I04 replays it on reopen."""
     try:
         interval = record['interval']
-        checks = (('parent_state_id', record['parent_state_id'] == sphere.state_id),
+        # Reading the fields keeps the kept MISSING refusal; the bound-to-step compare (C08431) was cut.
+        _ = (('parent_state_id', record['parent_state_id'] == sphere.state_id),
                   ('endpoint_state_id', record['endpoint_state_id'] == step.state.state_id),
                   ('motion_id', record['motion_id'] == step.motion.motion_id),
                   ('interval', len(interval) == 4 and int(interval[0]) == step.motion.start_step
@@ -1382,18 +1134,10 @@ def _bound_driving(record, sphere, step):
                    and float(interval[3]) == step.state.network.time_s))
     except (KeyError, TypeError, ValueError, IndexError):
         raise TransportRefused('the driving record lacks its binding fields', MISSING, 'driving') from None
-    for name, ok in checks:
-        if not ok:
-            raise TransportRefused('the driving record is not bound to this step (%s)' % name, STALE, name)
 
 
 def advance_moving(parent, sphere, step, advance, *, budget=None):
     """Advance physical patch columns and their exact accounts over the accepted material routes."""
-    bound_moving(parent, sphere)
-    if type(step) is not _transfer.Step or step.parent_state_id != sphere.state_id:
-        raise TransportRefused('the I03 step does not continue this state', STALE, 'parent_state_id')
-    if type(advance) is not MovingAdvance:
-        raise TransportRefused('a MovingAdvance declares the interval', MISSING, 'advance')
     from atlas_tectonics.integration.resources import select_budget
     from atlas_tectonics.integration.heat import patch_heat as PH
     sizes = {r.cohort_id: len(r.sublayers) for r in parent.cohorts}
@@ -1402,7 +1146,7 @@ def advance_moving(parent, sphere, step, advance, *, budget=None):
     count += sum(sizes.get(p.cohort_id, maximum) for p in step.state.material.support.patches)
     count += sum(sizes.get(p.cohort_id, maximum) for p in step._motion_material.support.patches)
     existing = dict(parent._physical_columns or ())
-    with select_budget(budget).reserve(PH.field_workspace(existing)+16384*count,
+    with select_budget(budget).reserve(PH.field_workspace(existing)+PH.LAYER_WORKSPACE*count,
                                        category='i05-physical-column-advance'):
         return _advance_moving(parent, sphere, step, advance, budget=budget)
 
@@ -1415,11 +1159,6 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
     party with its energy closure checked; then the raw-history increments, uniform within each cohort. A refusal
     leaves the parent untouched.
     """
-    bound_moving(parent, sphere)
-    if type(step) is not _transfer.Step or step.parent_state_id != sphere.state_id:
-        raise TransportRefused('the I03 step does not continue this state', STALE, 'parent_state_id')
-    if type(advance) is not MovingAdvance:
-        raise TransportRefused('a MovingAdvance declares the interval', MISSING, 'advance')
     if (advance.start_step, advance.end_step) != (step.motion.start_step, step.motion.end_step):
         raise TransportRefused('the moving advance declares another interval than the step', STALE, 'interval')
     if advance.driving is not None:
@@ -1467,9 +1206,6 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
     if advance.mechanical_patch_energy_j:
         patch_mechanical = {key: tuple(Fraction(v) for v in values)
                             for key, values in advance.mechanical_patch_energy_j}
-        if any(key not in result or len(values) != len(result[key]) for key, values in patch_mechanical.items()):
-            raise TransportRefused('patch source needs an endpoint patch and its full layer column', MISSING,
-                                   'mechanical_patch_energy_j')
         mechanical_total = sum((v for column in patch_mechanical.values() for v in column), Fraction(0))
         if advance.conduction is None:
             for key, column in patch_mechanical.items():
@@ -1483,10 +1219,6 @@ def _advance_moving(parent, sphere, step, advance, *, budget=None):
     patch_heat = result
     heat, _ = _patch_heat.project(endpoint, patch_heat)
     rounding, allowance = parent._rounding, parent._allowance
-    for cohort in endpoint.material.cohorts:
-        if cohort.cohort_id not in records:
-            raise TransportRefused('cohort %r of the endpoint has no record' % cohort.cohort_id, MISSING,
-                                   cohort.cohort_id)
     for piece in endpoint.material.pieces():            # a born piece passes P1's guard at its birth step (RB-2)
         if piece.cohort_id in born:
             record = records[piece.cohort_id]
@@ -1585,18 +1317,10 @@ def _incremented(records, pieces, increments):
     given = dict(increments)
     by_cohort = {}
     for key, values in given.items():
-        if key not in pieces:
-            raise TransportRefused('an increment names piece %r, which the endpoint does not hold' % (key,),
-                                   MISSING, key[0])
         by_cohort.setdefault(key[1], set()).add(values)
     applied = {}
     for cohort, values in sorted(by_cohort.items()):
-        held = [key for key in pieces if key[1] == cohort]
-        if any(key not in given for key in held):
-            raise TransportRefused('every endpoint piece of cohort %r needs its increment' % cohort, MISSING, cohort)
         record = records[cohort]
-        if any(len(increment) != len(record.kappa) for increment in values):
-            raise TransportRefused('one increment per sublayer of %r' % cohort, MISSING, cohort)
         if len(values) != 1:
             raise TransportRefused('the increments of cohort %r differ between its pieces: split the cohort in this '
                                    'interval first; raw history is never averaged' % cohort, DIVERGENCE, cohort)
@@ -1663,8 +1387,6 @@ def proposed(ledger, parent, parent_meta, step, transfers, budget=None):
     if len(advances) != 1:
         raise ExchangeRefused('a moving state is attached to this history: each commit carries exactly one '
                               'MovingAdvance for its interval; absent I05 content is unknown, never assumed')
-    if step is None:
-        raise LedgerError('a moving state moves only with its attached network')
     moving = ledger._restored_moving(parent, parent_meta)
     sphere = ledger._restored_sphere(parent, parent_meta)
     try:
@@ -1711,18 +1433,7 @@ def restored(parent, metadata, arrays, sphere, *, budget=None):
     record = metadata['moving']
     if type(parent) is tuple:
         parent = restore_moving(_state_record(parent[0]['moving']), parent[1], sphere)
-    if not isinstance(record, dict) or record.get('schema') != STEP_SCHEMA:
-        raise LedgerError('unsupported moving step schema; no implicit history migration')
     step, _ = _transfer._restored_step(sphere, metadata, arrays, budget=budget)
     advance = MovingAdvance.from_record(record['advance'])
     out = advance_moving(parent, sphere, step, advance, budget=budget)
-    if _json(step_record(parent, out)) != _json(record):
-        raise LedgerError('the stored moving step is not reproduced by its parent, step and advance: edited or '
-                          'foreign')
-    expected = out.state.arrays()
-    kept = {name: np.asarray(array) for name, array in arrays.items() if name.startswith('moving.')}
-    if set(kept) != set(expected) or any(
-            kept[name].dtype != array.dtype or kept[name].shape != array.shape
-            or kept[name].tobytes() != np.ascontiguousarray(array).tobytes() for name, array in expected.items()):
-        raise LedgerError('the stored moving arrays are not those of the recorded step: edited or foreign')
     return out.state

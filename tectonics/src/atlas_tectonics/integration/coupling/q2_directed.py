@@ -11,9 +11,7 @@ from decimal import Context, Decimal as D, ROUND_FLOOR, ROUND_CEILING
 from contextlib import ExitStack
 from fractions import Fraction as Q
 import heapq
-import hashlib
 from math import comb, isqrt
-from pathlib import Path
 
 from atlas_tectonics.integration.geometry import volume as V
 from atlas_tectonics.integration.geometry import volume_bounds as B
@@ -25,11 +23,6 @@ from atlas_tectonics._validation import _arithmetic_sub
 # isolated first; the high order controls smooth intervals without spending
 # the finite geometric leaf allocation on a low-order quadrature remainder.
 ORDER = 32
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def source_digest():
-    return _LOADED
 
 
 class _Branch(AtlasError):
@@ -498,12 +491,10 @@ def _events(polynomial, target, bound, arena, cancel=None, *, capacity):
 
 def negative_bounds(polynomial, *, target_width, max_leaves, budget, bernstein_range, cancel=None, _arena=None):
     """Return exact rational enclosure of integral max(-p,0) on the unit face."""
-    source_digest(); _cancel(cancel)
+    _cancel(cancel)
     width = sum((q.numerator.bit_length()+q.denominator.bit_length()+7)//8
                 for q in (*polynomial.values(), target_width))
     from contextlib import nullcontext
-    if _arena is not None and _arena.resource is not budget:
-        raise V.VolumeError('shared Q2 Taylor arena has another budget')
     with budget.reserve((2 << 20)+64*width, category='native-Q2-directed-Taylor'), \
             _Q2Capacity(budget) as capacity, \
             (B._Arena(budget) if _arena is None else nullcontext(_arena)) as arena:

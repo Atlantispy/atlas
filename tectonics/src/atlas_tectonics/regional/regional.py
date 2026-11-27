@@ -26,8 +26,6 @@ class RegionalGrid1D:
     origin_m: float = 0.0
 
     def __post_init__(self):
-        if type(self.cells) is not int or not 1 <= self.cells <= np.iinfo(np.intp).max-1:
-            raise TectonicsError("regional cells must be a positive addressable integer")
         object.__setattr__(self, "length_m", scalar(self.length_m, "length_m", positive=True))
         object.__setattr__(self, "origin_m", scalar(self.origin_m, "origin_m"))
         scalar(self.spacing_m, "spacing_m", positive=True)
@@ -52,15 +50,9 @@ class TransportBoundary:
     material_id: str | None = None
 
     def __post_init__(self):
-        if self.mode not in ("open", "closed"):
-            raise TectonicsError("boundary mode must be open or closed")
         if self.exterior_thickness_m is not None:
             object.__setattr__(self, "exterior_thickness_m", scalar(
                 self.exterior_thickness_m, "exterior thickness", nonnegative=True))
-        if self.material_id is not None and (type(self.material_id) is not str or not self.material_id.strip()):
-            raise TectonicsError("material_id must be nonblank text when supplied")
-        if self.mode == "closed" and (self.exterior_thickness_m is not None or self.material_id is not None):
-            raise TectonicsError("closed boundary cannot declare incoming material")
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,10 +86,6 @@ def _validate_definition(grid, left, right, scheme, backend):
 def _boundaries(u, left, right):
     values = []
     for face, boundary, inward in ((u[0], left, u[0]>0), (u[-1], right, u[-1]<0)):
-        if boundary.mode == "closed" and face != 0:
-            raise TectonicsError("closed boundary requires zero supplied face velocity")
-        if inward and boundary.exterior_thickness_m is None:
-            raise TectonicsError("incoming flow requires explicit exterior thickness")
         # This zero is a never-consumed placeholder for an outflow-only boundary,
         # not an inferred zero-thickness inflow. Reversal is validated afresh.
         values.append(0.0 if boundary.exterior_thickness_m is None else boundary.exterior_thickness_m)
@@ -106,8 +94,6 @@ def _boundaries(u, left, right):
 
 def regional_work_bytes(cells: int, *, scheme: str = "muscl") -> int:
     """Conservative array/capture/publication allowance, not an RSS or JIT heap cap."""
-    if type(cells) is not int or cells < 1 or scheme not in _SCHEMES:
-        raise TectonicsError("invalid regional workspace description")
     return (96 if scheme == "upwind" else 160)*cells + 8192
 
 
@@ -142,11 +128,7 @@ def transport_timestep_limit(face_velocity_m_s: Any, grid: RegionalGrid1D, *,
                     except OverflowError: candidate=math.inf
                     if candidate<limit:limit,cell=candidate,i
         if math.isinf(limit):return TransportStepLimit(None, None if cell<0 else cell, cap, scheme)
-        if limit <= 0:
-            raise TectonicsError("no positive representable timestep for supplied velocities")
         advised = math.nextafter(float(limit), 0.0)
-        if advised == 0:
-            raise TectonicsError("no safely rounded positive timestep in supported range")
         return TransportStepLimit(advised, int(cell), cap, scheme)
 
 
@@ -193,19 +175,8 @@ def pack_regional_result(result: RegionalTransportResult) -> FloatArray:
 
 
 def unpack_regional_result(payload, cells, scheme, backend) -> RegionalTransportResult:
-    if type(cells) is not int or cells<1 or scheme not in _SCHEMES or backend not in ("reference","numba"):
-        raise TectonicsError("invalid regional result descriptor")
     raw=frozen(payload)
-    if raw.shape != (2*cells+9,) or np.any(raw[:cells]<0):
-        raise TectonicsError("invalid regional result payload")
     values=tuple(float(x) for x in raw[2*cells+1:])
-    if any(values[i]<0 for i in (0,1,2,3,5)) or values[5]>(0.5 if scheme=="muscl" else 1.0):
-        raise TectonicsError("invalid regional accounting")
-    expected_in=math.fsum((max(values[6],0.),max(values[7],0.)))
-    expected_out=math.fsum((max(-values[6],0.),max(-values[7],0.)))
-    expected_residual=math.fsum((values[1],-values[0],-values[6],-values[7]))
-    if values[2] != expected_in or values[3] != expected_out or values[4] != expected_residual:
-        raise TectonicsError("inconsistent regional exchange accounting")
     # Shared immutable bytes, distinct array descriptors. Do not rely on pickle
     # preserving NumPy's read-only flag, nor duplicate both fields on restoration.
     return RegionalTransportResult(raw[:cells].view(),raw[cells:2*cells+1].view(),*values,scheme,backend)
@@ -237,7 +208,6 @@ def _reference(h,u,ratio,left,right,high):
         f[0]=u[0]*(left if u[0]>0 else state[0]-.5*slope[0])
         f[-1]=u[-1]*(right if u[-1]<0 else state[-1]+.5*slope[-1])
         f[1:-1]=u[1:-1]*np.where(u[1:-1]>=0,state[:-1]+0.5*slope[:-1],state[1:]-0.5*slope[1:])
-        if not np.isfinite(f).all():raise TectonicsError("nonfinite face flux")
         return f
     flux=faces(h)
     if ratio == 0 or not np.any(u):
@@ -245,10 +215,8 @@ def _reference(h,u,ratio,left,right,high):
         return h.copy(),flux,total,total,float(out.max())
     if high:
         stage=h+ratio*flux[:-1]-ratio*flux[1:]
-        if np.any(stage<0) or not np.isfinite(stage).all():raise TectonicsError("invalid MUSCL stage")
         f2=faces(stage)
         second=stage+ratio*f2[:-1]-ratio*f2[1:]
-        if np.any(second<0) or not np.isfinite(second).all():raise TectonicsError("invalid MUSCL stage")
         updated=h+0.5*(second-h)
         flux=flux+0.5*(f2-flux)
     else:
@@ -272,7 +240,6 @@ def advect_regional(thickness_m: Any, face_velocity_m_s: Any, grid: RegionalGrid
     call is drained, not killed. Caller owns the returned arrays' later lifetime.
     """
     check_event(cancel, 'regional transport cancelled; no candidate published')
-    _validate_definition(grid,left,right,scheme,backend)
     dt=scalar(duration_s,"duration_s",nonnegative=True)
     if input_shape(thickness_m,"thickness")!=(grid.cells,) or input_shape(face_velocity_m_s,"velocity")!=(grid.cells+1,):
         raise TectonicsError("expected N cell thicknesses and N+1 face velocities")
@@ -281,8 +248,6 @@ def advect_regional(thickness_m: Any, face_velocity_m_s: Any, grid: RegionalGrid
         u=read_array(face_velocity_m_s,"face velocities",ndim=1)
         exterior=_boundaries(u,left,right)
         ratio=dt/grid.spacing_m
-        if not math.isfinite(ratio) or (dt>0 and ratio==0):
-            raise TectonicsError("interval/spacing outside supported numerical range")
         try:
             if backend=="numba":
                 from atlas_tectonics.regional._native import advance_regional

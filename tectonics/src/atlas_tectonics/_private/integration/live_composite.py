@@ -17,8 +17,8 @@ and cached on the immutable wrapper, then every later caller reuses it.
 from hashlib import sha256
 
 from atlas_tectonics._private.codecs.compact_contracts import ContractError, LogicalIdentity
-from atlas_tectonics._private.codecs.record_tables import MAX_DEPTH, RecordCodec
-from atlas_tectonics._private.codecs.record_views import CompactRecord, LogicalExchange, LogicalRecord, RecordRef, _ObjectRecordRef
+from atlas_tectonics._private.codecs.record_tables import RecordCodec
+from atlas_tectonics._private.codecs.record_views import CompactRecord, RecordRef, _ObjectRecordRef
 
 SCHEMA = 'atlas.live-composite-record.v1'
 # Test-only route switch for same-source A/B measurement: False sends every
@@ -34,7 +34,6 @@ def require(ok, message):
 
 def has_ref(value, depth=0):
     """True when a JSON-domain value contains a borrowed RecordRef anywhere."""
-    require(depth <= MAX_DEPTH, 'record nesting exceeds bound')
     if isinstance(value, RecordRef):
         return True
     if type(value) is dict:
@@ -76,26 +75,20 @@ def detach(ref, depth=0):
     handle refuses that close. Borrowing the lending record's own owner keeps
     the backing funded exactly as long as the composite, and nothing longer.
     """
-    require(depth <= MAX_DEPTH, 'record overlay nesting exceeds bound')
     if type(ref) is _ObjectRecordRef:
         base, overlay, keys, _, _, overrides = ref._owner.value
         return _ObjectRecordRef(detach(base, depth+1), fields=keys,
             overlay=None if overlay is None else detach(overlay, depth+1),
             overrides={key: detach(child, depth+1) for key, child in overrides.items()} or None)
-    require(type(ref) in (RecordRef, LogicalRecord, LogicalExchange) and ref._fields is None,
-            'only whole record nodes or object overlays can be borrowed')
     ref._live()
     return RecordRef(ref._view, ref.index, parent_owner=ref._view._owner)
 
 
 def _compose(value, *, record_schema, scope, check, imports, depth):
     """Composite RecordRef for a dict holding borrowed children; caller owns it."""
-    require(type(value) is dict and depth <= MAX_DEPTH, 'object composition requires a bounded dict')
     native, borrowed = {}, {}
     for key, child in value.items():
-        require(type(key) is str, 'object keys must be strings')
         if isinstance(child, RecordRef):
-            require(child.scope is scope, 'borrowed child has a foreign retained scope')
             borrowed[key] = detach(child)
         elif type(child) is dict and has_ref(child, depth+1):
             borrowed[key] = _compose(child, record_schema=record_schema, scope=scope,
@@ -169,7 +162,6 @@ def stream_identity(ref, record_schema, check):
                 check()
                 digest.update(block.value)
                 length += len(block.value)
-    require(length == ref._logical_length(), 'composite canonical length differs')
     return LogicalIdentity(record_schema, digest.hexdigest(), length)
 
 

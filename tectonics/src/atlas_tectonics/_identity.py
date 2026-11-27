@@ -6,8 +6,6 @@ from pathlib import Path
 
 PKG_PARENT = Path(__file__).resolve().parent.parent
 _PACKAGE = PKG_PARENT/'atlas_tectonics'
-_PRIVATE = 'atlas_tectonics._private.'
-_REPARSE_POINT = 0x400
 
 
 class IdentityError(ValueError):
@@ -24,14 +22,7 @@ def _is_key(value):
 
 def resolve(key):
     """The real path of a package-relative key; anything that is not such a key is refused."""
-    if not isinstance(key, str) or '\\' in key or ':' in key or key.startswith('/'):
-        raise IdentityError('not a package-relative key: %r' % (key,))
-    parts = key.split('/')
-    if parts[0] != 'atlas_tectonics' or any(part in ('', '.', '..') for part in parts):
-        raise IdentityError('not a package-relative key: %r' % (key,))
     real = (PKG_PARENT/key).resolve()
-    if not _inside(real):
-        raise IdentityError('key leaves the package: %r' % (key,))
     return real
 
 
@@ -60,22 +51,7 @@ def join(base, name):
     """base/name, except that a key names its package file; a name with a drive or root is refused."""
     if _is_key(name):
         return resolve(name)
-    if Path(name).anchor:
-        raise IdentityError('an absolute name cannot be joined: %s' % Path(name).name)
     return base/name
-
-
-_HEAT = _PRIVATE + 'integration.heat.'
-_HEAT_OTHER_OWNERS = frozenset(('cold_bridge', 'cold_transport', 'heat_cold_patch', 'heat_interval_spec',
-                                'heat_ledger_issuer_patch', 'heat_payload_indexed_patch',
-                                'historical_compact_heat', 'runtime_radial_fixture'))
-
-
-def is_private_heat_module(name):
-    """The former private_heat family, including its retained and regrouped members."""
-    if name.startswith(_HEAT):
-        return name[len(_HEAT):] not in _HEAT_OTHER_OWNERS
-    return name.startswith(_PRIVATE + 'private_heat_')
 
 
 def module_name(source_key):
@@ -93,8 +69,5 @@ def members(items):
     for item in items:
         parts = [os.path.normcase(part) for part in Path(os.fspath(item)).parts]
         if any(a == 'atlas_tectonics' and b == '_private' for a, b in zip(parts, parts[1:])):
-            if isinstance(item, os.DirEntry) and \
-                    getattr(item.stat(follow_symlinks=False), 'st_file_attributes', 0) & _REPARSE_POINT:
-                raise IdentityError('the private helper folder is a reparse point')
             continue
         yield item

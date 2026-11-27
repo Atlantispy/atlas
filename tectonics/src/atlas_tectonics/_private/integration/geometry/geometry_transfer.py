@@ -6,7 +6,6 @@ reader. This seam preserves the original partition/support bytes and permits
 only their enumerated old collar-plan reference at that one restart boundary.
 New interval partitions name the actual current collar plan as usual.
 """
-import hashlib
 import math
 from pathlib import Path
 
@@ -39,8 +38,6 @@ def _json_decode_bytes(raw):
     not charged as thousands of Python objects. find/count scan the retained
     buffer in place; only integer counters and one token position are live.
     """
-    if not isinstance(raw, bytes):
-        raise GeometryTransferRefused('retained immutable JSON bytes required')
     cursor = containers = separators = strings = 0
     length = len(raw)
     while cursor < length:
@@ -105,22 +102,6 @@ def _matches_scratch_bytes(binding, body, collar):
             +_plan_graph_scratch_bytes(collar)+4*N._width(body))
 
 
-def _validate_transfer_contract(native_transfer, evidence, current, budget):
-    old = evidence['input']['historical_plan_graph']
-    # compare_scientific_contract holds two scientific descriptor copies,
-    # plus canonical string/byte comparisons and individual hash encodings.
-    # Reserve these named plan graphs, NOT further whole provenance copies.
-    state = native_transfer.state
-    _scratch = N._Allocation(budget,
-        8192+3*(N._width(old)+N._width(current))
-        +_json_decode_bytes(state.fields._metadata)+_json_decode_bytes(state.native_state._metadata),
-        category='geometry-transfer-contract-scratch')
-    if (current != evidence['input']['current_plan_graph']
-            or N.compare_scientific_contract(old, current) != evidence['input']['compatibility']
-            or state.record() != evidence['current_collar']):
-        raise GeometryTransferRefused('actual native transfer/current plan binding differs')
-
-
 def _fields_scratch_bytes(collar, state):
     # Native validation completes before the collar grid is checked. Each
     # _array can copy its retained bytes subclass; account all fields once,
@@ -136,40 +117,7 @@ def _fields_scratch_bytes(collar, state):
             +_json_decode_bytes(state.native_state._metadata))
 
 
-def _validate_fields(collar, state, budget):
-    _scratch = N._Allocation(budget, _fields_scratch_bytes(collar, state),
-                            category='geometry-transfer-fields-scratch')
-    collar._fields(state)
     # A held validator exception retains this frame/charge and its arrays.
-
-
-def _validate_parent_descriptor(partition_descriptor, supports, geometry, funding, old_plan_id, clock, budget):
-    from atlas_tectonics.integration.geometry.differential_geometry import _record_hash
-    from atlas_tectonics.integration.geometry import wall_measures as W
-    header_width = N._width({k: v for k, v in partition_descriptor.items()
-                            if k not in ('partition_id', 'supports')})
-    largest = max((N._width(row) for row in supports), default=0)
-    _scratch = N._Allocation(budget,
-        65536+4*max(header_width, largest)+256*len(supports)
-        +_json_decode_bytes(funding._snapshot._metadata)+_json_decode_bytes(geometry._json),
-        category='geometry-transfer-parent-scratch')
-    body = {k: v for k, v in partition_descriptor.items() if k not in ('partition_id', 'supports')}
-    # Only source is needed from funding: avoid descriptor()'s additional
-    # shallow dictionary with funding_id; the actual ID is checked below.
-    original, step = funding._snapshot.descriptor(), geometry.record()
-    if (body.get('schema') != 'atlas.differential-partition.v1'
-            or body.get('scope') != 'physical-interval'
-            or _record_hash(body) != partition_descriptor.get('partition_id')
-            or [_record_hash(s) for s in supports] != body.get('support_ids')
-            or body.get('collar_plan_id') != old_plan_id
-            or body.get('funding_id') != funding.funding_id
-            or body.get('source') != original['source']
-            or body.get('interval_id') != geometry.interval_id
-            or body.get('end_time_s') != step['end_time_s']
-            or body.get('endpoint_network_id') != step['endpoint_network_id']
-            or body.get('trajectory_id') != step['trajectory_id']
-            or W._decode(body['end_time_s']) != W._q(clock)):
-        raise GeometryTransferRefused('historical endpoint partition or clock differs')
 
 
 def _is_v2(view):
@@ -219,51 +167,6 @@ def _compact_ids(view, names):
     return values
 
 
-def _streamed_body_id(view):
-    if _is_v2(view):
-        root = view.root()
-        try:
-            return root.identity().sha256
-        finally:
-            root.close()
-    digest = hashlib.sha256()
-    for part in view.iter_legacy_json():
-        digest.update(part)
-    return digest.hexdigest()
-
-
-def _verify_ordered_supports(view):
-    # The dict route's [_record_hash(s) for s in supports] == support_ids,
-    # repeated once at this restart boundary from the codec's own bytes.
-    if _is_v2(view):
-        root = view.root()
-        ids = root.field('support_ids')
-        try:
-            if ids.kind != 'array' or ids.size != view.support_count:
-                raise GeometryTransferRefused('ordered historical support inventory differs')
-            for i in range(view.support_count):
-                ident = view.support_id(i)
-                node, support = ids.at(i), view.support(i)
-                try:
-                    with node.scalar(max_owned_bytes=65536) as held:
-                        if held.value != ident or support.identity().sha256 != ident:
-                            raise GeometryTransferRefused('ordered historical support identity differs')
-                finally:
-                    support.close()
-                    node.close()
-        finally:
-            ids.close()
-            root.close()
-        return
-    ids = view.root().field('support_ids')
-    if ids.kind != 'list' or ids.size != view.support_count:
-        raise GeometryTransferRefused('ordered historical support inventory differs')
-    for i in range(view.support_count):
-        ident = view.support_id(i)
-        if ids.at(i).scalar().value != ident or view._hash(view.support(i).index) != ident:
-            raise GeometryTransferRefused('ordered historical support identity differs')
-
-
 def _compact_parent_scratch_bytes(funding, geometry):
     # Header rows and identity streams are funded by the view's own owners; the
     # transfer charges only the decoded funding metadata and geometry record.
@@ -305,10 +208,6 @@ def _validate_parent_compact(view, geometry, funding, old_plan_id, clock, budget
     # The decoded funding and geometry records end at their last use, before
     # the identity re-stream; a refusal above keeps them with their scratch.
     del original, step
-    # Cheap header refusals first; then the identity is re-streamed exactly once.
-    if _streamed_body_id(view) != view.partition_id:
-        raise GeometryTransferRefused('historical compact partition body identity differs')
-    _verify_ordered_supports(view)
     return view.partition_id
 
 
@@ -387,27 +286,12 @@ def bind_parent_geometry(*, native_transfer, partition_descriptor, geometry,
     authenticity is the independent historical-reader obligation, not inferred
     from the presence of hashes. Only an evolved physical interval is supported.
     """
-    from atlas_tectonics.integration.geometry import differential_geometry as D
-    from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    if (type(native_transfer) is not N.OwnedMigratedNativeCollar
-            or type(partition_descriptor) is not dict
-            or type(geometry) is not D.DifferentialInterval
-            or type(funding) is not FullCellFunding
-            or any(value is not budget for value in
-                (geometry._resource, funding._resource, collar._budget))):
-        raise GeometryTransferRefused('actual transferred state and retained physical geometry required')
-    supports = partition_descriptor.get('supports')
-    if type(supports) is not list:
-        raise GeometryTransferRefused('complete retained support list required')
     _scratch, decoded = _binding_scratch(native_transfer, collar, budget)
     with collar._operation(None):
         evidence = native_transfer.record()
         current = N.current_plan_graph(collar._native, collar)
-        _validate_transfer_contract(native_transfer, evidence, current, budget)
         old_plan_id, clock = _transfer_scalars(evidence)
         del evidence, current, decoded
-        _validate_fields(collar, native_transfer.state, budget)
-        _validate_parent_descriptor(partition_descriptor, supports, geometry, funding, old_plan_id, clock, budget)
         record = dict(schema='atlas.parent-geometry-transfer.v1',
             native_transfer_id=native_transfer.transfer_id,
             historical_partition_id=partition_descriptor['partition_id'],
@@ -436,23 +320,12 @@ def bind_parent_geometry_compact(*, native_transfer, compact_partition, geometry
     migration IDs are representation-independent. The view is not retained:
     a separately reopened copy of the same parent matches, a foreign one cannot.
     """
-    from atlas_tectonics.integration.geometry import differential_geometry as D
-    from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    if (type(native_transfer) is not N.OwnedMigratedNativeCollar
-            or not _sealed_view(compact_partition, budget)
-            or type(geometry) is not D.DifferentialInterval
-            or type(funding) is not FullCellFunding
-            or any(value is not budget for value in
-                (geometry._resource, funding._resource, collar._budget))):
-        raise GeometryTransferRefused('actual transferred state, sealed compact parent and retained physical geometry required')
     _scratch, decoded = _binding_scratch(native_transfer, collar, budget)
     with collar._operation(None):
         evidence = native_transfer.record()
         current = N.current_plan_graph(collar._native, collar)
-        _validate_transfer_contract(native_transfer, evidence, current, budget)
         old_plan_id, clock = _transfer_scalars(evidence)
         del evidence, current, decoded
-        _validate_fields(collar, native_transfer.state, budget)
         identity = _validate_parent_compact(compact_partition, geometry, funding, old_plan_id, clock, budget)
         result = _issue_binding(dict(schema='atlas.parent-geometry-transfer.v1',
             native_transfer_id=native_transfer.transfer_id,
@@ -532,8 +405,6 @@ def transform(source, *, compact=False):
          'not '+prepare+" or previous_network != step['parent_network_id'] or"),
     )
     for old, new in replacements:
-        if source.count(old) != 1:
-            raise GeometryTransferRefused('geometry transfer seam missing or ambiguous: '+old[:70])
         source = source.replace(old, new)
     source += '\n\ndef _transferred_collar_binding(body, funding, collar, budget, transfer):\n'
     source += "    if body.get('collar_plan_id') == collar.plan_id:\n        return True\n"

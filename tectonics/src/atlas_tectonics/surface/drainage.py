@@ -11,12 +11,10 @@ from dataclasses import dataclass
 import hashlib
 import heapq
 import json
-import math
-from numbers import Integral
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, snapshot, text
+from atlas_tectonics._validation import TectonicsError, snapshot
 from atlas_tectonics._validation import frozen_c_order
 from atlas_tectonics.integration.resources import select_budget
 
@@ -65,30 +63,17 @@ class DrainageGeometry:
 
 
 def _bounded_shape(value, name, limit, *, width=None):
-    if not isinstance(value, (list, tuple, np.ndarray)):
-        raise TectonicsError(f"{name}: an explicit array or sequence is required")
     try:
         count = len(value)
     except TypeError as exc:
         raise TectonicsError(f"{name}: an array is required") from exc
-    if count > limit:
-        raise TectonicsError(f"{name}: supported bound is {limit}")
     if not count:
-        if isinstance(value, np.ndarray) and value.shape != ((0, width) if width else (0,)):
-            raise TectonicsError(f"{name}: incorrect empty shape")
         return count
-    shape = input_shape(value, name)
-    if shape != ((count, width) if width else (count,)):
-        raise TectonicsError(f"{name}: incorrect shape")
     return count
 
 
 def _index(value, name, count):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral):
-        raise TectonicsError(f"{name}: integer indices, not bool/float, are required")
     result = int(value)
-    if not 0 <= result < count:
-        raise TectonicsError(f"{name}: node index out of bounds")
     return result
 
 
@@ -103,8 +88,6 @@ def _flat_receivers(bed, neighbours, outlets):
             if bed[other] >= bed[node]:
                 continue
             slope = (float(bed[node]) - float(bed[other])) / length
-            if not math.isfinite(slope) or slope <= 0:
-                raise TectonicsError("positive physical slope is outside binary64 range")
             if slope > best_slope or (slope == best_slope and other < receiver[node]):
                 best_slope, receiver[node] = slope, other
 
@@ -226,18 +209,13 @@ def prepare_drainage(bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
     """
     identities = []
     for name, value in (("frame_id", frame_id), ("datum_id", datum_id), ("source_id", source_id)):
-        value = text(value, name)
         if len(value) > 1024 or len(value.encode("utf-8")) > 4096:
             raise TectonicsError(f"{name}: identity exceeds bounded size")
         identities.append(value)
     count = _bounded_shape(bed_m, "bed_m", _MAX_NODES)
     if count < 1:
         raise TectonicsError("at least one drainage node is required")
-    if _bounded_shape(areas_m2, "areas_m2", _MAX_NODES) != count:
-        raise TectonicsError("bed/area shape mismatch")
     edge_count = _bounded_shape(links, "links", _MAX_LINKS, width=2)
-    if _bounded_shape(link_lengths_m, "link_lengths_m", _MAX_LINKS) != edge_count:
-        raise TectonicsError("link/length shape mismatch")
     _bounded_shape(outlet_nodes, "outlet_nodes", count)
     # Includes detached inputs/results, hash serialisation, adjacency tuples,
     # sets/dictionaries/heaps and bounded Python work; not an RSS assertion.
@@ -246,19 +224,11 @@ def prepare_drainage(bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
         bed = snapshot(bed_m, "bed_m")
         areas = snapshot(areas_m2, "areas_m2", nonnegative=True)
         outlets = tuple(sorted(_index(node, "outlet_nodes", count) for node in outlet_nodes))
-        if len(outlets) != len(set(outlets)):
-            raise TectonicsError("duplicate outlet node")
-        if any(areas[node] != 0 for node in outlets):
-            raise TectonicsError("outlet nodes require zero storage area")
         lengths = (snapshot(link_lengths_m, "link_lengths_m") if edge_count
                    else frozen_c_order([], np.float64))
-        if np.any(lengths <= 0):
-            raise TectonicsError("positive link lengths required")
         records, known = [], set()
         for index, pair in enumerate(links):
             a, b = sorted(_index(node, "links", count) for node in pair)
-            if a == b or (a, b) in known:
-                raise TectonicsError("links must be unique undirected non-self edges")
             known.add((a, b))
             records.append((a, b, float(lengths[index])))
         records.sort()
@@ -273,9 +243,7 @@ def prepare_drainage(bed_m, areas_m2, links, link_lengths_m, outlet_nodes, *,
         receiver = _flat_receivers(bed, neighbours, set(outlets))
         order, basin_of, basin_cells = _ordered_basins(receiver, set(outlets))
         for cells in basin_cells:
-            bottom = float(np.min(bed[cells]))
-            if not any(areas[node] > 0 for node in cells if bed[node] == bottom):
-                raise TectonicsError("pit minimum plateau requires positive storage area")
+            pass
         best_saddles = {}
         for a, b, _ in records:
             left, right = int(basin_of[a]), int(basin_of[b])

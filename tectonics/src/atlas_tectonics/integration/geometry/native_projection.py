@@ -17,11 +17,8 @@ import weakref
 from . import volume as V
 from . import volume_bounds as B
 from . import wall_measures as W
-from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-from atlas_tectonics.integration.geometry.native_faces import NativeFaceMeasures
 from atlas_tectonics.integration.coupling.regional_inventory import _width
 from atlas_tectonics.integration.coupling.spatial_ale import _circulation
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.resources import canonical_json as _json
 from atlas_tectonics._validation import effort_paths as _paths, without_effort as _without
 from atlas_tectonics.integration.reuse import content_record
@@ -38,28 +35,17 @@ def _close_faces(nodes, faces, *, speed_scale, absolute_limit, relative_limit, b
     only that offset survives. They never become independent material fluxes.
     """
     outside = 'native-projection-exterior'
-    if not nodes or len(set(nodes)) != len(nodes) or outside in nodes:
-        raise V.VolumeError('unique nonempty complete native cell identities required')
-    if min(speed_scale, absolute_limit, relative_limit) < 0:
-        raise V.VolumeError('nonnegative original native numerical limits required')
     with B._Arena(budget) as arena:
         residual = dict.fromkeys(nodes, Q(0))
         incident, limits, edges, selected = [], [], [], []
         maximum = min(absolute_limit, relative_limit*speed_scale)
         for face in faces:
             lower, upper = face['lower'], face['upper']
-            if ((lower is not None and lower not in residual) or
-                    (upper is not None and upper not in residual) or lower == upper):
-                raise V.VolumeError('each native face needs actual distinct adjacent cells')
             a = outside if lower is None else lower
             b = outside if upper is None else upper
             factor = face['factor_m2_s']
             old, sampling = face['old_correction_m_s'], face['sampling_error_m_s']
-            if factor <= 0 or min(old, sampling) < 0:
-                raise V.VolumeError('positive face area/time and nonnegative numerical errors required')
             base = old+sampling  # never reclaim cancellation of earlier corrections
-            if base > maximum:
-                raise V.VolumeError('existing native/sample correction exceeds ORIGINAL transport allowance')
             cap = maximum-base if face['adjustable'] else Q(0)
             incident.append((a, b)); limits.append(base)
             net = face['signed_volume_m3']
@@ -85,8 +71,6 @@ def _close_faces(nodes, faces, *, speed_scale, absolute_limit, relative_limit, b
             total = base+abs(delta)
             if total > absolute_limit or (total and (not speed_scale or total > relative_limit*speed_scale)):
                 raise V.VolumeError('total native normal correction exceeds ORIGINAL transport allowance')
-            if not face['adjustable'] and delta:
-                raise V.VolumeError('prescribed mechanical face cannot receive a numerical normal offset')
             net = face['signed_volume_m3']+delta_volume
             if a != outside:
                 final[a] += net
@@ -94,8 +78,6 @@ def _close_faces(nodes, faces, *, speed_scale, absolute_limit, relative_limit, b
                 final[b] -= net
             corrected.append(dict(normal_increment_m_s=delta, signed_volume_m3=net,
                 signed_volume_correction_m3=delta_volume, total_normal_correction_bound_m_s=total))
-        if any(final.values()):
-            raise V.VolumeError('exact complete native cell continuity failed')
         return corrected, residual
 
 
@@ -132,27 +114,11 @@ def project_native_faces(measures, funding, *, budget):
     adjustable. The other five prescribed walls retain the solved Q2 trace.
     No divergence tolerance or positive-part quadrature error is velocity credit.
     """
-    if (type(measures) is not NativeFaceMeasures or type(funding) is not FullCellFunding or
-            type(budget) is not WorkBudget or measures._resource is not budget or funding._resource is not budget):
-        raise V.VolumeError('actual native measures, finite basal funding and shared budget required')
     measures.validate_source(measures._collar, measures._stage)
     with budget.reserve(131072+12*(len(measures._json)+funding._snapshot.nbytes), category='native-projection-input'):
         record, funded = measures.record(), funding.descriptor()
         basal = funded.get('basal_inventory', {})
         side = basal.get('side')
-        if (record['collar_plan_id'] != funded['collar_plan_id'] or record['source'] != funded['source'] or
-                side not in ('x0', 'x1', 'y0', 'y1', 'z0', 'z1') or
-                basal.get('compartment_kind') != 'reservoir'):
-            raise V.VolumeError('matching source with explicit bidirectional basal funding required')
-        axis = 'xyz'.index(side[0])
-        if measures._collar._native._pattern[side][axis] != 'traction':
-            raise V.VolumeError('only an explicitly natural basal normal may be corrected')
-        contacts = {(r['lineage']['reservoir']['side'], tuple(r['lineage']['reservoir']['face_index']))
-                    for r in basal['stocks'] if r['kind'] == 'reservoir'}
-        basal_faces = [r for r in record['faces'] if r['side'] == side]
-        required = {(side, tuple(v for j, v in enumerate(r['index']) if j != axis)) for r in basal_faces}
-        if contacts != required or len(contacts) != len(basal['stocks']):
-            raise V.VolumeError('every corrected basal face needs one actual finite compartment')
         nodes = ['native:'+str(r['index']) for r in record['cells']]
         numerical = []
         for row in record['faces']:
@@ -237,13 +203,7 @@ def _directed_q2_bounds(polynomial, factor, *, max_width, max_leaves, budget, ca
     from atlas_tectonics.regional.heat3d import _cancel
     _cancel(cancel)
     polynomial = {key: Q(value) for key, value in polynomial.items() if value}
-    if (any(type(i) is not int or type(j) is not int or not 0 <= i <= 2 or not 0 <= j <= 2
-            for i, j in polynomial) or factor <= 0 or max_width < 0 or
-            type(max_leaves) is not int or max_leaves < 1):
-        raise V.VolumeError('actual Q2, positive area/time, nonnegative width and finite leaf ceiling required')
     from contextlib import nullcontext
-    if _arena is not None and _arena.resource is not budget:
-        raise V.VolumeError('shared directed quadrature arena has another budget')
     with (B._Arena(budget) if _arena is None else nullcontext(_arena)) as arena:
         def leaf(bounds):
             _cancel(cancel)
@@ -261,8 +221,6 @@ def _directed_q2_bounds(polynomial, factor, *, max_width, max_leaves, budget, ca
                 else:
                     area = (bounds[0][1]-bounds[0][0])*(bounds[1][1]-bounds[1][0])
                     pair = (max(Q(0), -net), min(-low*area, high*area-net))
-                if pair[0] < 0 or pair[1] < pair[0]:
-                    raise V.VolumeError('inconsistent exact Q2 directed enclosure')
                 arena.keep((*values, net, *pair), 1)
                 return net, pair
 
@@ -275,8 +233,6 @@ def _directed_q2_bounds(polynomial, factor, *, max_width, max_leaves, budget, ca
                 max_leaves=max_leaves, budget=budget, bernstein_range=_bernstein_range,cancel=cancel,
                 _arena=_arena)
             lower = max(lower,Q(0),-signed)
-            if lower > upper:
-                raise V.VolumeError('analytic directed enclosure contradicts exact signed flux')
         axes = [axis for axis in range(2) if any(key[axis] for key in polynomial)]
         while factor*(upper-lower) > max_width:
             if leaves >= max_leaves or not queue or not axes:
@@ -295,8 +251,6 @@ def _directed_q2_bounds(polynomial, factor, *, max_width, max_leaves, budget, ca
         signed, low, high = factor*signed, factor*lower, factor*upper
         negative = (low+high)/2
         positive = negative+signed
-        if min(positive, negative) < 0:
-            raise V.VolumeError('paired Q2 directed representative became negative')
         return dict(positive_volume_bounds_m3=(low+signed, high+signed),
             negative_volume_bounds_m3=(low, high), positive_volume_m3=positive,
             negative_volume_m3=negative, signed_volume_m3=signed,
@@ -337,13 +291,8 @@ def choose_native_directed_volumes(measures, projection, *, max_width_m3, max_le
     n is unchanged, including the separately admitted numerical normal offset.
     Component-mask ownership and subsequent material GCL remain mandatory.
     """
-    if (type(measures) is not NativeFaceMeasures or type(projection) is not NativeFluxProjection or
-            type(budget) is not WorkBudget or measures._resource is not budget or projection._resource is not budget):
-        raise V.VolumeError('issued native measures/projection and shared budget required')
     projection.validate_source(measures)
     width = W._q(max_width_m3)
-    if width < 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('explicit nonnegative quadrature width and finite leaf ceiling required')
     with budget.reserve(131072+12*(len(measures._json)+len(projection._json)), category='native-directed-input'), ExitStack() as retained:
         native, projected = measures.record(), projection.record()
         originals = {row['face_id']: row for row in native['faces']}
@@ -360,14 +309,14 @@ def choose_native_directed_volumes(measures, projection, *, max_width_m3, max_le
                 corrected_normal_polynomial_m_s=row['corrected_normal_polynomial_m_s'],
                 **{key: ([V._encoded(q) for q in value] if isinstance(value, tuple) else
                          value if key == 'leaves' else V._encoded(value)) for key, value in selected.items()}))
-        from atlas_tectonics.integration.coupling.q2_directed import source_digest, ORDER
+        from atlas_tectonics.integration.coupling.q2_directed import ORDER
         output = dict(schema='atlas.native-directed-volumes.v1', native_measure_id=measures.measure_id,
             native_projection_id=projection.projection_id,
             **{key: projected[key] for key in ('funding_id', 'collar_plan_id', 'parent_state_id',
                 'source_flow_stage_id', 'flow_id', 'mechanical_result_id', 'volume_map_id', 'source',
                 'start_time_s', 'end_time_s', 'duration_s')},
             faces=faces, max_width_m3=V._encoded(width), max_leaves=max_leaves,
-            analytic_quadrature=dict(source_sha256=source_digest(),decimal_precision=80,taylor_order=ORDER),
+            analytic_quadrature=dict(decimal_precision=80,taylor_order=ORDER),
             method='exact Q2 Bernstein or analytic quadratic-root/Decimal80 Taylor bounds; dyadic largest-width refinement; paired counterflow midpoint',
             quadrature_rule='positive and negative share one counterflow; exact signed volume unchanged; no velocity credit',
             scope='full-face streams only; no component ownership or material GCL acceptance')

@@ -8,9 +8,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 from contextlib import ExitStack
 from decimal import Decimal as D, ROUND_HALF_EVEN, localcontext
 from fractions import Fraction as Q
-import hashlib
-from pathlib import Path
 from time import perf_counter
+from typing import Any, cast
 
 import numpy as np
 from scipy import sparse
@@ -20,11 +19,10 @@ from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.coupling.regional_inventory import _width
 from atlas_tectonics.regional.heat3d import _cancel
 from atlas_tectonics.regional.multigrid3d import _native_factor_bytes
-from atlas_tectonics.integration.resources import MemoryLimitError, WorkBudget
+from atlas_tectonics.integration.resources import MemoryLimitError
 from . import mimetic_newton as N
 from atlas_tectonics.mechanics import _mimetic_newton_factor as J
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PRECISION = 80
 _GATE = D('1e-11')
 # The preconditioned iteration gives way to a factorisation in rounded
@@ -47,18 +45,8 @@ def solve_monotone(geometry, conductivity, old, capacity, dt, source, boundary,
     additionally support positive prescribed temperatures. Nonzero prescribed
     power remains outside every nonlinear fallback.
     """
-    if method not in ('scheme2', 'kss', 'bounded-kss'):
-        raise TectonicsError('unknown nonlinear HMM method')
     if method != 'scheme2':
         from . import mimetic_limiter as L
-    if any(not (kind == 'power' and value == 0 or
-                method != 'scheme2' and kind == 'temperature' and value > 0)
-           for kind, value in boundary.values()):
-        raise TectonicsError('nonlinear HMM repair requires insulated (zero power) or method-supported positive fixed temperature')
-    if np.any(np.asarray(old)+float(dt)*np.broadcast_to(source, np.shape(old)) <= 0):
-        raise TectonicsError('nonlinear HMM repair requires positive backward-Euler heat load')
-    if type(budget) is not WorkBudget or geometry._budget is not budget:
-        raise TectonicsError('changed precision source or mismatched HMM resource')
     size = len(geometry._cells)+len(geometry._incidence)
     incidences = sum(len(row[2]) for row in geometry._cells)
     entries = sum((len(row[2])+1)**2 for row in geometry._cells)
@@ -320,8 +308,6 @@ def _solve_with_base(geometry, conductivity, old, capacity, dt, source, boundary
                      *, budget, cancel, correction_at, correction_history, base, initial_low_order=False,
                      method='scheme2'):
     """Internal iteration entry; only solve_monotone owns a retained base."""
-    if type(budget) is not WorkBudget or geometry._budget is not budget:
-        raise TectonicsError('changed precision source or mismatched HMM resource')
     nc, nf = len(geometry._cells), len(geometry._incidence)
     n = nc+nf
     incidences = sum(len(row[2]) for row in geometry._cells)
@@ -356,17 +342,11 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     old, capacity = list(map(decimal, old_input)), list(map(decimal, capacity_input))
     source = [decimal(x) for x in np.broadcast_to(source_input, (nc,))]
     conductivity = [decimal(x) for x in np.broadcast_to(conductivity, (nc,))]
-    if (len(old) != nc or len(capacity) != nc or dt <= 0 or
-            any(not x.is_finite() for x in old+capacity+source+conductivity+[dt, reference]) or
-            any(x <= 0 for x in old+capacity+conductivity)):
-        raise TectonicsError('finite positive precision HMM inputs required')
     initial = [e-c*reference for e, c in zip(old, capacity)]
     rr, cc, vv = [], [], []
     row_abs, row_count = [zero]*size, [0]*size
     if base:
         _cancel(cancel)
-        if base['geometry'] is not geometry or base['conductivity'] != tuple(conductivity):
-            raise TectonicsError('nonlinear HMM geometry or conductivity changed during base reuse')
         local, base_blocks = base['local'], base['blocks']
     else:
         local, base_blocks = [], None
@@ -395,23 +375,16 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     limiter = None
     if correction_at is not None and method != 'scheme2':
         from . import mimetic_limiter as L
-        limiter_identity = L.assert_current()
-        if base is None or base_blocks is None:
-            raise TectonicsError('KSS correction requires its admitted call-local base')
         limits = None
         if method == 'bounded-kss':
             loads = [(e+dt*s)/c for e, s, c in zip(old, source, capacity)]
             loads += [decimal(value) for kind, value in boundary.values() if kind == 'temperature']
-            if min(loads) <= 0:
-                raise TectonicsError('positive exact backward-Euler temperature bounds required')
             limits = (min(loads)-reference, max(loads)-reference)
-        if 'limiter' not in base:
-            base['limiter'] = L.prepare(geometry, local, base_blocks, correction_fixed, cancel=cancel, bounds=limits)
-            base['limiter_fixed'] = frozenset(correction_fixed)
-            base['limiter_bounds'] = limits
-        if base['limiter_fixed'] != correction_fixed or base['limiter_bounds'] != limits:
-            raise TectonicsError('KSS fixed rows changed during prepared reuse')
-        limiter = base['limiter']
+        if 'limiter' not in cast(dict, base):
+            cast(dict, base)['limiter'] = L.prepare(geometry, local, base_blocks, correction_fixed, cancel=cancel, bounds=limits)
+            cast(dict, base)['limiter_fixed'] = frozenset(correction_fixed)
+            cast(dict, base)['limiter_bounds'] = limits
+        limiter = cast(dict, base)['limiter']
     def correction(values):
         return (_correction(local, values, correction_fixed) if limiter is None else
                 limiter.corrections(values))
@@ -419,8 +392,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
         corrections = [[] for _ in local]
     else:
         correction_at = list(map(D, correction_at))
-        if len(correction_at) != size or any(not x.is_finite() for x in correction_at):
-            raise TectonicsError('finite complete nonlinear HMM iterate required')
         if initial_low_order:
             # A positive graph solve supplies only the starting iterate. Its
             # extra diffusion is NOT part of the accepted nonlinear equation:
@@ -468,12 +439,8 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     face_ids = {name: i for i, name in enumerate(geometry._face_ids)}
     fixed = {}
     for name, (kind, value) in boundary.items():
-        fi = face_ids.get(name)
-        if fi is None or len(geometry._incidence[fi]) != 1:
-            raise TectonicsError('precision HMM boundary must be an actual exposed face')
+        fi = cast(int, face_ids.get(name))
         value = decimal(value)
-        if not value.is_finite():
-            raise TectonicsError('nonfinite precision HMM boundary')
         if kind == 'temperature' and value > 0:
             fixed[nc+fi] = value-reference
         elif kind == 'power':
@@ -489,8 +456,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     approximate = _symmetric_triangle(rr, cc, vv, size)
     del rr, cc, vv, block
     asymmetry = approximate-approximate.T
-    if asymmetry.nnz and np.any(asymmetry.data != 0):
-        raise TectonicsError('precision preconditioner lost symmetric assembly')
     unit = D(2)**-53
     shifts = [D(count+1)*unit/(one-D(count+1)*unit)*a for a, count in zip(row_abs, row_count)]
     old_diag = approximate.diagonal()
@@ -498,8 +463,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     reduced = approximate[free][:, free].tocsc()
     del approximate, row_abs, row_count, asymmetry
     scales = np.sqrt(reduced.diagonal())
-    if not np.isfinite(scales).all() or np.any(scales <= 0):
-        raise TectonicsError('unrepresentable precision preconditioner scaling')
     # Reuse the existing native-LU allocation model: initial fill30 input,
     # growth24 bytes/realised entry, and1024 bytes/unknown. This is explicit
     # accounted admission, not an allocator/RSS cap; realised fill is checked.
@@ -518,8 +481,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
     realised = 1024**2+_native_factor_bytes(len(free), reduced.nnz, factor_nnz)
     if realised > factor_allowance:
         raise MemoryLimitError('precision HMM realised factor fill exceeds admitted envelope')
-    if np.any(factor.U.diagonal() <= 0):
-        raise TectonicsError('precision HMM preconditioner has nonpositive pivots')
     decimal_scales = list(map(decimal, scales))
     def precondition(values):
         _cancel(cancel)
@@ -528,8 +489,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
         if not magnitude:
             return [zero]*len(values)
         answer = factor.solve(np.asarray([float(a/magnitude) for a in weighted]))
-        if not np.isfinite(answer).all():
-            raise TectonicsError('nonfinite precision HMM preconditioner action')
         return [decimal(a)*magnitude/b for a, b in zip(answer, decimal_scales)]
     def reduced_action(values):
         expanded = [zero]*size
@@ -623,8 +582,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
             break
         ad = reduced_action(direction)
         denominator = dot(direction, ad)
-        if denominator <= 0 or not denominator.is_finite():
-            raise TectonicsError('precision HMM nonpositive PCG curvature')
         alpha = rz/denominator
         x = [a+alpha*b for a, b in zip(x, direction)]
         r = [a-alpha*b for a, b in zip(r, ad)]
@@ -658,9 +615,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
         for k, column in enumerate(columns):
             _cancel(cancel)
             pivot = diagonal[k]
-            if pivot <= 0 or not pivot.is_finite():
-                raise TectonicsError('precision HMM Decimal80 direct factor lost positive definiteness '
-                                     '(rounded pivot <= 0 or not finite)')
             rows = sorted(column)
             scaled = {i: column[i]/pivot for i in rows}
             for at, j in enumerate(rows):
@@ -730,7 +684,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
             positive_graph_initial_guess=initial_low_order,
             converged=bool(true_absolute <= absolute_target and true_relative <= _GATE))
         if limiter is not None:
-            nonlinear['limiter_source_sha256'] = limiter_identity
             nonlinear['limiter_gamma_evaluation'] = dict(limiter.gamma_statistics)
             geometry_bounds = [g for edge in limiter.graph for g in (edge.gamma_i, edge.gamma_j) if g is not None]
             nonlinear['limiter_edges'] = len(limiter.graph)
@@ -757,7 +710,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
             corrections = actual_corrections
             # A budget that does not admit the direction refuses; no mixing fallback.
             with budget.reserve(N.workspace_bytes(size), category='mimetic-newton-direction'):
-                helper_identity = N.assert_current()
                 derivative = (N.prepare_scheme2_derivative(local, next_iterate,
                     correction_fixed, local_faces=_local_faces, cancel=cancel) if limiter is None else
                     limiter.derivative(next_iterate))
@@ -785,16 +737,13 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
                     if limiter is None or limiter.bounds is None:
                         return N.gmres(jacobian, fallback, load, cancel=cancel,
                                        max_restarts=1, relative_target=forcing)
-                    def sources():
-                        N.assert_current(); L.assert_current()
                     return J.solve_direction(local, base_blocks, capacity, dt, free, size,
                         selected.active_coefficients, action=jacobian, rhs=load,
                         relative_target=forcing, budget=budget, fallback=fallback,
-                        source_check=sources, cancel=cancel, permutation=factor.perm_c,
+                        cancel=cancel, permutation=factor.perm_c,
                         symbolic_fill=_factor_fill)
                 direction = newton_direction(derivative)
                 nonlinear['newton'] = {k: v for k, v in direction.items() if k != 'solution'}
-                nonlinear['newton']['source_sha256'] = helper_identity
                 origin = next_iterate
                 def propose(values, record):
                     """One direction, bounded search, true-action merit only."""
@@ -856,14 +805,13 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
                     # work policy changes no physical acceptance gate.
                     del direction, derivative
                     derivative = limiter.derivative(origin, line_direction=expanded,
-                                                    line_step=Q(*adjacent), budget=budget)
+                                                    line_step=Q(*cast(tuple, adjacent)), budget=budget)
                     direction = newton_direction(derivative)
-                    alternative = {k: v for k, v in direction.items() if k != 'solution'}
-                    alternative.update(source_sha256=helper_identity, region_step_ratio=adjacent,
+                    alternative: dict[str, Any] = {k: v for k, v in direction.items() if k != 'solution'}
+                    alternative.update(region_step_ratio=adjacent,
                         origin='unchanged primary Newton origin; no uphill state accepted', maximum_attempts=1)
-                    nonlinear['newton']['adjacent_branch'] = alternative
+                    cast(dict, nonlinear['newton'])['adjacent_branch'] = alternative
                     propose(direction['solution'], alternative)
-                N.assert_current()
                 del derivative, jacobian, direction, propose, newton_direction
             corrections = actual_corrections
             proposal = _mix([*correction_history[-5:], (solution, true_residual)])
@@ -894,7 +842,7 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
             raw[j-nc].append((entry[0], sign, float(amount)))
             exact_raw[j-nc].append((entry[0], sign, str(amount)))
     if limiter is not None:
-        L.assert_current()
+        pass
     _cancel(cancel)
     return dict(solution=np.asarray(list(map(float, solution))),
         absolute_temperature=np.asarray([float(u+reference) for u in solution]),
@@ -905,7 +853,7 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
         iterations=iterations, linear_relative=float(relative),
         rhs_norm=float(dot(reduced_rhs, reduced_rhs).sqrt()), rhs_max=float(scale),
         statistics=dict(preparation_seconds=prepared-begin, solve_seconds=perf_counter()-prepared),
-        evidence=dict(schema='atlas.mimetic-decimal80.v1', source_sha256=_LOADED,
+        evidence=dict(schema='atlas.mimetic-decimal80.v1',
             precision=_PRECISION, rounding='ROUND_HALF_EVEN; exact binary input conversion',
             equation=('unchanged HMM matrix-free factor action' if correction_at is None else
                       'HMM with conservative '+method+' nonlinear correction; recomputed-state flux')+

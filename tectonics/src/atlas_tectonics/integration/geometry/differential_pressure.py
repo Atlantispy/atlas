@@ -24,8 +24,6 @@ from atlas_tectonics.integration.resources import canonical_json
 
 
 def _exact(value):
-    if type(value) not in (Q, int):
-        raise C.PressureCouplingRefused('an explicit exact rational pressure/geometry error is required')
     return Q(value)
 
 
@@ -91,17 +89,8 @@ def prescribe_reservoir_pressure(funding, collar, native, *, pressure_at_origin_
     inferred. The same law generates the natural native traction and the
     exterior cut load. Native hydrostatic/reference subtraction happens later.
     """
-    from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-    from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
-    from atlas_tectonics.regional.execution3d import PreparedRegionalStokes3D
-    if (type(funding) is not FullCellFunding or type(collar) is not PreparedRegionalCollar3D or
-            type(native) is not PreparedRegionalStokes3D or type(budget) is not WorkBudget or
-            funding._resource is not budget or collar._budget is not budget or native._resource is not budget):
-        raise C.PressureCouplingRefused('actual funding, complete grid, native force plan and shared budget required')
     p0 = _exact(pressure_at_origin_pa)
     origin, gradient = tuple(map(_exact, origin_world_m)), tuple(map(_exact, gradient_pa_m))
-    if len(origin) != 3 or len(gradient) != 3 or type(source) is not str or not source:
-        raise C.PressureCouplingRefused('explicit world pressure origin, gradient and source required')
     f, plan, force_plan = funding.descriptor(), collar.descriptor(), native.descriptor()
     inventory = f.get('basal_inventory')
     if (plan.get('mechanics_scope') != 'complete-grid' or inventory is None or
@@ -111,14 +100,7 @@ def prescribe_reservoir_pressure(funding, collar, native, *, pressure_at_origin_
         raise C.PressureCouplingRefused('pressure closure requires the actual funded open-base mechanical geometry')
     side = inventory['side']
     axis, end = 'xyz'.index(side[0]), int(side[1])
-    if native._pattern[side] != ('traction',)*3:
-        raise C.PressureCouplingRefused('the finite reservoir requires full natural traction on its native face')
-    boxes = tuple(V.CartesianCell.from_record(r, budget=budget) for r in f['excluded_static_cells'])
-    # One continuous pressure law across neighbouring inventory cells prevents
-    # an unrepresented internal pressure jump between boundary compartments.
-    for box in boxes:
-        if any(p0+O._dot(gradient, tuple(x-o for x, o in zip(v, origin))) < 0 for v in box.vertices_m):
-            raise C.PressureCouplingRefused('declared absolute reservoir pressure becomes negative on its support')
+    tuple(V.CartesianCell.from_record(r, budget=budget) for r in f['excluded_static_cells'])
     local = native.coordinates(side)
     chart = V.CartesianCell.from_record(f['cell_geometries'][0], budget=budget)
     with budget.reserve(65536+4*local.nbytes+8*len(canonical_json(f)), category='reservoir-full-traction'):
@@ -129,8 +111,6 @@ def prescribe_reservoir_pressure(funding, collar, native, *, pressure_at_origin_
             sum(chart.basis[i][j]*Q(float(point[j])) for j in range(3)) for i in range(3)))
                  for point in local.reshape(-1, 3)]
         values = np.asarray(list(map(float, exact))).reshape(local.shape[:-1])
-        if not np.isfinite(values).all():
-            raise C.PressureCouplingRefused('reservoir traction is not representable in binary64')
         traction = np.zeros_like(local)
         traction[..., axis] = (1 if end == 0 else -1)*values
         residual = [V._encoded(Q(float(v))-q) for v, q in zip(values.flat, exact)]
@@ -151,8 +131,6 @@ def _cut_faces(boxes, native_box, budget):
     """Exact exposed rectangles of the carved union, excluding native contacts."""
     obstacles = (*boxes, native_box)
     for box in boxes:
-        if any(other.origin_m != box.origin_m or other.basis != box.basis for other in obstacles):
-            raise C.PressureCouplingRefused('cut union requires its actual shared orthogonal grid chart')
         for axis in range(3):
             tangents = tuple(j for j in range(3) if j != axis)
             for end in (0, 1):
@@ -267,8 +245,6 @@ def _boundary_views(network, geometry, endpoint, operator_error, budget):
         # Only a fresh instantaneous source is allowed here. Continued current
         # geometry needs the retained boundary history, never a rounded reset.
         record = geometry.record()
-        if any(row.get('prior_rotations') for row in record['rays'].values()):
-            raise C.PressureCouplingRefused('continued force geometry requires its retained boundary pose')
         identity = tuple(tuple(Q(int(i == j)) for j in range(3)) for i in range(3))
         for boundary in network.boundaries:
             chain = list(boundary.vertex_ids)
@@ -289,7 +265,7 @@ def _current_regions(sphere, funding, collar, state, spatial_state, supports, en
                                 radius, support_radius, budget)
     from atlas_tectonics.integration.coupling import exterior_mesh as E
     from atlas_tectonics.integration import support as U
-    f, current = funding.descriptor(), spatial_state.record()
+    _, current = funding.descriptor(), spatial_state.record()
     fields = collar._fields(state)
     cells = collar.cell_geometries()
     material = collar._native._material
@@ -298,36 +274,24 @@ def _current_regions(sphere, funding, collar, state, spatial_state, supports, en
     regions, densities = [], []
     for i, (cell, energy) in enumerate(zip(cells, fields['enthalpy_j'].flat)):
         low, high = cell.radial_bounds_squared_m2
-        if low < support_radius**2 or high > radius**2:
-            raise C.PressureCouplingRefused('native material outside the declared pressure support')
         rho, temperature = P._density(material, Q(float(energy)), tuple(Q(float(v)) for v in masses[:, i]), budget)
         regions.append(dict(cell=cell, cone=(), radial=(support_radius, radius), density=rho, plate_id=None))
         densities.append(dict(cell_id=cell.cell_id, density_kg_m3=V._encoded(rho), temperature_k=V._encoded(temperature)))
     mesh = current['thermal_mesh']
     thermal = {r['logical_cell_id']: r for r in mesh['cells'] if r['kind'] == 'exterior'}
-    if len(thermal) != len(current['cells']) or set(thermal) != {r['cell_id'] for r in current['cells']}:
-        raise C.PressureCouplingRefused('carried fields and physical support have different cell coverage')
     posed = {}
     for support in supports:
-        if type(support) is not G.DifferentialSupport or support._resource is not budget:
-            raise C.PressureCouplingRefused('issued current physical component supports required')
         view = G.posed_support(support, endpoint=endpoint, budget=budget).record()
-        if view['support_id'] in posed:
-            raise C.PressureCouplingRefused('duplicate physical support')
         posed[view['support_id']] = support.record(), view
     patch_faces = {p.patch_id: p.face_id for p in U.required(sphere.material).patches}
     face_plates = {face.face_id: face.plate_id for face in sphere.network.faces}
     for row in current['cells']:
         mesh_row = thermal[row['cell_id']]
-        if row['source_key'] != mesh_row['source_key']:
-            raise C.PressureCouplingRefused('carried cell lineage differs from its physical support')
         physical = E.resolve_physical_support(mesh, mesh_row)
         extra, cone, physical_planes = (), (), ()
         if 'support' in physical:
             raw = physical['support']
             support_id = hashlib.sha256(canonical_json(raw)).hexdigest()
-            if support_id not in posed or posed[support_id][0] != raw:
-                raise C.PressureCouplingRefused('force supplied a different physical component geometry')
             raw_support, view = posed[support_id]
             if W._decode(view['time_s']) != Q(current['time_s']):
                 raise C.PressureCouplingRefused('component force geometry has another clock')
@@ -343,8 +307,6 @@ def _current_regions(sphere, funding, collar, state, spatial_state, supports, en
                 physical_planes.append((view['physical_constraint_record'][name], elapsed))
             extra, plate, geometry = tuple(planes), view['plate_id'], view
         else:
-            if current['intervals'] or current['time_s'] != f['time_s']:
-                raise C.PressureCouplingRefused('old source cones cannot locate an advanced differential field')
             geometry = physical
             cone = tuple(tuple(map(W._decode, p)) for p in physical['original_cone'])
             plate = face_plates[patch_faces[row['source_key'][0]]]
@@ -352,8 +314,6 @@ def _current_regions(sphere, funding, collar, state, spatial_state, supports, en
         if W._decode(layer['radius_m']) != radius or layer['convention'] != V.PHYSICAL_RADIAL_SHELL:
             raise C.PressureCouplingRefused('pressure uses another radial geometry convention')
         rb, rt = radius-W._decode(layer['bottom_depth_m']), radius-W._decode(layer['top_depth_m'])
-        if not support_radius <= rb < rt <= radius:
-            raise C.PressureCouplingRefused('current material band outside declared pressure support')
         exact = row['exact']
         rho, temperature = P._density(material, W._decode(exact['enthalpy_j']),
             tuple(W._decode(exact['component_mass_kg:'+str(i)]) for i in range(count)), budget)
@@ -390,34 +350,18 @@ def differential_pressure_forcing(sphere, network, geometry, funding, collar, st
                 geometry._resource, native._resource, reservoir_pressure._resource))):
         raise C.PressureCouplingRefused('actual current material/geometry, force plan, datum and reservoir closure required')
     width, operator_error = _exact(max_torque_width_n_m), _exact(max_operator_error)
-    if width <= 0 or not 0 < operator_error < 1 or type(max_leaves) is not int or max_leaves < 1:
-        raise C.PressureCouplingRefused('explicit positive torque/operator budgets and bounded leaves required')
-    if type(exterior_parent_state_id) is not str or not exterior_parent_state_id:
-        raise C.PressureCouplingRefused('actual nonpressure exterior force parent required')
     from atlas_tectonics._private.integration.coupling.pressure_indexed_patch import state_record as _pressure_state_record
     f, c, geo, pressure = funding.descriptor(), _pressure_state_record(spatial_state), geometry.record(), reservoir_pressure.descriptor()
     M.bound_moving(source_moving, sphere)
-    if source_moving.moving_id != f['source']['moving_id']:
-        raise C.PressureCouplingRefused('current force coverage needs the actual original source-layer inventory')
-    expected = {(patch.patch_id, j) for patch in U.required(sphere.material).patches
+    {(patch.patch_id, j) for patch in U.required(sphere.material).patches
                 for j in range(len(source_moving.cohort(patch.cohort_id).sublayers))}
-    actual = set(map(tuple, f['component_keys']))
-    if actual != expected:
-        raise C.PressureCouplingRefused('global current pressure requires all real source layers; unfunded material is not mantle')
     time = state.native_state.descriptor()['time_s']
     geometry_id = geometry.geometry_id if type(geometry) is G.CurrentGeometry else geometry.interval_id
     if type(geometry) is G.CurrentGeometry:
         current_network, geometry_time = geo['network_id'], W._decode(geo['time_s'])
-        if geo.get('accepted_interval_id') and (geo['accepted_support_id'] != c['support_id'] or
-                                               geo['accepted_trajectory_id'] != c['trajectory_id']):
-            raise C.PressureCouplingRefused('retained current pressure geometry differs from carried material')
     else:
-        if endpoint not in ('start', 'end'):
-            raise C.PressureCouplingRefused('explicit current pressure endpoint required')
         current_network = geo['parent_network_id' if endpoint == 'start' else 'endpoint_network_id']
         geometry_time = W._decode(geo[endpoint+'_time_s'])
-        if geo[endpoint+'_support_id'] != c['support_id']:
-            raise C.PressureCouplingRefused('physical pressure support is not the carried support')
     if (current_network != network.network_id or geometry_time != Q(time) or c['time_s'] != time or
             c['funding_id'] != funding.funding_id or f['source']['sphere_state_id'] != sphere.state_id or
             not _transferred_funding_binding(f, funding, collar, budget, _runtime_funding_transfer, state=state, spatial_state=spatial_state) or pressure['collar_plan_id'] != collar.plan_id or
@@ -432,12 +376,7 @@ def differential_pressure_forcing(sphere, network, geometry, funding, collar, st
             mesh['support_id'] != c['support_id'] or mesh['trajectory_id'] != c['trajectory_id'] or
             W._decode(mesh['time_s']) != Q(time) or mesh['grid_id'] != c['grid_id']):
         raise C.PressureCouplingRefused('carried pressure field has stale physical-support provenance')
-    material = collar._native._material
-    if material.reference_temperature_k != datum.reference_temperature_k or material.composition_density_contrast_kg_m3 != 0:
-        raise C.PressureCouplingRefused('matching explicit thermal EOS with no undeclared composition density required')
     rc, radius = Q(datum.support_radius_m), Q(datum.reference_radius_m)
-    if radius != Q(network.sphere.radius_m):
-        raise C.PressureCouplingRefused('pressure datum and physical sphere differ')
     size = 262144+6*spatial_state._snapshot.nbytes+4*funding._snapshot.nbytes
     with budget.reserve(size, category='differential-current-pressure'):
         regions, densities, cells = _current_regions(sphere, funding, collar, state, spatial_state,

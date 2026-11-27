@@ -98,12 +98,10 @@ print(json.dumps({'median_s':statistics.median(t),'samples_s':t}))
     if proc.returncode:raise RuntimeError(proc.stderr)
     out['identity']['previous_fresh']=json.loads(proc.stdout)
     start=time.perf_counter();context=ExecutionContext('scipy');out['identity']['context_initial_s']=time.perf_counter()-start
-    fresh=[];verified=[]
+    fresh=[]
     for _ in range(7):
         start=time.perf_counter();execution_identity('scipy');fresh.append(time.perf_counter()-start)
-        start=time.perf_counter();context.verify();verified.append(time.perf_counter()-start)
     out['identity']['current_fresh']=summary(fresh)
-    out['identity']['current_reused_verify']=summary(verified)
     for n in (256,65536,262144):
         x=frozen(np.linspace(0,10,n));one=frozen(np.array(1.));prepared=PreparedInput(x);age=PreparedInput(one)
         with tempfile.TemporaryDirectory() as d:

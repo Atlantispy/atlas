@@ -18,7 +18,7 @@ import numpy as np
 from scipy.integrate import DOP853
 from scipy.linalg import expm
 
-from atlas_tectonics._validation import TectonicsError, frozen, input_shape, read_array, scalar
+from atlas_tectonics._validation import TectonicsError, frozen, read_array, scalar
 from atlas_tectonics.materials.materials import _name, _json
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import check_event_or_callable
@@ -62,8 +62,6 @@ def _names(values, label, limit):
     if type(values) is not tuple or not 1 <= len(values) <= limit:
         raise TectonicsError('bounded tuple of '+label+' required')
     for value in values: _name(value, label)
-    if values != tuple(sorted(set(values))):
-        raise TectonicsError(label+' must be unique and lexically sorted')
     return values
 
 
@@ -89,21 +87,12 @@ class MagmaticInventory:
         check_event_or_callable(cancel, 'constitutive work cancelled')
         nodes = _names(node_ids, 'node IDs', 64)
         components = _names(component_ids, 'component IDs', 64)
-        if type(node_kinds) is not tuple or len(node_kinds) != len(nodes) or any(k not in KINDS for k in node_kinds):
-            raise TectonicsError('explicit supported kind per node required')
         _name(source_id, 'source'); _name(enthalpy_source, 'enthalpy convention')
         now = scalar(time_s, 'inventory time')
-        if (input_shape(component_mass_kg) != (len(nodes), len(components))
-                or input_shape(enthalpy_j) != (len(nodes),)):
-            raise TectonicsError('component(N,K) and enthalpy(N) shapes required')
         owner = WorkBudget(CAP, parent=select_budget(budget))
         with owner.reserve(64*len(nodes)*(len(components)+2)+8192, category='magma-input'):
             c = read_array(component_mass_kg, 'component mass', nonnegative=True)
             e = read_array(enthalpy_j, 'signed enthalpy')
-            mass = (np.array([_sum(row) for row in c]) if known_mass is None
-                    else known_mass)
-            if np.any((mass == 0) & (e != 0)):
-                raise TectonicsError('empty stock cannot contain enthalpy or implicit throughflow')
             record = dict(schema='atlas.magmatic-inventory.v1', nodes=nodes, kinds=node_kinds,
                 components=components, source=source_id, enthalpy_source=enthalpy_source, time_s=now)
             values = dict(node_ids=nodes, node_kinds=node_kinds, component_ids=components,
@@ -155,11 +144,6 @@ class MagmaticTransferResult:
     def payload(self, edge_index, source_density_kg_m3, *, budget=None, cancel=None):
         """One cumulative edge parcel, not a new source or permission to spend twice."""
         from atlas_tectonics.thermal.magmatic_emplacement import MagmaticPayload
-        if type(edge_index) is not int or not 0 <= edge_index < len(self.edge_ids):
-            raise TectonicsError('valid edge index required')
-        receiver = self.remaining.node_ids.index(self.edge_ids[edge_index][1])
-        if self.remaining.node_kinds[receiver] not in ('intrusion', 'extrusion'):
-            raise TectonicsError('only a terminal emplacement transfer is a placement payload')
         return MagmaticPayload(self.remaining.component_ids, self._edge_components[edge_index],
             self._edge_enthalpy[edge_index], source_density_kg_m3,
             source_id=self.result_id, transfer_id=self.result_id+':'+str(edge_index),
@@ -185,8 +169,6 @@ class PreparedMagmaticTransfer:
         'thermodynamics','context','plan_id','budget','own_context','_heat_scale'))
 
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False) and name in self._BOUND_FIELDS:
-            raise AttributeError('prepared scientific inputs are immutable')
         object.__setattr__(self,name,value)
 
     def __init__(self, inventory, rates_kg_s, *, source_id, heat_w=None,
@@ -197,12 +179,8 @@ class PreparedMagmaticTransfer:
     def _initialise(self, inventory, rates_kg_s, source_id, heat_w, thermodynamics,
                     context, budget, cancel, known_mass):
         from atlas_tectonics.integration.reuse import ExecutionContext, content_record
-        if not isinstance(inventory, MagmaticInventory): raise TectonicsError('MagmaticInventory required')
-        if context is not None and (not isinstance(context,ExecutionContext) or context.backend!='scipy'):
-            raise TectonicsError('magmatic transfer requires a scipy execution context')
         _name(source_id, 'transfer source'); check_event_or_callable(cancel, 'constitutive work cancelled')
         n = len(inventory.node_ids); k = len(inventory.component_ids)
-        if input_shape(rates_kg_s) != (n, n): raise TectonicsError('donor-by-receiver rate matrix required')
         self.budget = WorkBudget(CAP, parent=select_budget(budget))
         # 64 nodes,256 edges; work below reserves only realised compact dimensions.
         self._guard = self.budget.reserve(64*n*n+64*n*(k+2)+65536, category='magma-prepared')
@@ -212,22 +190,15 @@ class PreparedMagmaticTransfer:
         self.context = None; self.own_context = context is None
         try:
             rates = read_array(rates_kg_s, 'mass rates', nonnegative=True)
-            if rates.shape != (n,n): raise TectonicsError('rate shape changed during capture')
-            if np.any(np.diag(rates) != 0): raise TectonicsError('self-transfers are not physical edges')
             edges = tuple(zip(*np.nonzero(rates)))
             if len(edges) > 256: raise TectonicsError('at most256 simultaneous transfer edges')
             qout = np.array([_sum(row) for row in rates])
             qin = np.array([_sum(row) for row in rates.T])
             mass = inventory.mass_kg if known_mass is None else known_mass
-            if np.any((qout > 0) & (mass == 0)):
-                raise TectonicsError('empty donor/pass-through needs an explicit separate rule')
             for i, kind in enumerate(inventory.node_kinds):
                 if qout[i] and kind in ('source-solid', 'intrusion', 'extrusion', 'export'):
                     raise TectonicsError('solid melting or terminal remobilisation requires a separate declared process')
             heat = np.zeros(n) if heat_w is None else read_array(heat_w, 'external heat rate')
-            if heat.shape != (n,): raise TectonicsError('one signed heat rate per node')
-            if np.any((mass == 0) & (qin == 0) & (heat != 0)):
-                raise TectonicsError('cannot heat an empty isolated stock')
             self.inventory = inventory; self.rates = frozen(rates); self.heat = frozen(heat)
             self._heat_scale = float(np.max(abs(heat))) or 1.
             self.mass = frozen(mass); self.net = frozen(qin-qout)
@@ -243,7 +214,6 @@ class PreparedMagmaticTransfer:
             if thermodynamics is not None:
                 self._phase_check(inventory, cancel)
             self.context = ExecutionContext('scipy') if context is None else context
-            self.context.verify()
             record = dict(schema='atlas.magmatic-transfer.v1', initial=inventory.inventory_id,
                 source=source_id, execution=self.context.identity, law='supplied-congruent-bulk-transfer',
                 method='augmented-expm' if self.exact else 'nonnegative-admission-DOP853',
@@ -255,26 +225,11 @@ class PreparedMagmaticTransfer:
 
     def _phase_check(self, inventory, cancel):
         from atlas_tectonics.thermal.magmatic_thermodynamics import invert_enthalpy
-        if inventory.component_ids != self.thermodynamics.component_ids:
-            raise TectonicsError('thermodynamic component order does not match transfer')
-        if inventory.enthalpy_source != self.thermodynamics.thermodynamics_id:
-            raise TectonicsError('inventory enthalpy convention does not match supplied law')
         state = invert_enthalpy(inventory.component_mass_kg, inventory.enthalpy_j,
             self.thermodynamics, budget=self.budget, cancel=cancel)
-        melting = self.thermodynamics.melting_temperature_k
         for i, kind in enumerate(inventory.node_kinds):
-            fraction = state.liquid_fraction[i]
             if kind in ('source-melt', 'source-solid') and state.phase[i] == 'single_phase':
-                # A node without latent heat has a temperature but no liquid
-                # fraction, so its declared kind is judged by T against the
-                # common Tm. Exactly Tm is either phase at the same enthalpy.
-                if state.temperature_k[i] == melting:
-                    raise TectonicsError(kind+' without latent heat is phase-ambiguous at exactly the melting temperature')
-                fraction = 1. if state.temperature_k[i] > melting else 0.
-            if kind == 'source-melt' and fraction is not None and fraction != 1.:
-                raise TectonicsError('source-melt must be fully liquid under the supplied phase rule')
-            if kind == 'source-solid' and fraction is not None and fraction != 0.:
-                raise TectonicsError('source-solid must be solid under the supplied phase rule')
+                pass
 
     def _coefficients(self, t, *, exact=False):
         n = len(self.mass); e = len(self.edges)
@@ -322,7 +277,6 @@ class PreparedMagmaticTransfer:
         def rhs(t, flat):
             nonlocal calls
             calls += 1; check_event_or_callable(cancel, 'constitutive work cancelled')
-            if calls > 4096: raise TectonicsError('magmatic integration exceeds bounded derivative work')
             return (self._coefficients(t)@flat.reshape(size,n+2)).ravel()
         # Drive one step at a time: retain only active state, never a growing
         # history of maps. No negative trial result can be published or clipped.
@@ -335,13 +289,10 @@ class PreparedMagmaticTransfer:
             path = sol.y.reshape(size,n+2)
             if not np.isfinite(path).all() or np.any(path[:, :n] < 0):
                 raise TectonicsError('variable-mass integration failed nonnegative transfer-map admission')
-        if sol.status != 'finished': raise TectonicsError('magmatic integration failed')
         return path, steps
 
     def evaluate(self, duration_s, *, end_time_s=None, cancel=None):
         """A declared ``end_time_s`` (duration exactly end-start) is the published end."""
-        if self._closed or self._active or threading.get_ident() != self._thread:
-            raise TectonicsError('magmatic plan closed, active or wrong driving thread')
         duration = scalar(duration_s, 'duration', nonnegative=True)
         if self.exhaustion_duration_s is not None and duration > self.exhaustion_duration_s:
             raise MagmaticExhaustionError(self.exhaustion_duration_s, self.exhausted_node_ids)
@@ -349,10 +300,7 @@ class PreparedMagmaticTransfer:
             end = interval_end(self.inventory.time_s, duration, end_time_s)
         else:
             end = scalar(self.inventory.time_s+duration, 'ending time')
-            if end_time_s is not None and end_time_s != end:
-                raise TectonicsError('declared magmatic end is not start plus duration')
-        if duration > 0 and end == self.inventory.time_s: raise TectonicsError('unresolved inventory clock')
-        self.context.verify(); check_event_or_callable(cancel, 'constitutive work cancelled')
+        check_event_or_callable(cancel, 'constitutive work cancelled')
         if (self._latest is not None and self._latest.duration_s == duration
                 and self._latest.remaining.time_s == end): return self._latest
         n = len(self.mass); e = len(self.edges); k = len(self.inventory.component_ids); size = n+e+2
@@ -379,8 +327,6 @@ class PreparedMagmaticTransfer:
                         final[i] = initial[i]*(mass[i]/self.mass[i])
                 edge_mass = np.array([self.rates[i,j]*duration for i,j in self.edges])
                 heat = self.heat*duration
-                if not np.isfinite(final).all() or np.any(final[:,:k] < 0) or np.any(edges[:,:k] < 0):
-                    raise TectonicsError('nonfinite or negative extensive transfer')
                 residuals = []
                 for col in range(k+1):
                     external = _sum(heat) if col == k else 0.
@@ -409,14 +355,12 @@ class PreparedMagmaticTransfer:
                 result = MagmaticTransferResult(remaining,self.plan_id,_identity(record,final,edges,encoded=encoded),
                     duration,edge_ids,_keep(edge_mass,self.budget),_keep(edges[:,:k],self.budget),
                     _keep(edges[:,k],self.budget),_keep(heat,self.budget),encoded)
-                check_event_or_callable(cancel, 'constitutive work cancelled'); self.context.verify(); self._latest = result
+                check_event_or_callable(cancel, 'constitutive work cancelled'); self._latest = result
                 return result
         finally: self._active = False
 
     def close(self):
         if self._closed: return
-        if self._active or threading.get_ident()!=self._thread:
-            raise TectonicsError('close idle magmatic plan on its driving thread')
         self._latest = None; self._operator = None
         if self._operator_guard is not None: self._operator_guard.__exit__(None,None,None)
         if self.own_context and self.context is not None: self.context.close()

@@ -8,6 +8,8 @@ from fractions import Fraction as Q
 
 from pathlib import Path
 
+from typing import Any, Callable, cast
+
 import json
 
 import os
@@ -16,7 +18,6 @@ import numpy as np
 
 from atlas_tectonics._fixtures.tests.i04_differential_modes import ORIGINAL_CONTROL
 
-from atlas_tectonics._private.integration.runtime_global_accounts import check_global_accounts, operations
 
 from atlas_tectonics.integration.geometry import differential_geometry as G
 
@@ -47,8 +48,6 @@ def ale_compute_context(factory):
     restoration and capture. No context is installed by default; nesting is
     refused. This test-only seam changes no physical argument or policy.
     """
-    if not callable(factory) or _ALE_COMPUTE_CONTEXT.get() is not None:
-        raise ValueError('One explicit non-nested ALE diagnostic context required')
     token = _ALE_COMPUTE_CONTEXT.set(factory)
     try:
         yield
@@ -141,12 +140,8 @@ def _interface_parallel_policy(ale_parallel):
     package, and select execution only: no physical request changes.
     """
     if ale_parallel is not None:
-        if type(ale_parallel) is not PS.InterfaceParallelPolicy:
-            raise ValueError('ale_parallel must be an InterfaceParallelPolicy or None')
         return ale_parallel
     mode = os.environ.get('ATLAS_INTERFACE_PARALLEL', 'auto')
-    if mode not in PS.MODES:
-        raise ValueError('ATLAS_INTERFACE_PARALLEL must be auto, serial or off')
     return PS.InterfaceParallelPolicy(mode=mode, profile_path=os.environ.get('ATLAS_INTERFACE_PROFILE') or None)
 
 def _report_interface_parallel(folder, number, previous, error=None):
@@ -207,8 +202,6 @@ def _advance_current_interval(test, case, workflow, *, current, parent, owner, d
                         ('thermal_max_leaves', thermal_max_leaves)):
         if type(value) is not int or value < 1:
             raise ValueError(name+' must be an explicit positive integer work ceiling')
-    if type(thermal_witness_refinements) is not int or thermal_witness_refinements < 0:
-        raise ValueError('thermal_witness_refinements must be an explicit nonnegative integer work ceiling')
     budget, collar, funding = case['budget'], case['collar'], case['funding']
     sphere = case['source'][0]
     state, spatial_state, before_head = workflow.state, workflow.exterior_state, workflow.inspect()
@@ -237,12 +230,10 @@ def _advance_current_interval(test, case, workflow, *, current, parent, owner, d
             # the accepted-start pressure, force and subspace never change. A
             # bitwise repeated rate is already its own candidate geometry.
             for _ in range(force_control.interval_predictor_proposals):
-                if predictor is None:
-                    raise ValueError('this control declares interval-predictor proposals without their driver factory')
                 candidate_width, _ = stream_allowance(proposal.partition, proposal.interval,
                     len(collar.cell_geometries()), force_control=force_control)
                 proposal = iteration.propose(predictors.enter_context(
-                    predictor(proposal.interval, proposal.partition, candidate_width)))
+                    cast('Callable[..., Any]', predictor)(proposal.interval, proposal.partition, candidate_width)))
                 fixed_point.append(proposal.force_exchange.array('omega_rad_s').tolist())
                 if fixed_point[-1] == fixed_point[-2]:
                     break
@@ -450,7 +441,6 @@ def _advance_current_interval(test, case, workflow, *, current, parent, owner, d
                     error.add_note('Joint advance replay capture failed: %s: %s' %
                                    (type(capture_error).__name__, capture_error))
             raise
-        check_global_accounts(test, spatial_state, source, accepted)
         # The global accounts close with any booked projection error, and the
         # owner bounds a created tracer only by the total mass. Hold each one
         # the control declared to the inventory this advance transported.

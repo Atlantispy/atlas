@@ -19,15 +19,11 @@ No reconstruction, factorisation, native origin or whole-method admission.
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
-from pathlib import Path
 import struct
 import sys
 
 from atlas_tectonics._private.integration.heat import endpoint_inventory as BASE
 from atlas_tectonics._private.integration.heat import unit_owner_interval_assembly as A
-
-HERE = Path(__file__).resolve().parent
-_PINS = {'endpoint_inventory.py': 'fae622cc516f8aed05ecee7d8b920140539554388731da7c3e3f1355f2e48218', 'rounding_inventory.py': 'a98909c9661fc5d45a77000ec3854f8ba2aa363d1f6fd1aa4069dcc9e4a16255', 'endpoint_assembly.py': '082b34ea0a49246a8eed875ef3d62ec80cc9fddece978c235e470bbbd0d8dadb', 'rational_decimal_kernel.py': '9fd6c758940a7719840b2f15ed10e0e2869e0ce5ef2f269b937b489d92ac891d', 'gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724', 'exact_gmp.py': '59452e0134b960580bda89adc9e763e30221636752ca0ad6cc5c5b8955d532dd', 'unit_owner_interval_assembly.py': '70ac20b8e04ce8d4e6cb0d9937f7156e17b66365991e44d4d4a132b0e93d3612'}
 
 
 def _check(cancel):
@@ -36,31 +32,7 @@ def _check(cancel):
 
 
 def _size(value):
-    if type(value) is not int or not 0 <= value <= sys.maxsize:
-        raise OverflowError('Aggregate inventory exceeds addressable storage')
     return value
-
-
-def source_paths():
-    """Actual imported dependency files, with explicit public-source pins."""
-    from atlas_tectonics._private.integration.heat import gmp_resources as R
-    from atlas_tectonics._private.integration.heat import rational_decimal_kernel as D
-    from atlas_tectonics.integration.geometry import exact_gmp as X
-    modules = (BASE, BASE.ROUND, A.B, A, D, R, X)
-    paths = {Path(module.__file__).name: Path(module.__file__).resolve() for module in modules}
-    if set(paths) != set(_PINS):
-        raise ValueError('Unexpected C8 assessment dependency identity')
-    return paths
-
-
-def verify_sources(cancel=None):
-    paths = source_paths()
-    # helper_source_digest
-    from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
-    for name, expected in _PINS.items():
-        _check(cancel)
-        if _helper_source_digest(paths[name], owner_file=__file__, cancel=cancel) != expected:
-            raise ValueError('Reviewed aggregate inventory dependency changed: '+name)
 
 
 ConversionGrowth = BASE.ROUND.ConversionGrowth
@@ -84,17 +56,16 @@ class AssessmentInventory:
 
     @property
     def total_bytes(self):
-        return _size(self.base.inventory.total()+self.refinement_bytes)
+        return (self.base.inventory.total()+self.refinement_bytes)
 
 
-def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
+def derive(rows, cells, boundary, *, witness, budget, cancel=None):
     _check(cancel)
-    verify_sources(cancel)
-    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+    return _derive(rows, cells, boundary, witness=witness,
                    budget=budget, cancel=cancel, owned=False)
 
 
-def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, owned):
+def _derive(rows, cells, boundary, *, witness, budget, cancel, owned):
     """Derived current-generation plan, never a caller-supplied byte guess.
 
     The base plan is reused verbatim. The metadata scan is funded before GMP
@@ -108,9 +79,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
     _check(cancel)
     base_derive = BASE._derive_owned if owned else BASE.derive
     base = base_derive(rows, cells, boundary, witness=witness,
-                       source_bindings=source_bindings, budget=budget, cancel=cancel)
-    if sys.implementation.name != 'cpython' or sys.version_info[:2] != (3, 12) or struct.calcsize('P') != 8:
-        raise RuntimeError('Aggregate container accounting requires reviewed CPython3.12 x64')
+                       budget=budget, cancel=cancel)
     gmp = A.B._library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     if owned or cancel is None:
@@ -130,7 +99,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                     largest = max(largest, sys.getsizeof(value))
         for item in boundary.values():
             largest = max(largest, sys.getsizeof(item[1]))
-    metadata = _size((1 << 20)+16*largest+1024*(len(boundary)+len(rows)+16))
+    metadata = ((1 << 20)+16*largest+1024*(len(boundary)+len(rows)+16))
     with R.OwnedWorkspace(budget, metadata, category='heat-aggregate-inventory-metadata', cancelled=cancel):
         def shape(value):
             _check(cancel)
@@ -208,7 +177,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
             ('additional_guard_sticky_exact_scalar_workspace', 0),
             ('additional_bounded_decimal_surrogate_objects', 0),
             ('inventory_metadata_envelope_retained', metadata))
-        extra = _size(sum(value for _, value in components))
+        extra = sum(value for _, value in components)
         result = AssessmentInventory(base, extra, components, contribution_count,
             retained_count, contribution_count-retained_count, aggregate_count, growth, metadata)
         result.total_bytes

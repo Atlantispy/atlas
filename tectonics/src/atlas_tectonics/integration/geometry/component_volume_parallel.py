@@ -82,8 +82,6 @@ class ComponentParallelSession(P.BatchParallelSession):
     """Existing bounded transfer, adoption, revocation and stop implementation."""
 
     def __init__(self, *, workers=1, **kwargs):
-        if type(workers) is not int or not 1 <= workers <= 2:
-            raise ValueError('one or two component workers required')
         self._read_ahead = None
         super().__init__(wall=False, workers=workers, **kwargs)
 
@@ -120,8 +118,6 @@ class ComponentParallelSession(P.BatchParallelSession):
         super()._stop()
 
     def member_request(self, support, key, endpoint, pair):
-        if pair or endpoint not in ('start', 'end'):
-            raise ValueError('an endpoint job requires only its explicit start/end selector')
         _, _, start, end, _ = self._support_facts(support)
         return request_for(support, key, endpoint, start if endpoint == 'start' else end,
                            G.W._decode(self._width_text), self.leaves)
@@ -136,17 +132,11 @@ class EndpointBatchPass:
     """
 
     def __init__(self, *, session, context, batch_jobs=16):
-        if type(session) is not ComponentParallelSession:
-            raise TypeError('the reviewed component session is required')
-        if type(batch_jobs) is not int or not 1 <= batch_jobs <= 32:
-            raise ValueError('one to 32 endpoint requests per bounded batch required')
         self.session, self.context = session, context
         self.batch_jobs, self.jobs = batch_jobs, None
         self.prepared = self.closed = False
 
     def prepare(self, supports):
-        if self.prepared or self.closed:
-            raise RuntimeError('one prepare per endpoint pass')
         self.prepared = True
         if not self.session.open(self.context):
             return

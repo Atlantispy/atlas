@@ -25,25 +25,21 @@ def _tree(path):
 READERS = {
     'atlas_shared.machine.resources_monitor': {
         '_private.integration.fresh_interval_driver': ['Timings', 'launch_load', 'reading', 'save_store', 'use_store'],
-        '_private.integration.historical_admission': ['machine_memory'],
         '_private.integration.parallel.interface_worker_selection': ['Timings', 'reading'],
         '_private.integration.heat.continuation_guard': ['free_memory', 'machine_memory'],
         '_private.integration.heat.process_meter': ['Timings'],
         '_private.integration.reopen_fresh_restart': ['free_memory', 'machine_memory'],
         '_private.integration.reopen_prepared_restart': ['free_memory'],
         '_private.integration.run_fresh_interval': ['free_memory'],
-        '_private.integration.run_prepared_restart': ['free_memory', 'machine_memory'],
+        '_private.integration.run_prepared_restart': ['free_memory'],
         '_private.integration.start_gate': ['reading'],
         'integration.parallel.initial_parallel': ['Timings', 'reading'],
         'integration.parallel.profile': ['machine_memory', 'reported_cores'],
     },
     'atlas_shared.machine.resources_gate': {
         '_private.integration.fresh_interval_driver': ['launch_width', 'setting', 'widths_record'],
-        '_private.integration.historical_admission': ['FLOOR_BYTES', 'cap_bound'],
         '_private.integration.parallel.interface_worker_selection': ['free_cores', 'launch_width', 'run_cores', 'setting', 'step_down'],
         '_private.integration.heat.continuation_guard': ['FLOOR_BYTES', 'cap_bound'],
-        '_private.integration.reopen_prepared_restart': ['EARLIER_LIMITS', 'FLOOR_BYTES'],
-        '_private.integration.run_prepared_restart': ['FLOOR_BYTES', 'cap_bound'],
         '_private.integration.start_gate': ['ALLOWANCE_BYTES', 'EARLIER_LIMITS', 'FLOOR_BYTES', 'check_limits', 'limits', 'setting', 'start_need'],
         'integration.parallel.initial_parallel': ['pool_ceiling', 'setting'],
     },
@@ -52,7 +48,7 @@ READERS = {
         '_private.integration.prepared_interval_driver': ['InterfaceParallelPolicy'],
         '_private.integration.geometry.endpoint_geometry_provider': ['open_automatic'],
         '_private.integration.run_fresh_interval': ['InterfaceParallelPolicy'],
-        '_private.integration.runtime_joined_control': ['InterfaceParallelPolicy', 'MODES', 'last_decision'],
+        '_private.integration.runtime_joined_control': ['InterfaceParallelPolicy', 'last_decision'],
         'integration.geometry.component_volume_auto': ['_Rolling', '_public', '_text'],
         'integration.geometry.differential_ale': ['open_automatic', 'open_interface_batches', 'open_wall_batches'],
         'integration.coupling.pressure_walls': ['InterfaceParallelPolicy', '_Automatic'],
@@ -76,7 +72,7 @@ SELECTION_TAKES = {
                                      'wall_class_key', 'wall_exact_key', 'width_bucket'],
     'integration.parallel.results': ['MOMENTS', 'raw_capacity'],
     'integration.resources': ['WorkBudget'],
-    'integration.reuse': ['ExecutionContext', 'execution_mode'],
+    'integration.reuse': ['ExecutionContext'],
 }
 
 

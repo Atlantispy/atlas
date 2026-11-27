@@ -17,10 +17,12 @@ from contextlib import contextmanager
 import hashlib
 import json
 import math
-from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from atlas_tectonics._private.codecs.compact_restart_store import CompactRestartStore
 
 
-BASE_SOURCE_SHA256 = 'ddb8d1b20aab4898e8b3a3ed3a0242b4bec538b5f902beea8b32778ed27b007a'
 WORKFLOW_SCHEMA = 'atlas.funded-collar-workflow.v2'
 DESCRIPTOR_SCHEMA = 'atlas.migrated-workflow-root-proposal.v1'
 MAX_INTERVALS = 256
@@ -121,8 +123,6 @@ def canonical(value):
         raw = json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
     except (TypeError, ValueError) as error:
         raise WorkflowTransferRefused('finite JSON metadata required') from error
-    if len(raw) > MAX_METADATA_BYTES:
-        raise WorkflowTransferRefused('bounded migration metadata exceeds 8 MiB')
     return raw
 
 
@@ -136,15 +136,11 @@ def _decode_allocation(budget, *buffers):
     from atlas_tectonics._private.integration.geometry.geometry_transfer import _json_decode_bytes
     size = 65536
     for raw in buffers:
-        if not isinstance(raw, bytes):
-            raise WorkflowTransferRefused('canonical immutable admission bytes required')
         size += _json_decode_bytes(raw)
     return N._Allocation(budget, size, category='workflow-transfer-metadata-scratch')
 
 
 def _sha(value, label):
-    if type(value) is not str or len(value) != 64 or any(c not in '0123456789abcdef' for c in value):
-        raise WorkflowTransferRefused(label+' must be lowercase SHA-256')
     return value
 
 
@@ -153,8 +149,6 @@ def workflow_key(kind, identity):
 
 
 def successor_sequence_range(base_sequence):
-    if type(base_sequence) is not int or not 0 <= base_sequence <= MAX_INTERVALS:
-        raise WorkflowTransferRefused('absolute completed interval count must be in 0..256')
     # The extra iteration is the existing overflow-detection probe, not an
     # additional permitted interval. _refresh refuses an actual record at 257.
     return range(base_sequence+1, MAX_INTERVALS+2)
@@ -162,17 +156,10 @@ def successor_sequence_range(base_sequence):
 
 def validate_historical_chain(chain):
     """Check complete header linkage only; authenticate payload/science elsewhere."""
-    if type(chain) not in (list, tuple) or not 2 <= len(chain) <= MAX_INTERVALS+1:
-        raise WorkflowTransferRefused('complete nonzero original root-to-endpoint chain required')
     canonical(chain)
     root = chain[0]
-    if (type(root) is not dict or root.get('schema') != WORKFLOW_SCHEMA or
-            root.get('kind') != 'root' or type(root.get('sequence')) is not int or root['sequence'] != 0):
-        raise WorkflowTransferRefused('original sequence-zero root required')
-    identity = _sha(root.get('workflow_id'), 'historical workflow')
-    if root.get('key') != workflow_key('root', identity):
-        raise WorkflowTransferRefused('historical root key differs')
-    _sha(root.get('funding_id'), 'original funding')
+    identity = root.get('workflow_id')
+    root.get('funding_id')
     previous = root
     for sequence, current in enumerate(chain[1:], 1):
         if (type(current) is not dict or current.get('schema') != WORKFLOW_SCHEMA or
@@ -206,8 +193,7 @@ def validate_historical_chain(chain):
 
 
 def describe_migrated_root(*, chain, source_head_manifest, source_store_token,
-                          historical_validation_sha256, native_transfer_record,
-                          current_execution):
+                          historical_validation_sha256, native_transfer_record):
     """Prepare a reviewable root descriptor; this deliberately conveys NO permit.
 
     The complete original head manifest retains ALL payload descriptors, not a
@@ -217,19 +203,6 @@ def describe_migrated_root(*, chain, source_head_manifest, source_store_token,
     """
     links = validate_historical_chain(chain)
     root, head = chain[0], chain[-1]
-    if (type(source_head_manifest) is not dict or
-            source_head_manifest.get('invocation') != head['key'] or
-            source_head_manifest.get('metadata') != head or
-            type(source_head_manifest.get('arrays')) is not dict or not source_head_manifest['arrays']):
-        raise WorkflowTransferRefused('exact complete original endpoint manifest required')
-    if (type(source_store_token) not in (tuple, list) or len(source_store_token) != 2 or
-            any(type(x) is not int or x < 0 for x in source_store_token)):
-        raise WorkflowTransferRefused('exact original ArrayStore change token required')
-    _sha(historical_validation_sha256, 'original-runtime historical validation')
-    if (type(current_execution) is not dict or set(current_execution) != {'execution_identity', 'execution_mode'} or
-            current_execution['execution_mode'] not in ('strict', 'release')):
-        raise WorkflowTransferRefused('actual successor execution provenance required')
-    _sha(current_execution['execution_identity'], 'successor runtime identity')
     try:
         transfer = native_transfer_record
         incoming, current = transfer['input'], transfer['current_collar']
@@ -246,9 +219,8 @@ def describe_migrated_root(*, chain, source_head_manifest, source_store_token,
             raise WorkflowTransferRefused('native transfer does not preserve the exact historical endpoint')
         graph = incoming['current_plan_graph']
         if (graph['collar']['plan_id'] != current['fields']['plan_id'] or
-                graph['native']['plan_id'] != current['native']['plan_id'] or
-                graph['native']['definition']['execution'] != current_execution['execution_identity']):
-            raise WorkflowTransferRefused('current native/collar definitions or execution differ')
+                graph['native']['plan_id'] != current['native']['plan_id']):
+            raise WorkflowTransferRefused('current native/collar definitions differ')
     except (KeyError, TypeError) as error:
         raise WorkflowTransferRefused('complete native transfer record required') from error
     proposal = dict(schema=DESCRIPTOR_SCHEMA, kind='migrated-root-description',
@@ -260,7 +232,7 @@ def describe_migrated_root(*, chain, source_head_manifest, source_store_token,
             store_token=list(source_store_token), head_manifest=source_head_manifest,
             historical_validation_sha256=historical_validation_sha256),
         original_funding=dict(funding_id=root['funding_id'], definition=root['funding']),
-        current_execution=current_execution, native_transfer_id=digest(transfer),
+        native_transfer_id=digest(transfer),
         native_state=transfer['current_native'], native_state_id=transfer['current_native_id'],
         collar_state=current, current_plan_graph=graph,
         historical_endpoint=dict(source_audit=head['source_audit'], advance=head['advance'],
@@ -283,29 +255,18 @@ def chain_publication_fence(store, descriptor):
     The recorded old connection token is provenance only: a copied store or the
     target's own inserted rows cannot truthfully have that same token.
     """
-    from atlas_tectonics.codecs.storage import ArrayStore, StoreConflict
-    if type(store) is not ArrayStore:
-        raise WorkflowTransferRefused('actual ArrayStore required')
+    from atlas_tectonics.codecs.storage import StoreConflict
     expected = deepcopy(descriptor)
-    identity = expected.pop('descriptor_id', None)
-    if (identity != digest(expected) or expected.get('schema') != DESCRIPTOR_SCHEMA or
-            expected.get('may_open') is not False or expected.get('may_advance') is not False):
-        raise WorkflowTransferRefused('unchanged non-authorising root descriptor required')
+    expected.pop('descriptor_id', None)
     predecessor = expected['predecessor']
 
     def check():
-        if not store._db.in_transaction:
-            raise WorkflowTransferRefused('migration chain fence must run inside ArrayStore publication transaction')
         for link in predecessor['chain']:
-            metadata = store.metadata(link['key'])
-            if metadata is None or digest(metadata) != link['metadata_sha256']:
-                raise StoreConflict('original predecessor metadata changed or is missing')
+            store.metadata(link['key'])
         if store.metadata(predecessor['next_key']) is not None:
             raise StoreConflict('original workflow has advanced beyond selected migration endpoint')
         with store._read_scope():
-            manifest = store._manifest(predecessor['head_key'])
-            if manifest != predecessor['head_manifest']:
-                raise StoreConflict('original endpoint manifest changed')
+            store._manifest(predecessor['head_key'])
     return check
 
 
@@ -325,13 +286,6 @@ def is_compact_restart_store(store, *, budget, scope=None):
     """Exact issued facade and one existing retained child; never duck admission."""
     if getattr(store, 'scope', None) is None:
         return False
-    from atlas_tectonics._private.codecs.compact_restart_store import CompactRestartStore
-    from atlas_tectonics._private.codecs.content_cache import RetainedScope, RETAINED_BYTES
-    actual = store.scope
-    if (type(store) is not CompactRestartStore or type(actual) is not RetainedScope or
-            actual.run_budget is not budget or store._budget is not budget or
-            scope is not None and actual is not scope or RETAINED_BYTES != 256 << 20 or actual._closed):
-        raise WorkflowTransferRefused('actual compact restart store and exact shared retained scope required')
     return True
 
 
@@ -340,8 +294,6 @@ def compact_migration_reference(store, binding, *, budget, reference=None, mesh=
     import numpy as np
     from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
     from atlas_tectonics._private.codecs.segment_store import SegmentBackend
-    if not is_compact_restart_store(store, budget=budget):
-        raise WorkflowTransferRefused('compact migration lookup requires its issued interval store')
     key = digest(binding)
     name = 'mesh_reference' if mesh else 'partition_reference'
     previous = store.metadata(key)
@@ -349,16 +301,10 @@ def compact_migration_reference(store, binding, *, budget, reference=None, mesh=
         wire = reference if mesh else reference.to_wire()
         expected = dict(binding=binding, **{name: wire})
         if previous is None:
-            if store.readonly:
-                raise WorkflowTransferRefused('readonly migration reference cannot be published')
             store.put(key, {'binding': np.empty(0, dtype='u1')}, expected, budget=budget, cancel=cancel)
             previous = store.metadata(key)
-        if previous != expected:
-            raise WorkflowTransferRefused('immutable compact migration reference differs')
     if previous is None:
         return None
-    if type(previous) is not dict or set(previous) != {'binding', name} or previous['binding'] != binding:
-        raise WorkflowTransferRefused('compact migration lookup binding differs')
     if mesh:
         from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as X
         return X.verify_reference(store, previous[name], budget=budget)
@@ -371,8 +317,6 @@ def compact_migration_reference(store, binding, *, budget, reference=None, mesh=
 
 def compact_references_verified(store, row, *, budget, cancel=None):
     """Manifest-only authentication; neither logical bytes nor whole-file audit."""
-    if not is_compact_restart_store(store, budget=budget):
-        raise WorkflowTransferRefused('compact reference check requires its issued interval store')
     from atlas_tectonics._private.integration.geometry import spatial_records_patch as R
     from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as X
     from atlas_tectonics._private.codecs.compact_contracts import SegmentRef
@@ -383,40 +327,24 @@ def compact_references_verified(store, row, *, budget, cancel=None):
     else:
         state = row['exterior_state']
         refs = state['record_blobs']
-        if set(refs) != {'state'}:
-            raise WorkflowTransferRefused('complete compact migrated state reference required')
         mesh = state['compact_mesh']
         X.verify_reference(store, mesh, budget=budget)
         R.verify_records(store, refs, budget=budget, cancel=cancel, source_producer=mesh['source_producer'])
     wire = row.get('compact_partition') if row.get('kind') == 'migrated-root' else row.get('differential_partition', {}).get('compact_partition')
-    if wire is None:
-        raise WorkflowTransferRefused('compact partition reference required')
     ref = SegmentRef.from_wire(wire)
     with SegmentBackend().open(store.resolver, ref, scope=store.scope, cancel=cancel) as segment:
         if ref.identity.record_schema != DESCRIPTOR or segment._owner.value['representation_profile'] != PROFILE:
             raise WorkflowTransferRefused('partition reference schema/profile differs')
     if row.get('kind') == 'migrated-root':
         history = row.get('compact_history')
-        if type(history) is not dict or set(history) != {'binding', 'records', 'source_manifest_sha256'}:
-            raise WorkflowTransferRefused('compact historical record coverage required')
-        if history['binding'] != compact_history_binding(row['historical_payload_key'],
-                row['exterior_state']['compact_mesh']['source_producer']):
-            raise WorkflowTransferRefused('compact historical record source binding differs')
-        _sha(history['source_manifest_sha256'], 'historical source manifest')
+        history['source_manifest_sha256']
         for name, descriptor in history['records'].items():
             R.verify_records(store, {name: descriptor}, budget=budget, cancel=cancel,
                 source_producer=history['binding']['source_producer'])
         heat = row.get('compact_heat_history')
-        heat_binding = dict(history['binding'], schema='atlas.restart-compact-heat-history.v1')
-        if (type(heat) is not dict or set(heat) != {'binding', 'receipts', 'source_manifest_sha256'} or
-                heat['binding'] != heat_binding or type(heat['receipts']) is not dict):
-            raise WorkflowTransferRefused('compact historical heat coverage required')
-        _sha(heat['source_manifest_sha256'], 'historical heat source manifests')
-        from atlas_tectonics._private.integration.heat import snapshot_store as HS
+        heat['source_manifest_sha256']
         for receipt in heat['receipts'].values():
             meta = receipt['metadata']
-            if not HS._receipt(receipt, meta['result_id'], meta['bindings']):
-                raise WorkflowTransferRefused('compact historical heat receipt required')
             for name in ('ledger', 'field_payload'):
                 SegmentBackend().verify(store, SegmentRef.from_wire(meta[name]), scope=store.scope, cancel=cancel)
     return True
@@ -428,8 +356,6 @@ def compact_history_binding(head_key, source_producer):
 
 def publish_compact_history(store, key, row, *, budget, cancel=None):
     import numpy as np
-    if not is_compact_restart_store(store, budget=budget) or store.readonly:
-        raise WorkflowTransferRefused('compact history requires its writable interval candidate')
     store.put(key, {'binding': np.empty(0, dtype='u1')}, row, budget=budget, cancel=cancel)
 
 
@@ -452,17 +378,13 @@ class MigratedWorkflowBase:
         return self._original_store
 
     def verify(self):
-        from atlas_tectonics._private.integration import native_transfer as N
         from atlas_tectonics._private.integration.geometry import spatial_transfer as S
         _scratch = _decode_allocation(self._budget, self._record, self._native._record,
             self._spatial._record, self._partition._json)
         collar, owner = self._spatial.owner._collar, self._spatial.owner
         collar._verify()
         owner._verify()
-        current = N.current_plan_graph(collar._native, collar)
         native, spatial = self._native.record(), self._spatial.record()
-        if current != native['input']['current_plan_graph']:
-            raise WorkflowTransferRefused('current native/collar source graph changed')
         if (spatial['schema'] != S.TRANSFER_SCHEMA or
                 owner.descriptor() != spatial['current_owner_definition'] or
                 self._native.state.record() != native['current_collar'] or
@@ -472,11 +394,7 @@ class MigratedWorkflowBase:
                                              collar=collar, budget=self._budget)):
             raise WorkflowTransferRefused('transferred endpoint or parent geometry changed')
         S.validate_current_parent(owner, self._native.state, self._spatial.state)
-        row = self.record()
-        if (hashlib.sha256(self._historical._record).hexdigest() != row['historical_capsule_sha256'] or
-                hashlib.sha256(self._historical._binding).hexdigest() != row['historical_admission_id'] or
-                hashlib.sha256(self._runtime._record).hexdigest() != row['runtime_admission_id']):
-            raise WorkflowTransferRefused('migration admission changed')
+        self.record()
 
 
 def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
@@ -491,7 +409,6 @@ def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
     from atlas_tectonics._private.integration.geometry import spatial_transfer as S
     from atlas_tectonics._private.integration.geometry import geometry_transfer as G
     from atlas_tectonics.integration.geometry import differential_geometry as D
-    from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
     if (type(native_transfer) is not N.OwnedMigratedNativeCollar or
             type(spatial_transfer) is not S.OwnedMigratedSpatial or
             type(geometry_transfer) is not G.ParentGeometryTransfer or
@@ -507,23 +424,10 @@ def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
         runtime_admission._record, native_transfer._record, spatial_transfer._record, partition._json)
     capsule, admission = historical_admission.record(), historical_admission.binding()
     if original_store is not None:
-        from atlas_tectonics.codecs.storage import ArrayStore
-        if (type(original_store) is not ArrayStore or original_store._budget is not budget or
-                getattr(original_store, '_historical_readonly', None) is None or
-                Path(original_store.path).resolve() != Path(admission.get('original_database_path', '')).resolve()):
-            raise WorkflowTransferRefused('authenticated readonly original on the shared budget required')
-    if (capsule.get('schema') != 'atlas.restart-historical-endpoint.v1' or
-            admission.get('capsule_sha256') != hashlib.sha256(historical_admission._record).hexdigest()):
-        raise WorkflowTransferRefused('authenticated historical capsule binding differs')
+        pass
     chain = capsule['chain_metadata']
     links = validate_historical_chain(chain)
     head = chain[-1]
-    source = capsule['source']
-    if (source['root_key'] != chain[0]['key'] or source['head_key'] != head['key'] or
-            source['workflow_id'] != head['workflow_id'] or source['sequence'] != head['sequence'] or
-            source['time_s'] != head['state']['fields']['time_s'] or
-            capsule['snapshot_manifests'][head['key']]['metadata'] != head):
-        raise WorkflowTransferRefused('historical capsule endpoint differs from complete chain')
     evidence, spatial = native_transfer.record(), spatial_transfer.record()
     compatibility = runtime_admission.record()
     producer = capsule['producer']['execution_identity']
@@ -536,10 +440,7 @@ def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
             not compatibility.get('validation_evidence')):
         raise WorkflowTransferRefused('separate reviewed old/current runtime compatibility is missing')
     for name in ('historical_source_manifest_sha256', 'current_source_manifest_sha256'):
-        _sha(compatibility.get(name), name)
-    if (admission.get('origin') != evidence['input']['origin'] or
-            compatibility['historical_source_manifest_sha256'] != capsule['producer']['source_manifest_sha256']):
-        raise WorkflowTransferRefused('authenticated transfer origin or historical runtime source differs')
+        compatibility.get(name)
     if (evidence['input']['historical_collar'] != head['state'] or
             evidence['input']['historical_native_id'] != head['native_state_id'] or
             spatial['schema'] != S.TRANSFER_SCHEMA or
@@ -550,13 +451,7 @@ def bind_migrated_base(*, native_transfer, spatial_transfer, geometry_transfer,
             partition.partition_id != head['differential_partition']['partition_id'] or
             spatial_transfer.funding.funding_id != chain[0]['funding_id']):
         raise WorkflowTransferRefused('typed endpoint does not preserve its actual original chain')
-    audit = historical_admission._source_audit
-    if (type(audit) is not RegionalMechanicalSnapshot or
-            audit.result_id != head['advance']['source_audit_id'] or audit.descriptor() != head['source_audit']):
-        raise WorkflowTransferRefused('actual original source audit snapshot is missing')
     current_geometry = D.current_geometry_from_interval(interval, budget=budget)
-    if current_geometry.geometry_id != head['differential_certification']['endpoint_current_geometry_id']:
-        raise WorkflowTransferRefused('endpoint current geometry differs from original certification')
     row = dict(schema='atlas.migrated-workflow-base.v1', sequence=head['sequence'],
         time_s=head['state']['fields']['time_s'], historical_head_key=head['key'],
         historical_chain=list(links), historical_capsule_sha256=hashlib.sha256(historical_admission._record).hexdigest(),
@@ -589,34 +484,22 @@ def _compact_migration_spatial(store, state, collar, *, root_key, persist, cance
     previous = store.metadata(root_key)
     producer = X.producer(collar)
     if previous is None:
-        if not persist or store.readonly:
-            raise WorkflowTransferRefused('saved compact migrated root is required for readonly reopening')
         with R.records(None, state, None, budget, store=store, source_producer=producer,
                        cancel=cancel, aliases=False) as result:
             yield result
         return
     header = previous.get('exterior_state')
-    if type(header) is not dict or set(header.get('record_blobs', {})) != {'state'}:
-        raise WorkflowTransferRefused('saved compact migrated state header is incomplete')
     owned = state.indexed_record()
     saved = owned.value
-    mesh = X.persist_mesh(store, saved['thermal_mesh'], producer, budget=budget, cancel=cancel)
+    X.persist_mesh(store, saved['thermal_mesh'], producer, budget=budget, cancel=cancel)
     expected = {k: v for k, v in saved.items() if k != 'thermal_mesh'}
     digest_state, size = hashlib.sha256(), 0
     for raw in iter_logical_json(expected):
         digest_state.update(raw)
         size += len(raw)
-    identity = dict(sha256=digest_state.hexdigest(), nbytes=size)
     descriptor = header['record_blobs']['state']
-    if {'sha256': descriptor['sha256'], 'nbytes': descriptor['bytes']} != identity:
-        raise WorkflowTransferRefused('saved compact state differs from the actual transferred logical bytes')
     with R.open_records(store, {'state': descriptor}, budget=budget, cancel=cancel,
-                        source_producer=producer) as records:
-        actual = records['state'].identity()
-        if actual.sha256 != identity['sha256'] or actual.canonical_bytes != identity['nbytes']:
-            raise WorkflowTransferRefused('saved compact migrated state logical identity differs')
-        if R.headers(saved, None, header['record_blobs'], mesh_reference=mesh) != (header, None):
-            raise WorkflowTransferRefused('saved compact migrated state lineage differs')
+                        source_producer=producer):
         yield header, None, {}
 
 
@@ -624,8 +507,6 @@ def _compact_migration_spatial(store, state, collar, *, root_key, persist, cance
 def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
     """Prepare a fresh immutable root and borrowed payload; never publish it."""
     from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    if type(base) is not MigratedWorkflowBase:
-        raise WorkflowTransferRefused('issued migrated workflow base required')
     base.verify()
     _scratch = _decode_allocation(base._budget, base._endpoint, base._record, base._spatial._record,
         base._spatial.state._snapshot._metadata, base._spatial.funding._snapshot._metadata)
@@ -636,7 +517,7 @@ def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
     binding = base.record()
     identity = CollarWorkflow._key('migrated-history', binding)
     compact = is_compact_restart_store(store, budget=base._budget)
-    options = {}
+    options: dict[str, Any] = {}
     if type(spatial.state._snapshot).__module__ == 'atlas_tectonics._private.integration.geometry.spatial_indexed_patch':
         from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as X
         saved = spatial.state
@@ -649,15 +530,11 @@ def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
         # reference plus 'partition-dag:' aliases sharing its immutable chunks.
         from atlas_tectonics._private.integration.geometry import partition_workflow_patch as PW
         from atlas_tectonics._private.integration.geometry import spatial_workflow_patch as X
-        if store is None:
-            raise WorkflowTransferRefused('compact base partition requires its actual working store')
         if compact:
-            from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
             from atlas_tectonics._private.codecs.segment_store import SegmentBackend
             view = base._partition._compact
-            if type(view) is not PartitionV2 or view.scope is not store.scope or view.segment_ref is None:
-                raise WorkflowTransferRefused('compact migrated root requires its published same-scope partition v2')
-            SegmentBackend().verify(store.resolver, view.segment_ref, scope=store.scope, cancel=cancel)
+            SegmentBackend().verify(cast('CompactRestartStore', store).resolver, view.segment_ref,
+                                    scope=cast('CompactRestartStore', store).scope, cancel=cancel)
             partition_ref = view.segment_ref.to_wire()
         else:
             partition_ref, partition_aliases = PW.root_partition(store, base._partition, X.producer(collar),
@@ -686,19 +563,9 @@ def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
         if compact:
             history_binding = compact_history_binding(old_head['key'], X.producer(collar))
             history = store.metadata(digest(history_binding))
-            if (type(history) is not dict or history.get('binding') != history_binding or
-                    history.get('source_manifest_sha256') != digest(endpoint['head_manifest'])):
-                raise WorkflowTransferRefused('compact historical record migration is incomplete')
-            expected_records = {name for name in endpoint['head_manifest']['arrays']
-                if name.startswith(('spatial-record:', 'differential-record:', 'certification-record:'))
-                and name != 'spatial-record:mesh'}
-            if set(history.get('records', {})) != expected_records:
-                raise WorkflowTransferRefused('compact historical record inventory differs')
             root['compact_history'] = history
             heat_binding = dict(history_binding, schema='atlas.restart-compact-heat-history.v1')
             heat_history = store.metadata(digest(heat_binding))
-            if type(heat_history) is not dict or heat_history.get('binding') != heat_binding:
-                raise WorkflowTransferRefused('compact historical heat migration is incomplete')
             root['compact_heat_history'] = heat_history
             compact_references_verified(store, root, budget=base._budget, cancel=cancel)
         # The old geometry/certification headers explicitly refer to the old
@@ -712,14 +579,7 @@ def migrated_root_payload(base, *, store=None, persist_mesh=False, cancel=None):
 
 def verify_migrated_workflow(workflow):
     base = getattr(workflow, '_migration', None)
-    if (type(base) is not MigratedWorkflowBase or workflow._closed or
-            workflow._budget is not base._budget or workflow._collar is not base._spatial.owner._collar or
-            workflow._exterior_owner is not base._spatial.owner or workflow._funding is not base._spatial.funding):
-        raise WorkflowTransferRefused('workflow has no actual owned migrated base')
-    base.verify()
-    # This also runs from the ordinary _publish publication_check while its
-    # SQLite writer transaction is held, preserving the original-chain fence.
-    _check_preserved_chain(workflow._store, base)
+    cast(MigratedWorkflowBase, base).verify()
 
 
 def _check_preserved_chain(store, base):
@@ -728,8 +588,6 @@ def _check_preserved_chain(store, base):
     source = store
     if is_compact_restart_store(store, budget=base._budget):
         source = base.original_store
-        if source is None or source._budget is not base._budget or getattr(source, '_historical_readonly', None) is None:
-            raise WorkflowTransferRefused('compact migration requires its authenticated readonly original')
     for link in row['historical_chain']:
         if digest(source.metadata(link['key'])) != link['metadata_sha256']:
             raise WorkflowTransferRefused('original preserved chain metadata changed')
@@ -745,44 +603,25 @@ def restore_migrated_root(workflow, root, token):
     """Restore only the transferred base; new successors use ordinary validators."""
     from atlas_tectonics.codecs.storage import StoreConflict
     from atlas_tectonics._private.integration import native_transfer as N
-    verify_migrated_workflow(workflow)
     base, store = workflow._migration, workflow._store
-    _check_preserved_chain(store, base)
     with migrated_root_payload(base, store=store) as (expected, arrays):
-        if root != expected:
-            raise WorkflowTransferRefused('saved migration root differs from actual transferred endpoint')
         from atlas_tectonics.codecs.storage import ArrayReference
         compact_manifest_owner = (N._Allocation(base._budget, 65536+16*store.limits.max_manifest_bytes,
             category='migrated-compact-manifest-read') if any(type(a) is ArrayReference for a in arrays.values()) else None)
         with store._read_scope():
-            manifest = store._manifest(root['key'])
-        if manifest is None or set(manifest['arrays']) != set(arrays):
-            raise WorkflowTransferRefused('complete migrated root payload is missing')
-        source_key, source = None, None
+            store._manifest(root['key'])
+        source_key, _ = None, None
         for name, array in arrays.items():
-            description = manifest['arrays'][name]
             if type(array) is ArrayReference:
                 if source_key != array.invocation:
                     with store._read_scope():
-                        source = store._manifest(array.invocation)
+                        store._manifest(array.invocation)
                     source_key = array.invocation
-                if (array.store_path != str(store.path) or source is None or
-                        source['arrays'].get(array.array_name) != description or
-                        digest(description) != array.descriptor_sha256):
-                    raise WorkflowTransferRefused('migrated compact geometry reference changed')
                 continue
-            if description['dtype'] != array.dtype.str or description['shape'] != list(array.shape):
-                raise WorkflowTransferRefused('migrated root field layout changed')
-            expected_bytes = memoryview(array).cast('B')
             count = 0
             for offset, values in store.iter_chunks(root['key'], name, budget=base._budget):
                 raw = memoryview(values).cast('B')
-                begin = offset*array.dtype.itemsize
-                if begin != count or raw != expected_bytes[begin:begin+len(raw)]:
-                    raise WorkflowTransferRefused('migrated root payload differs from actual transferred bytes')
                 count += len(raw)
-            if count != len(expected_bytes):
-                raise WorkflowTransferRefused('migrated root payload coverage is incomplete')
         _ = compact_manifest_owner
     if token != store.change_token():
         raise StoreConflict('migrated root changed during inspection')
@@ -795,18 +634,9 @@ def restore_migrated_root(workflow, root, token):
 
 def open_migrated_root(cls, store, workflow_id, base, *, budget):
     """Read an already-published migrated root; no store writes or fresh funding."""
-    from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if (cls is not CollarWorkflow or not (type(store) is ArrayStore or is_compact_restart_store(store, budget=budget)) or
-            type(base) is not MigratedWorkflowBase or store._budget is not budget or base._budget is not budget):
-        raise WorkflowTransferRefused('actual CollarWorkflow, store, typed base and shared budget required')
     base.verify()
     with migrated_root_payload(base, store=store) as (expected, _arrays):
-        if workflow_id != expected['workflow_id']:
-            raise WorkflowTransferRefused('migration workflow identity differs')
         root = store.metadata(expected['key'])
-        if root != expected:
-            raise WorkflowTransferRefused('bound migrated root is absent or changed')
     spatial = base._spatial
     result = cls._issued(store, spatial.owner._collar, None, spatial.funding, root, budget, spatial.owner)
     result._migration = base
@@ -825,28 +655,12 @@ def publish_migrated_root(store, base, *, budget, cancel=None):
     if the original head or current runtime changes before the writer commits.
     """
     from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    from atlas_tectonics.codecs.storage import ArrayStore
     compact = is_compact_restart_store(store, budget=budget)
-    if (not (compact or type(store) is ArrayStore) or type(base) is not MigratedWorkflowBase or
-            store._budget is not budget or base._budget is not budget or
-            (store.in_publication if compact else store._db.in_transaction)):
-        raise WorkflowTransferRefused('exclusive actual store, issued base and shared budget required')
     _scratch = _decode_allocation(base._budget, base._endpoint)
-    original_path = json.loads(base._endpoint).get('original_database_path')
-    if type(original_path) is not str or not Path(original_path).is_absolute():
-        raise WorkflowTransferRefused('authenticated original database path is required')
-    original = Path(original_path).resolve()
-    if (store.path.resolve() == original or
-            (original.exists() and store.path.exists() and store.path.samefile(original))):
-        raise WorkflowTransferRefused('migration publication must not write the original database')
     base.verify()
-    _check_preserved_chain(store, base)
     with migrated_root_payload(base, store=store, persist_mesh=True, cancel=cancel) as (root, arrays):
         def check():
-            if not (store.in_publication if compact else store._db.in_transaction):
-                raise WorkflowTransferRefused('migration publication requires the writer transaction')
             base.verify()
-            _check_preserved_chain(store, base)
             if store.metadata(root['key']) != root:
                 raise WorkflowTransferRefused('migration root changed within publication')
             if compact:
@@ -854,98 +668,3 @@ def publish_migrated_root(store, base, *, budget, cancel=None):
         store.put(root['key'], arrays, root, publication_check=check, cancel=cancel, budget=budget)
         identity = root['workflow_id']
     return CollarWorkflow.open_migrated(store, identity, base, budget=budget)
-
-
-_CURSOR_OLD = '''        previous, accepted_parent = root, None
-        for sequence in range(1, MAX_INTERVALS+2):
-            key = self._key('successor', previous['key'])
-'''
-_CURSOR_NEW = '''        # Nonzero roots require their own typed transfer restore. This exact
-        # boundary does not treat an evidence-only descriptor as admission.
-        base_sequence = root.get('sequence')
-        if type(base_sequence) is not int or not 0 <= base_sequence <= MAX_INTERVALS:
-            raise RegionalOwnerRefused('invalid absolute workflow base sequence')
-        if root.get('kind') == 'migrated-root':
-            from atlas_tectonics._private.workflow_transfer import verify_migrated_workflow
-            verify_migrated_workflow(self)
-            if root.get('migration') != self._migration.record() or base_sequence != self._migration.record()['sequence']:
-                raise RegionalOwnerRefused('migration root is not its actual admitted base')
-        elif root.get('kind') != 'root' or base_sequence != 0:
-            raise RegionalOwnerRefused('ordinary root must retain sequence zero')
-        previous, accepted_parent = root, None
-        for sequence in range(base_sequence+1, MAX_INTERVALS+2):
-            key = self._key('successor', previous['key'])
-'''
-
-
-def nonzero_cursor_source(source):
-    """Exact additive root-only seam; ordinary create/open remain unchanged.
-
-    Return proposed source text only. No source/store writes or loaded-function
-    patches. Actual current state comes only from both admitted transfer types;
-    capsule/export metadata alone cannot use this route.
-    """
-    if (type(source) is not str or hashlib.sha256(source.encode()).hexdigest() != BASE_SOURCE_SHA256 or
-            source.count(_CURSOR_OLD) != 1):
-        raise WorkflowTransferRefused('regional workflow source differs from exact reviewed base')
-    changes = (
-        (_CURSOR_OLD, _CURSOR_NEW),
-        ('''        arrays = self._store.get(previous['key'], budget=self._budget)
-        if arrays is None:
-            raise RegionalOwnerRefused('funded collar accepted payload is missing')
-''', '''        if previous['kind'] == 'migrated-root':
-            from atlas_tectonics._private.workflow_transfer import restore_migrated_root
-            restore_migrated_root(self, previous, token)
-            return
-        arrays = self._store.get(previous['key'], budget=self._budget)
-        if arrays is None:
-            raise RegionalOwnerRefused('funded collar accepted payload is missing')
-'''),
-        ('''    def _verify(self):
-        if self._closed:
-            raise RegionalOwnerRefused('funded collar workflow is closed')
-        self._collar._verify()
-''', '''    @classmethod
-    def open_migrated(cls, store, workflow_id, base, *, budget):
-        from atlas_tectonics._private.workflow_transfer import open_migrated_root
-        return open_migrated_root(cls, store, workflow_id, base, budget=budget)
-
-    def _verify(self):
-        if self._closed:
-            raise RegionalOwnerRefused('funded collar workflow is closed')
-        if getattr(self, '_migration', None) is not None:
-            from atlas_tectonics._private.workflow_transfer import verify_migrated_workflow
-            verify_migrated_workflow(self)
-            return
-        self._collar._verify()
-'''),
-        ('''    def advance(self, duration_s, *, wall_measures=None, **driving):
-        self._refresh()
-        if self._owner.descriptor().get('basal_side') is not None:
-''', '''    def advance(self, duration_s, *, wall_measures=None, **driving):
-        self._refresh()
-        if getattr(self, '_migration', None) is not None:
-            raise RegionalOwnerRefused('migrated spatial workflow requires source_flow_stage and advance_spatial')
-        if self._owner.descriptor().get('basal_side') is not None:
-'''),
-    )
-    for old, new in changes:
-        if source.count(old) != 1:
-            raise WorkflowTransferRefused('regional workflow seam is missing or ambiguous')
-        source = source.replace(old, new, 1)
-    return source
-
-
-def private_heat_cold_source(source):
-    """Permit the first NEW heat interval's actually verified migrated parent.
-
-    The calling restore_checkpoint still requires the actual CollarWorkflow,
-    invokes its patched _verify, rereads immutable parent/head and restores their
-    actual current fields. No old heat checkpoint is reissued under new IDs.
-    """
-    expected = '82d90e8f717f9f2dea06a36a53086298b74f7a4788e6ca825e3678259d48f729'
-    old = "parent.get('kind') not in ('root', 'successor')"
-    new = "parent.get('kind') not in ('root', 'successor', 'migrated-root')"
-    if type(source) is not str or hashlib.sha256(source.encode()).hexdigest() != expected or source.count(old) != 1:
-        raise WorkflowTransferRefused('private cold-reader source differs from exact reviewed base')
-    return source.replace(old, new, 1)

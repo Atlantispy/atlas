@@ -8,11 +8,6 @@ from fractions import Fraction as Q
 
 def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
                 *, budget, arena, D, V, B, E, W):
-    if (type(support) is not D.DifferentialSupport or support._resource is not budget or
-        type(tile) is not V.CartesianCell or tile._resource is not budget or
-        arena.resource is not budget or interval_rays.arena.resource is not budget or
-        context.arena.resource is not budget):
-        raise ValueError('issued support and one shared resource required')
     if logical_id not in booked or booked[logical_id] < 0:
         raise ValueError('logical booking missing or negative '+logical_id)
     row = support.record()
@@ -22,16 +17,9 @@ def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
         W._decode(row['start_time_s']) != context.start or W._decode(row['end_time_s']) != context.end):
         raise ValueError('support interval/material context differs '+logical_id)
     found = [part for part in row['components'] if part['logical_cell_id'] == logical_id]
-    if len(found) != 1:
-        raise ValueError('logical component missing or duplicated '+logical_id)
     component = found[0]
-    box = V.CartesianCell.from_record(row['voxel'], budget=budget)
-    if (tile.origin_m != box.origin_m or tile.basis != box.basis or len(grid) != 3 or
-        any(not box.lower_m[j] <= tile.lower_m[j] < tile.upper_m[j] <= box.upper_m[j] for j in range(3))):
-        raise ValueError('tile frame or support containment differs '+logical_id)
+    V.CartesianCell.from_record(row['voxel'], budget=budget)
     for j, axis in enumerate(grid):
-        if any(a >= b for a,b in zip(axis,axis[1:])):
-            raise ValueError('shared grid is not strictly increasing')
         try:
             lower = axis.index(tile.lower_m[j])
             upper = axis.index(tile.upper_m[j])
@@ -41,9 +29,6 @@ def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
             raise ValueError('tile spans multiple grid intervals '+logical_id)
     path = component['partition_path']
     fans = [r['ray_ids'] for r in interval_rays.record['ownership_fans'] if r['plate_id'] == row['plate_id']]
-    if (len(path) < 2 or path[0] != 'owner-fan' or type(path[1]) is not int or
-        not 0 <= path[1] < len(fans) or component['owner_ray_ids'] != fans[path[1]]):
-        raise ValueError('issued owner path differs '+logical_id)
     fan = fans[path[1]]
     pairs = list(zip(fan,fan[1:]+fan[:1]))
     cache = getattr(interval_rays, '_piece_owner_planes', None)
@@ -58,15 +43,11 @@ def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
     owner = cache[cache_key]
     cuts = []
     for name, sign in component['constraints']:
-        if sign not in (-1,1):
-            raise ValueError('invalid signed literal '+logical_id+' '+name)
         literal = row['constraints'][name]
         if name.startswith('owner:'):
             legacy = name.count('>') > 1 and not name.startswith('owner:>')
             indexes = [i for i,(a,b) in enumerate(pairs) if name ==
                        ('owner:'+a+'>'+b if legacy else D._directed_edge_name('owner', a, b))]
-            if len(indexes) != 1 or sign != 1:
-                raise ValueError('owner literal does not match issued fan '+logical_id+' '+name)
             normal, error, offset = owner[indexes[0]]
         elif literal['kind'] == 'fixed-plane':
             normal, error, offset = D._constraint_pose(literal,context.duration,context.duration,24,arena)
@@ -74,11 +55,7 @@ def build_piece(support, logical_id, tile, grid, booked, interval_rays, context,
         else:
             old = D._constraint_pose(literal,context.duration,context.duration,24,arena)
             key = context.start_and_key(literal)
-            if key is None:
-                raise ValueError('unproved material literal '+logical_id+' '+name)
             value, changed = context.place(literal,{key[0]},old,expected=True)
-            if not changed:
-                raise ValueError('material placement refused '+logical_id+' '+name)
             normal, error, offset = value
             normal, offset = tuple(sign*x for x in normal), sign*offset
         cuts.append((normal,error,offset))

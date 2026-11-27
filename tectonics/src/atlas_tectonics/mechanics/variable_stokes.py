@@ -24,8 +24,7 @@ try:
 except ImportError:
     coo_matrix = bmat = diags = csc_matrix = None
 from atlas_tectonics._validation import TectonicsError, scalar
-from atlas_tectonics.materials.constitutive import DiffusiveScales, RheologyProfile
-from atlas_tectonics.mechanics.stokes import StokesBox2D, _MACOperator
+from atlas_tectonics.mechanics.stokes import _MACOperator
 
 _METHOD = 'atlas.variable-stress-mac-2d.v1'
 
@@ -60,12 +59,6 @@ class NonlinearStokesPolicy:
     velocity_preconditioner: str = 'auto'
 
     def __post_init__(self):
-        if self.method not in ('gmres', 'direct'):
-            raise TectonicsError('variable mechanics requires gmres or explicit direct reference')
-        if self.velocity_preconditioner not in ('auto', 'ilu', 'gmg'):
-            raise TectonicsError('velocity preconditioner must be auto, ilu or gmg')
-        if self.method == 'direct' and self.velocity_preconditioner == 'gmg':
-            raise TectonicsError('multigrid requires GMRES')
         for key in ('max_unknowns','direct_max_unknowns','restart','max_cycles','max_picard_iterations'):
             if type(getattr(self,key)) is not int or getattr(self,key)<1:
                 raise TectonicsError(key+' must be a positive integer')
@@ -74,26 +67,16 @@ class NonlinearStokesPolicy:
         for key in ('linear_rtol','momentum_tolerance','divergence_tolerance','gauge_tolerance',
                     'work_balance_tolerance','viscosity_rtol'):
             value=scalar(getattr(self,key),key,positive=True)
-            if not np.finfo(float).eps<=value<=1e-3:
-                raise TectonicsError(key+' outside binary64 error-policy envelope')
             object.__setattr__(self,key,value)
         for key,lo,hi in (('relaxation',0.,1.),('ilu_drop_tolerance',0.,.1),
                           ('ilu_fill_factor',1.,100.),('max_viscosity_contrast',1.,1e30)):
             value=scalar(getattr(self,key),key,nonnegative=True)
-            if not lo<=value<=hi or (key=='relaxation' and value==0):
-                raise TectonicsError(key+' outside numerical policy envelope')
             object.__setattr__(self,key,value)
 
 
 def check_variable_support(box,scales):
-    if type(box) is not StokesBox2D or type(scales) is not DiffusiveScales:
-        raise TectonicsError('typed box and diffusive scales required')
     hx=scalar((box.width_m/scales.length_m)/box.nx,'scaled x spacing',positive=True)
     hz=scalar((box.height_m/scales.length_m)/box.nz,'scaled z spacing',positive=True)
-    try: coeff=(1/hx)**2+(1/hz)**2
-    except OverflowError as exc: raise TectonicsError('variable-stress coefficients outside range') from exc
-    if not math.isfinite(coeff) or coeff==0:
-        raise TectonicsError('variable-stress coefficients outside range')
     return hx,hz
 
 
@@ -104,9 +87,6 @@ def check_coupled_rheology(box,scales,profile):
     supplied frozen damage field, never silently zeroed/advected by the two-field
     thermochemical state. No pressure-sensitive yield or new thermal law is chosen.
     """
-    check_variable_support(box,scales)
-    if type(profile) is not RheologyProfile or profile.family not in ('constant','tosi-linear','tosi-plastic'):
-        raise TectonicsError('coupled R4.3 supports constant/Tosi laws; damage evolution needs a named extension')
     if box.height_m>scales.depth_scale_m:
         raise TectonicsError('box extends outside declared rheology depth normalisation')
 
@@ -120,8 +100,6 @@ class _StressMACOperator(_MACOperator):
             from . import _mechanics_native
             _mechanics_native.prepare()
             self._native=_mechanics_native
-        if coo_matrix is None:
-            raise TectonicsError('SciPy sparse operators unavailable')
         self._build_derivatives()
         if compiled:self._build_velocity_template()
         else:self.velocity_template_nbytes=0

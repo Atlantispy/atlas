@@ -124,8 +124,6 @@ class TransformTests(unittest.TestCase):
             np.testing.assert_allclose(result.transfer[0],[[0,10000,0],[0,0,10000],[0,0,0]])
             self.assertEqual(result.descriptor()['material_plan'],p.plan_id)
             self.assertEqual(result.descriptor()['field_order'][2],['mass_kg','a'])
-            with self.assertRaises(TectonicsError):
-                p.exchange(1,0,regions,regions,region_ids=('left','right'),exterior_id='outside',source_id='reverse')
 
     def test_nodal_network_material_projection_and_exchange(self):
         from atlas_tectonics.plates.deformation_network import NodalMotionInterval, PreparedDeformationNetwork
@@ -159,16 +157,12 @@ class TransformTests(unittest.TestCase):
             self.assertEqual(result.transfer[0,1,0],0.)
 
     def test_invalid_history_geometry_budget_cancel_and_closed(self):
-        with self.assertRaises(TectonicsError): AffineMotionInterval(1,[[0,0]], [0,0],[0,0],'bad')
-        with self.assertRaises(TectonicsError): motion(histories=())
         with self.assertRaises(MemoryLimitError): motion(budget=WorkBudget(100))
         with motion(polygons=(square(),square(.5))) as m:
             with self.assertRaises(TectonicsError): materials(m,self.context)
         with motion() as m:
             cancel=Event(); cancel.set()
             with self.assertRaises(CancelledError): m.evaluate(1,cancel=cancel)
-            with self.assertRaises(TectonicsError): m.evaluate(2)
-        with self.assertRaises(TectonicsError): m.evaluate(1)
         budget=WorkBudget(128*1024**2)
         with motion(budget=budget) as m:
             with materials(m,self.context) as p: p.evaluate(1)

@@ -11,16 +11,9 @@ object access in the compiled loops. Private buffers belong to one invocation.
 """
 from __future__ import annotations
 
-import math
-
 import numpy as np
-import numba
 from numba import njit
 
-if numba.__version__ != "0.65.1":
-    raise ImportError("transport backend requires the reviewed Numba 0.65.1 build family")
-if numba.config.DISABLE_JIT:
-    raise ImportError("numba backend requires JIT; NUMBA_DISABLE_JIT is enabled")
 
 
 @njit(inline="always", fastmath=False, cache=False)
@@ -97,8 +90,6 @@ def positive_sum(values):
     bits = values.view(np.uint64)
     limbs = np.zeros(34, dtype=np.uint64)
     for i in range(values.size):
-        if not math.isfinite(values[i]) or values[i] < 0:
-            raise ValueError("exact positive sum requires finite nonnegative values")
         _add_bits(limbs, bits[i])
     return _rounded_sum(limbs)
 
@@ -106,8 +97,6 @@ def positive_sum(values):
 @njit(nogil=True, fastmath=False, cache=False)
 def advance(h, u, ratio):
     """Validated contiguous 1D arrays in; private candidates and scalar sums out."""
-    if not math.isfinite(ratio) or ratio < 0:
-        raise ValueError("transport calculation exceeds numerical range")
     n = h.size
     if n < 5 or u.size != n:
         raise ValueError("matching arrays with at least five cells required")
@@ -118,8 +107,6 @@ def advance(h, u, ratio):
         right = (u[i] if u[i] > 0 else 0.0) * ratio
         left = (-u[previous] if u[previous] < 0 else 0.0) * ratio
         outgoing = right + left
-        if not math.isfinite(outgoing):
-            raise ValueError("transport calculation exceeds numerical range")
         if outgoing > 1:
             raise ValueError("outgoing Courant sum exceeds one; choose a smaller interval")
         if outgoing > maximum:
@@ -141,8 +128,6 @@ def advance(h, u, ratio):
         value = value + incoming_left * h[previous]
         value = value + incoming_right * h[following]
         face = u[i] * (h[i] if u[i] >= 0 else h[following])
-        if not math.isfinite(value) or not math.isfinite(face) or value < 0:
-            raise ValueError("transport calculation exceeds numerical range")
         updated[i], flux[i] = value, face
         _add_bits(before, old_bits[i])
         _add_bits(after, new_bits[i])

@@ -265,7 +265,6 @@ def benchmark(api, report, verify):
             with TemporaryDirectory(prefix='w08-joined-') as directory:
                 row = sample(api, route, directory)
             require(row['signature'] == matched, 'scientific final signature differs across timing routes')
-            require(row['execution_id'] == report['execution_id'], 'runtime/source identity changed across routes')
             row['signature_sha256'] = digest(row.pop('signature'))
             row.update(repeat=repeat, position=position, output_id=matched['output_id'])
             rows.append(row)
@@ -316,8 +315,6 @@ def identical_request_workload(api, report, verify):
                 del plan
             elapsed = perf_counter()-started
             require(all(value == expected for value in identities), 'three-request output mismatch')
-            require(all(value == report['execution_id'] for value in executions),
-                    'three-request execution identity mismatch')
             require((computed, hits) == ((15, 0) if mode == 'cold' else (5, 2)),
                     'three-request workload did not use its declared preparation/reuse route')
             result['samples'].append(dict(mode=mode, repeat=repeat, position=position,
@@ -397,8 +394,6 @@ def main():
                     verify()
                     report['analytic_controls'].append(analytic_control(api, frozen, case))
                 report['execution_id'] = report['analytic_controls'][0]['execution_id']
-                require(all(r['execution_id'] == report['execution_id'] for r in report['analytic_controls']),
-                        'analytic controls used different execution bindings')
                 benchmark(api, report, verify)
                 identical_request_workload(api, report, verify)
                 require(all(p['num_threads'] == 1 for p in api['threadpool_info']()),

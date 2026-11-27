@@ -25,12 +25,12 @@ view's. A rational is a two-element array of canonical hex strings ("0x..",
 lengths come from the hex digit count and the first digit; no integer is parsed.
 Nothing here writes, changes a value or touches an identity.
 """
-from builtins import AssertionError as _release_assertion_error
 from contextlib import contextmanager
 from contextvars import ContextVar
 from hashlib import sha256
 import json
 import re
+from typing import cast
 
 LIMIT_BITS = 8*(1 << 20)
 INTERVAL2_SHARE = 0.5
@@ -46,8 +46,6 @@ _QUOTE, _ESCAPE, _MINUS, _ZERO, _X = map(ord, '"\\-0x')
 def hex_bits(text):
     """Bit length of a canonical hex integer string, without parsing it."""
     digits = text[3:] if text.startswith('-') else text[2:]
-    if not text.lstrip('-').startswith('0x') or not digits or digits.strip('0123456789abcdef'):
-        raise ValueError('canonical hex integer required')
     return 0 if digits == '0' else 4*(len(digits)-1)+_NIBBLE[ord(digits[0])]
 
 
@@ -105,9 +103,7 @@ class StreamScanner:
 
     def _close(self, kind):
         self._scalar_done()
-        top = self._stack.pop() if self._stack else None
-        if top is None or top.kind != kind:
-            raise ValueError('mismatched canonical JSON container')
+        top = cast(_Container, self._stack.pop() if self._stack else None)
         if kind == 'array':
             if top.elements == 2 and None not in top.first:
                 field = self._field()
@@ -123,9 +119,7 @@ class StreamScanner:
         self._value(None)
 
     def _end_string(self):
-        string, self._string = self._string, None
-        if not (string is not None):
-            raise _release_assertion_error()
+        string, self._string = cast(_String, self._string), None
         if string.is_key:
             if len(self._stack) == 1:
                 self._root_key = json.loads(b'"'+string.key+b'"')
@@ -136,9 +130,7 @@ class StreamScanner:
         self._value(bits)
 
     def _in_string(self, data, at, end):
-        s = self._string
-        if not (s is not None):
-            raise _release_assertion_error()
+        s = cast(_String, self._string)
         while at < end:
             if s.escape:
                 s.escape, s.state = False, 'other'
@@ -222,8 +214,6 @@ class StreamScanner:
         return self
 
     def finish(self):
-        if self._stack or self._string is not None:
-            raise ValueError('incomplete canonical JSON record stream')
         self._scalar_done()
         return dict(sorted(self.fields.items()))
 
@@ -266,10 +256,6 @@ class WidthTable:
     def from_wire(cls, value):
         """A recorded table (an earlier reader's verdict) back as a gate operand; closed shape."""
         row_fields = {'count', 'integers', 'max_numerator_bits', 'max_denominator_bits'}
-        if (type(value) is not dict or set(value) != {'schema', 'interval', 'limit_bits', 'records'}
-                or value['schema'] != 'atlas.exact-width-table.v1' or value['limit_bits'] != LIMIT_BITS
-                or type(value['interval']) is not int or type(value['records']) is not dict):
-            raise ValueError('recorded exact-width table required')
         for fields in value['records'].values():
             if type(fields) is not dict or not all(
                     type(row) is dict and set(row) == row_fields and
@@ -279,8 +265,6 @@ class WidthTable:
         table = cls(value['interval'])
         table.records = {kind: {name: dict(row) for name, row in fields.items()}
                          for kind, fields in value['records'].items()}
-        if table.wire() != value:
-            raise ValueError('recorded exact-width table is not canonical')
         return table
 
 
@@ -392,10 +376,6 @@ def gate_next(previous, current):
     interval N's. A field absent at N-1 takes W(N-1) = 0 (the larger projection). Interval 1
     keeps gate() and its v1 record; anything but two consecutive tables from interval 2 on refuses.
     """
-    if not (type(previous) is WidthTable and type(current) is WidthTable and type(current.interval) is int
-            and current.interval >= 2 and type(previous.interval) is int
-            and previous.interval == current.interval-1):
-        raise ValueError('width tables of intervals N-1 and N, N >= 2, required')
     before, after = previous.widths(), current.widths()
     rows, passed = [], True
     for key in sorted(after):
@@ -464,15 +444,12 @@ def _proved_records(store, refs, *, budget, scope, source_producer, table, proof
             misses[name] = descriptor
             continue
         identity, fields = hit
-        require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},
-                'adopted record differs from its reference: '+name)
         table.merge(name, fields)
         result[name] = {'sha256': descriptor['sha256'], 'nbytes': descriptor['bytes']}
     if not misses:
         return result
     with SR.open_records(store, misses, budget=budget, scope=scope, source_producer=source_producer,
                          prove=False) as opened:
-        require(set(opened) == set(misses), 'compact record inventory differs from its references')
         for name, child in opened.items():
             proved = {'sha256': misses[name]['sha256'], 'nbytes': misses[name]['bytes']}
             with child.iter_json() as stream:
@@ -489,10 +466,8 @@ def _proved_records(store, refs, *, budget, scope, source_producer, table, proof
 
 def _mesh(workflow, scope, table):
     from atlas_tectonics._private.integration.geometry import spatial_indexed_patch as SI
-    from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
     held = workflow.exterior_state.indexed_record()
     mesh = held.value['thermal_mesh']
-    require(type(mesh) is CompactMesh and mesh.scope is scope, 'compact endpoint requires its retained v3 mesh')
     scan = getattr(mesh, '_width_scan', None)
     if scan is not None:
         # I3: the restore's open rendered and proved these bytes in this reader block and scanned them as it did.
@@ -511,8 +486,6 @@ def _native_records(store, root_key, refs, *, budget, table):
     result = {}
     for name in sorted(refs):
         reference = refs[name]
-        require(type(reference) is dict and set(reference) == {'array', 'bytes', 'sha256'} and
-                reference['array'] == 'spatial-record:'+name, 'native root record reference differs: '+name)
         chunks = (memoryview(chunk).cast('B') for _, chunk in store.iter_chunks(root_key, reference['array'],
                                                                                 budget=budget))
         proved = {'sha256': reference['sha256'], 'nbytes': reference['bytes']}
@@ -530,20 +503,14 @@ def root_record_identities(workflow, table):
     """
     store, budget, head = workflow._store, workflow._budget, workflow._head
     scope = getattr(store, 'scope', None)
-    require(scope is not None and scope.run_budget is budget,
-            'root identities require the shared retained store scope')
-    require(type(head) is dict and head.get('kind') == 'root', 'fresh root required')
     state = head['exterior_state']
     refs = dict(state['record_blobs'])
     if 'compact_mesh' in state:
-        require(set(refs) == {'state'}, 'complete compact root state record required')
         result = _proved_records(store, refs, budget=budget, scope=scope,
                                  source_producer=state['compact_mesh']['source_producer'], table=table)
         result['mesh'] = _mesh(workflow, scope, table)
     else:
-        require(set(refs) == ROOT_RECORDS, 'complete native root state and mesh records required')
         result = _native_records(store, head['key'], refs, budget=budget, table=table)
-    require(set(result) == ROOT_RECORDS, 'complete root record identities required')
     return result
 
 
@@ -551,14 +518,9 @@ def _successor_records(workflow, table, proofs):
     """The successor's records, proved and their widths recorded: (result, scope)."""
     store, budget, head = workflow._store, workflow._budget, workflow._head
     scope = getattr(store, 'scope', None)
-    require(scope is not None and scope.run_budget is budget,
-            'compact endpoint identities require the shared retained store scope')
-    require(type(head) is dict and head.get('kind') == 'successor', 'compact fresh successor required')
     state = head['exterior_state']
     refs = dict(state['record_blobs'])
-    require(set(refs) == {'state'}, 'complete compact state record required')
     exchange = head['exterior_advance']['record_blobs']
-    require(set(exchange) == {'exchange', 'graph', 'transport', 'heat'}, 'complete compact exchange records required')
     refs.update(exchange)
     for header, kind in (('differential_certification', 'certification'), ('differential_geometry', 'differential')):
         refs[kind] = head[header]['record_blob']
@@ -575,12 +537,9 @@ def successor_record_identities(workflow, table, proofs=None):
     """
     from atlas_tectonics._private.integration.geometry import partition_native_patch as PN
     from atlas_tectonics._private.integration.geometry import partition_workflow_patch as PW
-    from atlas_tectonics._private.integration.geometry.partition_adapter import PartitionV2
     from atlas_tectonics._private.integration import reopen_prepared_restart as RO
     result, scope = _successor_records(workflow, table, proofs)
     partition = PN.compact_view(workflow.differential_partition)
-    require(type(partition) is PartitionV2 and partition.scope is scope,
-            'compact endpoint requires its retained v2 partition')
     result['partition'] = PW.descriptor_stats(partition)
     result['mesh'] = _mesh(workflow, scope, table)
     return RO.canonical_record_identities(result, successor=True)

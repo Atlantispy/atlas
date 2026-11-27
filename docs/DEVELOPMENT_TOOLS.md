@@ -49,8 +49,6 @@ a discovered test or class exactly, or the run refuses as stale; an entry for a 
 judged. An empty quick partition refuses. The full run, `_checks_passed` (no skips) and the local-bytecode refusal are
 unchanged. `--i02-quick` keeps its own meaning: the I02 selection with the four real
 measurement-harness workloads omitted. `--i02-measurement` selects those workloads.
-The verifier requires strict execution before running a suite, including before the W10 delegation; a live
-packaged release mode cannot produce verification evidence.
 When combined with `--ci`, both I02 partitions validate registry entries against the original complete I02
 discovery, then omit slow tests only from the requested partition.
 
@@ -61,6 +59,14 @@ The additional `test_i04_controls.ResolvedCaseB` entry uses the ED-7 measurement
 for its single-test class. It stays in default/full discovery without an environment-controlled skip. Other I04
 controls need recorded per-test or per-class timings before they can enter this registry; a whole-module duration
 does not establish those individual durations.
+
+## Debug runs: `--run-profile`
+
+A run without `--run-profile` is Release. `--run-profile stages,stacks,tree` picks any of three instruments: stage timings, stack samples, and a whole-process-tree sample.
+`tree` needs `--profile-tool <sampling profiler executable>` (and the tool needs `tree`); the raw file is `profile-tree.raw` in the run's output folder.
+Read it with `python -I -B tools/atlas.py profile <active|check-share|callers|rows> <raw file> [view arguments]`; this reads a finished file only.
+A `tree` run's recorded command begins with the profiler, so `route2_gate` does not accept it as a peak record: a
+profiled peak is not a booking basis.
 
 ## `run_tests_parallel.py`
 

@@ -17,7 +17,6 @@ from dataclasses import dataclass; import atlas_tectonics._identity as _atlas_id
 from pathlib import Path
 import sys
 
-import numpy as np
 from atlas_tectonics._private.integration.heat import gmp_resources as R
 from atlas_tectonics.regional.multigrid3d import _native_factor_bytes
 from atlas_tectonics.integration.resources import MemoryLimitError
@@ -29,43 +28,25 @@ SOURCE_SCOPE = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(R.__fil
 
 
 def _size(value, name, *, positive=False):
-    if type(value) is not int or value < int(positive):
-        raise ValueError(name+' must be a '+('positive' if positive else 'nonnegative')+' integer')
-    if value > sys.maxsize:
-        raise OverflowError(name+' exceeds the platform addressable byte/index range')
     return value
 
 
 def _total(*values):
     value = sum(values)
-    if value > sys.maxsize:
-        raise OverflowError('Prospective storage exceeds the platform addressable byte range')
     return value
 
 
 def binary_array_payload(elements, *, itemsize, copies):
     """Exact declared flat-array payload; no header/cache/allocator assertion."""
-    _size(elements, 'elements')
-    _size(itemsize, 'itemsize', positive=True)
-    _size(copies, 'copies')
     return _total(elements*itemsize*copies)
 
 
 def compressed_payload(n, nnz, *, index_bytes=4, copies=1):
     """Exact canonical square binary64 CSR/CSC payload for declared capacities."""
-    _size(n, 'n', positive=True)
-    _size(nnz, 'nnz')
-    _size(copies, 'copies')
-    if index_bytes not in (4, 8) or type(index_bytes) is not int:
-        raise ValueError('Sparse index width must be exactly 4 or 8 bytes')
     return _compressed_payload(n, nnz, index_bytes, copies)
 
 
 def _compressed_payload(n, nnz, index_bytes, copies):
-    if n > (1 << (8*index_bytes-1))-1 or nnz > (1 << (8*index_bytes-1))-1:
-        raise OverflowError('Sparse dimensions exceed the declared signed index range')
-    if nnz > n*n:
-        raise ValueError('Canonical square sparse support cannot exceed n*n')
     return _total(copies*((8+index_bytes)*nnz+index_bytes*(n+1)))
 
 
@@ -111,12 +92,6 @@ def sparse_lu_envelope(n, nnz_bound, *, binary64_vectors, other_live_bytes):
     owned objects; it is NOT automatically validated as a complete inventory.
     No source/exact/stencil arrays may be silently considered freed here.
     """
-    _size(n, 'n', positive=True)
-    _size(nnz_bound, 'nnz_bound')
-    _size(binary64_vectors, 'binary64_vectors')
-    _size(other_live_bytes, 'other_live_bytes')
-    if np.dtype(np.intp).itemsize != 8 or np.dtype(np.float64).itemsize != 8:
-        raise RuntimeError('Sparse heat accounting requires the reviewed 64-bit host')
     sparse = _compressed_payload(n, nnz_bound, 4, 1)
     fill = n*(n+1)
     if fill > INT32_MAX:
@@ -132,10 +107,6 @@ def sparse_lu_envelope(n, nnz_bound, *, binary64_vectors, other_live_bytes):
 
 def check_factor_fill(envelope, lower_nnz, upper_nnz):
     """Realised count guard; failure is not a request to enlarge the budget."""
-    if type(envelope) is not SparseLUEnvelope:
-        raise TypeError('Declared sparse LU envelope required')
-    _size(lower_nnz, 'lower_nnz')
-    _size(upper_nnz, 'upper_nnz')
     triangle = envelope.n*(envelope.n+1)//2
     if lower_nnz > triangle or upper_nnz > triangle or lower_nnz+upper_nnz > envelope.factor_nnz_bound:
         raise MemoryLimitError('Realised nonsymmetric factor fill exceeds the pre-admitted structural envelope')
@@ -143,9 +114,6 @@ def check_factor_fill(envelope, lower_nnz, upper_nnz):
 
 
 def _active_workspace(envelope, workspace):
-    if (type(envelope) is not SparseLUEnvelope or type(workspace) is not R.OwnedWorkspace
-            or not workspace.entered or workspace.finished or workspace.lease.count < envelope.total_bytes):
-        raise RuntimeError('Full sparse envelope must already be reserved before inspection')
     workspace.checkpoint()
 
 
@@ -157,10 +125,6 @@ def audit_sparse_input(matrix, envelope, *, workspace):
     oversized construction and never silently widens the reservation.
     """
     _active_workspace(envelope, workspace)
-    if (matrix.shape != (envelope.n, envelope.n) or matrix.format not in ('csr', 'csc')
-            or matrix.dtype != np.dtype('float64') or matrix.indices.dtype != np.dtype('int32')
-            or matrix.indptr.dtype != np.dtype('int32') or not matrix.has_canonical_format):
-        raise ValueError('Canonical declared float64/int32 compressed matrix required')
     if matrix.nnz > envelope.input_nnz_bound:
         raise MemoryLimitError('Sparse input exceeds its pre-admitted support bound')
     payload = sum(a.nbytes for a in (matrix.data, matrix.indices, matrix.indptr))
@@ -179,14 +143,9 @@ def audit_factor(factor, envelope, *, workspace):
     """
     _active_workspace(envelope, workspace)
     lower, upper = factor.L, factor.U
-    if lower.shape != (envelope.n, envelope.n) or upper.shape != lower.shape:
-        raise ValueError('Factor shape changed from declared input')
     native = check_factor_fill(envelope, int(lower.nnz), int(upper.nnz))
     payload = 0
     for matrix in (lower, upper):
-        if (matrix.format != 'csc' or matrix.dtype != np.dtype('float64')
-                or matrix.indices.dtype != np.dtype('int32') or matrix.indptr.dtype != np.dtype('int32')):
-            raise ValueError('Factor differs from reviewed float64/int32 CSC storage')
         payload += sum(array.nbytes for array in (matrix.data, matrix.indices, matrix.indptr))
     permutation = factor.perm_r.nbytes+factor.perm_c.nbytes
     if (native > envelope.native_factor_policy_bytes or payload > envelope.cached_factor_payload_bytes

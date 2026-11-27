@@ -25,7 +25,6 @@ from atlas_tectonics.history.finite_stock_history import W08Output
 from atlas_tectonics.spreading.cooling import SpreadingThermalState
 from atlas_tectonics.spreading.history_cooling import HistoryThermalState
 from atlas_tectonics.spreading.margin_cooling import MarginSupportResult
-from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.history.tectonic_history import TectonicHistoryOutput
 from atlas_tectonics.subduction.underthrust import UnderthrustState
 from atlas_tectonics.mechanics.evolving_flexure import EvolvingW04SupportResult
@@ -92,17 +91,9 @@ class _Port:
         self.specs = {}
 
     def add(self, name, value, *, support, owner, units=None, known=None, columns=None):
-        if type(value) is not np.ndarray or value.dtype.kind not in 'biuf':
-            raise TectonicsError('workflow export requires plain numeric arrays: '+name)
         backing = value
         while type(backing) is np.ndarray:
             backing = backing.base
-        if value.flags.writeable or type(backing) is not bytes:
-            raise TectonicsError('workflow export requires immutable byte backing: '+name)
-        if not np.isfinite(value).all():
-            raise TectonicsError('nonfinite workflow export field: '+name)
-        if name in self.fields:
-            raise TectonicsError('duplicate workflow export field: '+name)
         leaf = name.rsplit('.', 1)[-1]
         if units is None:
             if leaf in _DIMENSIONLESS or value.dtype.kind in 'biu' or leaf.endswith('_known'):
@@ -140,8 +131,6 @@ class _Port:
         return dict(result_id=result.result_id, native=result.descriptor())
 
     def snapshot(self, snapshot, prefix):
-        if type(snapshot) is not RegionalMechanicalSnapshot:
-            raise TectonicsError('exact RegionalMechanicalSnapshot required')
         native = snapshot.descriptor()
         for name in snapshot.array_names:
             units = None
@@ -194,8 +183,6 @@ def _snapshot_support(name, metadata):
 def _regional(out, port):
     samples = out.initial_samples
     md = samples.descriptor()
-    if md['requested_fields']:
-        raise TectonicsError('W12 regional port does not infer units for optional authored fields')
     masks = {'temperature_k': 'temperature_known', 'temperature_quadrature_error_k': 'temperature_known',
              'solid_volume_m3': 'solid_volume_known', 'reference_mass_kg': 'reference_mass_known',
              'field_values': 'field_known'}
@@ -338,8 +325,6 @@ def _history_result(result, port):
         md = dict(result_id=result.result_id,native=result.descriptor(),
                   mechanics=port.snapshot(result.mechanics,'result.mechanics'))
         return 'evolving-regional',result.result_id,md
-    if type(result) is not UnderthrustState:
-        raise TectonicsError('unsupported exact tectonic history result type')
     for name in ('volume_m3','mass_kg','enthalpy_j','boundary_work_j','gravitational_change_j','displacement_m'):
         support = 'parcel x named receiving/exterior destination'
         if name == 'boundary_work_j': support = 'supplied hangingwall/host generalised work'
@@ -381,8 +366,6 @@ def describe_workflow_output(output):
         identity = output.checkpoint_id
     elif cls is W07WorkflowOutput:
         receipt = output.descriptor()
-        if receipt['route'] not in ('steady','thermal','surface'):
-            raise TectonicsError('unsupported W07 output route')
         route, identity = 'w07-'+receipt['route']+'.v1', output.output_id
         descriptor = dict(native=receipt, checkpoint_id=output.checkpoint_id, output_index=output.output_index,
             state=port.snapshot(output.state,'state'), mechanics=port.snapshot(output.mechanics,'mechanics'))
@@ -398,8 +381,6 @@ def describe_workflow_output(output):
         route = 'tectonic-'+kind+'.v1'
     else:
         raise TectonicsError('unsupported exact workflow output type: '+cls.__name__)
-    if type(identity) is not str or not identity:
-        raise TectonicsError('native workflow output identity required')
     descriptor = _json(descriptor)
     native_ids = {}
     def collect(value, path=''):

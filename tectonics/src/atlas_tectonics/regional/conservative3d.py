@@ -9,13 +9,10 @@ Pestana and Silvester (2024), Numerische Mathematik, section 2.1,
 doi:10.1007/s00211-024-01420-z (tensor-product extended Taylor--Hood space).
 SPDX-License-Identifier: AGPL-3.0-only
 """
-import hashlib
-from pathlib import Path
 
 import numpy as np
 from scipy import sparse
 
-_LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def assembly_bytes(ncells):

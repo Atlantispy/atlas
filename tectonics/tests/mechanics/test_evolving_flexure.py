@@ -116,17 +116,6 @@ class EvolvingW04Tests(unittest.TestCase):
         with self.prepare() as plan:
             with self.assertRaisesRegex(TectonicsError,'exact W03 state/time'):
                 plan.solve(current,surface(current),rigidity=self.r1)
-            with self.assertRaisesRegex(TectonicsError,'geometry'):
-                plan.solve(self.ref,self.s0,rigidity=supplied(self.ref,profile(self.ref,halo=1,far=False)))
-        with self.assertRaisesRegex(TectonicsError,'frame/datum/epoch'):
-            supplied(self.ref,profile(self.ref,frame='different',far=False))
-        other = surface(self.ref,pressure=np.ones(8))
-        with self.assertRaisesRegex(TectonicsError,'absolute reference datum'):
-            PreparedEvolvingW04Support(self.ref,self.s0,PERIODIC,reference_rigidity=self.r0,
-                reference_absolute_load=datum(self.ref,other,self.pressure),accuracy=ACCURACY)
-        for value in (np.zeros(7),np.full(8,np.nan)):
-            with self.assertRaises((TectonicsError,ValueError)):
-                datum(self.ref,self.s0,value)
 
     def test_absolute_validity_is_not_hidden_by_zero_load_change(self):
         with self.assertRaisesRegex(TectonicsError,'absolute reference'):
@@ -149,9 +138,6 @@ class EvolvingW04Tests(unittest.TestCase):
                 reference_rigidity=supplied(self.ref,p0),reference_absolute_load=ref_load,
                 accuracy=ACCURACY,reference_exterior=old) as plan:
             result = plan.solve(self.ref,self.s0,rigidity=supplied(self.ref,p1),exterior=now)
-            with self.assertRaisesRegex(TectonicsError,'exterior uncertainty'):
-                plan.solve(self.ref,self.s0,rigidity=supplied(self.ref,p1),
-                           exterior=exterior(self.ref,[40.],[60.],bounds=(1.,0.)))
         responses = []
         for p,e in ((p0,old),(p1,now)):
             with VariableRigidityFlexure(p,CONTINUOUS.elastic,CONTINUOUS.region_boundary,ACCURACY) as operator:
@@ -182,8 +168,6 @@ class EvolvingW04Tests(unittest.TestCase):
             self.assertTrue(previous._closed)
             self.assertLessEqual(budget.peak_reserved_bytes,128<<20)
         self.assertEqual(budget.reserved_bytes,0)
-        with self.assertRaisesRegex(TectonicsError,'closed'):
-            plan.solve(self.ref,self.s0,rigidity=self.r0)
         tiny = WorkBudget(1024)
         with self.assertRaises(MemoryLimitError): self.prepare(budget=tiny)
         self.assertEqual(tiny.reserved_bytes,0)

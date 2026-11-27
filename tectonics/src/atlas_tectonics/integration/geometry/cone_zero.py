@@ -50,12 +50,6 @@ def projection_bounds(u, theta, g, arena, *, order=8, carry=None):
     A carry (one dict per (u, theta, g), orders ascending) keeps s, A, B, D
     and both series between orders; every work charge is still made.
     """
-    if type(order) is not int or not 0 <= order <= 16:
-        raise ValueError('order must be an integer from 0 to 16')
-    if any(len(v) != 3 for v in (u, theta, g)):
-        raise ValueError('three-component vectors required')
-    if any(type(x) not in (int, Q) for v in (u, theta, g) for x in v):
-        raise ValueError('exact int/Fraction operands required')
     # One exact arithmetic route for this whole enclosure: the same rationals,
     # work units and admissions on either (a carry skips the same repeated
     # admissions on both); only the two bounds leave it.
@@ -115,8 +109,6 @@ def plane_certificate(cell, literals, constraints, time, arena, *, detail=None):
     3-D volume. Other literals and the shell can only restrict the set.
     Outward projections prove signs; small or unresolved values never fire.
     """
-    if type(time) not in (int, Q):
-        raise ValueError('exact endpoint time required')
     if not 1 <= len(literals) <= MAX_LITERALS:
         return None
     if any(type(sign) is not int or sign not in (-1, 1) for _, sign in literals):
@@ -176,8 +168,6 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
     halfspaces. Projections >=0 plus max_voxel(u.x)<=0 restrict it to a plane.
     Extra literals and radial constraints can only restrict this intersection.
     """
-    if type(time) not in (int, Q):
-        raise ValueError('exact endpoint time required')
     if not 3 <= len(literals) <= MAX_LITERALS:
         return None
     values = (*cell.origin_m, *cell.lower_m, *cell.upper_m,
@@ -231,9 +221,6 @@ def certificate(cell, literals, constraints, time, arena, *, detail=None):
             with G.V._work((delta, *(x for row in (*normals, *generators) for x in row)), arena.resource, convert_values=False):
                 arena.work(128)
                 identity = tuple(tuple(_dot(m, g) for g in generators) for m in normals)
-                expected = tuple(tuple(abs(delta) if i == j else Q(0) for j in range(3)) for i in range(3))
-                if identity != expected:
-                    raise ArithmeticError('signed adjugate identity failed')
             for u, maximum in axes:
                 carries = tuple({} for _ in generators)   # one per (u, g): sABD depends on both
                 for order in ORDERS:

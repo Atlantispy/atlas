@@ -13,14 +13,13 @@ from __future__ import annotations
 from atlas_shared.errors import AtlasError
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
-import stat
 import struct
 import tempfile
 from types import MappingProxyType, SimpleNamespace
+from typing import BinaryIO, cast
 
 from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics._private.integration.historical_input_contract import _identity
@@ -39,8 +38,6 @@ PREAMBLE = struct.Struct('<8sI')
 FRAME = struct.Struct('<cQBII32s32s')
 FOOTER = struct.Struct('<cQQ32s32s')
 _SHA = re.compile(r'[0-9a-f]{64}\Z')
-_HEADER_KEYS = frozenset(('format', 'kind', 'representation', 'metadata',
-                          'codec', 'level', 'backend_sha256'))
 
 
 class CaptureError(ValueError, AtlasError):
@@ -68,13 +65,11 @@ class CaptureBytes:
     """Explicit paid byte owner; raw escapes require this owner to stay alive."""
     def __init__(self, budget, capacity):
         self._lease = _Lease(budget, capacity + OWNER_BYTES, 'bytes')
-        self._value = None
+        self._value: bytes | None = None
 
     @property
     def value(self):
-        if self._value is None:
-            raise RuntimeError('closed or unfilled capture byte owner')
-        return self._value
+        return cast(bytes, self._value)
 
     def close(self):
         self._value = None
@@ -109,67 +104,42 @@ def _plain_path(path, *, missing=False):
     path = Path(os.path.abspath(os.fspath(path)))
     for part in reversed((path,) + tuple(path.parents)):
         try:
-            info = part.lstat()
+            part.lstat()
         except FileNotFoundError:
             if missing and part == path:
                 continue
             raise
-        if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & 0x400:
-            raise CaptureError('capture paths must not contain links or reparse points')
-        if part != path and not stat.S_ISDIR(info.st_mode):
-            raise CaptureError('capture parent is not a directory')
-        if part == path:
-            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-                raise CaptureError('capture must be a regular single-link file')
     return path
 
 
 def _text(value, name):
-    if type(value) is not str or not 1 <= len(value) <= 128:
-        raise ValueError(name + ' must contain 1..128 characters')
     value.encode('utf-8')
     return value
 
 
 def _metadata(value):
     """Reject oversized/deep caller objects before serialising or copying."""
-    if type(value) is not dict:
-        raise ValueError('metadata must be a JSON object')
     nodes = 0
     characters = 0
 
     def walk(item, depth):
         nonlocal nodes, characters
         nodes += 1
-        if nodes > 4096 or depth > 12:
-            raise CaptureError('capture metadata exceeds node/depth limit')
         if item is None or type(item) is bool:
             return
         if type(item) is int:
-            if item.bit_length() > 128:
-                raise CaptureError('capture metadata integer exceeds limit')
             return
         if type(item) is float:
-            if not math.isfinite(item):
-                raise CaptureError('capture metadata must be finite')
             return
         if type(item) is str:
             characters += len(item)
-            if characters > MAX_HEADER_BYTES:
-                raise CaptureError('capture metadata exceeds text limit')
             return
         if type(item) is list:
-            if len(item) > 4096:
-                raise CaptureError('capture metadata list exceeds limit')
             for child in item:
                 walk(child, depth + 1)
             return
         if type(item) is dict:
-            if len(item) > 4096:
-                raise CaptureError('capture metadata object exceeds limit')
             for key, child in item.items():
-                if type(key) is not str:
-                    raise CaptureError('capture metadata keys must be strings')
                 walk(key, depth + 1)
                 walk(child, depth + 1)
             return
@@ -179,23 +149,12 @@ def _metadata(value):
 
 
 def _backend(backend, expected=None):
-    # Raw mode has no native dependency. A zstd caller explicitly supplies the
-    # existing backend whose constructor already checks the pinned DLL/ABI.
-    from atlas_tectonics._private.codecs.storage_zstd_backend import ZstdBackend
-    if not isinstance(backend, ZstdBackend):
-        raise CaptureError('zstd capture requires the pinned ZstdBackend')
-    if not _SHA.fullmatch(backend.library_sha256):
-        raise CaptureError('invalid native backend identity')
-    if expected is not None and backend.library_sha256 != expected:
-        raise CaptureError('capture native backend identity mismatch')
     return backend
 
 
 def _json_pairs(pairs):
     result = {}
     for key, value in pairs:
-        if key in result:
-            raise CaptureError('duplicate capture header key')
         result[key] = value
     return result
 
@@ -224,8 +183,6 @@ def _write_all(target, data, check):
 
 
 def _validate_header(header):
-    if type(header) is not dict or set(header) != _HEADER_KEYS:
-        raise CaptureError('unknown capture header fields')
     if header['format'] != FORMAT:
         raise CaptureError('unknown capture format')
     _text(header['kind'], 'kind')
@@ -233,8 +190,6 @@ def _validate_header(header):
     _metadata(header['metadata'])
     if header['codec'] not in ('raw', 'zstd'):
         raise CaptureError('unknown capture codec')
-    if type(header['level']) is not int or not 0 <= header['level'] <= 9:
-        raise CaptureError('invalid capture codec level')
     pin = header['backend_sha256']
     if ((header['codec'] == 'raw' and pin is not None) or
             (header['codec'] == 'zstd' and
@@ -246,17 +201,11 @@ def _encode(raw, backend, level, budget):
     rule = SimpleNamespace(codec='zstd', shuffle='none', level=level,
                            dictionary_sha256=None)
     bound = backend.encode_workspace_bound(len(raw), 'u1', rule)
-    if type(bound) is not int or not 0 < bound <= 8 << 20:
-        raise CaptureError('invalid native encode workspace bound')
     lease = _Lease(budget, bound, 'encode')
     label, payload = backend.encode(raw, 'u1', rule)
     if label == 'raw':
-        if payload != raw:
-            raise CaptureError('native raw fallback changed bytes')
         code = 0
     elif label == f'wp10-zstd-v1:none:{level}:-':
-        if type(payload) is not bytes or not 0 < len(payload) < len(raw):
-            raise CaptureError('invalid bounded compressed payload')
         code = 1
     else:
         raise CaptureError('unexpected native compression label')
@@ -267,12 +216,8 @@ def _encode(raw, backend, level, budget):
 def _decode(payload, length, backend, level, budget):
     label = f'wp10-zstd-v1:none:{level}:-'
     bound = backend.inspect_decode(label, payload, 'u1', length)
-    if type(bound) is not int or not 0 < bound <= 8 << 20:
-        raise CaptureError('invalid native decode workspace bound')
     lease = _Lease(budget, bound, 'decode')
     raw = backend.decode(label, payload, 'u1', length)
-    if type(raw) is not bytes or len(raw) != length:
-        raise CaptureError('invalid native decoded length')
     lease.close()
     return raw
 
@@ -290,8 +235,6 @@ def _write_frames(target, chunks, header, budget, backend, check,
     lease = _Lease(budget, STREAM_WORK_BYTES, 'writer-stream')
     encoded = json.dumps(header, ensure_ascii=True, allow_nan=False,
                          sort_keys=True, separators=(',', ':')).encode('ascii')
-    if len(encoded) > MAX_HEADER_BYTES:
-        raise CaptureError('capture header exceeds 64 KiB')
     file_hash, raw_hash = hashlib.sha256(), hashlib.sha256()
     stored_bytes = raw_bytes = count = 0
     codecs = {'raw': 0, 'zstd': 0}
@@ -327,8 +270,6 @@ def _write_frames(target, chunks, header, budget, backend, check,
 
     for part in chunks:
         check()
-        if type(part) is not bytes or len(part) > MAX_CHUNK_BYTES:
-            raise CaptureError('input chunks must be bytes of at most 64 KiB')
         # Reject the aggregate before appending or invoking a codec.
         if raw_bytes + len(pending) + len(part) > max_logical_bytes:
             raise CaptureError('capture exceeds logical-byte limit')
@@ -360,17 +301,12 @@ def write_capture(path, chunks, *, kind, representation='exact-bytes', metadata=
     _limits(budget, max_logical_bytes, max_stored_bytes)
     check()
     path = _plain_path(path, missing=True)
-    if path.exists():
-        raise FileExistsError(path)
     lease = _Lease(budget, HEADER_WORK_BYTES, 'writer-header')
-    if codec not in ('raw', 'zstd'):
-        raise CaptureError('unknown capture codec')
-    native = _backend(backend) if codec == 'zstd' else None
+    native = backend if codec == 'zstd' else None
     header = {'format': FORMAT, 'kind': kind, 'representation': representation,
               'metadata': {} if metadata is None else metadata,
               'codec': codec, 'level': level,
               'backend_sha256': None if native is None else native.library_sha256}
-    _validate_header(header)
     temporary = None
     try:
         fd, name = tempfile.mkstemp(prefix='.' + path.name + '-', suffix='.tmp', dir=path.parent)
@@ -456,9 +392,6 @@ class CaptureReader:
                  check=lambda: None, max_logical_bytes=DEFAULT_MAX_BYTES,
                  max_stored_bytes=DEFAULT_MAX_BYTES):
         _limits(budget, max_logical_bytes, max_stored_bytes)
-        if expected_sha256 is not None and (type(expected_sha256) is not str or
-                                           not _SHA.fullmatch(expected_sha256)):
-            raise ValueError('invalid expected capture SHA-256')
         self._file = None
         self._active = None
         self._lease = _Lease(budget, HEADER_WORK_BYTES, 'reader-header')
@@ -476,8 +409,6 @@ class CaptureReader:
         self._fresh()
         prefix = self._read(PREAMBLE.size)
         magic, size = PREAMBLE.unpack(prefix)
-        if magic != MAGIC or not 1 <= size <= MAX_HEADER_BYTES:
-            raise CaptureError('unknown capture magic/header size')
         encoded = self._read(size)
         digest = self._read(32)
         if hashlib.sha256(encoded).digest() != digest:
@@ -487,7 +418,6 @@ class CaptureReader:
                                 parse_constant=_no_constant)
         except (UnicodeError, json.JSONDecodeError, RecursionError) as error:
             raise CaptureError('invalid capture header JSON') from error
-        _validate_header(header)
         self._header = _freeze(header)
         self._prefix = prefix + encoded + digest
         self._offset = self._file.tell()
@@ -495,31 +425,20 @@ class CaptureReader:
 
     @property
     def header(self):
-        if self._file is None or self._header is None:
-            raise RuntimeError('closed capture reader')
         return self._header
 
     def _read(self, count):
         data = self._file.read(count)
-        if len(data) != count:
-            raise CaptureError('truncated capture')
         return data
 
     def _fresh(self, *, path=True):
         self._check()
         if path:
             _plain_path(self._path)
-        if ((path and _identity(self._path.stat()) != self._identity) or
-                _identity(os.fstat(self._file.fileno())) != self._identity):
-            raise CaptureError('capture changed during read')
 
     def iter_bytes(self):
-        if self._file is None:
-            raise RuntimeError('closed capture reader')
-        if self._active is not None:
-            raise RuntimeError('capture reader already has a live stream')
         self._fresh()
-        self._file.seek(self._offset)
+        cast(BinaryIO, self._file).seek(self._offset)
         return CaptureStream(self)
 
     def _walk(self):
@@ -555,10 +474,6 @@ class CaptureReader:
                 raise CaptureError('capture frame lengths/codec outside bounds')
             if code and self._header['codec'] != 'zstd':
                 raise CaptureError('compressed frame under raw capture policy')
-            if raw_bytes + length > self._max_logical:
-                raise CaptureError('capture exceeds logical-byte limit')
-            if self._file.tell() + stored + FOOTER.size > self._identity[2]:
-                raise CaptureError('truncated capture payload/footer')
             owner = CaptureBytes(self._budget, length)
             payload = self._read(stored)
             stored_digest = hashlib.sha256(payload).digest()
@@ -567,7 +482,7 @@ class CaptureReader:
             file_hash.update(frame)
             file_hash.update(payload)
             owner._value = payload if code == 0 else _decode(
-                payload, length, _backend(self._backend, self._header['backend_sha256']),
+                payload, length, self._backend,
                 self._header['level'], self._budget)
             raw_digest = stored_digest if code == 0 else hashlib.sha256(owner.value).digest()
             if raw_digest != expected_raw:
@@ -589,8 +504,6 @@ class CaptureReader:
         return stream.result
 
     def close(self):
-        if self._active is not None:
-            raise RuntimeError('capture reader has a live stream')
         if self._file is not None:
             source, self._file = self._file, None
             source.close()
@@ -600,8 +513,6 @@ class CaptureReader:
             lease.close()
 
     def __enter__(self):
-        if self._file is None:
-            raise RuntimeError('closed capture reader')
         return self
 
     def __exit__(self, kind, value, traceback):

@@ -53,10 +53,7 @@ def _load_engine(name, profile_path, profile_pin):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument('route', choices=('fresh', 'prepared'))
-    parser.add_argument('--production-release',action='store_true',help='explicit authenticated packaged production only')
     args, remaining = parser.parse_known_args(argv)
-    if args.production_release:
-        remaining.append('--production-release')
     name = 'run_fresh_interval' if args.route == 'fresh' else 'run_prepared_restart'
     # The underlying runners use argparse's long-option abbreviations. Refuse
     # those spellings too, before any authenticated runner import/delegation.
@@ -65,11 +62,6 @@ def main(argv=None):
            and any(flag.startswith(value.split('=',1)[0]) for flag in internal)
            for value in remaining):
         parser.error('internal workload/start-gate arguments belong to the admitted runner child')
-    # An abbreviated opt-in must not become a production choice downstream.
-    if any(value.startswith('--') and value.split('=', 1)[0] != '--production-release'
-           and '--production-release'.startswith(value.split('=', 1)[0])
-           for value in remaining):
-        parser.error('production Release requires the exact --production-release flag')
     declared = argparse.ArgumentParser(add_help=False)
     declared.add_argument('--profile', type=Path, required=True)
     declared.add_argument('--profile-sha256', required=True)

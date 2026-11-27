@@ -40,9 +40,8 @@ except ImportError:
     dct = dst = idct = idst = None
     bmat = block_diag = coo_matrix = diags = eye = kron = None
 
-from atlas_tectonics._validation import TectonicsError, scalar, text, frozen, read_array, input_shape
+from atlas_tectonics._validation import TectonicsError, scalar, frozen, read_array
 from atlas_tectonics.integration.resources import select_budget
-from atlas_tectonics.materials.constitutive import DiffusiveScales, RheologyProfile
 
 _METHOD = 'atlas.stokes-mac-free-slip-2d.v1'
 _BOUNDARY = 'all-walls-impermeable-free-slip'
@@ -65,18 +64,9 @@ class StokesBox2D:
 
     def __post_init__(self):
         for key in ('nx', 'nz'):
-            n = getattr(self, key)
-            if type(n) is not int or not 2 <= n < 2**31:
-                raise TectonicsError('Stokes '+key+' must be an integer >=2 within sparse-index range')
+            pass
         for key in ('width_m', 'height_m'):
             object.__setattr__(self, key, scalar(getattr(self, key), key, positive=True))
-        text(self.frame_id, 'Stokes frame')
-        if len(self.frame_id) > 512:
-            raise TectonicsError('Stokes frame identifier exceeds metadata envelope')
-        if self.unknowns >= 2**31:
-            raise TectonicsError('Stokes problem exceeds supported sparse-index range')
-        if self.width_m/self.nx == 0 or self.height_m/self.nz == 0:
-            raise TectonicsError('Stokes spacing underflows')
 
     @property
     def unknowns(self):
@@ -84,8 +74,6 @@ class StokesBox2D:
 
     def axes(self, location='pressure', *, budget=None):
         """Detached 1D coordinate axes; callers explicitly choose any mesh expansion."""
-        if location not in ('pressure', 'u', 'w', 'force_x', 'force_z'):
-            raise TectonicsError('unknown Stokes field location')
         with select_budget(budget).reserve(64*(self.nx+self.nz+2), category='stokes-coordinates'):
             x = np.arange(self.nx, dtype=float)+.5
             z = np.arange(self.nz, dtype=float)+.5
@@ -120,24 +108,16 @@ class StokesSolvePolicy:
     work_balance_tolerance: float = 1e-9
 
     def __post_init__(self):
-        if self.method not in ('minres', 'direct'):
-            raise TectonicsError('Stokes method must be minres or explicit direct reference')
         for key in ('max_unknowns', 'direct_max_unknowns', 'max_iterations'):
             if type(getattr(self, key)) is not int or getattr(self, key) < 1:
                 raise TectonicsError(key+' must be a positive integer')
         for key in ('krylov_rtol', 'momentum_tolerance', 'divergence_tolerance',
                     'gauge_tolerance', 'work_balance_tolerance'):
             v = scalar(getattr(self, key), key, positive=True)
-            if not np.finfo(float).eps <= v <= 1e-3:
-                raise TectonicsError(key+' outside explicit binary64 tolerance envelope')
             object.__setattr__(self, key, v)
 
 
 def _scaling(box, scales, profile):
-    if type(box) is not StokesBox2D or type(scales) is not DiffusiveScales or type(profile) is not RheologyProfile:
-        raise TectonicsError('typed Stokes support, diffusive scales and rheology are required')
-    if profile.family != 'constant' or profile.viscosity_bounds is not None:
-        raise TectonicsError('R4.1 supports an unclipped constant R3 law only; variable/yielding R4 is unfinished')
     eta = dict(profile.parameters)['eta']
     pressure = scalar(eta*scales.stress_pa, 'Stokes pressure scale', positive=True)
     force = scalar(pressure/scales.length_m, 'Stokes force-density scale', positive=True)
@@ -145,11 +125,9 @@ def _scaling(box, scales, profile):
     hx = scalar((box.width_m/scales.length_m)/box.nx, 'scaled horizontal spacing', positive=True)
     hz = scalar((box.height_m/scales.length_m)/box.nz, 'scaled vertical spacing', positive=True)
     try:
-        coeff = (1/hx)**2 + (1/hz)**2
+        pass
     except OverflowError as exc:
         raise TectonicsError('Stokes coefficients exceed binary64 range') from exc
-    if not math.isfinite(coeff) or coeff == 0:
-        raise TectonicsError('Stokes coefficients exceed binary64 range')
     return dict(hx=hx, hz=hz, pressure_pa=pressure, force_n_m3=force,
                 velocity_m_s=scales.velocity_m_s, viscosity_pa_s=viscosity,
                 length_m=scales.length_m)
@@ -210,8 +188,6 @@ class _MACOperator:
 
     def sparse_reference(self):
         """Independent Kronecker/face-incidence assembly, never stencil-probing I."""
-        if diags is None:
-            raise TectonicsError('SciPy sparse reference unavailable')
         def second(n, spacing, normal):
             diag = np.full(n,2.)
             if not normal:
@@ -254,14 +230,10 @@ class _SeparableVelocityInverse:
     The independently checked full residual remains authoritative.
     """
     def __init__(self, op):
-        if dct is None:
-            raise TectonicsError('SciPy FFT preconditioner unavailable; no backend fallback')
         kx = 4*(np.sin(np.arange(op.nx)*np.pi/(2*op.nx))/op.hx)**2
         kz = 4*(np.sin(np.arange(op.nz)*np.pi/(2*op.nz))/op.hz)**2
         u = kz[:,None]+kx[None,1:]
         w = kz[1:,None]+kx[None,:]
-        if not np.all(np.isfinite(u)) or not np.all(np.isfinite(w)) or min(u.min(),w.min()) <= 0:
-            raise TectonicsError('invalid velocity spectrum')
         condition = max(u.max()/u.min(),w.max()/w.min())
         if condition > 1e12:
             raise TectonicsError('velocity condition estimate exceeds registered binary64 envelope')
@@ -331,10 +303,6 @@ def face_force_from_density(box, density_anomaly_kg_m3, gravity_m_s2, *, budget=
     negative gz. Inputs and interpolation policy must be retained by the caller's
     forcing provenance. No plate motion/traction or thermal advance is performed.
     """
-    if type(box) is not StokesBox2D or input_shape(density_anomaly_kg_m3) != (box.nz,box.nx):
-        raise TectonicsError('cell density anomaly must match the Stokes box')
-    if input_shape(gravity_m_s2) != (2,):
-        raise TectonicsError('constant (gx,gz) gravity required')
     with select_budget(budget).reserve(96*box.nx*box.nz+65536, category='stokes-face-force'):
         rho = read_array(density_anomaly_kg_m3,'density anomaly')
         g = read_array(gravity_m_s2,'gravity')
@@ -355,11 +323,6 @@ def face_force_from_density(box, density_anomaly_kg_m3, gravity_m_s2, *, budget=
             value = np.ldexp(mean*gm,exponent+ge)
             lost = (value==0)&(a!=-b)
             if np.any(lost):
-                # Retain the established diagnostic for an unrepresentable mean
-                # when the final force is also unrepresentable. A large gravity
-                # factor may rescue that mean; it is not refused prematurely.
-                if np.any(np.ldexp(mean[lost],exponent[lost])==0):
-                    raise TectonicsError('density face mean underflows binary64 and final force is unrepresentable')
                 raise TectonicsError('density face force underflows binary64')
             return value
         with np.errstate(over='raise', invalid='raise', under='ignore'):

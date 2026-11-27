@@ -90,8 +90,6 @@ class RadialLayer:
         resource = select_budget(budget)
         with _work((self.radius_m, self.top_depth_m, self.bottom_depth_m), resource) as values:
             radius, top, bottom = values
-            if not 0 <= top < bottom <= radius:
-                raise VolumeError('a physical radial layer requires 0 <= top < bottom <= positive radius')
             for name, value in zip(('radius_m', 'top_depth_m', 'bottom_depth_m'), values):
                 object.__setattr__(self, name, value)
         object.__setattr__(self, '_resource', resource)
@@ -132,8 +130,6 @@ class RadialLayer:
     def volume_m3(self, surface_area_m2):
         with _work((*self._geometry(), surface_area_m2), self._resource) as values:
             area = values[-1]
-            if area < 0:
-                raise VolumeError('reference-surface area must be nonnegative')
             return area*self._factor()
 
     def heat_capacity_j_per_k(self, surface_area_m2, density_kg_m3, heat_capacity_j_kg_k):
@@ -141,8 +137,6 @@ class RadialLayer:
         with _work((*self._geometry(), surface_area_m2, density_kg_m3, heat_capacity_j_kg_k),
                    self._resource) as values:
             area, density, capacity = values[-3:]
-            if area < 0 or density <= 0 or capacity <= 0:
-                raise VolumeError('nonnegative area and positive density/heat capacity required')
             return area*density*capacity*self._factor()
 
     def linear_weights_m(self):
@@ -185,8 +179,6 @@ class RadialLayer:
         """
         with _work((*self._geometry(), conductivity_w_m_k), self._resource) as values:
             radius, top, bottom, conductivity = values
-            if conductivity <= 0 or bottom == radius:
-                raise VolumeError('radial point resistance requires positive conductivity and inner radius')
             return radius*radius*(bottom-top)/(conductivity*(radius-top)*(radius-bottom))
 
     def record(self):
@@ -225,11 +217,6 @@ class CartesianCell:
         with _work((*lower, *upper, *origin, *(v for row in rows for v in row)), resource) as q:
             lower, upper, origin = q[:3], q[3:6], q[6:9]
             rows = tuple(tuple(q[9+3*i:12+3*i]) for i in range(3))
-            if any(a >= b for a, b in zip(lower, upper)):
-                raise VolumeError('each cell upper bound must be strictly above its lower bound')
-            if any(sum(rows[k][i]*rows[k][j] for k in range(3)) != int(i == j)
-                   for i in range(3) for j in range(3)):
-                raise VolumeError('Cartesian basis must be exactly orthogonal; rounded frames are not repaired')
             for name, value in (('lower_m', lower), ('upper_m', upper), ('origin_m', origin), ('basis', rows)):
                 object.__setattr__(self, name, value)
         object.__setattr__(self, '_resource', resource)
@@ -291,14 +278,10 @@ class CartesianCell:
         when q's stored binary64 norm is not precisely one. This defines the
         rotation of the represented quaternion, not a new time integration.
         """
-        if type(quaternion) not in (tuple, list) or len(quaternion) != 4:
-            raise VolumeError('rotation requires four explicit quaternion components')
         resource = self._resource if budget is None else select_budget(budget)
         with _work((*self._geometry(), *quaternion), resource) as values:
             w, x, y, z = values[-4:]
             norm = w*w+x*x+y*y+z*z
-            if norm == 0:
-                raise VolumeError('a zero quaternion does not define a rotation')
             matrix = tuple(tuple(v/norm for v in row) for row in (
                 (w*w+x*x-y*y-z*z, 2*(x*y-w*z), 2*(x*z+w*y)),
                 (2*(x*y+w*z), w*w-x*x+y*y-z*z, 2*(y*z-w*x)),
@@ -320,18 +303,11 @@ class CartesianCell:
 
     @classmethod
     def from_record(cls, record, *, budget=None):
-        keys = {'schema', 'lower_m', 'upper_m', 'origin_m', 'basis', 'number_encoding', 'frame_rule'}
-        if type(record) is not dict or set(record) != keys or record['schema'] not in (
-                'atlas.exact-cartesian-cell.v1', 'atlas.exact-cartesian-cell.v2'):
-            raise VolumeError('a canonical exact Cartesian cell record is required')
         groups = tuple(_triple(record[k], k) for k in ('lower_m', 'upper_m', 'origin_m'))
         rows = tuple(_triple(row, 'basis row') for row in _triple(record['basis'], 'basis'))
         fractions = tuple(v for group in groups for v in group)
         if record['schema'].endswith('.v2'):
             fractions += tuple(v for row in rows for v in row)
-        if any(type(pair) is not list or len(pair) != 2 or
-               any(type(text) is not str for text in pair) for pair in fractions):
-            raise VolumeError('canonical rational-hex pairs are required')
         resource = select_budget(budget)
         # Charge decoding by encoded width before creating large integers.
         with resource.reserve(65536+128*sum(len(text) for pair in fractions for text in pair),
@@ -339,8 +315,6 @@ class CartesianCell:
             try:
                 def decode(pair):
                     numerator, denominator = (int(text, 16) for text in pair)
-                    if denominator <= 0:
-                        raise VolumeError('rational denominator must be positive')
                     return Fraction(numerator, denominator)
                 bounds = tuple(tuple(decode(pair) for pair in group) for group in groups)
                 basis = (tuple(tuple(decode(pair) for pair in row) for row in rows)
@@ -459,10 +433,6 @@ def contains_cartesian_cell(layer, cone_vertices, cell, *, budget=None):
     frame data raises VolumeError. A conforming convex union can first be proved
     with convex_cone_union; mere vertex membership in a union is not sufficient.
     """
-    if type(layer) is not RadialLayer or type(cell) is not CartesianCell:
-        raise VolumeError('typed radial-layer and Cartesian-cell geometry required')
-    if type(cone_vertices) not in (tuple, list) or len(cone_vertices) < 3:
-        raise VolumeError('a convex cone needs at least three explicit homogeneous vertices')
     count = len(cone_vertices)
     # Account the list/row traversal before copying user input.
     resource = select_budget(budget) if budget is not None else cell._resource

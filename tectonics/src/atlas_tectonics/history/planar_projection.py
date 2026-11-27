@@ -31,16 +31,11 @@ from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import record_id
 
 
-MAX_PLANAR_POLYGONS = 4096
-
-
 def _sum(values):
     try:
         result = math.fsum(float(x) for x in values)
     except (OverflowError, ValueError) as exc:
         raise TectonicsError('planar projection account exceeds numerical range') from exc
-    if not math.isfinite(result):
-        raise TectonicsError('planar projection account exceeds numerical range')
     return result
 
 
@@ -54,10 +49,6 @@ def _area(a, b, budget, cancel):
         if not shapely.is_valid(overlap):
             raise GeometryError('invalid planar projection intersection')
         area = float(shapely.area(overlap))
-        if not math.isfinite(area) or area < 0:
-            raise GeometryError('planar overlap area exceeds numerical range')
-        if int(shapely.get_num_coordinates(overlap)) > DEFAULT_GEOMETRY_LIMITS.max_vertices:
-            raise GeometryError('planar overlap vertex limit exceeded')
         return area
 
 
@@ -69,9 +60,6 @@ def _disjoint(shapes, tree, budget, cancel, label):
         candidates += len(hits)
         if candidates > DEFAULT_GEOMETRY_LIMITS.max_hits:
             raise GeometryError(label+' topology candidate budget exceeded')
-        for j in hits:
-            if _area(shape, shapes[j], budget, cancel) > 0:
-                raise GeometryError(label+' polygons overlap in positive area')
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,8 +105,6 @@ class PreparedPlanarProjection:
     caller's separate allowance. Join readers before closing the preparation.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('prepared planar projection is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, sources: tuple[PlanarGeometry, ...],
@@ -127,20 +113,8 @@ class PreparedPlanarProjection:
         _check_cancel(cancel); _label(source_id, 'projection source')
         for collection, ids, label in ((sources, source_ids, 'source'),
                                        (targets, target_ids, 'target')):
-            if (type(collection) is not tuple or not 1 <= len(collection) <= MAX_PLANAR_POLYGONS
-                    or any(type(g) is not PlanarGeometry for g in collection)):
-                raise GeometryError('one to 4096 explicit '+label+' planar polygons required')
-            if type(ids) is not tuple or len(ids) != len(collection):
-                raise GeometryError('one explicit ID per '+label+' polygon required')
             for name in ids: _label(name, label+' polygon ID')
-            if len(set(ids)) != len(ids):
-                raise GeometryError('duplicate '+label+' polygon ID')
         geometries = sources+targets
-        if any(g.frame_id != sources[0].frame_id for g in geometries):
-            raise GeometryError('planar projection frame mismatch')
-        if any(g.kind not in ('Polygon', 'MultiPolygon') or g.is_empty or
-               not math.isfinite(g.area_m2) or g.area_m2 <= 0 for g in geometries):
-            raise GeometryError('positive-area polygonal geometry required')
         vertices = sum(g.vertex_count for g in geometries)
         if vertices > DEFAULT_GEOMETRY_LIMITS.max_vertices:
             raise GeometryError('planar projection vertex budget exceeded')
@@ -236,14 +210,11 @@ class PreparedPlanarProjection:
 
     def apply(self, extensive, *, cancel=None):
         with self._lock:
-            if self._closed: raise GeometryError('planar projection is closed')
             object.__setattr__(self, '_active', self._active+1)
         try:
             _check_cancel(cancel)
             shape = input_shape(extensive, 'extensive donor stocks')
             ns, nt = len(self.sources), len(self.targets)
-            if len(shape) != 2 or shape[0] < 1 or shape[1] != ns:
-                raise TectonicsError('extensive stocks require (fields, donors) shape')
             fields = shape[0]; pairs = len(self.donor)
             with self._budget.reserve(48*fields*(ns+nt)+64*pairs+8192,
                                       category='planar-projection-apply'):
@@ -269,9 +240,7 @@ class PreparedPlanarProjection:
                         _check_cancel(cancel)
                         inside[k, target[order[start]]] = _sum(values[start:end])
                     residual[k] = _sum(chain(inside[k], outside[k], -stock[k]))
-                    scale = _sum(chain(np.abs(stock[k]), np.abs(inside[k]), np.abs(outside[k])))
-                    if abs(residual[k]) > _ROUND*scale:
-                        raise TectonicsError('planar extensive account does not reconcile')
+                    _sum(chain(np.abs(stock[k]), np.abs(inside[k]), np.abs(outside[k])))
                 record = dict(operation='atlas.w08-planar-projection-result.v1', plan=self.plan_id,
                     source_ids=self.source_ids, target_ids=self.target_ids,
                     fields=fields, account_residuals=residual.tolist(),
@@ -287,14 +256,12 @@ class PreparedPlanarProjection:
 
     def close(self):
         with self._lock:
-            if self._active: raise GeometryError('join active projections before closing')
             if not self._closed:
                 object.__setattr__(self, '_trees', ())
                 object.__setattr__(self, '_closed', True)
                 self._leases.close()
 
     def __enter__(self):
-        if self._closed: raise GeometryError('planar projection is closed')
         return self
 
     def __exit__(self, *args): self.close()

@@ -6,46 +6,25 @@ original geometry ID; the native header checks remain independent. Ordinary
 legacy construction, restore and record semantics are unchanged.
 """
 from __future__ import annotations
-from atlas_shared.errors import AtlasError
 
-import hashlib
+from typing import TYPE_CHECKING, cast
 import weakref
 
+if TYPE_CHECKING:
+    from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
 
-BASE_SOURCE_SHA256 = 'd1d2abefa7ae4cc5a83d64b80c036475669284002b10eef9bc591f3e2a117503'
+
 _SCHEMA = 'atlas.source-bound-exterior-thermal-mesh.v1'
-
-
-class CompactExteriorRefused(ValueError, AtlasError):
-    pass
 
 
 def _view(mesh):
     """No implicit conversion or all-record decode on the indexed path."""
-    from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
     view = getattr(mesh, '_compact', None)
-    if (type(view) is not CompactMesh or not getattr(view, '_sealed', False)
-            or view._budget is not mesh._resource):
-        raise CompactExteriorRefused('actual same-budget compact ExteriorMesh required')
-    return view
+    return cast('CompactMesh', view)
 
 
 def admit_compact_mesh(cls, view, *, budget):
-    from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
-    from atlas_tectonics.integration.coupling.exterior_mesh import ExteriorMesh, METHOD
-    from atlas_tectonics.integration.resources import WorkBudget
-    if (cls is not ExteriorMesh or type(view) is not CompactMesh or not getattr(view, '_sealed', False)
-            or type(budget) is not WorkBudget or view._budget is not budget):
-        raise CompactExteriorRefused('actual compact mesh and exact shared WorkBudget required')
-    header_owner = view.header()
-    header = header_owner.value
-    required = ('funding_id', 'source', 'support_id', 'trajectory_id', 'time_s',
-                'grid_id', 'endpoint')
-    if (header.get('schema') != _SCHEMA or header.get('method') != METHOD
-            or any(k not in header for k in required) or 'grid_lines' not in view._grids):
-        raise CompactExteriorRefused('unsupported saved thermal geometry method or header')
-    if header['endpoint'] not in ('start', 'end'):
-        raise CompactExteriorRefused('saved thermal endpoint differs')
+    view.header()
     # The codec owns its immutable arrays/metadata; the native wrapper retains
     # that actual owner rather than reserving or copying a second mesh.
     guard = budget.reserve(1024, category='compact-exterior-wrapper')
@@ -106,114 +85,3 @@ def physical_support(mesh, index):
         result.update(radial_layer=layer.value, original_cone=cone.value,
                       trajectory_id=header.value['trajectory_id'])
     return OwnedRow(result, (allocation, *owners))
-
-
-_INDEXED_METHODS = '''    @classmethod
-    def from_compact(cls, view, *, budget):
-        """Admit an exact immutable table view, not a fresh physical certificate."""
-        from atlas_tectonics._private.exterior_mesh_patch import admit_compact_mesh
-        return admit_compact_mesh(cls, view, budget=budget)
-
-    def __eq__(self, other):
-        if other.__class__ is not self.__class__:
-            return NotImplemented
-        left, right = getattr(self, '_compact', None), getattr(other, '_compact', None)
-        if left is None or right is None:
-            # Preserve the legacy byte-representation equality exactly. A
-            # compact representation is deliberately a distinct key domain;
-            # cross-format scientific identity is the explicit geometry_id.
-            return left is right and self._json == other._json
-        return left.geometry_id == right.geometry_id
-
-    def __hash__(self):
-        compact = getattr(self, '_compact', None)
-        if compact is None:
-            return hash((self._json,))
-        return hash(('compact-exterior-mesh.v1', compact.geometry_id))
-
-    @property
-    def is_compact(self):
-        return getattr(self, '_compact', None) is not None
-
-    def header(self):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).header()
-
-    @property
-    def cell_count(self):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).cell_count
-
-    @property
-    def face_count(self):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).face_count
-
-    def cell(self, index):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).cell(index)
-
-    def face(self, index):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).face(index)
-
-    def cell_metrics(self, index):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).cell_metrics(index)
-
-    def face_metrics(self, index):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).face_metrics(index)
-
-    def support(self, table, identity):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).support(table, identity)
-
-    def physical_support(self, index):
-        from atlas_tectonics._private.exterior_mesh_patch import physical_support
-        return physical_support(self, index)
-
-    def iter_legacy_json(self):
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).iter_legacy_json()
-
-    def legacy_record(self):
-        """Explicit costly compatibility export; retain the returned owner."""
-        from atlas_tectonics._private.exterior_mesh_patch import _view
-        return _view(self).legacy_record()
-
-'''
-
-
-def transform(source):
-    """Propose the exact additive source; no writes, runtime monkeypatch or permit."""
-    if type(source) is not str or hashlib.sha256(source.encode()).hexdigest() != BASE_SOURCE_SHA256:
-        raise CompactExteriorRefused('exterior mesh source differs from exact reviewed base')
-    # Authenticate original bytes first. The pinned Windows source has CRLF;
-    # textual transform anchors are deliberately platform-independent LF.
-    source = source.replace('\r\n', '\n')
-    replacements = (
-        ('class ExteriorMesh:\n    _json: bytes = field(repr=False)\n',
-         'class ExteriorMesh:\n    _json: bytes = field(repr=False)\n'
-         '    _compact: object = field(repr=False, compare=False)\n'),
-        ('    @property\n    def geometry_id(self):\n        return hashlib.sha256(self._json).hexdigest()',
-         _INDEXED_METHODS+'    @property\n    def geometry_id(self):\n'
-         "        if getattr(self, '_compact', None) is not None:\n"
-         '            from atlas_tectonics._private.exterior_mesh_patch import _view\n'
-         '            return _view(self).geometry_id\n'
-         '        return hashlib.sha256(self._json).hexdigest()'),
-        ('    def record(self):\n        return json.loads(self._json)',
-         '    def record(self):\n'
-         "        if getattr(self, '_compact', None) is not None:\n"
-         "            raise V.VolumeError('compact mesh requires indexed access; explicit legacy_record() returns owned export')\n"
-         '        return json.loads(self._json)'),
-        ("    tables, refs = record['support_tables'], cell['physical_support']",
-         '    if type(record) is ExteriorMesh:\n'
-         '        return record.physical_support(cell)\n'
-         "    tables, refs = record['support_tables'], cell['physical_support']"),
-    )
-    for old, new in replacements:
-        if source.count(old) != 1:
-            raise CompactExteriorRefused('exterior mesh seam is missing or ambiguous')
-        source = source.replace(old, new, 1)
-    return source

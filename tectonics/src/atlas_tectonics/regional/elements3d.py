@@ -44,8 +44,6 @@ def _frozen(value):
 def _field(value, shape, name, *, positive=False):
     try:
         raw = np.asarray(value)
-        if np.iscomplexobj(raw):
-            raise ValueError(f"{name} must be real")
         array = np.asarray(raw, dtype=np.float64)
     except (TypeError, OverflowError) as exc:
         raise ValueError(f"{name} must contain finite real numbers") from exc
@@ -279,8 +277,6 @@ class TaylorHoodBox:
         return result
 
     def _face(self, side):
-        if not isinstance(side, str) or side not in _SIDES:
-            raise ValueError("side must be x0, x1, y0, y1, z0 or z1")
         axis, high = _SIDES[side]
         face_cells = np.flatnonzero(self._cell_grid[:, axis] == (self.cells[axis]-1 if high else 0))
         axes = [other for other in range(3) if other != axis]

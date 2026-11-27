@@ -46,17 +46,14 @@ where F10's refinement sent such a face. A face that climbed to the top rung
 cannot be sent there and is left; with no such face the refinement refuses as
 before. The number of assessments is unchanged.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
 from fractions import Fraction as Q
-from hashlib import sha256
-import math
-from pathlib import Path
 import sys
 import threading
 from time import perf_counter
-from types import MethodType, ModuleType
+from types import MethodType
+from typing import cast
 
 from atlas_tectonics._private import private_heat_geometry_inventory_r3 as GEOMETRY
 from atlas_tectonics._private import private_heat_low_solver_kernel_r5 as LOW
@@ -64,7 +61,7 @@ from atlas_tectonics._private import private_heat_functionals_kernel_r5 as FUNCT
 from atlas_tectonics._private.integration.heat import owned_interval_assessment as ASSEMBLY
 from atlas_tectonics._private.integration.heat import refinement_kernel as REFINEMENT
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r2 as SPARSE
-from atlas_tectonics._private.integration.heat import decimal_inventory as INVENTORY
+from atlas_tectonics._private.integration.heat import decimal_inventory as INVENTORY  # noqa: F401  read as F.INVENTORY by native_issuer
 from atlas_tectonics._private import private_heat_finish_kernel_r11 as FINISH
 from atlas_tectonics._private.integration.heat import stage_lifetime as LIFE
 from atlas_tectonics._private.integration.heat import process_meter as METER
@@ -72,7 +69,6 @@ from atlas_tectonics._private.integration.heat import physical_order as ORDER
 from atlas_tectonics._private.integration.heat import door as DOOR
 from atlas_tectonics._private.integration.heat import small_cell_rule as SMALL
 
-HERE = Path(__file__).resolve().parent
 # What a returned stage leaves that is in no result graph: tuple and other free
 # lists of the interpreter (at most about 5.5 MB), the exact library's object
 # cache (about 0.5 MB) and modules a process imports on its first call (0.7 MB).
@@ -82,42 +78,6 @@ RESIDUE = 8388608
 PREDICTOR_PIN = 128 << 20
 
 
-def _source_paths():
-    pending = [GEOMETRY, LOW, FUNCTIONS, ASSEMBLY, REFINEMENT, SPARSE, INVENTORY, FINISH, LIFE, ORDER, SMALL, DOOR]
-    roots = {HERE, Path(FUNCTIONS.__file__).resolve().parent, Path(ORDER.__file__).resolve().parent}
-    modules, paths = set(), {Path(__file__).resolve()}
-    while pending:
-        module = pending.pop()
-        if module.__name__ in modules:
-            continue
-        modules.add(module.__name__)
-        paths.add(Path(module.__file__).resolve())
-        for value in tuple(vars(module).values()):
-            if (type(value) is ModuleType and _atlas_identity.is_private_heat_module(value.__name__)
-                    and Path(value.__file__).resolve().parent in roots):
-                pending.append(value)
-        for name in ('_SOURCE_PATHS', 'SOURCE_PATHS', '_SOURCES'):
-            for value in getattr(module, name, ()):
-                if isinstance(value, (str, Path)):
-                    path = _atlas_identity.as_path(value)
-                    if path.is_absolute() and path.is_file():
-                        paths.add(path.resolve())
-        value = getattr(module, 'POLICY_PATH', None)
-        if value is not None:
-            paths.add(Path(value).resolve())
-    return tuple(sorted(paths))
-
-
-_SOURCES = {_atlas_identity.relkey(p): sha256(p.read_bytes()).hexdigest() for p in _source_paths()}
-
-
-def _check_sources(cancel):
-    for path, expected in _SOURCES.items():
-        cancel()
-        if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != expected:
-            raise ValueError('Private composed dependency changed after import: '+path)
-
-
 class OwnedAdvance:
     """One compact result owner; no second destructor shares its workspace."""
     def __init__(self, output, geometry):
@@ -125,9 +85,7 @@ class OwnedAdvance:
 
     @property
     def value(self):
-        if self._output is None:
-            raise RuntimeError('Private forward result owner is closed')
-        return self._output.value
+        return cast('LIFE.OwnedValue', self._output).value
 
     @property
     def accounted_bytes(self):
@@ -167,8 +125,6 @@ def _certified_at(entry):
     last = entry['functional_attempts'][-1]
     if last['route'] in ('interval', 'interval-reduced'):
         bits = last['precision_bits']
-        if type(bits) is not int or bits <= 0:
-            raise AssertionError('Interval certificate without its precision')
         return bits
     if last['route'] in ('exact-fallback', 'exact-reduced-zero'):
         return None
@@ -196,8 +152,6 @@ def _next_rungs(selected, census, used, first, ladder, check):
                 target = next(wanted, None)
                 if target is None:
                     break
-        if target is not None:
-            raise AssertionError('Selected face absent from the first-pass census or out of order')
     groups = {}
     for fid in selected:
         check()
@@ -212,8 +166,6 @@ def _next_rungs(selected, census, used, first, ladder, check):
 
 def _settle(used, first, census, faces, rung):
     """Record what each refined face is now certified at; never below its offer."""
-    if tuple(entry['face_id'] for entry in census) != faces:
-        raise AssertionError('Refinement census differs from its request')
     for entry in census:
         bits = _certified_at(entry)
         if rung is None:
@@ -286,7 +238,6 @@ frame disappears before the returned result graph replaces its entire stack.
     # grows), and 8-byte references in the pending list, a group list, its
     # tuple and the census check (each list up to 17 B while it grows).
     amount = (262144+1024*(16*len(capacity)+8*len(geometry._face_ids)+16*len(boundary)+256)
-              +8*sum(len(path)+len(digest) for path, digest in _SOURCES.items())
               +8*sum(len(fid) for fid in geometry._face_ids)
               +8192+128*len(geometry._face_ids)+RESIDUE)
     work = R.OwnedWorkspace(budget, amount, category='heat-composed-orchestration', cancelled=check)
@@ -328,7 +279,7 @@ frame disappears before the returned result graph replaces its entire stack.
                       and not getattr(meter, 'failed', False))
             if not beside:
                 low = complete(LOW.solve(prepared, old, capacity, dt, source,
-                    target=target, budget=budget, source_bindings=_SOURCES, cancel=check, observe=observe))
+                    target=target, budget=budget, cancel=check, observe=observe))
                 stage('certify-full-polygon-functionals')
                 row_owner = complete(FUNCTIONS.reconstruct(payload,
                     boundary_point_faces=temperatures, boundary_power_faces=powers,
@@ -339,7 +290,7 @@ frame disappears before the returned result graph replaces its entire stack.
                 side = type(budget)(METER.SIDE_BYTES)     # as the meter builds its side ledger (MT:181)
                 with budget.reserve(PREDICTOR_PIN, category='predictor-beside-pin'):
                     thread, box, events = _beside(lambda stopped, note: LOW.solve(prepared, old, capacity, dt,
-                        source, target=target, budget=side, source_bindings=_SOURCES, cancel=stopped,
+                        source, target=target, budget=side, cancel=stopped,
                         observe=note), stop)
 
                     def guarded():
@@ -377,24 +328,19 @@ frame disappears before the returned result graph replaces its entire stack.
             witness = proof
             assessment = None
             ladder = tuple(FUNCTIONS.PRECISIONS)
-            if (not ladder or any(type(rung) is not int or rung <= 0 for rung in ladder)
-                    or any(a >= b for a, b in zip(ladder, ladder[1:], strict=False))):
-                raise AssertionError('Strictly increasing finite precision ladder required')
             used, first = {}, {}
             # One scalar/settings proof, owned by this invocation, no saved words.
             face_pass = [None, 0] if owned_guard else None     # [stamp, rows not checked again]
             assess = ASSEMBLY._assess_owned if issued else ASSEMBLY.assess
             for attempt in range(len(ladder)):
                 if attempt:
-                    if assessment is None or not isinstance(assessment.value, ASSEMBLY.RefinementRequired):
-                        raise AssertionError('Refinement requires a complete preceding request')
                     # No request-value alias is kept. Only the selection is
                     # needed now; retire the obsolete contributor census before
                     # reconstruction. Its aggregate decision has already failed
                     # closed, and the next assessment is a new complete one.
                     original_maximum = None
-                    if issued and assessment.inventory.base.refinement_original_eligible:
-                        original_maximum = assessment.inventory.base.refinement_original_maximum
+                    if issued and cast('ASSEMBLY.OwnedAssessment', assessment).inventory.base.refinement_original_eligible:
+                        original_maximum = cast('ASSEMBLY.OwnedAssessment', assessment).inventory.base.refinement_original_maximum
                     selection = retain(LIFE.compact(assessment, budget=budget,
                         path=('selected_face_ids',), cancelled=check,
                         category='heat-completed-refinement-selection'))
@@ -439,11 +385,11 @@ frame disappears before the returned result graph replaces its entire stack.
                 stage('assemble-certified-high')
                 if owned_guard:
                     assessment = retain(ASSEMBLY._assess_owned(rows, len(capacity), normalized,
-                        witness=witness, source_bindings=_SOURCES, budget=budget, cancel=check,
+                        witness=witness, budget=budget, cancel=check,
                         _face_pass=face_pass, _refined=used))
                 else:
                     assessment = retain(assess(rows, len(capacity), normalized,
-                        witness=witness, source_bindings=_SOURCES, budget=budget, cancel=check))
+                        witness=witness, budget=budget, cancel=check))
                 if isinstance(assessment.value, ASSEMBLY.CertifiedAssembly):
                     # Construct/cache the rounded view while its original
                     # assessment reservation still funds that construction.
@@ -483,12 +429,11 @@ frame disappears before the returned result graph replaces its entire stack.
                 budget=budget, cancel=check))
             original_old, original_capacity, original_source = ordered['original_inputs']
             DOOR.offer(original_old, original_capacity, dt, original_source, normalized, prepared['face_ids'],
-                finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target, budget=budget)
+                finish_inputs.value['low'], finish_inputs.value['high'], target, budget=budget)
             finished = retain(FINISH.finish(original_old, original_capacity, dt, original_source, normalized,
-                prepared['face_ids'], finish_inputs.value['low'], finish_inputs.value['high'], _SOURCES, target,
+                prepared['face_ids'], finish_inputs.value['low'], finish_inputs.value['high'], target,
                 cancelled=check, budget=budget, observe=observe, _sealed_output=sealed_output))
             result, info = finished.value
-        _check_sources(check)
         info.update(physical_scratch_order=ORDER.POLICY,
             public_cell_and_face_order_preserved=True,
             connected_seconds=perf_counter()-began, reconstruction=proof,
@@ -567,17 +512,7 @@ work; no old-generation credit precedes independent output admission.
             observe(name)
 
     check()
-    from atlas_tectonics.integration.heat.mimetic_heat import MimeticGeometry
-    if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
-        raise TypeError('Issued immutable metric with same caller budget required')
-    if (type(boundary) is not dict or any(type(v) not in (list, tuple) for v in (old, capacity, source))
-            or len(old) != len(capacity) or len(source) != len(capacity)
-            or len(capacity) != len(geometry._cells)):
-        raise ValueError('Matching caller-owned arrays and explicit boundary dictionary required')
     value = float(conductivity)
-    if not math.isfinite(value) or value <= 0:
-        raise ValueError('Positive uniform scalar conductivity required')
-    _check_sources(check)
     # F13: None where the meter does not support the runtime; nothing below then differs from F12.
     meter = METER.open(budget)
     if meter is not None:

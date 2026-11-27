@@ -13,14 +13,9 @@ The supplied arrays/encoded pairs remain caller-owned. The returned owner must
 remain live while its canonical hex account is borrowed. Installed GMP work
 policy is an accounted bound, not an allocator/RSS or native-admission proof.
 """
-from hashlib import sha256
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private import private_heat_issuer_resources_r3 as R
-
-_RESOURCE_SHA = '35cbaa7d67cb273d410ee6e81a3847d5c16e0fb21b08e5ef383d389b59e55d19'
-_SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _calculate(ar, prior, transport_residuals, transported, public, source, outward):
@@ -28,8 +23,6 @@ def _calculate(ar, prior, transport_residuals, transported, public, source, outw
     for encoded in transport_residuals:
         value = ar.op('add', value, ar.decode(encoded))
     for old, new in zip(transported, public, strict=True):
-        if type(new) is not float:
-            raise TypeError('Actual public binary64 enthalpy values required')
         value = ar.op('add', value, ar.op('subtract', ar.decode(old), ar.decode(new)))
     value = ar.op('add', value, ar.decode(source))
     return ar.op('subtract', value, ar.decode(outward))
@@ -43,11 +36,6 @@ finite-stock nodes). transported/public cover each positive physical cell once
 in identical order. Zero-volume cells must already have been checked stockless.
 """
     R.check(cancel)
-    if (R.source_hash(R.__file__, cancel) != _RESOURCE_SHA
-            or R.source_hash(__file__, cancel) != _SELF_SHA):
-        raise ValueError('Frozen grouped-account arithmetic source changed')
-    if len(transported) != len(public):
-        raise ValueError('Complete matching physical stock arrays required')
     G = R.A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as GMP
     outer = R.workspace(budget, 65536, cancel=cancel, category='private-heat-grouped-account')

@@ -115,8 +115,6 @@ class InitialParallelSession(ComponentParallelSession):
         self._relative_text = G._qtext(Q(relative_error))
 
     def member_request(self, support, key, endpoint, pair):
-        if pair or endpoint != 'start':
-            raise ValueError('an initial job is one start-endpoint query')
         request = super().member_request(support, key, endpoint, pair)
         request['relative_error'] = self._relative_text
         return request
@@ -136,11 +134,7 @@ class InitialParallel:
         ceiling = initial_ceiling()
         if type(workers) is not int or not 1 <= workers <= ceiling:
             raise ValueError('one to %d initial workers required' % ceiling)
-        if type(batch_jobs) is not int or not 1 <= batch_jobs <= 64:
-            raise ValueError('one to 64 queries per batch required')
         outstanding = 3*workers if outstanding is None else outstanding
-        if type(outstanding) is not int or not workers <= outstanding <= 8*workers:
-            raise ValueError('between one and eight batches per worker outstanding required')
         self.workers, self.budget, self.context = workers, budget, context
         self.batch_jobs, self.outstanding = batch_jobs, outstanding
         self.options = dict(child_bytes=child_bytes, predicate_units=predicate_units,
@@ -156,11 +150,6 @@ class InitialParallel:
                            refused=0, first_launch=None, note=None)
 
     def __enter__(self):
-        if self.token is not None or self.closed:
-            raise RuntimeError('one entry per initial pass')
-        if _ACTIVE.get() is not None:
-            # One pass per context: a nested pass would take over its outer pass's queries.
-            raise RuntimeError('an initial pass is already open in this context')
         self.token = _ACTIVE.set(self)
         return self
 

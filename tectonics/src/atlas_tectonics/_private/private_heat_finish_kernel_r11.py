@@ -13,12 +13,13 @@ step of a metered call, and on stage lifetime r3. Nothing else differs.
 R11 is R10 on closed owned r5 (exact endpoint certificate reuse in the closed
 guard). Nothing else differs.
 """
-from concurrent.futures import CancelledError; import atlas_tectonics._identity as _atlas_identity
-from hashlib import sha256
+from concurrent.futures import CancelledError
 import math
-from pathlib import Path
 from time import perf_counter
 import sys
+from typing import TYPE_CHECKING, cast
+if TYPE_CHECKING:
+    from atlas_tectonics._private.private_heat_finish_inventory_r1 import InventoryPlan
 
 from atlas_tectonics._private import private_heat_finish_kernel_r3 as K
 from atlas_tectonics._private.integration.heat import correction_owned as C
@@ -27,21 +28,14 @@ from atlas_tectonics._private.integration.heat import finish_issue_owned as I
 from atlas_tectonics._private.integration.heat import stage_lifetime as LIFE
 
 A, PUBLIC = K.A, K.PUBLIC
-METHOD = I.METHOD  # Numerical issuer unchanged; sources bind this accounting successor.
+METHOD = I.METHOD  # Numerical issuer unchanged.
 EndpointTraceUnavailable = K.EndpointTraceUnavailable
 PrivateNumericalResult = K.PrivateNumericalResult
 _q = A.rational
-_SOURCES = dict(K._SOURCES)
-for _module in (C, Q, I, LIFE):
-    for _path, _pin in _module._SOURCES.items():
-        if _path in _SOURCES and _SOURCES[_path] != _pin:
-            raise ValueError('Conflicting fixed FINISH dependency')
-        _SOURCES[_path] = _pin
-_SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _convert_values(old, capacity, dt, source, normalized_boundary, face_ids,
-                    low, high, bindings, target_value, check):
+                    low, high, target_value, check):
     """The unchanged conversion producer; omitted locals die on this return."""
     started = perf_counter()
     def walk(values):
@@ -66,8 +60,6 @@ def _convert_values(old, capacity, dt, source, normalized_boundary, face_ids,
     source_energy = [timestep*p for p in walk(physical_source)]
     load = [e+s for e, s in walk(zip(previous, source_energy, strict=True))]
     low_energy = [_q(e) for e in walk(low['energy'])]
-    if len(low_energy) != n:
-        raise ValueError('One low predictor stock per original cell is required')
     low_faces, low_pair_defect = K._face_fluxes(low, n, check)
     high_faces, high_pair_defect = K._face_fluxes(high, n, check)
     face_ids = list(walk(face_ids))
@@ -75,17 +67,11 @@ def _convert_values(old, capacity, dt, source, normalized_boundary, face_ids,
             not isinstance(fid, str) or not fid for fid in walk(face_ids)):
         raise ValueError('One unique supplied physical identifier per face required')
     boundary = dict(normalized_boundary)
-    if not set(boundary).issubset(face_ids):
-        raise ValueError('Boundary refers to an unknown physical face')
     fixed, prescribed = {}, {}
     for f, fid in walk(enumerate(face_ids)):
         if fid not in boundary:
             continue
         kind, value = boundary[fid]
-        if kind not in ('temperature', 'power'):
-            raise ValueError('Boundary must already be normalised as temperature or power')
-        if low_faces[f][1] is not None:
-            raise ValueError('Boundary must name an actual exterior physical face')
         if kind == 'temperature':
             fixed[f] = _q(float(value))
         else:
@@ -99,20 +85,19 @@ def _convert_values(old, capacity, dt, source, normalized_boundary, face_ids,
         source_energy=source_energy, load=load, low_energy=low_energy,
         low_faces=low_faces, high_faces=high_faces, low_pair_defect=low_pair_defect,
         high_pair_defect=high_pair_defect, face_ids=face_ids, fixed=fixed,
-        prescribed=prescribed, bounds=bounds, bindings=bindings)
+        prescribed=prescribed, bounds=bounds)
 
 
 def _converted_inputs(old, capacity, dt, source, normalized_boundary, face_ids,
-                      low, high, source_bindings, target_value, budget, check):
+                      low, high, target_value, budget, check):
     """Own input planning and conversion until their complete producer returns."""
     operands = dict(old=old, capacity=capacity, dt=dt, source=source,
         normalized_boundary=normalized_boundary, face_ids=face_ids, low=low, high=high,
         absolute_residual_target=target_value)
-    initial = K.INVENTORY.admit('inputs', operands, source_bindings=_SOURCES,
-        additional_bindings=source_bindings, budget=budget, cancel=check)
+    initial = K.INVENTORY.admit('inputs', operands, budget=budget, cancel=check)
     from atlas_tectonics._private.integration.heat import gmp_resources as resources
     try:
-        work = resources.OwnedWorkspace(budget, initial.value.inventory.total(),
+        work = resources.OwnedWorkspace(budget, cast('InventoryPlan', initial.value).inventory.total(),
             category='heat-finish-inputs-private', cancelled=check)
         work.__enter__()
     except BaseException:
@@ -120,43 +105,32 @@ def _converted_inputs(old, capacity, dt, source, normalized_boundary, face_ids,
         raise
     work.stack.enter_context(initial)
     try:
-        bindings = dict(_SOURCES)
-        for path, digest in (source_bindings or {}).items():
-            if path in bindings and bindings[path] != digest:
-                raise ValueError('Finisher source binding conflicts with fixed implementation')
-            bindings[path] = digest
         value = _convert_values(old, capacity, dt, source, normalized_boundary,
-            face_ids, low, high, bindings, target_value, check)
+            face_ids, low, high, target_value, check)
         return K.OWNERS.OwnedSolve(value, work)
     except BaseException:
         work.__exit__(*sys.exc_info())
         raise
 
 
-def _orchestration_bytes(face_count, source_bindings):
+def _orchestration_bytes(face_count):
     """Fixed later metadata/owner references, never rational-width estimates.
 
     256 KiB baseline; 128 container units for three stage inventories, stability,
     result/diagnostic dictionaries, owner/stack frames and iterators; one unit
-    per face for the temporary permitted-face set; eight units per source entry
-    for binding/owner references; eight bytes per source character for metadata
-    and diagnostic string generations. Numerical graphs have separate owners.
+    per face for the temporary permitted-face set. Numerical graphs have
+    separate owners.
     """
-    incoming = source_bindings if isinstance(source_bindings, dict) else {}
-    maps = (_SOURCES, incoming)
-    paths = sum(len(values) for values in maps)
-    text = sum(len(path)+len(digest) for values in maps for path, digest in values.items()
-               if isinstance(path, str) and isinstance(digest, str))
-    return 262144+1024*(128+face_count+8*paths)+8*text
+    return 262144+1024*(128+face_count)
 
 
 def _run(work, budget, converted, check, observe, sealed_output):
     started = converted['started']
     (target, cap, previous, source_energy, load, low_energy, low_faces, high_faces,
-     low_pair_defect, high_pair_defect, face_ids, fixed, prescribed, bounds, bindings) = (
+     low_pair_defect, high_pair_defect, face_ids, fixed, prescribed, bounds) = (
         converted[key] for key in ('target', 'cap', 'previous', 'source_energy', 'load',
             'low_energy', 'low_faces', 'high_faces', 'low_pair_defect', 'high_pair_defect',
-            'face_ids', 'fixed', 'prescribed', 'bounds', 'bindings'))
+            'face_ids', 'fixed', 'prescribed', 'bounds'))
     def walk(values):
         return K._walk(values, check)
     def retain(owner, stage):
@@ -183,7 +157,7 @@ def _run(work, budget, converted, check, observe, sealed_output):
         stability.update(kind='loaded-bounds-and-closed-stock-quadratic-decay',
                          scalar=guard['theta'], certificate=guard['certificate'])
     issue_owner = retain(I.issue(previous, cap, corrected, faces, face_ids, source_energy,
-        residual, target, fixed, prescribed, bindings, check, budget=budget,
+        residual, target, fixed, prescribed, check, budget=budget,
         _sealed_output=sealed_output), 'issue')
     result = issue_owner.value
     # Comparisons here inspect only exact alpha 0..1, and prior existing face
@@ -205,14 +179,13 @@ def _run(work, budget, converted, check, observe, sealed_output):
         closed_guard_selection=guard['selection'] if guard else None,
         production_resource_admitted=False, paired_global_identity=True,
         production_acceptance=False, endpoint_face_trace_available=False,
-        source_binding_scope='Caller-supplied predictor/geometry bindings plus finisher and result dependencies; no geometry inference',
         resource_route='FIXED_EXACT_OPERATION_LIVE_ARRAY_POLICY_NOT_NATIVE_OR_RSS',
         stage_inventories=stages, retained_owner_required=True,
         debug_record_views='New caller-owned allocations; not an unbounded borrowed-view allowance')
 
 
 def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
-           source_bindings, absolute_residual_target, cancelled=None, *, budget, observe=None,
+           absolute_residual_target, cancelled=None, *, budget, observe=None,
            _sealed_output=None):
     """Same fixed FINISH API; input and output borrows require their owners."""
     def check():
@@ -221,13 +194,13 @@ def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         return False
     check()
     from atlas_tectonics._private.integration.heat import gmp_resources as resources
-    amount = _orchestration_bytes(len(face_ids), source_bindings)
+    amount = _orchestration_bytes(len(face_ids))
     work = resources.OwnedWorkspace(budget, amount,
         category='heat-finish-orchestration-private', cancelled=check)
     work.__enter__()
     try:
         raw = work.stack.enter_context(_converted_inputs(old, capacity, dt, source,
-            normalized_boundary, face_ids, low, high, source_bindings,
+            normalized_boundary, face_ids, low, high,
             absolute_residual_target, budget, check))
         # The complete conversion frame has gone before any release credit.
         # No converted value is borrowed by this frame before full transfer.
@@ -236,7 +209,7 @@ def finish(old, capacity, dt, source, normalized_boundary, face_ids, low, high,
         raw = None  # its closed handle may remain on the stack, never its graph
         # External callers keep their own input custody; drop OUR aliases.
         old = capacity = dt = source = normalized_boundary = face_ids = None
-        low = high = source_bindings = absolute_residual_target = None
+        low = high = absolute_residual_target = None
         result = _run(work, budget, converted.value, check, observe, _sealed_output)
         result[1].update(input_conversion_custody=converted.retention,
             input_conversion_producer_workspace_released=True,

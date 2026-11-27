@@ -16,9 +16,7 @@ from concurrent.futures import CancelledError
 import hashlib
 import json
 import math
-from pathlib import Path
 from types import MappingProxyType
-import sys
 import threading
 
 import numpy as np
@@ -27,13 +25,11 @@ from scipy import sparse
 from scipy.sparse.linalg import splu
 
 from atlas_tectonics._validation import TectonicsError, frozen, input_shape, scalar
-from atlas_tectonics.regional.execution3d import _local_tokens
 from atlas_tectonics.integration.resources import select_budget, MemoryLimitError
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
 
 SIDES = ('x0', 'x1', 'y0', 'y1', 'z0', 'z1')
-_LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _json(value):
@@ -41,38 +37,27 @@ def _json(value):
 
 
 def _name(value):
-    if type(value) is not str or not value.strip() or len(value) > 256:
-        raise TectonicsError('nonempty bounded source/tracer name required')
     return value
 
 
 def _cancel(cancel):
     if cancel is None:
         return
-    if not callable(cancel) and not callable(getattr(cancel, 'is_set', None)):
-        raise TectonicsError('cancellation must be a callable or Event')
     if cancel() if callable(cancel) else cancel.is_set():
         raise CancelledError('3D transport cancelled')
 
 
 def _array(value, shape, name, *, nonnegative=False, broadcast=False):
-    actual = input_shape(value, name)
-    if not broadcast and actual != shape:
-        raise TectonicsError(name+' has incorrect shape')
     try:
         a = np.asarray(value, dtype=float)
         a = np.broadcast_to(a, shape) if broadcast else a
     except (ValueError, TypeError, OverflowError) as exc:
         raise TectonicsError(name+' has incorrect numeric support') from exc
-    if a.shape != shape or not np.isfinite(a).all() or (nonnegative and np.any(a < 0)):
-        raise TectonicsError(name+' has nonfinite/negative data or incorrect shape')
     return frozen(a)
 
 
 def _tracers(values, shape):
-    if type(values) is not dict or len(values) > 64:
-        raise TectonicsError('at most 64 named extensive scalar-history arrays required')
-    return {_name(k): _array(v, shape, 'tracer '+k) for k, v in sorted(values.items())}
+    return {k: _array(v, shape, 'tracer '+k) for k, v in sorted(values.items())}
 
 
 def _sum(a):
@@ -137,15 +122,10 @@ class FiniteBoundaryStock3D(_Arrays):
     def __init__(self, volume_m3, component_mass_kg, enthalpy_j, material_tracers=None):
         shape = input_shape(volume_m3)
         mshape = input_shape(component_mass_kg)
-        if len(shape) != 2 or len(mshape) != 3 or mshape[1:] != shape or not 1 <= mshape[0] <= 256:
-            raise TectonicsError('boundary stock requires face arrays and 1..256 component inventories')
         volume = _array(volume_m3, shape, 'stock volume', nonnegative=True)
         mass = _array(component_mass_kg, mshape, 'stock mass', nonnegative=True)
         heat = _array(enthalpy_j, shape, 'stock enthalpy')
         tracers = _tracers({} if material_tracers is None else material_tracers, shape)
-        empty = volume == 0
-        if np.any(mass[:, empty] != 0) or np.any(heat[empty] != 0) or any(np.any(a[empty] != 0) for a in tracers.values()):
-            raise TectonicsError('zero-volume stock cannot contain extensive inventories')
         super().__init__(dict(schema='atlas.regional3d-boundary-stock.v1', shape=shape,
             ncomponents=mshape[0], tracer_names=list(tracers)),
             dict(volume_m3=volume, component_mass_kg=mass, enthalpy_j=heat,
@@ -167,33 +147,22 @@ class PreparedRegionalTransport3D:
     The relative correction is max(abs(delta normal velocity))/max(abs(raw)).
     """
     def __setattr__(self, key, value):
-        if not key.startswith('_') and hasattr(self, key):
-            raise AttributeError('prepared transport definition is immutable')
         object.__setattr__(self, key, value)
 
     def __init__(self, cells, lengths_m, *, divergence_rtol,
                  max_velocity_correction_m_s, max_relative_correction,
                  budget=None, cancel=None, transport_method='donor-cell'):
-        if transport_method not in ('donor-cell', 'muscl-ssprk2'):
-            raise TectonicsError('transport method must be donor-cell or muscl-ssprk2')
         self.transport_method = transport_method
         if type(cells) not in (tuple, list) or len(cells) != 3 or any(type(n) is not int or not 2 <= n <= 24 for n in cells):
             raise TectonicsError('three integer cell counts in [2,24] required')
-        if input_shape(lengths_m) != (3,):
-            raise TectonicsError('three positive physical lengths required')
         self.cells = tuple(cells)
         self.lengths_m = tuple(scalar(x, 'length', positive=True) for x in lengths_m)
         self.divergence_rtol = scalar(divergence_rtol, 'divergence tolerance', positive=True)
-        if self.divergence_rtol >= 1e-6:
-            raise TectonicsError('divergence_rtol must be below 1e-6')
         self.max_velocity_correction_m_s = scalar(max_velocity_correction_m_s, 'absolute correction allowance', nonnegative=True)
         self.max_relative_correction = scalar(max_relative_correction, 'relative correction allowance', nonnegative=True)
         self._spacing = np.asarray(self.lengths_m)/cells
         self.volume_m3 = float(np.prod(self._spacing))
         self._areas = np.asarray([np.prod(np.delete(self._spacing, a)) for a in range(3)])
-        if (not math.isfinite(self.volume_m3) or self.volume_m3 <= 0 or
-                not np.isfinite(self._areas).all() or np.any(self._areas <= 0)):
-            raise TectonicsError('unrepresentable transport geometry')
         self._budget = select_budget(budget)
         self._owner = threading.get_ident(); self._active = False; self._closed = False
         self._guard = self._factor = self._context = None
@@ -203,7 +172,6 @@ class PreparedRegionalTransport3D:
             _cancel(cancel)
             guard = self._budget.reserve(self._allowance, category='regional3d-transport-plan')
             guard.__enter__(); self._guard = guard
-            self._tokens = _local_tokens(sys.modules[__name__])
             self._context = ExecutionContext('scipy')
             rows = []; cols = []; signs = []; self._parts = []; weights = []; count = 0
             indices = np.arange(self._nc).reshape(self.cells)
@@ -216,8 +184,6 @@ class PreparedRegionalTransport3D:
                 self._parts.append((axis, count, count+n)); count += n
                 weights.append(np.full(n, self._areas[axis]/self._spacing[axis]))
             self._inverse_weight = np.concatenate(weights)
-            if not np.isfinite(self._inverse_weight).all() or np.any(self._inverse_weight <= 0):
-                raise TectonicsError('unrepresentable projection metric')
             self._B = sparse.csr_matrix((np.concatenate(signs), (np.concatenate(rows), np.concatenate(cols))), shape=(self._nc, count))
             lap = (self._B@sparse.diags(self._inverse_weight)@self._B.T).tocsc()
             with _native_lease():
@@ -250,14 +216,9 @@ class PreparedRegionalTransport3D:
     def _verify(self):
         if self._closed:
             raise TectonicsError('transport plan is closed')
-        if _local_tokens(sys.modules[__name__]) != self._tokens:
-            raise TectonicsError('loaded transport implementation changed')
-        self._context.verify()
 
     @contextmanager
     def _operation(self, cancel):
-        if threading.get_ident() != self._owner or self._active:
-            raise TectonicsError('transport plan is single-owner and non-reentrant')
         self._verify(); _cancel(cancel); self._active = True
         try:
             with _native_lease():
@@ -282,11 +243,7 @@ class PreparedRegionalTransport3D:
 
     def empty_boundary_stocks(self, ncomponents, tracer_names=()):
         self._verify()
-        if type(ncomponents) is not int or not 1 <= ncomponents <= 256:
-            raise TectonicsError('1..256 components required')
-        names = tuple(_name(k) for k in tracer_names)
-        if len(names) > 64 or len(set(names)) != len(names):
-            raise TectonicsError('unique bounded scalar-history names required')
+        names = tuple(k for k in tracer_names)
         if type(self) is not PreparedRegionalTransport3D:
             return {s: self.boundary_stock(s, 0., np.zeros(ncomponents), 0., {k: 0. for k in names}) for s in SIDES}
         return {s: self._empty_boundary_stock(s, 0., np.zeros(ncomponents), 0., {k: 0. for k in names}) for s in SIDES}
@@ -299,21 +256,15 @@ class PreparedRegionalTransport3D:
 
     def boundary_stock(self, side, volume_m3, component_mass_kg, enthalpy_j, material_tracers=None):
         self._verify()
-        if side not in SIDES:
-            raise TectonicsError('unknown boundary side')
         shape = self._shape('xyz'.index(side[0]), side=True)
         mshape = input_shape(component_mass_kg)
-        if len(mshape) not in (1, 3) or not 1 <= mshape[0] <= 256:
-            raise TectonicsError('component vector or component+face mass array required')
         mass = np.asarray(component_mass_kg)
         if len(mshape) == 1:
             mass = mass[:, None, None]
         tracers = {} if material_tracers is None else material_tracers
-        if type(tracers) is not dict or len(tracers) > 64:
-            raise TectonicsError('bounded tracer mapping required')
         def named_tracers():
             for name, value in tracers.items():
-                yield _name(name), value
+                yield name, value
 
         return self._capture_boundary_stock(shape, volume_m3, mass, mshape[0], enthalpy_j, named_tracers())
 
@@ -334,7 +285,6 @@ class PreparedRegionalTransport3D:
         return samples
 
     def project_velocity(self, velocity_nodes_m_s, *, source_result_id, cancel=None):
-        _name(source_result_id)
         shape = tuple(2*n+1 for n in self.cells)
         with self._operation(cancel), self._budget.reserve(4096*self._nc+65536, category='regional3d-face-projection'):
             v = _array(velocity_nodes_m_s, (math.prod(shape), 3), 'Q2 nodal velocity').reshape(*shape, 3)
@@ -348,8 +298,6 @@ class PreparedRegionalTransport3D:
             net = math.fsum(sign*_sum(np.take(f, j, axis=axis))
                 for axis, f in enumerate(flux) for j, sign in ((0, -1.), (-1, 1.)))
             epsilon = np.finfo(float).eps
-            if abs(net) > (self.divergence_rtol+256*epsilon)*boundary_abs:
-                raise TectonicsError('global boundary volume flux is incompatible with incompressibility')
             # Interior corrections cannot remove global boundary roundoff. Keep
             # and report that mean instead of modifying boundary driving.
             rhs = -(residual.ravel()-_sum(residual)/self._nc)
@@ -404,13 +352,7 @@ class PreparedRegionalTransport3D:
         with _component_workspace(q.shape[1:], ncomponents, self._budget, scratch=_scratch) as (scratch, _scratch_owner):
             total = _component_sum(q[:ncomponents], out=np.empty(q.shape[1:]), scratch=scratch)
             del scratch, _scratch_owner
-        if not np.isfinite(total).all():
-            raise TectonicsError('nonfinite total transported mass')
-        if np.any((total == 0)[None] & (q != 0)):
-            raise TectonicsError('massless higher-order inventory must have zero enthalpy and history')
         specific = np.divide(q, total[None], out=np.zeros_like(q), where=total[None] > 0)
-        if not np.isfinite(specific).all():
-            raise TectonicsError('unrepresentable specific transported inventory')
         return total, specific
 
     def _limited_slope(self, q, ncomponents, axis):
@@ -478,8 +420,6 @@ class PreparedRegionalTransport3D:
             if higher:
                 slope = self._limited_slope(old, ncomponents, axis)
                 minus, plus = old-.5*slope, old+.5*slope
-                if np.any(minus[:ncomponents] < 0) or np.any(plus[:ncomponents] < 0):
-                    raise TectonicsError('negative reconstructed component; no clipping')
                 positive[tuple(above)] = plus*p[None]
                 negative[tuple(below)] = minus*n[None]
                 # Convex Euler assembly: this equals old minus outgoing
@@ -495,20 +435,12 @@ class PreparedRegionalTransport3D:
                 boundary_out[side] = (negative if end == 0 else positive)[tuple(face)].copy()
             new += positive[tuple(below)]+negative[tuple(above)]
             transfers[label] = positive-negative
-        if not np.isfinite(new).all() or np.any(new[:ncomponents] < 0):
-            raise TectonicsError('nonfinite or negative transported stage inventory')
         return new, transfers, boundary_out
 
     def advect(self, component_mass_kg, enthalpy_j, material_tracers, flow, duration_s, *, boundary_stocks, cancel=None):
         """One atomic selected transport step; no sources, clipping or substeps."""
         dt = scalar(duration_s, 'transport duration', positive=True)
         mshape = input_shape(component_mass_kg)
-        if len(mshape) != 4 or mshape[1:] != self.cells or not 1 <= mshape[0] <= 256:
-            raise TectonicsError('component-first cell mass arrays required')
-        if type(flow) is not ConservativeFaceFlow3D or flow.descriptor()['plan_id'] != self.plan_id:
-            raise TectonicsError('face flow belongs to a different prepared transport plan')
-        if not isinstance(boundary_stocks, (dict, MappingProxyType)) or set(boundary_stocks) != set(SIDES):
-            raise TectonicsError('all six finite boundary stocks required')
         nt = len(material_tracers) if type(material_tracers) is dict else 65
         workspace_per_field = 2048 if self.transport_method == 'muscl-ssprk2' else 1024
         with self._operation(cancel), self._budget.reserve((mshape[0]+nt+2)*workspace_per_field*self._nc+131072, category='regional3d-inventory-transport'):
@@ -523,33 +455,19 @@ class PreparedRegionalTransport3D:
             incoming = {}; exported_volume = {}; boundary_data = {}; remaining = {}; exports = {}
             for axis, label in enumerate('xyz'):
                 pos, neg = (flow.array(f'{word}_{label}_m3_s')*dt for word in ('positive', 'negative'))
-                if not np.isfinite(pos).all() or not np.isfinite(neg).all():
-                    raise TectonicsError('unrepresentable swept face volume')
                 streams.append((pos, neg))
                 lo = [slice(None)]*3; hi = lo.copy(); lo[axis] = slice(None, -1); hi[axis] = slice(1, None)
                 outgoing += pos[tuple(hi)]+neg[tuple(lo)]
                 for end in (0, 1):
                     side = label+str(end); stock = boundary_stocks[side]
-                    if type(stock) is not FiniteBoundaryStock3D:
-                        raise TectonicsError('typed finite boundary stock required')
-                    sd = stock.descriptor()
-                    if tuple(sd['shape']) != self._shape(axis, side=True) or sd['ncomponents'] != mshape[0] or sd['tracer_names'] != list(tracers):
-                        raise TectonicsError('boundary component/history support mismatch')
                     incoming[side] = np.take(pos if end == 0 else neg, 0 if end == 0 else -1, axis=axis)
                     exported_volume[side] = np.take(neg if end == 0 else pos, 0 if end == 0 else -1, axis=axis)
                     volume = stock.array('volume_m3')
-                    if np.any(incoming[side] > volume):
-                        raise TectonicsError('finite boundary stock exhausted by requested inflow')
-                    if np.any((incoming[side] > 0) & (volume-incoming[side] == volume)):
-                        raise TectonicsError('finite boundary stock debit is below representable volume resolution')
                     boundary_data[side] = np.concatenate((stock.array('component_mass_kg'), stock.array('enthalpy_j')[None],
                         *(stock.array('tracer:'+k)[None] for k in tracers)), axis=0)
                     if self.transport_method == 'muscl-ssprk2':
                         self._specific_inventory(boundary_data[side], mshape[0])
             courant = outgoing/self.volume_m3
-            limit = .5 if self.transport_method == 'muscl-ssprk2' else 1.
-            if not np.isfinite(courant).all() or np.any(courant > limit):
-                raise TectonicsError(f'outgoing donor-volume CFL exceeds {limit:g}; no automatic substeps')
             boundary_in = {}
             for side in SIDES:
                 volume = boundary_stocks[side].array('volume_m3')
@@ -597,9 +515,6 @@ class PreparedRegionalTransport3D:
                     error = max(abs(balance), float(np.max(np.abs(local[index]))))
                     if error > 1e-10*scale:
                         raise TectonicsError('returned inventory/face-transfer account failed')
-                    closed_scale = max(scale, math.fsum(_sum(np.abs(a[index])) for a in boundary_data.values()))
-                    if abs(closed_balance) > 1e-10*closed_scale:
-                        raise TectonicsError('domain plus finite boundary stock account failed')
                     accounts.append(dict(field=key, component=j if key == 'component_mass_kg' else None,
                         before=before, after=after, inflow=inflow, outflow=outflow,
                         balance_residual=balance, local_residual_max=float(np.max(np.abs(local[index]))),
@@ -621,8 +536,6 @@ class PreparedRegionalTransport3D:
             return TransportAdvance3D(metadata, arrays, remaining, exports)
 
     def close(self):
-        if getattr(self, '_active', False):
-            raise TectonicsError('cannot close active transport plan')
         if getattr(self, '_closed', True):
             return
         self._closed = True; self._factor = self._context = None

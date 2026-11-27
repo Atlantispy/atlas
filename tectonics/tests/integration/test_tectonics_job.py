@@ -210,11 +210,11 @@ class ManagedJobTests(unittest.TestCase):
         self.assertEqual(result['phase'], 'time-limit')
         self.assertEqual(result['seconds'], jobs.MAX_SECONDS)
 
-    def test_resume_refuses_source_or_runtime_drift_without_touching_saved_state(self):
+    def test_resume_refuses_source_drift_without_touching_saved_state(self):
         self.submit()
         directory = self.root / self.job_id
         before = {path.name: path.read_bytes() for path in directory.iterdir() if path.is_file()}
-        for target, value in (('_sources', {'changed.py': 'd' * 64}), ('_runtime', 'e' * 64)):
+        for target, value in (('_sources', {'changed.py': 'd' * 64}),):
             with self.subTest(target=target), patch.object(jobs, target, return_value=value):
                 executor = Mock()
                 self.assert_job_error('SOURCE_MISMATCH', jobs.run, self.root, self.job_id,

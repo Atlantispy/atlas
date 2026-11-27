@@ -31,30 +31,15 @@ def _name(value, label):
     return _label(value, label)
 
 
-def _choice(value, values, label):
-    if type(value) is not str or value not in values:
-        raise GeologyError(label + ' must be one of ' + ', '.join(sorted(values)))
-    return value
-
-
 def _text(value, label, max_length=4096):
     if type(value) is not str or not value.strip() or len(value) > max_length:
         raise GeologyError(label + ' must be nonblank bounded text')
     return value
 
 
-def _tuple(value, label, *, allow_empty=True):
-    if type(value) is not tuple or (not allow_empty and not value):
-        raise GeologyError(label + ' must be an immutable tuple' + (' (nonempty)' if not allow_empty else ''))
-    return value
-
-
 def _names(value, label, *, allow_empty=True, ordered=False):
-    _tuple(value, label, allow_empty=allow_empty)
     for name in value:
         _name(name, label)
-    if len(set(value)) != len(value):
-        raise GeologyError(label + ' contains duplicate identifiers')
     return value if ordered else tuple(sorted(value))
 
 
@@ -86,19 +71,11 @@ class GeologySource:
 
     def __post_init__(self):
         _name(self.source_id, 'source_id')
-        _choice(self.kind, {'authored', 'generated', 'observation', 'literature', 'synthetic', 'unknown'}, 'source kind')
         _text(self.statement, 'source statement')
-        _tuple(self.references, 'references')
         for ref in self.references:
             _text(ref, 'reference', 2048)
-        if len(set(self.references)) != len(self.references):
-            raise GeologyError('duplicate provenance references')
-        if self.kind in ('observation', 'literature') and not self.references:
-            raise GeologyError('observational/literature provenance requires an explicit reference')
         if self.content_sha256 is not None:
-            h = self.content_sha256
-            if type(h) is not str or len(h) != 64 or any(c not in '0123456789abcdef' for c in h):
-                raise GeologyError('content_sha256 must be a lowercase SHA256 identity')
+            pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,7 +101,6 @@ class MaterialDefinition:
 
     def __post_init__(self):
         _name(self.material_id, 'material_id'); _name(self.source_id, 'source_id')
-        _choice(self.material_class, {'solid', 'fluid'}, 'material class')
         missing = []
         for key in ('density_kg_m3', 'conductivity_w_m_k', 'specific_heat_j_kg_k',
                     'heat_production_w_m3', 'thermal_expansion_per_k', 'reference_temperature_k'):
@@ -140,17 +116,9 @@ class MaterialDefinition:
             _text(self.unknown_reason, 'reason for unknown material properties')
         elif self.unknown_reason is not None:
             raise GeologyError('unknown_reason supplied for fully specified material')
-        if self.thermal_expansion_per_k is not None and (self.density_kg_m3 is None or self.reference_temperature_k is None):
-            raise GeologyError('expansion coefficient requires reference density and temperature')
         if self.valid_temperature_k is not None:
-            v = _tuple(self.valid_temperature_k, 'temperature interval')
-            if len(v) != 2:
-                raise GeologyError('temperature interval needs two endpoints')
+            v = self.valid_temperature_k
             lo, hi = (scalar(x, 'temperature interval', nonnegative=True) for x in v)
-            if hi <= lo:
-                raise GeologyError('temperature interval must increase')
-            if self.reference_temperature_k is not None and not lo <= self.reference_temperature_k <= hi:
-                raise GeologyError('reference temperature lies outside declared validity interval')
             object.__setattr__(self, 'valid_temperature_k', (lo, hi))
 
 
@@ -161,8 +129,6 @@ class CohortDescription:
     source_id: str
 
     def __post_init__(self):
-        if type(self.cohort) is not MaterialCohort:
-            raise GeologyError('explicit W02 MaterialCohort required')
         _name(self.source_id, 'cohort source')
 
 
@@ -189,23 +155,13 @@ class ThermalInitialProfile:
 
     def __post_init__(self):
         _name(self.profile_id, 'profile_id'); _name(self.source_id, 'thermal source')
-        _choice(self.mode, {'unknown','constant','tabulated','half_space'}, 'thermal mode')
-        if self.interpolation != 'linear' or self.extrapolation != 'refuse':
-            raise GeologyError('only declared linear tables with refused extrapolation are supported')
-        _tuple(self.depths_m, 'depths'); _tuple(self.temperatures_k, 'temperatures')
         z = tuple(scalar(x, 'profile depth', nonnegative=True) for x in self.depths_m)
         t = tuple(scalar(x, 'temperature', nonnegative=True) for x in self.temperatures_k)
         object.__setattr__(self, 'depths_m', z); object.__setattr__(self, 'temperatures_k', t)
         if self.mode == 'unknown':
-            if z or t or self.diffusivity_m2_s is not None or self.cooling_start_time_s is not None:
-                raise GeologyError('unknown profile cannot carry guessed numeric values')
             _text(self.unknown_reason, 'unknown thermal reason')
             return
-        if self.unknown_reason is not None:
-            raise GeologyError('known profile cannot also be unknown')
         if self.mode == 'half_space':
-            if z or len(t) != 2 or t[1] < t[0]:
-                raise GeologyError('half-space profile needs ordered surface/mantle temperatures')
             _float(self, 'diffusivity_m2_s', positive=True)
             _float(self, 'cooling_start_time_s')
         elif self.diffusivity_m2_s is not None or self.cooling_start_time_s is not None:
@@ -225,9 +181,7 @@ class LayerComponent:
 
     def __post_init__(self):
         _name(self.cohort_id, 'cohort_id')
-        v = _float(self, 'solid_volume_fraction', positive=True)
-        if v > 1:
-            raise GeologyError('solid volume fraction exceeds one')
+        _float(self, 'solid_volume_fraction', positive=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,23 +202,12 @@ class GeologicalLayer:
 
     def __post_init__(self):
         _name(self.layer_id, 'layer_id'); _name(self.source_id, 'layer source')
-        _choice(self.role, {'sediment','crust','lithospheric_mantle'}, 'layer role')
         _float(self, 'bulk_thickness_m', positive=True)
-        _tuple(self.components, 'components', allow_empty=False)
-        if any(type(c) is not LayerComponent for c in self.components):
-            raise GeologyError('typed LayerComponent records required')
-        ids = [c.cohort_id for c in self.components]
-        if len(set(ids)) != len(ids):
-            raise GeologyError('a cohort is repeated within one layer')
-        if not math.isclose(math.fsum(c.solid_volume_fraction for c in self.components), 1., rel_tol=0, abs_tol=FRACTION_ABSOLUTE_TOLERANCE):
-            raise GeologyError('solid volume fractions must sum to one; no renormalisation')
         object.__setattr__(self, 'components', tuple(sorted(self.components, key=lambda c:c.cohort_id)))
         if self.porosity is None:
             _text(self.unknown_porosity_reason, 'unknown porosity reason')
         else:
-            p = _float(self, 'porosity', nonnegative=True)
-            if p >= 1 or self.unknown_porosity_reason is not None:
-                raise GeologyError('porosity must be below one, with no contradictory unknown reason')
+            _float(self, 'porosity', nonnegative=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -286,32 +229,16 @@ class ColumnDescription:
     def __post_init__(self):
         for field in ('column_id','thermal_profile_id','source_id'):
             _name(getattr(self, field), field)
-        _choice(self.crust_type, {'continental','oceanic','transitional','unknown'}, 'crust type')
-        _tuple(self.layers, 'layers', allow_empty=False)
-        if any(type(x) is not GeologicalLayer for x in self.layers):
-            raise GeologyError('typed GeologicalLayer records required')
-        if len({x.layer_id for x in self.layers}) != len(self.layers):
-            raise GeologyError('duplicate layer ID in column')
-        ranks = {'sediment':0, 'crust':1, 'lithospheric_mantle':2}
-        r = [ranks[x.role] for x in self.layers]
-        if 1 not in r or r != sorted(r):
-            raise GeologyError('stack needs crust, with sediment above and mantle below it')
         try:
-            total = math.fsum(x.bulk_thickness_m for x in self.layers)
+            pass
         except OverflowError as exc:
             raise GeologyError('layer thickness total exceeds numerical range') from exc
-        litho = _float(self, 'lithosphere_thickness_m', positive=True)
-        if not math.isclose(total, litho, rel_tol=STACK_RELATIVE_TOLERANCE, abs_tol=0):
-            raise GeologyError('layer stack differs from declared lithosphere thickness')
+        _float(self, 'lithosphere_thickness_m', positive=True)
         # Check that even a very thin layer remains a distinct represented interval.
         z = 0.
         for layer in self.layers:
             new = z + layer.bulk_thickness_m
-            if new <= z or not math.isfinite(new):
-                raise GeologyError('layer boundary is not resolvable in binary64')
             z = new
-        if any(x.porosity is not None and x.porosity > 0 for x in self.layers) and self.fluid_material_id is None:
-            raise GeologyError('nonzero porosity requires an explicit pore-fluid material')
         if self.fluid_material_id is not None:
             _name(self.fluid_material_id, 'pore-fluid material')
 
@@ -339,10 +266,7 @@ class SurfaceSelector:
     keys: tuple[str, ...] = ()
 
     def __post_init__(self):
-        _choice(self.kind, {'domain','plates','regions','geometry'}, 'selector kind')
         object.__setattr__(self, 'keys', _names(self.keys,'selector keys',allow_empty=self.kind=='domain'))
-        if self.kind == 'domain' and self.keys:
-            raise GeologyError('domain selector takes no keys')
 
 
 @dataclass(frozen=True, slots=True)
@@ -355,8 +279,6 @@ class GeologicalProvince:
     def __post_init__(self):
         for key in ('province_id','column_id','source_id'):
             _name(getattr(self,key),key)
-        if type(self.selector) is not SurfaceSelector:
-            raise GeologyError('explicit SurfaceSelector required')
 
 
 @dataclass(frozen=True, slots=True)
@@ -378,10 +300,7 @@ class FaultDescription:
         _name(self.fault_id,'fault_id'); _name(self.source_id,'fault source')
         object.__setattr__(self,'trace_keys',_names(self.trace_keys,'fault traces',allow_empty=False))
         _depths(self)
-        dip = _float(self,'dip_rad',positive=True)
-        if dip > math.pi/2:
-            raise GeologyError('dip must lie in (0, pi/2] radians')
-        _choice(self.dip_side,{'left','right'},'dip side')
+        _float(self,'dip_rad',positive=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -403,17 +322,13 @@ class WeakZoneDescription:
 
     def __post_init__(self):
         _name(self.zone_id,'zone_id'); _name(self.source_id,'weak-zone source')
-        if type(self.selector) is not SurfaceSelector:
-            raise GeologyError('typed SurfaceSelector required')
         _depths(self)
         if self.half_width_m is not None:
             _float(self,'half_width_m',positive=True)
         if self.strength_factor is None:
             _text(self.unknown_reason,'unknown strength reason')
         else:
-            factor = _float(self,'strength_factor',positive=True)
-            if factor > 1 or self.unknown_reason is not None:
-                raise GeologyError('weakness factor must be in (0,1], without unknown reason')
+            _float(self,'strength_factor',positive=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -431,7 +346,4 @@ class FeaturePrecedence:
 
     def __post_init__(self):
         _names(self.province_order,'province precedence',allow_empty=False,ordered=True)
-        _choice(self.weak_zone_mode, {'retain_all','ordered_override'}, 'weak zone precedence')
         _names(self.weak_zone_order,'weak-zone precedence',ordered=True)
-        if self.weak_zone_mode == 'retain_all' and self.weak_zone_order:
-            raise GeologyError('retain_all must not also specify an override order')

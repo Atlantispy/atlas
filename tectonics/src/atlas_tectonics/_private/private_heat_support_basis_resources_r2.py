@@ -23,12 +23,8 @@ class Basis(B.Basis):
 def basis(centre, sample_points, *, budget, cancelled=None):
     B.F.K._require_gmp()
     B.I.check(cancelled)
-    if type(sample_points) not in (list, tuple) or not sample_points or len(centre) != 3:
-        raise ValueError('Explicit initial support points and centre required')
     largest = 1
     for point in (centre, *sample_points):
-        if type(point) not in (list, tuple) or len(point) != 3:
-            raise ValueError('Exact 3D point required')
         for value in point:
             largest = max(largest, B._coordinate(value))
     from atlas_tectonics._private.integration.heat import gmp_resources as R
@@ -36,7 +32,6 @@ def basis(centre, sample_points, *, budget, cancelled=None):
     work = R.OwnedWorkspace(budget, metadata, category='heat-cubic-basis-growth', cancelled=cancelled)
     work.__enter__()
     try:
-        B._verify(cancelled)
         ar = B.E.Arithmetic(work, B.G, scalar_slots=128, container_bytes=metadata,
             initial_bits=max(2200, 8*largest), cancelled=cancelled)
         result = Basis(ar, centre, sample_points)

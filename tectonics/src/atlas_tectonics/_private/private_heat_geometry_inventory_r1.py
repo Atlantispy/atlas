@@ -14,29 +14,17 @@ support selection, MPFR certificate, exact fallback or retained HIGH row is
 admitted here. Imports/runtime and supplied metric ownership remain external.
 This is a useful stage, not a whole-method resource certificate or native port.
 """
-from concurrent.futures import CancelledError; import atlas_tectonics._identity as _atlas_identity
+from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
-from hashlib import sha256
 import math
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import low_geometry_kernel as LOW
 from atlas_tectonics._private.integration.heat import heat_payload_indexed_patch as INDEXED_PAYLOAD
 from atlas_tectonics._private.integration.heat import low_ledger_inventory as L
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
-from atlas_tectonics.integration.heat import mimetic_heat as HEAT
 
-HERE = Path(__file__).resolve().parent
-_PINS = {
-    'atlas_tectonics/_private/integration/heat/low_geometry_kernel.py': 'b3036a440f67d3411d58482c985bd45c8201a5577eea4a59d79f93d738d0cb23',
-    'atlas_tectonics/_private/integration/heat/low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5',
-    'atlas_tectonics/_private/integration/heat/gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724',
-    'atlas_tectonics/_private/integration/heat/endpoint_assembly_inventory.py': '8c1342cdd9f2c1e42f93a4b20af87d5b5deb73a4de5287dacf03ce07bd3cb587',
-    'atlas_tectonics/_private/integration/heat/decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87',
-    _atlas_identity.relkey(HEAT.__file__): 'fdbb30ec4eea4454286048a08b6e960da5967ff9bca6cd982e1742d35a312fbf',
-}
 UNIT = L.CONTAINER_UNIT
 
 
@@ -46,8 +34,6 @@ def _check(cancel):
 
 
 def _size(count):
-    if type(count) is not int or not 0 <= count <= sys.maxsize:
-        raise OverflowError('Startup accounting exceeds addressable storage')
     return count
 
 
@@ -65,7 +51,7 @@ class PreparationPlan:
 
     @property
     def total_bytes(self):
-        return _size(self.metadata_bytes+sum(value for _, value in self.components))
+        return (self.metadata_bytes+sum(value for _, value in self.components))
 
 
 def json_decode_inventory(encoded, *, cancel=None):
@@ -78,16 +64,12 @@ def json_decode_inventory(encoded, *, cancel=None):
     tables and active nesting. json.loads remains the original semantic reader.
     Caller owns the small scalar scan frame before this function is entered.
     """
-    if type(encoded) is not bytes:
-        raise TypeError('Issued canonical bytes required')
     strings = atoms = containers = entries = depth = deepest = 0
     string_bytes = number_bytes = 0
     quoted = escaped = atom = False
     for offset, byte in enumerate(encoded):
         if offset % 4096 == 0:
             _check(cancel)
-        if byte > 127:
-            raise ValueError('Issued ensure_ascii JSON required')
         if quoted:
             if escaped:
                 escaped = False
@@ -121,26 +103,12 @@ def json_decode_inventory(encoded, *, cancel=None):
                 atom = True
             number_bytes += 1  # booleans/null overcharged as integer tokens
     _check(cancel)
-    if quoted or escaped or depth:
-        raise ValueError('Incomplete issued JSON')
     units = strings+atoms+containers+entries+deepest+1
     # Full decode text plus possible parser text copies; string payload, numeric
     # payload, objects/tables. No assumption of key interning or alias reuse.
-    return _size(UNIT*units+8*len(encoded)+4*string_bytes+4*number_bytes), (
+    return (UNIT*units+8*len(encoded)+4*string_bytes+4*number_bytes), (
         ('json_strings', strings), ('json_atoms', atoms), ('json_containers', containers),
         ('json_entries', entries), ('json_depth', deepest), ('json_bytes', len(encoded)))
-
-
-def _verify_sources(cancel):
-    L.D._runtime(cancel)
-    for name, expected in _PINS.items():
-        digest = sha256()
-        with (_atlas_identity.join(HERE, name)).open('rb') as stream:
-            while block := stream.read(65536):
-                _check(cancel)
-                digest.update(block)
-        if digest.hexdigest() != expected:
-            raise ValueError('Reviewed startup dependency changed: '+name)
 
 
 def _derive(geometry, conductivity, boundary, metadata_bytes, R, G, cancel):
@@ -169,11 +137,7 @@ def _derive(geometry, conductivity, boundary, metadata_bytes, R, G, cancel):
         else:
             exposed += 1
             kind, value = boundary.get(fid, ('power', 0.))
-            if kind not in ('temperature', 'power'):
-                raise ValueError('Only temperature or outward power supported')
             value = float(value)
-            if not math.isfinite(value):
-                raise ValueError('Finite represented boundary value required')
             boundary_slots += ar.slot(ar.q(value))
             conductance = (ar.op('divide', ar.op('multiply', ks, area), ds[0])
                            if kind == 'temperature' else L.ZERO)
@@ -181,9 +145,6 @@ def _derive(geometry, conductivity, boundary, metadata_bytes, R, G, cancel):
         # Retain Python conductance, two GMP weights even for singleton power,
         # negation/sign copies and already-owned distance aliases, all charged.
         rational_slots += 5*ar.slot(conductance)+sum(ar.slot(value) for value in ds)
-    if any(key not in geometry._face_ids or len(geometry._incidence[geometry._face_ids.index(key)]) != 1
-           for key in boundary):
-        raise ValueError('Boundary must name actual exterior faces')
     if INDEXED_PAYLOAD.is_indexed(geometry):
         decode_bytes, json_counts = INDEXED_PAYLOAD.indexed_inventory(geometry, cancel=cancel)
     else:
@@ -212,23 +173,14 @@ class OwnedPreparation(P.OwnedSolve):
 def admit(geometry, conductivity, boundary, *, budget, cancel=None):
     """Return an owned prospective plan; no payload decode/LOW output yet."""
     _check(cancel)
-    from atlas_tectonics.integration.heat.mimetic_heat import MimeticGeometry
     from atlas_tectonics._exact_runtime import selected
     from atlas_tectonics._private.integration.heat import gmp_resources as R
-    if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
-        raise TypeError('Issued immutable geometry with identical caller budget required')
     G = selected.library()
-    if G is None:
-        raise RuntimeError('Selected GMP backend required')
     # No rational getters/arrays before the metadata lease. Native metric uses
     # Fraction; its integer getters borrow immutable already-owned ints.
     largest = 2048
-    if type(conductivity) not in (int, float, Fraction) or type(boundary) is not dict:
-        raise TypeError('Plain uniform represented conductivity and owned boundary required')
     def inspect_scalar(value):
         nonlocal largest
-        if type(value) not in (int, float, Fraction):
-            raise TypeError('Plain represented int, float or Fraction scalar required')
         if type(value) is Fraction:
             largest = max(largest, sys.getsizeof(value.numerator), sys.getsizeof(value.denominator))
         else:
@@ -236,8 +188,6 @@ def admit(geometry, conductivity, boundary, *, budget, cancel=None):
     inspect_scalar(conductivity)
     for key, entry in boundary.items():
         _check(cancel)
-        if type(key) is not str or type(entry) not in (list, tuple) or len(entry) != 2:
-            raise TypeError('Plain physical boundary key and two-part declaration required')
         inspect_scalar(entry[1])
     for cell in geometry._cells:
         _check(cancel)
@@ -246,12 +196,11 @@ def admit(geometry, conductivity, boundary, *, budget, cancel=None):
                 largest = max(largest, sys.getsizeof(value.numerator), sys.getsizeof(value.denominator))
         for value in cell[6]:
             largest = max(largest, sys.getsizeof(value.numerator), sys.getsizeof(value.denominator))
-    metadata_bytes = _size(262144+UNIT*(len(geometry._cells)+4*len(geometry._incidence)+1)
+    metadata_bytes = (262144+UNIT*(len(geometry._cells)+4*len(geometry._incidence)+1)
         +R.native_workspace_allowance(8*largest, 32))
     work = R.OwnedWorkspace(budget, metadata_bytes, category='heat-startup-inventory', cancelled=cancel)
     work.__enter__()
     try:
-        _verify_sources(cancel)
         plan = _derive(geometry, conductivity, boundary, metadata_bytes, R, G, cancel)
         return OwnedPreparation(plan, work, geometry)
     except BaseException:

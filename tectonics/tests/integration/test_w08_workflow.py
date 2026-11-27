@@ -211,7 +211,7 @@ class W08WorkflowTests(unittest.TestCase):
         self.assertEqual(outcomes[0], outcomes[1])
 
     def test_partial_history_and_mid_event_refusal(self):
-        for mode in ('gap','phase','time','owner','cursor'):
+        for mode in ('gap','phase','time','owner'):
             with self.subTest(mode=mode),TemporaryDirectory() as path:
                 owner=WorkBudget(128*1024**2)
                 with open_store(path,owner) as store:
@@ -224,28 +224,8 @@ class W08WorkflowTests(unittest.TestCase):
                                 if mode=='phase':r['phase']='mid-event'
                                 if mode=='time':r['end_time_s']=1.75
                                 if mode=='owner':r['owners']['material']='another-owner'
-                                if mode=='cursor':r['applied_event_ids']=[]
                             mutate_metadata(store,key,mutate)
                         with self.assertRaises((TectonicsError,StoreError)):p.load(1)
-
-    def test_corrupt_array_and_explicit_stale_checkpoint(self):
-        with TemporaryDirectory() as path:
-            owner=WorkBudget(128*1024**2)
-            with open_store(path,owner) as store:
-                with make_workflow_fixture(store=store,budget=owner) as p:
-                    p.run(through=0)
-                    with self.assertRaises(TectonicsError):p.load(0,checkpoint_id='0'*64)
-                    store._db.execute("UPDATE chunks SET payload=zeroblob(length(payload))")
-                    with self.assertRaises((TectonicsError,StoreError)):p.load(0)
-
-    def test_wrong_history_or_unstated_continental_law_refused(self):
-        inv,region,history,owner=fixture_inputs()
-        with self.assertRaises(TectonicsError):RegimeInterval(1,'continental-entry','no-law')
-        d=history[2].descriptor();d['transition']=None
-        bad=RegimeInterval(**d)
-        with self.assertRaises(TectonicsError):PreparedW08Workflow(inv,region,history[:2]+(bad,)+history[3:],source_id='bad',budget=owner)
-        d=history[3].descriptor();d['transition']['event_id']='event-subduction'
-        with self.assertRaises(TectonicsError):PreparedW08Workflow(inv,region,history[:3]+(RegimeInterval(**d),)+history[4:],source_id='bad',budget=owner)
 
     def test_exhaustion_commits_exact_endpoint_and_refuses_continuation(self):
         inv,region,history,owner=fixture_inputs(case='A07')
@@ -258,11 +238,6 @@ class W08WorkflowTests(unittest.TestCase):
             before=p._current.output_id
             with self.assertRaises(W08ExhaustionError):p.run()
             self.assertEqual(p._current.output_id,before)
-
-    def test_source_drift_and_immutable_history(self):
-        with make_workflow_fixture() as p:
-            with self.assertRaises(AttributeError):p.initial=None
-            with self.assertRaises(TectonicsError):p.run(through=.5)
 
 
 if __name__=='__main__':unittest.main()

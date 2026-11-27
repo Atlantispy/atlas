@@ -25,18 +25,14 @@ import gmpy2 as G
 HERE = Path(__file__).resolve().parent
 # Runtime package selection belongs to the explicit source fence.
 from atlas_tectonics.integration.coupling.spatial_transport import _preserve_workspace
-from atlas_tectonics.integration.resources import WorkBudget, _ResizableLease
+from atlas_tectonics.integration.resources import _ResizableLease
 
 
 def _count(value, name):
-    if type(value) is not int or value < 0:
-        raise ValueError(f'{name} must be a nonnegative integer')
     return value
 
 
 def _integer(value):
-    if type(value) not in (int, G.mpz):
-        raise TypeError('expected an already owned exact int or mpz')
     return value
 
 
@@ -47,11 +43,8 @@ class RationalShape:
     possibly_negative: bool = True
 
     def __post_init__(self):
-        _count(self.numerator_bits, 'numerator_bits')
-        if _count(self.denominator_bits, 'denominator_bits') == 0:
+        if self.denominator_bits == 0:
             raise ValueError('a positive denominator requires at least one bit')
-        if type(self.possibly_negative) is not bool:
-            raise TypeError('possibly_negative must be bool')
 
     @property
     def bits(self):
@@ -65,17 +58,12 @@ def shape_from_parts(numerator, denominator):
     workspace lease. No absolute-value big integer or float is constructed here.
     Canonical reduction is unnecessary for a conservative size bound.
     """
-    n, d = _integer(numerator), _integer(denominator)
-    if d <= 0:
-        raise ValueError('denominator must be positive')
+    n, d = numerator, denominator
     return RationalShape(n.bit_length(), d.bit_length(), n < 0)
 
 
 def limb_payload_bytes(bits, *, limb_bits=64):
     """Bytes needed for this value's minimal limbs, excluding all headers/cache."""
-    _count(bits, 'bits')
-    if type(limb_bits) is not int or limb_bits <= 0 or limb_bits % 8:
-        raise ValueError('limb_bits must be a positive byte-aligned integer')
     return ((bits+limb_bits-1)//limb_bits)*(limb_bits//8)
 
 
@@ -124,10 +112,6 @@ def operation_growth(operation, left, right, *, divisor_is_nonzero=False):
         n, denominator = _product_bits(a, c), b+d
         widths = (n, denominator)
     elif operation == 'divide':
-        if c == 0:
-            raise ZeroDivisionError('zero divisor refused before allocation')
-        if divisor_is_nonzero is not True:
-            raise ValueError('division requires a separately checked nonzero divisor')
         n, denominator = _product_bits(a, d), b+c
         widths = (n, denominator)
     else:
@@ -144,8 +128,6 @@ def reported_gmp_bytes(values):
     """
     total = 0
     for value in values:
-        if type(value) not in (G.mpq, G.mpz):
-            raise TypeError('reported GMP allocation requires mpq/mpz values')
         total += sys.getsizeof(value)
     return total
 
@@ -176,11 +158,6 @@ def native_workspace_allowance(bits, count, *, pairs=0):
     all live operands. No OS RSS or arbitrary-operation scratch guarantee.
     """
     _installed_policy()
-    _count(bits, 'bits')
-    _count(count, 'count')
-    _count(pairs, 'pairs')
-    if bits > 1 << 27:
-        raise ValueError('exact operands exceed the existing GMP route ceiling')
     return 65536+128*bits+256*count+256*pairs
 
 
@@ -198,10 +175,6 @@ def hex_buffers_allowance(shape, *, ascii_copies, utf8_copies):
     the pair/list, separate component strings, JSON encoder chunks, compressor,
     bytearray over-allocation or file I/O buffers: inventory those separately.
     """
-    _count(ascii_copies, 'ascii_copies')
-    _count(utf8_copies, 'utf8_copies')
-    if sys.implementation.name != 'cpython':
-        raise RuntimeError('flat codec object accounting is CPython-specific')
     length = hex_pair_char_bound(shape)
     return ascii_copies*(sys.getsizeof('')+length)+utf8_copies*(sys.getsizeof(b'')+length)
 
@@ -213,7 +186,7 @@ def encode_parts(numerator, denominator):
     inventoried by the caller. Refuse noncanonical input rather than reduce it
     invisibly. No decimal-size limit, float conversion or loss of 1/3 occurs.
     """
-    n, d = _integer(numerator), _integer(denominator)
+    n, d = numerator, denominator
     if d <= 0 or G.gcd(n, d) != 1:
         raise ValueError('codec requires a reduced numerator and positive denominator')
     return '["'+format(n, 'x')+'","'+format(d, 'x')+'"]'
@@ -229,9 +202,6 @@ class OwnedWorkspace:
     charge until their owner dies. Never shrink while objects remain live.
     """
     def __init__(self, budget, count, *, category='heat-exact-private', cancelled=None):
-        if not isinstance(budget, WorkBudget):
-            raise TypeError('budget must be a native WorkBudget')
-        _count(count, 'count')
         self.stack = ExitStack()
         self.lease = _ResizableLease(budget, category=category)
         self.count, self.cancelled = count, cancelled
@@ -242,8 +212,6 @@ class OwnedWorkspace:
             raise CancelledError('private heat resource scope cancelled')
 
     def __enter__(self):
-        if self.entered or self.finished:
-            raise RuntimeError('workspace cannot be entered twice')
         self.checkpoint()
         try:
             self.stack.enter_context(self.lease)
@@ -258,10 +226,8 @@ class OwnedWorkspace:
         return self
 
     def resize_before_allocation_or_after_drop(self, count):
-        if not self.entered or self.finished:
-            raise RuntimeError('workspace is not active')
         self.checkpoint()
-        if type(count) is not int or count != self.lease.count:  # an equal int resize charges nothing
+        if count != self.lease.count:  # an equal resize charges nothing
             self.lease.resize(count)
 
     def __exit__(self, kind, error, traceback):

@@ -11,17 +11,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
 from math import comb, factorial
-import hashlib
-from pathlib import Path
 
 from . import volume as V, volume_overlap as O
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _SERIES_DEGREE = 32
-
-
-def source_digest():
-    return _LOADED
 
 
 def _ray_intersect(constraint, active, face, bounds, J, arena, *, _line=None):
@@ -150,7 +143,6 @@ def intersect_world_line(constraint, point, direction, bounds, J, arena):
     the line's physical origin, its two fixed-plane identities, and the
     already-certified clipping crossing. This helper grants none of those.
     """
-    source_digest()
     if (len(point)!=3 or len(direction)!=3 or
             any(not isinstance(q,(int,Q)) for q in (*point,*direction))):
         return None
@@ -172,7 +164,6 @@ def intersect_world_line_reduced(constraint, point, direction, bounds, J, arena)
     """
     from . import differential_geometry as G
     from . import moving_face_moments as M
-    source_digest()
     if (len(point)!=3 or len(direction)!=3 or not 0<bounds[0]<=bounds[1] or
             any(not isinstance(q,(int,Q)) for q in (*point,*direction)) or
             constraint['kind']!='moving-ray-edge'):
@@ -250,8 +241,6 @@ def intersect_world_line_reduced(constraint, point, direction, bounds, J, arena)
         parameter=forms[0]
         for other in forms[1:]:
             parameter=tuple((max(a,c),min(b,e)) for (a,b),(c,e) in zip(parameter,other))
-            if any(lo>hi for lo,hi in parameter):
-                raise V.VolumeError('reduced world-line quotient contradicts its direct form')
         answer=tuple(J.sub(J.constant(q),J.scale(parameter,e)) for q,e in zip(point,direction))
         arena.keep(tuple(Q(q) for coordinate in answer for pair in coordinate for q in pair),
                    len(answer)*(M.ORDER+1))

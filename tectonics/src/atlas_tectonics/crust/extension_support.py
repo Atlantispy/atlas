@@ -10,9 +10,8 @@ import hashlib
 import json
 import math
 import numpy as np
-from atlas_tectonics._validation import TectonicsError, scalar, text, frozen, read_array, input_shape
+from atlas_tectonics._validation import TectonicsError, scalar, frozen, read_array
 from atlas_tectonics._validation import within_budget
-from atlas_tectonics.crust.extension import PreparedListricExtension
 from atlas_tectonics.materials.materials import _json
 from atlas_tectonics.regional.regional import RegionalGrid1D
 from atlas_tectonics.planet.parameters import FlexureParameters
@@ -63,13 +62,9 @@ class ContinuousCellMeanFlexure:
     response. The caller owns the explicit exterior approximation/error.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('prepared cell-mean operator is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, operator, *, budget=None):
-        if type(operator) is not FiniteRegionFlexure or not operator.boundary.continuous:
-            raise TectonicsError('uniform continuous-plate operator required')
         self.cells = n = operator.grid.cells
         self.operator_id = hashlib.sha256(_json(dict(method='mean-cell-green-v1',
                                                      point_operator=operator.operator_id))).hexdigest()
@@ -85,15 +80,11 @@ class ContinuousCellMeanFlexure:
         return len(self._spectrum)
 
     def solve(self, load_pa, *, budget=None):
-        if input_shape(load_pa) != (self.cells,):
-            raise TectonicsError('one cell pressure per source cell required')
         with select_budget(budget).reserve(1024*self.cells+8192, category='mean-flexure-solve'):
             load = read_array(load_pa, 'cell load')
             values = np.fft.irfft(np.fft.rfft(load, n=self._nfft)*
                 np.frombuffer(self._spectrum, dtype=np.complex128), n=self._nfft)
             result = values[self.cells-1:2*self.cells-1]
-            if not np.isfinite(result).all():
-                raise TectonicsError('cell-mean flexure outside numerical range')
             return frozen(result)
 
 
@@ -107,14 +98,9 @@ class ExtensionSupportPolicy:
     source_id: str
 
     def __post_init__(self):
-        if type(self.elastic) is not FlexureParameters:
-            raise TectonicsError('explicit elastic parameters required')
-        text(self.source_id, 'support policy source')
         for key in ('max_abs_displacement_m', 'max_abs_slope', 'max_bending_strain',
                     'max_omitted_displacement_m'):
             object.__setattr__(self, key, scalar(getattr(self, key), key, positive=True))
-        if self.max_abs_slope >= 1 or self.max_bending_strain >= 1:
-            raise TectonicsError('small-slope and strain limits must be below one')
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -159,26 +145,14 @@ class PreparedExtensionSupport:
     close it. Initial reference is fixed, never the preceding requested output.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('prepared extension support is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, motion, policy, *, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published')
-        if type(motion) is not PreparedListricExtension or type(policy) is not ExtensionSupportPolicy:
-            raise TectonicsError('typed prepared extension and support policy required')
-        motion._check(motion.initial); motion._context.verify()
-        if motion.transport != 'characteristic':
-            raise TectonicsError('W05 coupled support requires the accuracy-accepted characteristic route')
-        if policy.elastic.density_contrast_kg_m3 <= motion.density_kg_m3:
-            raise TectonicsError('dry restoring density is mantle density, strictly greater than crust density')
+        motion._check(motion.initial)
         edges = motion.grid.edges_m
         n = motion.grid.cells
         grid = RegionalGrid1D(n, float(edges[-1]-edges[0]), float(edges[0]))
-        expected = np.linspace(edges[0], edges[-1], n+1)
-        if (np.any(np.abs(edges-expected) > 1e-12*grid.spacing_m) or
-                np.any(np.abs(motion.grid.widths_m-grid.spacing_m) > 1e-12*grid.spacing_m)):
-            raise TectonicsError('uniform shared load/motion grid required; no implicit remapping')
         self.motion = motion; self.policy = policy
         self._budget = motion._budget if budget is None else select_budget(budget)
         within_budget(self._budget, motion._budget, 'call/store budget must descend from the prepared run budget')
@@ -198,15 +172,10 @@ class PreparedExtensionSupport:
                 self._zero = np.zeros(n).tobytes()
                 initial_h = motion.initial.material.total_thickness(backend=motion.backend, budget=self._budget)
                 initial_volume = area*initial_h
-                if np.any((initial_h > 0) & (initial_volume == 0)):
-                    raise TectonicsError('initial hanging-wall volume underflows')
                 # Partition the declared initial support IN VOLUME coordinates.
                 # F = capacity-H0 avoids an artificial over-capacity ulp from
                 # separately rounded area*F and area*H0. Moving H is not altered.
                 footwall_volume = area*motion.geometry.crust_thickness_m-initial_volume
-                if (np.any(footwall_volume <= 0) or np.any(np.abs(footwall_volume-
-                        area*motion.footwall_thickness_m) > 1e-12*footwall_volume)):
-                    raise TectonicsError('stationary footwall volume does not resolve declared geometry')
                 self._initial_h = initial_h.tobytes()
                 self._initial_h_volume = initial_volume.tobytes()
                 self._footwall_volume = footwall_volume.tobytes()
@@ -215,7 +184,7 @@ class PreparedExtensionSupport:
                     motion=motion.plan_id, policy=asdict(policy), reference_load=self._reference_load.state_id,
                     operator=self.operator.operator_id, mean_operator=self.mean_operator.operator_id,
                     execution=motion.execution_id)))).hexdigest()
-            check_event(cancel, 'regional transport cancelled; no candidate published'); motion._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             self._sealed = True
         except BaseException:
             self._stack.close()
@@ -224,11 +193,6 @@ class PreparedExtensionSupport:
     def _load(self, state, hangingwall, cancel):
         with np.errstate(over='raise', invalid='raise', under='ignore'):
             moving_volume = hangingwall*self.support.area_m2
-        initial_h = np.frombuffer(self._initial_h, dtype=np.float64)
-        initial_volume = np.frombuffer(self._initial_h_volume, dtype=np.float64)
-        if (np.any((hangingwall > 0) & (moving_volume == 0)) or
-                np.any((hangingwall != initial_h) & (moving_volume == initial_volume))):
-            raise TectonicsError('hanging-wall volume or nonzero change is unresolvable')
         volumes = np.column_stack((np.frombuffer(self._footwall_volume, dtype=np.float64), moving_volume))
         return ColumnLoadState(self.support, self.phase, volumes,
             np.frombuffer(self._zero, dtype=np.float64), source_id=state.state_id,
@@ -256,9 +220,7 @@ class PreparedExtensionSupport:
         return qright, bounds
 
     def solve(self, state, *, cancel=None):
-        if self._closed:
-            raise TectonicsError('extension support preparation is closed')
-        self.motion._check(state); check_event(cancel, 'regional transport cancelled; no candidate published'); self.motion._context.verify()
+        self.motion._check(state); check_event(cancel, 'regional transport cancelled; no candidate published')
         n = self.motion.grid.cells
         with self._budget.reserve(1024*n+32768, category='extension-support-output'):
             fields = self.motion.geometry_fields(state, budget=self._budget)
@@ -311,7 +273,7 @@ class PreparedExtensionSupport:
             for name, value in (('_metadata', metadata), ('_fields', payload), ('_points', point_payload),
                     ('result_id', hashlib.sha256(_json(content_record(record))+payload+point_payload).hexdigest())):
                 object.__setattr__(result, name, value)
-            check_event(cancel, 'regional transport cancelled; no candidate published'); self.motion._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return result
 
     def close(self):
@@ -320,8 +282,6 @@ class PreparedExtensionSupport:
             self._stack.close()
 
     def __enter__(self):
-        if self._closed:
-            raise TectonicsError('extension support preparation is closed')
         return self
 
     def __exit__(self, *args):

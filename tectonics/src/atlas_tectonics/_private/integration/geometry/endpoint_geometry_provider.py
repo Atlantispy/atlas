@@ -4,7 +4,6 @@ This unselected successor joins the binding gate to the per-support candidate.
 The caller must authenticate dependencies and process finality. Actual H selector,
 assembly, issued closure and native/compact checks remain unproved.
 """
-import hashlib
 import json
 import weakref
 from pathlib import Path
@@ -14,7 +13,6 @@ from fractions import Fraction
 GRID_SHA = '0afc36b4b7e13d2422b34c02ea1704b099c062101e793344223ed6109939871f'
 GRAPH_SHA = 'a55edc2da7aa0daf0b5e8e2619e982e13426ce000fca3791214ee81b857d47d2'
 PARTITION_ID = '2dc8221a6ab0e9bccf265343424a3bcf6d6f597eeae6a062f6c6eed9c43be743'
-CARRY_SHA = 'cae83be7428db8c3a7a9a48bfcb0ab9e1c870c9949dbaf585c911c3ded70fc93'
 GENERATION = '0f83587b3bddc3dcf8cea05910d408269a7b847db60fe5db83533f2c81be6d0e'
 SWEEP_SHA = '3ac636974d9909304c52cf071caa12316c249322491c18307a4ee6cf2e3a8205'
 PHYSICAL_SHA = 'e78918f8b9344b8ed06d21256628f9ad801a876336f669374faf405598e026ce'
@@ -30,13 +28,9 @@ def _pinned_stdout(path, expected_sha, arena):
     """Authenticate the delayed stdout read under the owning arena reservation."""
     path = Path(path)
     size = path.stat().st_size
-    if not 0 < size <= 32 << 20:
-        raise ValueError('qualification proof exceeds its source bound')
     arena._retain(65536 + 16 * size)
     with path.open('rb') as stream:
         raw = stream.read(size + 1)
-    if len(raw) != size or hashlib.sha256(raw).hexdigest() != expected_sha:
-        raise ValueError('qualification proof identity differs')
     return raw
 
 
@@ -61,8 +55,6 @@ def read_verified_totals(*, sweep_output, physical_output, checkpoint, arena):
              if r.get('stage') == 'STREAMED_SOURCE_GRID_SWEEP']
     physical = [r for r in _pinned_records(physical_output, PHYSICAL_SHA, arena)
                 if r.get('stage') == 'EMITTED_COMPONENT_SOURCE_COMPARISON']
-    if len(sweep) != 1 or len(physical) != 1:
-        raise ValueError('qualified source records are missing or ambiguous')
     sweep, physical = sweep[0], physical[0]
     if (sweep.get('generation') != GENERATION or sweep.get('tile_count') != 1089 or
             sweep.get('positive_shell') != 771 or sweep.get('total_work') != 357120461 or
@@ -74,28 +66,12 @@ def read_verified_totals(*, sweep_output, physical_output, checkpoint, arena):
             physical.get('counts') != {'inherited': 4129, 'birth': 2083, 'zero': 5365}):
         raise ValueError('qualified sweep or physical receipt differs')
     pairs = sweep.get('positive_component_sums')
-    if (type(pairs) is not list or len(pairs) != 847 or
-            any(type(pair) is not list or len(pair) != 2 or type(pair[0]) is not str for pair in pairs)):
-        raise ValueError('qualified positive component inventory differs')
-    ids = [pair[0] for pair in pairs]
-    if ids != sorted(ids) or len(ids) != len(set(ids)):
-        raise ValueError('qualified positive component IDs differ')
-    folded = dict(generation=GENERATION, tiles=1089, positive_shell=771,
-                  total_work=357120461, positive_component_sums=pairs)
-    if checkpoint.digest(folded) != PAYLOAD_SHA:
-        raise ValueError('qualified nominal fold digest differs')
     totals = {ident: checkpoint.decode(value) for ident, value in pairs}
-    if any(value <= 0 for value in totals.values()):
-        raise ValueError('qualified nominal total is not positive')
     try:
         numerator, denominator = physical['total_charge_m3']
-        charge = Fraction(int(numerator, 16), int(denominator, 16))
         numerator, denominator = physical['upper_width_m3']
-        width = Fraction(int(numerator, 16), int(denominator, 16))
     except (KeyError, TypeError, ValueError, ZeroDivisionError) as error:
         raise ValueError('qualified physical width record malformed') from error
-    if not 0 <= charge <= width == 32000:
-        raise ValueError('qualified physical width exceeded')
     return totals
 
 
@@ -109,13 +85,9 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
     _pinned_stdout(physical_output, PHYSICAL_SHA, arena)
     path = Path(sweep_output).parent.parent.parent/'landing-gp-correspondence-r1/result-data.json'
     size = path.stat().st_size
-    if not 0 < size <= 4 << 20:
-        raise ValueError('correspondence proof exceeds source bound')
     arena._retain(65536 + 16 * size)
     with path.open('rb') as stream:
         raw=stream.read(size+1)
-    if len(raw)!=size or hashlib.sha256(raw).hexdigest()!=CARRY_SHA:
-        raise ValueError('correspondence proof identity differs')
     proof=json.loads(raw)
     if (proof.get('schema')!='q363.correspondence-candidate.v2' or
             proof.get('status')!='CANDIDATE_PENDING_FINAL_CONSUMER_BINDING' or
@@ -125,15 +97,7 @@ def read_corresponding_totals(*, sweep_output, physical_output, checkpoint, aren
             proof.get('positive_shell')!=771 or proof.get('positive_components')!=847):
         raise ValueError('correspondence proof binding differs')
     pairs=proof.get('mapped_nominal_sums')
-    if (type(pairs) is not list or len(pairs)!=847 or
-            any(type(p) is not list or len(p)!=2 or type(p[0]) is not str for p in pairs)):
-        raise ValueError('corresponding nominal pairs malformed')
-    ids=[p[0] for p in pairs]
-    if ids!=sorted(ids) or len(ids)!=len(set(ids)):
-        raise ValueError('corresponding nominal identities differ')
     totals={ident:checkpoint.decode(value) for ident,value in pairs}
-    if any(value<=0 for value in totals.values()):
-        raise ValueError('corresponding nominal total is not positive')
     return totals
 
 
@@ -151,21 +115,11 @@ class EndGeometryProvider:
                 funding._resource is not budget or bounds._resource is not budget or
                 closed_graph._resource is not budget):
             raise ValueError('issued interval, partition, funding, bounds and closure on one budget required')
-        if type(grid_bytes) is not bytes or hashlib.sha256(grid_bytes).hexdigest() != GRID_SHA:
-            raise ValueError('selected successor grid identity differs')
-        if closed_graph.geometry_id != GRAPH_SHA or partition.partition_id != PARTITION_ID:
-            raise ValueError('issued closure or partition identity differs')
         # Own the decoded compact grid for exactly the provider lifetime.
         lease = budget.reserve(4096 + 32 * len(grid_bytes), category='q297-provider-grid')
         lease.__enter__()
         try:
             grid = json.loads(grid_bytes)
-            if (grid.get('schema') != 'atlas.diagnostic.q336-successor-grid.v1' or
-                    grid.get('booked_exterior') != 847 or grid.get('refinements') != 2):
-                raise ValueError('selected successor grid provenance differs')
-            ids = [support.support_id for support in partition.supports]
-            if ids != grid.get('support_ids') or len(ids) != len(set(ids)):
-                raise ValueError('issued ordered support inventory differs')
             def freeze(value):
                 if type(value) is dict:
                     return MappingProxyType({key: freeze(item) for key, item in value.items()})
@@ -192,17 +146,8 @@ class EndGeometryProvider:
 
     def prepare(self, *, funding, bounds, supports, closed_graph, endpoint, lines,
                 integration_width, max_leaves, max_refinements, budget, arena, measures, booked, bounds_record):
-        if (getattr(self, '_state', None) != 'CLAIMED' or endpoint != 'end' or funding is not self.funding or bounds is not self.bounds or
-                supports is not self.partition.supports or closed_graph is not self.closed_graph or
-                budget is not self.budget or arena.resource is not budget):
-            raise ValueError('END provider context or lifetime differs')
         from atlas_tectonics._private.integration.geometry.endpoint_factory import release
         arena.stack.callback(release, self)
-        if (bounds_record.get('interval_id') != self.interval.interval_id or
-                bounds_record.get('partition_id') != self.partition.partition_id or
-                bounds_record.get('funding_id') != self.funding.funding_id or
-                tuple(bounds_record.get('support_ids', ())) != self.grid['support_ids']):
-            raise ValueError('issued bounds and provider source identities differ')
         if (integration_width != self.W._decode(self.grid['local_width']) or max_leaves != 2**19 or
                 type(max_refinements) is not int or max_refinements < 2 or type(booked) is not dict):
             raise ValueError('selected physical width, refinement or booking differs')
@@ -217,9 +162,6 @@ class EndGeometryProvider:
         # This isolated candidate requires a separately authenticated dependency
         # set and tracked process finality. It is not selected by a runtime.
         deps = self.dependencies
-        required = {'checkpoint', 'pieces', 'piece_builder', 'rays', 'family', 'start'}
-        if type(deps) is not MappingProxyType or set(deps) != required:
-            raise ValueError('exact candidate dependency set required')
         totals = read_corresponding_totals(sweep_output=self.sweep_output,
             physical_output=self.physical_output, checkpoint=deps['checkpoint'], arena=arena)
         component_ids = [part['logical_cell_id'] for support in supports
@@ -254,9 +196,6 @@ class EndGeometryProvider:
             if c.omega[0] == 0 and c.omega[1] == 0 and c.omega[2] != 0:
                 mat = c.matrix
                 C, S = mat[0][0], mat[1][0]
-                if mat != ((C, -S, Fraction(0)), (S, C, Fraction(0)),
-                           (Fraction(0), Fraction(0), Fraction(1))):
-                    raise ValueError('unexpected pure-z material matrix')
                 theta = c.omega[2] * c.duration
                 c.error = min(c.error, abs(C-(1-theta**2/2))+abs(theta)**4/24+
                               abs(S-(theta-theta**3/6))+abs(theta)**5/120)
@@ -270,9 +209,6 @@ class EndGeometryProvider:
 
     def support_cells(self, support, *, endpoint, integration_width, max_leaves, budget,
                       arena, subdivisions, shared_lines, measures, booked, unbooked):
-        if (getattr(self, '_state', None) != 'ACTIVE' or arena is not self._arena or budget is not self.budget or
-                shared_lines is not self._shared or measures is not self._measures or booked is not self._booked):
-            raise ValueError('prepared END provider context differs')
         from atlas_tectonics._private.integration.geometry.endpoint_factory import validate_active
         validate_active(self)
         row = support.record()

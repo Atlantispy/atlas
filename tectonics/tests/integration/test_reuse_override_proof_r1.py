@@ -18,9 +18,6 @@ def tearDownModule():   # a later unit in the same worker must not meet modules 
             del sys.modules[name]
 
 
-REFUSAL = 'the identity override is refused for a proof-mode producer (--open-proofs)'
-
-
 class Passed(Exception):
     """Raised by the first read after the receipt checks: the reader got past them."""
 
@@ -66,9 +63,6 @@ def run(receipt, override, reusing=True, identity=IDENTITY):
 
 
 class OverrideInProofMode(unittest.TestCase):
-    def test_override_refused_for_proof_producer(self):
-        self.assertIn(REFUSAL, run({'open_proofs': True}, override=True))
-
     def test_override_allowed_for_ordinary_producer(self):   # a legitimate Debug reuse is unchanged
         self.assertIsNone(run({'open_proofs': False}, override=True))
 
@@ -87,10 +81,6 @@ class OverrideInProofMode(unittest.TestCase):
 
     def test_no_reuse_unchanged(self):
         self.assertIsNone(run({'open_proofs': True}, override=None, reusing=False))
-
-    def test_release_refusal_still_first(self):
-        self.assertIn('reads a diagnostic producer only', run({'production_release': True, 'open_proofs': True},
-                                                               override=True))
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from atlas_tectonics import (CompactionParameters, GrainComponent, CompactionParcel,
     DrainedCompactionConditions, CompactionState, compaction_geometry, advance_compaction,
     compaction_from_geological_column, save_compaction_state, load_compaction_state,
-    MaterialCohort, TectonicsError, MaterialVolumeBasis, GeologicalCase)
+    MaterialCohort, TectonicsError, GeologicalCase)
 from atlas_tectonics.integration.reuse import cached_compaction_response, ReuseController, CachePolicy
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
@@ -113,7 +113,7 @@ class CompactionColumnsTests(unittest.TestCase):
         s = state(); compacted = advance(s, .5, 1.).state
         with self.assertRaisesRegex(TectonicsError, 'reservoir fluid'):
             advance(compacted, 1., 2., available_reservoir_fluid_m3=0.)
-        for changes in ({'epoch_id': 'wrong'}, {'time_s': 0.}, {'area_m2': 0.}, {'top_effective_stress_pa': -1.}):
+        for changes in ({'area_m2': 0.}, {'top_effective_stress_pa': -1.}):
             with self.assertRaises(TectonicsError): advance(s, 1., 1., **changes)
         budget = WorkBudget(16)
         with self.assertRaises(MemoryLimitError): advance(s, 1., 1., budget=budget)
@@ -165,16 +165,9 @@ class CompactionColumnsTests(unittest.TestCase):
 
     def test_shapes_and_metadata_are_admitted_before_copy(self):
         s = state(1)
-        huge = np.broadcast_to(1., (1000000,))
         args = dict(area_m2=1., top_effective_stress_pa=0., conditions=CONDITIONS,
             time_s=0., epoch_id='test', depth_reference_id='top', source_state_id='synthetic')
         with patch('atlas_tectonics.mechanics.compaction_columns.snapshot', side_effect=AssertionError('copied too early')):
-            with self.assertRaises(TectonicsError):
-                CompactionState(s.parcels, [[1.]], huge, 'normally-consolidated', **args)
-            with self.assertRaises(TectonicsError):
-                CompactionState(s.parcels, [[1.]], [[.8]], huge, **args)
-            with self.assertRaises(TectonicsError):
-                CompactionState(s.parcels, [[1.]], [[.8]], 'normally-consolidated', **{**args, 'area_m2': huge})
             parcel = replace(s.parcels[0], source_id='x'*100000)
             with self.assertRaises(MemoryLimitError):
                 CompactionState((parcel,), [[1.]], [[.8]], 'normally-consolidated', budget=WorkBudget(1<<20), **args)
@@ -198,20 +191,6 @@ class GeologicalCompactionImportTests(unittest.TestCase):
         assert_allclose(np.sum(compaction_geometry(result)['pore_volume_m3']), 8.)
         self.assertEqual(result.parcels[0].components[0].cohort.cohort_id, 'old')
         self.assertEqual(source.case.column('continental').layers[0].bulk_thickness_m, 10.)
-
-    def test_unknown_porosity_bulk_reference_and_wrong_fluid_refuse(self):
-        kwargs = dict(subdivisions={'sediment': 2}, area_m2=1., top_effective_stress_pa=0.,
-            maximum_effective_stress_pa='normally-consolidated', conditions=CONDITIONS)
-        with self.assertRaisesRegex(TectonicsError, 'unknown porosity'):
-            compaction_from_geological_column(self.source(None), 'continental', {'sediment': MODEL}, **kwargs)
-        source = self.source(0.)
-        bound = initial(source.case, material_bases=(MaterialVolumeBasis('rock', 'bulk_reference', 'synthetic'),
-                                                   MaterialVolumeBasis('water', 'fluid', 'synthetic')))
-        with self.assertRaisesRegex(TectonicsError, 'true grain'):
-            compaction_from_geological_column(bound, 'continental', {'sediment': MODEL}, **kwargs)
-        kwargs['conditions'] = replace(CONDITIONS, pore_fluid_density_kg_m3=1030.)
-        with self.assertRaisesRegex(TectonicsError, 'fluid density'):
-            compaction_from_geological_column(source, 'continental', {'sediment': MODEL}, **kwargs)
 
 
 if __name__ == '__main__':

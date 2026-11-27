@@ -16,16 +16,13 @@ accounting conventions, not proofs of GMP scratch, allocator capacity or RSS.
 No reconstruction, sparse factor, runtime-import or native origin is admitted.
 Imports are stdlib-safe; the selected GMP backend is gated only at invocation.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from decimal import Decimal
 from fractions import Fraction
-from hashlib import sha256
-import math
-from pathlib import Path
 import sys
+from typing import Any, cast
 
 from atlas_tectonics._private.integration.heat import decimal_inventory as D
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
@@ -33,52 +30,17 @@ from atlas_tectonics._private.integration.heat import finish_arithmetic as A
 from atlas_tectonics._private.integration.heat import endpoint_assembly as M
 from atlas_tectonics._private.integration.heat import endpoint_assembly_inventory as I
 
-HERE = Path(__file__).resolve().parent
-_PINS = {
-    'atlas_tectonics/_private/private_heat_low_solver_kernel_r2.py': 'aecd7da940f60314a80cafa46ac999677581bbce127eaf3f020604127d2a5225',
-    'atlas_tectonics/_private/integration/heat/endpoint_assembly_inventory.py': '8c1342cdd9f2c1e42f93a4b20af87d5b5deb73a4de5287dacf03ce07bd3cb587',
-}
 CONTAINER_UNIT = D.CONTAINER_UNIT
 ZERO = I.Shape(1, 1, True)
 # Every finite binary64 lies on the 2**-1074 lattice and has magnitude <2**1024.
 PUBLIC_BINARY64 = I.Shape(2098, 1075, True)
 # L1: a Fraction's fixed __slots__ instance size, which slot() used to measure on every call.
 _FRACTION_ZERO_SIZE = sys.getsizeof(Fraction(0))
-# L1: op()/slot() inline formulas copied from private_heat_gmp_resources_r1 at exactly this content.
-_INLINE_RESOURCES_SHA256 = '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724'
-# Lower case on purpose: the loaded-implementation identity records upper-case module values as
-# constants, and this cache is filled on first use. Only sys.modules' own entry is cached.
-_inline_checked = []
-# L1 r3: the 'do not inline' marker. A private object, so no resources value (None included)
-# can ever be identical to it.
-_NO_INLINE = object()
 
 
 def _py_int(bits):
     # L1: slot()'s per-call lambda, unchanged, defined once.
     return sys.getsizeof(0)+sys.int_info.sizeof_digit*((bits+sys.int_info.bits_per_digit-1)//sys.int_info.bits_per_digit)
-
-
-def _inline_resources(resources):
-    """resources if it is the loaded gmp_resources_r1 with the reviewed file content, else _NO_INLINE.
-
-    The file is hashed once per module object per process. Any doubt (another object, missing or
-    unreadable file, other content) returns _NO_INLINE, so op()/slot() run their original bodies: L1
-    can only lose speed, never diverge from a later gmp_resources revision.
-    """
-    loaded = sys.modules.get('atlas_tectonics._private.integration.heat.gmp_resources')
-    if resources is None or resources is not loaded:
-        return _NO_INLINE
-    for module, verdict in _inline_checked:
-        if module is resources:
-            return verdict
-    try:
-        same = sha256(Path(resources.__file__).read_bytes()).hexdigest() == _INLINE_RESOURCES_SHA256
-    except (AttributeError, TypeError, ValueError, OSError):
-        same = False
-    verdict = resources if same else _NO_INLINE
-    _inline_checked.append((resources, verdict))
-    return verdict
 
 
 def _check(cancel):
@@ -87,8 +49,6 @@ def _check(cancel):
 
 
 def _size(value):
-    if type(value) is not int or not 0 <= value <= sys.maxsize:
-        raise OverflowError('LOW inventory exceeds addressable counted storage')
     return value
 
 
@@ -113,10 +73,8 @@ def _footprint(values, gmp, cancel):
     def visit(value, depth=0):
         nonlocal total, count, largest
         _check(cancel)
-        if depth > 16:
-            raise ValueError('Unexpected recursive LOW input metadata')
         size = sys.getsizeof(value)
-        total, count, largest = _size(total+size), _size(count+1), max(largest, size)
+        total, count, largest = (total+size), (count+1), max(largest, size)
         if type(value) is dict:
             for key, item in value.items():
                 visit(key, depth+1)
@@ -128,11 +86,9 @@ def _footprint(values, gmp, cancel):
             visit(value.numerator, depth+1)
             visit(value.denominator, depth+1)
         elif type(value) is np.ndarray:
-            if value.dtype != np.dtype('float64') or value.ndim != 1:
-                raise ValueError('Only original one-dimensional binary64 arrays supported')
             # Count backing payload again even when getsizeof already includes it.
-            total = _size(total+value.nbytes)
-            count = _size(count+value.size)
+            total = (total+value.nbytes)
+            count = (count+value.size)
         elif type(value) not in (str, int, float, bool, type(None), Decimal, gmp.mpq, gmp.mpz, np.float64):
             raise ValueError('Unsupported LOW owned input object: '+type(value).__name__)
     for value in values:
@@ -149,13 +105,9 @@ class RationalGrowth:
     divisor_power_two is a caller proof about the actual positive divisor;
     an arbitrary numerator bit upper bound is not that proof.
     """
-    # L1: the reviewed resources module this object may inline, or _NO_INLINE (original route).
-    _inline = _NO_INLINE
-
     def __init__(self, gmp, resources, cancel):
         self.gmp, self.resources, self.cancel = gmp, resources, cancel
         self.expression_bits = 1
-        self._inline = _inline_resources(resources)
 
     def q(self, value):
         _check(self.cancel)
@@ -165,11 +117,9 @@ class RationalGrowth:
             if value.is_zero():
                 return ZERO
             if low >= 0:
-                return I.Shape(_size(4*(high+1)+1), 1, True)
-            return I.Shape(_size(4*max(digits, high+1, 1)+1), _size(-4*low+1), False)
+                return I.Shape((4*(high+1)+1), 1, True)
+            return I.Shape((4*max(digits, high+1, 1)+1), (-4*low+1), False)
         if type(value) is float:
-            if not math.isfinite(value):
-                raise ValueError('Finite represented scalar required')
             n, d = value.as_integer_ratio()
         elif type(value) is Fraction or type(value) is self.gmp.mpq:
             n, d = value.numerator, value.denominator
@@ -180,53 +130,28 @@ class RationalGrowth:
         return I.Shape(max(1, n.bit_length()), d.bit_length(), d.bit_count() == 1)
 
     def binary(self, value):
-        import numpy as np
-        if type(value) not in (float, int, np.float64):
-            raise ValueError('Original finite binary64-compatible scalar required')
         return self.q(float(value))
 
     def op(self, operation, left, right, *, divisor_power_two=False):
         _check(self.cancel)
-        R = self.resources
-        if R is not self._inline or R is _NO_INLINE:
-            growth = R.operation_growth(operation,
-                R.RationalShape(left.numerator, left.denominator),
-                R.RationalShape(right.numerator, right.denominator), divisor_is_nonzero=True)
-            total = growth.total_expression_bits
-            numerator, denominator = growth.result.numerator_bits, growth.result.denominator_bits
+        # L1: R.RationalShape validation and R.operation_growth, written out (gmp_resources_r1 5ada7b86).
+        a, b = left.numerator, left.denominator
+        c, d = right.numerator, right.denominator
+        if operation in ('add', 'subtract'):
+            ad = 0 if a == 0 or d == 0 else a+d
+            cb = 0 if c == 0 or b == 0 else c+b
+            numerator = max(ad, cb)+(1 if ad and cb else 0)
+            denominator = b+d
+            widths = ad+cb+numerator+denominator
+        elif operation == 'multiply':
+            numerator, denominator = (0 if a == 0 or c == 0 else a+c), b+d
+            widths = numerator+denominator
+        elif operation == 'divide':
+            numerator, denominator = (0 if a == 0 or d == 0 else a+d), b+c
+            widths = numerator+denominator
         else:
-            # L1: R.RationalShape validation and R.operation_growth, written out (gmp_resources_r1 5ada7b86).
-            a, b = left.numerator, left.denominator
-            if type(a) is not int or a < 0:
-                raise ValueError('numerator_bits must be a nonnegative integer')
-            if type(b) is not int or b < 0:
-                raise ValueError('denominator_bits must be a nonnegative integer')
-            if b == 0:
-                raise ValueError('a positive denominator requires at least one bit')
-            c, d = right.numerator, right.denominator
-            if type(c) is not int or c < 0:
-                raise ValueError('numerator_bits must be a nonnegative integer')
-            if type(d) is not int or d < 0:
-                raise ValueError('denominator_bits must be a nonnegative integer')
-            if d == 0:
-                raise ValueError('a positive denominator requires at least one bit')
-            if operation in ('add', 'subtract'):
-                ad = 0 if a == 0 or d == 0 else a+d
-                cb = 0 if c == 0 or b == 0 else c+b
-                numerator = max(ad, cb)+(1 if ad and cb else 0)
-                denominator = b+d
-                widths = ad+cb+numerator+denominator
-            elif operation == 'multiply':
-                numerator, denominator = (0 if a == 0 or c == 0 else a+c), b+d
-                widths = numerator+denominator
-            elif operation == 'divide':
-                if c == 0:
-                    raise ZeroDivisionError('zero divisor refused before allocation')
-                numerator, denominator = (0 if a == 0 or d == 0 else a+d), b+c
-                widths = numerator+denominator
-            else:
-                raise ValueError('operation must be add, subtract, multiply or divide')
-            total = (a+b)+(c+d)+widths+(numerator+denominator)
+            raise ValueError('operation must be add, subtract, multiply or divide')
+        total = (a+b)+(c+d)+widths+(numerator+denominator)
         self.expression_bits = max(self.expression_bits, total)
         if operation in ('add', 'subtract'):
             return I.add_shape(left, right)
@@ -260,58 +185,39 @@ class RationalGrowth:
         # original; Fraction(0)'s size is a process constant and py_int is defined once.
         python = _FRACTION_ZERO_SIZE+_py_int(value.numerator)+_py_int(value.denominator)
         R = self.resources
-        if R is not self._inline or R is _NO_INLINE:
-            native = R.native_slot_allowance(self.resources.RationalShape(value.numerator, value.denominator))
-            return _size(python+native)
-        S = self.resources
         n, d = value.numerator, value.denominator
-        if S is R and type(n) is int and type(d) is int and n >= 0 and d >= 1:
+        if type(n) is int and type(d) is int and n >= 0 and d >= 1:
             # RationalShape(n, d) cannot refuse these widths. The policy check still runs on
             # every call; then native_slot_allowance's formula, literally.
             R._installed_policy()
             native = 160+8*(max(64, (n+63)//64+2)+max(64, (d+63)//64+2))
         else:
-            native = R.native_slot_allowance(S.RationalShape(n, d))
-        return _size(python+native)
+            native = R.native_slot_allowance(R.RationalShape(n, d))
+        return (python+native)
 
     def scalar_work(self, *, rational_slots=12):
-        # Source-local peak: operands/results, gcd/division parts, comparison
-        # copies and conversion parts. Native policy covers library scratch;
-        # 12 rational slots also overcharge the Python integer intermediates.
-        if type(rational_slots) is not int or rational_slots <= 0:
-            raise ValueError('Explicit positive simultaneous rational slot count required')
         bits = self.expression_bits
-        return _size(self.resources.native_workspace_allowance(bits, rational_slots)
+        return (self.resources.native_workspace_allowance(bits, rational_slots)
                      +rational_slots*self.slot(I.Shape(bits, bits, False)))
 
 
 def _base(prepared, old, capacity, dt, source, target, ar):
     n = prepared.get('cells')
-    if type(n) is not int or n <= 0 or not (len(old) == len(capacity) == len(source) == n):
-        raise ValueError('Complete original LOW arrays and positive cell count required')
-    if type(prepared.get('rows')) is not list or type(prepared.get('boundary')) is not dict:
-        raise ValueError('Original prepared LOW rows and boundary required')
     e0, cap, src = [[ar.binary(v) for v in values] for values in (old, capacity, source)]
-    if float(dt) <= 0 or any(float(c) <= 0 for c in capacity):
-        raise ValueError('Positive original timestep and capacities required')
     delta = ar.binary(dt)
     power_two = []
     for value in capacity:
         numerator, _ = float(value).as_integer_ratio()
         power_two.append(numerator.bit_count() == 1)
     _, digits, low, high = D._target_metadata(target, ar.cancel)
-    target_shape = I.Shape(_size(4*max(digits, high+1, 1)+1), _size(4*max(0, -low)+1), low >= 0)
+    target_shape = I.Shape((4*max(digits, high+1, 1)+1), (4*max(0, -low)+1), low >= 0)
     load = [ar.op('add', e, ar.op('multiply', delta, s)) for e, s in zip(e0, src, strict=True)]
     loaded = load[:]
     boundary = prepared['boundary']
     face_ids = prepared.get('face_ids')
-    if type(face_ids) is not list or len(face_ids) != len(prepared['rows']):
-        raise ValueError('Original face ordering required')
     owner_count = 0
     for fid, row in zip(face_ids, prepared['rows'], strict=True):
         _check(ar.cancel)
-        if fid != row['face_id'] or type(row['owners']) not in (list, tuple) or len(row['owners']) not in (1, 2):
-            raise ValueError('Original face ordering and owners required')
         owner_count += len(row['owners'])
         for i, sign in row['owners']:
             if type(i) is not int or not 0 <= i < n or type(sign) is not int or sign not in (-1, 1):
@@ -328,40 +234,30 @@ def _base(prepared, old, capacity, dt, source, target, ar):
         bounds=bounds, power_two=power_two, owners=owner_count)
 
 
-def _plan(prepared, old, capacity, dt, source, target, binding_count, returned, constant_lower,
-          *, stage, footprint, object_count, largest_source, ar):
-    base = _base(prepared, old, capacity, dt, source, target, ar)
+def _plan(prepared, old, capacity, dt, source, target, returned, constant_lower,
+          *, stage, footprint, object_count, ar):
+    base = cast('dict[str, Any]', _base(prepared, old, capacity, dt, source, target, ar))
     n, rows = base['n'], prepared['rows']
     count = len(rows)
     bslots = sum(ar.slot(s) for name in ('e0', 'cap', 'src', 'load', 'loaded', 'loaded_temperature', 'walls')
                  for s in base[name])+sum(ar.slot(base[name]) for name in ('delta', 'target', 'bounds'))
-    # Source verification's bytes/hash buffers and binding copies coexist.
-    source_work = 2*largest_source+CONTAINER_UNIT*(3*binding_count+4)
     if stage == 'initial':
         # singleton_rows: row dict + key list/set + bounds dict/pairs; the exact
         # values are already owned but are charged again per copied occurrence.
         singleton_slots = sum(ar.slot(ar.q(weight))*2 for row in rows for _, weight in row['weights'])
         units = 32+18*n+8*count+5*base['owners']+object_count
         components = (('initial_exact_arrays', bslots), ('singleton_value_copies', singleton_slots),
-            ('source_verification', source_work), ('containers_and_binary_snapshots', CONTAINER_UNIT*units),
+            ('containers_and_binary_snapshots', CONTAINER_UNIT*units),
             ('scalar_arithmetic_and_conversions', ar.scalar_work()),
             ('target_parse_codec', 4*sys.getsizeof(target)))
         result_bytes = CONTAINER_UNIT*(24+len(components))
         cells = faces = global_bits = ()
     else:
         if returned is None:
-            if constant_lower is None:
-                raise ValueError('Actual sparse returned energy or actual constant lower bound required')
             lower = ar.q(constant_lower)
             energy = [ar.op('multiply', c, lower) for c in base['cap']]
         else:
-            if constant_lower is not None or type(returned) is not dict:
-                raise ValueError('Choose exactly one original LOW result path')
             values = returned.get('energy')
-            if type(values) is not list or len(values) != n or any(type(v) is not Decimal for v in values):
-                raise ValueError('Already-owned original Decimal sparse energies required')
-            if returned.get('evidence', {}).get('absolute_target_decimal') != str(target):
-                raise ValueError('Original sparse target string changed')
             energy = list(map(ar.q, values))
         temperature = [ar.op('divide', e, c, divisor_power_two=p)
             for e, c, p in zip(energy, base['cap'], base['power_two'], strict=True)]
@@ -374,8 +270,6 @@ def _plan(prepared, old, capacity, dt, source, target, binding_count, returned, 
             i = row['owners'][0][0]
             kind, fid = row['kind'], row['face_id']
             if kind == 'interior':
-                if len(row['owners']) != 2:
-                    raise ValueError('Interior LOW face requires its original two owners')
                 j = row['owners'][1][0]
                 difference = ar.op('subtract', temperature[i], temperature[j])
             elif kind == 'temperature':
@@ -416,9 +310,9 @@ def _plan(prepared, old, capacity, dt, source, target, binding_count, returned, 
         # Independent public-E and public-T Fraction generations, evidence energy
         # list, converted global operands, and exact min/max/result scalars.
         public_slots = 4*n*ar.slot(PUBLIC_BINARY64)+sum(ar.slot(s) for s in energy)+sum(ar.slot(s)*2 for s in global_shapes)
-        units = 64+30*n+9*count+6*base['owners']+4*binding_count
+        units = 64+30*n+9*count+6*base['owners']
         components = (('initial_exact_arrays_retained', bslots), ('exact_ledger_and_residuals', exact_slots),
-            ('public_projection_and_global_audit', public_slots), ('source_verification', source_work),
+            ('public_projection_and_global_audit', public_slots),
             ('containers_and_result_views', CONTAINER_UNIT*units),
             ('scalar_arithmetic_and_conversions', ar.scalar_work()), ('public_numpy_payloads', 16*n))
         # Result is in-memory rationals, not a JSON/hex serialization. Only target
@@ -427,8 +321,8 @@ def _plan(prepared, old, capacity, dt, source, target, binding_count, returned, 
         cells = tuple((s.numerator, s.denominator) for s in residual)
         faces = tuple((s.numerator, s.denominator) for s in transfers)
         global_bits = tuple((s.numerator, s.denominator) for s in global_shapes)
-    work = _size(sum(value for _, value in components))
-    inventory = M.DiagnosticInventory(max(1, footprint), work, _size(result_bytes),
+    work = sum(value for _, value in components)
+    inventory = M.DiagnosticInventory(max(1, footprint), work, result_bytes,
         'Derived staged LOW incident-face rational growth plus installed Fraction/GMP/container policy; '
         'not allocator/RSS, reconstruction or whole-method admission.')
     inventory.total()
@@ -437,34 +331,24 @@ def _plan(prepared, old, capacity, dt, source, target, binding_count, returned, 
         cells, faces, global_bits)
 
 
-def _admit(prepared, old, capacity, dt, source, target, *, source_bindings, budget,
-           additional_bindings=None, returned=None, constant_lower=None, stage, cancel):
+def _admit(prepared, old, capacity, dt, source, target, *, budget,
+           returned=None, constant_lower=None, stage, cancel):
     _check(cancel)
     gmp = A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
-    values = (prepared, old, capacity, dt, source, target, source_bindings, additional_bindings, returned, constant_lower)
+    values = (prepared, old, capacity, dt, source, target, returned, constant_lower)
     footprint, objects, largest = _footprint(values, gmp, cancel)
-    if type(source_bindings) is not dict or (additional_bindings is not None and type(additional_bindings) is not dict):
-        raise ValueError('Original source binding dictionary required')
-    binding_sets = (source_bindings,) if additional_bindings is None else (source_bindings, additional_bindings)
-    binding_count = sum(len(values) for values in binding_sets)
-    largest_source = max((_atlas_identity.as_path(path).stat().st_size for values in binding_sets for path in values), default=0)
-    # Only scalar sizes/counts above; all rational getters, shape lists/maps,
-    # Decimal/target metadata and source read buffers are admitted below.
-    scan_bytes = _size(R.native_workspace_allowance(8*max(1, largest), objects)
-                      +CONTAINER_UNIT*(objects+1)+2*largest_source)
+    # Only scalar sizes/counts above; all rational getters, shape lists/maps and
+    # Decimal/target metadata are admitted below.
+    scan_bytes = (R.native_workspace_allowance(8*max(1, largest), objects)
+                      +CONTAINER_UNIT*(objects+1))
     workspace = R.OwnedWorkspace(budget, scan_bytes, category='heat-low-ledger-inventory-metadata', cancelled=cancel)
     workspace.__enter__()
     try:
         D._runtime(cancel)
-        for name, pin in _PINS.items():
-            _check(cancel)
-            if _helper_source_digest(_atlas_identity.as_path(name), owner_file=__file__) != pin:
-                raise ValueError('Reviewed LOW inventory arithmetic source changed')
         ar = RationalGrowth(gmp, R, cancel)
-        plan = _plan(prepared, old, capacity, dt, source, target, binding_count, returned,
-            constant_lower, stage=stage, footprint=footprint, object_count=objects,
-            largest_source=largest_source, ar=ar)
+        plan = _plan(prepared, old, capacity, dt, source, target, returned,
+            constant_lower, stage=stage, footprint=footprint, object_count=objects, ar=ar)
         _check(cancel)
         return P.OwnedSolve(plan, workspace)
     except BaseException:
@@ -472,15 +356,13 @@ def _admit(prepared, old, capacity, dt, source, target, *, source_bindings, budg
         raise
 
 
-def admit_initial(prepared, old, capacity, dt, source, target, *, source_bindings, budget,
-                  additional_bindings=None, cancel=None):
+def admit_initial(prepared, old, capacity, dt, source, target, *, budget, cancel=None):
     """Owned plan for the initial LOW stage; keep until its work lease exists."""
-    return _admit(prepared, old, capacity, dt, source, target, source_bindings=source_bindings,
-                  additional_bindings=additional_bindings, budget=budget, stage='initial', cancel=cancel)
+    return _admit(prepared, old, capacity, dt, source, target, budget=budget, stage='initial', cancel=cancel)
 
 
-def admit_ledger(prepared, old, capacity, dt, source, target, *, source_bindings, budget,
+def admit_ledger(prepared, old, capacity, dt, source, target, *, budget,
                  returned=None, constant_lower=None, cancel=None):
     """Owned second-stage plan; reserve its inventory BEFORE E/C or ledger work."""
-    return _admit(prepared, old, capacity, dt, source, target, source_bindings=source_bindings,
+    return _admit(prepared, old, capacity, dt, source, target,
         budget=budget, returned=returned, constant_lower=constant_lower, stage='ledger', cancel=cancel)

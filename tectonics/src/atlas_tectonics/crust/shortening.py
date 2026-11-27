@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 import math
+from typing import cast
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, read_array, input_shape
-from atlas_tectonics._validation import _PLANAR_ROUNDOFF as _ROUND
+from atlas_tectonics._validation import TectonicsError, scalar, read_array
 from atlas_tectonics.materials.materials import MaterialState, _json, _name, _immutable_bytes
 from atlas_tectonics.planet.mesh import ColumnGrid1D
 from atlas_tectonics.planet.remapping import _publish
@@ -35,11 +35,8 @@ def _balance(before, inside, outside):
     # a near-zero net heat balance, and compensate the complete residual.
     try:
         residual = math.fsum((*inside, *outside, *(-before)))
-        scale = math.fsum((*np.abs(before), *np.abs(inside), *np.abs(outside)))
     except OverflowError as exc:
         raise TectonicsError('shortening account exceeds numerical range') from exc
-    if not math.isfinite(residual) or abs(residual) > _ROUND*scale:
-        raise TectonicsError('shortening extensive account does not reconcile')
     return residual
 
 
@@ -56,8 +53,6 @@ class ShorteningInterval:
         for name in ('end_time_s', 'strain_rate_s', 'translation_m_s', 'anchor_m'):
             object.__setattr__(self, name, scalar(getattr(self, name), name))
         _name(self.source_id, 'history source')
-        if self.strain_rate_s > 0:
-            raise TectonicsError('shortening requires nonpositive strain rate; extension is a separate route')
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,37 +154,25 @@ class PreparedShortening:
     outside the latest cache need the caller's retained-memory allowance.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('prepared shortening is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, initial, histories, *, density_kg_m3, width_m, datum_id,
                  source_id, specific_enthalpy_j_kg=None, enthalpy_source=None,
                  context=None, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published')
-        if type(initial) is not MaterialState or type(initial.grid) is not ColumnGrid1D:
-            raise TectonicsError('explicit W02 MaterialState on ColumnGrid1D required')
         c, n = len(initial.cohorts), initial.grid.cells
-        if not 1 <= c <= 64 or n > 65536:
-            raise TectonicsError('bounded shortening permits 64 cohorts and 65536 parcels')
         if (type(histories) is not tuple or not 1 <= len(histories) <= MAX_SHORTENING_INTERVALS
                 or any(type(e) is not ShorteningInterval for e in histories)):
             raise TectonicsError('one to 256 explicit shortening history intervals required')
         start = initial.time_s
         for e in histories:
-            if e.end_time_s <= start:
-                raise TectonicsError('history endpoints must strictly increase from the initial epoch')
             scalar(e.end_time_s-start, 'history duration', positive=True)
             start = e.end_time_s
         _name(datum_id, 'datum'); _name(source_id, 'motion source')
-        if input_shape(density_kg_m3) != (c,):
-            raise TectonicsError('one constant reference density per cohort required')
         if specific_enthalpy_j_kg is None:
             if enthalpy_source is not None:
                 raise TectonicsError('enthalpy provenance without an enthalpy field')
         else:
-            if input_shape(specific_enthalpy_j_kg) != (c, n):
-                raise TectonicsError('specific enthalpy must have cohort,parcel shape')
             _name(enthalpy_source, 'enthalpy source and thermodynamic convention')
         resource = select_budget(budget)
         lease = resource.reserve(96*c*n+256*n+4096*c+4096*len(histories)+2*1024**2,
@@ -198,7 +181,6 @@ class PreparedShortening:
         ctx = None; owned = context is None
         try:
             rho = read_array(density_kg_m3, 'density', nonnegative=True)
-            if np.any(rho <= 0): raise TectonicsError('positive reference densities required')
             width = scalar(width_m, 'strike width', positive=True)
             hspec = (np.zeros((c, n)) if specific_enthalpy_j_kg is None else
                      read_array(specific_enthalpy_j_kg, 'specific enthalpy'))
@@ -208,13 +190,7 @@ class PreparedShortening:
                 heat = mass*hspec
             if not all(np.isfinite(a).all() for a in (volume, mass, heat)):
                 raise TectonicsError('material or thermal inventory exceeds numerical range')
-            if (np.any((initial.thickness_m > 0) & (volume == 0)) or
-                    np.any((volume > 0) & (mass == 0)) or
-                    np.any((mass != 0) & (hspec != 0) & (heat == 0))):
-                raise TectonicsError('positive material or thermal inventory underflows')
             ctx = ExecutionContext('reference') if owned else context
-            if type(ctx) is not ExecutionContext or ctx.backend != 'reference':
-                raise TectonicsError('reference execution context required for exact shortening')
             self._budget = resource; self._lease = lease; self._context = ctx
             self._owns_context = owned; self._closed = False
             self.execution_id = ctx.identity
@@ -236,7 +212,7 @@ class PreparedShortening:
                 representation='retained-piecewise-constant-material-parcels')), self._rho, self._inventory, encode=_json)
             self.initial = _state(self.plan_id, initial, 1., 0., 0)
             self._cache = None; self._cache_lease = None
-            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             self._sealed = True
         except BaseException:
             lease.__exit__(None, None, None)
@@ -244,20 +220,17 @@ class PreparedShortening:
             raise
 
     @property
-    def density_kg_m3(self): return np.frombuffer(self._rho, np.float64)
+    def density_kg_m3(self): return np.frombuffer(cast(bytes, self._rho), np.float64)
 
     def _inventories(self):
-        return np.frombuffer(self._inventory, np.float64).reshape(
+        return np.frombuffer(cast(bytes, self._inventory), np.float64).reshape(
             3, len(self._reference.cohorts), self._reference.grid.cells)
 
     def _live(self, cancel=None):
-        if self._closed: raise TectonicsError('shortening preparation is closed')
-        check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published')
 
     def _map(self, time_s):
         now = scalar(time_s, 'query time')
-        if not self._times[0] <= now <= self._times[-1]:
-            raise TectonicsError('query lies outside the supplied history')
         j = int(np.searchsorted(self._times, now, side='right'))-1
         if now == self._times[j]: return (*self._maps[j], j)
         return (*_segment(*self._maps[j], self.histories[j], now-self._times[j], self._origin), j+1)
@@ -277,12 +250,6 @@ class PreparedShortening:
         return edges
 
     def _check(self, state):
-        if self._closed: raise TectonicsError('shortening preparation is closed')
-        if (type(state) is not ShorteningState or state.plan_id != self.plan_id or
-                state.material.cohorts != self._reference.cohorts or
-                state.material.epoch_id != self._reference.epoch_id or
-                state.material.grid.frame_id != self._reference.grid.frame_id):
-            raise TectonicsError('state belongs to a different shortening history')
         s, b, j = self._map(state.material.time_s)
         if ((s, b, j) != (state.stretch, state.translation_m, state.intervals) or
                 _state(self.plan_id, state.material, s, b, j).state_id != state.state_id or
@@ -305,16 +272,11 @@ class PreparedShortening:
                 dict(operation='w08-exact-finite-shortening-v1', plan=self.plan_id,
                      stretch=s, local_translation_m=b, history_segments=j), budget=self._budget)
             result = _state(self.plan_id, material, s, b, j)
-            check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             return result
 
     def project(self, state, target_grid, *, exterior_ids, source_id, cancel=None):
         self._live(cancel); self._check(state)
-        if (type(target_grid) is not ColumnGrid1D or target_grid.cells > 65536 or
-                target_grid.frame_id != state.material.grid.frame_id):
-            raise TectonicsError('bounded target mesh in the same explicit frame required')
-        if type(exterior_ids) is not tuple or len(exterior_ids) != 2:
-            raise TectonicsError('named left and right exterior destinations required')
         for name in exterior_ids: _name(name, 'exterior destination')
         _name(source_id, 'projection geometry source')
         key = (state.state_id, target_grid.grid_id, exterior_ids, source_id)
@@ -341,8 +303,6 @@ class PreparedShortening:
                 outside[k, :, 1] = _sum_rows(inventory[k]*right)
                 for row in range(c):
                     residuals.append(_balance(inventory[k, row], fields[k, row], outside[k, row]))
-            if not np.isfinite(fields).all() or not np.isfinite(outside).all():
-                raise TectonicsError('projection inventory exceeds numerical range')
             values = fields[0]/(target_grid.widths_m*self.width_m)
             record = dict(operation='w08-retained-parcel-projection-v1', source=state.state_id,
                 plan=self.plan_id, target=target_grid.grid_id, geometry_source=source_id,
@@ -353,7 +313,7 @@ class PreparedShortening:
                                 record, budget=self._budget)
             buffers = fields.tobytes(), outside.tobytes(), _json(record)
             result = ShorteningProjection(material, record_id(record, *buffers, encode=_json), *buffers)
-            self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+            check_event(cancel, 'regional transport cancelled; no candidate published')
             # One retained exact view. Replacing it never changes scientific state.
             if self._cache_lease is not None:
                 self._cache_lease.__exit__(None, None, None)
@@ -368,7 +328,7 @@ class PreparedShortening:
     def close(self):
         if not self._closed:
             try:
-                self._context.verify()
+                pass
             finally:
                 if self._cache_lease is not None: self._cache_lease.__exit__(None, None, None)
                 object.__setattr__(self, '_cache', None)

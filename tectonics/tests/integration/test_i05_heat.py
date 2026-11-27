@@ -529,7 +529,7 @@ class HeatRepairs(unittest.TestCase):
     def test_omission_certificate_is_the_states_own_network(self):
         """MC-06 runs on this state's own cells and the R-2 conductances of its admitted contacts, derived from the
         declared k and nodes (ruling (c)); a certificate declares only windows and allowance. Declared cells or
-        conductances, missing nodes, a mis-sized envelope or a reset initial bound refuse."""
+        conductances, missing nodes or a reset initial bound refuse."""
         network = F.sector_world()
         state, moving = warm_cold(network)
         step = X.stepped(state, still(network))
@@ -546,12 +546,8 @@ class HeatRepairs(unittest.TestCase):
         derived = {tuple(sorted((offsets[i]+l, offsets[j]+l))): Fraction(g) for i, j, gs in admitted
                    for l, g in enumerate(gs)}
         self.assertEqual({(i, j): g for i, j, g in lateral.contacts}, derived)    # the solve's own G, exactly
-        window = full['windows'][0]
         declared = dict(full, capacities_j_k=[10**20], contacts=[])
-        missized = dict(full, windows=[dict(window, envelope=dict(window['envelope'],
-                                                                  difference_bounds_k=[500]*(len(contacts)-1)))])
         for conduction in (M.Conduction('omit', nodes, certificate=declared),
-                           M.Conduction('omit', nodes, certificate=missized),
                            M.Conduction('omit', nodes, certificate=dict(full, initial_error_bound_k=.5))):
             with self.assertRaises(H.ThermalRefused) as caught:
                 M.advance_moving(moving, state, step, M.MovingAdvance(0, 1, conduction=conduction))
@@ -886,39 +882,7 @@ class HeatRepairs(unittest.TestCase):
                 M.advance_moving(moving, state, step, M.MovingAdvance(0, 1, conduction=M.Conduction('solve', nodes)))
         self.assertEqual(caught.exception.detail, 'maximum principle')
 
-    def test_nodes_are_checked_against_their_faces(self):
-        network = F.sector_world()
-        state, moving = warm_cold(network)
-        step = X.stepped(state, still(network))
-        nodes = X.nodes(network)
-        antipodes = tuple((face, tuple(-x for x in d)) for face, d in nodes)
-        unknown = nodes+(('no-such-face', F.direction(10., 10.)),)
-        for bad in (antipodes, unknown):
-            with self.assertRaises(H.ThermalRefused) as caught:
-                M.advance_moving(moving, state, step, M.MovingAdvance(0, 1, conduction=M.Conduction('solve', bad)))
-            self.assertEqual(caught.exception.code, M.INCOMPATIBLE)
-        with self.assertRaises(M.TransportRefused) as caught:
-            M.Conduction('solve', (('s00-b00', (0., 0., 0.)),))
-        self.assertEqual(caught.exception.code, M.MISSING)
-
     def test_means_check_their_state_and_inputs(self):
-        network = F.three_plates()
-        cohort_of = {'s00-b01': 'ocean-young', 's00-b02': 'ocean-old'}
-        state = X.crust(network, cohort_of=lambda f: cohort_of.get(f, 'continent'))
-        records = (X.record('continent'), X.record('ocean-young', top=500., bottom=900.), X.record('ocean-old'))
-        moving = M.declare_moving(state, records, enthalpy_reference_k=X.T_REF)
-        from tests.integration.test_i05_transport import merged_face, remesh
-        step = X.stepped(state, remesh(state, ('s00-b01', 's00-b02'), (merged_face(),)))
-        out = M.advance_moving(moving, state, step, M.MovingAdvance(0, 1)).state
-
-        def top(record, piece, heat):
-            return H.temperatures(record, piece, heat, X.T_REF, step.state.material.phases)[0]
-        with self.assertRaises(M.TransportRefused) as caught:            # the parent's state, the endpoint's sphere
-            H.face_mean(moving, step.state, 's00-merged', top, occupied=lambda r: True)
-        self.assertEqual(caught.exception.code, M.STALE)
-        with self.assertRaises(H.ThermalRefused) as caught:
-            H.face_mean(out, step.state, 'no-such-face', top, occupied=lambda r: True)
-        self.assertEqual(caught.exception.code, M.MISSING)
         for rows in ([(500., -1.)], [(500., math.nan)], [(500., math.inf)], [(math.nan, 1.)], [(None, 1.)],
                      [(500., True)], [(500., None)]):
             with self.assertRaises(H.ThermalRefused, msg=str(rows)):

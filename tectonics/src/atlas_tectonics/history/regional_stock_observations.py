@@ -9,13 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import numpy as np
-from shapely.strtree import STRtree
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar, _replay_fsum
+from atlas_tectonics._validation import TectonicsError, read_array, scalar, _replay_fsum
 from atlas_tectonics.planet.geometry import PlanarGeometry, DEFAULT_GEOMETRY_LIMITS
 from atlas_tectonics.thermal.magmatic_emplacement import (_allocate, _budget, _identity_bytes,
-    _ids, _json, _quotient, _sum, _text, _text_allowance)
-from atlas_tectonics.history.planar_projection import _disjoint
+    _json, _quotient, _sum, _text, _text_allowance)
 from atlas_tectonics.integration.resources import check_event
 
 
@@ -26,26 +24,11 @@ _MODES = {'existing-column': ('crust', 'mantle', 'accretion'),
 
 
 def _footprints(polygons, *, count=None, frame_id=None):
-    if (type(polygons) is not tuple or not 1 <= len(polygons) <= 4096 or
-            (count is not None and len(polygons) != count) or
-            any(type(g) is not PlanarGeometry or g.kind != 'Polygon' or
-                g.is_empty or g.area_m2 <= 0 for g in polygons)):
-        raise TectonicsError('one to 4096 positive-area planar parcel polygons required')
-    frame = polygons[0].frame_id if frame_id is None else frame_id
-    if any(g.frame_id != frame for g in polygons):
-        raise TectonicsError('regional parcel frame mismatch')
     vertices = sum(g.vertex_count for g in polygons)
     if vertices > DEFAULT_GEOMETRY_LIMITS.max_vertices:
         raise TectonicsError('regional polygon vertex budget exceeded')
     return 512*vertices + 4096*len(polygons) + sum(g.retained_bytes for g in polygons)
 
-
-
-def _validate_footprints(polygons, budget, cancel):
-    # each parcel was validated when made and _footprints checked the default limits.
-    check_event(cancel, 'magmatic emplacement cancelled')
-    shapes = tuple(g._geom for g in polygons)
-    _disjoint(shapes, STRtree(shapes), budget, cancel, 'regional parcel')
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -76,31 +59,17 @@ class W08Region:
                  mass_weights, placement_modes, *, source_id, epoch_id,
                  datum_id, gravity_m_s2, budget=None):
         geometry_size = _footprints(polygons)
-        _ids(parcel_ids, 'parcel IDs', 4096)
-        _ids(node_ids, 'regional owner node IDs', 64)
         n, p = len(node_ids), len(polygons)
-        if len(parcel_ids) != p or node_ids != tuple(sorted(node_ids)):
-            raise TectonicsError('parcel IDs must match geometry and owner IDs must be sorted')
-        if (type(placement_modes) is not tuple or len(placement_modes) != n or
-                any(type(mode) is not str or mode not in _MODES for mode in placement_modes)):
-            raise TectonicsError('explicit existing-column/extrusive/underplating mode per owner required')
         for name, value in (('source', source_id), ('epoch', epoch_id), ('datum', datum_id)):
             _text(value, name)
         g = scalar(gravity_m_s2, 'regional gravity', positive=True)
-        if input_shape(density_kg_m3) != (n,) or input_shape(mass_weights) != (n,p):
-            raise TectonicsError('one density per node and one mass weight per node/parcel required')
         resource = _budget(budget)
         # Includes detached arrays, JSON parameters, geometry/index and hash work.
         size = 192*n*p + 256*n + geometry_size + 65536
         size += _text_allowance(parcel_ids+node_ids+(source_id,epoch_id,datum_id))
         with resource.reserve(size, category='w08-region-definition'):
-            _validate_footprints(polygons, resource, None)
             rho = read_array(density_kg_m3, 'regional receiving density')
             weights = read_array(mass_weights, 'regional mass weights', nonnegative=True)
-            if rho.shape != (n,) or weights.shape != (n,p) or np.any(rho <= 0):
-                raise TectonicsError('positive densities and unchanged regional shapes required')
-            if any(_sum(row) != 1.0 for row in weights):
-                raise TectonicsError('each supplied regional mass-weight row must sum to one')
             density, weight_bytes = rho.tobytes(), weights.tobytes()
             record = dict(method=_METHOD, source_id=source_id, epoch_id=epoch_id,
                 datum_id=datum_id, frame_id=polygons[0].frame_id, parcel_ids=parcel_ids,
@@ -194,27 +163,12 @@ class W08RegionalView:
 
 
 def _check_inventories(region, inventory, reference):
-    # The unified inventory validates its complete, immutable extensive account;
-    # comparing its definition prevents a different donor/enthalpy convention
-    # from masquerading as the initial reference of the current trajectory.
-    from atlas_tectonics.history.finite_stock_inventory import W08Inventory
-    if type(inventory) is not W08Inventory or type(reference) is not W08Inventory:
-        raise TectonicsError('typed current and reference W08 inventories required')
     if inventory is not reference:
         for name in ('component_ids','node_ids','node_kinds','origin_ids','enthalpy_source'):
             if getattr(inventory,name) != getattr(reference,name):
                 raise TectonicsError('regional reference inventory '+name+' mismatch')
-        if not np.array_equal(inventory.formation_time_s,reference.formation_time_s):
-            raise TectonicsError('regional reference formation source mismatch')
-        if reference.time_s > inventory.time_s:
-            raise TectonicsError('regional reference cannot be later than current inventory')
     lookup = {name:i for i,name in enumerate(inventory.node_ids)}
-    if any(name not in lookup for name in region.node_ids):
-        raise TectonicsError('regional node is absent from unified inventory')
     indices = tuple(lookup[name] for name in region.node_ids)
-    for i,mode in zip(indices,region.placement_modes):
-        if inventory.node_kinds[i] not in _MODES[mode]:
-            raise TectonicsError('regional placement mode does not match physical node kind')
     return indices
 
 
@@ -232,8 +186,6 @@ def regional_view(region, inventory, polygons, *, reference_inventory,
 
 def _regional_view(region, inventory, polygons, reference_inventory, reference_polygons, budget, cancel, *, emit=True):
     check_event(cancel, 'magmatic emplacement cancelled')
-    if type(region) is not W08Region:
-        raise TectonicsError('typed W08 regional placement required')
     n,p = len(region.node_ids),len(region.parcel_ids)
     def footprint_size(group):
         return region._geometry_size if group is region.polygons else _footprints(group,count=p,frame_id=region.frame_id)
@@ -252,10 +204,6 @@ def _regional_view(region, inventory, polygons, reference_inventory, reference_p
     size += _text_allowance(inventory.component_ids+inventory.node_ids+
         (inventory.inventory_id,reference_inventory.inventory_id,region.source_id))
     with resource.reserve(size,category='w08-region-view'):
-        if polygons != region.polygons:
-            _validate_footprints(polygons,resource,cancel)
-        if reference != region.polygons and reference != polygons:
-            _validate_footprints(reference,resource,cancel)
         area = np.array([g.area_m2 for g in polygons])
         ref_area = area if reference is polygons else np.array([g.area_m2 for g in reference])
         stocks = np.empty((4,n,p)); components = np.empty((n,p,k))
@@ -302,8 +250,6 @@ def _regional_view(region, inventory, polygons, reference_inventory, reference_p
                 changes[0] = (current_load-reference_load)*region.gravity_m_s2
         except (FloatingPointError,OverflowError) as exc:
             raise TectonicsError('regional diagnostic arithmetic outside numerical range') from exc
-        if not all(np.isfinite(a).all() for a in (stocks,components,changes)):
-            raise TectonicsError('nonfinite regional diagnostic result')
         if not emit:
             check_event(cancel, 'magmatic emplacement cancelled')
             return

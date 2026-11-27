@@ -21,28 +21,20 @@ def _intersect(rows, refined, selected, budget, cancel, original_maximum):
             raise CancelledError('Selective functional refinement cancelled')
     check()
     from atlas_tectonics._exact_runtime import selected as exact_backend
-    G = exact_backend.library()
-    if G is None:
-        raise RuntimeError('Selected GMP backend required')
+    exact_backend.library()
     from atlas_tectonics._private.integration.heat import gmp_resources as R
-    if type(rows) not in (list,tuple) or type(refined) not in (list,tuple) or type(selected) is not tuple:
-        raise TypeError('Owned complete row sequence, refined rows and selection tuple required')
     count, largest = 0, 1
     for row in refined:
         check()
         count += len(row['bounds'])
         for pair in row['bounds'].values():
             for value in pair:
-                if type(value) not in (G.mpq, int):
-                    raise TypeError('Owned exact GMP refinement endpoints required')
                 largest = max(largest, sys.getsizeof(value))
     if original_maximum is None:
         for row in rows:
             check()
             for pair in row['bounds'].values():
                 for value in pair:
-                    if type(value) not in (G.mpq, int):
-                        raise TypeError('Owned exact GMP original endpoints required')
                     largest = max(largest, sys.getsizeof(value))
     else:
         for _ in rows:
@@ -56,31 +48,16 @@ def _intersect(rows, refined, selected, budget, cancel, original_maximum):
     workspace.__enter__()
     try:
         selected_set = set(selected)
-        if len(selected_set) != len(selected):
-            raise ValueError('Duplicate selected face')
         originals = [row for row in rows if row['face_id'] in selected_set]
-        if tuple(row['face_id'] for row in originals) != selected:
-            raise ValueError('Selection must match original face order and coverage')
-        if tuple(row['face_id'] for row in refined) != selected:
-            raise ValueError('Complete same-order refined face coverage required')
         replacements, bounds_checked = {}, 0
         for old, new in zip(originals, refined, strict=True):
             check()
-            if (new['owners'] != old['owners'] or new['ordered_keys'] != old['ordered_keys']
-                    or (new['bounds'].keys() != old['bounds'].keys()
-                        if type(new['bounds']) is dict and type(old['bounds']) is dict
-                        else set(new['bounds']) != set(old['bounds']))):
-                raise ValueError('Refinement changed owners, observation keys or their order')
             bounds = {}
             for key in old['ordered_keys']:
                 check()
                 a,b = old['bounds'][key]
                 c,d = new['bounds'][key]
-                if a>b or c>d:
-                    raise ValueError('Reversed certified enclosure')
                 low,high = max(a,c),min(b,d)
-                if low>high:
-                    raise ValueError('Disjoint certificates for supposedly identical functional')
                 bounds[key] = low,high
                 bounds_checked += 1
             replacements[new['face_id']] = dict(face_id=new['face_id'], owners=old['owners'],

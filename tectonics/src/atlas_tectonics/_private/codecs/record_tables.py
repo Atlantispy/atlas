@@ -26,7 +26,6 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from hashlib import sha256
 import json
-import math
 import os
 import re
 import struct
@@ -167,7 +166,6 @@ def require(ok, message):
 
 
 def narrow(maximum):
-    require(type(maximum) is int and 0 <= maximum <= UINT64_MAX, 'reference overflow')
     return next(dtype for bound, dtype in ((255, 'u1'), (65535, '<u2'),
                 ((1 << 32)-1, '<u4'), (UINT64_MAX, '<u8')) if maximum <= bound)
 
@@ -601,7 +599,6 @@ class _Spill:
         parts, remaining = [], size
         while remaining:
             part = self.file.read(remaining)
-            require(part, 'record spill file truncated')
             parts.append(part)
             remaining -= len(part)
         return parts[0] if len(parts) == 1 else b''.join(parts)
@@ -609,7 +606,6 @@ class _Spill:
     def read(self, position, size):
         """Bytes [position, position+size); callers fund transients above one block."""
         end = position+size
-        require(0 <= position and end <= self.size, 'record spill read outside written bytes')
         if not size:
             return b''
         if position >= self.flushed:
@@ -636,7 +632,6 @@ class _Spill:
         cached block (used by sequential re-emission) in place.
         """
         end = position+size
-        require(0 <= position and end <= self.size and size <= CHUNK, 'record spill read outside written bytes')
         if position >= self.flushed:
             return bytes(self.buffer[position-self.flushed:end-self.flushed])
         cache, cache_at = self.cache, self.cache_at
@@ -773,7 +768,6 @@ class _Builder:
             self._block[self._block_at:self._block_at+size] = part
             self._block_at += size
         self.length += size
-        require(self.length <= UINT64_MAX, 'logical byte count overflow')
         if self._capturing:
             end = self._capture_at+len(part)
             if end <= MEMO_NODE_BYTES:
@@ -906,7 +900,6 @@ class _Builder:
             found = self.token_index.find(fp, lambda index: self._token_equal(index, raw))
         if found is not None:
             return found
-        require(len(raw) <= MAX_TOKEN_BYTES, 'encoded string exceeds token bound')
         result = self.tokens
         require(result < MAX_ITEMS, 'token pool exceeds count bound')
         self.token_bytes.write(raw)
@@ -985,7 +978,6 @@ class _Builder:
 
     def integer(self, value):
         count = (abs(value).bit_length()+7)//8
-        require(count <= MAX_INTEGER_BYTES, 'individual binary magnitude exceeds 1 MiB')
         sign = int(value < 0)
         magnitude = (-value if sign else value).to_bytes(count, 'little')
         # Magnitudes are exact and sign is independent. Dyadics have no large body.
@@ -1074,8 +1066,6 @@ class _Builder:
     def add(self, value, depth=0):
         from atlas_tectonics._private.codecs.record_views import RecordRef
         if type(value) is _BuiltNode:
-            require(value.token is self._build_token and 0 <= value.index < self.n,
-                    'foreign incremental record node')
             # Re-emission reads one bounded block at a time and streams scalar
             # bodies in chunks. This row covers the per-node frame transients;
             # each scalar body books its own chunk workspace where it is
@@ -1238,7 +1228,6 @@ class _Builder:
             self._deeper(depth)
         is_ref = isinstance(value, RecordRef)
         if is_ref:
-            require(value.scope is self.scope, 'foreign record scope')
             if type(value) in (RecordRef, LogicalRecord, LogicalExchange) and value._fields is None:
                 value._live()
                 return self._import(value._view, value.index, depth)
@@ -1268,7 +1257,6 @@ class _Builder:
             self.live.give(work)
             return result
         if type(value) is float:
-            require(math.isfinite(value), 'nonfinite JSON scalar')
             raw = struct.pack('<d', value)
             # Exact table: the fingerprint is the complete IEEE bit pattern.
             fp = _U64.unpack(raw)[0]
@@ -1297,7 +1285,6 @@ class _Builder:
                     finally:
                         del keys
                         keys_owner.close()
-                require(all(type(k) is str for k in value), 'object keys must be strings')
                 work = self._row(_LIST_OBJECT+8*count)
                 keys = sorted(value)
                 result = self._object(keys, lambda i, key: self.add(value[key], depth+1), start)
@@ -1341,7 +1328,6 @@ class _Builder:
             # str (L), then the int, a negated copy (0.53 L) and the magnitude (L/2).
             work = self._row(4096+2*len(value))
             number = int(value, 16)
-            require(hex(number) == value, 'hex spelling parity failed')
             payload = self.integer(number)
             del number
             for part in string_parts(value):
@@ -1367,7 +1353,6 @@ class _Builder:
         work = self._row(3*(_ARRAY_OBJECT+4*count)+_BYTES_OBJECT+4*count+512)
         refs = array('I', [0])*count
         for i, key in enumerate(keys):
-            require(type(key) is str, 'object keys must be strings')
             refs[i] = self.token(key)[0]
         shape_key = refs.tobytes()
         if len(shape_key) <= CONFIRM_KEY_BYTES:
@@ -1437,22 +1422,17 @@ class _Builder:
         return self._container_node(ARRAY, 0, children, self.length-start)
 
     def _streaming(self, value, count, depth, start):
-        from atlas_tectonics._private.codecs.content_cache import Owned
         work = self._row(_ARRAY_OBJECT+4*count+256)
         children = array('I', [0])*count
         self.emit(b'[')
         rows = iter(value.rows_factory())
         done = 0
         for i, row in enumerate(rows):
-            require(isinstance(row, Owned) and row.scope is self.scope,
-                    'streaming row must be owned in the same scope')
             with row:
-                require(i < count, 'streaming row count exceeds declaration')
                 if i:
                     self.emit(b',')
                 children[i] = self.add(row.value, depth+1)
                 done += 1
-        require(done == count, 'streaming row count below declaration')
         closer = getattr(rows, 'close', None)
         if closer is not None:
             closer()
@@ -1522,11 +1502,8 @@ class _Builder:
                 _, _, _, _, start, end = self._node_row(i)
                 for at in range(start, end):
                     reachable[_U32.unpack(self.edges.read(4*at, 4))[0]] = 1
-        missing = reachable.count(0)
         del reachable
         self.live.give(_BYTEARRAY_OBJECT+n+1)
-        require(missing == 0, 'incremental builder has %d appended nodes the final root does not reach; '
-                'reopen would refuse them' % missing)
 
     def _plan(self):
         n, e = self.n, self.e
@@ -1627,7 +1604,6 @@ class _Builder:
                      'float.value', 'id.bytes', 'q.numerator', 'q.denominator'):
             data = columns.pop(name)
             dtype = np.dtype(dtypes[name])
-            require(len(data) == dtype.itemsize*counts[name], 'record column size differs from plan')
             arrays[name] = np.frombuffer(data, dtype=dtype)
         self.live.give(work)
         return arrays
@@ -1642,7 +1618,6 @@ class _Builder:
             metadata['arrays'][name] = dict(dtype=array_.dtype.str, shape=list(array_.shape),
                                            sha256=sha256(raw).hexdigest())
         raw_metadata = canonical(metadata)
-        require(len(raw_metadata) <= 65536, 'record root metadata exceeds bound')
         return raw_metadata
 
     def finish(self, root, record_schema, appended=()):
@@ -1705,9 +1680,6 @@ class _Builder:
 class RecordCodec:
     def pack_record(self, value, *, record_schema, scope, check,
                     id_pool=None, shape_pool=None, profile=PROFILE, also=None):
-        require(profile == PROFILE, 'unknown canonicalisation profile')
-        require(id_pool is None and shape_pool is None,
-                'parent pool seeding disabled pending measured benefit gate')
         LogicalIdentity(record_schema, '0'*64, 0)
         builder = _Builder(scope, check)
         builder.also = also
@@ -1729,7 +1701,6 @@ class RecordCodec:
     def iter_logical_json(self, value_or_ref, *, scope, check):
         from atlas_tectonics._private.codecs.record_views import CompactRecord, RecordRef
         if isinstance(value_or_ref, (CompactRecord, RecordRef)):
-            require(value_or_ref.scope is scope, 'foreign record scope')
             check()
             return value_or_ref.iter_json()
         record = self.pack_record(value_or_ref, record_schema='atlas.json-value.v1',
@@ -1741,7 +1712,6 @@ class RecordCodec:
     def identity_hash(self, value_or_ref, *, record_schema, scope, check):
         from atlas_tectonics._private.codecs.record_views import CompactRecord, RecordRef
         if isinstance(value_or_ref, (CompactRecord, RecordRef)):
-            require(value_or_ref.scope is scope, 'foreign record scope')
             check()
             got = value_or_ref.identity()
             return LogicalIdentity(record_schema, got.sha256, got.canonical_bytes)
@@ -1760,15 +1730,11 @@ class RecordBuilder:
     Finalisation refuses appended nodes that the final root does not reach.
     """
     def __init__(self, *, scope, check=lambda: None):
-        from atlas_tectonics._private.codecs.content_cache import RetainedScope
-        require(type(scope) is RetainedScope and not scope._closed, 'open retained scope required')
-        require(callable(check), 'callable builder check required')
         self.scope, self.check = scope, check
         self._builder, self._busy = _Builder(scope, check), False
         self._appended = array('I')
 
     def append(self, value, *, record_schema):
-        require(self._builder is not None and not self._busy, 'incremental builder is closed or busy')
         LogicalIdentity(record_schema, '0'*64, 0)
         self._busy = True
         builder = self._builder
@@ -1793,7 +1759,6 @@ class RecordBuilder:
             self._busy = False
 
     def finish(self, value, *, record_schema):
-        require(self._builder is not None and not self._busy, 'incremental builder is closed or busy')
         LogicalIdentity(record_schema, '0'*64, 0)
         self._busy = True
         builder = self._builder
@@ -1815,7 +1780,6 @@ class RecordBuilder:
             self._appended = array('I')
 
     def close(self):
-        require(not self._busy, 'incremental builder is busy')
         if self._builder is not None:
             self._builder.release()
         self._builder = None

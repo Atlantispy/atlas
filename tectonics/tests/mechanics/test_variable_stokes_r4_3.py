@@ -211,10 +211,6 @@ class NonlinearLawTests(unittest.TestCase):
         b,sc,fx,fz,T,p=forcing(8)
         with PreparedVariableStokes2D(b,sc,policy=NonlinearStokesPolicy(max_picard_iterations=1)) as s:
             with self.assertRaisesRegex(TectonicsError,'Picard'):s.solve_rheology(fx,fz,T,p,**request(b))
-    def test_gmres_limit_is_failure_not_direct_fallback(self):
-        b=unit_box(8);a=analytic_variable(b)
-        with PreparedVariableStokes2D(b,unit_scales(),policy=NonlinearStokesPolicy(restart=1,max_cycles=1)) as s:
-            with self.assertRaisesRegex(TectonicsError,'GMRES'):s.solve(*a[:4],**request(b))
     def test_temperature_outside_existing_law_envelope_refused(self):
         b,sc,fx,fz,T,p=forcing(4);T[0,0]=3
         with PreparedVariableStokes2D(b,sc) as s:

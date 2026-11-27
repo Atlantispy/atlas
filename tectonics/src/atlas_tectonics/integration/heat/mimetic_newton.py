@@ -9,21 +9,12 @@ factor/preconditioner and returned arrays. It is accounting, not an RSS cap.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from decimal import Decimal as D, ROUND_HALF_EVEN, localcontext
-import hashlib
-from pathlib import Path
 from atlas_tectonics.integration.resources import check_event_or_callable
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def assert_current():
-    return _LOADED
 
 
 def _vector(values, size=None):
     result = tuple(map(D, values))
-    if (size is not None and len(result) != size) or any(not x.is_finite() for x in result):
-        raise ValueError('finite complete Decimal vector required')
     return result
 
 
@@ -39,8 +30,6 @@ def workspace_bytes(size, max_basis=32):
     512 bytes per Decimal80 value/slot and 1024 per unknown for containers and
     local traversal temporaries. No edge table or persistent cache is built.
     """
-    if type(size) is not int or size < 0 or type(max_basis) is not int or max_basis < 1:
-        raise ValueError('nonnegative size and positive basis limit required')
     basis = min(size, max_basis)
     return 1024**2+512*((2*basis+20)*size+(basis+1)*basis+12*basis)+1024*size
 
@@ -64,8 +53,6 @@ def prepare_scheme2_derivative(local, state, fixed, *, local_faces, cancel=None)
         state = _vector(state)
         size, zero = len(state), D(0)
         fixed = frozenset(fixed)
-        if any(type(i) is not int or not 0 <= i < size for i in fixed):
-            raise ValueError('fixed node outside Decimal state')
         force, denominator = [zero]*size, [zero]*size
         for entry in local:
             check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
@@ -140,15 +127,11 @@ def gmres(action, precondition, rhs, *, cancel=None, max_basis=32, max_restarts=
     true-residual action per completed cycle. Cancellation and callback errors
     propagate to the caller's existing resource owner.
     """
-    if type(max_basis) is not int or max_basis < 1 or type(max_restarts) is not int or max_restarts < 0:
-        raise ValueError('positive basis and nonnegative restart limits required')
     with localcontext() as context:
         context.prec, context.rounding = 80, ROUND_HALF_EVEN
         check_event_or_callable(cancel, 'Decimal Newton direction cancelled')
         rhs = _vector(rhs)
         relative_target = D(relative_target)
-        if not relative_target.is_finite() or not 0 < relative_target < 1:
-            raise ValueError('inner relative target must be finite and between zero and one')
         zero, one, size = D(0), D(1), len(rhs)
         dot = lambda a, b: sum((x*y for x, y in zip(a, b)), zero)
         norm = lambda a: dot(a, a).sqrt()

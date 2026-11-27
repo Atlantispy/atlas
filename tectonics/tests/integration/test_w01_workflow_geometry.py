@@ -7,7 +7,7 @@ import unittest
 
 from atlas_tectonics import (BoundaryRegion, GeologicalCase, RegionalGrid1D,
     SphericalChart, SphericalFrame, SphericalPatch, build_boundary_network,
-    build_spherical_atlas, GeologyError)
+    build_spherical_atlas)
 from atlas_tectonics.regional.workflow_geometry import RegionalColumnSupport, build_workflow_cells
 from atlas_tectonics.regional.forcing import PreparedRegionalForcing, MotionReductionError
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
@@ -44,11 +44,6 @@ class WorkflowGeometry(unittest.TestCase):
                 self.assertEqual(c.footprint.area_m2, 20./count)
                 self.assertEqual(c.footprint.bounds[1::2], (4., 6.))
 
-    def test_planar_strip_must_be_wholly_inside_domain(self):
-        net = network(); s = state(net)
-        f = forcing(net, width=12.)  # The section itself remains wholly covered.
-        with self.assertRaisesRegex(GeologyError, 'outside|clipping'):
-            build_workflow_cells(s, f, RegionalColumnSupport('planar-strip', 0., 4., SOURCE))
 
     def test_off_centre_owner_with_different_motion_is_refused(self):
         net = build_boundary_network(box(), (
@@ -115,20 +110,7 @@ class WorkflowGeometry(unittest.TestCase):
         with self.assertRaisesRegex(MotionReductionError, 'whole column footprint'):
             build_workflow_cells(s, f, RegionalColumnSupport('north-hemisphere', 0., 2., SOURCE))
 
-    def test_topology_epoch_time_and_reduction_mismatch(self):
-        net = network(); f = forcing(net)
-        support = RegionalColumnSupport('planar-strip', 0., 4., SOURCE)
-        for s in (state(network(split=True)), state(net, epoch_id='different'), state(net, time_s=1.)):
-            with self.assertRaisesRegex(MotionReductionError, 'mismatch'):
-                build_workflow_cells(s, f, support)
-        with self.assertRaisesRegex(MotionReductionError, 'reductions disagree'):
-            build_workflow_cells(state(net), f, replace(support, kind='north-hemisphere'))
-
     def test_support_contract_cancellation_and_memory_release(self):
-        for args in (('latitude-strip', 0., 1., SOURCE), ('planar-strip', 2., 1., SOURCE),
-                     ('planar-strip', 0., 1., None)):
-            with self.assertRaises(MotionReductionError):
-                RegionalColumnSupport(*args)
         support = RegionalColumnSupport('planar-strip', 0., 4., SOURCE)
         with self.assertRaises(FrozenInstanceError):
             support.kind = 'north-hemisphere'

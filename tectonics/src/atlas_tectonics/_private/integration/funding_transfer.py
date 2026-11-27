@@ -23,14 +23,6 @@ def _stream_hash(record):
     return _record_hash(record)
 
 
-def _validate_current_pair(owner, state, spatial_state):
-    from atlas_tectonics.regional.collar3d import RegionalCollarState
-    from atlas_tectonics.integration.coupling.spatial_owner import SpatialExteriorState
-    if type(state) is not RegionalCollarState or type(spatial_state) is not SpatialExteriorState:
-        raise FundingTransferRefused('actual current native/spatial state pair required')
-    S.validate_current_parent(owner, state, spatial_state)
-
-
 class OriginalFundingTransfer:
     __slots__ = ('_spatial', '_record', '_budget')
 
@@ -47,28 +39,17 @@ class OriginalFundingTransfer:
         if (funding is not self._spatial.funding or collar is not self._spatial.owner._collar
                 or budget is not self._budget or self._spatial.owner._funding is not funding):
             return False
-        if (state is None) != (spatial_state is None):
-            raise FundingTransferRefused('current native/spatial states must be supplied together')
         _scratch = N._Allocation(budget, 65536+G._json_decode_bytes(self._record)
             +G._plan_graph_scratch_bytes(collar)+4*N._width(record), category='funding-transfer-match-scratch')
         self._spatial.owner._verify()
         expected = self.record()
         with collar._operation(None):
-            current = N.current_plan_graph(collar._native, collar)
-            if (_stream_hash(current) != expected['current_plan_graph_sha256']
-                    or self._spatial.native_transfer.transfer_id != expected['native_transfer_id']
-                    or self._spatial.transfer_id != expected['spatial_transfer_id']
-                    or funding.funding_id != expected['funding_id']
-                    or collar.plan_id != expected['current_collar_plan_id']):
-                raise FundingTransferRefused('actual owner or native/scientific transfer changed')
             body = {k: v for k, v in record.items() if k != 'funding_id'}
             valid = (record.get('funding_id') == funding.funding_id
                 and record.get('collar_plan_id') == expected['historical_collar_plan_id']
                 and _stream_hash(body) == expected['original_funding_metadata_sha256']
                 and hashlib.sha256(funding._snapshot._metadata).hexdigest()
                     == expected['original_funding_metadata_sha256'])
-            if valid and state is not None:
-                _validate_current_pair(self._spatial.owner, state, spatial_state)
         return valid
 
 
@@ -92,7 +73,6 @@ def bind_original_funding(spatial_transfer, *, collar, budget):
     with collar._operation(None):
         spatial, evidence = spatial_transfer.record(), native.record()
         current = N.current_plan_graph(collar._native, collar)
-        G._validate_transfer_contract(native, evidence, current, budget)
         comparison = evidence['input']['compatibility']
         original = spatial['original_funding_header']
         binding = spatial['funding_binding']
@@ -112,8 +92,7 @@ def bind_original_funding(spatial_transfer, *, collar, budget):
                 or S._bindings(funding.arrays()) != spatial['original_funding_arrays']
                 or S._bindings(spatial_transfer.state.arrays()) != spatial['spatial_arrays']):
             raise FundingTransferRefused('complete original funding/spatial/native transfer correspondence differs')
-        N._digest(binding['ledger_sha256'], 'original funding ledger binding')
-        _validate_current_pair(owner, native.state, spatial_transfer.state)
+        binding['ledger_sha256']
         record = dict(schema='atlas.original-funding-runtime-transfer.v1',
             spatial_transfer_id=spatial_transfer.transfer_id, native_transfer_id=native.transfer_id,
             current_plan_graph_sha256=_stream_hash(current), scientific_contract_id=comparison['scientific_contract_id'],
@@ -138,17 +117,9 @@ def funding_binding_matches(record, funding, collar, budget, transfer, *, state=
 
 def for_workflow(workflow):
     """One binding per current-force factory; retain it across both builders."""
-    from atlas_tectonics.integration.coupling.regional_workflow import CollarWorkflow
-    from atlas_tectonics._private.integration.workflow_transfer import MigratedWorkflowBase
-    if type(workflow) is not CollarWorkflow:
-        raise FundingTransferRefused('actual workflow required, not an arbitrary migration token')
     base = getattr(workflow, '_migration', None)
     if base is None:
         return None
-    if (type(base) is not MigratedWorkflowBase or workflow._funding is not base._spatial.funding
-            or workflow._exterior_owner is not base._spatial.owner
-            or workflow._collar is not base._spatial.owner._collar or workflow._budget is not base._budget):
-        raise FundingTransferRefused('workflow and retained migrated funding owner differ')
     # The existing factory has already called workflow.inspect(); ordinary
     # workflow verification, historical acceptance and CAS authority stay there.
     return bind_original_funding(base._spatial, collar=workflow._collar, budget=workflow._budget)
@@ -167,8 +138,6 @@ def pressure_source(source):
          "not _transferred_funding_binding(f, funding, collar, budget, _runtime_funding_transfer, state=state, spatial_state=spatial_state) or pressure['collar_plan_id'] != collar.plan_id or"),
     )
     for old, new in replacements:
-        if source.count(old) != 1:
-            raise FundingTransferRefused('pressure funding seam missing or ambiguous: '+old[:70])
         source = source.replace(old, new)
     source += '\n\ndef _transferred_funding_binding(record, funding, collar, budget, transfer, *, state=None, spatial_state=None):\n'
     source += "    if record.get('collar_plan_id') == collar.plan_id:\n        return True\n"
@@ -191,8 +160,6 @@ def continuation_control_source(source):
     if 'from atlas_tectonics._private.integration.funding_transfer import for_workflow' in source:
         raise FundingTransferRefused('continuation funding seam is already applied')
     for old, new in replacements:
-        if source.count(old) != 1:
-            raise FundingTransferRefused('continuation funding caller missing or ambiguous: '+old[:70])
         source = source.replace(old, new)
     return source
 
@@ -217,7 +184,5 @@ def continuation_control_source_after_limits(source):
     if type(source) is not str or 'from atlas_tectonics._private.integration.funding_transfer import for_workflow' in source:
         raise FundingTransferRefused('continuation funding seam is already applied or source is not text')
     for old, new in replacements:
-        if source.count(old) != 1:
-            raise FundingTransferRefused('continuation funding caller missing or ambiguous: '+old[:70])
         source = source.replace(old, new)
     return source

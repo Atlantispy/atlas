@@ -5,7 +5,7 @@ import os
 import re
 
 FRAME = re.compile(r'^(?P<func>.+?) \((?P<file>[^()]*?)(?::(?P<line>\d+))?\)$')
-CHECK = re.compile(r'verif|check|guard|refus|hash|digest|identity|validat|_checked|release_boundary|tree_digest|sha|pin\b|_pin|require', re.I)
+CHECK = re.compile(r'verif|check|guard|refus|hash|digest|identity|validat|_checked|tree_digest|sha|pin\b|_pin|require', re.I)
 ACTIVE_WAIT = {'Popen._wait', 'wait', 'supervise', '_receive', '_drain', '_write', '_worker', '_collect', 'Condition.wait',
         '_Child.serve', 'Event.wait', 'Thread.join', '_wait_for_tstate_lock', 'select', 'sleep', 'Connection._recv'}
 WAIT = {'Popen._wait', 'wait', 'supervise', '_receive', '_drain', '_write', '_worker', '_collect', 'Condition.wait', '_Child.serve'}

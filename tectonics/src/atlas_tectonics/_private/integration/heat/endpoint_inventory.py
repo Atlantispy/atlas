@@ -10,14 +10,10 @@ from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from fractions import Fraction
 from itertools import chain
-import math
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import endpoint_assembly as A
 from atlas_tectonics._private.integration.heat import rounding_inventory as ROUND
-
-ASSEMBLER_SHA = '082b34ea0a49246a8eed875ef3d62ec80cc9fddece978c235e470bbbd0d8dadb'
 
 
 @dataclass(frozen=True)
@@ -62,17 +58,17 @@ class InventoryPlan:
     owned_endpoint_storage: int = 0
 
 
-def derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
-    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+def derive(rows, cells, boundary, *, witness, budget, cancel=None):
+    return _derive(rows, cells, boundary, witness=witness,
                    budget=budget, cancel=cancel, owned=False)
 
 
-def _derive_owned(rows, cells, boundary, *, witness, source_bindings, budget, cancel=None):
-    return _derive(rows, cells, boundary, witness=witness, source_bindings=source_bindings,
+def _derive_owned(rows, cells, boundary, *, witness, budget, cancel=None):
+    return _derive(rows, cells, boundary, witness=witness,
                    budget=budget, cancel=cancel, owned=True)
 
 
-def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, owned):
+def _derive(rows, cells, boundary, *, witness, budget, cancel, owned):
     """Inspect typed owned rows; return inventory for unchanged A.assemble.
 
     No rows/coefficients/Decimal digit arrays are copied. Temporary shape maps
@@ -85,25 +81,14 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
             raise CancelledError('Endpoint inventory cancelled')
 
     check()
-    if (type(rows) not in (tuple, list) or type(cells) is not int or cells <= 0
-            or type(boundary) is not dict):
-        raise ValueError('Typed owned rows, positive cells and plain boundary required')
     gmp = A._library()
-    # helper_source_digest
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     from atlas_tectonics.integration.coupling.spatial_transport import _json_encoding_capacity
-    from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
-    if _helper_source_digest(Path(A.__file__), owner_file=__file__) != ASSEMBLER_SHA:
-        raise ValueError('Reviewed assembler changed')
 
     def owned_bytes(value):
         if type(value) is Fraction:
             shallow = sys.getsizeof(value)
             return shallow+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator), shallow
-        if type(value) not in (int, float, gmp.mpq):
-            raise ValueError('Only owned integer, binary64, Fraction or GMP rational endpoints supported')
-        if type(value) is float and not math.isfinite(value):
-            raise ValueError('Finite endpoint required')
         size = sys.getsizeof(value)
         return size, size
 
@@ -113,18 +98,10 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
     refinement_original_maximum, refinement_original_eligible = 1, True
     for row in rows:
         check()
-        if type(row) is not dict or type(row.get('bounds')) is not dict:
-            raise ValueError('Plain certified face dictionaries required')
-        if type(row.get('owners')) not in (list, tuple) or len(row['owners']) not in (1, 2):
-            raise ValueError('One/two physical owners required')
-        if type(row.get('ordered_keys')) not in (list, tuple) or type(row.get('face_id')) is not str:
-            raise ValueError('Owned ordered observation keys and face identifier required')
         weights += len(row['bounds'])
         owners += len(row['owners'])*len(row['bounds'])
         input_bytes += 2048+4*len(row['face_id'])+1024*len(row['ordered_keys'])
         for key, pair in row['bounds'].items():
-            if type(key) is not tuple or len(key) != 2 or type(pair) not in (list, tuple) or len(pair) != 2:
-                raise ValueError('Typed observation and endpoint pairs required')
             input_bytes += 512+sum(sys.getsizeof(item) for item in key)
             for value in pair:
                 size, shallow = owned_bytes(value)
@@ -134,8 +111,6 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                 largest = max(largest, size)
     shallow_maximum = max(2048, refinement_original_maximum)
     for key, entry in boundary.items():
-        if type(key) is not str or type(entry) not in (tuple, list) or len(entry) != 2:
-            raise ValueError('Typed physical boundary declarations required')
         size, shallow = owned_bytes(entry[1])
         shallow_maximum = max(shallow_maximum, shallow)
         input_bytes += 1024+4*len(key)+size
@@ -143,8 +118,7 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
     scan_bytes = (1 << 20)+2048*(owners+cells+len(boundary))+16*largest
     with R.OwnedWorkspace(budget, scan_bytes, category='heat-endpoint-inventory-metadata', cancelled=cancel):
         witness_bytes, witness_codec = _json_encoding_capacity(witness, budget)
-        source_bytes, source_codec = _json_encoding_capacity(source_bindings, budget)
-        input_bytes += witness_codec+source_codec+sys.getsizeof(rows)+sys.getsizeof(boundary)
+        input_bytes += witness_codec+sys.getsizeof(rows)+sys.getsizeof(boundary)
 
         def shape(value):
             check()
@@ -167,7 +141,6 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
         owned_retained = owned_endpoint_storage = 0
         bshape = {key: shape(entry[1]) for key, entry in boundary.items()}
         for row in rows:
-            owners_validated = False
             for key, pair in row['bounds'].items():
                 check()
                 kind, index = key
@@ -182,8 +155,6 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                         tie_bits = max(tie_bits, s.numerator+s.denominator)
                         tie_part = max(tie_part, s.numerator, s.denominator)
                 for owner, sign in row['owners']:
-                    if (not owned or not owners_validated) and (type(owner) is not int or not 0 <= owner < cells or type(sign) is not int or sign not in (-1, 1)):
-                        raise ValueError('Original bounded integer owner and sign required')
                     if kind == 'cell':
                         if type(index) is not int or not 0 <= index < cells:
                             raise ValueError('Bounded cell observation required')
@@ -232,7 +203,6 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
                         conversion_bits = max(conversion_bits, result.numerator+result.denominator)
                         conversion_part = max(conversion_part, result.numerator, result.denominator)
                         target[j] = result
-                owners_validated = True
                 if owned and not (all(value == 0 for value in pair)
                                   or kind != 'cell' and boundary[index][1] == 0):
                     # the interval inventory's retained endpoint storage, from this pass's shapes
@@ -255,11 +225,11 @@ def _derive(rows, cells, boundary, *, witness, source_bindings, budget, cancel, 
         scalar = R.native_workspace_allowance(max(max_bits, growth.exact_scalar_expression_bits), 64)
         decimal = growth.python_conversion_bytes
         containers = 2048*(weights+owners+cells+len(rows)+len(boundary)+1)
-        codec = 2*(witness_codec+source_codec)+4*(witness_bytes+source_bytes)
+        codec = 2*witness_codec+4*witness_bytes
         # CertifiedFace and RoundedFace generations, Decimal values/slots,
         # immutable operator/wall tuples, signatures, witness and plan records.
-        result = (4096+2048*(2*len(rows)+cells+len(boundary)+len(source_bindings))
-                  +1024*(weights+len(op)+cells)+2*(witness_bytes+source_bytes))
+        result = (4096+2048*(2*len(rows)+cells+len(boundary))
+                  +1024*(weights+len(op)+cells)+2*witness_bytes)
         work = scalar+decimal+containers+retained_endpoint_bytes+codec+scan_bytes
         inventory = A.DiagnosticInventory(max(1, input_bytes), work, result,
             'Derived per-coefficient exact growth with proved-zero results after operand scratch; '

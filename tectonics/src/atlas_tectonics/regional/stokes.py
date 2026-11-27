@@ -46,8 +46,6 @@ def boundary_coordinates(nx, nz, width, height, side, component):
     are vertices, including both corners. The normal endpoints validate the
     two prescribed traces meeting at a corner; they are not extra flux faces.
     """
-    if side not in SIDES or component not in COMPONENTS:
-        raise ValueError("unknown boundary side or component")
     horizontal = side in ("bottom", "top")
     n, length = (nx, width) if horizontal else (nz, height)
     q = (np.r_[0., (np.arange(n)+.5)*length/n, length]
@@ -171,8 +169,6 @@ class MACPlan:
         Validation, cancellation or factorisation failure preserves the old plan.
         The execution owner must admit the simultaneous old/new numeric storage.
         """
-        if self._closed:
-            raise RuntimeError("MAC plan is closed")
         check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         coefficients = self._coefficients(None, eta_center, eta_vertex)
         self._install_numeric(coefficients, self._numeric(coefficients, cancel))
@@ -439,8 +435,6 @@ class MACPlan:
                                   boundaries, self.pattern)[0]
 
     def solve(self, force_u, force_w, *, boundaries=None, cancel=None):
-        if self._closed:
-            raise RuntimeError("MAC plan is closed")
         start = perf_counter()
         check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         values = self._boundary_values(boundaries)
@@ -512,14 +506,8 @@ class MACPlan:
         This path does not multiply by the assembled stiffness/saddle matrix.
         It is also the public wrapper's post-SI-roundtrip validation seam.
         """
-        if self._closed:
-            raise RuntimeError("MAC plan is closed")
         check_event_or_callable(cancel, 'regional Stokes calculation cancelled')
         v, p = np.asarray(velocity_vector, dtype=float), np.asarray(pressure, dtype=float)
-        if v.shape != (self.full_velocity_unknowns,) or p.size != self.pressure_unknowns:
-            raise ValueError("evaluation fields have wrong shape")
-        if not np.all(np.isfinite(v)) or not np.all(np.isfinite(p)):
-            raise ValueError("evaluation fields must be finite")
         p = p.reshape(self.nz, self.nx)
         values = self._boundary_values(boundaries)
         lift = self._lift(values)
@@ -658,8 +646,6 @@ class MACPlan:
             self._factor = self._preconditioner = None
 
     def __enter__(self):
-        if self._closed:
-            raise RuntimeError("MAC plan is closed")
         return self
 
     def __exit__(self, *exc):

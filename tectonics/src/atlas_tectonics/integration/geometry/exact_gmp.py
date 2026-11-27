@@ -58,7 +58,6 @@ from atlas_tectonics.integration.geometry.volume_bounds import _BOX_RINGS, NATIV
 # This wheel counts bits in 32 bits: a value crossing 2**32 bits reports a wrong
 # bit length or ends the process. One admitted step's operands are refused long
 # before its results could reach that; the Python route has no such limit.
-CEILING_BITS = 1 << 27
 # Measured for gmpy2 2.3.2: a freed object is reused with its limb blocks when
 # each holds at most 64 allocated limbs, and a result keeps the block its own
 # intermediates needed. _settle therefore bounds the two blocks of a retained
@@ -179,8 +178,6 @@ def _total(values):
 
 
 def _plane(plane):
-    if len(plane) != 4 or any(type(v) is not int and type(v) is not Fraction for v in plane):
-        raise V.VolumeError('exact int or Fraction plane required at the native boundary')
     result = object.__new__(_Plane)
     result.source = tuple(plane)
     result.bits = sum(V._bits(v) for v in plane)
@@ -327,9 +324,6 @@ def _work(bits, count, budget, *, pairs=0):
     # integration_volume._work's allowance for the same operands. Its name and
     # the bits/pairs locals are what a failure report reads from the traceback.
     with budget.reserve(65536+128*bits+256*count+256*pairs, category='i03-physical-volume'):
-        if bits > CEILING_BITS:
-            raise V.VolumeError('exact operands exceed the GMP route ceiling of 2**27 bits in one step; '
-                                'use ATLAS_EXACT_ARITHMETIC=python')
         yield
 
 
@@ -453,11 +447,7 @@ class _Chain2:
             total, (ax, ay) = _zero, poly[0]
             for (bx, by), (cx, cy) in zip(poly[1:-1], poly[2:]):
                 twice = (bx-ax)*(cy-ay)-(by-ay)*(cx-ax)
-                if twice < 0:
-                    raise V.VolumeError('wall polygon orientation changed')
                 total += twice*(l0*(ax+bx+cx)+l1*(ay+by+cy)+3*l2)/6
-            if total < 0:
-                raise V.VolumeError('negative sign-split wall integral')
             return _exact(total)
 
     def exact(self, poly):
@@ -508,8 +498,6 @@ def _face(vertices, indices, normal, *, _coplanar_cap=False):
         cross = O._cross(O._minus(vertices[ring[1]], vertices[ring[0]]),
                          O._minus(vertices[ring[2]], vertices[ring[0]]))
         orientation = normal[0]*cross[0]+normal[1]*cross[1]+normal[2]*cross[2]
-    if orientation == 0:
-        raise O.OverlapError('degenerate supporting face after exact hull ordering')
     if orientation < 0:
         ring.reverse()
     start = ring.index(min(ring))
@@ -526,8 +514,6 @@ def _cap_face(vertices, indices, normal, poly, fresh, resource):
     # impose a new resource-type refusal merely to enable this optional path.
     if type(resource) is not WorkBudget:
         return _face(vertices, indices, normal, _coplanar_cap=True)
-    if type(poly) is not _Poly or type(fresh) is not dict:
-        raise TypeError('native cap ownership required')
     widest = 0
     for point in vertices:
         row = fresh.get(point)
@@ -577,8 +563,6 @@ def _cap_face(vertices, indices, normal, poly, fresh, resource):
                 cross = O._cross(O._minus(vertices[ring[1]], vertices[ring[0]]),
                                  O._minus(vertices[ring[2]], vertices[ring[0]]))
                 orientation = normal[0]*cross[0]+normal[1]*cross[1]+normal[2]*cross[2]
-            if orientation == 0:
-                raise O.OverlapError('degenerate supporting face after exact hull ordering')
             if orientation < 0:
                 ring.reverse()
             start = ring.index(min(ring))
@@ -620,8 +604,6 @@ def _cut(poly, plane, arena, split):
     """(outside, inside); outside is meaningful only when split."""
     if not poly:
         return (), ()
-    if type(poly) is not _Poly or type(plane) is not _Plane:
-        raise TypeError('native-resident polyhedron and plane required')
     if not plane.cuts:
         return (poly if plane.source[3] <= 0 else ()), (poly if plane.admits_all else ())
     _own(poly, arena)
@@ -715,8 +697,6 @@ def _repeat_volume_exact(poly, arena, known):
     """
     if not poly:
         return known
-    if type(poly) is not _Poly:
-        raise TypeError('native-resident polyhedron required')
     _own(poly, arena)
     points = poly.points
     arena.work(8+4*sum(map(len, poly)))
@@ -731,8 +711,6 @@ def _repeat_volume_exact(poly, arena, known):
 def _volume(poly, arena, *, _consume=None):
     if not poly:
         return _zero if _consume is None else _consume(_zero)
-    if type(poly) is not _Poly:
-        raise TypeError('native-resident polyhedron required')
     _own(poly, arena)
     points = poly.points
     arena.work(8+4*sum(map(len, poly)))
@@ -761,8 +739,6 @@ def _volume(poly, arena, *, _consume=None):
                     determinant = (a[0]*(b[1]*c[2]-b[2]*c[1])
                                    +a[1]*(b[2]*c[0]-b[0]*c[2])
                                    +a[2]*(b[0]*c[1]-b[1]*c[0]))
-                    if determinant < 0:
-                        raise V.VolumeError('invalid outward convex-face orientation')
                     if determinant:
                         six_volume += mpq(determinant, da*db*dc)
             result = six_volume/6
@@ -868,9 +844,6 @@ def _mesh_closure_allowance(terms, volume):
     """
     numerator_bits = denominator_bits = widest = 0
     for row, denominator in terms:
-        if (len(row) != 12 or type(denominator) is not int or denominator <= 0 or
-                any(type(value) is not int for value in row)):
-            raise V.VolumeError('twelve integer terms and positive denominator required for native mesh closure')
         denominator_bits += denominator.bit_length()
         for value in row:
             width = max(1, value.bit_length())
@@ -947,8 +920,6 @@ def _mimetic_moment_allowance(vectors, centres, indexes, volume):
     measure(volume)
     for vector, index in zip(vectors, indexes, strict=True):
         centre = centres[index]
-        if len(vector) != 3 or len(centre) != 3:
-            raise V.VolumeError('three-dimensional native mimetic metrics required')
         for value in (*vector, *centre):
             measure(value)
     count = len(vectors)

@@ -47,20 +47,12 @@ class HistorySplit:
                                '(no-op split)' % cohort)
         groups, seen_faces = [], set()
         for group in self.groups:
-            if type(group) not in (tuple, list) or len(group) != 2:
-                raise SplitRefused('a split group is (history_id, face IDs)')
             history = _checked_name(group[0], 'sub-cohort history reference')
             faces = group[1]
-            if type(faces) not in (tuple, list) or not faces:
-                raise SplitRefused('every sub-cohort of a split of %r holds at least one piece' % cohort)
             faces = tuple(sorted(_checked_name(face, 'split face') for face in faces))
-            if len(set(faces)) != len(faces) or seen_faces & set(faces):
-                raise SplitRefused('a piece of %r is named twice in one split' % cohort)
             seen_faces.update(faces)
             groups.append((history, faces))
         groups.sort()
-        if len({history for history, _ in groups}) != len(groups):
-            raise SplitRefused('the sub-cohorts of one split take distinct history references')
         object.__setattr__(self, 'cohort_id', cohort)
         object.__setattr__(self, 'groups', tuple(groups))
 
@@ -87,11 +79,7 @@ def _checked_name(value, label):
 
 def checked(splits):
     """The splits of one motion: typed, one per cohort, sorted by cohort."""
-    if type(splits) not in (tuple, list) or any(type(item) is not HistorySplit for item in splits):
-        raise SplitRefused('history splits are HistorySplit records')
     ordered = tuple(sorted(splits, key=lambda item: item.cohort_id))
-    if len({item.cohort_id for item in ordered}) != len(ordered):
-        raise SplitRefused('a cohort is split at most once in one interval')
     return ordered
 
 
@@ -138,17 +126,11 @@ def applied(network, material, splits, end_step, returns, budget=None):
         if missing:
             raise SplitRefused('a history split of %r names face %r, which holds no piece of it (unknown or foreign '
                                'piece)' % (split.cohort_id, missing[0]))
-        if len(split.groups) == 1 and len(named) == len(held):
-            raise SplitRefused('a single group holding every piece of %r leaves no history distinct: no-op split'
-                               % split.cohort_id)
         if len(named) == len(held):
             raise SplitRefused('the groups of a split of %r name every piece and would leave the parent cohort '
                                'without one: one history stays in the parent, so its pieces are not named'
                                % split.cohort_id)
         for history, faces in split.groups:
-            if history == parent.history_id:
-                raise SplitRefused('a sub-cohort of %r takes the history reference its parent already holds'
-                                   % split.cohort_id)
             child = sub_cohort_id(split.cohort_id, end_step, history)
             if child in cohorts or any(child == name for name, _ in born):
                 raise SplitRefused('the derived sub-cohort %r is already in use: a split never changes material, origin '

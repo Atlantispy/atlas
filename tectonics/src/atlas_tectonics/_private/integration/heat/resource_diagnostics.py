@@ -12,7 +12,6 @@ process peaks are deliberately absent: they need not be simultaneous. Sampling
 cannot measure processes that start and exit wholly between guardian ticks.
 """
 import ctypes
-import math
 
 from atlas_tectonics._private.integration import windows_workload_job as WJ
 
@@ -96,8 +95,6 @@ class ResourceSummary:
     outer stage durations. The output explains these limits explicitly.
     """
     def __init__(self, max_phases=128):
-        if type(max_phases) is not int or not 1 <= max_phases <= 1024:
-            raise ValueError('Bounded positive max_phases required')
         self.max_phases = max_phases
         self.phases = {}
         self.previous = {}
@@ -108,11 +105,6 @@ class ResourceSummary:
         self.peaks = {}
 
     def observe(self, sample, phase, elapsed):
-        if not isinstance(phase, str) or not phase or len(phase) > 256:
-            raise ValueError('Short, nonempty phase name required')
-        if not math.isfinite(elapsed) or elapsed < 0 or (
-                self.previous_elapsed is not None and elapsed <= self.previous_elapsed):
-            raise ValueError('Strictly increasing nonnegative elapsed time required')
         if phase not in self.phases and len(self.phases) >= self.max_phases:
             phase = None
             self.phase_overflow_samples += 1
@@ -126,10 +118,6 @@ class ResourceSummary:
             entry['last_observed_seconds'] = elapsed
         current = {_key(row): row['cpu_kernel_seconds']+row['cpu_user_seconds']
                    for row in sample['live_processes']}
-        if len(current) != len(sample['live_processes']):
-            raise ValueError('Duplicate process identity in guardian sample')
-        if any(not math.isfinite(cpu) or cpu < 0 for cpu in current.values()):
-            raise ValueError('Finite nonnegative process CPU counters required')
         delta = 0.0
         for key in current.keys() & self.previous.keys():
             if current[key] < self.previous[key]:

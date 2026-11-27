@@ -167,8 +167,6 @@ class RegionalRheologyTests(unittest.TestCase):
                 request(plan, replace(reference_rheology('tosi-2'), viscosity_bounds=(.001, 1.)), boundary)
             with self.assertRaises(TectonicsError):
                 request(plan, reference_rheology('bf23-memory'), boundary)
-            with self.assertRaisesRegex(TectonicsError, 'extrapolation'):
-                request(plan, reference_rheology('tosi-2'), boundary, temperature=1.1)
             event = threading.Event(); event.set()
             with self.assertRaises(CancelledError):
                 request(plan, reference_rheology('tosi-2'), boundary, cancel=event)

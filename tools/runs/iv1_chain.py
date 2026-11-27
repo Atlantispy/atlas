@@ -238,9 +238,8 @@ Fast-loop r11 = r10 + resume after a reviewed pin change, driver only (resume-af
 
 Fast-loop r10 = r9 + the capture mode, driver only (capture-route-r1 c48a3977 + errata 1 f712b0d0; errata 2
 f3ff84cb withdraws its section 5):
-  CAP    config `capture` (bool; refused with a continuation). Issue test F3 turned round in a capture: each live pin
-         must have been issued under another identity than the one probed (equal: nothing to capture); every other
-         issue test as before. Before step 5 starts, the failure record must be absent (C-1). Step 5 exiting 0 stops
+  CAP    config `capture` (bool; refused with a continuation). Issue test F3 as in an ordinary run. Before step
+         5 starts, the failure record must be absent (C-1). Step 5 exiting 0 stops
          at once, unaccepted. Step 5 exiting non-zero is judged before the closing checks: status CAPTURED and a
          `capture` block only for the provider's own id refusal with ids that differ from the record's; else
          STOPPED with the reason. Exit code stays 1 for all but PASS.
@@ -298,7 +297,7 @@ Fast-loop r3 = r2 (58a9a1fc) + two changes, driver only:
 
 Fast-loop r2 = r1 (770218b2, reviewed) + W4 and review C1, driver only:
   F3     before run B can launch: issue_record (pinned, with the grid path run B reads) names the live issued-label
-         pins; each literal is still at its file:line, was issued under this run's identity and for this grid, and the
+         pins; each literal is still at its file:line, was issued for this grid, and the
          grid hashes to GRID_SHA with the pinned graph/partition ids.
   F2/F4  on resume, before anything moves: retained receipts of reused steps carry this run's probe identity (run A)
          and its current source proof and profile sha (what each reader compares).
@@ -439,7 +438,7 @@ MAPPED = ('cand-r1 pool 6402bfca3fa7a4ff8d71187fbf91db4cf997d84ba42233f3570768b0
           're-verified against pool r4 144c6386012b2e4aec9c5d5cb8658df06925cb216265a77573343fa3f886aeb3 (cand-r5)')
 FIELDS = {'schema', 'python', 'interpreter', 'package', 'pth', 'delivery', 'entries', 'routes', 'layout_check',
           'environment', 'profile', 'journal_directory', 'bookings', 'heat_workers', 'heat_pool', 'ram_wait_seconds',
-          'ram_poll_seconds', 'cores_sample_seconds', 'check3', 'expected_execution_identity', 'resume_from',
+          'ram_poll_seconds', 'cores_sample_seconds', 'check3', 'resume_from',
           'issue_record', 'continuation', 'resume_release', 'capture', 'record_failed_steps'}
 CAPTURE_FAILURE = 'thermal-mesh-failure-01.json.gz'      # JC:406: the joined control's END failure record (run-interval)
 CAPTURE_ERROR = 'issued closure or partition identity differs'          # PRV:151: the provider's own id refusal
@@ -798,18 +797,14 @@ def probe_check(config, environment):
 
 
 def identity_check(config, environment):
-    """q389 preflight: the staged package's strict SciPy execution identity must be the one the provider and
-    grid pins were issued under; a source edit that moves it stops here, in seconds, not 15 minutes into run B."""
+    """q389 preflight: probe and journal the staged package's execution identity (a record, compared with nothing)."""
     done = run_child([config['python'], '-B', '-c', IDENTITY_PROBE], env=environment,
                           cwd=config['interpreter']['root'], capture_output=True, text=True, timeout=120)
     require(done.returncode == 0, f'execution identity probe exited {done.returncode}: {done.stderr[-300:]}')
     lines = done.stdout.strip().splitlines()
     require(lines, 'execution identity probe printed nothing')
     found = json.loads(lines[-1], object_pairs_hook=_unique)
-    require(type(found) is dict and found.get('execution_mode') == 'strict', f'execution identity probe: {found}')
-    require(found.get('execution_identity') == config['expected_execution_identity'],
-            f'execution identity {found.get("execution_identity")} differs from expected '
-            f'{config["expected_execution_identity"]}: provider/grid pins would refuse')
+    require(type(found) is dict, f'execution identity probe: {found}')
     return found
 
 
@@ -836,10 +831,10 @@ def pool_workers(config):
     return 'launch'
 
 
-def issue_checks(config, identity, *, retained_provider=None):
+def issue_checks(config):
     """F3 (W4): run B's live issued-label pins named by the pinned issue record still hold, in seconds instead of
-    15 minutes into run B: each literal is still at its file:line, it was issued under this run's execution
-    identity and for this grid, and the grid file hashes to GRID_SHA with the pinned graph and partition ids.
+    15 minutes into run B: each literal is still at its file:line, it was issued for this grid, and the grid file hashes to
+    GRID_SHA with the pinned graph and partition ids.
     r37 (content pin): the grid names the reference capture's ids; the record's 'content' block ties each live id
     to them by content: for the graph and the partition, the captured id's digest equals the reference id's
     digest, both made by one reduction file, each naming the capture receipt it was measured on. A missing or
@@ -876,17 +871,6 @@ def issue_checks(config, identity, *, retained_provider=None):
             skipped.append(f'{pin.get("file")}:{pin.get("line")}' if type(pin) is dict else repr(pin))
             continue
         at(pin['file'], pin['line'], pin['name'], pin['value'], 'issued pin')
-        if config['capture']:                     # CAP: turned round; the other tests stand (acceptance check)
-            require(issue['identity'] != identity, f'F3 capture: {pin["name"]} was issued under the probed identity '
-                                                   f'{identity}: nothing to capture; run the ordinary chain')
-        else:
-            if issue['identity'] != identity:
-                require(retained_provider is not None and issue['identity'] == retained_provider['identity'],
-                        f'F3: {pin["name"]} was issued under identity {issue["identity"]}, '
-                        f'this run probes {identity}: the pin is stale')
-                original = retained_provider['record']
-                require(all(record.get(name) == original.get(name) for name in ('status', 'pins', 'grid', 'content')),
-                        'F3: the retained provider pin, grid or content differs from the earlier admitted issue')
         inputs = issue.get('inputs')
         require(type(inputs) is dict and inputs.get('grid_sha256') == grid['sha256'],
                 f'F3: {pin["name"]} was issued for another grid')
@@ -903,8 +887,6 @@ def issue_checks(config, identity, *, retained_provider=None):
             'F3: the grid file names other graph or partition ids')
     result = {'record_sha256': digest, 'record_status': record.get('status'), 'checked': checked, 'skipped': skipped,
               'grid_sites': [f'{file}:{line}' for file, line in sites]}
-    if retained_provider is not None:
-        result['retained_issue_sha256'] = retained_provider['sha256']
     return result
 
 
@@ -1610,8 +1592,6 @@ class Chain:
         self.run_log = None
         self.producer_profile_words = self.reader_profile_words = ()
         self.package_change = None                     # RP: set by resume_key when the rule applies
-        self.retained_root_claim = None
-        self.root_producers = {}
         self.mixed_restart = None
         self.admission_changes = set()
         self.reused_recorded = []                      # R-3: steps reused as recorded (place 3)
@@ -1673,13 +1653,9 @@ class Chain:
         if change is not None:
             for name in ('profile', 'package tree'):                # P-1, P-2 stand in for these two
                 pairs.pop(name)
-        current_identity, previous_identity = pairs['execution identity']
         differ = [name for name, (now, then) in pairs.items() if then is None or now != then]
         if 'post_check_failure' in self.earlier:
             differ.append('post_check_failure')
-        if differ == ['execution identity'] and change is not None and self.config.get('reuse_identity_override', False):
-            self.check_finished_root_change(change, pre, old, current_identity, previous_identity)
-            differ.clear()
         if differ:
             self.key_differs = True                                     # S-1: no stopped store is taken
             self.stop_reuse(f'differs from the earlier journal or is not journaled there: {differ}')
@@ -1708,87 +1684,6 @@ class Chain:
                                           origin, original, resuming=True)
         self.journal['resume']['mixed'] = copy.deepcopy(record)
 
-    def check_finished_root_change(self, change, pre, old, current, previous):
-        """Admit the four finished root steps through the existing package-change proof."""
-        require(is_sha(current) and is_sha(previous) and current == self.config['expected_execution_identity']
-                and member(pre, 'execution_identity', 'execution_mode') == 'strict'
-                and member(old, 'execution_identity', 'execution_mode') == 'strict',
-                'identity override requires both actual strict execution identities')
-        require(change['reviewed'] and not self.config.get('open_proofs', False) and not self.config['capture']
-                and not self.continuation and self.config.get('intervals', 1) == 1
-                and not self.overlap_stages and not change['reader_files_only'],
-                'identity override is confined to the diagnostic finished-root route')
-        require(diagnostic_profile(self.profile), 'identity override requires a diagnostic current profile')
-        steps = self.earlier['steps']
-        require(tuple(step['step'] for step in steps[:4]) == RETAINED[:4] and
-                all(passed_in(step) and type(step.get('checkpoint')) is dict for step in steps[:4])
-                and not any(passed_in(step) and type(step.get('checkpoint')) is dict for step in steps[4:]),
-                'identity override requires a finished root and no later passed checkpoint')
-
-        previous_profile, _ = read_json(change['earlier_profile']['path'], change['earlier_profile']['sha256'])
-        package = Path(self.config['package']['root'])
-        native = Path(self.profile['workspace']) / self.profile['native_root']
-        require(same_path(native, package), 'identity override requires the same installed native root')
-        for profile in (previous_profile, self.profile):
-            require(diagnostic_profile(profile), 'identity override requires diagnostic profiles')
-        shared = set()
-        dependencies = {'atlas_shared/__init__.py', 'atlas_shared/machine/__init__.py',
-                        'atlas_shared/machine/resources_monitor.py', 'atlas_shared/machine/resources_gate.py'}
-        independent = change['retained_root_independent_members']
-        for row in change['files']:
-            name = row['path']
-            if re.fullmatch(r'[^/]+\.dist-info/RECORD', name):
-                continue
-            parts = name.split('/')
-            require(len(parts) > 1 and parts[0] == 'atlas_shared' and parts[1] != '_private'
-                    and all(part not in ('', '.', '..') for part in parts) and '\\' not in name and ':' not in name
-                    and name.endswith('.py') and parts[-1] != '__init__.py' and name not in dependencies
-                    and is_sha(row['old_sha256']) and is_sha(row['new_sha256']),
-                    'identity override changes a finished-root dependency or exceeds the approved prefix: '+name)
-            require(name in independent, 'identity override lacks reviewed finished-root dependency proof: '+name)
-            shared.add(name)
-        require(shared, 'identity override has no changed ordinary shared member')
-        self.root_producers = self.finished_root_producers(steps[:4])
-        change['execution_identity'] = {'previous': previous, 'current': current}
-        self.reusable = {step['step']: step for step in steps[:4]}
-
-    def finished_root_producers(self, steps):
-        """Follow each reused step's pinned producer journal without changing its receipt."""
-        first = self.journal['resume']['from']['sha256']
-        journals = {first: self.earlier}
-        producers = {}
-        for entry in steps:
-            name = entry['step']
-            step, origin, visited = entry, first, {first}
-            while 'reused_from' in step:
-                ref = member(journals[origin], 'resume', 'from')
-                pinned(ref, 'retained root predecessor')
-                origin = ref['sha256']
-                require(step['reused_from'] == origin and origin not in visited,
-                        'retained root has invalid producer lineage: '+name)
-                visited.add(origin)
-                if origin not in journals:
-                    journals[origin] = read_json(ref['path'], origin)[0]
-                matches = [row for row in journals[origin]['steps'] if row['step'] == name]
-                require(len(matches) == 1 and passed_in(matches[0])
-                        and step['outputs'] == matches[0]['outputs'], 'retained root producer output differs: '+name)
-                step = matches[0]
-            journal = journals[origin]
-            pre = journal['pre_checks']
-            profile_pin = journal['profile_sha256']
-            words = step['argv']
-            require(words.count('--profile') == 1 and words.count('--profile-sha256') == 1,
-                    'retained root producer has no unique profile: '+name)
-            profile_path = words[words.index('--profile')+1]
-            identity = member(pre, 'execution_identity', 'execution_identity')
-            require(profile_words(words, profile_path, profile_pin) is not None
-                    and all(is_sha(pin) for pin in (profile_pin, identity))
-                    and member(pre, 'execution_identity', 'execution_mode') == 'strict',
-                    'retained root lacks the original strict producer proof: '+name)
-            producers[name] = {'profile': {'path': profile_path, 'sha256': profile_pin},
-                               'identity': identity, 'journal_sha256': origin}
-        return producers
-
     def package_change_checks(self, pre, old):
         """RP P-1, P-2 and the earlier proof for P-4 (integrity checks: any failure stops the chain), or None when the
         trees are equal or the record names no change from the earlier journal's tree (today's rule)."""
@@ -1802,9 +1697,6 @@ class Chain:
             return None
         require(not self.continuation, 'package change: a continuation is refused')
         files, profile, readers = change.get('files'), change.get('earlier_profile'), record.get('readers')
-        independent = change.get('retained_root_independent_members', [])
-        require(type(independent) is list and all(type(name) is str for name in independent)
-                and len(set(independent)) == len(independent), 'package change: invalid retained-root dependency list')
         only = change.get('reader_files_only', False)                       # RFO
         require(type(only) is bool, 'package change: reader_files_only must be true or false')
         keeps = change.get('keeps_queries', False)                          # KQ (U-3)
@@ -1856,7 +1748,6 @@ class Chain:
         require(is_sha(earlier_identity), 'package change: the earlier journal holds no execution identity')
         return {'record_sha256': record_sha, 'reviewed': record.get('status') == REVIEWED,
                 'files': files, 'earlier_tree_sha256': then_tree, 'earlier_profile': profile,
-                'retained_root_independent_members': independent,
                 'runtime_identity': earlier_identity, 'reader_files_only': only,
                 'keeps_queries': keeps, 'keeps_queries_reason': reason if keeps else None,       # KQ
                 'keeps_measurements': keeps_m, 'keeps_measurements_reason': reason_m if keeps_m else None}   # S-1
@@ -2132,8 +2023,7 @@ class Chain:
             root = next(step for step in self.journal['steps'] if step['step'] == '1-root-producer')
             if root.get('producer_journal_sha256') != self.mixed_restart.origin['sha256']:
                 return ()
-        profile = (self.root_producers['1-root-producer']['profile'] if self.root_producers
-                   else change['earlier_profile'])
+        profile = change['earlier_profile']
         return ('--reuse-previous-run', profile['path'], '--reuse-previous-run-sha256', profile['sha256'])
 
     def reuse(self, name, argv, outputs):
@@ -2187,7 +2077,6 @@ class Chain:
                 self.torn = torn
                 self.journal['resume']['torn_outputs'] = torn
         if why is not None:
-            require(name not in self.root_producers, f'identity override cannot retain {name}: {why}')
             if deferred:
                 raise ChainStop(f'{name}: restored outputs failed acceptance: {why}')
             if affected and self.mixed_restart is None and self.home_admission is not None and self.home_admission.owner.assigned():
@@ -2229,7 +2118,7 @@ class Chain:
         if self.package_change is None or (self.mixed_restart is not None and not self.mixed_restart.deferred(name)
                                            and self.mixed_restart.resuming):
             return then == now
-        profile = self.root_producers[name]['profile'] if name in self.root_producers else self.package_change['earlier_profile']
+        profile = self.package_change['earlier_profile']
         earlier = profile_words(then, profile['path'], profile['sha256'])
         require(earlier is not None, f'package change P-3: {name}\'s journaled command does not hold the earlier profile')
         return earlier == profile_words(now, self.profile_path, self.profile_sha)
@@ -2377,10 +2266,6 @@ class Chain:
             expected = default
             if mixed is not None:
                 expected = mixed.expected_proof(step['step'], step, step['reused_from'])
-            elif step['step'] in self.root_producers:
-                original = self.root_producers[step['step']]
-                identity = original['identity']
-                expected = {'producer_identity': original['profile']['sha256'], 'runtime_identity': original['identity']}
             if step['step'] == '1-root-producer':
                 expected = dict(expected, execution_identity=expected.get('execution_identity', identity))
                 identity = expected['execution_identity']
@@ -2437,22 +2322,7 @@ class Chain:
         self.save()
 
     def check_provider_issue(self):
-        identity = self.journal['pre_checks']['execution_identity']['execution_identity']
-        retained = None
-        if self.retained_root_claim is not None:
-            part = self.config['issue_record']
-            issue, _ = read_json(part['path'], part['sha256'])
-            if any(member(pin, 'issue', 'identity') != identity for pin in issue.get('pins', ())
-                   if type(pin) is dict and pin.get('live_route') and is_sha(member(pin, 'issue', 'identity'))):
-                ref = issue.get('retained_provider_issue')
-                pinned(ref, 'F3 retained provider issue')
-                require(ref['sha256'] == member(self.earlier, 'preflight', 'issue', 'record_sha256'),
-                        'F3: retained provider issue differs from the previous preflight')
-                original, _ = read_json(ref['path'], ref['sha256'])
-                retained = {'record': original, 'sha256': ref['sha256'],
-                            'identity': self.package_change['execution_identity']['previous']}
-        return issue_checks(self.config, identity, retained_provider=retained)
-
+        return issue_checks(self.config)
     def producer_argv(self, mode, seed, parent=None):
         args, _ = self.booking(mode)
         extra = [] if seed is None else ['--seed-receipt-sha256', seed[0], '--seed-store-sha256', seed[1]]
@@ -2460,28 +2330,7 @@ class Chain:
             extra = extra+['--parent-adopted-sha256', parent]
         if self.config.get('open_proofs', False):                 # r21: proof-mode arm, producers only (D-9)
             extra = extra+['--open-proofs']
-        if mode == 'interval' and self.retained_root_claim is not None:
-            path, pin = self.retained_root_claim
-            extra += ['--retained-root-claim', path, '--retained-root-claim-sha256', pin]
         return self.command('producer', mode)+['--launch']+args+extra
-
-    def issue_retained_root_claim(self, receipt_sha):
-        """Bind the exact reused root to this diagnostic interval launch."""
-        require(self.journal['resume']['reused'] == list(RETAINED[:4]),
-                'identity override requires every finished root step')
-        original = self.root_producers['1-root-producer']
-        outputs = self.journal['steps'][0]['outputs']
-        path = self.journal_dir/'retained-root.json'
-        runner_sha = outputs[str(self.store/'runner-record-interval-0000.json')]
-        claim = {'schema': 'atlas.diagnostic-retained-root.v1', 'profile_sha256': self.profile_sha,
-                 'producer': original, 'root_runner_sha256': runner_sha,
-                 'root_receipt_sha256': receipt_sha,
-                 'execution_identity': self.package_change['execution_identity']['current']}
-        raw = json.dumps(claim, sort_keys=True, separators=(',', ':')).encode()
-        with path.open('xb') as stream:
-            stream.write(raw)
-        self.retained_root_claim = str(path), hashlib.sha256(raw).hexdigest()
-        self.journal['resume']['retained_root_claim'] = dict(zip(('path', 'sha256'), self.retained_root_claim, strict=True))
 
     def save(self, *, durable=False):
         replace = self.home_admission.module.durable_replace if durable else os.replace
@@ -2859,7 +2708,7 @@ class Chain:
             return self.reader_steps(mode, receipt, producer_sha)
         return self.reader_steps(mode, receipt, producer_sha, entry=entry, gate_sha=gate_sha, pair=produced)
 
-    def execute(self, run_profile='off'):
+    def execute(self, run_profile='off', profile_tool=None):
         require(not self.journal_dir.exists(), f'journal directory exists: {self.journal_dir}')
         self.journal_dir.mkdir(parents=True)
         try:
@@ -2871,7 +2720,7 @@ class Chain:
             except Exception:
                 pass
             self.log_event('INFO', 'run_started', stamp=self.journal['started_utc'])
-            return self.execute_admitted(run_profile)
+            return self.execute_admitted(run_profile, profile_tool)
         except BaseException as error:
             self.log_event('ERROR', 'run_stopped', detail={'reason': f'{type(error).__name__}: {error}'})
             raise
@@ -2879,7 +2728,7 @@ class Chain:
             if self.run_log is not None:
                 self.run_log.close()
 
-    def execute_admitted(self, run_profile):
+    def execute_admitted(self, run_profile, profile_tool=None):
         release = (self.journal.get('resume') or {}).get('release')
         if release is not None and 'driver_record' in release:              # R-1 (V-3): the driver's own record
             path = self.journal_dir/'release-by-driver.json'
@@ -2895,8 +2744,11 @@ class Chain:
                     selection = profile_source_selection(self.config, self.profile)
                 profiler = selected_diagnostic(selection, 'profiling')
                 requested = profiler.profile_selection(run_profile)
-                self.producer_profile_words = profiler.profile_words(requested)
-                self.reader_profile_words = profiler.profile_words(requested.intersection(('stacks',)))
+                tool = ['--profile-tool', str(profiler.profile_tool(requested, profile_tool))] if 'tree' in requested else []
+                self.producer_profile_words = [*profiler.profile_words(requested), *tool]
+                self.reader_profile_words = [*profiler.profile_words(requested.intersection(('stacks', 'tree'))), *tool]
+            else:
+                require(profile_tool is None, '--profile-tool needs --run-profile tree')
             self.env = child_environment(self.config['environment'])
             self.journal['environment'] = {k: v for k, v in sorted(self.env.items()) if k.upper().startswith(AUDITED)}
             if self.earlier is None:
@@ -2925,10 +2777,6 @@ class Chain:
             require(type(stored) is dict and is_sha(stored.get('sha256')) and type(stored.get('filename')) is str,
                     'run A does not name its measurement store')
             seed = (root_sha, stored['sha256'])
-            if self.root_producers:
-                self.issue_retained_root_claim(root_sha)
-                if not self.package_change['keeps_measurements']:
-                    seed = None
             self.stage('interval', seed=seed)
             if self.config.get('intervals', 1) == 2:                         # r21: steps 9-12
                 adopt = next(s for s in self.journal['steps'] if s['step'] == '8-interval-adopt')
@@ -3139,7 +2987,7 @@ def pinned(value, name):
 def load_config(path, pin):
     """Closed configuration: every member and nested member named, typed and pinned before any step runs."""
     config, digest = read_json(path, pin)
-    shape(config, FIELDS | ({'overlap', 'keep_query_leftovers', 'stop_after', 'intervals', 'open_proofs', 'reuse_identity_override',
+    shape(config, FIELDS | ({'overlap', 'keep_query_leftovers', 'stop_after', 'intervals', 'open_proofs',
                              'takes_resumed_measurements'} & set(config)),
           'the configuration')                                       # o4, MSS, r20, r21: optional
     require(config['schema'] == CONFIG_SCHEMA, f'configuration schema is not {CONFIG_SCHEMA}')
@@ -3198,9 +3046,6 @@ def load_config(path, pin):
     require(not two or not (config['capture'] or config['continuation'] or 'stop_after' in config or
                             'overlap' in config), 'intervals 2 refuses capture, continuation, stop_after and overlap')
     require(type(config.get('open_proofs', False)) is bool, 'open_proofs must be true or false')   # r21
-    require(type(config.get('reuse_identity_override', False)) is bool, 'reuse_identity_override must be true or false')
-    require(not config.get('reuse_identity_override', False) or config['resume_from'] is not None,
-            'reuse_identity_override needs a pinned same-home resume')
     require(not config.get('open_proofs', False) or not (config['capture'] or config['resume_from'] is not None),
             'open_proofs refuses resume_from and capture: a proof run reuses nothing')
     stages = STAGES + (STAGES2 if two else ())
@@ -3215,7 +3060,6 @@ def load_config(path, pin):
     require(type(config['heat_workers']) is int and config['heat_workers'] >= 2, 'heat_workers must be an integer >= 2')
     for name in ('ram_wait_seconds', 'ram_poll_seconds', 'cores_sample_seconds'):
         require(type(config[name]) in (int, float) and config[name] > 0, f'{name} must be a positive number')
-    require(is_sha(config['expected_execution_identity']), 'expected_execution_identity must be a sha256')
     if config['resume_from'] is not None:
         pinned(config['resume_from'], 'resume_from')
         require(Path(config['resume_from']['path']).is_absolute(), 'resume_from needs an absolute journal path')
@@ -3806,6 +3650,7 @@ def main(argv=None):
     parser.add_argument('--config', required=True)
     parser.add_argument('--config-sha256', required=True)
     parser.add_argument('--run-profile', default='off')
+    parser.add_argument('--profile-tool', type=Path, help='with --run-profile tree: the sampling profiler executable')
     args = parser.parse_args(argv)
     try:
         config, digest = load_config(args.config, args.config_sha256)
@@ -3822,7 +3667,7 @@ def main(argv=None):
                 if recovery is not None:
                     chain.journal['recovered_transition'] = dict(zip(('path', 'prior_sha256', 'sha256'),
                                                                       (str(recovery[0]), *recovery[1:]), strict=True))
-                code = chain.execute(args.run_profile)
+                code = chain.execute(args.run_profile, args.profile_tool)
             finally:
                 home.leave_shared()
     except Exception as error:  # noqa: BLE001

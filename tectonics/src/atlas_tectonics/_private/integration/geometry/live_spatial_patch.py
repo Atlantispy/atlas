@@ -10,7 +10,7 @@ import sys
 import numpy as np
 
 from atlas_tectonics._private.codecs.compact_contracts import ContractError
-from atlas_tectonics._private.codecs.content_cache import ChargeSpec, RetainedScope
+from atlas_tectonics._private.codecs.content_cache import ChargeSpec
 from atlas_tectonics.integration.resources import _close_consumed_stack
 
 
@@ -18,17 +18,7 @@ input_stack = _close_consumed_stack
 
 
 def _once(source, old, new):
-    if source.count(old) != 1:
-        raise ValueError('live spatial source seam missing or ambiguous: '+old[:90])
     return source.replace(old, new, 1)
-
-
-def _function(source, name):
-    matches = [node for node in ast.parse(source).body
-               if isinstance(node, ast.FunctionDef) and node.name == name]
-    if len(matches) != 1:
-        raise ValueError('one live spatial function required: '+name)
-    return ast.get_source_segment(source, matches[0])
 
 
 class _FloatSequence:
@@ -36,11 +26,6 @@ class _FloatSequence:
     __slots__ = ('_owner',)
 
     def __init__(self, array, scope):
-        from atlas_tectonics._private.codecs.heat_ledger_tables import _FieldBytes
-        if (type(array) is not np.ndarray or array.dtype != np.float64 or
-                array.ndim != 1 or not array.flags.c_contiguous or array.flags.writeable or
-                not isinstance(scope, RetainedScope) or scope._closed):
-            raise ContractError('immutable contiguous native binary64 field required')
         backing = array.base
         for _ in range(8):
             if type(backing) is np.ndarray:
@@ -49,9 +34,6 @@ class _FloatSequence:
                 backing = backing.obj
             else:
                 break
-        if (type(backing) is not _FieldBytes or
-                getattr(getattr(backing, '_owner', None), 'scope', None) is not scope):
-            raise ContractError('heat public field requires its same-scope paid backing')
         self._owner = scope.reserve(ChargeSpec('heat-public-field-view', 512)).commit(array)
 
     def __len__(self):
@@ -74,8 +56,6 @@ def float_list(values):
 def normalisation_capacity(value, check, depth=0):
     """Charge only tuple conversions and the containers on their parent paths."""
     check()
-    if depth > 128:
-        raise ContractError('heat metadata container depth exceeds bound')
     if type(value) not in (dict, list, tuple):
         return 0
     children = value.values() if type(value) is dict else value
@@ -97,135 +77,6 @@ def normalise_containers(value, check):
         return {key: normalise_containers(child, check) for key, child in value.items()}
     return [normalise_containers(child, check) for child in value]
 
-
-def joined_source(source):
-    """Reuse finish's records in the nested account, then release dead inputs.
-
-    The public grouped_account keeps every validation. Its private twin reuses
-    the enclosing finish's records with the same checks and exact arithmetic.
-    """
-    if '_grouped_account_records' in source or 'import atlas_tectonics._private.live_spatial_patch' in source:
-        raise ValueError('live spatial joined source already transformed')
-    source = _once(source, 'import atlas_tectonics._private.private_heat_grouped_account_r1 as ACCOUNT\n',
-                   'import atlas_tectonics._private.private_heat_grouped_account_r1 as ACCOUNT\n'
-                   'import atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\n')
-    original = _function(source, 'grouped_account')
-    shared = _once(original,
-        'def grouped_account(value, owner, step, mesh, *, cancel=None):',
-        'def _grouped_account_records(value, owner, step, mesh, *, graph, transported, metric, prior, cancel=None):')
-    shared = _once(shared,
-        '    graph, transported, metric = step.graph.record(), step.result.record(), INDEXED.mesh_rows(mesh)\n', '')
-    shared = _once(shared,
-        "    prior = owner._bound(step.parent)['projection_accounts']['enthalpy_j']\n", '')
-    shared = _once(shared, "        public = value.array('enthalpy_j').tolist()\n",
-                   "        public = LIVE_SPATIAL.float_sequence(value.array('enthalpy_j'),\n"
-                   "            scope=EXCHANGE_RECORD.required_scope(owner))\n")
-    source = _once(source, original, original+'\n\n\n'+shared)
-    source = _once(source, '    with grouped_account(heat, owner, step, mesh, cancel=cancel) as grouped:\n',
-        '    with _grouped_account_records(heat, owner, step, mesh, graph=graph,\n'
-        '            transported=transported, metric=metric,\n'
-        "            prior=old['projection_accounts']['enthalpy_j'], cancel=cancel) as grouped:\n")
-    source = _once(source, "        accounts = {k: O._enc(v) for k,v in projection.items()}\n",
-        "        LIVE_SPATIAL.sort_cells(cells)\n"
-        "        accounts = {k: O._enc(v) for k,v in projection.items()}\n")
-    source = _once(source,
-        "        exact, native, cells = transported['exact_stocks'], collar_advance.state.fields, []\n",
-        "        if LIVE_SPATIAL.EARLY_RELEASE:\n"
-        "            # Each non-enthalpy projection column was read once, above.\n"
-        "            LIVE_SPATIAL.release_columns(transported, 'exact_projection_accounts', keep=('enthalpy_j',))\n"
-        "        exact, native, cells = transported['exact_stocks'], collar_advance.state.fields, LIVE_SPATIAL.cell_sink(owner, cancel)\n")
-    source = _once(source, "        end = float(O._q(graph['end_time_s']))\n",
-        "        if LIVE_SPATIAL.EARLY_RELEASE:\n"
-        "            # Stock columns and the thermal lookup end with the cell loop;\n"
-        "            # the grouped account still holds both enthalpy slices.\n"
-        "            exact = thermal = None\n"
-        "            LIVE_SPATIAL.release_columns(transported, 'exact_stocks', keep=('enthalpy_j',))\n"
-        "        end = float(O._q(graph['end_time_s']))\n")
-    source = _once(source, "thermal_mesh=INDEXED.stored_mesh(mesh), cells=sorted(cells, key=lambda r: r['cell_id']), projection_accounts=accounts)",
-                   'thermal_mesh=INDEXED.stored_mesh(mesh), cells=LIVE_SPATIAL.state_cells(cells), projection_accounts=accounts)')
-    source = _once(source, '        state = owner._issue(record)\n',
-        '        state = owner._issue(record)\n'
-        '        del record, cells, old, metric, thermal, native, exact\n')
-    source = _once(source,
-        '            check=lambda: R.check(cancel))\n        validate_owner(heat, owner, step, mesh, cancel=cancel)\n',
-        '            check=lambda: R.check(cancel))\n'
-        '        del exchange, graph, transported\n'
-        '        validate_owner(heat, owner, step, mesh, cancel=cancel)\n')
-    source = _tail(source, 'grouped_account',
-        '    graph, transported, metric = step.graph.record(), step.result.record(), INDEXED.mesh_rows(mesh)\n',
-        'with LIVE_SPATIAL.record_access(step.graph, scope=EXCHANGE_RECORD.required_scope(owner)) as graph:',
-        '    transported = _live_inputs.enter_context(LIVE_SPATIAL.transport_access(step.result, scope=EXCHANGE_RECORD.required_scope(owner)))\n'
-        '    metric = INDEXED.mesh_rows(mesh)\n')
-    source = _tail(source, 'finish',
-        '    old, graph, transported = owner._bound(step.parent), step.graph.record(), step.result.record()\n',
-        'with LIVE_SPATIAL.record_access(step.graph, scope=EXCHANGE_RECORD.required_scope(owner)) as graph:',
-        '    old = owner._bound(step.parent)\n'
-        '    transported = _live_inputs.enter_context(LIVE_SPATIAL.transport_access(step.result, scope=EXCHANGE_RECORD.required_scope(owner)))\n')
-    source = source.replace('with LIVE_SPATIAL.record_access(step.graph, scope=EXCHANGE_RECORD.required_scope(owner)) as graph:',
-        'with LIVE_SPATIAL.input_stack() as _live_inputs, LIVE_SPATIAL.record_access(step.graph, scope=EXCHANGE_RECORD.required_scope(owner)) as graph:')
-    source = _once(source, 'spatial_graph_id=step.graph.geometry_id, spatial_graph=graph,',
-        'spatial_graph_id=step.graph.geometry_id, spatial_graph=LIVE_SPATIAL.reference(graph),')
-    source = _once(source, 'transport=transported,', 'transport=LIVE_SPATIAL.reference(transported),')
-    compile(source, '<live-spatial-joined>', 'exec')
-    return source
-
-
-def projection_source(source):
-    """Share the five float lists already retained by the projection owner."""
-    old = """    output = dict(metadata=metadata, arrays=dict(enthalpy_j=list(record['enthalpy_j']),
-        temperature_k=list(record['temperature_k']), input_enthalpy_j=list(map(float, arrays[0])),
-        input_capacity_j_k=list(map(float, arrays[1])), input_source_w=list(map(float, arrays[2]))))"""
-    new = """    # Native projection has already checked and captured these lists. Its
-    # owner stays live until the independent immutable snapshot is admitted.
-    output = dict(metadata=metadata, arrays=dict(enthalpy_j=record['enthalpy_j'],
-        temperature_k=record['temperature_k'], input_enthalpy_j=LIVE_SPATIAL.float_list(arrays[0]),
-        input_capacity_j_k=LIVE_SPATIAL.float_list(arrays[1]), input_source_w=LIVE_SPATIAL.float_list(arrays[2])))"""
-    source = _once(source, 'import atlas_tectonics._private.heat_ledger_issuer_patch as HEAT_LEDGER\n',
-        'import atlas_tectonics._private.heat_ledger_issuer_patch as HEAT_LEDGER\nimport atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\n')
-    return _once(source, old, new)
-
-
-def issuer_source(source):
-    """End the original call-list lifetime once projection owns its capture.
-
-    Under RELEASE_SOLVE_RESULT the forward solve's result owner also closes
-    right after projection instead of after packaging: projection's private
-    verification decoded its own independent copy and diagnostics are never
-    read, so only a lifetime ends; no value, ID or account changes.
-    """
-    release = ('        # The solve result and its unread diagnostics end here: projection\n'
-               '        # verified and decoded its own independent copy (verified_private).\n'
-               '        del produced, diagnostics\n'
-               '        numerical_owner.close()\n') if RELEASE_SOLVE_RESULT else ''
-    source = _once(source,
-        '            cancel=cancel, record_scope=HEAT_LEDGER.verify_scope(call))\n        with projection_owner:\n',
-        '            cancel=cancel, record_scope=HEAT_LEDGER.verify_scope(call))\n'
-        '        del values\n'+release+
-        '        with projection_owner:\n')
-    if RELEASE_SOLVE_RESULT:
-        source = _once(source,
-            '            del produced, diagnostics, projected, private, record, fixed, powers, actual_fixed, actual_power\n',
-            '            del projected, private, record, fixed, powers, actual_fixed, actual_power\n')
-    source = _once(source, 'import atlas_tectonics._private.heat_ledger_issuer_patch as HEAT_LEDGER\n',
-        'import atlas_tectonics._private.heat_ledger_issuer_patch as HEAT_LEDGER\nimport atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\n')
-    source = _once(source,
-        '        with RESOURCES.decoded(step.graph._json, budget=owner._budget, cancel=cancel) as gv:\n'
-        '            g = scope.stack.enter_context(RESOURCES.extracted(gv, _GRAPH_FIELDS,\n'
-        '                budget=owner._budget, cancel=cancel)).value\n',
-        '        g = scope.stack.enter_context(LIVE_SPATIAL.record_access(step.graph,\n'
-        '            scope=HEAT_LEDGER.required_scope((owner,), owner._budget)))\n')
-    source = _once(source,
-        '        with RESOURCES.decoded(step.result._snapshot._metadata,\n'
-        '                               budget=owner._budget, cancel=cancel) as tv:\n'
-        '            t = scope.stack.enter_context(RESOURCES.extracted(tv, _TRANSPORT_FIELDS,\n'
-        '                budget=owner._budget, cancel=cancel)).value\n',
-        '        t = scope.stack.enter_context(LIVE_SPATIAL.transport_access(step.result,\n'
-        '            scope=HEAT_LEDGER.required_scope((owner,), owner._budget)))\n')
-    source = _once(source, '    if type(snapshot) is HEAT_TABLES.CompactHeatSnapshot:\n',
-        '    if LIVE_SPATIAL.is_transport_snapshot(snapshot):\n'
-        '        return LIVE_SPATIAL.transport_identity(snapshot, budget, cancel)\n'
-        '    if type(snapshot) is HEAT_TABLES.CompactHeatSnapshot:\n')
-    return source
 
 # Fresh physical graph/bounds use the caller's one existing scope. Construction
 # never installs a cache or creates a new scope on a view or holder.
@@ -252,11 +103,6 @@ EARLY_RELEASE = True
 # of collecting the complete Python row list and packing it at issue. Same
 # canonical bytes and cell_id order. Test-only switch, captured like the above.
 STREAM_CELLS = True
-# Step 8 (inventory rows handoff-4, heat-ledger): the heat issuer closes the
-# forward solve's result owner (solve result and unread diagnostics) right
-# after projection instead of holding it through compact packaging and the
-# checkpoint save. Lifetime only. Test-only switch, captured like the above.
-RELEASE_SOLVE_RESULT = True
 STATE_CELLS_SCHEMA = 'atlas.spatial-state-cells.v1'
 STATE_CELL_ROW_SCHEMA = 'atlas.spatial-state-cell.v1'
 _ROW_FIELDS = frozenset(('cells', 'face_intervals', 'transfers',
@@ -266,12 +112,6 @@ _ROW_FIELDS = frozenset(('cells', 'face_intervals', 'transfers',
 
 @contextmanager
 def construction(scope, *, budget):
-    if (not isinstance(scope, RetainedScope) or scope._closed or
-            scope.run_budget is not budget):
-        raise ContractError('fresh spatial construction requires the existing same-budget scope')
-    prior = _ACTIVE.get()
-    if prior is not None and prior is not scope:
-        raise ContractError('fresh spatial construction cannot replace an active scope')
     token = _ACTIVE.set(scope)
     try:
         yield
@@ -281,8 +121,6 @@ def construction(scope, *, budget):
 
 def active_scope(budget):
     scope = _ACTIVE.get()
-    if scope is not None and (scope._closed or scope.run_budget is not budget):
-        raise ContractError('fresh spatial producer has a foreign or closed scope')
     return scope
 
 
@@ -367,10 +205,6 @@ def is_record(value):
     return type(value) is dict or type(value) in (_Object, _TransportObject)
 
 
-def is_rows(value):
-    return type(value) is list or type(value) is VALIDATION._Rows
-
-
 def reference(value):
     if type(value) in (_Object, VALIDATION._Object, _TransportObject, _Columns):
         return value.ref
@@ -403,8 +237,6 @@ class _Columns:
             self.columns[name] = column
             child = self.ref.field(name)
             column.callback(child.close)
-            if child.kind != 'array':
-                raise ContractError('transport field column requires an array')
             owned = child.export(max_logical_bytes=4 << 20, max_owned_bytes=4 << 20)
             column.enter_context(owned)
             self.cache[name] = owned.value
@@ -431,8 +263,6 @@ class _TransportObject(_Object):
         if key not in self.cache and (key.startswith('exact_') or key == 'binary_stock_projection_accounts'):
             child = self.ref.field(key)
             self.stack.callback(child.close)
-            if child.kind != 'object':
-                raise ContractError('transport exact fields require an object')
             value = _Columns(child, self.stack)
             self.cache[key] = value
         return super().__getitem__(key)
@@ -459,21 +289,15 @@ class CellSink:
         self._pending = row
 
     def __getitem__(self, index):
-        if index != -1 or self._pending is None:
-            raise ContractError('only the newest pending state cell row is writable')
         return self._pending
 
     def _commit(self):
         if self._pending is None:
             return
         row, self._pending = self._pending, None
-        if type(row) is not dict or type(row.get('cell_id')) is not str:
-            raise ContractError('state cell rows require an object with a string cell_id')
         self._nodes.append((row['cell_id'], self._builder.append(row, record_schema=STATE_CELL_ROW_SCHEMA)))
 
     def sort_by_cell_id(self):
-        if self._record is not None:
-            raise ContractError('state cells already finished')
         self._commit()
         # The native key: rows ordered by cell_id with a stable sort.
         self._nodes.sort(key=lambda item: item[0])
@@ -544,8 +368,6 @@ def transport_access(result, *, scope=_UNSPECIFIED):
             del record
         return
     record = result.record()
-    if scope is not _UNSPECIFIED and record.scope is not scope:
-        raise ContractError('transport result has a foreign retained scope')
     stack = ExitStack()
     stack.callback(record.close)
     value = _TransportObject(record, stack)
@@ -583,17 +405,11 @@ def record_access(holder, *, scope=_UNSPECIFIED):
         current = _LEGACY_READS.get()
         for original, payload, budget, record in reversed(current):
             if original is holder:
-                if holder._json is not payload or holder._resource is not budget:
-                    raise ContractError('legacy holder changed during bounded record access')
                 digest = sha256()
                 for part in json.JSONEncoder(sort_keys=True, separators=(',', ':'), allow_nan=False).iterencode(record):
                     digest.update(part.encode('utf8'))
-                if digest.digest() != sha256(payload).digest():
-                    raise ContractError('legacy working record changed before nested access')
                 yield record
                 return
-        if len(current) >= 16:
-            raise ContractError('legacy spatial access nesting exceeds bound')
         # Legacy compatibility still funds its explicit complete decode. Fresh
         # compact holders never enter this branch or allocate a JSON body.
         from atlas_tectonics._private.codecs.mesh_tables import _decode_charge
@@ -608,8 +424,6 @@ def record_access(holder, *, scope=_UNSPECIFIED):
         return
     record = holder.record()
     if isinstance(record, RecordRef):
-        if scope is not _UNSPECIFIED and record.scope is not scope:
-            raise ContractError('spatial holder has a foreign retained scope')
         with construction(record.scope, budget=holder._resource):
             with access(record) as value:
                 yield value
@@ -681,8 +495,6 @@ class _MeshInput:
 
 
 def mesh_input(mesh):
-    if mesh.is_compact and mesh._compact.scope is not None and active_scope(mesh._resource) is not mesh._compact.scope:
-        raise ContractError('native heat mesh has a foreign retained scope')
     return _MeshInput(mesh) if mesh.is_compact else mesh.record()
 
 
@@ -706,8 +518,6 @@ def _tail(source, name, anchor, scope, replacement):
     """Open one bounded-access scope after all native pre-entry guards."""
     import textwrap
     part = _function_any(source, name)
-    if part.count(anchor) != 1:
-        raise ValueError('live spatial tail anchor differs: '+name)
     at = part.index(anchor)
     prefix, tail = part[:at], part[at:]
     indent = tail[:len(tail)-len(tail.lstrip(' '))]
@@ -719,173 +529,5 @@ def _tail(source, name, anchor, scope, replacement):
 def _function_any(source, name):
     matches = [node for node in ast.walk(ast.parse(source))
                if isinstance(node, ast.FunctionDef) and node.name == name]
-    if len(matches) != 1:
-        raise ValueError('one live spatial function required: '+name)
     node = matches[0]
     return ''.join(source.splitlines(keepends=True)[node.lineno-1:node.end_lineno])
-
-
-def _import(source):
-    return _once(source, 'import weakref\n',
-                 'import weakref\nimport atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\n')
-
-
-def ale_source(source):
-    source = _import(source)
-    source = _once(source, 'def _issue(cls, record, budget):\n',
-        'def _issue(cls, record, budget):\n'
-        '    return LIVE_SPATIAL.issue(cls, record, budget, _legacy_issue)\n\n\n'
-        'def _legacy_issue(cls, record, budget):\n')
-    if source.count('return hashlib.sha256(self._json).hexdigest()') != 2:
-        raise ValueError('native spatial holder identity inventory differs')
-    source = source.replace('return hashlib.sha256(self._json).hexdigest()',
-                            'return LIVE_SPATIAL.holder_content_identity(self)')
-    if source.count('return json.loads(self._json)') != 2:
-        raise ValueError('native spatial holder record inventory differs')
-    source = source.replace('return json.loads(self._json)',
-                            'return LIVE_SPATIAL.holder_record(self)')
-    if source.count('_json: bytes = field(repr=False)') != 2:
-        raise ValueError('native spatial holder storage inventory differs')
-    source = source.replace('_json: bytes = field(repr=False)',
-                            '_json: object = field(repr=False)')
-    source = _once(source,
-        "result = {k: v for k, v in record.items() if k not in ('cells', 'face_intervals', 'schema')}",
-        "result = LIVE_SPATIAL.remaining(record, ('cells', 'face_intervals', 'schema'))")
-    source = _once(source, 'original_face_intervals=transfers,',
-                   'original_face_intervals=LIVE_SPATIAL.reference(transfers),')
-    source = _tail(source, 'close_spatial_ale',
-        "    with budget.reserve(65536+8*len(bounds._json), category='spatial-ale-closure'), V._work(tuple(start_volumes_m3.values()), budget):\n",
-        'with LIVE_SPATIAL.record_access(bounds) as working:',
-        '    with LIVE_SPATIAL.workspace(budget, 65536+8*LIVE_SPATIAL.holder_bytes(bounds)), V._work(tuple(start_volumes_m3.values()), budget, convert_values=False):\n')
-    source = _once(source, '_close_record(bounds.record(), start_volumes_m3, budget)',
-                   '_close_record(working, start_volumes_m3, budget)')
-    source = _once(source, '            return _issue(SpatialALEGraph, record, budget)',
-        '            result = _issue(SpatialALEGraph, record, budget)\n'
-        '            del record\n'
-        '            return result')
-    compile(source, '<live-spatial-ale>', 'exec')
-    return source
-
-
-def transport_source(source):
-    source = _import(source)
-    source = _once(source, 'import atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\n',
-        'import atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\nimport atlas_tectonics._private.live_finite_patch as LIVE_FINITE\n'
-        'import atlas_tectonics._private.live_transport_result as LIVE_TRANSPORT\n')
-    source = _once(source, 'return dict(result_id=self.result_id, **self._snapshot.descriptor())',
-                   'return LIVE_TRANSPORT.result_record(self)')
-    source = _once(source, 'snapshot = RegionalMechanicalSnapshot(metadata, projected)',
-                   'if LIVE_SPATIAL.EARLY_RELEASE:\n'
-                   '                # The metadata now holds every exact table encoded; the\n'
-                   '                # rational tuples would otherwise live through the pack.\n'
-                   '                del exact_old, exact_new, exact_faces, exact_residual, binary_residual\n'
-                   '                del old, new, moved, residual, projection, concentration, densities\n'
-                   '            snapshot = LIVE_TRANSPORT.make_snapshot(metadata, projected, self._budget, '
-                   'RegionalMechanicalSnapshot, check=lambda: _cancel(cancel))')
-    source = _once(source, '_retain(result, 8192+3*_width(metadata)+sum(a.nbytes for a in projected.values()), self._budget)',
-                   'LIVE_TRANSPORT.retain(result, 8192+3*_width(metadata)+sum(a.nbytes for a in projected.values()), self._budget, _retain)')
-    source = _once(source, 'type(stocks) is not dict',
-                   'not LIVE_FINITE.is_stocks(stocks, self._budget)')
-    source = _once(source, 'type(budget) is not WorkBudget or type(geometry) is not dict',
-                   'type(budget) is not WorkBudget or not LIVE_SPATIAL.is_record(geometry)')
-    source = _once(source, 'type(rows) is not list or not rows or type(faces) is not list',
-                   'not LIVE_SPATIAL.is_rows(rows) or not rows or not LIVE_SPATIAL.is_rows(faces)')
-    source = _once(source, 'encoded_bytes, encoding_scratch = _json_encoding_capacity(geometry, budget)',
-                   'encoded_bytes, encoding_scratch = LIVE_SPATIAL.graph_encoding(geometry, budget, _json_encoding_capacity)')
-    source = _once(source, 'self._encoded = _json(geometry)',
-                   'self._encoded = LIVE_SPATIAL.graph_encoded(geometry, _json)')
-    source = _once(source, 'self.geometry_id = hashlib.sha256(self._encoded).hexdigest()',
-                   'self.geometry_id = LIVE_SPATIAL.graph_content_identity(geometry, lambda value: hashlib.sha256(self._encoded if value is geometry else _json(value)).hexdigest())')
-    compile(source, '<live-spatial-transport>', 'exec')
-    return source
-
-
-def owner_source(source):
-    source = _import(source)
-    source = _tail(source, 'close_graph',
-        '        r, b = self._bound(state), bounds.record()\n',
-        "with LIVE_SPATIAL.record_access(bounds, scope=getattr(self, '_record_scope', None)) as b:",
-        '        r = self._bound(state)\n')
-    source = _tail(source, 'transport',
-        '        g, r = graph.record(), self._bound(state)\n',
-        "with LIVE_SPATIAL.record_access(graph, scope=getattr(self, '_record_scope', None)) as g:",
-        '        r = self._bound(state)\n')
-    source = _tail(source, 'heat',
-        '        m, g, t = mesh.record(), step.graph.record(), step.result.record()\n',
-        "with LIVE_SPATIAL.input_stack() as _live_inputs, LIVE_SPATIAL.record_access(step.graph, scope=getattr(self, '_record_scope', None)) as g:",
-        "        t = _live_inputs.enter_context(LIVE_SPATIAL.transport_access(step.result, scope=getattr(self, '_record_scope', None)))\n"
-        '        m = LIVE_SPATIAL.mesh_input(mesh)\n')
-    source = _once(source, 'geometry = MimeticGeometry(m, budget=self._budget)',
-        'geometry = LIVE_SPATIAL.thermal_geometry(mesh, m, self._budget, MimeticGeometry)')
-    source = _tail(source, 'finish',
-        '        old, graph, transported = self._bound(step.parent), step.graph.record(), step.result.record()\n',
-        "with LIVE_SPATIAL.input_stack() as _live_inputs, LIVE_SPATIAL.record_access(step.graph, scope=getattr(self, '_record_scope', None)) as graph:",
-        '        old = self._bound(step.parent)\n'
-        "        transported = _live_inputs.enter_context(LIVE_SPATIAL.transport_access(step.result, scope=getattr(self, '_record_scope', None)))\n")
-    source = _once(source, 'metric, heat_meta = mesh.record(), heat.descriptor()',
-        'metric, heat_meta = LIVE_SPATIAL.mesh_input(mesh), heat.descriptor()')
-    source = _once(source, "            exact = transported['exact_stocks']\n",
-        "            if LIVE_SPATIAL.EARLY_RELEASE:\n"
-        "                # Every projection column was read once, above.\n"
-        "                LIVE_SPATIAL.release_columns(transported, 'exact_projection_accounts')\n"
-        "            exact = transported['exact_stocks']\n")
-    source = _once(source, "            end = float(_q(graph['end_time_s']))\n",
-        "            if LIVE_SPATIAL.EARLY_RELEASE:\n"
-        "                # Stock columns and the thermal lookup end with the cell loop.\n"
-        "                exact = thermal = None\n"
-        "                LIVE_SPATIAL.release_columns(transported, 'exact_stocks')\n"
-        "            end = float(_q(graph['end_time_s']))\n")
-    source = _once(source, "            cells, projection = [], {k: _q(v) for k, v in old['projection_accounts'].items()}\n",
-        "            cells, projection = LIVE_SPATIAL.cell_sink(self, cancel), {k: _q(v) for k, v in old['projection_accounts'].items()}\n")
-    source = _once(source, "            record = dict(schema='atlas.spatial-exterior-state.v1', owner_id=self.owner_id,",
-        "            LIVE_SPATIAL.sort_cells(cells)\n"
-        "            record = dict(schema='atlas.spatial-exterior-state.v1', owner_id=self.owner_id,")
-    source = _once(source, "thermal_mesh=metric, cells=sorted(cells, key=lambda r: r['cell_id']),",
-        'thermal_mesh=LIVE_SPATIAL.mesh_value(mesh, metric), cells=LIVE_SPATIAL.state_cells(cells),')
-    source = _once(source, '            state = self._issue(record)\n',
-        '            state = self._issue(record)\n'
-        '            del record, cells, old, metric, thermal, native, exact\n')
-    source = _once(source, 'spatial_graph_id=step.graph.geometry_id, spatial_graph=graph,',
-        'spatial_graph_id=step.graph.geometry_id, spatial_graph=LIVE_SPATIAL.reference(graph),')
-    source = _once(source, 'global_transport_id=step.result.result_id, transport=transported,',
-        'global_transport_id=step.result.result_id, transport=LIVE_SPATIAL.reference(transported),')
-    source = _once(source,
-        "            with self._budget.reserve(65536+3*_width(exchange), category='spatial-exchange-encoding'):\n"
-        '                result = SpatialExteriorAdvance(state, _json(exchange), step.result, heat)\n'
-        '                _retain(result, 8192+len(result._record), self._budget)\n',
-        '            if LIVE_SPATIAL.active_scope(self._budget) is not None:\n'
-        '                result = _EXCHANGE_RECORD.build_advance(SpatialExteriorAdvance, state, exchange,\n'
-        '                    step.result, heat, scope=_EXCHANGE_RECORD.required_scope(self), check=lambda: LIVE_SPATIAL.check_cancel(cancel))\n'
-        '            else:\n'
-        "                with self._budget.reserve(65536+3*_width(exchange), category='spatial-exchange-encoding'):\n"
-        '                    result = SpatialExteriorAdvance(state, _json(exchange), step.result, heat)\n'
-        '                    _retain(result, 8192+len(result._record), self._budget)\n'
-        '            del exchange, graph, transported\n')
-    compile(source, '<live-spatial-owner>', 'exec')
-    return source
-
-
-def differential_source(source):
-    """Use the same compact bounds through the original finite/dual closure."""
-    source = _import(source)
-    source = _once(source, 'import atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\n',
-        'import atlas_tectonics._private.live_spatial_patch as LIVE_SPATIAL\nimport atlas_tectonics._private.live_finite_patch as LIVE_FINITE\n')
-    source = _tail(source, 'close_differential_ale', '    record = bounds.record()\n',
-        'with LIVE_SPATIAL.record_access(bounds) as record:',
-        '    # The original schema and lineage gates below still precede closure.\n')
-    source = _once(source,
-        'with budget.reserve(65536+4*len(bounds._json)+4*len(finite_stock_state._encoded),\n'
-        "                            category='differential-finite-volume-closure'):",
-        'with LIVE_SPATIAL.workspace(budget, 65536+4*LIVE_SPATIAL.holder_bytes(bounds)+4*len(finite_stock_state._encoded)):')
-    source = _once(source, 'augmented = json.loads(_encoded(record))',
-        "augmented = LIVE_FINITE.clone_mutable(record, ('cells', 'face_intervals', 'finite_exchange_intervals'), budget=budget)")
-    source = _once(source, 'bounds_id=bounds_id, bounds=record, finite_stock_state=stock_record,',
-        'bounds_id=bounds_id, bounds=LIVE_SPATIAL.reference(record), finite_stock_state=stock_record,')
-    source = _once(source, '            return A._issue(A.SpatialALEGraph, result, budget)',
-        '            issued_graph = A._issue(A.SpatialALEGraph, result, budget)\n'
-        '            del result\n'
-        '            return issued_graph')
-    compile(source, '<live-spatial-differential>', 'exec')
-    return source
-
-

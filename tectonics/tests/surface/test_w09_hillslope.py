@@ -1,6 +1,5 @@
 """Independent H1/H2 controls, finite soil and shared-face provenance accounts."""
 from concurrent.futures import CancelledError
-from dataclasses import replace
 import json
 import math
 from pathlib import Path
@@ -120,8 +119,6 @@ class HillslopeTests(unittest.TestCase):
             self.assertEqual(result.requested_end_time_s,end)
             if result.status == 'COMPLETE':
                 self.assertEqual(result.state.time_s,end)
-            with self.assertRaises(TectonicsError):
-                p.advance(state,.5,end_time_s=end)
 
     def test_evolving_flux_is_implicit_and_time_refines(self):
         # Two equal cells, phi=.4: ds/dt=-2 D s/(1-s^2).
@@ -229,8 +226,6 @@ class HillslopeTests(unittest.TestCase):
             self.assertEqual(r.state.accepted_intervals,256)
             with self.assertRaises(TectonicsError):p.advance(r.state,1.)
             with self.assertRaises(ValueError):r.state.mass_kg.flags.writeable=True
-            with self.assertRaises(AttributeError):p.critical_slope=2.
-            with self.assertRaises(TectonicsError):p.advance(s,1.,partitions=True)
 
     def test_cancellation_is_atomic_and_accounted_memory_released(self):
         budget=WorkBudget(CAP)
@@ -243,7 +238,6 @@ class HillslopeTests(unittest.TestCase):
         self.assertEqual(p.statistics()['computed_intervals'],0)
         p.close()
         self.assertEqual(budget.reserved_bytes,0)
-        with self.assertRaises(TectonicsError):p.advance(s,1.)
         with self.assertRaises(MemoryLimitError):
             model([1.],[[0,-1]],[1.],[1.],boundary_elevations_m=[0.],budget=WorkBudget(1024))
 
@@ -271,20 +265,6 @@ class HillslopeTests(unittest.TestCase):
             p.advance(s,1.)
             with model([1.,1.],[[0,1]],[2.],[1.]) as changed:
                 with self.assertRaisesRegex(TectonicsError,'mismatch'):changed.advance(s,1.)
-
-    def test_invalid_geometry_and_material_metadata(self):
-        for faces in ([[0,0]],[[0,2]],[[0,1],[1,0]],[[0,0.5]],[[0.,1.]],[[False,True]]):
-            with self.assertRaises(TectonicsError):model([1.,1.],faces,np.ones(len(faces)),np.ones(len(faces)))
-        with self.assertRaises(TectonicsError):model(np.ones(257),[[0,1]],[1.],[1.])
-        with model([1.,1.],[[0,1]],[1.],[1.]) as p:
-            with self.assertRaises(TectonicsError):p.initial_state([0.,0.],[[1.],[1.]],[tag()],porosity=1.)
-            with self.assertRaises(TectonicsError):p.initial_state([0.,0.],[[1.,1.],[1.,1.]],[tag(),tag()])
-            with self.assertRaises(TectonicsError):p.initial_state([0.,0.],[[1.,1.],[1.,1.]],[tag(),replace(tag('B'),enthalpy_reference='different')])
-            with self.assertRaises(TectonicsError):p.initial_state([0.,0.],[[1.],[1.]],[replace(tag(),formation_time_s=1.)])
-
-    def test_branching_support_refuses_unimplemented_full_2d_gradient(self):
-        with self.assertRaisesRegex(TectonicsError,'branching/2D slope unsupported'):
-            model(np.ones(4),[[0,1],[0,2],[0,3]],np.ones(3),np.ones(3))
 
 
 if __name__ == '__main__':

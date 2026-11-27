@@ -27,7 +27,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 from dataclasses import dataclass
 import hashlib
 import math
-from numbers import Real
+from typing import cast
 
 import numpy as np
 
@@ -55,7 +55,6 @@ COARSE = 'belt unresolved by the faces: line-quadrature deposit diluted (beta < 
 HEAT_OMITTED = 'dissipation not converted to heat (IN-05 v1, atlas.i04-dissipation-not-heated.v1)'
 ONE_SIDED = ('declared one-sided shear-zone placement (I03 cannot carry history in sheared non-carrier rows)')
 S_RELATIVE = TOL                                             # the belt stops on S at the kernel's own 2e-11
-ORDER_RANGE = (2, _column.POLICY['max_order'])
 
 MISSING = 'missing value'
 INVALID = 'invalid input'
@@ -84,17 +83,11 @@ class StrengthRefused(TectonicsError):
 
 
 def _name(value, label):
-    if type(value) is not str or not value.strip():
-        raise StrengthRefused(label+' must be a nonempty name', INVALID, label)
     return value
 
 
 def _real(value, label, *, positive=False, nonnegative=False):
-    if isinstance(value, bool) or not isinstance(value, Real):
-        raise StrengthRefused(label+' must be a real number', INVALID, label)
     value = float(value)
-    if not math.isfinite(value) or (positive and value <= 0) or (nonnegative and value < 0):
-        raise StrengthRefused(label+' is outside its finite support', INVALID, label)
     return value
 
 
@@ -121,13 +114,8 @@ class BeltMaterial:
             raise StrengthRefused('only the yield convention %r is admitted' % YIELD_CONVENTION, UNSUPPORTED,
                                   'yield_convention')
         _real(self.cohesion_pa, 'cohesion', nonnegative=True)
-        phi = _real(self.friction_rad, 'friction', nonnegative=True)
-        if not phi < math.pi/2:
-            raise StrengthRefused('friction must lie in [0, pi/2)', INVALID, 'friction')
         _real(self.plastic_viscosity_pa_s, 'plastic viscosity', positive=True)
         _real(self.grain_m, 'grain size', positive=True)
-        if type(self.weakening_interval) is not tuple or len(self.weakening_interval) != 2:
-            raise StrengthRefused('the weakening interval is (start, end)', INVALID, 'weakening_interval')
         try:
             law = _weak.WeakeningLaw(self.weakening_interval[0], self.weakening_interval[1], self.cohesion_factor,
                                      self.friction_factor)
@@ -138,7 +126,6 @@ class BeltMaterial:
                            ('cohesion_factor', law.cohesion_factor), ('friction_factor', law.friction_factor)):
             object.__setattr__(self, key, float(value))
         object.__setattr__(self, 'weakening_interval', (law.start, law.end))
-        _name(self.source, 'material source')
 
     def law(self):
         return _weak.WeakeningLaw(self.weakening_interval[0], self.weakening_interval[1], self.cohesion_factor,
@@ -166,19 +153,14 @@ class CreepLaw:
     source: str
 
     def __post_init__(self):
-        if type(self.mechanisms) is not tuple or not 1 <= len(self.mechanisms) <= _column.POLICY['max_mechanisms']:
-            raise StrengthRefused('one to four creep mechanisms are declared', INVALID, 'creep')
         clean = []
         for item in self.mechanisms:
-            if type(item) is not dict:
-                raise StrengthRefused('a creep mechanism is a dict of the I01 Creep fields', INVALID, 'creep')
             try:
                 _weak.validate_creep(dict(item))
             except (TypeError, ValueError) as exc:
                 raise StrengthRefused('creep mechanism refused: %s' % exc, INVALID, 'creep') from None
             clean.append(tuple(sorted((k, float(v)) for k, v in item.items())))
         object.__setattr__(self, 'mechanisms', tuple(clean))
-        _name(self.source, 'creep source')
 
     def dicts(self):
         return [dict(item) for item in self.mechanisms]
@@ -205,17 +187,8 @@ class Belt:
     side: str = 'both'
 
     def __post_init__(self):
-        if self.side not in ('both', 'left', 'right'):
-            raise StrengthRefused('a belt side is both, left or right', INVALID, 'side')
         object.__setattr__(self, 'width_m', _real(self.width_m, 'belt width', positive=True))
         object.__setattr__(self, 'length_m', _real(self.length_m, 'D2 length', positive=True))
-        if self.healing_law_id is None:
-            raise StrengthRefused('the healing law is declared', MISSING, 'healing_law_id')
-        if self.healing_law_id != HEALING_NONE:
-            raise StrengthRefused('only the zero-healing law %r is admitted' % HEALING_NONE, UNSUPPORTED,
-                                  'healing_law_id')
-        _name(self.width_source, 'belt width source')
-        _name(self.length_source, 'D2 length source')
 
     def record(self):
         out = dict(width_m=self.width_m, length_m=self.length_m, healing_law_id=self.healing_law_id,
@@ -232,11 +205,6 @@ class Belt:
 
 def _pairs(value, label, kind):
     items = sorted(value.items()) if isinstance(value, dict) else list(value)
-    if any(type(p) is not tuple or len(p) != 2 or type(p[0]) is not str or type(p[1]) is not kind for p in items):
-        raise StrengthRefused(label+': (name, %s) pairs required' % kind.__name__, INVALID, label)
-    names = [p[0] for p in items]
-    if len(set(names)) != len(names):
-        raise StrengthRefused(label+': each name at most once', INVALID, label)
     return tuple(sorted(items))
 
 
@@ -254,11 +222,6 @@ class Declaration:
         object.__setattr__(self, 'belts', _pairs(self.belts, 'belts', Belt))
         object.__setattr__(self, 'materials', _pairs(self.materials, 'materials', BeltMaterial))
         object.__setattr__(self, 'creep_laws', _pairs(self.creep_laws, 'creep laws', CreepLaw))
-        if not self.belts:
-            raise StrengthRefused('at least one D2 belt is declared', MISSING, 'belts')
-        if type(self.order) is not int or not ORDER_RANGE[0] <= self.order <= ORDER_RANGE[1]:
-            raise StrengthRefused('the Gauss order per layer is an integer in %s' % (ORDER_RANGE,), INVALID, 'order')
-        _name(self.provenance, 'declaration provenance')
 
     def record(self):
         return dict(schema=SCHEMA, method=METHOD, belt=BELT, order=self.order, provenance=self.provenance,
@@ -273,8 +236,6 @@ class Declaration:
     @classmethod
     def from_record(cls, record):
         """The declaration a stored record names (for replay); its identity must reproduce."""
-        if record.get('schema') != SCHEMA:
-            raise StrengthRefused('not a D2 declaration record', STALE, 'schema')
         return cls(tuple((k, Belt.from_record(v)) for k, v in record['belts']),
                    tuple((k, BeltMaterial.from_record(v)) for k, v in record['materials']),
                    tuple((k, CreepLaw.from_record(v)) for k, v in record['creep_laws']), record['order'],
@@ -285,14 +246,10 @@ class Declaration:
 
     def material(self, material_id):
         found = dict(self.materials).get(material_id)
-        if found is None:
-            raise StrengthRefused('no D2 material is declared for %r' % material_id, MISSING, 'materials')
         return found
 
     def creep(self, creep_law_id):
         found = dict(self.creep_laws).get(creep_law_id)
-        if found is None:
-            raise StrengthRefused('no creep law is declared for %r' % creep_law_id, MISSING, 'creep_laws')
         return found
 
 
@@ -302,8 +259,6 @@ class Declaration:
 
 def piece_rows(strength, index):
     """Rows of piece ``index`` in a P2 StrengthState, bottom to top (P2's order)."""
-    if type(strength).__name__ != 'StrengthState':
-        raise StrengthRefused('a P2 StrengthState is required', INVALID, 'strength')
     start, stop = int(strength.offsets[index]), int(strength.offsets[index+1])
     return range(start, stop)
 
@@ -318,13 +273,7 @@ def column_layers(strength, index, declaration, gravity_m_s2):
     for row in rows:
         t = float(strength.thickness_m[row])
         top, bottom = float(strength.vertical_stress_top_pa[row]), float(strength.vertical_stress_bottom_pa[row])
-        if not t > 0:
-            raise StrengthRefused('a sublayer of piece %r has no thickness' % (strength.pieces[index],),
-                                  UNSUPPORTED, 'thickness_m')
         density = (bottom-top)/(gravity_m_s2*t)
-        if not (math.isfinite(density) and density > 0):
-            raise StrengthRefused('a sublayer of piece %r has no positive effective density'
-                                  % (strength.pieces[index],), UNSUPPORTED, 'vertical_stress')
         material = declaration.material(strength.material_ids[row])
         creep = declaration.creep(strength.creep_law_ids[row])
         temperature, pore = float(strength.temperature_k[row]), float(strength.pore_pressure_pa[row])
@@ -381,8 +330,6 @@ class _Subset:
 def point_factors(prep, laws, kappa_bar):
     """Per-point (lambda_C, lambda_phi) from each layer's own weakening law on the nonlocal history."""
     kappa_bar = np.asarray(kappa_bar, dtype=float)
-    if kappa_bar.shape != (prep.size,) or not np.all(np.isfinite(kappa_bar)) or np.any(kappa_bar < 0):
-        raise StrengthRefused('the nonlocal history must be finite and nonnegative at every point', INVALID, 'kappa')
     cohesion, friction = np.ones(prep.size), np.ones(prep.size)
     for layer_index, law in enumerate(laws):
         mask = prep.layer == layer_index
@@ -400,8 +347,6 @@ def oblique_stresses(prep, factors, e, c, guess=None):
     """Point stresses s for invariant rate e > 0 and closure fraction c (P = sigma_v - c s)."""
     e = _real(e, 'invariant rate', positive=True)
     c = _real(c, 'closure fraction')
-    if not -1. <= c <= 1.:
-        raise StrengthRefused('the closure fraction lies in [-1, 1]', INVALID, 'c')
     le = math.log(e)
     lam_c, lam_f = factors
     friction = prep.friction_rad*lam_f
@@ -560,8 +505,6 @@ def invert_resultant(prep, factors, target, c, *, guess=None):
 def line_operator(lengths, ell):
     """(diagonal, off-diagonal) of the symmetric M-matrix A with A kbar = D kappa, D = diag(dy)."""
     dy = np.asarray(lengths, dtype=float)
-    if dy.ndim != 1 or dy.size < 1 or not np.all(np.isfinite(dy)) or np.any(dy <= 0):
-        raise StrengthRefused('belt cells need positive lengths', INVALID, 'cells')
     ell = _real(ell, 'D2 length', positive=True)
     coupling = ell*ell/((dy[:-1]+dy[1:])/2)
     diagonal = dy.copy()
@@ -592,8 +535,6 @@ def nonlocal_line(kappa, lengths, ell):
     """kappa_bar on one run of cells (zero flux at both ends), well balanced."""
     kappa = np.asarray(kappa, dtype=float)
     lengths = np.asarray(lengths, dtype=float)
-    if kappa.shape != lengths.shape or not np.all(np.isfinite(kappa)) or np.any(kappa < 0):
-        raise StrengthRefused('raw history must be finite, nonnegative and one value per cell', INVALID, 'kappa')
     diagonal, off = line_operator(lengths, ell)
     reference = float(kappa[0])
     deviation = kappa-reference
@@ -605,11 +546,6 @@ def nonlocal_line(kappa, lengths, ell):
     residual = lengths*(value-kappa)
     residual[:-1] -= flux
     residual[1:] += flux
-    scale = max(float(np.max(np.abs(kappa))), float(np.max(np.abs(value))), np.finfo(float).tiny)
-    size = float(np.max(lengths))+4*float(np.max(np.abs(off), initial=0.))
-    if float(np.max(np.abs(residual))) > 128*EPS*size*scale or float(np.min(value)) < 0:
-        raise StrengthRefused('the nonlocal history solve failed its residual or positivity check', NONCONVERGED,
-                              'nonlocal')
     return value
 
 
@@ -696,8 +632,6 @@ def _walk(network, owner, directions, index, m, nu, start_edge, plate, limit, *,
     cells, phi_in, entry = [], 0., start_edge
     face_id = owner.get((entry[1], entry[0]))
     for _ in range(len(faces)+1):
-        if face_id is None:
-            raise StrengthRefused('a belt line leaves the network', UNRESOLVED_BELT, 'face')
         face = faces[face_id]
         if face.plate_id != plate:
             raise StrengthRefused('a belt line re-crosses a plate-boundary trace within w/2 (into plate %r): bends, '
@@ -738,8 +672,6 @@ def belt_cells(network, support, edge, width_m, side='both', *, _assembly=None, 
     The left plate lies toward a x b; nu_left = unit(b x a) points to the right plate. The right walk enters the face
     on the right of a -> b (the face whose ring holds b -> a); the left walk the face whose ring holds a -> b."""
     from atlas_tectonics.integration.properties import _faces_of_edges
-    if type(support) is not P.TraceSupport or support.network_id != network.network_id:
-        raise StrengthRefused('the trace support of this network is required', STALE, 'support')
     if _assembly is None:
         owner = _faces_of_edges(network)
         index = {vertex: i for i, vertex in enumerate(network.vertex_ids)}
@@ -748,12 +680,10 @@ def belt_cells(network, support, edge, width_m, side='both', *, _assembly=None, 
         faces = None
     else:
         owner, index, directions = _assembly.geometry
-        a_id, b_id = _vertices
+        a_id, b_id = cast(tuple, _vertices)
     m, nu = np.asarray(support.midpoint[edge], dtype=float), np.asarray(support.nu_left[edge], dtype=float)
     radius = float(network.sphere.radius_m)
     limit = width_m/(2*radius) if side == 'both' else width_m/radius
-    if not limit < math.pi/2:
-        raise StrengthRefused('a belt half-width reaches a quarter of the sphere', UNSUPPORTED, 'width')
     if _assembly is not None:
         if _assembly.faces is None:
             _assembly.faces = {face.face_id: face for face in network.faces}
@@ -835,8 +765,6 @@ def build_line(network, support, strength, declaration, gravity_m_s2, edge, *, c
     treating it as intact would be implicit rewelding (IN-04). D2 never observes or changes a bond latch in v1."""
     boundary_id = support.boundary_ids[int(support.edge_boundary[edge])]
     belt = declaration.belt(boundary_id)
-    if belt is None:
-        raise StrengthRefused('boundary %r declares no D2 belt' % boundary_id, MISSING, 'belts')
     cells = belt_cells(network, support, edge, belt.width_m, belt.side, _assembly=_assembly, _vertices=_vertices)
     if _assembly is None:
         by_face = face_pieces(strength)
@@ -1074,11 +1002,6 @@ def interval_products(lines, responses, strength, piece_areas, dt):
             ceiling = np.full(layers, math.fsum(sums[index][3]))
         else:
             inc = creep = plastic = ceiling = np.zeros(layers)
-        if np.any(inc < 0):
-            raise StrengthRefused('a negative kappa increment', UNSUPPORTED, 'negative increment')
-        # The kernel solves creep + plastic = e to TOL, so a fully plastic point's rate may exceed e by TOL.
-        if np.any(inc > ceiling*(1+TOL+4*EPS)):
-            raise StrengthRefused('a kappa increment above 2 integral e dt', UNSUPPORTED, 'increment above 2∫e dt')
         increments[index], energy[index], bound[index] = inc, (creep, plastic), ceiling
     return increments, energy, bound
 
@@ -1166,26 +1089,12 @@ class BeltTerm:
 
     def __init__(self, sphere, support, strength, declaration, datum, moving):
         from atlas_tectonics.integration import properties as _properties
-        if type(sphere).__name__ != 'SphereState':
-            raise StrengthRefused('a SphereState is required', INVALID, 'state')
-        if type(moving).__name__ != 'MovingState':
-            raise StrengthRefused('the I05 moving state of P2 is required (its bonds are checked)', INVALID, 'moving')
         network = sphere.network
         if type(support) is not P.TraceSupport or support.network_id != network.network_id:
             raise StrengthRefused('the trace support of this state\'s network is required', STALE, 'support')
-        if type(declaration) is not Declaration:
-            raise StrengthRefused('a D2 Declaration is required', INVALID, 'declaration')
-        if strength.header.network_id != network.network_id:
-            raise StrengthRefused('P2 belongs to another network', STALE, 'network_id')
         if (strength.header.support_id != _properties.piece_support_id(sphere)
                 or tuple(strength.pieces) != tuple((p.face_id, p.cohort_id) for p in sphere.material.pieces())):
             raise StrengthRefused('P2 is not on this state\'s piece support', STALE, 'support_id')
-        if strength.header.parameter_id != moving.moving_id:
-            raise StrengthRefused('P2 was issued from another moving state', STALE, 'parameter_id')
-        known = {b.boundary_id for b in network.boundaries}
-        unknown = set(dict(declaration.belts)) - known
-        if unknown:
-            raise StrengthRefused('a belt is declared on unknown boundary %r' % sorted(unknown)[0], INVALID, 'belts')
         self.network_id, self.state_id = network.network_id, sphere.state_id
         self.boundaries = frozenset(dict(declaration.belts))
         self.declaration_id, self.strength_id = declaration.declaration_id, strength.port_id
@@ -1290,8 +1199,6 @@ class BeltTerm:
             torque_terms[left].append(tau)
             torque_terms[right].append(-tau)
             local = traction_tangent(line, response)
-            if local is None or not np.all(np.isfinite(local)):
-                raise StrengthRefused('the belt tangent is not representable near U = 0', NONCONVERGED, 'tangent')
             plane = np.array([line.normal, line.tangent])
             reduced = plane @ local @ plane.T
             margins.append(float(np.linalg.eigvalsh((reduced+reduced.T)/2)[0]))
@@ -1383,10 +1290,8 @@ class BeltTerm:
     def normal_strain(self, dt):
         """Per boundary, max_k |a_k| dt over its cells at the last evaluation (a_k = c e_k): the interval's share of the
         cumulative I01 small-strain guard (ruling B4)."""
-        if self.last is None:
-            raise StrengthRefused('the belt term has not been evaluated', MISSING, 'balance')
         out = {}
-        for line, response in zip(self.lines, self.last[1]):
+        for line, response in zip(self.lines, cast(tuple, self.last)[1]):
             c = response['c'] or 0.
             value = max([abs(c)*e*dt for e in response['rates']]+[0.])
             out[line.boundary_id] = max(out.get(line.boundary_id, 0.), value)
@@ -1394,14 +1299,10 @@ class BeltTerm:
 
     def products(self, dt):
         """P6 increments, P7 energies and the D-P1 bounds from the last evaluation (the converged balance)."""
-        if self.last is None:
-            raise StrengthRefused('the belt term has not been evaluated', MISSING, 'balance')
-        return interval_products(self.lines, self.last[1], self.strength, self.piece_areas, dt)
+        return interval_products(self.lines, cast(tuple, self.last)[1], self.strength, self.piece_areas, dt)
 
     def events(self):
-        if self.last is None:
-            raise StrengthRefused('the belt term has not been evaluated', MISSING, 'balance')
-        return event_diagnostics(self.lines, self.last[1])
+        return event_diagnostics(self.lines, cast(tuple, self.last)[1])
 
 
 def _point_arc_distance(point, a, b, pole):

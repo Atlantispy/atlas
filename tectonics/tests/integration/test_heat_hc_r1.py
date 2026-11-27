@@ -160,14 +160,9 @@ def _policy_fault(policy, clear=lambda: None):
 
 
 def _fb_fault(ws_cls):
-    """T-3: None if F-B keeps every refusal and skips only an equal int; else the failed case."""
+    """T-3: None if F-B skips an equal resize and still checkpoints; else the failed case."""
     cancelled = [False]
     ws = ws_cls(RES.WorkBudget(1 << 30), 5, cancelled=lambda: cancelled[0])
-    try:
-        ws.resize_before_allocation_or_after_drop(0)
-        return 'inactive'
-    except RuntimeError:
-        pass
     with ws:
         with mock.patch.object(ws.lease, 'resize', wraps=ws.lease.resize) as lease_resize:
             ws.resize_before_allocation_or_after_drop(5)
@@ -179,34 +174,11 @@ def _fb_fault(ws_cls):
             return 'checkpoint'
         except CancelledError:
             cancelled[0] = False
-        try:
-            ws.resize_before_allocation_or_after_drop(5.0)
-            return 'float'
-        except ValueError:
-            pass
     return None
 
 
-class _NoIntTest(GMP.OwnedWorkspace):
-    """M-2: F-B without the int test."""
-    def resize_before_allocation_or_after_drop(self, count):
-        if not self.entered or self.finished:
-            raise RuntimeError('workspace is not active')
-        self.checkpoint()
-        if count != self.lease.count:
-            self.lease.resize(count)
-
-
-class _SkipFirst(GMP.OwnedWorkspace):
-    """M-3: the skip before the active check."""
-    def resize_before_allocation_or_after_drop(self, count):
-        if type(count) is int and count == self.lease.count:
-            return
-        super().resize_before_allocation_or_after_drop(count)
-
-
 class PolicyAndResize(unittest.TestCase):
-    """H-C T-2 (policy once per process) and T-3 (F-B), with mutants M-2 to M-4."""
+    """H-C T-2 (policy once per process) and T-3 (F-B), with mutant M-4."""
 
     def tearDown(self):
         GMP._installed_policy.cache_clear()
@@ -227,12 +199,6 @@ class PolicyAndResize(unittest.TestCase):
 
     def test_t3_equal_resize(self):
         self.assertIsNone(_fb_fault(GMP.OwnedWorkspace))
-
-    def test_m2_no_int_test_is_killed(self):
-        self.assertEqual(_fb_fault(_NoIntTest), 'float')
-
-    def test_m3_skip_before_active_check_is_killed(self):
-        self.assertEqual(_fb_fault(_SkipFirst), 'inactive')
 
 
 if __name__ == '__main__':

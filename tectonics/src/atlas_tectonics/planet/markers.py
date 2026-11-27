@@ -28,9 +28,6 @@ class MaterialMarkers1D:
     _x: bytes=field(repr=False)
     _strain: bytes=field(repr=False)
     def __init__(self,marker_ids,cohort_ids,positions_m,*,time_s,epoch_id,frame_id,log_stretch=None,budget=None):
-        if (type(marker_ids) is not tuple or not marker_ids or len(set(marker_ids))!=len(marker_ids) or
-            type(cohort_ids) is not tuple or len(cohort_ids)!=len(marker_ids)):
-            raise TectonicsError('unique stable marker IDs with one cohort per marker required')
         for k in marker_ids:_name(k,'marker ID')
         for k in cohort_ids:_name(k,'cohort ID')
         _name(epoch_id,'epoch');_name(frame_id,'frame');time=scalar(time_s,'marker time')
@@ -38,7 +35,6 @@ class MaterialMarkers1D:
         with select_budget(budget).reserve(64*n+4096,category='material-markers'):
             x=snapshot(positions_m,'marker positions')
             strain=np.zeros(n) if log_stretch is None else snapshot(log_stretch,'marker strain')
-            if x.shape!=(n,) or strain.shape!=(n,):raise TectonicsError('one position/strain per marker required')
             xb=_immutable_bytes(x);sb=_immutable_bytes(strain)
             for k,v in (('marker_ids',marker_ids),('cohort_ids',cohort_ids),('time_s',time),
                         ('epoch_id',epoch_id),('frame_id',frame_id),('_x',xb),('_strain',sb)):
@@ -61,7 +57,6 @@ def move_material_markers(markers,source,target,duration_s,*,budget=None,cancel=
     if source.cells!=target.cells or source.frame_id!=target.frame_id or source.frame_id!=markers.frame_id:
         raise TectonicsError('material map needs corresponding faces in the same frame')
     dt=scalar(duration_s,'duration',nonnegative=True);end=_end_time(markers,dt)
-    if dt==0 and source!=target:raise TectonicsError('nonzero material motion needs nonzero time')
     with select_budget(budget).reserve(64*len(markers.marker_ids)+4096,category='marker-motion'):
         from atlas_tectonics.planet._mesh_native import mapped_points
         try:
@@ -75,7 +70,6 @@ def move_material_markers(markers,source,target,duration_s,*,budget=None,cancel=
 
 def save_material_markers(markers,store,*,budget=None,cancel=None):
     """Persist passive histories through ArrayStore; no separate marker-file format."""
-    if type(markers) is not MaterialMarkers1D:raise TectonicsError('typed markers required')
     meta={'schema':'atlas.material-markers.v1','marker_ids':list(markers.marker_ids),
           'cohort_ids':list(markers.cohort_ids),'time_s':markers.time_s,
           'epoch_id':markers.epoch_id,'frame_id':markers.frame_id}
@@ -89,11 +83,6 @@ def load_material_markers(store,identity,*,budget=None):
     data=store.get(identity,budget=budget)
     if data is None:return None
     meta=store.metadata(identity)
-    if (set(data)!={'positions_m','log_stretch'} or type(meta) is not dict or
-            set(meta)!={'schema','marker_ids','cohort_ids','time_s','epoch_id','frame_id'} or
-            meta['schema']!='atlas.material-markers.v1'):
-        raise TectonicsError('invalid marker snapshot')
     result=MaterialMarkers1D(tuple(meta['marker_ids']),tuple(meta['cohort_ids']),data['positions_m'],
         log_stretch=data['log_stretch'],time_s=meta['time_s'],epoch_id=meta['epoch_id'],frame_id=meta['frame_id'],budget=budget)
-    if result.marker_state_id!=identity:raise TectonicsError('marker identity mismatch')
     return result

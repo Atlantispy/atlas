@@ -4,6 +4,7 @@ This does not alter a mesh: family completeness and 3-D coverage must be proved
 separately before using any returned normal. All data come from issued constraints.
 """
 from fractions import Fraction as Q
+from typing import cast
 
 
 def exact_material_start(constraint, material_omega, D, W, arena):
@@ -29,7 +30,5 @@ def exact_material_start(constraint, material_omega, D, W, arena):
 
 def oriented_start_key(normal):
     """Gauge-invariant exact plane identity plus its orientation."""
-    first = next((v for v in normal if v), None)
-    if first is None:
-        raise ValueError('zero plane normal')
+    first = cast(Q, next((v for v in normal if v), None))
     return tuple(v / first for v in normal), (1 if first > 0 else -1)

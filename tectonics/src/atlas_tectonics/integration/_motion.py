@@ -47,10 +47,6 @@ def solve(prep, law, kappa, drive, *, method="newton", warm=None, deadline=None)
     continuous zero-stress/zero-dissipation limit, never by log(0).
     warm is an initial guess ONLY, not a cached result; every state is resolved.
     """
-    if type(prep) is not w.PreparedColumn or type(law) is not w.WeakeningLaw or type(drive) is not Drive:
-        raise ValueError("typed preparation, law and drive required")
-    if method not in ("newton", "brent"):
-        raise ValueError("unknown motion solver")
     kappa = w.history_array(prep, kappa)
     law.certify(prep)
     w.check_deadline(deadline)

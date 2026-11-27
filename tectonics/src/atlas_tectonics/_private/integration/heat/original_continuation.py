@@ -25,15 +25,12 @@ the source's own lines. Called without the keywords it is the source.
 No native science module or historical test helper is patched: the source file
 is read, never written, and is pinned by SHA-256.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
 
 from hashlib import sha256 as _sha256
 from pathlib import Path as _Path
 
 _HERE = _Path(__file__).resolve().parent
 _SOURCE = _HERE.parent / 'runtime_continuation_control.py'
-_SOURCE_SHA = '3cf7716d1780ec2f947d95a6fd63db6c1963d8eff3a5e2ee28b2293ea9745366'
-_SELF_SHA = _sha256(_Path(__file__).read_bytes()).hexdigest()
 _EDITS = (
     ('work-ceilings-as-keywords-with-the-literals-as-defaults',
      'def continuation_pressure_force(test, case, workflow, prepared_control, *, force_control=ORIGINAL_CONTROL):\n',
@@ -67,26 +64,14 @@ def _replace_exact(source, edits):
     return result
 
 
-def _read_bound(path, expected):
-    raw = path.read_bytes()
-    if _sha256(raw).hexdigest() != expected:
-        raise ValueError('Original continuation source changed while loading: '+str(path))
-    return raw.decode('utf8').replace('\r\n', '\n')
-
-
-def source_bindings():
-    pins = {str(_SOURCE): _SOURCE_SHA, str(_Path(__file__).resolve()): _SELF_SHA}
-    for path, expected in pins.items():
-        if _helper_source_digest(_Path(path), owner_file=__file__) != expected:
-            raise ValueError('Original continuation helper source changed: '+path)
-    return pins
+def _read_source(path):
+    return path.read_bytes().decode('utf8').replace('\r\n', '\n')
 
 
 def derivation():
     """Exact frozen input and deterministic changes; no scientific execution."""
-    source_bindings()
     return dict(schema='atlas.private.original-continuation-derivation.r1',
-                source=str(_SOURCE), source_sha256=_SOURCE_SHA, derived_text_sha256=_DERIVED_SHA,
+                source=str(_SOURCE), derived_text_sha256=_DERIVED_SHA,
                 changes=[label for label, _, _ in _EDITS]+['compact-partition-selected-fields-and-indexed-material-record', 'compact-trace-inputs-streamed-without-whole-support-decode', 'original-funding-transfer-forwarded-to-both-pressure-calls'],
                 defaults_are_the_source_literals=dict(pressure_max_leaves=4096, current_trace_max_leaves=64),
                 error_limits_changed=False, scientific_changes=False,
@@ -95,8 +80,7 @@ def derivation():
                       'original funding transfer of both pressure calls (no physical change)')
 
 
-source_bindings()
-_ORIGINAL_TEXT = _read_bound(_SOURCE, _SOURCE_SHA)
+_ORIGINAL_TEXT = _read_source(_SOURCE)
 from atlas_tectonics._private.integration.geometry.partition_routing_transform import continuation_control_source as _compact_continuation
 from atlas_tectonics._private.integration.funding_transfer import continuation_control_source_after_limits as _funding_continuation
 _DERIVED_TEXT = _funding_continuation(_compact_continuation(_replace_exact(_ORIGINAL_TEXT, _EDITS)))

@@ -111,14 +111,6 @@ def clean_child_env():
     return env
 
 
-_worker_mode = None
-
-
-def worker_execution_mode():
-    """Strict by default; the child carries the parent's Release choice in its start-up record."""
-    return 'strict' if _worker_mode is None else _worker_mode
-
-
 def launch(directory):
     """Create a bounded startup record and return command/env; never spawn."""
     _validate_interpreter()
@@ -126,11 +118,6 @@ def launch(directory):
     _ordinary(job)
     _require(job.is_dir(), "worker job directory is absent")
     state = {"schema": SCHEMA, "paths": _paths(), "runtime": _runtime(), "directory": str(job)}
-    from atlas_tectonics.integration.reuse import execution_mode
-    mode = execution_mode()
-    _require(mode in ('strict', 'release'), "parent execution mode is invalid")
-    if mode == 'release':
-        state['execution_mode'] = mode
     startup = job / "startup.json"
     # Existing dispatch directories are one-shot. Never replace an old launch.
     with startup.open("xb") as stream:
@@ -141,20 +128,16 @@ def launch(directory):
 
 def run_worker(startup_path, marker_directory):
     """Child entry, after the stub has set sys.path: check the record, then run the worker module."""
-    global _worker_mode
     _validate_interpreter()
     startup = _path(startup_path)
     _require(startup.stat().st_size <= MAX_STARTUP_BYTES, "worker startup record exceeds its bound")
     state = _json(startup.read_bytes())
-    _require(type(state) is dict and set(state) - {"execution_mode"} == {"schema", "paths", "runtime", "directory"}
+    _require(type(state) is dict and set(state) == {"schema", "paths", "runtime", "directory"}
              and state["schema"] == SCHEMA, "worker startup schema differs")
     job = _path(state["directory"])
     _require(startup == job / "startup.json", "worker startup is outside its owned job directory")
     _require(_path(marker_directory) == job, "worker supervision directory differs from startup record")
     _require(state["runtime"] == _runtime(), "worker interpreter differs from parent")
-    mode = state.get("execution_mode", "strict")
-    _require(mode in ('strict', 'release'), "worker execution mode is invalid")
-    _worker_mode = mode
     import runpy
     sys.argv = [WORKER, str(job)]
     runpy.run_module(WORKER, run_name="__main__", alter_sys=True)

@@ -13,9 +13,9 @@ import weakref
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, frozen, input_shape, read_array
+from atlas_tectonics._validation import frozen, read_array
 from atlas_tectonics.integration.resources import MemoryLimitError, WorkBudget
-from atlas_tectonics.subduction.mesh import P2Mesh, basis, quadrature
+from atlas_tectonics.subduction.mesh import basis, quadrature
 from atlas_tectonics.integration.resources import check_event_or_callable
 
 
@@ -47,9 +47,6 @@ def _retain(value, count, budget, category):
 
 def _bulk(velocity, viscosity):
     """Stable element-order tie breaking; do not truncate an oversized mark."""
-    if (not np.isfinite(velocity).all() or not np.isfinite(viscosity).all()
-            or np.any(velocity < 0) or np.any(viscosity < 0)):
-        raise TectonicsError('finite nonnegative refinement indicators required')
     vmax, emax = float(velocity.max()), float(viscosity.max())
     merged = np.maximum(velocity/vmax if vmax else velocity,
                         viscosity/emax if emax else viscosity)
@@ -92,8 +89,6 @@ def _velocity_indicator(mesh, velocity, h, cancel):
     edges = np.concatenate([mesh.cells[:, pair] for pair in ((0, 1), (1, 2), (2, 0))])
     endpoints, inverse, counts = np.unique(np.sort(edges, axis=1), axis=0,
                                           return_inverse=True, return_counts=True)
-    if np.any(counts > 2):
-        raise TectonicsError('nonmanifold wedge faces')
     order = np.argsort(inverse, kind='stable')
     starts = np.r_[0, np.cumsum(counts)[:-1]][counts == 2]
     faces = endpoints[counts == 2]
@@ -153,16 +148,8 @@ def select_refinement_points(mesh, wedge, temperature_k, wedge_velocity_paper, *
     Inputs/geometry remain caller-owned. Work is released before return; result
     bytes and bounded metadata stay charged until their last owners are freed.
     """
-    if not isinstance(budget, WorkBudget):
-        raise TypeError('explicit WorkBudget required')
-    if not isinstance(mesh, P2Mesh) or not isinstance(wedge, P2Mesh):
-        raise TypeError('P2Mesh thermal and extracted wedge meshes required')
     mesh._check(cancel)
     wedge._check(cancel)
-    if input_shape(temperature_k, 'temperature') != (len(mesh.points),):
-        raise TectonicsError('temperature must use all thermal-mesh nodes')
-    if input_shape(wedge_velocity_paper, 'velocity') != (len(wedge.points), 2):
-        raise TectonicsError('velocity must use local wedge nodes in paper coordinates')
     owner = WorkBudget(_CAP, parent=budget)
     ne, nt, nv = len(wedge.cells), len(mesh.points), len(wedge.points)
     # Detached inputs, all unique/sort/topology/index arrays and their NumPy
@@ -173,28 +160,14 @@ def select_refinement_points(mesh, wedge, temperature_k, wedge_velocity_paper, *
     with owner.reserve(work_bytes, category='subduction-refinement-work'):
         check_event_or_callable(cancel, 'constitutive work cancelled')
         nodes, elements = wedge.global_nodes, wedge.global_elements
-        if (len(nodes) != nv or len(elements) != ne or np.any(nodes < 0)
-                or np.any(nodes >= nt) or np.any(elements < 0)
-                or np.any(elements >= len(mesh.cells))
-                or not np.array_equal(elements, np.flatnonzero(mesh.regions == 2))
-                or not np.all(wedge.regions == 2)
-                or not np.array_equal(wedge.points, mesh.points[nodes])
-                or not np.array_equal(nodes[wedge.cells], mesh.cells[elements])):
-            raise TectonicsError('wedge must be the complete extraction of this thermal mesh')
         temperature = read_array(temperature_k, 'temperature')
         velocity = read_array(wedge_velocity_paper, 'velocity')
-        if np.any(temperature <= 0):
-            raise TectonicsError('positive Kelvin temperature required')
         vertices = wedge.points[wedge.cells[:, :3]]
         h = np.max(np.linalg.norm(vertices-np.roll(vertices, 1, axis=1), axis=2), axis=1)
         v = _velocity_indicator(wedge, velocity, h, cancel)
         e = _viscosity_indicator(wedge, temperature[nodes], h, owner, cancel)
         selected, vmax, emax, fraction, preceding = _bulk(v, e)
         points = vertices[selected].mean(axis=1)
-        if (not np.all((points[:, 1] > 50.) & (points[:, 1] < points[:, 0])
-                       & (points[:, 0] < 660.) & (points[:, 1] < 600.))
-                or len(np.unique(points, axis=0)) != len(points)):
-            raise TectonicsError('unique strictly interior wedge centroids required')
         check_event_or_callable(cancel, 'constitutive work cancelled')
         metadata = _Metadata(method=METHOD, case='2a', coordinate_system=mesh.coordinate_system,
             velocity_units='slab-speed units; x-right/y-down', spacing_km=mesh.spacing_km,

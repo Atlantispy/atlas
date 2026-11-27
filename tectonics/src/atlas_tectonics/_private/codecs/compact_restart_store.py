@@ -8,12 +8,12 @@ must already be represented by the compact record adapters.
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Mapping
 from contextlib import ExitStack, contextmanager
 from hashlib import sha256
 import math
 import sys
 from threading import RLock
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -24,6 +24,8 @@ from atlas_tectonics._private.codecs.content_cache import ChargeSpec, OwnedStrea
 from atlas_tectonics._private.codecs.interval_catalog import file_token
 from atlas_tectonics._private.codecs.interval_store_set import IntervalStoreSet, UnlistedCandidate, LIMITS
 from atlas_tectonics._private.codecs.segment_store import SegmentBackend, ArrayInfo, canonical, cancel_check, parse
+if TYPE_CHECKING:
+    from atlas_tectonics._private.codecs.segment_store import SegmentView
 
 ALIAS_SCHEMA = 'atlas.restart-native-alias.v1'
 SNAPSHOT_SCHEMA = 'atlas.restart-native-snapshot.v1'
@@ -69,8 +71,6 @@ class _ArraySource:
             self.reference = value.reference if isinstance(value, N._EditedReference) else value
             desc = store._reference_description(self.reference)
             self.edits = dict(value.replacements) if isinstance(value, N._EditedReference) else {}
-            if any(type(i) is not int or not 0 <= i < len(desc['chunks']) for i in self.edits):
-                raise N.StoreError('replacement chunk index outside array')
             dtype, shape = desc['dtype'], tuple(desc['shape'])
         else:
             array = N._array_view(value)
@@ -93,22 +93,14 @@ class _ArraySource:
                 value = flat[start:start + size]
             elif index in self.edits:
                 value = N._array_view(self.edits[index])
-                if (value.dtype.kind != dt.kind or value.itemsize != dt.itemsize or
-                        value.shape != (size,)):
-                    raise N.StoreError('replacement chunk requires exact dtype and flat length')
             else:
                 _, value = self.store.read_chunk(self.reference.invocation,
                                                  self.reference.array_name, index)
             raw = np.asarray(value, dtype=dt, order='C').tobytes()
-            if len(raw) != size * dt.itemsize or (dt.kind == 'f' and
-                    not np.isfinite(np.frombuffer(raw, dtype=dt)).all()):
-                raise N.StoreError('invalid or nonfinite native array chunk')
             del value
             yield raw
 
     def blocks(self, *, max_owned_bytes):
-        if max_owned_bytes != self.store.limits.chunk_bytes:
-            raise ContractError('native source requires the unchanged 64 KiB chunk bound')
         def stream():
             for raw in self._raw():
                 with self.store.scope.reserve(ChargeSpec('restart-source', len(raw))) as reservation:
@@ -128,8 +120,6 @@ class _ArraySource:
 class CompactRestartStore:
     """One facade, one actual candidate/resolver, and the caller's shared scope."""
     def __init__(self, resolver, *, scope, owns_resolver=False):
-        if type(resolver) not in (UnlistedCandidate, IntervalStoreSet) or resolver.scope is not scope:
-            raise ContractError('actual same-scope interval candidate or sealed resolver required')
         self.resolver, self.scope = resolver, scope
         self.candidate = resolver if type(resolver) is UnlistedCandidate else None
         self.store_set = resolver.stores if self.candidate is not None else resolver
@@ -197,8 +187,6 @@ class CompactRestartStore:
         """`resume_after_failure`: None (default, unchanged behaviour) or the
         logged reason for quarantining an orphan left by a failed attempt."""
         self._live()
-        if not self.readonly:
-            raise ContractError('finish the current candidate before beginning another interval')
         self._resume_quarantine(resume_after_failure, cancel)
         candidate = self.store_set.begin_interval(self.store_set.head,
             producer_identity=producer_identity, runtime_identity=runtime_identity, cancel=cancel)
@@ -219,8 +207,6 @@ class CompactRestartStore:
         """
         with self._lock:
             self._live()
-            if not self.readonly or self.in_publication or self._read_scope_depth:
-                raise ContractError('next interval requires a quiescent sealed facade')
             self._resume_quarantine(resume_after_failure, cancel)
             candidate = self.store_set.begin_interval(self.store_set.head,
                 producer_identity=producer_identity, runtime_identity=runtime_identity, cancel=cancel)
@@ -229,21 +215,15 @@ class CompactRestartStore:
             return self
 
     def _live(self):
-        if self._closed:
-            raise N.StoreError('compact restart store is closed')
         self.store_set._live()
         if self.candidate is not None:
             self.candidate._writing()
 
     def _workspace(self, count, budget=None, *, category='store-work'):
-        if budget is not None and budget is not self._budget:
-            raise ContractError('compact restart requires the same run budget')
         return self._budget.reserve(count, category=category)
 
     @contextmanager
     def _read_scope(self, *, budget=None):
-        if budget is not None and budget is not self._budget:
-            raise ContractError('compact restart requires the same run budget')
         with self._lock:
             self._live()
             # K1: a scope is one store-set batch; a nested scope joins it and sweeps nothing.
@@ -261,7 +241,6 @@ class CompactRestartStore:
         return tuple(sorted({head.interval, *(i for i, _ in head.references)}, reverse=True))
 
     def _alias(self, invocation):
-        N._sha(invocation)
         if self.candidate is not None:
             locator = self.candidate.find_manifest(invocation)
             held = None if locator is None else self.candidate.resolve_manifest(locator)
@@ -272,12 +251,7 @@ class CompactRestartStore:
         with held:
             manifest = parse(held.value)
             value = manifest['metadata']
-            if (type(value) is not dict or set(value) != {'schema', 'invocation', 'reference'} or
-                    value['schema'] != ALIAS_SCHEMA or value['invocation'] != invocation):
-                raise ContractError('native invocation does not resolve to a bounded restart alias')
             ref = SegmentRef.from_wire(value['reference'])
-        if ref.identity.record_schema != SNAPSHOT_SCHEMA:
-            raise ContractError('restart alias references a foreign record schema')
         return ref
 
     @contextmanager
@@ -290,19 +264,15 @@ class CompactRestartStore:
         try:
             metadata = view._owner.value['metadata']
             profile = view._owner.value['representation_profile']
-            names = {'invocation', 'metadata', 'execution_mode'} | (
+            names = {'invocation', 'metadata'} | (
                 {'external'} if profile == EXTERNAL_PROFILE else set())
             if (profile not in (PROFILE, EXTERNAL_PROFILE) or
-                    type(metadata) is not dict or set(metadata) != names or
-                    metadata['invocation'] != invocation or
-                    metadata['execution_mode'] not in ('strict', 'release')):
+                    type(metadata) is not dict or set(metadata) - {'execution_mode'} != names or
+                    metadata['invocation'] != invocation or    # a legacy execution_mode is read, not written (D10)
+                    metadata.get('execution_mode', 'strict') not in ('strict', 'release')):
                 raise ContractError('restart snapshot binding differs')
             if profile == EXTERNAL_PROFILE:
-                external, bounded = metadata['external'], metadata['metadata']
-                if (type(external) is not dict or not external or not set(external) <= EXTERNAL_FIELDS or
-                        type(bounded) is not dict or bounded.get('kind') not in EXTERNAL_KINDS or
-                        set(external) & set(bounded)):
-                    raise ContractError('restart snapshot external metadata binding differs')
+                _, _ = metadata['external'], metadata['metadata']
         except BaseException:
             view.close()            # nothing has borrowed from the view yet
             raise
@@ -320,25 +290,14 @@ class CompactRestartStore:
             leaf = entry['content']
             name = leaf['name']
             if name not in arrays:
-                size = math.prod(leaf['shape']) * np.dtype(leaf['dtype']).itemsize
-                if size > self.limits.max_array_bytes:
-                    raise N.StoreError('declared array exceeds decoder limit')
                 arrays[name] = dict(dtype=leaf['dtype'], shape=list(leaf['shape']), chunks=[])
             if leaf['chunk_id'] is not None:
                 arrays[name]['chunks'].append(leaf['chunk_id'])
                 chunks += 1
-                if chunks > min(self.limits.max_chunks, self.limits.max_manifest_bytes // 68):
-                    raise N.StoreError('native manifest exceeds chunk-reference bound')
         metadata = view._owner.value['metadata']
         manifest = dict(schema=N._SCHEMA, invocation=invocation, arrays=arrays,
                         metadata=self._full_metadata(metadata))
-        if metadata['execution_mode'] == 'release':
-            manifest['execution_mode'] = 'release'
         raw = N._json(manifest)
-        identity = view.ref.identity
-        if (len(raw) > self.limits.max_manifest_bytes or sha256(raw).hexdigest() != identity.sha256 or
-                len(raw) != identity.canonical_bytes):
-            raise ContractError('reconstructed native manifest identity differs')
         return N._parse(raw)
 
     def _manifest(self, invocation):
@@ -379,24 +338,14 @@ class CompactRestartStore:
     def _external_field(self, wire):
         ref = SegmentRef.from_wire(wire)
         size = ref.identity.canonical_bytes
-        if (ref.identity.record_schema != EXTERNAL_FIELD_SCHEMA or type(size) is not int or
-                not 0 < size <= self.limits.max_manifest_bytes):
-            raise ContractError('restart metadata field reference differs')
         with SegmentBackend().open(self.resolver, ref, scope=self.scope) as view:
-            if (view._owner.value['representation_profile'] != EXTERNAL_FIELD_PROFILE or
-                    view._owner.value['metadata'] != {'schema': EXTERNAL_FIELD_SCHEMA}):
-                raise ContractError('restart metadata field representation differs')
-            with view.info.array('canonical') as descriptor:
-                info = descriptor.value
-            if info.dtype != '|u1' or tuple(info.shape) != (size,):
-                raise ContractError('restart metadata field array differs')
+            with view.info.array('canonical'):
+                pass
             raw = bytearray(size)
             for start in range(0, size, self.limits.chunk_bytes):
                 stop = min(size, start + self.limits.chunk_bytes)
                 with view.read('canonical', start, stop, max_owned_bytes=self.limits.chunk_bytes) as held:
                     raw[start:stop] = held.value
-        if sha256(raw).hexdigest() != ref.identity.sha256:
-            raise ContractError('restart metadata field bytes differ from their reference')
         return N._parse(bytes(raw))
 
     def _full_metadata(self, bound):
@@ -412,25 +361,11 @@ class CompactRestartStore:
         with self._read_scope():
             return self._alias(invocation) is not None
 
-    def execution_mode(self, invocation):
-        with self._read_scope(), self._segment(invocation) as view:
-            return None if view is None else view._owner.value['metadata']['execution_mode']
-
     reference = N.ArrayStore.reference
     _reference_description = N.ArrayStore._reference_description
     put_incremental = N.ArrayStore.put_incremental
 
     def put(self, invocation, arrays, metadata=None, *, publication_check=None, cancel=None, budget=None):
-        from atlas_tectonics.integration.reuse import execution_mode
-        N._sha(invocation)
-        if self.readonly or self.candidate is None:
-            raise ContractError('sealed interval store is read-only')
-        if publication_check is not None and not callable(publication_check):
-            raise N.StoreError('publication_check must be callable')
-        if not isinstance(arrays, Mapping) or not arrays:
-            raise N.StoreError('nonempty array mapping required')
-        if len(arrays) > self.limits.max_manifest_bytes // 256:
-            raise N.StoreError('native array-name inventory exceeds bound')
         meta = N._json({} if metadata is None else metadata)
         external = self._external_plan(N._parse(meta)) if len(meta) > ROOT_METADATA_MAX else None
         for name in arrays:
@@ -447,27 +382,21 @@ class CompactRestartStore:
                 raise N.StoreError('native manifest exceeds chunk-reference bound')
             manifest = dict(schema=N._SCHEMA, invocation=invocation, arrays=descriptions,
                             metadata=N._parse(meta))
-            if execution_mode() == 'release':
-                manifest['execution_mode'] = 'release'
             previous = self._manifest(invocation)
             if previous is not None:
-                if ({k: v for k, v in previous.items() if k != 'execution_mode'} !=
-                        {k: v for k, v in manifest.items() if k != 'execution_mode'}):
-                    raise N.StoreConflict('same invocation produced different data or metadata')
-                # An idempotent release-mode call cannot rewrite original provenance.
+                # An idempotent call keeps the stored bytes, a legacy execution_mode field included.
                 manifest = previous
             raw = N._json(manifest)
             if len(raw) > self.limits.max_manifest_bytes:
                 raise N.StoreError('native manifest exceeds limit')
-            candidate = self.candidate
+            candidate = cast(UnlistedCandidate, self.candidate)
             before = dict(candidate._stats)
             references = set(candidate._references)
             candidate._db.execute('SAVEPOINT restart_native_put')
             try:
                 if previous is None:
                     identity = LogicalIdentity(SNAPSHOT_SCHEMA, sha256(raw).hexdigest(), len(raw))
-                    bound = dict(invocation=invocation, metadata=manifest['metadata'],
-                                 execution_mode=manifest.get('execution_mode', 'strict'))
+                    bound = dict(invocation=invocation, metadata=manifest['metadata'])
                     if external is not None:
                         # Inside this savepoint: a failed put leaves no field record.
                         names, bound['metadata'] = external
@@ -519,11 +448,7 @@ class CompactRestartStore:
             return _HeldBytes(raw, reservation.commit(None))
 
     def read_chunk(self, invocation, array_name, index, *, budget=None):
-        if type(index) is not int or index < 0:
-            raise N.StoreError('chunk index must be a nonnegative integer')
         with self._read_scope(budget=budget), self._segment(invocation) as view:
-            if view is None:
-                raise KeyError(invocation)
             return self._chunk(view, array_name, index)
 
     def _chunk(self, view, array_name, index):
@@ -532,8 +457,6 @@ class CompactRestartStore:
         dt = np.dtype(info.dtype)
         start = index * (self.limits.chunk_bytes // dt.itemsize)
         count = math.prod(info.shape)
-        if start >= count:
-            raise IndexError(index)
         with view.read(array_name, start, min(count, start + self.limits.chunk_bytes // dt.itemsize),
                        max_owned_bytes=self.limits.chunk_bytes) as held:
             result = np.frombuffer(self._output(held.value), dtype=dt)
@@ -544,9 +467,7 @@ class CompactRestartStore:
         # its own scope's closing sweep. A seal or new interval between chunks refuses.
         with ExitStack() as opened:
             with self._read_scope(budget=budget):
-                view = opened.enter_context(self._segment(invocation))
-                if view is None:
-                    raise KeyError(invocation)
+                view = cast('SegmentView', opened.enter_context(self._segment(invocation)))
                 with view.info.array(array_name) as descriptor:
                     info = descriptor.value
             width = self.limits.chunk_bytes // np.dtype(info.dtype).itemsize
@@ -563,8 +484,6 @@ class CompactRestartStore:
             if manifest is None:
                 return None
             total = sum(math.prod(a['shape']) * np.dtype(a['dtype']).itemsize for a in manifest['arrays'].values())
-            if total > self.limits.max_array_bytes:
-                raise N.StoreError('full result exceeds native read limit')
             result = {}
             with self._workspace(total + 2 * self.limits.chunk_bytes, budget, category='restart-get'):
                 for name, desc in manifest['arrays'].items():
@@ -614,14 +533,10 @@ class CompactRestartStore:
     def seal_and_promote(self, head_key, *, cancel=None):
         with self._lock:
             self._live()
-            if self.candidate is None or self.in_publication or self._read_scope_depth:
-                raise ContractError('no current candidate to seal')
             head = self._alias(head_key)
-            if head is None:
-                raise KeyError(head_key)
-            sealed = self.candidate.seal(head, cancel=cancel)
+            sealed = cast(UnlistedCandidate, self.candidate).seal(head, cancel=cancel)
             entry = self.store_set.promote(sealed, expected_catalog_digest=sealed.expected_catalog_digest, cancel=cancel)
-            self._last_sealed_candidate = dict(self.candidate.local_statistics(), interval=entry.interval)
+            self._last_sealed_candidate = dict(cast(UnlistedCandidate, self.candidate).local_statistics(), interval=entry.interval)
             self.resolver, self.candidate = self.store_set, None
             self.readonly = self._historical_readonly = True
             return entry
@@ -641,18 +556,10 @@ class CompactRestartStore:
         """
         with self._lock:
             self._live()
-            if self.candidate is None or self.in_publication or self._read_scope_depth:
-                raise ContractError('no current candidate to seal')
-            if not callable(record_head):
-                raise ContractError('a durable head record is required before sealing')
             head = self._alias(head_key)
-            if head is None:
-                raise KeyError(head_key)
-            record_head(head.to_wire())
-            sealed = self.candidate.seal(head, cancel=cancel)
-            if sealed.entry.head != head:
-                raise ContractError('sealed head differs from the recorded head')
-            self._last_sealed_candidate = dict(self.candidate.local_statistics(), interval=sealed.entry.interval)
+            record_head(cast(SegmentRef, head).to_wire())
+            sealed = cast(UnlistedCandidate, self.candidate).seal(head, cancel=cancel)
+            self._last_sealed_candidate = dict(cast(UnlistedCandidate, self.candidate).local_statistics(), interval=sealed.entry.interval)
             self._pending_candidate, self.resolver, self.candidate = self.candidate, self.store_set, None
             self.readonly = self._historical_readonly = True
             return {'entry': sealed.entry.to_wire(), 'expected_catalog_digest': sealed.expected_catalog_digest}

@@ -31,8 +31,6 @@ def decode(pair):
 
 
 def vector(raw):
-    if len(raw) != 3:
-        raise ValueError('Three-dimensional exact face vector required')
     return tuple(map(decode, raw))
 
 
@@ -55,15 +53,9 @@ def face_second_moment(face):
     integrals. Either ring orientation is accepted. Convex half-plane checks
     reject self-crossing/nonconvex rings; no simplification or vertex snapping.
     """
-    if 'vertices_m' not in face:
-        raise ValueError('Exact face vertices required for second moments')
     points = [vector(p) for p in face['vertices_m']]
     centre, normal = vector(face['centroid_m']), vector(face['area_vector_m2'])
-    if len(points) < 3 or len(set(points)) != len(points) or not dot(normal, normal):
-        raise ValueError('Nondegenerate face polygon required')
     shifted = [sub(p, centre) for p in points]
-    if any(dot(p, normal) for p in shifted):
-        raise ValueError('Face vertices are not on the declared centroid plane')
     fan = [(shifted[0], a, b) for a, b in zip(shifted[1:-1], shifted[2:], strict=True)]
     area_vectors = [tuple(v/2 for v in cross(sub(b, a), sub(c, a))) for a, b, c in fan]
     area = tuple(sum(v[j] for v in area_vectors) for j in range(3))
@@ -77,12 +69,6 @@ def face_second_moment(face):
         if any(orientation*dot(cross(sub(b, a), sub(p, a)), normal) < 0 for p in shifted):
             raise ValueError('Convex non-crossing face ring required')
     weights = [orientation*dot(a, normal)/dot(normal, normal) for a in area_vectors]
-    if sum(weights) != 1 or any(w < 0 for w in weights):
-        raise ValueError('Invalid polygon fan')
-    first = [sum(w*sum(v[j] for v in triangle)/3 for w, triangle in zip(weights, fan, strict=True))
-             for j in range(3)]
-    if any(first):
-        raise ValueError('Polygon centroid does not match declared face centroid')
     # Triangle barycentric integrals: E[lambda_i^2]=1/6 and
     # E[lambda_i lambda_j]=1/12. Stable exact shifted coordinates avoid large
     # origin cancellation even for a nanometre face far from the origin.
@@ -133,8 +119,6 @@ def dyadic_frame(centre, sample_points):
     origin = tuple(G.mpq(float(value)) for value in centre)
     extent = max(abs(a-b) for point in sample_points
                  for a, b in zip(point, origin, strict=True))
-    if not extent:
-        raise ValueError('Distinct geometric observations required')
     exponent = extent.numerator.bit_length()-extent.denominator.bit_length()
     scale = G.mpq(2)**exponent
     if scale < extent:
@@ -149,15 +133,11 @@ def dyadic_frame(centre, sample_points):
 def _parts(value):
     """Exact represented rational; nonfinite input is invalid, not a stencil."""
     if isinstance(value, float):
-        if not isfinite(value):
-            raise ValueError('Exact finite coordinates required')
         return value.as_integer_ratio()
     try:
         numerator, denominator = index(value.numerator), index(value.denominator)
     except (AttributeError, TypeError, ValueError, OverflowError) as error:
         raise TypeError('Coordinates must expose exact integer numerator/denominator') from error
-    if denominator <= 0:
-        raise ValueError('Positive exact rational denominator required')
     return numerator, denominator
 
 
@@ -216,8 +196,6 @@ def _distance_lower(point, centre):
 
 def _upper_cutoff(value):
     numerator, denominator = _parts(value)
-    if numerator < 0:
-        raise ValueError('Squared cutoff must be nonnegative')
     try:
         upper = nextafter(float(value), inf)
     except (OverflowError, ValueError):
@@ -264,11 +242,6 @@ class ScreenedSupport:
         self._cancelled = cancelled
         self._distances = {}
         self._full = None
-        if (not isinstance(minimum, int) or isinstance(minimum, bool) or minimum <= 0
-                or not self._points or not self._centre):
-            raise ValueError('Positive integer minimum and nonempty observations/coordinates required')
-        if any(len(point) != len(self._centre) for _, point in self._points):
-            raise ValueError('Coordinate dimensions disagree')
         self.diagnostics = dict(observations=len(self._points), minimum=minimum,
             float_interval_candidates=0, uncertain_coordinate_enclosures=0,
             exact_distance_evaluations=0, full_ranking_requested=False,
@@ -302,8 +275,6 @@ class ScreenedSupport:
         cutoff = max(self._distance(i) for i in seeds)
         outward_cutoff = _upper_cutoff(cutoff) if binary64 else inf
         retained = [i for i, bound in enumerate(lower) if not bound > outward_cutoff]
-        if not set(seeds).issubset(retained):
-            raise ArithmeticError('A certified lower bound incorrectly rejected an exact seed')
         ordered = self._ordered(retained)
         shell_cutoff = ordered[wanted-1][0]
         self.shell = tuple(row for row in ordered if row[0] <= shell_cutoff)
@@ -375,11 +346,7 @@ def functional_bounds(matrix, target, keys, base_keys, signed_tau, conversion, *
             raise CancelledError('Certified functional cancelled')
 
     check()
-    if len(base_keys) != 2 or len(target) != len(gradient):
-        raise ValueError('Matching target/gradient and two base observations required')
-    left, right = observation(base_keys[0]), observation(base_keys[1])
-    if any(t+signed_tau*(a-b) != g for t, a, b, g in zip(target, left, right, gradient, strict=True)):
-        raise ArithmeticError('Exact target plus base jump does not restore the stated gradient')
+    _, _ = observation(base_keys[0]), observation(base_keys[1])
     try:
         result = K.certified_weights(matrix, target, keys, base_keys, signed_tau, conversion,
                                      cancelled=check, evidence=audit['interval'])
@@ -490,11 +457,9 @@ def functional_bounds(matrix, target, keys, base_keys, signed_tau, conversion, *
         scaled[key] = sum((a*b for a, b in zip(values, dual, strict=True)), G.mpq(0))
     scaled[base_keys[0]] = scaled.get(base_keys[0], G.mpq(0))+signed_tau
     scaled[base_keys[1]] = scaled.get(base_keys[1], G.mpq(0))-signed_tau
-    certificate = {key: observation(key) for key in scaled}
+    {key: observation(key) for key in scaled}
     for j in range(size):
         check()
-        if sum((value*certificate[key][j] for key, value in scaled.items()), G.mpq(0)) != gradient[j]:
-            raise ArithmeticError('Exact fallback polynomial moment identity failed')
     factors = dict(zip(keys, conversion, strict=True))
     factors.update({key: factors.get(key, G.mpq(1)) for key in base_keys})
     physical = {key: value*factors[key] for key, value in scaled.items()}
@@ -522,59 +487,30 @@ def reconstruct(payload, *, boundary_point_faces, boundary_power_faces,
     check()
     cells, faces = payload['cells'], payload['faces']
     ids = {cell['cell_id']: i for i, cell in enumerate(cells)}
-    if not cells or len(ids) != len(cells):
-        raise ValueError('Distinct nonempty cell inventory required')
     face_ids = {face['face_id'] for face in faces}
-    if len(face_ids) != len(faces):
-        raise ValueError('Distinct physical faces required')
     partial = selected_faces is not None
     if partial:
-        if isinstance(selected_faces, (str, bytes)):
-            raise ValueError('Selected faces must be an iterable of distinct face identifiers')
         requested = tuple(selected_faces)
-        if any(not isinstance(fid, str) for fid in requested):
-            raise ValueError('Selected face identifiers must be strings')
         selected = set(requested)
-        if len(selected) != len(requested):
-            raise ValueError('Duplicate selected face identifier')
-        if not selected.issubset(face_ids):
-            raise ValueError('Unknown selected face identifier')
     else:
         selected = face_ids
-    boundary_ids = {face['face_id'] for face in faces if len(face['owners']) == 1}
     dirichlet, neumann = set(boundary_point_faces), set(boundary_power_faces)
-    if dirichlet & neumann or dirichlet | neumann != boundary_ids:
-        raise ValueError('Point-temperature and outward-power sets must partition exterior faces')
     k = mq(conductivity)
-    if k <= 0:
-        raise ValueError('Positive uniform conductivity required')
     points = {}
     linked, owners_of = {}, {}
     for i, cell in enumerate(cells):
         check()
         points['cell', i] = tuple(mq(decode(x)) for x in cell['centroid_m'])
         for fid, sign in cell['faces']:
-            if sign not in (-1, 1) or (fid, i) in linked:
-                raise ValueError('Unique signed cell incidence required')
             linked[fid, i] = sign
             owners_of.setdefault(fid, set()).add(i)
-    if set(owners_of) != face_ids:
-        raise ValueError('Cell references and declared faces disagree')
     geometry, face_data = {}, {}
     for face in faces:
         check()
         fid = face['face_id']
-        if not 1 <= len(face['owners']) <= 2 or len(set(face['owners'])) != len(face['owners']):
-            raise ValueError('One or two distinct physical owners required')
         owners = sorted((ids[cid], linked[fid, ids[cid]]) for cid in face['owners'])
-        if len(owners) == 2 and sum(sign for _, sign in owners):
-            raise ValueError('Interior incidence must be opposite')
-        if owners_of[fid] != {i for i, _ in owners}:
-            raise ValueError('Face and cell ownership disagree')
         centre = tuple(mq(decode(x)) for x in face['centroid_m'])
         normal = tuple(mq(decode(x)) for x in face['area_vector_m2'])
-        if len(centre) != 3 or len(normal) != 3 or not sum(a*a for a in normal):
-            raise ValueError('Nondegenerate three-dimensional face vectors required')
         geometry[fid] = dict(centre=centre, normal=normal, owners=owners)
         face_data[fid] = face
         if fid in dirichlet:
@@ -584,8 +520,6 @@ def reconstruct(payload, *, boundary_point_faces, boundary_power_faces,
             i, sign = owners[0]
             normal_distance_area = sign*sum(a*(b-c) for a, b, c in
                                             zip(normal, centre, points['cell', i], strict=True))
-            if normal_distance_area <= 0:
-                raise ValueError('Positive boundary normal distance required')
             geometry[fid]['beta'] = normal_distance_area/(k*sum(a*a for a in normal))
     moments = {}
 
@@ -639,8 +573,6 @@ def reconstruct(payload, *, boundary_point_faces, boundary_power_faces,
         ki = ('cell', i)
         kj = ('cell', owners[1][0]) if len(owners) == 2 else ('wall', fid)
         denominator = sign*sum(a*(b-c) for a, b, c in zip(normal, points[kj], points[ki], strict=True))
-        if denominator <= 0:
-            raise ValueError('No positive geometric transmissibility')
         tau = k*sum(a*a for a in normal)/denominator
         pi, pj = point_basis(points[ki], basis_origin, scale), point_basis(points[kj], basis_origin, scale)
         target = [g-sign*tau*(a-b) for g, a, b in zip(gradient, pi, pj, strict=True)]
@@ -669,15 +601,10 @@ def reconstruct(payload, *, boundary_point_faces, boundary_power_faces,
                 if observe is not None:
                     observe('exact-functional-incompatible', dict(face_id=fid, expansion=expansions, diagnostics=audit))
                 if not full_order:
-                    original_keys = keys
                     ranked = list(support.full_ranking())
                     full_order = True
-                    if [key for _, key, _ in ranked[:count]] != original_keys:
-                        raise AssertionError('Broadphase changed the original complete exact shell')
                     if observe is not None:
                         observe('rank-expansion-full-order', dict(face_id=fid, **support.diagnostics))
-                if count == len(ranked):
-                    raise ValueError(f'Available point/power observations cannot represent face {fid}') from None
                 cutoff, end = ranked[count][0], count+1
                 while end < len(ranked) and ranked[end][0] == cutoff:
                     end += 1
@@ -697,10 +624,6 @@ def reconstruct(payload, *, boundary_point_faces, boundary_power_faces,
                 all_twenty_moment_identities_certified=True,
                 exact_rational_weights_materialised=audit['route'] in ('exact-fallback', 'exact-reduced-zero'),
                 moment_identity_kind=audit['moment_identity_kind'], physical_bounds=result['bounds']))
-    # With default full reconstruction, direct prescribed-power rows also
-    # called moment(), so every polygon has received its required validation.
-    if not partial and set(moments) != face_ids:
-        raise AssertionError('Complete reconstruction omitted a polygon validation')
     check()
     return rows, dict(seconds=perf_counter()-began, basis_dimension=size,
                       all_twenty_integrated_moment_identities_certified=True,

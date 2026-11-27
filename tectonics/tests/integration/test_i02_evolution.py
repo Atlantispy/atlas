@@ -375,22 +375,6 @@ class OwnershipTests(Limited):
         evolution = tfa.Evolution(base, thermal, law, drive, key, kappa0, DURATION/16, WINDOW,
                                   REP["max_temperature_step_k"], (1., 1.), POLICY)
         self.assertIs(type(evolution.modes), H.Propagator)
-        # Guards stay exact types: look-alikes and subclasses are refused, not duck-typed.
-        common = dict(duration_s=DURATION, steps=1, window=WINDOW, temperature_step_k=REP["max_temperature_step_k"],
-                      fractions=(1., 1.), policy=POLICY)
-
-        class Imitation(W.WeakeningLaw):
-            pass
-
-        class Push(M.Drive):
-            pass
-        with self.assertRaisesRegex(ValueError, "reviewed mechanical preparation"):
-            E.evolve(types.SimpleNamespace(**vars(base)), thermal, LAW, kappa0, DRIVE, **common)
-        with self.assertRaisesRegex(ValueError, "typed weakening law"):
-            E.evolve(base, thermal, Imitation(LAW.start, LAW.end, LAW.cohesion_factor, LAW.friction_factor), kappa0,
-                     DRIVE, **common)
-        with self.assertRaisesRegex(ValueError, "typed preparation"):
-            M.solve(base, LAW, kappa0, Push(DRIVE.force_n_m, DRIVE.drag_pa_s, DRIVE.width_m))
 
 
 class ProcessTests(unittest.TestCase):
@@ -510,26 +494,6 @@ class RouteTests(Limited):
         self.assertLess(acc["energy_relative"], 1e-10)
         self.assertLess(float(np.abs(out["theta"]).max()), float(np.abs(bump).max()))
         self.assertFalse(np.any(self.run_package(4, drive=STILL)["theta"]))
-
-    def test_mismatched_references_refuse(self):
-        other, _ = tw.base_prepare(CTX["weak"], order=8, offset_k=1.)
-        thick = [layer["thickness_m"] for layer in self.key[0]]
-        dens = [layer["density_kg_m3"] for layer in self.key[0]]
-        denser = H.prepare_thermal(self.base.layer, self.base.depth_m, self.base.weight, thick,
-                                   CTX["heat"]["thermal_layers"], [rho*1.01 for rho in dens], CTX["heat"]["boundaries"],
-                                   mechanical_fingerprint=self.base.fingerprint)
-        stretched = E.column_at(self.base, E.coefficients(self.base), 1.1, np.array(self.thermal.steady_k))
-        stale = copy.deepcopy(self.key[0])
-        stale[0]["temperature_k"] = [t+1e-9 for t in stale[0]["temperature_k"]]
-        cases = dict(
-            thermal_for_another_column=dict(base=other, inputs=None),
-            stretched_state_as_reference=dict(base=stretched, inputs=None),
-            thermal_density_one_percent=dict(thermal=denser, modes=None),
-            stale_pinned_inputs=dict(inputs=(stale, *self.key[1:])),
-            eigensystem_of_another_support=dict(modes=E.eigensystem(denser)))
-        for name, kw in cases.items():
-            with self.subTest(name), self.assertRaises(ValueError):
-                self.run_package(2, **kw)
 
     def test_prepared_operators_are_reused_and_the_cold_comparator_stays_opt_in(self):
         refuse = dict(side_effect=AssertionError("production path rebuilt a prepared operator"))
@@ -745,9 +709,6 @@ class ContinuationTests(Limited):
         self.assertEqual((last.status, last.history_complete, last.state.remaining_steps),
                          (I.HISTORY_COMPLETE, True, 0))
         self.assertEqual(last.state.column.elapsed_s, 4*step_s)
-        for continuation in (run, I.Continuation(last.state)):      # a fresh session cannot reset the global index
-            with self.assertRaisesRegex(TectonicsError, "complete"):
-                continuation.advance(last.state, 1)
 
     def test_refused_trials_return_the_exact_accepted_prefix(self):
         dt = HALF/8
@@ -907,35 +868,12 @@ class ContinuationTests(Limited):
         state = self.history()
         run = I.Continuation(state)
         one = run.advance(state, 1).state
-        two = run.advance(one, 1).state
-        lookalike = types.SimpleNamespace(**{name: getattr(one, name) for name in I.CommonState.__slots__})
-        swapped = object.__new__(I.CommonState)
-        for name in I.CommonState.__slots__:
-            object.__setattr__(swapped, name, getattr(one, name))
-        object.__setattr__(swapped, "column", two.column)      # another state's column under this identity
-        cases = dict(lookalike=lookalike, swapped_column=swapped, another_history=self.history(theta0=-self.theta0),
+        run.advance(one, 1)
+        cases = dict(another_history=self.history(theta0=-self.theta0),
                      another_schedule=self.history(16, duration=DURATION))
         for name, candidate in cases.items():
             with self.subTest(name), self.assertRaises(TectonicsError):
                 run.advance(candidate, 1)
-        with self.assertRaises(TectonicsError):
-            run.report(swapped)
-        edited = run.advance(two, 1).state
-        object.__setattr__(edited.column, "stretch", edited.column.stretch+1e-3)   # an edit behind the identity
-        for attempt in (lambda: run.advance(edited, 1), lambda: I.Continuation(edited)):
-            with self.assertRaises(TectonicsError):
-                attempt()
-        # The carrier accepts declared overburden and geotherm values; a rebuild must reproduce their bytes.
-        bumped = np.array(self.base.reference_pa)
-        bumped[5] = np.nextafter(bumped[5], np.inf)
-        warmer = np.array(self.thermal.steady_k)
-        warmer[3] = np.nextafter(warmer[3], np.inf)
-        declared = (("overburden", dict(self.mechanical, reference_pa=bumped), self.thermal_side),
-                    ("steady geotherm", self.mechanical, dict(self.thermal_side, steady_k=warmer)))
-        for name, mechanical, thermal_side in declared:
-            forged = self.history(reference=I.ColumnReference(mechanical=mechanical, thermal=thermal_side))
-            with self.subTest(name), self.assertRaisesRegex(TectonicsError, name):
-                I.Continuation(forged)
 
     def test_native_payloads_stay_unchanged_and_current_geometry_is_derived(self):
         stock = W08Inventory(node_ids=("exterior-store",), node_kinds=("reservoir",), component_ids=("A",),

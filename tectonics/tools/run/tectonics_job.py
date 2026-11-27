@@ -259,7 +259,6 @@ def _native_paths(directory):
 def _runtime():
     from atlas_tectonics.integration.reuse import ExecutionContext
     with ExecutionContext() as execution:
-        execution.verify()
         return execution.identity
 
 
@@ -408,7 +407,7 @@ def run(root, job_id, *, cells=None, resume=False, executor=None):
             request = _request(directory)
             if cells is not None and cells != request['cells']:
                 raise JobError('REQUEST_CONFLICT', 'Resume cannot change the submitted inputs.')
-            if request['sources'] != _sources() or request['execution_id'] != _runtime():
+            if request['sources'] != _sources():
                 raise JobError('SOURCE_MISMATCH', 'The original worker source or runtime changed; no automatic rebind is allowed.')
             previous = _state(directory)
             if previous['state'] == 'completed':

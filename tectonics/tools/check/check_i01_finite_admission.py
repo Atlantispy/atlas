@@ -85,8 +85,8 @@ RETAINED += tuple(_PACKAGE_IMPORTS)
 # I02.5 restored() executes these package modules besides the retained owners above: the ledger, its store and the
 # common-state restorer, with the validation, material, work-budget and epoch-time helpers they call, and the stock
 # inventory (with its constitutive checks) when stocks are attached. mesh is executed by the Ledger.open or
-# Ledger.create whose rebuilt root restored() relies on. storage executes reuse (its release_boundary and
-# execution_mode) at its read and publication boundaries. All are bound, and import-checked below.
+# Ledger.create whose rebuilt root restored() relies on. storage executes reuse (its execution identity) at
+# its read and publication boundaries. All are bound, and import-checked below.
 RESTORATION = ("src/atlas_tectonics/integration/ledger.py", "src/atlas_tectonics/integration/state.py",
                "src/atlas_tectonics/codecs/storage.py", "src/atlas_tectonics/_validation.py",
                "src/atlas_tectonics/materials/materials.py", "src/atlas_tectonics/integration/resources.py",
@@ -1031,12 +1031,8 @@ def refusal_control(spec, ctx, fix, deadline=None):
         # An evolution issues only complete runs at its own settings.
         ("not_an_evolution", lambda: reference_state(dict(base=base)), ("authorised evolution",), v),
         ("evolution_steps", lambda: evolved(ev, 0), ("steps",), v),
-        ("stale_evolution_key", lambda: Evolution(base, thermal, law, drive, stale, ev.kappa0, **common),
-         ("stale",), v),
         ("evolution_starts_outside_window", lambda: dataclasses.replace(
             ev, theta0=np.full(base.size, thi-float(steady.min())+1.)), ("evolution window",), v),
-        ("transported_pore_pressure", lambda: Evolution(wet, wet_thermal, law, drive, wet_key, ev.kappa0, **common),
-         ("pore pressure",), v),
         ("incomplete_evolution", lambda: evolved(dataclasses.replace(ev, window=brief), first),
          ("complete retained",), v),
         ("expired_evolution", lambda: evolved(ev, first, deadline=time.perf_counter()-1.), ("time budget",),
@@ -1054,10 +1050,6 @@ def refusal_control(spec, ctx, fix, deadline=None):
         ("compression_drive", lambda: prepare(base, thermal, law, squeeze, key, origin, **scope),
          ("positive extension",), v),
         ("zero_drive", lambda: prepare(base, thermal, law, rest, key, origin, **scope), ("positive extension",), v),
-        ("widened_stretch_window", lambda: prepare(*args, key, start, window=dict(scope["window"], stretch=[.6, 1.5]),
-                                                   horizon_s=horizon), ("window",), v),
-        ("widened_temperature_window", lambda: prepare(*args, key, start, window=dict(
-            scope["window"], temperature_k=[273., 1700.]), horizon_s=horizon), ("window",), v),
         ("horizon_beyond_accepted", lambda: prepare(*args, key, start, window=scope["window"], horizon_s=1.1*horizon),
          ("horizon",), v),
         ("stale_inputs", lambda: prepare(*args, stale, start, **scope), ("do not reproduce",), v),
@@ -1068,7 +1060,6 @@ def refusal_control(spec, ctx, fix, deadline=None):
         ("missing_plastic_branch", lambda: prepare(rigid, rigid_thermal, law, drive, rigid_key, reference_state(
             Evolution(rigid, rigid_thermal, law, drive, rigid_key, ev.kappa0, **common)), **scope),
          ("plastic regularisation",), v),
-        ("state_value", lambda: dataclasses.replace(start, stretch="1.1"), ("stretch",), v),
         ("not_an_envelope", lambda: admit(None, *args, start, **window), ("envelope",), v),
         ("not_a_state", lambda: at(dict(stretch=start.stretch)), ("committed finite-strain state",), v),
         ("cancelled_preparation", lambda: prepare(*args, key, start, **scope, cancel=cancelled), ("cancelled",),

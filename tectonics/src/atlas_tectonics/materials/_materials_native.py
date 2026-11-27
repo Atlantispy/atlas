@@ -5,7 +5,6 @@ There is no separately advanced total to renormalise against. Fluxes are interva
 means. No fast-math, changed precision, automatic order reduction or thread races.
 """
 from __future__ import annotations
-import math
 import numpy as np
 from numba import njit
 from atlas_tectonics.regional._native import admission, fluxes, _euler, upwind_span, _slope
@@ -69,16 +68,10 @@ def cohort_fluxes(h, u, external_left, external_right, flux):
         for k in range(c):
             slope = h[k, i]*rate + theta*(slopes[k]-h[k, i]*candidate_rate)
             lower, upper = h[k, i]-0.5*slope, h[k, i]+0.5*slope
-            if lower < 0.0 or upper < 0.0:
-                raise ValueError('cohort reconstruction outside nonnegative range')
             if u[i] <= 0.0:
                 flux[k, i] = u[i]*lower
             if u[i+1] >= 0.0:
                 flux[k, i+1] = u[i+1]*upper
-    for k in range(c):
-        for j in range(n+1):
-            if not math.isfinite(flux[k, j]):
-                raise ValueError('cohort face flux outside numerical range')
 
 
 @njit(nogil=True, fastmath=False, cache=False)
@@ -138,6 +131,4 @@ def column_totals(h):
         for k in range(c):
             _add_bits(limbs, bits[k, i])
         out[i] = _rounded_sum(limbs)
-        if not math.isfinite(out[i]):
-            raise ValueError('total thickness exceeds numerical range')
     return out

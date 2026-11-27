@@ -4,7 +4,6 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 
-from atlas_tectonics._private.codecs.compact_contracts import ContractError
 from atlas_tectonics._private.integration import live_composite as LIVE_COMPOSITE
 from atlas_tectonics._private.codecs.record_tables import RecordCodec, Scratch
 from atlas_tectonics._private.codecs.record_views import RecordRef, _ObjectRecordRef
@@ -25,8 +24,6 @@ def clone_mutable(value, fields, *, budget):
     ref = L.reference(value)
     if not isinstance(ref, RecordRef):
         return deepcopy(value)
-    if ref.scope.run_budget is not budget:
-        raise ContractError('mutable finite graph requires its exact run budget')
     with ref.keys(max_owned_bytes=65536) as keys:
         names = keys.value
         owners = [Scratch(budget, 65536+512*len(names))]
@@ -64,9 +61,6 @@ def issue(cls, record, owner, ordinary):
     scope = L.active_scope(owner._budget)
     if scope is None or cls.__name__ != 'FiniteStockProposal':
         return ordinary(cls, record, owner)
-    from atlas_tectonics.integration.coupling.spatial_reservoir import FiniteStockProposal
-    if cls is not FiniteStockProposal:
-        raise ContractError('actual native finite proposal class required')
     payload = dict(record)
     if type(payload.get('graph')) is MutableRecord:
         payload['graph'] = dict(payload['graph'])
@@ -118,11 +112,6 @@ def stocks(proposal, decode):
     owner = Scratch(proposal._owner._budget, 65536+16*len(json.dumps(held.value)))
     return MutableRecord({key: tuple(map(decode, values)) for key, values in held.value.items()},
                          [held, owner], proposal._owner._budget)
-
-
-def is_stocks(value, budget):
-    return type(value) is dict or (type(value) is MutableRecord and value._budget is budget
-                                  and bool(value._owners))
 
 
 def transport_inputs(proposal, decode):

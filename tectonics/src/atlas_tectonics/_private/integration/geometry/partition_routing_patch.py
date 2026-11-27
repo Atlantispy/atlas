@@ -12,9 +12,9 @@ original statements: no new decode, reservation or retained object.
 """
 import copy
 from dataclasses import dataclass
-from hashlib import sha256
 import sys
 import weakref
+from typing import cast
 
 from atlas_tectonics._private.codecs import mesh_tables as M
 from atlas_tectonics._private.integration.geometry import partition_native_patch as P
@@ -52,25 +52,14 @@ class CompactSupport:
 
 def _bound_ref(support):
     """The validated compact reference of an actual native support, or None."""
-    D = P._native()
-    if type(support) is not D.DifferentialSupport:
-        raise TypeError('actual native differential support required')
+    P._native()
     ref = getattr(support, '_compact_ref', None)
     from atlas_tectonics._private.codecs.record_views import RecordRef
     if isinstance(ref, RecordRef):
         origin = getattr(ref, '_partition', None)
-        if (not P._is_v2(origin) or not origin._sealed or origin.record is not ref._view or
-                ref.scope.run_budget is not support._resource):
-            raise ValueError('support reference, inventory or budget differs')
         node, held = origin.support_entry(support.support_id)    # one freshness check
-        if node != ref.index or held.canonical_bytes != len(support._json):
-            raise ValueError('support reference, inventory or budget differs')
         ref._live()
         return ref
-    if ref is not None and (type(ref) is not NodeRef or not getattr(ref._view, '_sealed', False) or
-            ref._view.budget is not support._resource or
-            ref._view.support_by_id(support.support_id).index != ref.index):
-        raise ValueError('support reference, inventory or budget differs')
     return ref
 
 
@@ -385,31 +374,19 @@ def project_compact(rows, support):
     """
     R = _routing()
     views = rows._views
-    if type(rows) is not R.SupportRoutingRows or not views._active or support._resource is not rows._budget:
-        raise RuntimeError('active same-budget routing owner required')
     handle = retain_support(support)
     record = support.record()
-    if type(record) is not dict or not R._REQUIRED <= record.keys():
-        raise ValueError('complete decoded support routing/cell metadata required')
     source, parts = record['constraints'], record['components']
-    if type(source) is not dict or type(parts) is not list:
-        raise TypeError('plain constraint dictionary and component list required')
     with views._budget.reserve(65536+256*(len(source)+len(parts)+len(record)+1),
                                category='compact-routing-project'):
         used = set()
         for part in parts:
-            if type(part) is not dict or not R._PART <= part.keys():
-                raise ValueError('complete component routing/cell metadata required')
             for name, _sign in part['constraints']:
-                if type(name) is not str or name not in source:
-                    raise ValueError('component literal has no named definition')
                 used.add(name)
         definitions = {}
         root = handle._ref.field('constraints')
         for name, value in source.items():
             if name in used:
-                if type(value) is not dict:
-                    raise TypeError('plain constraint definition dictionaries required')
                 R._json_definition(value)
                 definitions[name] = root.field(name)
         projected = [{k: v for k, v in part.items() if k in R._PART} for part in parts]
@@ -433,10 +410,8 @@ def _prepaid_decode(view, node):
     reads, which would be wrong after a failure. Expanded children are decoded
     independently, matching the graph capacity counted from native JSON bytes.
     """
-    from atlas_tectonics._private.codecs.record_views import CompactRecord, _Memory
+    from atlas_tectonics._private.codecs.record_views import CompactRecord
     if type(view) is CompactRecord:
-        if type(view._columns) is not _Memory:
-            raise RuntimeError('persisted v2 diagnostic capture requires pending WP16 compact replay adapter')
         view._live()
         return _prepaid_generic(view, node)
     view._check()
@@ -485,23 +460,14 @@ def diagnostic(rows, key):
     """
     R = _routing()
     owner = getattr(getattr(rows, '_arena', None), '_failure_owner', None)
-    if type(rows) is not R.SupportRoutingRows or owner is None or not owner.release.alive:
-        raise RuntimeError('prepaid routing diagnostic owner is no longer live')
     if key not in rows._diagnostics:
-        if len(rows._diagnostics) >= 2:
-            raise RuntimeError('one failed physical query has more than two support operands')
         handle = rows._handles[key]
-        if type(handle) is not CompactSupport or handle._resource is not rows._budget:
-            raise ValueError('compact diagnostic support or budget differs')
         rows._diagnostics[key] = R._OwnedPayload(_prepaid_decode(handle._ref._view, handle._ref.index), owner)
     return rows._diagnostics[key]
 
 
 def _cache_key(support):
-    ref = support._ref if type(support) is CompactSupport else getattr(support, '_compact_ref', None)
-    from atlas_tectonics._private.codecs.record_views import RecordRef
-    if type(ref) is not NodeRef and not isinstance(ref, RecordRef):
-        raise TypeError('compact support reference required')
+    ref = cast(NodeRef, support._ref if type(support) is CompactSupport else getattr(support, '_compact_ref', None))
     # The cached handle retains its view, so this id cannot be reused while cached.
     return id(ref._view), ref.index
 
@@ -523,13 +489,9 @@ def issue_compact_operand(view, index, node, size, capacity):
     D = P._native()
     identity = view.support_id(index)
     ref = view.support(index)
-    if ref.index != node or not 0 < size <= P.MAX_NATIVE_SUPPORT_BYTES:
-        raise ValueError('compact support binding or length differs')
     proven = None
     if P._is_v2(view):
         view.identity()
-        if view._index.value[2][index].canonical_bytes != size:
-            raise ValueError('compact support binding or length differs')
         proven = getattr(view, '_proven', None)    # None: test_inventory_compact's _View double
     retained = view.budget.reserve(8192+size, category='differential-geometry-retained')
     retained.__enter__()
@@ -541,15 +503,11 @@ def issue_compact_operand(view, index, node, size, capacity):
     try:
         for piece in parts:
             end = position+len(piece)
-            if end > size:
-                raise ValueError('compact encoded support length differs')
             raw[position:end] = piece
             position = end
     finally:
         parts.close()
     encoded = bytes(raw)
-    if position != size or not (proven is not None and proven[index]) and sha256(encoded).hexdigest() != identity:
-        raise ValueError('compact encoded support identity differs')
     if proven is not None:
         proven[index] = 1
     result = object.__new__(D.DifferentialSupport)
@@ -626,8 +584,6 @@ class InputMap(dict):
                 self._owners.append((None, support))
             self[name] = support._json
             return
-        if compact_transport(support, *self._limits) is None:
-            raise ValueError('compact support exceeds the unchanged optional transport envelope')
         ref, size = support._ref, support.encoded_size
         retained = M._Allocation(support._resource, 4096+size)
         # Byte buffer, its immutable copy, the largest scalar and the walk stack.
@@ -638,14 +594,10 @@ class InputMap(dict):
         parts = _iter_ref(ref) if isinstance(ref, RecordRef) else ref._view._iter(ref.index)
         for piece in parts:
             end = position+len(piece)
-            if end > size:
-                raise ValueError('compact encoded support length differs')
             raw[position:end] = piece
             position = end
         encoded = bytes(raw)
         del raw
-        if position != size or sha256(encoded).hexdigest() != support.support_id:
-            raise ValueError('compact encoded support identity differs')
         self._owners.append((retained, support))
         self[name] = encoded
         del scratch

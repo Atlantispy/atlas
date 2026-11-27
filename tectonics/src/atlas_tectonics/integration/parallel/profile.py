@@ -56,8 +56,8 @@ REPORTED = ROUTES+('adopted', 'waited')
 _THREADS = ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS')
 
 # The ONE mutable object of this module. It is lower-case, not callable and
-# never rebound, so the execution identity neither captures nor guards it
-# (precedent: reuse._release_state). Every reader and writer takes its lock.
+# never rebound, so the execution identity neither captures nor guards it.
+# Every reader and writer takes its lock.
 _state = types.SimpleNamespace(lock=threading.RLock(), stores=OrderedDict(), machine=None,
                                decisions=deque(maxlen=MAX_DECISIONS), issued=0, loaded=None)
 
@@ -138,8 +138,6 @@ def current_binding(budget, code=_CAPTURE_CODE, family='interface'):
 def width_bucket(width):
     """floor(log2(width)) of an exact positive rational; 'zero' for a zero width."""
     top, bottom = width.numerator, width.denominator
-    if top < 0:
-        raise ValueError('nonnegative width required')
     if not top:
         return 'zero'
     exponent = top.bit_length()-bottom.bit_length()

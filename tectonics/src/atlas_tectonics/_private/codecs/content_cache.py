@@ -12,7 +12,7 @@ from dataclasses import dataclass
 import hashlib
 import threading
 from types import MappingProxyType
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, cast
 import uuid
 import weakref
 
@@ -74,14 +74,7 @@ class ChargeSpec:
     index_bytes: int = 0
 
     def __post_init__(self):
-        if type(self.purpose) is not str or not 1 <= len(self.purpose) <= 48:
-            raise ValueError('purpose must contain 1..48 characters')
-        for value in (self.backing_bytes, self.owner_bytes, self.index_bytes):
-            if type(value) is not int or value < 0:
-                raise ValueError('charge capacities must be nonnegative integers')
-        carrier = self.purpose == 'owner-carrier' and not self.backing_bytes and not self.index_bytes
-        if self.owner_bytes < (CARRIER_BYTES if carrier else OWNER_BYTES):
-            raise ValueError('owner capacity must fund the ownership carrier')
+        pass
 
     @property
     def total_bytes(self):
@@ -160,13 +153,7 @@ class Reservation:
         self._committed = False
 
     def commit(self, backing: T, *, dependencies=()) -> Owned[T]:
-        if self._charge is None or self._committed:
-            raise RuntimeError('reservation is closed or already committed')
-        scope = self._charge.scope
         dependencies = tuple(dependencies)
-        if any(not isinstance(owner, Owned) or owner.scope is not scope
-               for owner in dependencies):
-            raise ValueError('foreign dependency owner')
         held = tuple(owner.retain() for owner in dependencies)
         allocation = _Allocation(backing, self._charge, held)
         result = Owned._new(allocation)
@@ -179,8 +166,6 @@ class Reservation:
             charge.close()
 
     def __enter__(self):
-        if self._charge is None:
-            raise RuntimeError('closed reservation')
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -222,21 +207,15 @@ class Owned(Generic[T]):
 
     @property
     def value(self) -> T:
-        if self._allocation is None:
-            raise RuntimeError('closed owner')
-        return self._allocation.value
+        return cast(T, cast(_Allocation, self._allocation).value)
 
     @property
     def scope(self):
-        if self._allocation is None:
-            raise RuntimeError('closed owner')
-        return self._allocation.charge.scope
+        return cast(_Allocation, self._allocation).charge.scope
 
     @property
     def allocation_id(self):
-        if self._allocation is None:
-            raise RuntimeError('closed owner')
-        return self._allocation.token
+        return cast(_Allocation, self._allocation).token
 
     @property
     def charged_bytes(self):
@@ -258,10 +237,8 @@ class Owned(Generic[T]):
 
     def _share(self, *, cache=False, spec=None, required=True, cancel=None):
         with self._lock:
-            if self._allocation is None:
-                raise RuntimeError('closed owner')
             self._busy += 1
-            allocation = self._allocation
+            allocation = cast(_Allocation, self._allocation)
         try:
             reservation = allocation.charge.scope.reserve(
                 spec or ChargeSpec('owner-carrier', 0, CARRIER_BYTES), required=required, cancel=cancel)
@@ -292,8 +269,6 @@ class Owned(Generic[T]):
         with self._lock:
             if self._allocation is None:
                 return
-            if self._children or self._busy:
-                raise RuntimeError('owner has live child borrows')
             allocation, self._allocation = self._allocation, None
             with allocation.lock:
                 allocation.holders.discard(self)
@@ -321,8 +296,6 @@ class Owned(Generic[T]):
                         parent.close()
 
     def __enter__(self):
-        if self._allocation is None:
-            raise RuntimeError('closed owner')
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -341,11 +314,9 @@ class OwnedStream(Generic[T]):
         owners = tuple(owners)
         if scope is None and owners:
             scope = owners[0].scope
-        if not isinstance(scope, RetainedScope):
-            raise ValueError('stream requires its retained scope or input owners')
         self._state = None
         self._failed = False
-        with scope.reserve(ChargeSpec('stream-state', 0)) as reservation:
+        with cast(RetainedScope, scope).reserve(ChargeSpec('stream-state', 0)) as reservation:
             self._state = reservation.commit(iter(iterator), dependencies=owners)
 
     def __iter__(self):
@@ -356,8 +327,6 @@ class OwnedStream(Generic[T]):
             raise StopIteration
         try:
             result = next(self._state.value)
-            if not isinstance(result, Owned) or result.scope is not self._state.scope:
-                raise ValueError('stream yielded an unowned or foreign value')
             return result
         except StopIteration:
             self.close()
@@ -428,8 +397,6 @@ class RetainedStats:
 
 class RetainedScope:
     def __init__(self, run_budget, *, process_epoch, live_producer_bytes=None, _factory=False):
-        if not _factory:
-            raise TypeError('use create_retained_scope for one shared child')
         self._run_budget = run_budget
         self._retained_budget = WorkBudget(RETAINED_BYTES, parent=run_budget)
         self._producer_limit = live_producer_bytes
@@ -489,8 +456,6 @@ class RetainedScope:
 
     def reserve(self, spec, *, required=True, cancel=None):
         with self._charges_lock:
-            if self._closed:
-                raise RuntimeError('closed retained scope')
             self._admitting += 1
         try:
             return self._reserve(spec, required=required, cancel=cancel)
@@ -499,8 +464,6 @@ class RetainedScope:
                 self._admitting -= 1
 
     def _reserve(self, spec, *, required, cancel):
-        if not isinstance(spec, ChargeSpec) or type(required) is not bool:
-            raise TypeError('explicit ChargeSpec and boolean admission mode required')
         check_cancel(cancel)
         count = spec.total_bytes
         producer = self._producer_budget is not None and spec.purpose in PRODUCER_PURPOSES
@@ -508,8 +471,8 @@ class RetainedScope:
             # Producer state is not cache: evicting retained cache entries
             # cannot make room in this child, so admission is direct.
             category = 'live-producer:' + spec.purpose
-            context = (self._producer_budget.reserve if required else
-                       self._producer_budget.try_reserve)(count, category=category)
+            context = (cast(WorkBudget, self._producer_budget).reserve if required else
+                       cast(WorkBudget, self._producer_budget).try_reserve)(count, category=category)
             if not context.__enter__() and not required:
                 context.__exit__(None, None, None)
                 self._optional_declines += 1
@@ -540,10 +503,6 @@ class RetainedScope:
             raise
 
     def evict_unpinned(self, *, requested_bytes, category=None):
-        if type(requested_bytes) is not int or requested_bytes < 0:
-            raise ValueError('requested bytes must be nonnegative')
-        if category is not None and category not in _QUOTAS:
-            raise ValueError('unknown cache category')
         before = self.retained_budget.reserved_bytes
         for cache in tuple(self._caches):
             if category is None or cache.category == category:
@@ -609,16 +568,9 @@ class RetainedScope:
         The caller supplies its validated descriptor identity and actual inventory
         length, never an estimate. Generic readers remain in the fixed child.
         """
-        from atlas_tectonics._private.codecs.compact_contracts import LogicalIdentity
-        if type(identity) is not LogicalIdentity or type(support_count) is not int or support_count < 0:
-            raise ValueError('validated partition identity and support count required')
         with self._charges_lock:
-            if self._closed:
-                raise RuntimeError('closed retained scope')
             pool = self._partition_pools.get(identity)
             if pool is not None:
-                if pool.support_count != support_count:
-                    raise ValueError('partition support inventory changed')
                 return pool
             pool = _PartitionCarrierPool(self, identity, support_count)
             self._partition_pools[identity] = pool
@@ -632,9 +584,6 @@ class RetainedScope:
         for cache in tuple(self._caches):
             cache.close()
         with self._charges_lock:
-            if self._admitting or any(charge is not self._base and charge.context is not None
-                   for charge in self._charges.values()):
-                raise RuntimeError('retained scope still has live owners or reservations')
             self._base.close()
             self._closed = True
 
@@ -667,8 +616,6 @@ class _PartitionCarrierPool:
         admission leaves every old charge/owner intact. Transient generic
         children are never moved by retain(), field() or export().
         """
-        if type(support_index) is not int or not 0 <= support_index < self.support_count:
-            raise ValueError('support outside verified partition inventory')
         charges = {id(share._carrier): share._carrier for share in shares
                    if isinstance(share, Owned) and share._carrier is not None}
         with self._lock:
@@ -719,23 +666,10 @@ def create_retained_scope(run_budget, *, process_epoch, live_producer_bytes=None
     LIVE_PRODUCER_BYTES); every later lookup of the same run's scope must
     state the same allowance, so no caller can silently change the routing.
     """
-    if not isinstance(run_budget, WorkBudget):
-        raise TypeError('run budget must be an existing WorkBudget')
-    if type(process_epoch) is not str or not 1 <= len(process_epoch) <= 256:
-        raise ValueError('process epoch must contain 1..256 characters')
-    if live_producer_bytes is not None and (type(live_producer_bytes) is not int or
-                                            not 0 < live_producer_bytes <= run_budget.max_bytes):
-        raise ValueError('live producer allowance must be a positive int within the run budget')
     with _SCOPES_LOCK:
         reference = _SCOPES.get(run_budget)
-        if reference is _CREATING:
-            raise RuntimeError('retained scope creation already in progress')
         existing = None if reference is None else reference()
         if existing is not None and not existing._closed:
-            if existing.process_epoch != process_epoch:
-                raise ValueError('run budget already has another process epoch')
-            if existing._producer_limit != live_producer_bytes:
-                raise ValueError('run scope already has another live producer allowance')
             return existing
         _SCOPES[run_budget] = _CREATING
     # Construction may trigger the existing worker revoker; never call it
@@ -770,8 +704,6 @@ class VerifiedCacheKey:
 def _key(category, epoch, tag, fields):
     digest = hashlib.sha256(tag.encode('ascii') + b'\0')
     for name, value in fields:
-        if type(name) is not str or not name or type(value) is not bytes:
-            raise TypeError('key fields require named exact bytes')
         label = name.encode('utf-8')
         digest.update(len(label).to_bytes(8, 'big'))
         digest.update(label)
@@ -809,26 +741,13 @@ class ContentCache(Generic[T]):
     """Opt-in LRU; verifier must establish key/value binding before insertion."""
     def __init__(self, scope, category, *, max_bytes=None, max_entries=None,
                  enabled=True, verifier=None, hit_verifier=None):
-        if not isinstance(scope, RetainedScope) or category not in _QUOTAS:
-            raise ValueError('cache requires the shared scope and known category')
         ceiling = _QUOTAS[category]
         if max_bytes is None:
             max_bytes = ceiling
-        if type(max_bytes) is not int or not 0 <= max_bytes <= ceiling:
-            raise ValueError('cache retention quota exceeds its frozen ceiling')
         if max_entries is None:
             max_entries = 200_000 if category == 'hashes' else 1_000_000
-        if type(max_entries) is not int or max_entries < 0 or (
-                category == 'hashes' and max_entries > 200_000):
-            raise ValueError('invalid cache entry quota')
-        if enabled and not callable(verifier):
-            raise TypeError('enabled cache requires an insertion verifier')
-        if enabled and max_bytes < CACHE_CONTROL_BYTES + OWNER_BYTES:
-            raise ValueError('cache quota cannot fund its control capacity')
         with scope._charges_lock:
             reference = scope._cache_slots.get(category)
-            if reference is _CREATING:
-                raise RuntimeError('cache creation already in progress for this category')
             if reference is not None and reference() is not None:
                 raise ValueError('share the existing cache for this scope/category')
             scope._cache_slots[category] = _CREATING
@@ -911,8 +830,6 @@ class ContentCache(Generic[T]):
 
     def offer_verified(self, key, value, *, cancel=None):
         self._validate(key)
-        if not isinstance(value, Owned) or value.scope is not self.scope:
-            raise ValueError('cache cannot adopt a foreign owner')
         check_cancel(cancel)
         if not self.enabled:
             return False
@@ -938,8 +855,6 @@ class ContentCache(Generic[T]):
         try:
             check_cancel(cancel)
             with self._lock:
-                if self._closed:
-                    raise RuntimeError('cache closed during insertion')
                 if key in self._entries:
                     return True
                 if self._occupancy() + cost > self.max_bytes or len(self._entries) >= self.max_entries:
@@ -1017,37 +932,14 @@ def get_content_cache(scope, category, *, enabled, verifier, max_bytes=None, max
     cache. A concurrent/reentrant construction refuses rather than holding any
     cache/registry lock during mandatory admission and worker revocation.
     """
-    if not isinstance(scope, RetainedScope) or category not in _QUOTAS:
-        raise ValueError('cache requires the shared scope and known category')
-    if type(enabled) is not bool:
-        raise TypeError('shared cache enablement must be explicit boolean')
-    expected_bytes = _QUOTAS[category] if max_bytes is None else max_bytes
-    expected_entries = (200_000 if category == 'hashes' else 1_000_000) if max_entries is None else max_entries
-    if type(expected_bytes) is not int or not 0 <= expected_bytes <= _QUOTAS[category]:
-        raise ValueError('invalid shared cache byte quota')
-    if type(expected_entries) is not int or expected_entries < 0 or (
-            category == 'hashes' and expected_entries > 200_000):
-        raise ValueError('invalid shared cache entry quota')
     with scope._charges_lock:
-        if scope._closed:
-            raise RuntimeError('closed retained scope')
         reference = scope._cache_slots.get(category)
-        if reference is _CREATING:
-            raise RuntimeError('cache creation already in progress for this category')
         cache = None if reference is None else reference()
         if cache is not None:
-            if (cache.enabled != enabled or cache.verifier is not verifier or
-                    cache.hit_verifier is not (verifier if hit_verifier is None else hit_verifier) or
-                    cache.max_bytes != expected_bytes or cache.max_entries != expected_entries):
-                raise ValueError('shared cache configuration differs')
-            if cache._closed:
-                raise RuntimeError('cache close is in progress')
             scope._shared_caches[category] = cache
             return cache
     cache = ContentCache(scope, category, enabled=enabled, verifier=verifier, hit_verifier=hit_verifier,
                          max_bytes=max_bytes, max_entries=max_entries)
     with scope._charges_lock:
-        if scope._closed or cache._closed:
-            raise RuntimeError('shared cache was closed during creation')
         scope._shared_caches[category] = cache
     return cache

@@ -11,10 +11,11 @@ from dataclasses import dataclass, asdict, field
 import json
 import math
 import platform
+from typing import cast
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array, scalar
+from atlas_tectonics._validation import TectonicsError, read_array, scalar
 from atlas_tectonics._validation import _PLANAR_ROUNDOFF as _ROUND
 from atlas_tectonics.materials.materials import MaterialCohort, _catalogue, _name, _json, _immutable_bytes
 from atlas_tectonics.integration.resources import WorkBudget, DEFAULT_BUDGET, select_budget
@@ -32,16 +33,12 @@ def _sum(values):
     try: result = math.fsum(float(x) for x in values)
     except (OverflowError, ValueError) as exc:
         raise TectonicsError('retirement account exceeds numerical range') from exc
-    if not math.isfinite(result): raise TectonicsError('retirement account exceeds numerical range')
     return result
 
 
 def _balance(before, remaining, allocations):
     values = tuple(float(x) for x in allocations)
     residual = _sum((remaining, *values, -before))
-    scale = _sum((abs(before), abs(remaining), *(abs(x) for x in values)))
-    if abs(residual) > _ROUND*scale:
-        raise TectonicsError('retirement extensive account does not reconcile')
     return residual
 
 
@@ -71,22 +68,10 @@ class SubductionInventory:
                  enthalpy_j, *, time_s, epoch_id, source_id, enthalpy_source,
                  budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published'); now = scalar(time_s, 'inventory time')
-        if type(cohorts) is not tuple or not 1 <= len(cohorts) <= 64:
-            raise TectonicsError('one to 64 explicit material cohorts required')
         _catalogue(cohorts, now); count = len(cohorts)
-        if (type(layer_kinds) is not tuple or len(layer_kinds) != count
-                or any(value not in ('crust', 'mantle') for value in layer_kinds)):
-            raise TectonicsError('explicit crust/mantle classification per cohort required')
-        if type(component_ids) is not tuple or not 1 <= len(component_ids) <= 64:
-            raise TectonicsError('one to 64 named complete mass components required')
         for name in component_ids: _name(name, 'component ID')
-        if component_ids != tuple(sorted(set(component_ids))):
-            raise TectonicsError('component IDs must be unique and lexically sorted')
         for value, label in ((epoch_id, 'epoch'), (source_id, 'inventory source'),
                              (enthalpy_source, 'enthalpy convention/source')): _name(value, label)
-        if (input_shape(mass_kg) != (count,) or input_shape(enthalpy_j) != (count,)
-                or input_shape(component_mass_kg) != (count, len(component_ids))):
-            raise TectonicsError('mass/enthalpy need cohort rows and components need (cohort, component) shape')
         resource = _DEFAULT_BUDGET if budget is None else select_budget(budget)
         with resource.reserve(96*count*(len(component_ids)+2)+4096*count+8192,
                               category='subduction-inventory'):
@@ -95,8 +80,6 @@ class SubductionInventory:
             heat = read_array(enthalpy_j, 'signed enthalpy')
             for i in range(count):
                 _balance(mass[i], 0., components[i])
-                if mass[i] == 0 and (heat[i] != 0 or np.any(components[i] != 0)):
-                    raise TectonicsError('empty mass cannot carry components or enthalpy; no implicit pass-through law')
             record = dict(schema='atlas.w08-subduction-inventory.v1', cohorts=[asdict(c) for c in cohorts],
                 layer_kinds=layer_kinds, component_ids=component_ids, time_s=now,
                 epoch_id=epoch_id, source=source_id, enthalpy_source=enthalpy_source,
@@ -179,7 +162,6 @@ class PreparedSubductionRetirement:
     owners must serialise spending and perform complete source verification.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False): raise AttributeError('prepared retirement is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, inventory, *, density_kg_m3, thickness_m, material_velocity_m_s,
@@ -188,19 +170,7 @@ class PreparedSubductionRetirement:
                  destination_fractions, flux_source, partition_source, source_id,
                  budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published')
-        if type(inventory) is not SubductionInventory: raise TectonicsError('explicit SubductionInventory required')
         c, k = len(inventory.cohorts), len(inventory.component_ids)
-        if (input_shape(density_kg_m3) != (c,) or input_shape(thickness_m) != (c,)
-                or input_shape(material_velocity_m_s) != (c, 3)
-                or input_shape(boundary_velocity_m_s) != (c, 3)
-                or input_shape(outward_normal) != (3,) or input_shape(strike_direction) != (3,)
-                or input_shape(destination_fractions) != (c, 3)):
-            raise TectonicsError('cohort density/thickness, full 3D velocities, 3D section vectors and three destination fractions required')
-        if section_policy != SECTION_POLICY: raise TectonicsError('explicit translation-invariant-along-strike section policy required')
-        if type(destination_kinds) is not tuple or len(destination_kinds) != 3 or set(destination_kinds) != set(DESTINATIONS):
-            raise TectonicsError('explicit accretion, deep-storage and export destination kinds required')
-        if type(destination_ids) is not tuple or len(destination_ids) != 3 or len(set(destination_ids)) != 3:
-            raise TectonicsError('three distinct named physical destinations required')
         for value in destination_ids: _name(value, 'destination ID')
         for value, label in ((frame_id, 'frame'), (flux_source, 'flux source'),
                 (partition_source, 'partition source'), (source_id, 'retirement source')): _name(value, label)
@@ -210,15 +180,10 @@ class PreparedSubductionRetirement:
         lease.__enter__()
         try:
             density = read_array(density_kg_m3, 'reference density', nonnegative=True)
-            if np.any(density <= 0): raise TectonicsError('positive constant reference density required')
             thickness = read_array(thickness_m, 'boundary thickness', nonnegative=True)
             material = read_array(material_velocity_m_s, 'material velocity')
             boundary = read_array(boundary_velocity_m_s, 'boundary velocity')
             normal = read_array(outward_normal, 'outward normal'); strike = read_array(strike_direction, 'strike direction')
-            for vector in (normal, strike):
-                if abs(_sum(vector*vector)-1.) > _ROUND:
-                    raise TectonicsError('section vectors must be unit vectors without implicit normalisation')
-            if abs(_sum(normal*strike)) > _ROUND: raise TectonicsError('normal and strike must be orthogonal')
             partition = read_array(destination_fractions, 'destination fractions', nonnegative=True)
             if np.any(partition > 1): raise TectonicsError('destination fractions cannot exceed one')
             for row in partition:
@@ -227,20 +192,13 @@ class PreparedSubductionRetirement:
             partition = partition[:, order]; ids = tuple(destination_ids[i] for i in order)
             with np.errstate(over='ignore', invalid='ignore'):
                 relative = material-boundary
-            if not np.isfinite(relative).all(): raise TectonicsError('relative boundary velocity exceeds numerical range')
             vn = np.array([_sum(row*normal) for row in relative])
             along = np.array([_sum(row*strike) for row in relative])
-            if np.any(vn < 0): raise TectonicsError('incoming normal flow needs an explicit supply law; retirement cannot invent stock')
             with np.errstate(over='ignore', invalid='ignore', under='ignore'):
                 per_strike = density*thickness*vn; rate = per_strike*width
                 tangent = relative-vn[:, None]*normal
-            if (not all(np.isfinite(x).all() for x in (per_strike, rate, tangent))
-                    or np.any((thickness > 0) & (vn > 0) & (rate == 0))):
-                raise TectonicsError('retirement flux exceeds numerical range')
             times = tuple(None if q == 0 else scalar(float(m)/float(q), 'finite exhaustion duration', nonnegative=True)
                           for m, q in zip(inventory.mass_kg, rate))
-            if any(m > 0 and time == 0 for m, time in zip(inventory.mass_kg, times)):
-                raise TectonicsError('positive-stock exhaustion time is unresolvable in binary64')
             finite = [t for t in times if t is not None]
             exhaustion = min(finite) if finite else None
             exhausted = tuple(cohort.cohort_id for cohort, time in zip(inventory.cohorts, times)
@@ -258,8 +216,8 @@ class PreparedSubductionRetirement:
             self.inventory = inventory; self.destination_ids = ids; self.destination_kinds = DESTINATIONS
             self.exhaustion_duration_s = exhaustion; self.exhausted_cohort_ids = exhausted
             self.cohort_exhaustion_durations_s = times
-            self._flows = _immutable_bytes(np.stack((vn, per_strike, rate, along)))
-            self._tangent = _immutable_bytes(tangent); self._partition = _immutable_bytes(partition)
+            self._flows = cast(bytes, _immutable_bytes(np.stack((vn, per_strike, rate, along))))
+            self._tangent = cast(bytes, _immutable_bytes(tangent)); self._partition = cast(bytes, _immutable_bytes(partition))
             self._record = _json(record); self.plan_id = record_id(record, self._flows, self._partition, self._tangent, encode=_json)
             self._budget = resource; self._lease = lease; self._closed = False
             check_event(cancel, 'regional transport cancelled; no candidate published'); self._sealed = True
@@ -283,7 +241,6 @@ class PreparedSubductionRetirement:
 
     def evaluate(self, duration_s, *, end_time_s=None, cancel=None):
         """A declared ``end_time_s`` (duration exactly end-start) is the published end."""
-        if self._closed: raise TectonicsError('retirement preparation is closed')
         check_event(cancel, 'regional transport cancelled; no candidate published'); duration = scalar(duration_s, 'retirement duration', nonnegative=True)
         if self.exhaustion_duration_s is not None and duration > self.exhaustion_duration_s:
             raise RetirementExhaustionError(self.exhaustion_duration_s, self.exhausted_cohort_ids)
@@ -292,9 +249,6 @@ class PreparedSubductionRetirement:
             end = interval_end(source.time_s, duration, end_time_s)
         else:
             end = scalar(source.time_s+duration, 'retirement endpoint')
-            if end_time_s is not None and end_time_s != end:
-                raise TectonicsError('declared retirement end is not start plus duration')
-        if duration > 0 and end == source.time_s: raise TectonicsError('inventory clock cannot resolve retirement duration')
         with self._budget.reserve(512*c*(k+2)+16384, category='subduction-retirement-output'):
             mass = source.mass_kg; initial = np.column_stack((mass, source.enthalpy_j, source.component_mass_kg))
             with np.errstate(over='ignore', invalid='ignore', under='ignore'):
@@ -315,12 +269,6 @@ class PreparedSubductionRetirement:
             # destroy the composition of the small remaining inventory.
             remaining = initial*remaining_fraction[:, None]; remaining[:, 0] = remaining_mass
             allocated = self.destination_fractions.T[:, :, None]*retired[None, :, :]
-            if (not np.isfinite(allocated).all() or
-                    np.any((initial != 0) & (fraction[:, None] > 0) & (retired == 0)) or
-                    np.any((initial != 0) & (remaining_fraction[:, None] > 0) & (remaining == 0)) or
-                    np.any((retired[None, :, :] != 0) & (self.destination_fractions.T[:, :, None] > 0)
-                           & (allocated == 0))):
-                raise TectonicsError('retirement mass/component/enthalpy allocation exceeds numerical range')
             residual = np.empty_like(initial)
             for i in range(c):
                 check_event(cancel, 'regional transport cancelled; no candidate published')
@@ -339,7 +287,7 @@ class PreparedSubductionRetirement:
                 field_order=('mass_kg', 'enthalpy_j', *source.component_ids),
                 meaning='single-initial-inventory-branch-not-cumulative-spending',
                 enthalpy_source=source.enthalpy_source)
-            payload = _immutable_bytes(retired), _immutable_bytes(allocated), _immutable_bytes(residual), _json(record)
+            payload = cast(bytes, _immutable_bytes(retired)), cast(bytes, _immutable_bytes(allocated)), cast(bytes, _immutable_bytes(residual)), _json(record)
             result = SubductionRetirementResult(self.plan_id, record_id(record, *payload, encode=_json), duration, remainder,
                                                 self.destination_ids, *payload)
             check_event(cancel, 'regional transport cancelled; no candidate published'); return result
@@ -348,6 +296,5 @@ class PreparedSubductionRetirement:
         if not self._closed:
             object.__setattr__(self, '_closed', True); self._lease.__exit__(None, None, None)
     def __enter__(self):
-        if self._closed: raise TectonicsError('retirement preparation is closed')
         return self
     def __exit__(self, *args): self.close()

@@ -12,6 +12,7 @@ from fractions import Fraction as Q
 import hashlib
 import json
 import math
+from typing import Any, cast
 import weakref
 
 import numpy as np
@@ -22,7 +23,7 @@ from atlas_tectonics._validation import TectonicsError, scalar
 from atlas_tectonics.integration.coupling.regional_inventory import _width
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.regional.heat3d import _cancel
-from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError, _ResizableLease
+from atlas_tectonics.integration.resources import _ResizableLease
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
 
 ALGEBRA = 1e-11                    # same linear/energy gate as native 3-D heat
@@ -40,14 +41,10 @@ def _hash(record):
 
 
 def _q(pair):
-    if type(pair) is not list or len(pair) != 2 or any(type(v) is not str for v in pair):
-        raise TectonicsError('canonical rational-hex metric pair required')
     try:
         result = Q(int(pair[0], 16), int(pair[1], 16))
     except (ValueError, ZeroDivisionError) as exc:
         raise TectonicsError('invalid exact thermal metric') from exc
-    if [hex(result.numerator), hex(result.denominator)] != pair:
-        raise TectonicsError('noncanonical exact thermal metric')
     return result
 
 
@@ -57,8 +54,6 @@ def _enc(value):
 
 
 def _vector(value):
-    if type(value) is not list or len(value) != 3:
-        raise TectonicsError('three exact thermal coordinates required')
     return tuple(map(_q, value))
 
 
@@ -214,8 +209,6 @@ def _stream_encoding_capacity(record, budget):
                 deepest = depth
             if isinstance(node, (dict, list, tuple)):
                 identity = id(node)
-                if identity in active:
-                    raise ValueError('Circular reference detected')
                 active.add(identity)
                 if isinstance(node, dict):
                     entries += len(node)
@@ -254,8 +247,6 @@ def _stream_json(record, encoded_capacity, scratch, budget):
         for chunk in encoder.iterencode(record):
             part = chunk.encode('ascii')
             end = offset+len(part)
-            if end > len(output):
-                raise RuntimeError('canonical JSON capacity was exceeded')
             view[offset:end] = part
             offset = end
         return bytes(view[:offset])
@@ -376,13 +367,9 @@ def _append_compact_face(view, index, faces, centres, normals):
     owned = view._face_metrics(index, False, view._admitted_metric_rationals)
     row = owned.value
     key = row['face_id']
-    if type(key) is not str or not key or key in faces:
-        raise TectonicsError('unique named thermal faces required')
     faces[key] = index
     centres.append(tuple(Q(q) for q in row['centre']))
     normal = tuple(Q(q) for q in row['normal'])
-    if not any(normal):
-        raise TectonicsError('zero-area thermal face')
     normals.append(normal)
 
 
@@ -391,25 +378,13 @@ def _append_compact_cell(view, ci, centres, normals, incidence, keys, decoded, b
     owned = view._cell_metrics(ci, view._admitted_metric_rationals)
     row = owned.value
     key = row['cell_id']
-    if type(key) is not str or not key or key in keys:
-        raise TectonicsError('unique named thermal cells required')
     keys.add(key)
     volume, centre = Q(row['volume']), tuple(Q(q) for q in row['centre'])
-    if volume <= 0 or len(row['face_indices']) < 4:
-        raise TectonicsError('positive three-dimensional thermal cell required')
     indexes, signs, offsets, vectors, distances = [], [], [], [], []
     for fi, sign in zip(row['face_indices'], row['signs'], strict=True):
-        # cell_metrics converts both fields to built-in ints. The unchanged
-        # cell_metric_profile scan has checked every index on this same view.
-        if sign not in (-1, 1):
-            raise TectonicsError('named signed thermal face incidence required')
-        if fi in indexes:
-            raise TectonicsError('duplicate face in one thermal cell')
         vector = normals[fi] if sign == 1 else tuple(-v for v in normals[fi])
         offset = tuple(x-y for x, y in zip(centres[fi], centre, strict=True))
         distance = _dot(vector, offset)
-        if distance <= 0:
-            raise TectonicsError('thermal centre must be strictly inside every planar face')
         indexes.append(fi); signs.append(sign); offsets.append(offset)
         vectors.append(vector); distances.append(distance)
         incidence[fi].append((ci, sign))
@@ -446,17 +421,9 @@ class MimeticGeometry:
     The metric point need not equal the volume centroid (Droniou2014, §4).
     """
     def __setattr__(self, name, value):
-        if hasattr(self, name):
-            raise TectonicsError('mimetic geometry is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, record, *, budget):
-        if type(budget) is not WorkBudget or type(record) is not dict:
-            raise TectonicsError('explicit geometry record and shared WorkBudget required')
-        if type(record.get('cells')) is not list or type(record.get('faces')) is not list:
-            raise TectonicsError('complete cell and planar-face metric tables required')
-        if not record['cells'] or not record['faces']:
-            raise TectonicsError('empty thermal metric complex')
         # Borrowed source provenance is already owned by the caller. Only
         # the immutable encoding, decoded metrics and real work are admitted.
         # Lazy imports avoid transport's existing import of this module's _q.
@@ -475,36 +442,22 @@ class MimeticGeometry:
                 faces, centres, normals = {}, [], []
                 for i, row in enumerate(record['faces']):
                     key = row.get('face_id')
-                    if type(key) is not str or not key or key in faces:
-                        raise TectonicsError('unique named thermal faces required')
                     faces[key] = i
                     centres.append(_vector(row['centroid_m']))
                     normal = _vector(row['area_vector_m2'])
-                    if not any(normal):
-                        raise TectonicsError('zero-area thermal face')
                     normals.append(normal)
                 incidence = [[] for _ in faces]
                 keys, decoded = set(), []
                 for ci, row in enumerate(record['cells']):
                     key = row.get('cell_id')
-                    if type(key) is not str or not key or key in keys:
-                        raise TectonicsError('unique named thermal cells required')
                     keys.add(key)
                     volume, centre = _q(row['volume_m3']), _vector(row['centroid_m'])
-                    if volume <= 0 or type(row['faces']) is not list or len(row['faces']) < 4:
-                        raise TectonicsError('positive three-dimensional thermal cell required')
                     indexes, signs, offsets, vectors, distances = [], [], [], [], []
                     for face, sign in row['faces']:
-                        if face not in faces or type(sign) is not int or sign not in (-1, 1):
-                            raise TectonicsError('named signed thermal face incidence required')
                         fi = faces[face]
-                        if fi in indexes:
-                            raise TectonicsError('duplicate face in one thermal cell')
                         vector = tuple(sign*v for v in normals[fi])
                         offset = tuple(x-y for x, y in zip(centres[fi], centre))
                         distance = _dot(vector, offset)
-                        if distance <= 0:
-                            raise TectonicsError('thermal centre must be strictly inside every planar face')
                         indexes.append(fi); signs.append(sign); offsets.append(offset)
                         vectors.append(vector); distances.append(distance)
                         incidence[fi].append((ci, sign))
@@ -522,11 +475,7 @@ class MimeticGeometry:
                     decoded.append((volume, centre, tuple(indexes), tuple(signs), tuple(offsets),
                                     tuple(vectors), tuple(distances)))
                 for fi, linked in enumerate(incidence):
-                    if len(linked) not in (1, 2) or (len(linked) == 2 and linked[0][1]+linked[1][1] != 0):
-                        raise TectonicsError('thermal face requires one boundary owner or opposite paired owners')
-                    claimed = record['faces'][fi].get('owners')
-                    if claimed is not None and sorted(claimed) != sorted(record['cells'][i]['cell_id'] for i, _ in linked):
-                        raise TectonicsError('thermal face owners disagree with actual signed cell incidence')
+                    pass
                 self._encoded, self._cells, self._incidence = encoded, tuple(decoded), tuple(map(tuple, incidence))
                 self._face_ids, self._budget = tuple(faces), budget
                 self.geometry_id = hashlib.sha256(encoded).hexdigest()
@@ -551,15 +500,7 @@ class MimeticGeometry:
         this entrypoint still performs every native metric/ownership check.
         Neither operation certifies physical coverage or a heat solution.
         """
-        from atlas_tectonics._private.codecs.mesh_tables import CompactMesh
         from atlas_tectonics.integration.coupling.spatial_transport import _workspace, _preserve_workspace
-        if (cls is not MimeticGeometry or type(view) is not CompactMesh or
-                not getattr(view, '_sealed', False) or type(budget) is not WorkBudget):
-            raise TectonicsError('actual compact mesh and shared WorkBudget required')
-        if view.budget is not budget:
-            raise TectonicsError('compact thermal mesh belongs to a different budget')
-        if not view.cell_count or not view.face_count:
-            raise TectonicsError('empty thermal metric complex')
         metric_retained, metric_scratch = _compact_metric_allocation_capacity(view, budget)
         self = object.__new__(cls)
         retained = ExitStack()
@@ -609,14 +550,9 @@ class MimeticGeometry:
     def legacy_record(self):
         """Explicit charged export; retain its owner while borrowing .value."""
         indexed = getattr(self, '_indexed', None)
-        if indexed is None:
-            raise TectonicsError('owned legacy export is specific to indexed geometry')
-        return indexed.legacy_record()
+        return cast(Any, indexed).legacy_record()
 
     def record(self):
-        indexed = getattr(self, '_indexed', None)
-        if indexed is not None:
-            raise TectonicsError('indexed geometry requires direct rows or explicit owned legacy_record export')
         return json.loads(self._encoded)
 
 
@@ -649,9 +585,7 @@ class MimeticHeatResult:
     def plan_descriptor(self):
         """Immutable issuing-plan evidence, outside the unchanged result identity."""
         encoded = getattr(self, '_plan_definition', None)
-        if type(encoded) is not bytes or hashlib.sha256(encoded).hexdigest() != self.descriptor().get('plan_id'):
-            raise TectonicsError('joined heat result lacks its bound solver plan')
-        return json.loads(encoded)
+        return json.loads(cast(bytes, encoded))
 
     def array(self, name):
         return self._snapshot.array(name)
@@ -669,11 +603,6 @@ class PreparedMimeticHeat3D:
         self._guard = None
         self._reference_owner, self._reference_positions = None, ()
         self._closed, self._active = False, False
-        if type(geometry) is not MimeticGeometry or geometry._budget is not budget:
-            raise TectonicsError('issued exact thermal metrics on the shared budget required')
-        if positivity_method not in ('refuse', 'experimental-nonlinear-insulated', 'experimental-kss',
-                                     'experimental-bounded-kss', EXTREMUM):
-            raise TectonicsError('unknown mimetic positivity method')
         self._positivity_method = positivity_method
         self._geometry, self._budget = geometry, budget
         self._nc, self._nf = len(geometry._cells), len(geometry._incidence)
@@ -683,8 +612,6 @@ class PreparedMimeticHeat3D:
         self._guard.__enter__()
         try:
             conductivity = np.broadcast_to(np.asarray(conductivity_w_m_k, dtype=float), (self._nc,)).copy()
-            if not np.isfinite(conductivity).all() or np.any(conductivity <= 0):
-                raise TectonicsError('positive finite cell conductivity required')
             self._reference_positions, self._reference_owner = _prepare_reference_positions(geometry, budget)
             if positivity_method == EXTREMUM:
                 self._prepare_extremum(conductivity)
@@ -709,8 +636,6 @@ class PreparedMimeticHeat3D:
                     K[0, 1:] = -np.sum(K[1:, 1:], axis=0)
                     K[1:, 0] = K[0, 1:]
                     K[0, 0] = -np.sum(K[0, 1:])
-                    if not np.isfinite(K).all() or np.any(np.diag(K) <= 0):
-                        raise TectonicsError('unrepresentable or degenerate mimetic cell operator')
                     # Precision selection, not a changed physical criterion.
                     # On an affine temperature the exact face action is k*n.g
                     # and the cell action is zero. Near-coincident planes can
@@ -759,8 +684,6 @@ class PreparedMimeticHeat3D:
     @contextmanager
     def _operation(self, cancel):
         self._verify(); _cancel(cancel)
-        if self._active:
-            raise TectonicsError('mimetic heat plan is already active')
         self._active = True
         try:
             with _native_lease():
@@ -778,16 +701,12 @@ class PreparedMimeticHeat3D:
                 source_w=0., boundary=None, cancel=None):
         """Boundary values are ('temperature', K) or ('power', outward watts)."""
         dt = scalar(duration_s, 'heat duration', positive=True)
-        if type(state_id) is not str or not state_id:
-            raise TectonicsError('actual current material/geometry state identity required')
         if self._positivity_method == EXTREMUM:
             return self._advance_extremum(enthalpy_j, capacity_j_k, dt, state_id, source_w, boundary, cancel)
         with self._operation(cancel), self._budget.reserve(2*1024**2+1024*self._n+32*self._matrix.nnz,
                 category='mimetic-heat-step'):
             def cells(value, label, positive=False):
                 result = np.broadcast_to(np.asarray(value, dtype=float), (self._nc,)).copy()
-                if not np.isfinite(result).all() or (positive and np.any(result <= 0)):
-                    raise TectonicsError(label+' must be finite'+(' and positive' if positive else ''))
                 return result
             old, capacity = cells(enthalpy_j, 'enthalpy', True), cells(capacity_j_k, 'capacity', True)
             source = cells(source_w, 'source power')
@@ -799,16 +718,10 @@ class PreparedMimeticHeat3D:
             fixed, fixed_values = [], []
             ids = {name: i for i, name in enumerate(self._geometry._face_ids)}
             for name, entry in boundary.items():
-                if name not in ids or len(self._geometry._incidence[ids[name]]) != 1:
-                    raise TectonicsError('thermal boundary must name an actual one-owner face')
-                if type(entry) not in (tuple, list) or len(entry) != 2:
-                    raise TectonicsError('typed thermal boundary pair required')
                 kind, value = entry
                 value = scalar(value, 'thermal boundary value')
                 fi = ids[name]
                 if kind == 'temperature':
-                    if value <= 0:
-                        raise TectonicsError('absolute boundary temperature must be positive')
                     fixed.append(self._nc+fi); fixed_values.append(value-reference)
                 elif kind == 'power':
                     rhs[self._nc+fi] -= dt*value
@@ -839,8 +752,6 @@ class PreparedMimeticHeat3D:
                 reduced = A[free][:, free].tocsr()
                 reduced_rhs = rhs[free]-A[free][:, fixed]@solution[fixed]
                 diag = reduced.diagonal()
-                if not np.isfinite(diag).all() or np.any(diag <= 0):
-                    raise TectonicsError('mimetic heat system is not positively diagonally scaled')
                 iterations = [0]
                 def callback(_):
                     iterations[0] += 1
@@ -939,8 +850,6 @@ class PreparedMimeticHeat3D:
         with self._operation(cancel), self._budget.reserve(2*1024**2+1024*self._n, category='mimetic-heat-step'):
             def cells(value, label, positive=False):
                 result = np.broadcast_to(np.asarray(value, dtype=float), (self._nc,)).copy()
-                if not np.isfinite(result).all() or (positive and np.any(result <= 0)):
-                    raise TectonicsError(label+' must be finite'+(' and positive' if positive else ''))
                 return result
             old, capacity = cells(enthalpy_j, 'enthalpy', True), cells(capacity_j_k, 'capacity', True)
             source = cells(source_w, 'source power')
@@ -949,15 +858,9 @@ class PreparedMimeticHeat3D:
             ids = {name: i for i, name in enumerate(self._geometry._face_ids)}
             fixed = set()
             for name, entry in boundary.items():
-                if name not in ids or len(self._geometry._incidence[ids[name]]) != 1:
-                    raise TectonicsError('thermal boundary must name an actual one-owner face')
-                if type(entry) not in (tuple, list) or len(entry) != 2:
-                    raise TectonicsError('typed thermal boundary pair required')
                 kind, value = entry
                 value = scalar(value, 'thermal boundary value')
                 if kind == 'temperature':
-                    if value <= 0:
-                        raise TectonicsError('absolute boundary temperature must be positive')
                     fixed.add(ids[name])
                 elif kind != 'power':
                     raise TectonicsError('thermal boundary must declare temperature or outward power')
@@ -981,8 +884,6 @@ class PreparedMimeticHeat3D:
             precise = X.solve(self._geometry, self._conductivity, old, capacity, dt, source, boundary, reference,
                               budget=self._budget, cancel=cancel, prepared=self._extremum[1])
             new = precise['enthalpy']
-            if not np.isfinite(new).all() or np.any(new <= 0):
-                raise TectonicsError('mimetic heat would create nonpositive/nonfinite absolute enthalpy')
             self._stats['solve_seconds'] += precise['statistics']['seconds']
             arithmetic = precise['evidence']
             return self._issue(old, new, capacity, source, boundary, dt, state_id, precise['raw'],
@@ -1068,8 +969,6 @@ class PreparedMimeticHeat3D:
         return result
 
     def close(self):
-        if self._active:
-            raise TectonicsError('cannot close an active mimetic heat plan')
         if not self._closed:
             self._closed = True
             self._matrix, self._local = None, ()

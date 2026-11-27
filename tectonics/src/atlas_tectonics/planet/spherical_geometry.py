@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import math
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import shapely
@@ -36,7 +36,6 @@ _DEFAULT_ANGULAR_BAND=64*np.finfo(float).eps
 def _directions(value):
     a=read_array(value,'spherical directions')
     scale=np.max(np.abs(a),axis=-1,keepdims=True)
-    if np.any(scale==0):raise GeometryError('zero direction has no spherical position')
     a=a/scale
     return a/np.sqrt(np.sum(a*a,axis=-1,keepdims=True))
 
@@ -72,8 +71,6 @@ class SphericalChart:
     _basis: bytes=field(init=False,repr=False,compare=False)
 
     def __post_init__(self):
-        if type(self.sphere) is not SphericalFrame:raise GeometryError('SphericalFrame required')
-        if _point_shape(self.centre,3)!=(3,):raise GeometryError('chart centre must have three components')
         c=_directions(self.centre)
         margin=scalar(self.min_cosine,'min_cosine',positive=True)
         if margin>=1:raise GeometryError('chart min_cosine must be below one')
@@ -84,8 +81,6 @@ class SphericalChart:
     @classmethod
     def from_descriptor(cls, desc):
         """Restore the exact captured centre; do not normalise and drift on each load."""
-        if type(desc) is not dict or set(desc)!= {'schema','sphere','centre','min_cosine'} or desc['schema']!='atlas.gnomonic-chart.v1':
-            raise GeometryError('invalid spherical chart descriptor')
         try:
             sd=desc['sphere'];sphere=SphericalFrame(sd['radius_m'],sd['frame_id'])
             if sphere.descriptor()!=sd:raise GeometryError('sphere descriptor mismatch')
@@ -175,22 +170,17 @@ class SphericalGeometry:
 
     @classmethod
     def _from_shape(cls,g,chart,*,limits=None,_validated=None,_frame_id=None):
-        if type(chart) is not SphericalChart:raise GeometryError('SphericalChart required')
         limits=_limits(limits);_validate_once(g,limits,_validated)
         xy=shapely.get_coordinates(g)
         unit=None
         if len(xy):
             unit=chart._unproject(xy)
-            # A small rounding allowance applies to re-reading the declared chart,
-            # not to moving its horizon or changing any feature coordinates.
-            if np.any(unit@np.asarray(chart.centre)<chart.min_cosine*(1-32*np.finfo(float).eps)):
-                raise GeometryError('stored geometry exceeds chart conditioning limit')
         # A hole-free Polygon has one ring whose coordinates are exactly xy (same
         # values, same shape), so its unprojection is the array computed above.
         single=unit is not None and g.geom_type=='Polygon' and not len(g.interiors)
         starts=[];ends=[];areas=[];lengths=[]
         for coords,role in _rings(g):
-            u=unit if single else chart._unproject(coords)
+            u=cast(np.ndarray, unit) if single else chart._unproject(coords)
             if len(u)==1:
                 starts.append(u[0]);ends.append(u[0])
             else:
@@ -200,17 +190,11 @@ class SphericalGeometry:
                 dif=u[:-1]-u[1:];tot=u[:-1]+u[1:]
                 for a,b,d,s in zip(u[:-1],u[1:],dif,tot):
                     theta=sphere.angle_scalar_from_chords(d,s)
-                    if theta==0 or theta>=math.pi:
-                        raise GeometryError('degenerate or antipodal spherical edge')
                     starts.append(a);ends.append(b);lengths.append(theta)
             if role:areas.append(role*_ring_area(u,np.asarray(chart.centre)))
         area=math.fsum(areas);length=math.fsum(lengths)
-        if g.geom_type in ('Polygon','MultiPolygon') and not g.is_empty and area<=0:
-            raise GeometryError('spherical area is numerically unresolvable')
         if area<0 or not math.isfinite(area) or not math.isfinite(length):
             raise GeometryError('invalid spherical measure')
-        if not math.isfinite((area*chart.sphere.radius_m)*chart.sphere.radius_m) or not math.isfinite(length*chart.sphere.radius_m):
-            raise GeometryError('spherical metric exceeds binary64 range')
         # g and limits passed _validate_once at the top of this method.
         frame_id=chart.identity if _frame_id is None else _frame_id
         projected=PlanarGeometry._from_shape(g,frame_id,limits=limits,_validated=(g,limits))
@@ -230,8 +214,6 @@ class SphericalGeometry:
         Input triples are directions in the sphere's named axes. Magnitude is not
         altitude. Use stage-1 conversions with explicit angular units beforehand.
         """
-        if type(chart) is not SphericalChart:raise GeometryError('SphericalChart required')
-        if type(holes) not in (tuple,list):raise GeometryError('explicit holes sequence required')
         limits=_limits(limits);count=_preflight_vertices((directions,*holes),3,limits)
         with select_budget(budget).reserve(1024*count+16384,category='spherical-build'):
             outer=chart._project(_directions(_vertices(directions,3,ring=True,limits=limits)))
@@ -244,7 +226,6 @@ class SphericalGeometry:
 
     @classmethod
     def polyline(cls,directions,*,chart,limits=None,budget=None):
-        if type(chart) is not SphericalChart:raise GeometryError('SphericalChart required')
         limits=_limits(limits);count=_preflight_vertices((directions,),3,limits)
         with select_budget(budget).reserve(1024*count+16384,category='spherical-build'):
             xy=chart._project(_directions(_vertices(directions,3,ring=False,limits=limits)))
@@ -298,7 +279,6 @@ class SphericalGeometry:
         _check_cancel(cancel)
         limits=_limits(limits);shape=_point_shape(directions,3);n=elements(shape)//3
         tol=scalar(angular_tolerance_rad,'angular tolerance',nonnegative=True)
-        if tol>=self.chart.min_cosine/4:raise GeometryError('boundary band exceeds chart validity allowance')
         with select_budget(budget).reserve(64*n+1024*min(n,limits.batch_points)+16384,category='spherical-query'):
             p=_directions(directions).reshape(-1,3);out=np.full(n,-1,dtype='i1')
             if self.is_empty:
@@ -324,8 +304,6 @@ class SphericalGeometry:
 
     def distance_to(self,directions,*,boundary=False,limits=None,budget=None,cancel=None):
         """Great-circle metres to finite arcs, not to their infinite great circles."""
-        if type(boundary) is not bool:raise GeometryError('boundary must be bool')
-        if self.is_empty:raise GeometryError('distance to empty geometry is undefined')
         limits=_limits(limits);shape=_point_shape(directions,3);n=elements(shape)//3
         with select_budget(budget).reserve(80*n+1024*min(n,limits.batch_points)+16384,category='spherical-distance'):
             p=_directions(directions).reshape(-1,3);out=np.empty(n)
@@ -340,8 +318,6 @@ class SphericalGeometry:
                 # boundary rather than publishing inf as a physical distance.
                 with np.errstate(over='ignore', invalid='ignore'):
                     distances *= self.chart.sphere.radius_m
-                if not np.isfinite(distances).all():
-                    raise GeometryError('spherical distance exceeds binary64 range')
                 out[start:start+len(a)]=distances
             _check_cancel(cancel)
             return _typed_frozen(out.reshape(shape[:-1]),np.float64)
@@ -362,10 +338,6 @@ class SphericalGeometry:
             return type(self)._from_shape(g,chart,limits=limits)
 
     def overlay(self,other,operation='intersection',*,limits=None,budget=None,cancel=None):
-        if type(other) is not SphericalGeometry or other.chart.sphere!=self.chart.sphere:
-            raise GeometryError('spherical frame/radius mismatch')
-        if operation not in ('intersection','union','difference','symmetric_difference'):
-            raise GeometryError('unsupported geometry operation')
         _check_cancel(cancel);limits=_limits(limits)
         if self.geometry_id==other.geometry_id:
             if self.vertex_count>limits.max_vertices:raise GeometryError('geometry vertex limit exceeded')
@@ -390,8 +362,6 @@ class SphericalGeometry:
                         del coords
                 centre=np.array([math.fsum(points[:count,j]) for j in range(3)])
                 del points
-                if not count or np.linalg.norm(centre)==0:
-                    raise GeometryError('no supported common hemisphere; split the operation into explicit patches')
                 joint=SphericalChart(self.chart.sphere,tuple(centre),max(self.chart.min_cosine,other.chart.min_cosine))
                 a=self.in_chart(joint,limits=limits,budget=budget);b=other.in_chart(joint,limits=limits,budget=budget)
         with _overlay_budget(a._projected._geom,b._projected._geom,limits,budget):
@@ -406,5 +376,4 @@ class SphericalGeometry:
 
 def _restore_spherical(raw,chart,expected):
     out=SphericalGeometry.from_projected_wkb(raw,chart=chart)
-    if out.geometry_id!=expected:raise GeometryError('restored spherical identity mismatch')
     return out

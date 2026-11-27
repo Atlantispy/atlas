@@ -12,8 +12,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 """
 from fractions import Fraction as Q
 from math import comb
-import hashlib
-from pathlib import Path
 
 from . import volume as V
 from . import wall_measures as W
@@ -23,14 +21,6 @@ from atlas_tectonics.regional.heat3d import _cancel
 METHOD='proved-full-interval-component-face:exact-chart-Q2-directed-v1'
 SIGNED_METHOD='moving-mask-signed-Q2-moment:exact-Bernstein-opposite-stream-cap-v1'
 COMPLEMENT_METHOD='moving-mask-signed-Q2-moment:proved-one-sign-complement-v1'
-_LOADED=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-_PROJECTION_LOADED=hashlib.sha256(Path(NP.__file__).read_bytes()).hexdigest()
-
-
-def source_digest():
-    from atlas_tectonics.integration.geometry.moving_face_moments import source_digest as geometry_digest
-    from atlas_tectonics.integration.coupling.q2_directed import source_digest as quadrature_digest
-    return hashlib.sha256((_LOADED+_PROJECTION_LOADED+geometry_digest()+quadrature_digest()).encode('ascii')).hexdigest()
 
 
 def _unit_polynomial(polynomial, bounds):
@@ -53,8 +43,6 @@ def _bernstein_range(polynomial):
 
 def _intersection(*pairs):
     pair=max(value[0] for value in pairs),min(value[1] for value in pairs)
-    if pair[0]>pair[1]:
-        raise V.VolumeError('signed native moment contradicts directed physical enclosure')
     return pair
 
 
@@ -113,8 +101,6 @@ def _outer_stream_caps(record,component,face,polynomial,duration,arena,cancel,_p
             break
     arena.work(128+128*len(polynomial))
     area=W._integral(outer,(Q(0),Q(0),Q(1)),arena)
-    if area<0:
-        raise V.VolumeError('component outer polygon has negative area')
     bounds=(tuple((min(p[j] for p in outer),max(p[j] for p in outer)) for j in range(2))
             if area else ((Q(0),Q(0)),)*2)
     with V._work((*polynomial.values(),*[q for pair in bounds for q in pair],area,duration),arena.resource, convert_values=False):
@@ -198,8 +184,6 @@ def integrate_signed_complement(record,component,layer,face,normal_polynomial,po
     if normal_polynomial is None or any(type(i) is not int or type(j) is not int or
         not 0<=i<=2 or not 0<=j<=2 for i,j in normal_polynomial):
         return None
-    if duration<=0 or len(widths)!=2+len(polynomials):
-        raise V.VolumeError('positive interval and complete component moment widths required')
     if max_leaves<4 or min(widths[:2])<=0 or not TM._face_in_layer(face,layer):
         return None
     (a,b),(c,d)=face[4]
@@ -266,8 +250,6 @@ def integrate_near_signed(record,component,layer,face,normal_polynomial,polynomi
     if normal_polynomial is None or any(type(i) is not int or type(j) is not int or
         not 0<=i<=2 or not 0<=j<=2 for i,j in normal_polynomial):
         return None
-    if duration<=0 or len(widths)!=2+len(polynomials):
-        raise V.VolumeError('positive interval and complete component moment widths required')
     if not TM._face_in_layer(face,layer):
         return None
     (a,b),(c,d)=face[4]
@@ -364,8 +346,6 @@ def integrate(record,component,layer,face,normal_polynomial,polynomials,widths,d
     if any(type(i) is not int or type(j) is not int or not 0<=i<=2 or not 0<=j<=2
            for i,j in normal_polynomial):
         return None
-    if duration<=0 or len(widths)!=2+len(polynomials):
-        raise V.VolumeError('positive interval and complete component moment widths required')
     if not _face_in_layer(face,layer):
         return None
     rectangle=W._rectangle(face[4])

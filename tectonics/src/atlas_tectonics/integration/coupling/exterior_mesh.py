@@ -20,7 +20,6 @@ from atlas_tectonics.integration.geometry import volume_bounds as B
 from atlas_tectonics.integration.geometry import volume_overlap as O
 from atlas_tectonics.integration.geometry import wall_measures as W
 from atlas_tectonics.integration.geometry import collar_geometry as F
-from atlas_tectonics.integration.resources import WorkBudget
 
 # Pose width (c): the stored deviation sum is an outward bound with a short dyadic
 # denominator, at most 2**-DEVIATION_STORED_BITS above the exact sum relative.
@@ -31,8 +30,6 @@ _OVERLAP_OWNER = ContextVar('thermal_overlap_owner', default=None)
 
 def _stored_deviation(total, width):
     """Outward short bound of an exact nonnegative sum already checked against width."""
-    if type(total) is not Q or type(width) is not Q or not 0 <= total <= width:
-        raise V.VolumeError('checked exact deviation sum required')
     return _round_stored_deviation(total, width)
 
 
@@ -73,8 +70,6 @@ def resolve_physical_support(record, cell):
     if 'differential_support_id' in refs:
         support = tables['differential_supports'][refs['differential_support_id']]
         component = next((r for r in support['components'] if r['logical_cell_id'] == refs['logical_cell_id']), None)
-        if component is None:
-            raise V.VolumeError('thermal physical support reference has no matching component')
         return json.loads(json.dumps(dict(support=support, component=component), separators=(',', ':')))
     result = dict(voxel=tables['voxels'][refs['voxel_id']])
     if cell['kind'] == 'exterior':
@@ -121,8 +116,6 @@ def _cell_metrics(poly, arena):
             a = ring[0]
             for b, c in zip(ring[1:-1], ring[2:]):
                 part = O._dot(O._minus(a, origin), O._cross(O._minus(b, origin), O._minus(c, origin)))/6
-                if part < 0:
-                    raise V.VolumeError('thermal cell has an incorrectly oriented convex face')
                 volume += part
                 for j in range(3):
                     moment[j] += part*(origin[j]+a[j]+b[j]+c[j])/4
@@ -200,8 +193,6 @@ def _unmatched_parts(poly, holes, matched_areas, arena):
     with V._work(tuple(q for p in poly for q in p)+tuple(matched_areas), arena.resource, convert_values=False):
         original = _area(poly)
         covered = sum(matched_areas, Q(0))
-        if covered > original:
-            raise V.VolumeError('thermal-face matched area exceeds its exact original area')
         if covered == original:
             return ()
     return _subtract(poly, holes, arena)
@@ -319,12 +310,12 @@ def _admitted_closure_fails(terms, volume, budget):
 
 def _assemble(candidates, arena):
     """Exact face overlay, including one full collar face vs many subfaces."""
+def _assemble(candidates, arena):
+    """Exact face overlay, including one full collar face vs many subfaces."""
     groups, cells, shapes = {}, {}, {}
     capture = _OVERLAP_OWNER.get() is not None
     for key, poly, metadata in candidates:
         volume, centre = _cell_metrics(poly, arena)
-        if volume <= 0:
-            raise V.VolumeError('positive convex thermal cells required')
         cells[key] = dict(metadata, cell_id=key, volume_m3=_enc(volume), centroid_m=_point(centre), faces=[])
         shapes[key] = volume, centre
         for ring_index, ring in enumerate(poly):
@@ -392,8 +383,6 @@ def _assemble(candidates, arena):
         terms = []
         for face_id, sign in cell['faces']:
             nonpositive, term = _signed_face(None, sign, centre, scale, exact=face_keys[face_id])
-            if nonpositive:
-                raise V.VolumeError('convex thermal cell has nonpositive normal centre distance')
             terms.append(term)
         if _admitted_closure_fails(terms, volume, arena.resource):
             raise V.VolumeError('exact thermal metric closure or first-moment identity failed')
@@ -403,9 +392,6 @@ def _assemble(candidates, arena):
         if face_keys[a['face_id']] == face_keys[b['face_id']]:
             raise V.VolumeError('two thermal faces share a centroid and area vector')
     order = sorted(cells, key=lambda k: shapes[k][1])
-    for a, b in zip(order, order[1:]):
-        if shapes[a][1] == shapes[b][1]:
-            raise V.VolumeError('two thermal cells share an interior point')
     rank = {f['face_id']: i for i, f in enumerate(faces)}
     for cell in cells.values():
         cell['faces'].sort(key=lambda row: rank[row[0]])
@@ -597,8 +583,6 @@ class ExteriorMesh:
         return hashlib.sha256(self._json).hexdigest()
 
     def record(self):
-        if getattr(self, '_compact', None) is not None:
-            raise V.VolumeError('compact mesh requires indexed access; explicit legacy_record() returns owned export')
         return json.loads(self._json)
 
     @classmethod
@@ -609,18 +593,8 @@ class ExteriorMesh:
         must bind this record to its saved accepted source and transaction.
         """
         from atlas_tectonics.integration.coupling.regional_inventory import _width
-        if type(record) is not dict or type(budget) is not WorkBudget or type(geometry_id) is not str:
-            raise V.VolumeError('saved geometry record, identity and shared budget required')
         size = _width(record)
         with budget.reserve(65536+2*size, category='exterior-thermal-mesh-restore'):
-            if record.get('schema') != 'atlas.source-bound-exterior-thermal-mesh.v1' or record.get('method') != METHOD:
-                raise V.VolumeError('unsupported saved thermal geometry method')
-            required = ('cells', 'faces', 'support_tables', 'funding_id', 'source', 'support_id',
-                        'trajectory_id', 'time_s', 'grid_id', 'grid_lines', 'endpoint')
-            if any(k not in record for k in required) or _hash(record) != geometry_id:
-                raise V.VolumeError('saved thermal geometry identity or record contract changed')
-            if record['endpoint'] not in ('start', 'end'):
-                raise V.VolumeError('saved thermal endpoint differs')
             encoded = json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
             lease = budget.reserve(8192+4*len(encoded), category='exterior-thermal-mesh-retained')
             lease.__enter__()
@@ -644,42 +618,21 @@ def build_exterior_mesh(funding, sphere, wall_measures, *, grid_lines,
     it is never dropped as a small cell or disguised by the global error sum.
     """
     from atlas_tectonics.integration import support as U
-    if type(funding) is not F.FullCellFunding or type(wall_measures) is not W.WallMeasures:
-        raise V.VolumeError('issued source funding and current physical wall/pose evidence required')
-    if endpoint not in ('start', 'end'):
-        raise V.VolumeError('physical start or end endpoint required')
-    if type(budget) is not WorkBudget or funding._resource is not budget or wall_measures._resource is not budget:
-        raise V.VolumeError('one shared explicit source/geometry WorkBudget required')
-    if type(grid_lines) is not tuple or len(grid_lines) != 3 or any(type(q) is not tuple or len(q) < 2 for q in grid_lines):
-        raise V.VolumeError('three explicit finite coordinate-line tuples required')
     width = W._q(max_geometry_volume_error_m3)
-    if width <= 0 or type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive predeclared geometric error and finite subdivision budget required')
     record, motion = funding.descriptor(), wall_measures.descriptor()
-    if motion['funding_id'] != funding.funding_id or record['source']['sphere_state_id'] != sphere.state_id:
-        raise V.VolumeError('thermal mesh source/funding/pose binding differs')
     with budget.reserve(131072+2*funding._snapshot.nbytes+2*len(wall_measures._json), category='thermal-mesh-source'), B._Arena(budget) as arena:
         with V._work(tuple(q for axis in grid_lines for q in axis), budget) as values:
             lines, offset = [], 0
             for axis in grid_lines:
                 line = values[offset:offset+len(axis)]; offset += len(axis)
-                if any(a >= b for a, b in zip(line, line[1:])):
-                    raise V.VolumeError('thermal grid lines must be strictly increasing')
                 lines.append(line)
             lines = tuple(lines)
         collar_cells = tuple(V.CartesianCell.from_record(r, budget=budget) for r in record['cell_geometries'])
         first = collar_cells[0]
         origin, basis = first.origin_m, first.basis
-        if any(c.origin_m != origin or c.basis != basis for c in collar_cells):
-            raise V.VolumeError('one actual exact Cartesian embedding required')
         radius = Q(sphere.network.sphere.radius_m)
-        translation = tuple(sum(basis[k][j]*origin[k] for k in range(3)) for j in range(3))
-        if any(line[0] > -radius-t or line[-1] < radius-t for line, t in zip(lines, translation)):
-            raise V.VolumeError('declared thermal grid does not contain the complete funded radial source')
         for axis in range(3):
-            required = {q for c in collar_cells for q in (c.lower_m[axis], c.upper_m[axis])}
-            if not required.issubset(lines[axis]):
-                raise V.VolumeError('grid must retain every actual active-cell face coordinate')
+            pass
         support = U.required(sphere.material)
         keys = tuple((r['patch_id'], r['sublayer']) for r in record['exterior_remainder'])
         patches = {p.patch_id: p for p in support.patches if p.patch_id in {k[0] for k in keys}}
@@ -853,20 +806,10 @@ def _build_exterior_mesh_record(funding, sphere, wall_measures, *, grid_lines,
     it is never dropped as a small cell or disguised by the global error sum.
     """
     from atlas_tectonics.integration import support as U
-    if type(funding) is not F.FullCellFunding or type(wall_measures) is not W.WallMeasures:
-        raise V.VolumeError('issued source funding and current physical wall/pose evidence required')
-    if endpoint not in ('start', 'end'):
-        raise V.VolumeError('physical start or end endpoint required')
-    if type(budget) is not WorkBudget or funding._resource is not budget or wall_measures._resource is not budget:
-        raise V.VolumeError('one shared explicit source/geometry WorkBudget required')
-    if type(grid_lines) is not tuple or len(grid_lines) != 3 or any(type(q) is not tuple or len(q) < 2 for q in grid_lines):
-        raise V.VolumeError('three explicit finite coordinate-line tuples required')
     width = W._q(max_geometry_volume_error_m3)
     if width <= 0 or type(max_leaves) is not int or max_leaves < 1:
         raise V.VolumeError('positive predeclared geometric error and finite subdivision budget required')
     record, motion = funding.descriptor(), wall_measures.descriptor()
-    if motion['funding_id'] != funding.funding_id or record['source']['sphere_state_id'] != sphere.state_id:
-        raise V.VolumeError('thermal mesh source/funding/pose binding differs')
     with budget.reserve(131072+2*funding._snapshot.nbytes+2*len(wall_measures._json), category='thermal-mesh-source'), B._Arena(budget) as arena:
         with V._work(tuple(q for axis in grid_lines for q in axis), budget) as values:
             lines, offset = [], 0

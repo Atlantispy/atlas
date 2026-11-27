@@ -30,11 +30,6 @@ class GeologicalDomain:
 
     def __post_init__(self):
         _name(self.source_id, 'domain source')
-        if type(self.surface) not in (PlanarGeometry, SphericalGeometry, SphericalFrame):
-            raise GeologyError('a typed planar area, spherical patch or full sphere is required')
-        if type(self.surface) is not SphericalFrame:
-            if self.surface.is_empty or self.surface.kind not in ('Polygon', 'MultiPolygon'):
-                raise GeologyError('geological domain must have nonempty areal support')
 
     @property
     def sphere(self):
@@ -55,8 +50,6 @@ class GeologicalDomain:
     @property
     def domain(self):
         """Bounded geometry only; a full sphere must never become a fake polygon."""
-        if self.full_sphere:
-            raise GeologyError('full sphere has no single conditioned surface polygon')
         return self.surface
 
     @property
@@ -97,10 +90,6 @@ class GeologicalDomain:
 
 def restore_geological_domain(descriptor, geometries):
     """Rebuild from already verified geometry bytes; never generate new support."""
-    if type(descriptor) is not dict or set(descriptor) != {'schema', 'source_id', 'support', 'surface'}:
-        raise GeologyError('invalid geological domain descriptor')
-    if descriptor['schema'] != 'atlas.geological-domain.v1':
-        raise GeologyError('unsupported geological domain version')
     try:
         d = descriptor['surface']
         if descriptor['support'] == 'full-sphere':

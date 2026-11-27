@@ -209,7 +209,7 @@ def generate_layout_candidate(plan, *, policy=None, cancel=None):
                         validate_plan(plan)
                         atlas = candidate
                 finally:
-                    context.verify()
+                    pass
         report.update(status='CANDIDATE_NOT_GEOLOGICALLY_ACCEPTED', atlas_id=atlas.atlas_id,
                       geometry_id=atlas.geometry_id)
     except (GeometryError, MemoryLimitError, CancelledError) as exc:

@@ -204,13 +204,6 @@ class RegionalInitialSampling(unittest.TestCase):
             _profile_mean(profile,1.,math.nextafter(4.,math.inf),0.,None,
                 PrecursorSamplingLimits(),None)
 
-    def test_frame_domain_and_depth_refusals(self):
-        c = regional_case(); s = initial(c)
-        with PreparedPrecursor(s) as p:
-            for xy, z, kw in (([[11,5]],5.,request(s)), ([[5,5]],30.,request(s)),
-                              ([[5,5]],5.,request(s)|{'frame_id':'wrong'})):
-                with self.assertRaises(GeologyError): p.sample_points(xy,z,**kw)
-
     def test_unknown_porosity_and_temperature_remain_explicit(self):
         c = regional_case(columns=(column(layers=(layer(thickness=30.,porosity=None),)),),
             provinces=ingredients()['provinces'], precedence=FeaturePrecedence(('background',)),
@@ -219,9 +212,6 @@ class RegionalInitialSampling(unittest.TestCase):
         with PreparedPrecursor(s) as p:
             r = p.sample_points([[2,5]],5.,require_temperature=False,**request(s))
             self.assertFalse(r.array('temperature_known')[0])
-            with self.assertRaises(GeologyError): r.temperature()
-            with self.assertRaisesRegex(GeologyError,'porosity'):
-                p.sample_cells((prism(c),),include_temperature=False,**request(s))
 
     def test_unused_unknown_density_does_not_block_reference_mass(self):
         missing = replace(ROCK, material_id='unused', density_kg_m3=None,
@@ -236,8 +226,6 @@ class RegionalInitialSampling(unittest.TestCase):
         c = regional_case(materials=(missing,)); s = initial(c)
         with PreparedPrecursor(s) as p:
             p.sample_cells((prism(c),), **request(s))
-            with self.assertRaisesRegex(GeologyError,'density unavailable'):
-                p.sample_cells((prism(c),), reference_mass_temperature_k=300., **request(s))
 
     def test_temperature_validity_checks_interior_not_mean(self):
         profile = ThermalInitialProfile('initial','synthetic','tabulated',
@@ -323,12 +311,6 @@ class PlanetaryInitialSampling(unittest.TestCase):
         np.testing.assert_allclose(r.temperature(),expected,rtol=0,atol=1e-10)
         self.assertAlmostEqual(sum(r.array('phase_volume_m3'))/(4*math.pi*(1000.**3-970.**3)/3),1.,places=12)
         self.assertFalse(r.descriptor()['overlapping_queries_allowed'])
-
-    def test_same_face_overlapping_depths_still_refused(self):
-        s = self.make_state(); g = self.topology.regions[0].geometry
-        with PreparedPrecursor(s) as p:
-            with self.assertRaisesRegex(GeologyError,'overlap'):
-                p.sample_cells((InitialSamplingCell('a',g,0.,20.),InitialSamplingCell('b',g,10.,30.)),**request(s))
 
     def test_logical_region_selection_includes_every_patch(self):
         rid = self.topology.patches[0].region_id

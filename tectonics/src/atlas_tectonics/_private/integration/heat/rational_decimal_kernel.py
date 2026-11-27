@@ -27,8 +27,6 @@ from operator import index
 def _library():
     from atlas_tectonics._exact_runtime import selected
     result = selected.library()
-    if result is None:
-        raise RuntimeError('Exact rational Decimal conversion requires the selected GMP backend')
     return result
 
 
@@ -95,8 +93,6 @@ between exact scalar operations. Evidence is optional caller-owned metadata.
             quotient //= 10
             work_exponent += 1
     digits = quotient.digits(10)
-    if len(digits) > context.prec+3:
-        raise ArithmeticError('Exact coefficient bound unexpectedly exceeded')
     if evidence is not None:
         evidence.update(route='EXACT_GMP_GUARD_STICKY', adjusted_exponent=exponent,
             rounding_quantum=quantum, bounded_coefficient_digits=len(digits),

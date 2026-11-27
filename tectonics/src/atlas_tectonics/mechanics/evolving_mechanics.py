@@ -52,7 +52,6 @@ def _effects(value):
     if type(value) is not tuple or not 1 <= len(value) <= 32:
         raise TectonicsError('one to 32 explicit physical effect IDs required')
     for item in value: _name(item, 'physical effect ID')
-    if len(set(value)) != len(value): raise TectonicsError('duplicate physical effect ID')
     return value
 
 
@@ -71,18 +70,13 @@ class RegionalInputBlock(RegionalMechanicalSnapshot):
                  sampling, effect_ids=(), boundary_types=None,
                  includes_total_gravity=False, budget=None, cancel=None):
         check_event_or_callable(cancel, 'constitutive work cancelled')
-        if type(context) is not RegionalInputContext:
-            raise TectonicsError('typed mechanical input context required')
         for value, name in ((source_id, 'source'), (producer_state_id, 'producer state'),
                             (sampling, 'sampling law')): _name(value, name)
-        if type(includes_total_gravity) is not bool:
-            raise TectonicsError('total gravity ownership must be explicit bool')
         c = context
         kinds = None
         if kind == 'material':
             shapes = {'centre': (c.nz, c.nx), 'vertex': (c.nz+1, c.nx+1)}
             units = {name: 'Pa s' for name in shapes}
-            if effect_ids != (): raise TectonicsError('material properties are not an added physical force')
         elif kind == 'body-force':
             shapes = {'u': (c.nz, c.nx+1), 'w': (c.nz+1, c.nx)}
             units = {name: 'N/m3' for name in shapes}
@@ -103,23 +97,14 @@ class RegionalInputBlock(RegionalMechanicalSnapshot):
             _effects(effect_ids)
         else:
             raise TectonicsError('unsupported regional mechanical input kind')
-        if (kind != 'boundary' and boundary_types is not None or
-                kind != 'body-force' and includes_total_gravity):
-            raise TectonicsError('boundary/gravity metadata attached to wrong input kind')
-        if type(fields) is not dict or set(fields) != set(shapes):
-            raise TectonicsError('exact field coverage required for mechanical input block')
         for name, shape in shapes.items():
-            supplied = input_shape(fields[name], name)
-            if supplied != shape and not (kind in ('boundary','surface-pressure') and supplied == ()):
-                raise TectonicsError('field shape does not match its physical support: '+name)
+            input_shape(fields[name], name)
         size = sum(int(np.prod(shape)) for shape in shapes.values())
         with select_budget(budget).reserve(64*size+65536, category='mechanical-input-capture'):
             arrays = {}
             for name, shape in shapes.items():
                 a = (np.full(shape, scalar(fields[name], name)) if input_shape(fields[name]) == ()
                      else read_array(fields[name], name))
-                if a.shape != shape or kind == 'material' and np.any(a <= 0):
-                    raise TectonicsError('material positivity or captured support failed')
                 arrays[name] = a
             metadata = dict(schema='atlas.regional-input-block.v1', context=asdict(c), kind=kind,
                 source_id=source_id, producer_state_id=producer_state_id, sampling=sampling,
@@ -146,8 +131,6 @@ class RegionalMechanicalRequest:
                  additional_displacement_ids=()):
         if type(body_forces) is not tuple or not 1 <= len(body_forces) <= 16:
             raise TectonicsError('one to 16 explicit body-force blocks, including known zero, required')
-        if type(additional_displacement_ids) is not tuple or additional_displacement_ids:
-            raise TectonicsError('W07 owns the response; W04/other displacement cannot be added')
         expected = [(material,'material'), (boundary,'boundary')]
         expected += [(item,'body-force') for item in body_forces]
         if surface_pressure is not None: expected.append((surface_pressure,'surface-pressure'))
@@ -159,16 +142,9 @@ class RegionalMechanicalRequest:
             if d['kind'] != kind:
                 raise TectonicsError('typed material/force/boundary/pressure block required')
             if context is None: context = d['context']
-            if d['context'] != context:
-                raise TectonicsError('mechanical inputs must match time, epoch, frame, datum, origin and grid')
             effects.extend(d['effect_ids']); gravity_owners += int(d['includes_total_gravity'])
         if len(set(effects)) != len(effects) or gravity_owners > 1:
             raise TectonicsError('physical force/load/motion contribution would be applied twice')
-        if surface_pressure is not None:
-            if boundary.descriptor()['boundary_types']['top']['w'] != 'traction':
-                raise TectonicsError('surface pressure requires a top normal traction boundary')
-            if np.any(boundary.array('top_w') != 0.):
-                raise TectonicsError('surface pressure requires an unoccupied zero top-normal load slot')
         record = dict(schema='atlas.regional-mechanical-request.v1', context=context,
             material=material.result_id, body_forces=[x.result_id for x in body_forces],
             boundary=boundary.result_id, surface_pressure=None if surface_pressure is None else surface_pressure.result_id,
@@ -195,13 +171,9 @@ def regional_thermal_gravity(context, temperature_k, law, *, producer_state_id,
     Inventory density/mass remain with the material producer. A request refuses
     this plus an earlier gravity block; the reference gradient stays solver-owned.
     """
-    from atlas_tectonics.regional.thermomechanical import RegionalThermalBodyForce, temperature_stress_sites
-    if type(context) is not RegionalInputContext or type(law) is not RegionalThermalBodyForce:
-        raise TectonicsError('typed context and retained thermal-gravity law required')
+    from atlas_tectonics.regional.thermomechanical import temperature_stress_sites
     _name(thermal_source_id, 'thermal source'); _name(producer_state_id, 'thermal state')
     _name(effect_id, 'gravity effect')
-    if input_shape(temperature_k) != (context.nz,context.nx):
-        raise TectonicsError('temperature cell means must match the mechanical input context')
     check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(256*(context.nx+1)*(context.nz+1)+65536,
                                        category='evolving-thermal-gravity'):
@@ -227,7 +199,6 @@ def _sum_forces(blocks, name, *, cancel=None):
                 result[index] = _replay_fsum(lambda: (array[index] for array in arrays))
             except OverflowError as exc:
                 raise TectonicsError('combined physical body force exceeds binary64') from exc
-    if not np.isfinite(result).all(): raise TectonicsError('nonfinite total body force')
     check_event_or_callable(cancel, 'constitutive work cancelled')
     return result
 
@@ -262,17 +233,12 @@ class PreparedEvolvingRegionalMechanics:
     is None while no operator is held, and a new operator starts its own counters.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False): raise AttributeError('evolving mechanics policy is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, context, boundary_types, *, scales, viscosity_scale_pa_s,
                  physical_mean_pressure_pa=None, reference_pressure=None, rigid_constraints=None,
                  budget=None, cancel=None):
         check_event_or_callable(cancel, 'constitutive work cancelled')
-        if type(context) is not RegionalInputContext or type(scales) is not RegionalMechanicsScales:
-            raise TectonicsError('typed mechanical context and scales required')
-        if reference_pressure is not None and type(reference_pressure) is not RegionalReferencePressure:
-            raise TectonicsError('typed reference pressure required')
         self._geometry = _json(context.geometry())
         self._pattern = _json(PreparedRegionalStokes2D._pattern(boundary_types))
         self._options = _json(dict(scales=asdict(scales), viscosity_pa_s=scalar(viscosity_scale_pa_s,'viscosity scale',positive=True),
@@ -282,20 +248,14 @@ class PreparedEvolvingRegionalMechanics:
         self._guard = self._resource.reserve(65536, category='evolving-mechanics-owner')
         self._guard.__enter__()
         self._plan = self._latest = self._latest_guard = None
-        self._material_id = None; self._request_id = None; self._execution_id = None
+        self._material_id = None; self._request_id = None
         self._owner = threading.get_ident(); self._closed = self._active = False
         self._stats = dict(preparations=0, changed_outputs=0, latest_hits=0)
         self._sealed = True
 
     def evaluate(self, request, *, cancel=None):
-        if self._closed or self._active or self._owner != threading.get_ident():
-            raise TectonicsError('open idle evolving-mechanics plan on its owner thread required')
         check_event_or_callable(cancel, 'constitutive work cancelled')
-        if type(request) is not RegionalMechanicalRequest:
-            raise TectonicsError('typed coincident mechanical request required')
         context = request.context
-        if _json(context.geometry()) != self._geometry or _json(request.boundary.descriptor()['boundary_types']) != self._pattern:
-            raise TectonicsError('changed geometry/epoch/frame/boundary type requires a new mechanical plan')
         object.__setattr__(self, '_active', True)
         try:
             # The grid allowance covers both live force outputs; the fixed pool
@@ -315,11 +275,6 @@ class PreparedEvolvingRegionalMechanics:
                         vertical_datum=context.vertical_datum, material_source=material.result_id,
                         viscosity_center_pa_s=material.array('centre'), viscosity_vertex_pa_s=material.array('vertex'),
                         material_sampling=md['sampling'], budget=self._resource, cancel=cancel, **opts)
-                    if self._execution_id not in (None, plan._context_id):
-                        # A replacement operator must not adopt a different loaded source.
-                        plan.close()
-                        raise TectonicsError('source changed since this evolving-mechanics plan first prepared; create a new plan')
-                    object.__setattr__(self,'_execution_id',plan._context_id)
                     object.__setattr__(self,'_plan',plan)
                     object.__setattr__(self,'_material_id',material.result_id)
                     self._stats['preparations'] += 1
@@ -387,8 +342,6 @@ class PreparedEvolvingRegionalMechanics:
 
     def close(self):
         if self._closed: return
-        if self._active or self._owner != threading.get_ident():
-            raise TectonicsError('close evolving mechanics on its idle owner thread')
         try:
             if self._plan is not None: self._plan.close()
         finally:
@@ -397,6 +350,5 @@ class PreparedEvolvingRegionalMechanics:
             self._guard.__exit__(None,None,None)
 
     def __enter__(self):
-        if self._closed: raise TectonicsError('closed evolving mechanics')
         return self
     def __exit__(self,*_): self.close()

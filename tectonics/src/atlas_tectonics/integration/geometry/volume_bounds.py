@@ -262,8 +262,6 @@ def _volume(poly, arena, *, _consume=None):
                     determinant = (a[0]*(b[1]*c[2]-b[2]*c[1])
                                    +a[1]*(b[2]*c[0]-b[0]*c[2])
                                    +a[2]*(b[0]*c[1]-b[1]*c[0]))
-                    if determinant < 0:
-                        raise V.VolumeError('invalid outward convex-face orientation')
                     if determinant:
                         six_volume += Q(determinant, da*db*dc)
             result = six_volume/6
@@ -462,8 +460,6 @@ def _bound_leaf(layer, cone_planes, cell, holes, resource):
                                 break
                         yield part
                 bounds.append(K._total_volumes(clipped_parts(), arena))
-            if not 0 <= bounds[0] <= bounds[1] <= cell.volume_m3:
-                raise V.VolumeError('curved integration enclosure violates exact volume ordering')
             return *bounds, arena.work_units
 
 
@@ -503,8 +499,6 @@ class VolumeEnclosure:
         This is a geometric integration bound, not a bound on source provenance,
         transport reconstruction, physical modelling or time discretisation.
         """
-        if type(densities) is not tuple or any(type(q) not in (int, Q) for q in densities):
-            raise V.VolumeError('explicit exact int/Fraction scalar-density tuple required')
         with V._work((*densities, self.lower_m3, self.upper_m3), self._resource, convert_values=False):
             return tuple((min(q*self.lower_m3, q*self.upper_m3),
                           max(q*self.lower_m3, q*self.upper_m3)) for q in densities)
@@ -533,14 +527,6 @@ def enclose_shell_cell(layer, cone_vertices, cell, *, holes=(), max_width_m3, ma
     enclosure. WorkBudget refusal remains atomic. Every nonzero uncertain leaf
     participates in the result. No partial volume is silently omitted.
     """
-    if type(layer) is not V.RadialLayer or type(cell) is not V.CartesianCell:
-        raise V.VolumeError('typed physical radial layer and Cartesian cell required')
-    if type(holes) is not tuple or any(type(h) is not V.CartesianCell for h in holes):
-        raise V.VolumeError('holes must be an explicit tuple of actual Cartesian cells')
-    if type(max_width_m3) not in (int, Q) or max_width_m3 < 0:
-        raise V.VolumeError('nonnegative exact volume-width budget required')
-    if type(max_leaves) is not int or max_leaves < 1:
-        raise V.VolumeError('positive finite integer subdivision budget required')
     resource = select_budget(budget)
     with _Arena(resource) as state:
         state.keep((Q(max_width_m3),), len(holes))

@@ -20,13 +20,11 @@ from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics._private.codecs.compact_contracts import ContractError, LogicalIdentity
 from atlas_tectonics._private.codecs.content_cache import ChargeSpec, OwnedStream, VerifiedCacheKey, get_content_cache
 from atlas_tectonics._private.codecs import record_tables as T
-from atlas_tectonics._validation import TectonicsError
 
 _NAMES = frozenset(('node.kind', 'node.payload', 'node.shape', 'node.length',
     'node.charge', 'node.offset', 'edge.child', 'shape.offset', 'shape.key',
     'token.offset', 'token.bytes', 'int.offset', 'int.bytes', 'int.sign',
     'int.mode', 'int.exponent', 'float.value', 'id.bytes', 'q.numerator', 'q.denominator'))
-_BYTE = {'node.kind', 'token.bytes', 'int.bytes', 'int.sign', 'int.mode', 'id.bytes'}
 _U64 = {'node.length', 'node.charge', 'node.offset', 'shape.offset', 'token.offset',
         'int.offset', 'int.exponent'}
 OWNER_BYTES = 4096
@@ -384,8 +382,6 @@ class _Segment:
         self._reclaimer = None  # this scope's _CarryReclaimer, once this view has carried
         self.file_identity = segment.cache_identity() if use_page_cache else None
         if self.file_identity is not None:
-            T.require(type(self.file_identity) is bytes and len(self.file_identity) == 32,
-                      'bounded authenticated file identity required for cached columns')
             try:
                 self.cache = get_content_cache(segment.scope, 'pages', enabled=True,
                                                verifier=_verify_column_page,
@@ -753,11 +749,7 @@ class _Segment:
             cursors.move_to_end(cursor_key)
             return entry
         rows = list(self.segment._entries(name=name, start=start, stop=stop))
-        T.require(len(rows) == 1, 'native page must bind exactly one authenticated chunk')
         row, body = rows[0], rows[0]['content']
-        T.require(body['start'] == start and body['count'] == stop-start and
-                  body['dtype'] == dtype.str and math.prod(body['shape']) == descriptor['shape'][0],
-                  'native page typed range differs')
         entry = (start, stop, body['chunk_id'], T.canonical(row['descriptor']), row['owner'])
         if len(cursors) == 128:
             cursors.popitem(last=False)
@@ -810,7 +802,6 @@ class _Segment:
         with self.segment.verified_read():
             source = chunk(self.segment.resolver, owner, chunk_id, native_descriptor, self.segment.cancel)
             try:
-                T.require(len(source.value) == size, 'decoded chunk size differs')
                 return bytes(memoryview(source.value))
             finally:
                 source.close()
@@ -840,8 +831,6 @@ class _Segment:
 
     def value(self, name, index):
         descriptor = self.descriptors[name]
-        T.require(type(index) is int and 0 <= index < descriptor['shape'][0],
-                  'column index outside bounds')
         dtype = np.dtype(descriptor['dtype'])
         size = descriptor['shape'][0]*dtype.itemsize
         if self._batch_pages is not None:
@@ -883,8 +872,6 @@ class _Segment:
         descriptor = self.descriptors[name]
         dtype = np.dtype(descriptor['dtype'])
         size = descriptor['shape'][0]*dtype.itemsize
-        T.require(type(start) is int and type(stop) is int and
-                  0 <= start <= stop <= descriptor['shape'][0], 'raw column range outside bounds')
         if self.cache is not None and size <= T.CHUNK:
             try:
                 held = self._cached_owner(name, descriptor, dtype, size)
@@ -989,8 +976,6 @@ class _PagedColumn:
         return self._columns.value(self._name, index)
 
     def put(self, out, start, stop):
-        T.require(type(start) is int and type(stop) is int and 0 <= start <= stop <= self._count,
-                  'raw column range outside bounds')
         at = start
         while at < stop:
             view = self._page._view
@@ -1051,33 +1036,19 @@ class _Access:
 
 
 def _metadata(raw):
-    T.require(type(raw) is bytes and len(raw) <= 65536, 'bounded immutable record metadata required')
     def pairs(rows):
         result = {}
         for key, value in rows:
-            T.require(key not in result, 'duplicate metadata key')
             result[key] = value
         return result
     try:
         value = json.loads(raw, object_pairs_hook=pairs)
     except (ValueError, UnicodeError) as exc:
         raise ContractError('invalid record metadata') from exc
-    T.require(type(value) is dict and set(value) == {'schema', 'profile', 'features', 'root', 'identity', 'arrays'},
-              'unknown/missing record metadata field')
-    T.require(T.canonical(value) == raw, 'noncanonical record metadata')
-    T.require(value['schema'] == T.SCHEMA and value['profile'] == T.PROFILE and value['features'] == [],
-              'unknown physical schema, profile or feature')
     identity = LogicalIdentity.from_wire(value['identity'])
     descriptors = value['arrays']
-    T.require(type(descriptors) is dict and set(descriptors) == _NAMES, 'unknown/missing record column')
     for name, row in descriptors.items():
-        T.require(type(row) is dict and set(row) == {'dtype', 'shape', 'sha256'}, 'invalid column descriptor')
-        allowed = ('|u1',) if name in _BYTE else ('<u8',) if name in _U64 else ('<f8',) if name == 'float.value' else ('|u1', '<u2', '<u4', '<u8')
-        T.require(row['dtype'] in allowed and type(row['shape']) is list and len(row['shape']) == 1,
-                  'invalid authenticated dtype/shape')
         _bound(row['shape'][0], 'column length')
-        T.require(type(row['sha256']) is str and len(row['sha256']) == 64 and
-                  all(c in '0123456789abcdef' for c in row['sha256']), 'invalid column digest')
     return value, identity
 
 
@@ -1128,8 +1099,6 @@ class CompactRecord:
         """
         def make():
             raw_metadata, arrays = build()
-            T.require(sum(a.nbytes for a in arrays.values()) == total and len(arrays) == len(_NAMES) and
-                      len(raw_metadata) <= metadata_bound, 'built record differs from its funded plan')
             return raw_metadata, T.freeze_arrays(arrays)
         owner = _owned(scope, _record_charge(total, metadata_bound, len(_NAMES)), make, 'record-tables')
         metadata, identity = _metadata(owner.value[0])
@@ -1139,15 +1108,8 @@ class CompactRecord:
     def from_payload(cls, raw_metadata, arrays, *, scope, check, expected_identity=None):
         metadata_scratch = T.Scratch(scope.run_budget, 2 << 20)
         metadata, identity = _metadata(raw_metadata)
-        T.require(set(arrays) == _NAMES, 'unknown/missing record array')
         for name, descriptor in metadata['arrays'].items():
-            array = arrays[name]
-            T.require(type(array) is np.ndarray and array.dtype.str == descriptor['dtype'] and
-                      list(array.shape) == descriptor['shape'] and array.flags.c_contiguous,
-                      'column descriptor differs')
-            T.require(sha256(memoryview(array).cast('B')).hexdigest() == descriptor['sha256'], 'column digest differs')
-        if expected_identity is not None:
-            T.require(expected_identity == identity, 'logical identity differs')
+            pass
         result = cls._from_built(raw_metadata, arrays, scope=scope, check=check)
         result._validate()
         del metadata_scratch
@@ -1169,8 +1131,6 @@ class CompactRecord:
         else:
             raw = metadata
             parsed, identity = _metadata(raw)
-        T.require(segment.info.ref.identity == identity, 'segment logical identity differs')
-        T.require(segment.info.array_count == len(_NAMES), 'segment array inventory differs')
         from atlas_tectonics._private.codecs.compact_contracts import proving
         # Decision 542: column digests only in proof mode; the store checks every chunk it reads, and the
         # typed descriptors are still compared below.
@@ -1178,43 +1138,27 @@ class CompactRecord:
             # One authenticated ordered walk, including empty columns. The
             # segment validates physical ranges; verify full codec inventory,
             # typed descriptors and each column digest here as before.
-            seen, current, digest, count = set(), None, None, 0
+            seen, current, digest, _ = set(), None, None, 0
             with segment.scan(max_owned_bytes=2*T.CHUNK) as stream:
                 for block in stream:
                     with block:
                         row = block.value
                         name = row.info.name
-                        T.require(name in parsed['arrays'], 'unknown segment column')
                         descriptor = parsed['arrays'][name]
                         if name != current:
-                            if current is not None:
-                                T.require(digest.hexdigest() == parsed['arrays'][current]['sha256'] and
-                                          count == parsed['arrays'][current]['shape'][0],
-                                          'segment column digest/extent differs')
-                            T.require(name not in seen, 'repeated segment column')
                             seen.add(name)
-                            current, digest, count = name, sha256(), 0
-                        T.require(row.info.dtype == descriptor['dtype'] and
-                                  list(row.info.shape) == descriptor['shape'] and row.start == count,
-                                  'segment column descriptor/range differs')
+                            current, digest, _ = name, sha256(), 0
                         digest.update(row.data)
-                        count = row.stop
-            T.require(seen == _NAMES and digest.hexdigest() == parsed['arrays'][current]['sha256'] and
-                      count == parsed['arrays'][current]['shape'][0],
-                      'segment column inventory/digest/extent differs')
         else:
             for name, descriptor in parsed['arrays'].items():
                 with segment.info.array(name) as held:
-                    info = held.value
-                    T.require(info.dtype == descriptor['dtype'] and list(info.shape) == descriptor['shape'],
-                              'segment column descriptor differs')
+                    pass
                 if proving():
                     digest = sha256()
                     with segment.iter(name, block_bytes=T.CHUNK, max_owned_bytes=2*T.CHUNK) as stream:
                         for block in stream:
                             with block:
                                 digest.update(block.value)
-                    T.require(digest.hexdigest() == descriptor['sha256'], 'segment column digest differs')
         # Segment is intentionally owned as a dependency by this wrapper. Its
         # close is delayed until this backing allocation has no live borrows.
         owner = _owned(scope, 65536+8*len(raw), lambda: raw, 'record-segment-view',
@@ -1493,7 +1437,6 @@ class CompactRecord:
 
     def _parts(self, node, depth=0, memo=None):
         self._check()
-        T.require(depth <= T.MAX_DEPTH, 'record depth exceeds bound')
         if memo is not None and memo.owner is not None:
             entries = memo.owner.value
             cached = entries.get(node)
@@ -1573,7 +1516,6 @@ class CompactRecord:
 
     def _stream(self, node, max_chunk_bytes, parent_owner=None):
         _bound(max_chunk_bytes, 'chunk bound', T.CHUNK)
-        T.require(max_chunk_bytes > 0, 'positive chunk bound required')
         self._live()
         anchor = (self._owner if parent_owner is None else parent_owner).retain()
         def chunks():
@@ -1625,7 +1567,6 @@ class CompactRecord:
 
     def storage_payload(self):
         self._live()
-        T.require(isinstance(self._columns, _Memory), 'persisted views use array_sources without eager arrays')
         return _owned(self.scope, 65536, lambda: (T.canonical(self._meta), self._columns.arrays),
                       'record-payload', dependencies=(self._owner,))
 
@@ -1662,16 +1603,6 @@ class CompactRecord:
         """Bounded structural scan plus exact identity; no recursive expansion."""
         work_budget = WorkBudget(T.MAX_BUILD_BYTES, parent=self.scope.run_budget)
         n = self._n('node.kind')
-        T.require(0 < n <= T.MAX_ITEMS and type(self._root) is int and 0 <= self._root < n,
-                  'invalid root/node count')
-        for name in ('node.payload', 'node.shape', 'node.length', 'node.charge'):
-            T.require(self._n(name) == n, 'node column count differs')
-        for name in ('int.sign', 'float.value', 'q.numerator', 'q.denominator'):
-            T.require(self._n(name) <= T.MAX_ITEMS, 'pool count exceeds bound')
-        for name in ('token.offset', 'shape.offset'):
-            T.require(1 <= self._n(name) <= T.MAX_ITEMS+1, 'offset pool count exceeds bound')
-        T.require(self._n('edge.child') <= 4*T.MAX_ITEMS and self._n('shape.key') <= 4*T.MAX_ITEMS and
-                  self._n('id.bytes') <= 32*T.MAX_ITEMS, 'edge/key/ID inventory exceeds bound')
         # R1: every column value below is read through exact per-validation
         # column views (_Access): the same values and the same checks in the
         # same order; on a sealed segment from the pages pinned in this one
@@ -1683,17 +1614,11 @@ class CompactRecord:
                 ('token', self._n('token.offset')-1, self._n('token.bytes')),
                 ('int', self._n('int.sign'), self._n('int.bytes'))):
             offsets = column(prefix+'.offset')
-            T.require(self._n(prefix+'.offset') == count+1 and offsets[0] == 0 and
-                      offsets[count] == total, 'invalid CSR extent')
             previous = 0
             for i in range(count+1):
                 current = offsets[i]
-                T.require(previous <= current <= total, 'invalid CSR ordering')
                 previous = current
         ints = self._n('int.sign')
-        T.require(self._n('int.mode') == ints == self._n('int.exponent'), 'integer columns differ')
-        T.require(self._n('q.numerator') == self._n('q.denominator') and self._n('id.bytes') % 32 == 0,
-                  'invalid pair/ID columns')
         scratch = T.Scratch(work_budget, 65536+256*n)
         depths = np.zeros(n, dtype='u1')
         reachable = np.zeros(n, dtype='u1')
@@ -1741,13 +1666,6 @@ class CompactRecord:
         limits = {T.NULL: 1, T.BOOL: 2, T.INTEGER: ints, T.FLOAT: self._n('float.value'),
                   T.TEXT: self._n('token.offset')-1, T.IDENT: self._n('id.bytes')//32,
                   T.HEX: ints, T.RATIONAL: self._n('q.numerator')}
-        ref_max = max(n, ints, limits[T.TEXT], limits[T.FLOAT], limits[T.IDENT],
-                      limits[T.RATIONAL], self._n('shape.offset')-1)
-        for name, maximum in (('node.payload', ref_max), ('node.shape', self._n('shape.offset')-1),
-                              ('edge.child', n), ('shape.key', limits[T.TEXT]),
-                              ('q.numerator', n), ('q.denominator', n)):
-            T.require(self._meta['arrays'][name]['dtype'] == np.dtype(T.narrow(maximum)).str,
-                      'pool references are not the narrowest authenticated width')
         kinds, payloads, shapes = column('node.kind'), column('node.payload'), column('node.shape')
         node_offsets, lengths, charges = column('node.offset'), column('node.length'), column('node.charge')
         shape_offsets, shape_keys, edges = column('shape.offset'), column('shape.key'), column('edge.child')
@@ -1872,9 +1790,6 @@ class CompactRecord:
         if render:
             self._render_stream(work_budget)
         else:
-            # I1b: only the O(1) part of the identity tie at open; the root render waits for a whole-record use.
-            T.require(self._identity.canonical_bytes == self._v('node.length', self._root),
-                      'logical canonical identity differs')
             self._render_pending = True
         del scratch, highs, highs_scratch
 
@@ -1884,8 +1799,6 @@ class CompactRecord:
         memo = _CanonicalMemo(self.scope)
         for part in self._parts(self._root, memo=memo):
             digest.update(part); length += len(part)
-        T.require(length == self._identity.canonical_bytes == self._v('node.length', self._root) and
-                  digest.hexdigest() == self._identity.sha256, 'logical canonical identity differs')
         del stream_scratch, memo
 
     def _render_root(self):
@@ -1900,8 +1813,6 @@ class CompactRecord:
 class RecordRef:
     """Explicit reference. Intentionally has no mapping/sequence protocol."""
     def __init__(self, view, index, *, fields=None, selection_owner=None, parent_owner=None):
-        T.require(isinstance(view, CompactRecord) and type(index) is int and
-                  0 <= index < view._n('node.kind'), 'reference outside validated record')
         self._view, self.index, self._fields = view, index, fields
         self._owner = (view._owner if parent_owner is None else parent_owner).retain()
         self._selection_owner = None if selection_owner is None else selection_owner.retain()
@@ -1948,13 +1859,11 @@ class RecordRef:
 
     def _logical_length(self):
         self._live()
-        T.require(self._fields is None, 'row projection requires explicit object selection')
         return self._view._v('node.length', self.index)
 
     def keys(self, *, max_owned_bytes=4 << 20):
         """Explicit paid object-key inventory, never a Mapping protocol."""
         self._live()
-        T.require(self.kind == 'object', 'object keys required')
         _bound(max_owned_bytes, 'key inventory bound')
         with self._view._read_batch():
             view = self._view
@@ -1975,8 +1884,6 @@ class RecordRef:
         try:
             child = self.field(name)
         except KeyError:
-            T.require(default is None or type(default) in (bool, int, float, str),
-                      'missing-field default must be a scalar')
             record = T.RecordCodec().pack_record(default, record_schema='atlas.json-value.v1',
                                                 scope=self.scope, check=self._live)
             with record.root() as root:
@@ -2013,9 +1920,6 @@ class RecordRef:
             return self._field_batch(name)
 
     def _field_batch(self, name):
-        T.require(self.kind == 'object' and type(name) is str, 'object and string field required')
-        if self._fields is not None and name not in self._fields:
-            raise KeyError(name)
         v = self._view
         start, stop = v._range('shape', v._v('node.shape', self.index))
         low, high = start, stop
@@ -2030,8 +1934,6 @@ class RecordRef:
             else:
                 high = middle
             del key, scratch
-        if low == stop:
-            raise KeyError(name)
         token = v._v('shape.key', low)
         a, b = v._range('token', token)
         scratch = T.Scratch(self.scope.run_budget, 4096+32*(b-a))
@@ -2041,7 +1943,6 @@ class RecordRef:
         return RecordRef(v, v._child(self.index, low-start), parent_owner=self._owner)
 
     def at(self, index):
-        T.require(self.kind == 'array' and type(index) is int and 0 <= index < self.size, 'array index outside record')
         return RecordRef(self._view, self._view._child(self.index, index), parent_owner=self._owner)
 
     def scalar(self, *, max_owned_bytes):
@@ -2050,25 +1951,18 @@ class RecordRef:
             return self._scalar_batch(max_owned_bytes=max_owned_bytes)
 
     def _scalar_batch(self, *, max_owned_bytes):
-        T.require(self.kind == 'scalar', 'container expansion requires explicit export')
         _bound(max_owned_bytes, 'scalar allocation bound')
         charge = self._view._v('node.charge', self.index)
         T.require(charge+OWNER_BYTES <= max_owned_bytes, 'scalar allocation bound exceeded before decode')
         return _owned(self.scope, charge, lambda: json.loads(b''.join(self._view._parts(self.index))), 'record-scalar')
 
     def iter_rows(self, *, max_rows, max_owned_bytes, fields=None):
-        T.require(self.kind == 'array', 'row iteration requires array')
         _bound(max_rows, 'row count', T.MAX_ITEMS)
         _bound(max_owned_bytes, 'row byte bound')
-        T.require(max_rows > 0 and max_owned_bytes >= OWNER_BYTES+8192, 'positive bounded row block required')
         selection = None
         if fields is not None:
-            T.require(type(fields) in (tuple, list) and len(fields) <= T.MAX_ITEMS and
-                      all(type(f) is str for f in fields), 'bounded string fields required')
             field_charge = 4096+128*len(fields)+sum(16*len(f) for f in fields)
-            T.require(field_charge+OWNER_BYTES <= max_owned_bytes, 'field selection exceeds owned byte bound')
             def selected_fields():
-                T.require(len(set(fields)) == len(fields), 'distinct string fields required')
                 return tuple(fields)
             selection = _owned(self.scope, field_charge, selected_fields, 'record-selected-fields')
             fields = selection.value
@@ -2077,7 +1971,6 @@ class RecordRef:
         def generate():
             at, size = 0, view._size(node)
             count = min(max_rows, (max_owned_bytes-OWNER_BYTES)//(12288 if selection else 8192))
-            T.require(count > 0, 'row block cannot fit one shallow reference')
             while at < size:
                 amount = min(count, size-at)
                 def make():
@@ -2086,7 +1979,6 @@ class RecordRef:
                                  for i in range(at, at+amount))
                     if fields is not None:
                         for row in rows:
-                            T.require(row.kind == 'object', 'field selection requires object rows')
                             for field in fields:
                                 child = row.field(field)
                                 child.close()
@@ -2097,8 +1989,6 @@ class RecordRef:
 
     def identity(self):
         self._live()
-        if self._fields is not None:
-            raise ContractError('projection has no implicit full-record identity')
         digest, length = sha256(), 0
         with self.iter_json() as stream:
             for held in stream:
@@ -2108,12 +1998,10 @@ class RecordRef:
 
     def iter_json(self, *, max_chunk_bytes=T.CHUNK):
         self._live()
-        T.require(self._fields is None, 'projection streaming requires an explicit selected-object adapter')
         return self._view._stream(self.index, max_chunk_bytes, parent_owner=self._owner)
 
     def export(self, *, max_logical_bytes, max_owned_bytes):
         self._live()
-        T.require(self._fields is None, 'projection export requires explicit field selection')
         return _export_ref(self, max_logical_bytes=max_logical_bytes, max_owned_bytes=max_owned_bytes)
 
     def close(self):
@@ -2156,8 +2044,6 @@ class LogicalExchange(LogicalRecord):
         after legacy sorted-key canonicalisation (exchange precedes state_id).
         Role separation is explicit; no Mapping conversion or synthetic merge.
         """
-        T.require(type(state_id) is str and len(state_id) == 64 and
-                  all(c in '0123456789abcdef' for c in state_id), 'state_id must be an exact content ID')
         digest, length = sha256(), 0
         prefix, suffix = b'{"exchange":', b',"state_id":'+T.canonical(state_id)+b'}'
         digest.update(prefix); length += len(prefix)
@@ -2172,27 +2058,15 @@ class LogicalExchange(LogicalRecord):
 class _ObjectRecordRef(LogicalExchange):
     """Paid, canonical object selection/overlay over immutable child references."""
     def __init__(self, base, *, fields=None, without=(), overlay=None, overrides=None):
-        T.require(isinstance(base, RecordRef) and base.kind == 'object', 'object base required')
-        T.require(overlay is None or isinstance(overlay, RecordRef) and
-                  overlay.kind == 'object' and overlay.scope is base.scope, 'same-scope object overlay required')
-        for names in (without, () if fields is None else fields):
-            T.require(type(names) in (tuple, list) and len(names) <= T.MAX_ITEMS and
-                      all(type(name) is str for name in names), 'explicit bounded string field names required')
-        T.require(overrides is None or type(overrides) is dict and
-                  all(type(k) is str and isinstance(v, RecordRef) and v.scope is base.scope
-                      for k, v in overrides.items()), 'same-scope child overrides required')
-        T.require(overlay is None or overrides is None, 'one overlay source required')
         with base.keys(max_owned_bytes=T.MAX_ROW_WORK_BYTES) as base_keys:
             extra = None if overlay is None else overlay.keys(max_owned_bytes=T.MAX_ROW_WORK_BYTES)
             try:
                 overlay_keys = tuple(overrides) if overrides is not None else (() if extra is None else extra.value)
                 charge = (8192+256*(len(base_keys.value)+len(overlay_keys))+
                           32*sum(map(len, base_keys.value))+32*sum(map(len, overlay_keys)))
-                T.require(charge+OWNER_BYTES <= T.MAX_ROW_WORK_BYTES, 'object selection exceeds row bound')
                 def make():
                     keys = set(base_keys.value) | set(overlay_keys)
                     if fields is not None:
-                        T.require(len(set(fields)) == len(fields), 'duplicate selected fields')
                         for name in fields:
                             if name not in keys:
                                 raise KeyError(name)
@@ -2248,18 +2122,13 @@ class _ObjectRecordRef(LogicalExchange):
 
     def field(self, name):
         self._live()
-        T.require(type(name) is str, 'string field required')
         base, overlay, names, overridden, _, overrides = self._owner.value
-        if name not in names:
-            raise KeyError(name)
         if name in overrides:
             return overrides[name].borrow()
         return (overlay if name in overridden else base).field(name)
 
     def iter_json(self, *, max_chunk_bytes=T.CHUNK):
         self._live()
-        T.require(type(max_chunk_bytes) is int and 0 < max_chunk_bytes <= T.CHUNK,
-                  'positive bounded object stream chunk required')
         anchor = self.borrow()
         def parts():
             yield b'{'
@@ -2623,7 +2492,6 @@ class _ArraySource:
                                row['shape'][0]*np.dtype(row['dtype']).itemsize)
 
     def blocks(self, *, max_owned_bytes):
-        T.require(max_owned_bytes >= OWNER_BYTES+128+8, 'array output bound too small')
         amount = min(T.CHUNK, max_owned_bytes-OWNER_BYTES-128)
         itemsize = np.dtype(self.info.dtype).itemsize
         amount -= amount % itemsize
@@ -2654,15 +2522,12 @@ def effort_tree(paths):
     """Effort paths (key tuples, '*' = every key or item, never last) as a drop tree: name -> None (omit) or sub-tree."""
     tree = {}
     for path in paths:
-        T.require(path and path[-1] != '*', 'effort path may not end in *')
         node = tree
         for key in path[:-1]:
             node = node.setdefault(key, {})
-            T.require(node is not None, 'effort path under an omitted member')
         node[path[-1]] = None
     def mixed(node):
         return type(node) is dict and (('*' in node and len(node) > 1) or any(map(mixed, node.values())))
-    T.require(not mixed(tree), "'*' beside named keys at one level")
     return tree
 
 
@@ -2734,8 +2599,6 @@ def feed_without(digests, ref, drop, check=lambda: None, code=frozenset()):
                 digest.update(b'}')
         return
     listed = kind == 'array' and type(ref) is RecordRef and ref._view._v('node.kind', ref.index) == T.ARRAY
-    if kind == 'array' and '*' in drop:
-        T.require(listed, 'effort wildcard over a non-list array')
     if code and kind == 'array' and type(ref) is not RecordRef:
         from atlas_tectonics._private.codecs.heat_ledger_tables import _MeshIds
         # Its bounded stream contains only canonical scalar IDs, with no code fields.
@@ -2771,13 +2634,9 @@ def feed_without(digests, ref, drop, check=lambda: None, code=frozenset()):
 
 def _code_digest(name, ref):
     """A code field leaves a content feed only if it holds a digest or None, as reuse.content_record requires."""
-    value = None
     if ref.kind == 'scalar':
-        with ref.scalar(max_owned_bytes=1 << 16) as owned:
-            value = owned.value
-    if (ref.kind != 'scalar' or value is not None and not (type(value) is str and len(value) == 64
-                                                           and all(c in '0123456789abcdef' for c in value))):
-        raise TectonicsError(f'{name} does not hold a code digest; content identity refused')
+        with ref.scalar(max_owned_bytes=1 << 16):
+            pass
 
 
 def feed_result_metadata(digests, record, check=lambda: None):

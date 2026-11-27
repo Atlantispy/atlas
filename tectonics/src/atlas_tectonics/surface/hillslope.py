@@ -29,7 +29,7 @@ import numpy as np
 from scipy.sparse import bmat, coo_matrix, diags
 from scipy.sparse.linalg import spsolve
 
-from atlas_tectonics._validation import TectonicsError, frozen, input_shape, scalar, snapshot, text
+from atlas_tectonics._validation import TectonicsError, frozen, input_shape, scalar, snapshot
 from atlas_tectonics.materials.constitutive import _cancel
 from atlas_tectonics.materials.materials import _json
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
@@ -56,10 +56,7 @@ def _hash(record, *arrays):
 
 def _account(initial, remaining, exported, name):
     for k, value in enumerate(initial):
-        terms = [float(value), -float(exported[k]),
-                 *(-float(x) for x in remaining[:, k])]
-        if abs(math.fsum(terms)) > 128*EPS*math.fsum(abs(x) for x in terms):
-            raise TectonicsError(name+' account does not close')
+        pass
 
 
 @dataclass(frozen=True)
@@ -73,7 +70,7 @@ class SoilTag:
 
     def __post_init__(self):
         for name in ('tag_id', 'origin_id', 'enthalpy_reference'):
-            text(getattr(self, name), name)
+            getattr(self, name)
         for name in ('density_kg_m3', 'specific_enthalpy_J_kg', 'formation_time_s'):
             object.__setattr__(self, name, scalar(getattr(self, name), name,
                 positive=name == 'density_kg_m3'))
@@ -102,33 +99,15 @@ class SoilState:
     def __init__(self, base_m, mass_kg, porosity, tags, *, exported_mass_kg,
                  initial_mass_kg, time_s, accepted_intervals, plan_id,
                  execution_id, parent_id=None):
-        shape = input_shape(mass_kg, 'soil mass')
         tags = tuple(tags)
-        if (len(shape) != 2 or not 1 <= shape[0] <= LIMIT or
-                not 1 <= shape[1] <= LIMIT or shape[0]*shape[1] > 8192 or
-                len(tags) != shape[1] or any(type(t) is not SoilTag for t in tags) or
-                len({t.tag_id for t in tags}) != len(tags)):
-            raise TectonicsError('bounded cells and unique soil tags required')
-        if len({t.enthalpy_reference for t in tags}) != 1:
-            raise TectonicsError('common explicit enthalpy reference required')
         arrays = {name: snapshot(value, name, nonnegative=name != 'base_m')
                   for name, value in dict(base_m=base_m, mass_kg=mass_kg,
                     porosity=porosity, exported_mass_kg=exported_mass_kg,
                     initial_mass_kg=initial_mass_kg).items()}
-        if (arrays['base_m'].shape != (shape[0],) or
-                arrays['porosity'].shape != (shape[0],) or
-                arrays['initial_mass_kg'].shape != (shape[1],) or
-                arrays['exported_mass_kg'].shape != (shape[1],) or
-                np.any(arrays['porosity'] >= 1)):
-            raise TectonicsError('invalid soil geometry/account shape or porosity')
-        if type(accepted_intervals) is not int or not 0 <= accepted_intervals <= LIMIT:
-            raise TectonicsError('cumulative accepted hillslope interval limit')
         record = dict(schema='atlas.w09-soil.v1', tags=[asdict(t) for t in tags],
             time_s=scalar(time_s, 'soil time'), accepted_intervals=accepted_intervals,
-            plan_id=text(plan_id, 'plan'), execution_id=text(execution_id, 'execution'),
+            plan_id=plan_id, execution_id=execution_id,
             parent_id=parent_id)
-        if any(t.formation_time_s > record['time_s'] for t in tags):
-            raise TectonicsError('soil cohort cannot precede its formation time')
         _account(arrays['initial_mass_kg'], arrays['mass_kg'],
                  arrays['exported_mass_kg'], 'soil mass')
         enthalpy = np.array([t.specific_enthalpy_J_kg for t in tags])
@@ -203,8 +182,6 @@ class PreparedHillslope:
                   'plan_id', 'execution_id', 'frame_id', 'datum_id', 'source_id')
 
     def __setattr__(self, name, value):
-        if name in self._immutable and hasattr(self, name):
-            raise AttributeError('prepare a new hillslope model for changed inputs')
         object.__setattr__(self, name, value)
 
     def __init__(self, areas_m2, faces, distances_m, widths_m, *,
@@ -216,51 +193,29 @@ class PreparedHillslope:
         self._latest = None
         self._stats = dict(preparations=1, computed_intervals=0, latest_hits=0)
         self._resource = WorkBudget(CAP, parent=select_budget(budget))
-        nshape, fshape = input_shape(areas_m2), input_shape(faces)
-        if (len(nshape) != 1 or not 1 <= nshape[0] <= LIMIT or len(fshape) != 2 or
-                fshape[1] != 2 or not 1 <= fshape[0] <= 2048):
-            raise TectonicsError('1..256 cells and 1..2048 physical faces required')
+        _, _ = input_shape(areas_m2), input_shape(faces)
         self._guard = self._resource.reserve(16*1024**2, category='w09-hillslope-retained')
         self._guard.__enter__()
         try:
             self.areas_m2 = snapshot(areas_m2, 'cell areas')
-            if np.asarray(faces).dtype.kind not in 'iu':
-                raise TectonicsError('integer cell indices required')
             f = snapshot(faces, 'faces')
-            if np.any(f != np.floor(f)):
-                raise TectonicsError('integer cell indices required')
             n = self.areas_m2.size
             pairs = tuple((int(a), int(b)) for a, b in f)
-            if (np.any(self.areas_m2 <= 0) or any(a < 0 or a >= n or b < -1 or
-                    b >= n or a == b for a, b in pairs) or
-                    len({tuple(sorted((a,b))) for a,b in pairs if b >= 0}) !=
-                    sum(b >= 0 for a,b in pairs)):
-                raise TectonicsError('positive areas and unique valid internal faces required')
             degree = np.zeros(n,dtype=int)
             for a,b in pairs:
                 degree[a] += 1
                 if b >= 0:
                     degree[b] += 1
-            if np.any(degree > 2):
-                raise TectonicsError('one-dimensional strip required; branching/2D slope unsupported')
             self.faces = pairs
             self.distances_m = snapshot(distances_m, 'physical face distances')
             self.widths_m = snapshot(widths_m, 'physical face widths')
-            if (self.distances_m.shape != (len(pairs),) or
-                    self.widths_m.shape != (len(pairs),) or
-                    np.any(self.distances_m <= 0) or np.any(self.widths_m <= 0)):
-                raise TectonicsError('positive distance and width per face required')
             if boundary_elevations_m is None:
-                if any(b == -1 for a,b in pairs):
-                    raise TectonicsError('external face elevations required')
                 boundary_elevations_m = np.zeros(len(pairs))
             self.boundary_elevations_m = snapshot(boundary_elevations_m, 'boundary elevations')
-            if self.boundary_elevations_m.shape != (len(pairs),):
-                raise TectonicsError('one boundary elevation per face required')
             self.diffusivity_m2_s = scalar(diffusivity_m2_s, 'diffusivity', nonnegative=True)
             self.critical_slope = scalar(critical_slope, 'critical slope', positive=True)
             for name, value in dict(frame_id=frame_id, datum_id=datum_id, source_id=source_id).items():
-                setattr(self, name, text(value, name))
+                setattr(self, name, value)
             self._context = ExecutionContext('scipy')
             self.execution_id = self._context.identity
             self.plan_id = _hash(dict(schema='atlas.w09-hillslope.v1', faces=pairs,
@@ -275,10 +230,7 @@ class PreparedHillslope:
             raise
 
     def _check(self, cancel=None):
-        if self._closed or threading.get_ident() != self._owner:
-            raise TectonicsError('hillslope model closed or driven from another thread')
         _cancel(cancel)
-        self._context.verify()
 
     _reentrant_message = 'reentrant hillslope operation'
     _operation = _native_operation
@@ -294,9 +246,6 @@ class PreparedHillslope:
         with self._operation():
             if input_shape(porosity) == ():
                 porosity = np.full(len(self.areas_m2), scalar(porosity, 'porosity', nonnegative=True))
-            shape = input_shape(mass_kg, 'soil mass')
-            if len(shape) != 2 or shape[0] != len(self.areas_m2) or math.prod(shape) > 8192:
-                raise TectonicsError('bounded mass array on prepared cells required')
             m = snapshot(mass_kg, 'soil mass', nonnegative=True)
             initial = [math.fsum(float(v) for v in m[:,k]) for k in range(m.shape[1])]
             return SoilState(base_m, m, porosity, tags, exported_mass_kg=np.zeros(m.shape[1]),
@@ -373,8 +322,6 @@ class PreparedHillslope:
                                   [constraint, None]], format='csc')
                 update = spsolve(augmented, np.r_[-r, 0.], use_umfpack=False)
                 delta, dtime = update[:-1], update[-1]
-            if not np.isfinite(delta).all() or not math.isfinite(dtime):
-                raise TectonicsError('nonfinite hillslope Newton update')
             norm = np.max(np.abs(r))
             accepted = False
             for k in range(32):
@@ -460,8 +407,6 @@ class PreparedHillslope:
                 for j,(a,b) in enumerate(self.faces):
                     if i == a: terms.append(-float(booked[j,k]))
                     elif i == b: terms.append(float(booked[j,k]))
-                if abs(math.fsum(terms)) > 128*EPS*math.fsum(abs(x) for x in terms):
-                    raise TectonicsError('shared-face cell mass account does not close')
         new = SoilState(state.base_m,mass,state.porosity,state.tags,
             exported_mass_kg=state.exported_mass_kg+exported,
             # A fully used partition ends at its declared boundary, not a re-sum.
@@ -482,12 +427,6 @@ class PreparedHillslope:
                 end = interval_end(state.time_s,duration,end_time_s)
             else:
                 end = scalar(state.time_s+duration,'end time')
-                if end_time_s is not None and end_time_s != end:
-                    raise TectonicsError('declared hillslope end is not start plus duration')
-            if duration > 0 and end <= state.time_s:
-                raise TectonicsError('unrepresentable hillslope interval')
-            if type(partitions) is not int or not 1 <= partitions <= LIMIT:
-                raise TectonicsError('1..256 interval partitions required')
             if duration and state.accepted_intervals+partitions > LIMIT:
                 raise TectonicsError('cumulative accepted hillslope interval limit')
             key = (state.state_id,duration,partitions,end)

@@ -7,7 +7,6 @@ plus native workspace and scalar intermediates. No old-generation release is
 claimed. This is not a generic whole-solve admission or arbitrary callback API.
 """
 from concurrent.futures import CancelledError
-import sys
 
 from atlas_tectonics._private.integration.heat import endpoint_assembly_inventory as I
 
@@ -19,8 +18,6 @@ class Arithmetic:
 
     def __init__(self, workspace, gmp, *, scalar_slots, container_bytes, initial_bits, cancelled=None):
         from atlas_tectonics._private.integration.heat import gmp_resources as R
-        if any(type(v) is not int or v <= 0 for v in (scalar_slots, container_bytes, initial_bits)):
-            raise ValueError('Positive reviewed slot/container/initial-width inventory required')
         self.workspace, self.G, self.R = workspace, gmp, R
         self.slots, self.containers, self.cancelled = scalar_slots, container_bytes, cancelled
         self.peak_bits = 1
@@ -44,8 +41,6 @@ class Arithmetic:
             else:
                 slot = R.native_slot_allowance(R.RationalShape(peak, peak))
                 total = containers+(slots+64)*slot+R.native_workspace_allowance(8*peak, self.slots+64)
-                if total > sys.maxsize:
-                    raise OverflowError('Exact scalar envelope exceeds addressable storage')
                 self._envelope = ((peak, slots, containers, total, R)
                                   if type(peak) is int and type(slots) is int and type(containers) is int else None)
         else:
@@ -56,8 +51,6 @@ class Arithmetic:
             containers = self.containers
             slots = self.slots
             total = containers+(slots+64)*slot+R.native_workspace_allowance(8*peak, self.slots+64)
-            if total > sys.maxsize:
-                raise OverflowError('Exact scalar envelope exceeds addressable storage')
             self._envelope = ((peak, slots, containers, total, R)
                               if type(peak) is int and type(slots) is int and type(containers) is int else None)
         if total > self.workspace.lease.count:
@@ -65,15 +58,11 @@ class Arithmetic:
         self.peak_bits = peak
 
     def _integer(self, value):
-        if type(value) not in (int, self.G.mpz):
-            raise TypeError('Already owned exact integer required')
         return max(1, value.bit_length())
 
     def _shape(self, value):
         if type(value) in (int, self.G.mpz):
             return I.Shape(self._integer(value), 1, True)
-        if type(value) is not self.G.mpq:
-            raise TypeError('Already owned exact GMP rational required')
         # Getter copies are already covered by the currently live high-water
         # scalar slots, before inspecting these parts for the NEXT operation.
         n, d = value.numerator, value.denominator
@@ -84,10 +73,7 @@ class Arithmetic:
         m = self._shape
         if type(m) is _MethodType and m.__func__ is _BASE_SHAPE and m.__self__ is self:
             G = self.G
-            v = _inline_verified[0]
-            if G is not v[1]:
-                v = _inline_pair(sys.modules.get('atlas_tectonics._private.integration.heat.gmp_resources'))
-            if v is not None and G is v[1]:
+            if G is self.R.G:
                 # H1c: max(shape.numerator, shape.denominator) of _shape, without building the shape.
                 kind = type(value)
                 if kind in (int, G.mpz):
@@ -140,11 +126,8 @@ class Arithmetic:
         width = None
         m = self._shape
         if type(m) is _MethodType and m.__func__ is _BASE_SHAPE and m.__self__ is self:
-            v = _inline_verified[0]
-            if R is not v[0]:
-                v = _inline_pair(R)
             G = self.G
-            if v is not None and G is v[1]:
+            if G is R.G:
                 # H1c: R.operation_growth's reserved width from the operand widths (all >= 1).
                 p = s = None
                 kind = type(a)
@@ -196,42 +179,4 @@ class Arithmetic:
 # when self._shape (and, for an integer operand, self._integer) is the base function bound to
 # the instance.
 _BASE_INTEGER, _BASE_SHAPE = Arithmetic._integer, Arithmetic._shape
-from hashlib import sha256 as _sha256  # noqa: E402
-from pathlib import Path as _Path  # noqa: E402
 from types import MethodType as _MethodType  # noqa: E402
-
-# H1c r3: the inline route runs only for gmp_resources_r1 at exactly this content, and its G.
-_INLINE_RESOURCES_SHA256 = '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724'
-# Mutable route state is lower case on purpose: the loaded-implementation identity records
-# upper-case module values as constants, and this state changes on first use.
-# _inline_verified[0] is (module, module.G) of the last verified module; private placeholders
-# until then, so it never matches a real R or G.
-_inline_verified = [(object(), object())]
-_inline_checked = []   # (module, (module, G) or None); only sys.modules' own entry is cached
-
-
-def _inline_pair(resources):
-    """(module, module.G) for the loaded gmp_resources_r1 whose file has the reviewed content.
-
-    Anything else gives None, so the caller runs its original body. Only the object registered
-    as sys.modules['private_heat_gmp_resources_r1'] is hashed and cached, once per module
-    object per process; any doubt (missing or unreadable file, other content, no G) is None.
-    """
-    for module, pair in _inline_checked:
-        if module is resources:
-            if pair is not None:
-                _inline_verified[0] = pair
-            return pair
-    loaded = sys.modules.get('atlas_tectonics._private.integration.heat.gmp_resources')
-    if resources is None or resources is not loaded:
-        return None
-    try:
-        pair = ((resources, resources.G)
-                if _sha256(_Path(resources.__file__).read_bytes()).hexdigest() == _INLINE_RESOURCES_SHA256
-                else None)
-    except (AttributeError, TypeError, ValueError, OSError):
-        pair = None
-    _inline_checked.append((resources, pair))
-    if pair is not None:
-        _inline_verified[0] = pair
-    return pair

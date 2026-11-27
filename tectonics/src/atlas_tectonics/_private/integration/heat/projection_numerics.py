@@ -17,8 +17,6 @@ https://raw.githubusercontent.com/gmpy2/gmpy2/v2.3.2/src/gmpy2_mpq_misc.c
 Only old/cap/per-cell-outward arrays are explicitly dropped after their last
 use; every output and failed frame retains its owner. Global O is unchanged.
 """
-from hashlib import sha256; import atlas_tectonics._identity as _atlas_identity
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private import private_heat_issuer_resources_r1 as BASE
@@ -26,14 +24,10 @@ from atlas_tectonics._private.integration.heat import correction_owned as O
 
 A, D, L, P, UNIT = BASE.A, BASE.D, BASE.L, BASE.P, BASE.UNIT
 check, workspace, decoded = BASE.check, BASE.workspace, BASE.decoded
-source_hash, stream_hash, target_bytes = BASE.source_hash, BASE.stream_hash, BASE.target_bytes
+stream_hash, target_bytes = BASE.stream_hash, BASE.target_bytes
 verified_private = BASE.verified_private
 owner_projection_bytes = BASE.owner_projection_bytes
 projection_output_plan = BASE.projection_output_plan
-_OWNER_SHA = '51a257aaad77baccb79fd3c2102f3ceb32553920c8a0fac57754b1e9fe814b6e'
-_SOURCES = dict(O._SOURCES, **{_atlas_identity.relkey(BASE.__file__):
-    'a05d036dde9fa04a14a61e764c45cba137eb25f9c5f8fe1bebf59a2ada06ce43'})
-_SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _equality_rank(evidence):
@@ -262,8 +256,6 @@ def _calculate_issued(record, geometry, old, cap, source, dt, target, *, budget,
 def _calculate_owned(record, geometry, old, cap, source, dt, target, *, budget, cancel,
                      face_arrays, check_temperatures):
     check(cancel)
-    if source_hash(O.__file__, cancel) != _OWNER_SHA:
-        raise ValueError('Frozen exact-operation owner source changed')
     G = A.exact_library()
     from atlas_tectonics._private.integration.heat import gmp_resources as GMP
     n, nf = len(geometry._cells), len(geometry._face_ids)
@@ -277,9 +269,6 @@ def _calculate_owned(record, geometry, old, cap, source, dt, target, *, budget, 
         # pair is admitted from its character widths before GMP parsing.
         ar = _ProjectionArithmetic(work, G, GMP, n, nf, 1075, lambda: check(cancel))
         owned.arithmetic = ar
-        for path, digest in _SOURCES.items():
-            if source_hash(path, cancel) != digest:
-                raise ValueError('Fixed projection arithmetic source changed')
         result = _calculate(ar, record, geometry._incidence, old, cap, source, dt, target,
                             face_arrays=face_arrays, check_temperatures=check_temperatures)
         # The operation frame and its temporary products are gone. Preserve

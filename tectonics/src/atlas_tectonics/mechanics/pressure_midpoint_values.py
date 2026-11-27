@@ -95,8 +95,6 @@ def current_custody(budget):
 
 def _retained_size(value, depth=0):
     """Bound shallow immutable payload; aliases deliberately counted repeatedly."""
-    if depth > 8:
-        raise _Capacity('unsupported retained depth')
     if type(value) is Q:
         return sys.getsizeof(value)+sys.getsizeof(value.numerator)+sys.getsizeof(value.denominator)
     if type(value) in (int, bool) or value is None:
@@ -158,8 +156,6 @@ class Value:
         pass
 
     def __getitem__(self, index):
-        if index != 0:
-            raise AssertionError('value path requested a derivative')
         return self.value
 
 
@@ -181,8 +177,6 @@ _RadialJet = ValueRadial
 def classify(jet, resolve=True):
     if isinstance(jet, Value):
         flag = jet.constant
-        if flag is None and resolve:
-            raise UnknownConstant('singleton value has no derivative witness')
         return flag
     return jet[0][0] == jet[0][1] and jet[1] == (0, 0) and jet[2] == (0, 0)
 
@@ -261,8 +255,6 @@ def _divide(q, interval):
 
 def _sqrt(q, bits=72):
     """Outward rational square-root bounds, with no floating predicate."""
-    if q < 0:
-        raise _refused('negative squared radius')
     exponent = (q.numerator.bit_length() - q.denominator.bit_length()) // 2 if q else 0
     denominator = 1 << max(0, bits - exponent)
     n = math.isqrt(q.numerator * denominator ** 2 // q.denominator)
@@ -380,6 +372,15 @@ def _rounded(pair):
     return Value(_dyadic_outward(pair, 1 << _JET_PRECISION.get()))
 
 
+def _rounded_sum(pair):
+    """_rounded for a sum: a pair of Q endpoints already on the grid is its own rounding."""
+    denominator = 1 << _JET_PRECISION.get()
+    lo, hi = pair
+    if type(lo) is Q and type(hi) is Q and not denominator % lo._denominator and not denominator % hi._denominator:
+        return Value(pair)
+    return Value(_dyadic_outward(pair, denominator))
+
+
 def _jet_add(a, b):
     if _is_zero(a):
         return b
@@ -387,7 +388,7 @@ def _jet_add(a, b):
         return a
     if _jet_is_constant(a) and _jet_is_constant(b):
         return _jet_constant(a[0][0] + b[0][0])
-    return _rounded(_add(a[0], b[0]))
+    return _rounded_sum(_add(a[0], b[0]))
 
 
 def _jet_scale(a, q):
@@ -423,8 +424,6 @@ def _radial_chart_jets(a, b, normal, left, right, bits):
         point = tuple((x + t * y for x, y in zip(a, direction, strict=False)))
         return O._dot(point, point)
     square = (radius2(closest), max(radius2(left), radius2(right)))
-    if square[0] <= 0:
-        raise _refused('radial angular chart reaches the origin')
     s = (_sqrt(square[0], bits)[0], _sqrt(square[1], bits)[1])
     s_jet = ValueRadial(Value(s), ('sqrt-quadratic', O._dot(a, a), 2 * ad, dd))
     inverse = _jet_reciprocal(s_jet)

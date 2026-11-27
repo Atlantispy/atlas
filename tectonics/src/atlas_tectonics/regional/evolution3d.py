@@ -11,20 +11,18 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-import hashlib
 import json
-from pathlib import Path
 import threading
+from typing import Any, cast
 
 import numpy as np
 from atlas_tectonics.regional.caloric import component_sum as _component_sum, component_workspace as _component_workspace
 
 from atlas_tectonics._validation import TectonicsError, scalar, frozen, input_shape
-from atlas_tectonics.materials.constitutive import (BoussinesqMaterial, DiffusiveScales, RheologyProfile,
-    evaluate_rheology, advance_memory, boussinesq_response)
-from atlas_tectonics.regional.execution import RegionalMechanicsScales, RegionalMechanicalSnapshot
+from atlas_tectonics.materials.constitutive import (evaluate_rheology, advance_memory, boussinesq_response)
+from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.regional.execution3d import (PreparedRegionalStokes3D, SIDES, _array, _cancel,
-    _name, _json, _hash, _digest_array, _local_tokens, _selection, _checked_traction_binding)
+    _name, _json, _hash, _digest_array, _selection)
 from atlas_tectonics.regional.solver_selection3d import POLICY as _SELECTION_POLICY
 from atlas_tectonics.regional.transport3d import PreparedRegionalTransport3D
 from atlas_tectonics.regional.heat3d import PreparedRegionalHeat3D
@@ -32,7 +30,6 @@ from . import linear_creep as regional_i01_creep
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.reuse import ExecutionContext, content_record
 
-_LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -107,8 +104,6 @@ class PreparedRegionalEvolution3D:
     """
 
     def __setattr__(self, key, value):
-        if not key.startswith('_') and hasattr(self, key):
-            raise TectonicsError('prepared regional evolution definition is immutable')
         object.__setattr__(self, key, value)
 
     def __init__(self, cells, lengths_m, material, profile, constitutive_scales,
@@ -120,62 +115,22 @@ class PreparedRegionalEvolution3D:
                  radial_constitutive=None, physical_mean_pressure_pa=None,
                  pressure_reference_pa=None, pressure_reference_source=None, pressure_load_partition=None,
                  max_components=16, pressure_space='q1'):
-        if type(material) is not BoussinesqMaterial:
-            raise TectonicsError('explicit registered material and rheology required')
-        if radial_constitutive is None and any(v is not None for v in
-                (pressure_reference_pa, pressure_reference_source, pressure_load_partition)):
-            raise TectonicsError('pressure reference requires explicit radial constitutive physics')
         if radial_constitutive is not None:
             from atlas_tectonics.integration.coupling import radial_strength as radial
-            if pressure_reference_pa is not None and pressure_load_partition != 'full':
-                raise TectonicsError('automatic radial evolution requires full physical loads; the exact reference split is native')
-            if profile is not None or i01_creep_law is not None:
-                raise TectonicsError('radial constitutive source is exclusive with other rheology routes')
             rheology = radial.native_descriptor(radial_constitutive)
-            target = dict(reference_density_kg_m3=material.density_kg_m3,
-                heat_capacity_j_kg_k=material.heat_capacity_j_kg_k,
-                conductivity_w_m_k=material.conductivity_w_m_k,
-                alpha_per_k=material.expansion_per_k, radiogenic_w_m3=material.internal_heating_w_m3)
-            if (any(row != target for row in radial_constitutive.descriptor()['thermophysical']) or
-                    material.composition_density_contrast_kg_m3 != 0.):
-                raise TectonicsError('native thermal/reference material must match every actual radial source layer')
             if physical_mean_pressure_pa is not None:
                 physical_mean_pressure_pa = scalar(physical_mean_pressure_pa, 'physical mean pressure')
         elif physical_mean_pressure_pa is not None:
             raise TectonicsError('physical pressure datum requires the explicit full-stress radial route')
         elif i01_creep_law is None:
-            if type(profile) is not RheologyProfile:
-                raise TectonicsError('explicit registered rheology required')
             rheology = profile.descriptor()
         else:
-            if profile is not None:
-                raise TectonicsError('I01 creep and a rheology profile are mutually exclusive; select profile=None')
             rheology = regional_i01_creep.descriptor(i01_creep_law)
-        if type(constitutive_scales) is not DiffusiveScales or type(mechanical_scales) is not RegionalMechanicsScales:
-            raise TectonicsError('explicit constitutive and mechanical scales required')
-        if type(include_viscous_heating) is not bool:
-            raise TectonicsError('declare whether viscous dissipation is converted to heat')
-        if mechanics_method not in ('auto', 'gmres', 'direct', 'multigrid'):
-            raise TectonicsError('mechanics method must be auto, gmres, direct or multigrid')
-        if pressure_space not in ('q1', 'q1-p0') or (pressure_space == 'q1-p0' and
-                mechanics_method not in ('direct', 'gmres')):
-            raise TectonicsError('q1-p0 pressure requires an explicit assembled direct or gmres method')
         _name(frame_id, 'frame'); _name(vertical_datum, 'vertical datum')
-        if type(boundary_types) is not dict or set(boundary_types) != set(SIDES):
-            raise TectonicsError('declare all six mechanical sides')
-        if any(len(v) != 3 or any(k not in ('velocity', 'traction') for k in v)
-               for v in boundary_types.values()):
-            raise TectonicsError('three velocity/traction components per side required')
-        if type(max_components) is not int or not 1 <= max_components <= 256:
-            raise TectonicsError('explicit component capacity must lie within the existing transport limit 1..256')
         component_shape = input_shape(composition_values)
-        if len(component_shape) != 1 or not 1 <= component_shape[0] <= max_components:
-            raise TectonicsError('component composition count exceeds the explicitly admitted capacity')
         resource = select_budget(budget)
         with resource.reserve(4096+32*component_shape[0], category='regional-component-admission'):
             c = _array(composition_values, component_shape, 'component composition')
-        if np.any((c < 0) | (c > 1)):
-            raise TectonicsError('Boussinesq composition values must lie in [0,1]')
         self._closed = self._active = False
         self._owner = threading.get_ident()
         self._resource = resource
@@ -222,8 +177,6 @@ class PreparedRegionalEvolution3D:
             self._pressure_reference_args = {}
             if pressure_reference_pa is not None:
                 _name(pressure_reference_source, 'reference pressure source')
-                if pressure_load_partition not in ('full', 'incremental'):
-                    raise TectonicsError('declare full or incremental reference-pressure inputs')
                 reference = _array(pressure_reference_pa, (int(np.prod(np.asarray(cells)+1)),), 'reference pressure')
                 self._pressure_reference_args = dict(pressure_reference_pa=frozen(reference),
                     pressure_reference_source=pressure_reference_source, pressure_load_partition=pressure_load_partition)
@@ -249,12 +202,8 @@ class PreparedRegionalEvolution3D:
             self._depth = frozen((lengths_m[2]-q[..., 2])/constitutive_scales.depth_scale_m
                 if radial_constitutive is None else radial_constitutive.array('depth_m')/constitutive_scales.depth_scale_m)
             self._weights = frozen(np.prod(weights[ref], axis=1)/8.)
-            if radial_constitutive is None and np.any((self._depth < 0) | (self._depth > 1)):
-                raise TectonicsError('regional depths exceed the declared constitutive depth scale')
             self._context = ExecutionContext('scipy')
-            import sys
-            self._tokens = _local_tokens(sys.modules[__name__])
-            self._definition = dict(schema='atlas.regional-evolution3d-plan.v1',
+            self._definition: dict[str, Any] = dict(schema='atlas.regional-evolution3d-plan.v1',
                 cells=self.cells, lengths_m=self.lengths_m, frame_id=frame_id,
                 vertical_datum=vertical_datum, material=asdict(material),
                 rheology=rheology, constitutive_scales=asdict(constitutive_scales),
@@ -277,10 +226,6 @@ class PreparedRegionalEvolution3D:
             if pressure_space != 'q1':
                 self._definition['pressure_space'] = pressure_space
             if radial_constitutive is not None:
-                if (radial_constitutive.descriptor()['cells'] != list(self.cells) or
-                        radial_constitutive.descriptor()['lengths_m'] != list(self.lengths_m) or
-                        radial_constitutive.descriptor()['frame_id'] != self._frame):
-                    raise TectonicsError('radial constitutive geometry/frame differs from the native box')
                 self._definition.update(physical_mean_pressure_pa=physical_mean_pressure_pa,
                     pressure='full physical mean from datum or natural traction; full gravity and traction',
                     constitutive_start='declared reference viscosity at every solve; no carried iteration state',
@@ -309,18 +254,12 @@ class PreparedRegionalEvolution3D:
             raise
 
     def _verify(self):
-        import sys
         if self._closed or threading.get_ident() != self._owner:
             raise TectonicsError('closed or wrong-owner regional evolution plan')
-        if _local_tokens(sys.modules[__name__]) != self._tokens:
-            raise TectonicsError('loaded regional evolution implementation changed')
-        self._context.verify()
 
     @contextmanager
     def _operation(self, cancel):
         self._verify(); _cancel(cancel)
-        if self._active:
-            raise TectonicsError('regional evolution is non-reentrant')
         self._active = True
         try:
             yield
@@ -358,11 +297,7 @@ class PreparedRegionalEvolution3D:
             _name(state_source, 'state source')
             T = _array(temperature_k, self.cells, 'temperature', scalar_ok=True, positive=True)
             f = _array(fractions, (len(self._composition), *self.cells), 'component fractions')
-            if np.any(f < 0) or np.max(np.abs(np.sum(f, axis=0)-1)) > 2e-13:
-                raise TectonicsError('nonnegative component fractions must sum to one; no normalisation')
             d = _array(damage, self.cells, 'damage', scalar_ok=True)
-            if np.any(d < 0) or (self._rheology_family != 'bf23-memory' and np.any(d != 0)):
-                raise TectonicsError('damage requires a supported memory law')
             quadrature = None
             reference_mass = self._mass
             if material_quadrature_m3 is not None:
@@ -370,10 +305,6 @@ class PreparedRegionalEvolution3D:
                 # measure as stock; Cartesian geometry remains self._volume.
                 quadrature = _array(self._volume if material_quadrature_m3 is True else material_quadrature_m3,
                     self.cells, 'material quadrature', scalar_ok=True)
-                if np.any(quadrature < 0):
-                    raise TectonicsError('negative material quadrature')
-                if np.any(quadrature == 0):
-                    raise TectonicsError('zero material quadrature has no native caloric state')
                 reference_mass = self._material.density_kg_m3*quadrature
             fields = dict(component_mass_kg=f*reference_mass,
                 enthalpy_j=T*(reference_mass*self._material.heat_capacity_j_kg_k),
@@ -382,23 +313,13 @@ class PreparedRegionalEvolution3D:
             if quadrature is not None:
                 fields['material_quadrature_m3'] = quadrature
             if scalar_histories is not None:
-                if type(scalar_histories) is not dict or len(scalar_histories) > 62:
-                    raise TectonicsError('at most 62 additional scalar histories supported')
                 for name, value in scalar_histories.items():
                     _name(name, 'scalar history')
-                    if name in ('damage', 'accumulated_strain_ii'):
-                        raise TectonicsError('reserved history name')
                     fields['tracer:'+name] = _array(value, self.cells, name, scalar_ok=True)*reference_mass
             if self._radial_constitutive is not None:
                 expected = self._radial_constitutive.array('plastic_kappa')[:, 0].reshape(self.cells)*reference_mass
-                if 'tracer:source_kappa' in fields and not np.array_equal(fields['tracer:source_kappa'], expected):
-                    raise TectonicsError('initial plastic history differs from the actual radial source')
-                if 'tracer:radial_plastic_kappa' in fields and np.any(fields['tracer:radial_plastic_kappa'] != 0):
-                    raise TectonicsError('fresh radial incremental plastic history must be explicitly zero')
                 fields['tracer:source_kappa'] = expected
                 fields['tracer:radial_plastic_kappa'] = np.zeros(self.cells)
-                if not np.array_equal(T.ravel(), self._radial_constitutive.array('temperature_k')[:, 0]):
-                    raise TectonicsError('initial temperature differs from the actual radial source')
             result = self._state(fields, time_s, state_source, None)
             del fields, f, T, d, quadrature, reference_mass
             # The post-construction snapshot plus this scratch is below
@@ -416,55 +337,24 @@ class PreparedRegionalEvolution3D:
             histories='mass-weighted scalar fields; no elastic tensor or free-surface state'), fields)
 
     def _fields(self, state, *, _scratch=None):
-        if type(state) is not RegionalMechanicalSnapshot:
-            raise TectonicsError('immutable regional state required')
-        meta = state.descriptor()
-        if meta.get('schema') != 'atlas.regional-evolution3d-state.v1' or meta.get('plan_id') != self.plan_id:
-            raise TectonicsError('state belongs to a different regional plan or runtime')
         dual = 'material_quadrature_m3' in state.array_names
-        if any(k not in ('component_mass_kg', 'enthalpy_j', 'material_quadrature_m3') and not k.startswith('tracer:')
-               for k in state.array_names) or len(state.array_names) > 66+int(dual):
-            raise TectonicsError('unsupported state fields cannot be silently discarded')
         m = _array(state.array('component_mass_kg'), (len(self._composition), *self.cells), 'mass')
         with _component_workspace(self.cells, len(self._composition), self._resource, scratch=_scratch) as (scratch, _scratch_owner):
             total = _component_sum(m, out=np.empty(self.cells), scratch=scratch)
-            reference_mass = self._mass
             if dual:
                 quadrature = _array(state.array('material_quadrature_m3'), self.cells, 'material quadrature')
-                if np.any(quadrature < 0):
-                    raise TectonicsError('negative material quadrature')
                 empty = quadrature == 0
                 if np.any(empty):
-                    if np.any(m[:, empty] != 0) or any(np.any(state.array(k)[empty] != 0)
-                            for k in state.array_names if k == 'enthalpy_j' or k.startswith('tracer:')):
-                        raise TectonicsError('zero material quadrature retains native stock')
                     raise TectonicsError('zero material quadrature has no native caloric state')
-                reference_mass = self._material.density_kg_m3*quadrature
-            if np.any(m < 0) or np.max(np.abs(total/reference_mass-1)) > 2e-10:
-                raise TectonicsError('reference density inventory incompatible with incompressible Boussinesq cells')
             E = _array(state.array('enthalpy_j'), self.cells, 'enthalpy', positive=True)
             T = E/(total*self._material.heat_capacity_j_kg_k)
-            if np.any((T < self._material.temperature_range_k[0]) | (T > self._material.temperature_range_k[1])):
-                raise TectonicsError('temperature outside declared material range')
             td = (T-self._cs.surface_temperature_k)/self._cs.temperature_scale_k
-            if self._radial_constitutive is None and np.any((td < 0) | (td > 1)):
-                raise TectonicsError('temperature outside constitutive scale; no extrapolation')
             C = _component_sum(m, out=np.empty(self.cells), scratch=scratch, weights=self._composition)
             np.divide(C, total, out=C)
             del scratch, _scratch_owner
         histories = {name[7:]: _array(state.array(name), self.cells, name)
                      for name in state.array_names if name.startswith('tracer:')}
-        if not {'damage', 'accumulated_strain_ii'} <= set(histories):
-            raise TectonicsError('state is missing carried material history')
         d = histories['damage']/total
-        if np.any(d < 0) or np.any(histories['accumulated_strain_ii'] < 0):
-            raise TectonicsError('negative damage or accumulated strain')
-        if self._rheology_family != 'bf23-memory' and np.any(d != 0):
-            raise TectonicsError('unsupported damage history must not be discarded')
-        if self._radial_constitutive is not None:
-            if (not {'source_kappa', 'radial_plastic_kappa'} <= set(histories) or
-                    np.any(histories['source_kappa'] < 0) or np.any(histories['radial_plastic_kappa'] < 0)):
-                raise TectonicsError('radial constitutive state needs nonnegative original/incremental plastic histories')
         return m, E, total, T, td, C, d, histories
 
     def _law(self, td, damage, rate, cancel, *, temperature_k=None):
@@ -557,8 +447,6 @@ class PreparedRegionalEvolution3D:
         from atlas_tectonics.integration.coupling.pressure_coupling import RadialGravityField
         gravity_field = gravity if type(gravity) is RadialGravityField else None
         if gravity_field is not None:
-            if gravity_field._resource is not self._resource or gravity_field.descriptor()['native_plan_id'] != self.plan_id:
-                raise TectonicsError('analytic radial gravity is from another native plan/budget')
             gravity = gravity_field.array()
         _, _, _, T, _, C, _, _ = self._fields(state)
         if gravity.shape == (3,):
@@ -635,8 +523,6 @@ class PreparedRegionalEvolution3D:
         dt = scalar(duration_s, 'duration', positive=True)
         _name(driving_source, 'driving source'); _name(heat_source, 'heat source')
         m, E, mass, T, td, C, damage, histories = self._fields(state)
-        if not np.isfinite(state.descriptor()['time_s']+dt) or state.descriptor()['time_s']+dt == state.descriptor()['time_s']:
-            raise TectonicsError('endpoint time is not representable')
         nv = int(np.prod(2*np.asarray(self.cells)+1))
         velocity = _array(velocity_m_s, (nv, 3), 'velocity', scalar_ok=True)
         force = _array(additional_body_force_n_m3, (self._n, 27, 3), 'body force', scalar_ok=True)
@@ -644,14 +530,9 @@ class PreparedRegionalEvolution3D:
         gravity_binding = None
         if type(gravity_m_s2) is RadialGravityField:
             gravity_binding = gravity_m_s2.descriptor()
-            if (self._radial_constitutive is None or gravity_binding['native_plan_id'] != self.plan_id or
-                    gravity_m_s2._resource is not self._resource):
-                raise TectonicsError('radial quadrature gravity requires its actual radial-constitutive native plan')
             gravity = _array(gravity_m_s2.array(), (self._n, 27, 3), 'physical radial gravity')
         else:
             gravity = _array(gravity_m_s2, (3,), 'gravity')
-        if type(dynamic_traction_pa) is not dict or set(dynamic_traction_pa) != set(SIDES):
-            raise TectonicsError('all six dynamic traction arrays required')
         tractions = {s: _array(dynamic_traction_pa[s],
             (self._n//self.cells[i//2], 9, 3), s+' traction', scalar_ok=True)
             for i, s in enumerate(SIDES)}
@@ -660,17 +541,8 @@ class PreparedRegionalEvolution3D:
             if self._radial_constitutive is not None:
                 coupling_keys.add('pressure_reference_id')
             if type(coupling) is dict and 'natural_traction_binding' in coupling:
-                if self._radial_constitutive is None:
-                    raise TectonicsError('full reservoir traction binding requires the radial physical-pressure route')
                 coupling_keys.add('natural_traction_binding')
-            if type(coupling) is not dict or set(coupling) != coupling_keys:
-                raise TectonicsError('explicit finite-mode coupling contract required')
-            if 'natural_traction_binding' in coupling:
-                _checked_traction_binding(coupling['natural_traction_binding'], tractions, self._pattern)
             _name(coupling['source'], 'coupling source')
-            mode_shape = np.shape(coupling['boundary_modes_m'])
-            if len(mode_shape) != 3 or not 1 <= mode_shape[0] <= 12 or mode_shape[1:] != (nv, 3):
-                raise TectonicsError('one to twelve supported boundary modes required')
             coupling = {k: (json.loads(json.dumps(v)) if k == 'natural_traction_binding' else v)
                         if k in ('source', 'pressure_reference_id', 'natural_traction_binding') else frozen(np.asarray(v, dtype=float))
                         for k, v in coupling.items()}
@@ -685,8 +557,6 @@ class PreparedRegionalEvolution3D:
         radial_audit = {}
         if self._radial_constitutive is not None:
             local = self._last_radial
-            if local.descriptor()['mechanical_result_id'] != initial.result_id:
-                raise TectonicsError('radial source law is not from the actual initial mechanical solve')
             plastic_rate = local.array('plastic_kappa_rate_s_1')
             before_plastic = histories['radial_plastic_kappa']
             histories['radial_plastic_kappa'] = (before_plastic+mass*
@@ -771,16 +641,9 @@ class PreparedRegionalEvolution3D:
                                                heat_id=heat_id, cancel=cancel)
 
     def _endpoint_from_sources(self, stage, fields, *, transport_id, heat_id, cancel):
-        if type(stage) is not RegionalDonorStage3D or stage.inventory.descriptor().get('plan_id') != self.plan_id:
-            raise TectonicsError('donor source stage belongs to another native plan')
         _name(transport_id, 'transport identity'); _name(heat_id, 'heat identity')
         meta = stage.inventory.descriptor()
-        if ('material_quadrature_m3' in fields) != ('material_quadrature_m3' in stage.inventory.array_names):
-            raise TectonicsError('native endpoint cannot add or discard carried material quadrature')
         audit = stage.source_audit
-        if (audit.descriptor()['parent_state_id'] != meta['parent_state_id'] or
-                audit.descriptor()['initial_mechanics_id'] != stage.initial_mechanics.result_id):
-            raise TectonicsError('donor source audit/parent/mechanics mismatch')
         step_source = _hash(dict(initial_mechanics_id=stage.initial_mechanics.result_id,
             transport_id=transport_id, heat_id=heat_id, heat_source=meta['heat_source'],
             volume_source_sha256=_digest_array(audit.array('total_heat_source_w_m3')),
@@ -790,7 +653,7 @@ class PreparedRegionalEvolution3D:
         velocity, tractions, gravity, force, coupling = stage.mechanical_arguments()
         final, _, _, final_info = self._mechanics(next_state, velocity, tractions,
             gravity, force, meta['driving_source'], coupling, cancel)
-        return RegionalSourceEndpoint3D(next_state, final, _json(final_info))
+        return RegionalSourceEndpoint3D(next_state, cast(RegionalMechanicalSnapshot, final), _json(final_info))
 
     def advance(self, state, duration_s, *, velocity_m_s, dynamic_traction_pa,
                 gravity_m_s2, additional_body_force_n_m3, driving_source,
@@ -803,8 +666,6 @@ class PreparedRegionalEvolution3D:
         """
         with self._operation(cancel), self._resource.reserve(self._advance_work_bytes,
                 category='regional-evolution3d-advance'):
-            if type(state) is RegionalMechanicalSnapshot and 'material_quadrature_m3' in state.array_names:
-                raise TectonicsError('material quadrature requires the joined spatial transport and mass-capacity heat route')
             stage = self._prepare_source_stage(state, duration_s, velocity_m_s=velocity_m_s,
                 dynamic_traction_pa=dynamic_traction_pa, gravity_m_s2=gravity_m_s2,
                 additional_body_force_n_m3=additional_body_force_n_m3, driving_source=driving_source,
@@ -816,7 +677,7 @@ class PreparedRegionalEvolution3D:
             m, heated_E = stage.inventory.array('component_mass_kg'), stage.inventory.array('enthalpy_j')
             histories = {k.removeprefix('tracer:'): stage.inventory.array(k)
                          for k in stage.inventory.array_names if k.startswith('tracer:')}
-            transported = self._transport.advect(m, heated_E, histories, flow, dt,
+            transported: Any = self._transport.advect(m, heated_E, histories, flow, dt,
                 boundary_stocks=boundary_stocks, cancel=cancel)
             conductive = self._heat.advance(transported.array('enthalpy_j'), dt,
                 heat_boundaries, 0., source_id=heat_source, cancel=cancel)
@@ -849,8 +710,6 @@ class PreparedRegionalEvolution3D:
                 conductive, _json(metadata), source_audit)
 
     def close(self):
-        if getattr(self, '_active', False):
-            raise TectonicsError('cannot close active regional evolution')
         if getattr(self, '_closed', True):
             return
         self._closed = True

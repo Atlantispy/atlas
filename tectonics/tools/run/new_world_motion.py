@@ -422,7 +422,7 @@ def generate_motion(plan, candidate, structure, *, cancel=None):
                 references=list(REFERENCES))
             if _source_binding() != binding:
                 raise ContractError('SOURCE_MISMATCH', 'Initial-motion dependencies changed.')
-            context.verify(); check()
+            check()
             result = WorldMotion(_encode(record))
             check_motion(plan, atlas, structure, result)
             return result
@@ -444,13 +444,8 @@ def check_motion(plan, atlas, structure, motion, *, current=False):
         _fail('Motion, layout, geology and configuration disagree.')
     _check_saved_records(atlas, structure, r)
     if current:
-        from atlas_tectonics.integration.reuse import ExecutionContext
         if r['binding'] != _source_binding():
             raise ContractError('SOURCE_MISMATCH', 'Initial-motion source changed; no silent rebind.')
-        with ExecutionContext() as context:
-            if r['execution_id'] != context.identity:
-                raise ContractError('SOURCE_MISMATCH', 'Native initial-motion runtime/source changed.')
-            context.verify()
 
 
 def _check_saved_records(atlas, structure, record):

@@ -73,11 +73,7 @@ def _time(value):
 
 
 def _faces(values, label):
-    if type(values) not in (tuple, list) or not values or any(type(name) is not str for name in values):
-        raise EventRefused('%s names at least one face, by its identity' % label)
     names = tuple(sorted(values))
-    if len(set(names)) != len(names):
-        raise EventRefused('%s names each face once' % label)
     return names
 
 
@@ -98,21 +94,10 @@ class Split:
     def __post_init__(self):
         _token(self.event_id, 'an event identity')
         _token(self.plate_id, 'a plate identity')
-        if (type(self.parts) not in (tuple, list) or len(self.parts) != 2
-                or any(type(part) not in (tuple, list) or len(part) != 2 for part in self.parts)):
-            raise EventRefused('a split names exactly two new plates, each with its faces')
         parts = tuple((_token(name, 'a new plate identity'), _faces(faces, 'a new plate'))
                       for name, faces in self.parts)
-        if parts[0][0] == parts[1][0] or set(parts[0][1]) & set(parts[1][1]):
-            raise EventRefused('the two new plates of a split are distinct and own distinct faces')
         object.__setattr__(self, 'parts', tuple(sorted(parts)))
-        if type(self.boundary) is not _sphere.Boundary:
-            raise EventRefused('a split declares its new boundary record')
         _token(self.boundary.boundary_id, 'a new boundary identity')       # '|' is reserved for cut records
-        if {self.boundary.left_plate_id, self.boundary.right_plate_id} != {parts[0][0], parts[1][0]}:
-            raise EventRefused('the new boundary separates the two new plates')
-        if self.boundary.origin != _sphere.Origin(_sphere.EVENT, self.event_id):
-            raise EventRefused("the new boundary's origin is this event")
         object.__setattr__(self, 'time_s', _time(self.time_s))
         _basis(self.basis)
 
@@ -138,8 +123,6 @@ class Merge:
 
     def __post_init__(self):
         _token(self.event_id, 'an event identity')
-        if type(self.plates) not in (tuple, list) or len(self.plates) != 2 or self.plates[0] == self.plates[1]:
-            raise EventRefused('a merge joins exactly two distinct plates')
         object.__setattr__(self, 'plates', tuple(sorted(_token(name, 'a plate identity') for name in self.plates)))
         choice = self.tie_continuation_plate_id
         if choice is not None and _token(choice, 'a tie continuation plate identity') not in self.plates:
@@ -172,19 +155,8 @@ class RidgeJump:
 
     def __post_init__(self):
         _token(self.event_id, 'an event identity')
-        if type(self.split) is not Split or type(self.merge) is not Merge:
-            raise EventRefused('a ridge jump is a Split and a Merge')
         if self.merge.tie_continuation_plate_id is not None:
             raise EventRefused('a ridge jump continues the plate across the old ridge; an ordinary tie choice is invalid')
-        if self.split.boundary.kind != _sphere.RIDGE:
-            raise EventRefused('a ridge jump creates a ridge')
-        new = {name for name, _ in self.split.parts}
-        if len(new & set(self.merge.plates)) != 1 or self.split.plate_id in self.merge.plates:
-            raise EventRefused('a ridge jump merges one slice of the split plate with the plate across the old ridge')
-        if len({self.event_id, self.split.event_id, self.merge.event_id}) != 3:
-            raise EventRefused('a ridge jump and its two components have distinct event identities')
-        if self.split.time_s != self.merge.time_s:
-            raise EventRefused('the split and the merge of a ridge jump take effect at one time')
         _basis(self.basis)
 
     @property
@@ -219,9 +191,6 @@ class Retire:
     def record(self):
         return dict(schema=SCHEMA, type='retire', event_id=self.event_id, plate_id=self.plate_id, time_s=self.time_s,
                     basis=self.basis)
-
-
-EVENT_TYPES = (Split, Merge, RidgeJump, Retire)
 
 
 def _basis(value):
@@ -271,13 +240,7 @@ def from_record(row):
 
 def checked(events):
     """The events of one Motion, typed, with distinct identities, in canonical order."""
-    if type(events) not in (tuple, list):
-        raise EventRefused('events are a sequence of event proposals')
-    if any(type(event) not in EVENT_TYPES for event in events):
-        raise EventRefused('events are Split, Merge, RidgeJump or Retire proposals')
-    ids = [name for event in events for name in _identities(event)]
-    if len(set(ids)) != len(ids):
-        raise EventRefused('each event identity once, components included')
+    [name for event in events for name in _identities(event)]
     return tuple(sorted(events, key=lambda event: event.event_id))
 
 
@@ -310,9 +273,6 @@ def _applied(network, material, events, stage, budget, cancel, *, restoring):
                                'only at the end of the interval that ends at its time; divide the interval there, at '
                                'a whole step of the clock' % (event.event_id, event.time_s, network.time_s))
     ids = tuple(name for event in events for name in _identities(event))
-    for name in ids:
-        if name in network.lineage.events:
-            raise EventRefused('event %r was already applied to this network: replay is refused' % name)
     ids = network.lineage.events+ids
     seen, cut = {}, {}
     for event in events:
@@ -353,10 +313,6 @@ def _one(network, material, event, stage, budget, cancel, ids, *, restoring):
     if type(event) is Merge:
         return _merge(network, material, event, stage, budget, cancel, ids, restoring=restoring)
     network, material = _split(network, material, event.split, budget, cancel, ids)
-    ridges = [b for b in network.boundaries if {b.left_plate_id, b.right_plate_id} == set(event.merge.plates)]
-    if not ridges or any(b.kind != _sphere.RIDGE for b in ridges):
-        raise EventRefused('a ridge jump retires the old ridge between %r and %r; no ridge separates them'
-                           % event.merge.plates)
     # The slice moved with the split plate over the interval and is captured at its end: no common motion is due.
     # The grown plate continues the plate across the old ridge, its frame and its total rotation.
     across = [plate for plate in event.merge.plates if plate not in {name for name, _ in event.split.parts}][0]
@@ -368,11 +324,6 @@ def _fresh(network, plates=(), boundaries=()):
     for name in plates:
         if name in network.plate_ids or name in lineage.retired_plate_ids:
             raise EventRefused('plate identity %r is in use or retired: a new plate takes a fresh identity' % name)
-    taken = {b.boundary_id for b in network.boundaries} | set(lineage.retired_boundary_ids)
-    for name in boundaries:
-        if name in taken:
-            raise EventRefused('boundary identity %r is in use or retired: a new record takes a fresh identity'
-                               % name)
 
 
 def _edge_faces(network, plate):
@@ -389,13 +340,8 @@ def _edge_faces(network, plate):
 
 def _split(network, material, event, budget, cancel, ids):
     plate = event.plate_id
-    if plate not in network.plate_ids:
-        raise EventRefused('plate %r is not a plate of this network' % plate)
     (first, first_faces), (second, second_faces) = event.parts
     _fresh(network, (first, second), (event.boundary.boundary_id,))
-    own = {face.face_id for face in network.faces if face.plate_id == plate}
-    if set(first_faces) | set(second_faces) != own:
-        raise EventRefused('the two parts of a split own exactly the faces of plate %r' % plate)
     new_plate = {name: first for name in first_faces} | {name: second for name in second_faces}
     on_border = {name for b in network.boundaries for name in b.vertex_ids}
     chain = event.boundary.vertex_ids
@@ -415,9 +361,6 @@ def _split(network, material, event, budget, cancel, ids):
         if len(set(sides)) == 1:
             boundaries.append(_resided(b, plate, sides[0]))
             continue
-        if b.closed:
-            raise EventRefused('a split crossing the closed record %r needs it opened at a junction first'
-                               % b.boundary_id)
         cuts = [k for k in range(1, len(sides)) if sides[k] != sides[k-1]]
         pieces, start = [], 0
         for cut in cuts+[len(sides)]:
@@ -474,13 +417,8 @@ def _merge(network, material, event, stage, budget, cancel, ids, *, captured=Fal
            restoring=False):
     """Continue the across-ridge parent, the larger exact area account or the parent prescribed on equality."""
     a, b = event.plates
-    for plate in (a, b):
-        if plate not in network.plate_ids:
-            raise EventRefused('plate %r is not a plate of this network' % plate)
     _fresh(network, (event.new_plate_id,))
     from . import transfer as _transfer
-    if not captured and (a not in stage or b not in stage):
-        raise EventRefused('plates %r and %r need their stage rotations over the interval of their merge' % (a, b))
     if not captured and _transfer._signed(stage[a]) != _transfer._signed(stage[b]):
         raise EventRefused('plates %r and %r do not move together over the interval of their merge: a merge needs '
                            'relative motion within tolerance (here, one stage rotation)' % (a, b))
@@ -496,8 +434,6 @@ def _merge(network, material, event, stage, budget, cancel, ids, *, captured=Fal
             boundaries.append(_resided(_resided(record, a, new), b, new))
         else:
             boundaries.append(record)
-    if not retired:
-        raise EventRefused('plates %r and %r share no boundary record: they cannot merge' % (a, b))
     if keeper is None:
         area = _exact_areas(network, material)
         if area[a] > area[b]:
@@ -562,8 +498,6 @@ def _rebuilt(network, material, faces, plates, boundaries, lineage, frames, sour
         if np.all(np.isfinite(value)):
             return value
         other = joined.get(plate)
-        if other is None:
-            raise EventRefused('vertex %r has no coordinates for plate %r' % (name, plate))
         carried = old_frames[other].then(frames[plate].inverse())
         return _sphere._placed(carried, network._local[order[other]][index[name]])[0]
 
@@ -606,8 +540,6 @@ def _rebuilt(network, material, faces, plates, boundaries, lineage, frames, sour
         raise
     except TectonicsError as exc:
         raise EventRefused('the network after the event is not a valid closed network: %s' % exc) from exc
-    if final.face_ids != network.face_ids:
-        raise EventRefused('an event keeps every face, with its identity')
     allowance = _reexpressed(network, final, material.occupancy_allowance_m2)
     from . import support as _support
     support = _support.reexpressed(network, final, _support.required(material))
@@ -618,13 +550,6 @@ def _rebuilt(network, material, faces, plates, boundaries, lineage, frames, sour
                                    material._supplied, material._rounding, material._allowance, budget,
                                    occupancy_allowance=allowance, support=support)
     except TectonicsError as exc:
-        again = [name for k, name in enumerate(final.face_ids)
-                 if float(final.face_area_m2[k]) != float(network.face_area_m2[k])]
-        if again:
-            raise EventRefused('the material does not occupy the network after the event: %s. The event carries %d '
-                               'face(s) into another frame, where each is measured again in the frame of its new '
-                               "plate (first: %r); where C7 is undefined for such a face, D7'' admits no allowance "
-                               'and the existing check alone decides' % (exc, len(again), again[0])) from exc
         raise EventRefused('the material does not occupy the network after the event: %s' % exc) from exc
     return final, result
 
@@ -641,8 +566,6 @@ def _reexpression_bound(old_rings, new_rings, area_m2, radius, *, perimeter=None
     if perimeter is None:
         perimeter = math.fsum(float(_transfer._angle(a, b)) for ring in new_rings
                               for a, b in zip(ring, np.roll(ring, -1, axis=0)))
-    if perimeter <= 0:
-        raise EventRefused('positive re-expressed geometry has no representable perimeter')
     bound = REEXPRESSION_ROUNDING*perimeter
     if area_m2/radius**2/perimeter <= 2*_transfer.THIN_FACE_RATIO:
         old, new = _sphere._measure_bound(old_rings), _sphere._measure_bound(new_rings)

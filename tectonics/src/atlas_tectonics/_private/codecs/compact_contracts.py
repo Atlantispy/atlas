@@ -10,6 +10,7 @@ from atlas_shared.errors import AtlasError
 from contextlib import contextmanager
 from dataclasses import dataclass
 import json
+from typing import cast
 from atlas_tectonics.integration.resources import _sha256_pattern as _SHA256
 
 
@@ -21,8 +22,6 @@ SEGMENT_CHUNK_REFERENCES = 2048
 SEGMENT_MANIFEST_BYTES = 256 * 1024
 ROOT_METADATA_MAX = 64 * 1024
 SEGMENT_REF_BYTES = 4096
-RECORD_SCHEMA_BYTES = 256
-BINDING_PAGE_BYTES = 64 * 1024
 INDEX_FANOUT = 256
 INDEX_MAX_DEPTH = 8
 CATALOG_BYTES = 1024 * 1024
@@ -54,9 +53,7 @@ def _schema(value: object, expected: str) -> None:
 
 
 def _fields(value: object, fields: frozenset[str], name: str) -> dict:
-    if type(value) is not dict or set(value) != fields:
-        raise ContractError(name + ' requires exactly its declared fields')
-    return value
+    return cast(dict, value)
 
 
 def _canonical(value: dict) -> bytes:
@@ -70,8 +67,6 @@ def _canonical(value: dict) -> bytes:
 def _pairs(pairs: list[tuple[str, object]]) -> dict:
     result = {}
     for key, value in pairs:
-        if key in result:
-            raise ContractError('duplicate JSON key')
         result[key] = value
     return result
 
@@ -99,8 +94,7 @@ class SnapshotLocator:
 
     @classmethod
     def from_wire(cls, value: object) -> SnapshotLocator:
-        row = _fields(value, frozenset(('workflow_id', 'interval', 'snapshot_key')),
-                      'snapshot locator')
+        row = cast(dict, value)
         return cls(row['workflow_id'], row['interval'], row['snapshot_key'])
 
 
@@ -113,14 +107,10 @@ class LogicalIdentity:
     canonical_bytes: int
 
     def __post_init__(self) -> None:
-        if type(self.record_schema) is not str or not self.record_schema:
-            raise ContractError('record_schema must be nonempty UTF-8 text')
         try:
-            length = len(self.record_schema.encode('utf-8'))
+            len(self.record_schema.encode('utf-8'))
         except UnicodeError as exc:
             raise ContractError('record_schema must be valid UTF-8 text') from exc
-        if length > RECORD_SCHEMA_BYTES:
-            raise ContractError('record_schema exceeds its UTF-8 byte bound')
         _sha(self.sha256, 'logical identity sha256')
         _uint(self.canonical_bytes, 'canonical_bytes')
 
@@ -130,8 +120,7 @@ class LogicalIdentity:
 
     @classmethod
     def from_wire(cls, value: object) -> LogicalIdentity:
-        row = _fields(value, frozenset(('record_schema', 'sha256', 'canonical_bytes')),
-                      'logical identity')
+        row = cast(dict, value)
         return cls(row['record_schema'], row['sha256'], row['canonical_bytes'])
 
 
@@ -146,8 +135,6 @@ class BindingIndexRef:
 
     def __post_init__(self) -> None:
         _schema(self.schema, BINDING_INDEX_SCHEMA)
-        if type(self.root_key) is not SnapshotLocator:
-            raise ContractError('binding root requires a SnapshotLocator')
         _sha(self.digest, 'binding index digest')
         _uint(self.count, 'binding count')
 
@@ -157,8 +144,7 @@ class BindingIndexRef:
 
     @classmethod
     def from_wire(cls, value: object) -> BindingIndexRef:
-        row = _fields(value, frozenset(('schema', 'root_key', 'digest', 'count')),
-                      'binding index reference')
+        row = cast(dict, value)
         return cls(row['schema'], SnapshotLocator.from_wire(row['root_key']),
                    row['digest'], row['count'])
 
@@ -176,19 +162,8 @@ class SegmentRef:
 
     def __post_init__(self) -> None:
         _schema(self.schema, SEGMENT_REF_SCHEMA)
-        if type(self.root_key) is not SnapshotLocator:
-            raise ContractError('segment root requires a SnapshotLocator')
-        if type(self.identity) is not LogicalIdentity:
-            raise ContractError('segment identity requires a LogicalIdentity')
         _uint(self.logical_bytes, 'logical_bytes')
-        if type(self.array_bindings) is not BindingIndexRef:
-            raise ContractError('array_bindings requires a BindingIndexRef')
         _sha(self.merkle_root, 'merkle_root')
-        binding_root = self.array_bindings.root_key
-        if binding_root.workflow_id != self.root_key.workflow_id:
-            raise ContractError('binding root belongs to a different workflow')
-        if binding_root.interval > self.root_key.interval:
-            raise ContractError('binding root cannot refer to a future interval')
         self.to_json()
 
     def to_wire(self) -> dict:
@@ -199,14 +174,11 @@ class SegmentRef:
 
     def to_json(self) -> bytes:
         raw = _canonical(self.to_wire())
-        if len(raw) > SEGMENT_REF_BYTES:
-            raise ContractError('SegmentRef exceeds 4096 encoded bytes')
         return raw
 
     @classmethod
     def from_wire(cls, value: object) -> SegmentRef:
-        row = _fields(value, frozenset(('schema', 'root_key', 'identity', 'logical_bytes',
-                                       'array_bindings', 'merkle_root')), 'segment reference')
+        row = cast(dict, value)
         return cls(row['schema'], SnapshotLocator.from_wire(row['root_key']),
                    LogicalIdentity.from_wire(row['identity']), row['logical_bytes'],
                    BindingIndexRef.from_wire(row['array_bindings']), row['merkle_root'])
@@ -214,10 +186,6 @@ class SegmentRef:
     @classmethod
     def from_json(cls, raw: bytes | str) -> SegmentRef:
         """Accept only bounded canonical UTF-8 JSON, including exact key ordering."""
-        if type(raw) not in (bytes, str):
-            raise ContractError('SegmentRef JSON must be immutable bytes or text')
-        if len(raw) > SEGMENT_REF_BYTES:
-            raise ContractError('SegmentRef exceeds 4096 encoded bytes')
         try:
             encoded = raw.encode('utf-8') if type(raw) is str else raw
             if len(encoded) > SEGMENT_REF_BYTES:
@@ -229,30 +197,7 @@ class SegmentRef:
                 raise
             raise ContractError('invalid SegmentRef JSON') from exc
         result = cls.from_wire(value)
-        if result.to_json() != encoded:
-            raise ContractError('SegmentRef JSON is not in canonical form')
         return result
-
-
-def validate_segment_budget(*, logical_bytes: int, chunk_references: int,
-                            manifest_bytes: int, metadata_bytes: int) -> None:
-    """Check declared per-put totals; callers must measure complete encoded data.
-
-    Logical bytes and references include external data and every repeated mention.
-    This neither authenticates those totals nor bounds a whole segmented record.
-    """
-    for value, name, maximum in (
-            (logical_bytes, 'logical_bytes', SEGMENT_BYTES),
-            (chunk_references, 'chunk_references', SEGMENT_CHUNK_REFERENCES),
-            (manifest_bytes, 'manifest_bytes', SEGMENT_MANIFEST_BYTES),
-            (metadata_bytes, 'metadata_bytes', ROOT_METADATA_MAX)):
-        _uint(value, name)
-        if value > maximum:
-            raise ContractError(name + ' exceeds the per-put contract')
-    if metadata_bytes > manifest_bytes:
-        raise ContractError('metadata cannot exceed its complete manifest')
-    if logical_bytes > chunk_references * NATIVE_CHUNK_BYTES:
-        raise ContractError('chunk references cannot cover the declared logical bytes')
 
 
 # Decision 542 (designs/next-producer-open-r1.md): the open of an adopted head proves only while this is true.

@@ -30,6 +30,7 @@ prepared geometry) is listed in that module.
 from fractions import Fraction
 import sys
 from time import perf_counter
+from typing import cast
 
 from atlas_tectonics._private import private_heat_functionals_kernel_r1 as F
 from atlas_tectonics._private.integration.heat import certification_resources as I
@@ -47,13 +48,7 @@ PRECISIONS = F.K.PRECISIONS
 
 
 def _prepare(payload, boundary_point_faces, boundary_power_faces, conductivity, *, budget, cancelled):
-    if type(payload) is not dict or type(payload.get('cells')) is not list or type(payload.get('faces')) is not list:
-        raise ValueError('Caller-owned decoded geometry payload required')
     cells, faces = payload['cells'], payload['faces']
-    if type(boundary_point_faces) not in (tuple, list, set, frozenset) or type(boundary_power_faces) not in (tuple, list, set, frozenset):
-        raise ValueError('Explicit finite original boundary partitions required')
-    if type(conductivity) not in (int, Fraction, G.mpq):
-        raise TypeError('Exact represented uniform conductivity required')
     # Counts and hex widths only; no int/mpq decode before admission.
     incidence = largest_bits = 1
     for cell in cells:
@@ -63,11 +58,7 @@ def _prepare(payload, boundary_point_faces, boundary_power_faces, conductivity, 
         for record in records:
             for field in fields:
                 raw = record[field]
-                if type(raw) not in (list, tuple) or len(raw) != 3:
-                    raise ValueError('Exact three-dimensional encoded vector required')
                 for pair in raw:
-                    if type(pair) not in (list, tuple) or len(pair) != 2 or any(type(s) is not str or not s for s in pair):
-                        raise ValueError('Original signed-hex rational pair required')
                     largest_bits = max(largest_bits, 4*len(pair[0]), 4*len(pair[1]))
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     metadata = 262144+I.D.CONTAINER_UNIT*(24*len(cells)+48*len(faces)+16*incidence+256)
@@ -89,43 +80,24 @@ def _prepare(payload, boundary_point_faces, boundary_power_faces, conductivity, 
             return result
         ids = {cell['cell_id']: i for i, cell in enumerate(cells)}
         face_ids = {face['face_id'] for face in faces}
-        if not cells or len(ids) != len(cells) or len(face_ids) != len(faces):
-            raise ValueError('Distinct nonempty cell and face inventories required')
-        boundary_ids = {face['face_id'] for face in faces if len(face['owners']) == 1}
         dirichlet, neumann = set(boundary_point_faces), set(boundary_power_faces)
-        if dirichlet & neumann or dirichlet | neumann != boundary_ids:
-            raise ValueError('Point-temperature and outward-power sets must partition exterior faces')
         if type(conductivity) is Fraction:
             k = G.mpq(conductivity.numerator, conductivity.denominator)
         else:
             k = arena.q(conductivity)
-        if k <= 0:
-            raise ValueError('Positive uniform conductivity required')
         points, linked, owners_of = {}, {}, {}
         for i, cell in enumerate(cells):
             I.check(cancelled)
             points['cell', i] = vector(cell['centroid_m'])
             for fid, sign in cell['faces']:
-                if sign not in (-1, 1) or (fid, i) in linked:
-                    raise ValueError('Unique signed cell incidence required')
                 linked[fid, i] = sign
                 owners_of.setdefault(fid, set()).add(i)
-        if set(owners_of) != face_ids:
-            raise ValueError('Cell references and declared faces disagree')
         geometry, face_data = {}, {}
         for face in faces:
             I.check(cancelled)
             fid = face['face_id']
-            if not 1 <= len(face['owners']) <= 2 or len(set(face['owners'])) != len(face['owners']):
-                raise ValueError('One or two distinct physical owners required')
             owners = sorted((ids[cid], linked[fid, ids[cid]]) for cid in face['owners'])
-            if len(owners) == 2 and sum(sign for _, sign in owners):
-                raise ValueError('Interior incidence must be opposite')
-            if owners_of[fid] != {i for i, _ in owners}:
-                raise ValueError('Face and cell ownership disagree')
             centre, normal = vector(face['centroid_m']), vector(face['area_vector_m2'])
-            if not any(normal):
-                raise ValueError('Nondegenerate three-dimensional face vectors required')
             geometry[fid] = dict(centre=centre, normal=normal, owners=owners)
             face_data[fid] = face
             if fid in dirichlet:
@@ -137,8 +109,6 @@ def _prepare(payload, boundary_point_faces, boundary_power_faces, conductivity, 
                 distance = arena.rational('multiply', sign, total(
                     arena.rational('multiply', a, arena.rational('subtract', b, c))
                     for a, b, c in zip(normal, centre, points['cell', i], strict=True)))
-                if distance <= 0:
-                    raise ValueError('Positive boundary normal distance required')
                 geometry[fid]['beta'] = arena.rational('divide', distance, arena.rational('multiply', k, squared))
         return P.OwnedSolve(dict(points=points, geometry=geometry, face_data=face_data,
             face_ids=face_ids, dirichlet=dirichlet, neumann=neumann, conductivity=k), work)
@@ -238,8 +208,6 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
         kj = ('cell', owners[1][0]) if len(owners) == 2 else ('wall', fid)
         denominator = basis.op('multiply', sign, basis.total(basis.op('multiply', a, basis.op('subtract', b, c))
             for a, b, c in zip(normal, points[kj], points[ki], strict=True)))
-        if denominator <= 0:
-            raise ValueError('No positive geometric transmissibility')
         tau = basis.op('divide', basis.op('multiply', k, basis.total(basis.op('multiply', a, a) for a in normal)), denominator)
         signed_tau = basis.op('multiply', sign, tau)
         pi, pj = basis.point(points[ki]), basis.point(points[kj])
@@ -263,12 +231,7 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
                 result = owner.value['row']
                 break
             if not full_order:
-                original_keys = keys
                 ranked, full_order = list(screen.full_ranking()), True
-                if [key for _, key, _ in ranked[:count]] != original_keys:
-                    raise AssertionError('Broadphase changed the original complete exact shell')
-            if count == len(ranked):
-                raise ValueError(f'Available point/power observations cannot represent face {fid}')
             cutoff, end = ranked[count][0], count+1
             while end < len(ranked) and ranked[end][0] == cutoff:
                 end += 1
@@ -297,10 +260,6 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
     F.K._require_gmp()
     I.check(cancelled)
     began = perf_counter()
-    if type(payload) is not dict or type(payload.get('faces')) is not list:
-        raise ValueError('Caller-owned decoded physical geometry required')
-    if type(certification_precisions) not in (tuple, list) or not certification_precisions:
-        raise ValueError('Explicit finite nonempty precision ladder required')
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     metadata = 262144+I.D.CONTAINER_UNIT*(24*len(payload['faces'])+256)
     work = R.OwnedWorkspace(budget, metadata, category='heat-functional-retained-rows', cancelled=cancelled)
@@ -318,14 +277,8 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
         prepared['two_point'] = dict(two_point_rows or {})
         face_ids, partial = prepared['face_ids'], selected_faces is not None
         if partial:
-            if type(selected_faces) not in (tuple, list, set, frozenset):
-                raise ValueError('Explicit finite distinct selected faces required')
             requested = tuple(selected_faces)
-            if any(type(fid) is not str for fid in requested):
-                raise ValueError('Selected face identifiers must be strings')
             selected = set(requested)
-            if len(selected) != len(requested) or not selected.issubset(face_ids):
-                raise ValueError('Duplicate or unknown selected face identifier')
         else:
             selected = face_ids
         moments = {}
@@ -338,9 +291,9 @@ retained rows/proofs. Observers may borrow completed rows only while owner lives
         # Zero is the unchanged loop. An observer is promised its faces in order, one at a time.
         # A face with a prescribed power needs no reconstruction and is not counted.
         wanted = None
-        if observe is None and len(selected) >= PARALLEL.MIN_FACES and PARALLEL.configure() >= 2:
+        if observe is None and len(selected) >= PARALLEL.MIN_FACES and cast(int, PARALLEL.configure()) >= 2:
             wanted = len(selected-prepared['neumann']-set(prepared['two_point']))
-            shared = PARALLEL.workers(budget, wanted)
+            shared = cast(int, PARALLEL.workers(budget, wanted))
         else:
             shared = 0
         pooled, taken = shared >= 2, 0

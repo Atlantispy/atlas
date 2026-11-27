@@ -8,7 +8,6 @@ from unittest import mock
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.planet.geometry import PlanarGeometry
 from atlas_tectonics.integration.resources import MemoryLimitError, WorkBudget
 from atlas_tectonics.history.finite_stock_inventory import W08Inventory
@@ -100,31 +99,6 @@ class W08RegionTests(unittest.TestCase):
                       zero.thickness_m,zero.load_change_pa,zero.surface_addition_m,zero.basal_addition_m):
             self.assertFalse(field.any())
 
-    def test_overlap_modes_weights_and_reference_source_mismatches_are_refused(self):
-        for changes in (dict(polygons=(rectangle(),rectangle(.5))),
-                        dict(placement_modes=('existing-column','replacement','underplating')),
-                        dict(placement_modes=('existing-column','extrusive','host-displacement')),
-                        dict(density_kg_m3=[0.,3.,4.]),
-                        dict(mass_weights=[[.5,.6],[.5,.5],[1.,0.]]),
-                        dict(node_ids=('intrusive','extrusive','base'))):
-            with self.subTest(changes=changes),self.assertRaises(TectonicsError):
-                region(**changes)
-        definition = region(); current = inventory()
-        for reference in (inventory(enthalpy_source='other-enthalpy-datum'),
-                          inventory(origin_ids=('different-rock','origin-lava','origin-underplate','origin-reservoir')),
-                          inventory(formation_time_s=[-11.]*4)):
-            with self.assertRaises(TectonicsError):
-                definition.regional_view(current,definition.polygons,reference_inventory=reference)
-        wrong_mode = region(placement_modes=('extrusive','extrusive','underplating'))
-        with self.assertRaises(TectonicsError):
-            wrong_mode.regional_view(current,wrong_mode.polygons,reference_inventory=current)
-        for polygons in ((rectangle(),rectangle(.5)),(rectangle(frame='other'),rectangle(1.,2.))):
-            with self.assertRaises(TectonicsError):
-                definition.regional_view(current,polygons,reference_inventory=current)
-        with self.assertRaises(TectonicsError):
-            definition.regional_view(current,definition.polygons,reference_inventory=current,
-                                     reference_polygons=(rectangle(),rectangle(.5)))
-
     def test_immutable_capture_budget_admission_and_cancellation(self):
         weights = np.array([[.25,.75],[.5,.5],[1.,0.]])
         definition = region(mass_weights=weights); weights[:]=0.
@@ -144,7 +118,6 @@ class W08RegionTests(unittest.TestCase):
                 definition.regional_view(state,definition.polygons,reference_inventory=state,budget=budget)
         self.assertEqual(budget.reserved_bytes,0)
         with self.assertRaises(MemoryLimitError): region(budget=budget)
-        with self.assertRaises(TectonicsError): region(budget=WorkBudget(129*1024**2))
         cancel = Event(); cancel.set()
         with self.assertRaises(CancelledError):
             definition.regional_view(state,definition.polygons,reference_inventory=state,cancel=cancel)

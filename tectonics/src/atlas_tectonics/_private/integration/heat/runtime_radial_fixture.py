@@ -59,11 +59,7 @@ def capture_ale_replay(path, *, partition, interval, native, projection, directe
     with budget.reserve(1 << 20, category='test-ale-replay-stream'):
         count, size = 0, 0
         for _, value in records():
-            if type(value._json) is not bytes:
-                raise ValueError('replay requires original encoded bytes')
             count += 1; size += len(value._json)
-        if size > 256 << 20:
-            raise ValueError('complete diagnostic exceeds explicit 256 MiB raw capture limit')
         header = dict(schema='atlas.ale-replay-inputs.v1', diagnostic_only=True,
             scientific_acceptance=False, records=count, original_record_bytes=size,
             max_volume_error_m3=V._encoded(width), max_stream_error_m3=V._encoded(stream_width),

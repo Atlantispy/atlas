@@ -149,7 +149,6 @@ def _boundary_row(boundaries, side):
 
 
 def validate_boundaries(boundaries):
-    _check_boundary_shape(boundaries)
     out = []
     for side in ("top", "bottom"):
         b = _boundary_row(boundaries, side)
@@ -165,7 +164,6 @@ def validate_boundaries(boundaries):
 
 
 def _prism_boundary_temperatures(boundaries):
-    _check_boundary_shape(boundaries)
     out = []
     for side in ("top", "bottom"):
         b = _boundary_row(boundaries, side)
@@ -226,9 +224,6 @@ def _prepare_reference_prism(layer, depth, weight, thicknesses, props, densities
 
 def _prepare_thermal(layer, depth, weight, thicknesses, props, densities, boundaries,
                      boundary_temperatures, reference_temperature, mechanical_fingerprint):
-    if (type(thicknesses) not in (list, tuple) or type(props) is not list
-            or not len(props) == len(thicknesses) == len(densities)):
-        raise ValueError("thermal properties must match the layers")
     n_layers = len(thicknesses)
     validate_thermal_layers(props, [p.get("name") if type(p) is dict else None for p in props])
     layer, depth, weight, tops = validate_support(layer, depth, weight, thicknesses)
@@ -239,8 +234,6 @@ def _prepare_thermal(layer, depth, weight, thicknesses, props, densities, bounda
         edges = tops[li]+np.concatenate([[0.], np.cumsum(weight[m])])
         edges[0], edges[-1] = tops[li], tops[li+1]           # validated above: the last face moves by round-off only
         lower[m], upper[m] = edges[:-1], edges[1:]
-    if not (np.all(lower < depth) and np.all(depth < upper)):
-        raise ValueError("a quadrature point lies outside its control volume")
     k = np.array([positive(props[i]["conductivity_w_m_k"], "conductivity") for i in layer])
     density = np.array([positive(densities[i], "density") for i in layer])
     rho_cp = np.array([positive(densities[i], "density")*positive(props[i]["heat_capacity_j_kg_k"], "heat capacity")
@@ -329,8 +322,6 @@ def prepare_propagator(thermal, dt):
 
 
 def _prepare_modes(thermal, dt, *, fixed_step):
-    if not valid_thermal(thermal):
-        raise ValueError("thermal preparation content differs from its prepared identity")
     dt = positive(dt, "time step")
     s = 1./np.sqrt(thermal.capacity)
     lam, q = eigh(s[:, None]*thermal.operator()*s[None, :])
@@ -382,8 +373,6 @@ class ArrheniusUpdate:
 
     @classmethod
     def of(cls, base):
-        if type(base) is not weakening.PreparedColumn:
-            raise ValueError("a reviewed prepared column is required")
         width = base.log_c.shape[1]
         constant = np.full((base.size, width), -math.inf)
         numerator = np.zeros((base.size, width))
@@ -399,8 +388,6 @@ class ArrheniusUpdate:
 
     def at(self, temperature):
         t = np.asarray(temperature)
-        if t.dtype.kind != "f" or t.shape != (self.base.size,) or not np.all(np.isfinite(t) & (t > 0)):
-            raise ValueError("temperature must be finite, positive and one value per material point")
         rt = R*t
         log_c = self.constant-self.numerator/rt[:, None]
         if not np.all(np.isfinite(log_c[self.base.active])):

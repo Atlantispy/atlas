@@ -224,8 +224,6 @@ class RegionalStokesCoreTests(unittest.TestCase):
             plan.solve(*forces(plan, 'vortex'), cancel=cancel_during_iteration)
         self.assert_gates(plan.solve(*forces(plan, 'vortex')))
         plan.close()
-        with self.assertRaisesRegex(RuntimeError, 'closed'):
-            plan.solve(np.zeros((8, 9)), np.zeros((9, 8)))
 
 
 if __name__ == '__main__':

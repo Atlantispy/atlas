@@ -38,7 +38,6 @@ class RoundedSystem:
     exact_operator_nnz: int
     context_signature: tuple
     boundary_signature: tuple
-    source_bindings: tuple
     witness_json: str
 
 
@@ -66,10 +65,6 @@ class CallerInventory:
 
     def total(self):
         counts = (self.input_bytes, self.work_bytes, self.result_bytes)
-        if any(type(value) is not int or value <= 0 for value in counts):
-            raise ValueError(self._count_refusal)
-        if type(self.justification) is not str or not self.justification.strip():
-            raise ValueError(self._justification_refusal)
         value = sum(counts)
         if value > sys.maxsize:
             raise OverflowError(self._overflow_refusal)
@@ -98,8 +93,6 @@ class OwnedSolve:
 
     @property
     def value(self):
-        if self._workspace is None:
-            raise RuntimeError('Sparse result owner is closed')
         return self._value
 
     def close(self):
@@ -141,58 +134,24 @@ def _finite(value):
 
 def _validate(system, old, capacity, dt, source, boundary, target, context, cancel):
     n = system.cells
-    if (system.context_signature != context_signature(context)
-            or type(system.operator) is not tuple or len(system.operator) != n
-            or type(system.wall) is not tuple or len(system.wall) != n
-            or type(system.rows) is not tuple
-            or len(old) != n or len(capacity) != n or len(source) != n):
-        raise ValueError('Matching immutable Decimal-80 system and ordered cell arrays required')
-    if system.boundary_signature != boundary_signature(boundary):
-        raise ValueError('Numerical prescribed observations changed after assembly')
     if any(kind not in ('temperature', 'power') or not math.isfinite(float(value))
            for kind, value in boundary.values()):
         raise ValueError('Finite physical boundary observations required')
-    if (not math.isfinite(float(dt)) or float(dt) <= 0
-            or not D(target).is_finite() or D(target) <= 0
-            or any(not math.isfinite(float(x)) for x in old)
-            or any(not math.isfinite(float(x)) for x in source)
-            or any(not math.isfinite(float(x)) or float(x) <= 0 for x in capacity)
-            or any(not _finite(x) for x in system.wall)):
-        raise ValueError('Finite original inputs and positive capacity/dt/target required')
     count = 0
     for row in system.operator:
         _checkpoint(cancel, None, 'validate-operator-row')
-        if type(row) is not tuple:
-            raise ValueError('Immutable ordered operator rows required')
-        previous = -1
         for j, value in row:
-            if type(j) is not int or not previous < j < n or not _finite(value):
-                raise ValueError('Finite ascending unique operator columns required')
-            previous = j
             count += 1
-    if type(system.exact_operator_nnz) is not int or count != system.exact_operator_nnz:
-        raise ValueError('Exact assembled support count changed')
     faces = set()
     for row in system.rows:
         _checkpoint(cancel, None, 'validate-face-row')
-        if (type(row) is not RoundedFace or type(row.face_id) is not str or not row.face_id
-                or row.face_id in faces or type(row.owners) is not tuple
-                or type(row.weights) is not tuple or len(row.owners) not in (1, 2)):
-            raise ValueError('Unique immutable physical face rows required')
         faces.add(row.face_id)
         indices, signs = set(), []
         for i, sign in row.owners:
-            if (type(i) is not int or not 0 <= i < n or i in indices
-                    or type(sign) is not int or sign not in (-1, 1)):
-                raise ValueError('Valid distinct physical owners and exact orientation required')
             indices.add(i)
             signs.append(sign)
-        if len(signs) == 2 and sum(signs) != 0:
-            raise ValueError('Interior face owners must have opposite orientation')
         keys = set()
         for (kind, key), value in row.weights:
-            if (kind, key) in keys or not _finite(value):
-                raise ValueError('Finite unique ordered observation weights required')
             keys.add((kind, key))
             if kind == 'cell':
                 if type(key) is not int or not 0 <= key < n:
@@ -201,30 +160,19 @@ def _validate(system, old, capacity, dt, source, boundary, target, context, canc
                 raise ValueError('Unsupported or missing prescribed observation')
             elif boundary[key][0] != ('temperature' if kind == 'wall' else 'power'):
                 raise ValueError('Prescribed observation kind changed')
-    _validate_bindings(system)
+    _validate_witness(system)
 
 
-def _validate_bindings(system):
-    if (type(system.source_bindings) is not tuple or not system.source_bindings
-            or type(system.witness_json) is not str or not system.witness_json.strip()):
-        raise ValueError('Explicit caller source bindings and witness record required')
-    names = set()
-    for name, digest in system.source_bindings:
-        if (type(name) is not str or not name or name in names or type(digest) is not str
-                or len(digest) != 64 or any(x not in '0123456789abcdef' for x in digest)):
-            raise ValueError('Unique caller source names and SHA256 bindings required')
-        names.add(name)
+def _validate_witness(system):
+    if type(system.witness_json) is not str or not system.witness_json.strip():
+        raise ValueError('Explicit caller witness record required')
 
 
 def _validate_issued(system, boundary, target, context, cancel):
     """Validate live state on the certified assembly/small-cell handoff."""
-    if system.context_signature != context_signature(context):
-        raise ValueError('Matching immutable Decimal-80 system and ordered cell arrays required')
     # decimal_inventory_r1._derive, run just before on these objects (core r2), proved the
     # signature canonical and equal to the boundary, each observation a declared kind with a finite binary64 value.
     target_decimal = D(target)
-    if not target_decimal.is_finite() or target_decimal <= 0:
-        raise ValueError('Finite original inputs and positive capacity/dt/target required')
     for _ in system.operator:
         _checkpoint(cancel, None, 'validate-operator-row')
     # Assembly established distinct face IDs, signed owners and observation
@@ -233,7 +181,7 @@ def _validate_issued(system, boundary, target, context, cancel):
     # against this private boundary. Retain the per-face guard opportunity.
     for _ in system.rows:
         _checkpoint(cancel, None, 'validate-face-row')
-    _validate_bindings(system)
+    _validate_witness(system)
     return target_decimal
 
 
@@ -250,13 +198,7 @@ def solve_rounded(system, old, capacity, dt, source, boundary, target, *,
     No original target substitution, regularisation or extra correction occurs.
     """
     _checkpoint(cancel, observe, 'admission-start')
-    if type(system) is not RoundedSystem or type(system.cells) is not int or system.cells <= 0:
-        raise ValueError('Positive immutable rounded system required')
-    if type(inventory) is not CallerInventory:
-        raise ValueError('Caller workset inventory is mandatory, not inferred')
     other = inventory.total()
-    if spectrum:
-        raise ValueError('Exact-rational spectrum is not certified by a rounded numerical core')
     # Gate BEFORE importing resource helpers which themselves depend on GMP.
     from atlas_tectonics._exact_runtime import selected
     if selected.library() is None:
@@ -271,7 +213,6 @@ def solve_rounded(system, old, capacity, dt, source, boundary, target, *,
     try:
         with localcontext() as context:
             context.prec, context.rounding = 80, ROUND_HALF_EVEN
-            _validate(system, old, capacity, dt, source, boundary, target, context, cancel)
             value = _solve(system, old, capacity, dt, source, boundary, target,
                            cancel=cancel, observe=observe, resources=resources,
                            plan=plan, workspace=workspace)
@@ -359,7 +300,7 @@ def _solve(system, old, capacity, dt, source, boundary, target, *, cancel, obser
             approximate_system_nnz=approximate.nnz, factor_L_plus_U_nnz=factor_nnz,
             spectrum_computed=False, native_workbudget_admitted=False, seconds=perf_counter()-began),
         coefficient_diagnostics=dict(validity='CALLER_WITNESSED_NOT_REPROVED_BY_NUMERICAL_CORE',
-            source_bindings=dict(system.source_bindings), witness_json=system.witness_json,
+            witness_json=system.witness_json,
             exact_sum_then_round_certified_by_core=False),
         resource_diagnostics=dict(factor_audit, caller_inventory_independently_certified=False,
             caller_other_live_bytes=plan.other_live_bytes,

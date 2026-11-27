@@ -7,7 +7,6 @@ Requires IEEE binary64 and gradual underflow, checked before using a filter.
 Temporary work is constant-sized; production callers own FILTER_BYTES before
 entry and preserve that owner if an escaping traceback retains the work.
 """
-from fractions import Fraction
 import math
 import struct
 import sys
@@ -15,9 +14,6 @@ import sys
 from atlas_tectonics._exact_runtime import selected
 
 _library = selected.library()
-_RATIONAL_TYPES = (int, Fraction) if _library is None else (
-    int, Fraction, _library.mpq, _library.mpz)
-_INTEGER_TYPES = (int,) if _library is None else (int, _library.mpz)
 FILTER_BYTES = 32768
 _INF = float('inf')
 _TINY = math.ulp(0.0)
@@ -57,10 +53,6 @@ def ratio_bounds(numerator, denominator):
     Positive division is monotone. Pad division AND power-of-two scaling
     independently outwards; this also covers subnormal rounding/underflow.
     """
-    if type(numerator) not in _INTEGER_TYPES or type(denominator) not in _INTEGER_TYPES:
-        raise TypeError('exact integer numerator and denominator required')
-    if denominator <= 0:
-        raise ValueError('positive exact denominator required')
     if not _available():
         return None
     if numerator == 0:
@@ -87,8 +79,6 @@ def ratio_bounds(numerator, denominator):
 
 
 def rational_bounds(value):
-    if type(value) not in _RATIONAL_TYPES:
-        raise TypeError('exact int, Fraction or selected GMP rational required')
     return ratio_bounds(value.numerator, value.denominator)
 
 
@@ -135,15 +125,11 @@ def _sign(value):
 
 
 def plane_bounds(coefficients):
-    if len(coefficients) != 4:
-        raise ValueError('four exact plane coefficients required')
     result = tuple(map(rational_bounds, coefficients))
     return None if any(value is None for value in result) else result
 
 
 def plane_side_from_bounds(coefficients, point):
-    if len(point) != 3:
-        raise ValueError('three exact point coordinates required')
     if coefficients is None:
         return None
     total = (-coefficients[3][1], -coefficients[3][0])
@@ -165,8 +151,6 @@ def plane_side(coefficients, point):
 
 
 def orientation2d(p, q, r):
-    if any(len(point) != 2 for point in (p, q, r)):
-        raise ValueError('three exact 2-D points required')
     values = tuple(rational_bounds(value) for point in (p, q, r) for value in point)
     if any(value is None for value in values):
         return None

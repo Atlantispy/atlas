@@ -347,20 +347,19 @@ imports, with no list file of package sources. A new build carries a new version
 so its identity differs; an edit of the source within one version does not change
 the identity. Prepared immutable inputs can retain their data digest.
 
-The source checkout keeps these strict checks on each operation. A packaged
-desktop payload can use a separate release policy: capture each backend once,
-then check fully again before saves, on reopen and on cache reads. The calculation
-is identical; only the frequency of checking whether code changed is different.
-A packaging marker and matching interpreter/command paths select this policy,
-not a user environment setting. The scientific identity stays the same between
-modes; saves record the producer mode separately. A different backend, runtime or
-version invalidates reuse, and evidence tools cannot turn a release run into a
-strict pass.
+Every run uses one execution: a checkout, a worker and the desktop start the same
+way, and no marker or environment setting selects another checking policy. A
+Debug run (`--run-profile`) only adds timing files or profiles and marks its
+receipt `run_mode: debug`; the calculation and scientific identity are unchanged.
+See the [execution policy](../../../docs/CODING_SAFETY.md#release-and-debug-runs).
 
-Within strict checks, deeply immutable constants can reuse their normalised
-representation while mutable constants, defaults and function bindings are
-re-examined. This avoids repeated formatting, not source verification. Focused
-controls deliberately mutate sources and functions and require refusal.
+No run checks its own code. Execution contexts, issued records and restarts do
+not re-hash or compare Atlas source files or loaded functions, and records no
+longer carry private source digests or a loaded-dependency identity. A run or
+stored state started under other code therefore continues rather than stopping;
+data, schema, input and stored-record checks are unchanged. Retained historical
+evidence hashes and the inventory pins that admit external evidence are data
+checks, not code checks.
 
 The [explicit final source constructor](../../optimisation/workbench/plan31/final/README.md#explicit-construction-and-data-boundary)
 can select a manifest-bound fixture route. It authenticates the selected manifest
@@ -703,8 +702,7 @@ recorded identity equals the current one; otherwise it is recomputed.
 A Debug restart can explicitly reuse a finished root after a reviewed shared
 source edit. The driver checks the earlier live provider issue and grid, then
 the workflow opener compares the stored collar and heat plan with the rebuilt
-admission under the original producer's execution proof. Fresh outputs record
-the current execution identity. A reviewed shared-home assignment adds exclusive
+admission. A reviewed shared-home assignment adds exclusive
 admission for protected moves. An interrupted move leaves a durable recovery
 reference. The driver validates that reference, finishes the move and records
 the active checkpoint before ordinary clients can enter again.

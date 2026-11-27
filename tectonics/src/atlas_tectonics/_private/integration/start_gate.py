@@ -30,6 +30,7 @@ import json
 import sys
 from hashlib import sha256
 from pathlib import Path
+from typing import cast
 
 from atlas_shared.errors import AtlasError
 from atlas_shared.machine import resources_monitor as MONITOR
@@ -66,11 +67,7 @@ def decide(key, *, measured=(), booking=None, machine=None, environ=None):
     names the record (path and SHA-256). ``booking``: None, or (bytes, basis) declared by whoever launches.
     ``machine``, ``environ``: the reading and the setting the memory limits are decided from (tests pass stand-ins).
     """
-    require(type(key) is dict and key and all(type(name) is str for name in key), 'an explicit gate key is required')
     measured = list(measured)
-    require(all(type(item) is tuple and len(item) == 2 and type(item[0]) is str and item[0] and _bytes(item[1])
-                for item in measured), 'each measured peak needs its record and positive integer bytes')
-    require(len({source for source, _ in measured}) == len(measured), 'a record was given twice')
     if booking is not None:
         require(type(booking) is tuple and len(booking) == 2 and _bytes(booking[0]) and type(booking[1]) is str
                 and booking[1].strip(), 'a declared booking needs positive integer bytes and its basis')
@@ -97,12 +94,7 @@ def admit(decision, available_bytes, flags=None):
     ``flags``: the interpreter's sys.flags unless given (tests pass a stand-in).
     """
     flags = sys.flags if flags is None else flags
-    require(getattr(flags, 'hash_randomization', None) == 0,
-            'production requires seed 0: run with PYTHONHASHSEED=0 and without -I or -E')
-    gate = decision.get('gate_bytes') if type(decision) is dict else None
-    if not (type(gate) is int and decision.get('schema') == SCHEMA and decision.get('basis') in (MEASURED, BOOKING)
-            and gate == gate_bytes(decision.get('predicted_peak_bytes'))):
-        raise StartGateRefused('start gate decision differs from its own prediction')
+    gate = cast(int, decision.get('gate_bytes') if type(decision) is dict else None)
     # A decision made before the gate has no limits, and its receipts are still validated.
     require('limits' not in decision or GATE.check_limits(decision['limits']),
             'start gate decision memory limits differ from the gate\'s arithmetic on their own entries')
@@ -123,8 +115,6 @@ ARGUMENT = '--start-gate'
 
 def stage_key(stage, interval):
     """The gate key of one route (1) stage: its name and interval number."""
-    require(type(stage) is str and stage and type(interval) is int and interval >= 0,
-            'a route (1) gate key needs the stage name and a non-negative integer interval')
     return {'route': 'fresh-interval', 'stage': stage, 'interval': interval}
 
 
@@ -153,7 +143,6 @@ def stage_peaks(paths, key):
     is the larger of the two, the stage peak. A record that does
     not qualify refuses; it is never skipped. The source is the resolved path and the SHA-256 of the bytes read.
     """
-    require(type(paths) in (list, tuple), 'stage records are given as a list of paths')
     found = []
     for path in paths:
         path = Path(path).resolve()
@@ -163,16 +152,12 @@ def stage_peaks(paths, key):
         except ValueError:
             record = None
         peak = _stage_peak(record, key)
-        require(peak is not None, 'not a completed PASS record of stage %r interval %r: %s' % (
-            key['stage'], key['interval'], path))
         found.append(('%s sha256=%s' % (path, sha256(raw).hexdigest()), peak))
     return found
 
 
 def stage_decision(key, *, records=(), booking_bytes=None, booking_basis=None):
     """decide() for one route (1) stage from its named records and a declared booking (both parts or neither)."""
-    require((booking_bytes is None) == (booking_basis is None),
-            'a declared booking needs both --booking-bytes and --booking-basis')
     booking = None if booking_bytes is None else (booking_bytes, booking_basis)
     return decide(key, measured=stage_peaks(records, key), booking=booking)
 
@@ -195,7 +180,6 @@ def encode(decision):
 
 def child_admit(text, available_bytes, flags=None):
     """A guarded child's start: its launcher's decision, admitted again against this process's free memory."""
-    require(type(text) is str, 'this run has no start gate decision: launch it with --peak-record or a booking')
     try:
         decision = json.loads(text)
     except ValueError:
@@ -210,7 +194,6 @@ def run_limits(decision):
     limits = decision.get('limits') if type(decision) is dict else None
     if limits is None:
         return dict(GATE.EARLIER_LIMITS)
-    require(GATE.check_limits(limits), 'start gate memory limits differ from the gate\'s arithmetic on their own entries')
     return {name: limits[name] for name in ('rss_bytes', 'free_floor_bytes', 'logical_budget_bytes')}
 
 
@@ -303,12 +286,7 @@ def release_admit(decision, available_bytes, physical_bytes, flags=None):
     flags = sys.flags if flags is None else flags
     require(getattr(flags, 'hash_randomization', None) == 0,
             'production requires seed 0: run with PYTHONHASHSEED=0 and without -I or -E')
-    if type(decision) is not dict:
-        raise StartGateRefused('release start gate decision differs from its own prediction')
     gate = decision.get('gate_bytes')
-    if not (type(gate) is int and decision.get('schema') == RELEASE_SCHEMA and decision.get('basis') == RELEASE_BASIS
-            and gate == release_gate_bytes(decision.get('predicted_peak_bytes'))):
-        raise StartGateRefused('release start gate decision differs from its own prediction')
     require(_bytes(physical_bytes), 'the release ledger needs the positive integer physical memory')
     cap = release_cap_bytes(available_bytes)
     if decision['predicted_peak_bytes'] > cap:

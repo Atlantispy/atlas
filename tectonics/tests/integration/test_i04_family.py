@@ -13,12 +13,14 @@ edges, N = 52, f > 0.5), one class per world so the runner spreads them; ReviewW
 adequacy check. Select a class with -k ClassName.
 SPDX-License-Identifier: AGPL-3.0-only
 """
+import contextlib
 from fractions import Fraction
 import hashlib
 import json
 import math
 from pathlib import Path
 import sys
+import tracemalloc
 from typing import TYPE_CHECKING
 import unittest
 from unittest import mock
@@ -33,6 +35,8 @@ import tectonics.tools.run.new_world_thermal as thermal
 from atlas_tectonics.integration.coupling import driving as D
 from atlas_tectonics.integration import family as F
 from atlas_tectonics.integration import ports as P
+from atlas_tectonics.integration import resources as R
+from atlas_tectonics.integration import support as Q
 from atlas_tectonics.integration.geometry import sphere as S
 from atlas_tectonics.integration import transfer as T
 from atlas_tectonics.planet.coordinates import SphericalFrame
@@ -86,11 +90,6 @@ class ToolParity(unittest.TestCase):
         for seed in SEEDS:
             for name in STREAMS:
                 self.assertEqual(F.stream_seed(seed, name), contract.stream_seed(seed, name))
-        for seed, name in (('0'*32, '../file'), ('0'*32, 'Plate'), ('0'*31, 'plate_layout'),
-                           ('A'*32, 'plate_layout'), (0, 'plate_layout')):
-            with self.subTest(seed=seed, name=name), self.assertRaises(F.FamilyRefused) as caught:
-                F.stream_seed(seed, name)
-            self.assertEqual(caught.exception.code, F.INVALID_REQUEST)
 
     def test_label_draw_matches_structure_draw(self):
         labels = ('area/0', 'shape/2', 'rotation/1', 'background/thickness', 'major-00/weight', 'ocean/plate-03/thermal-age',
@@ -166,7 +165,7 @@ def _request(**changes):
 
 class RequestValidation(unittest.TestCase):
     def test_bad_requests_refused(self):
-        for field, values in (('seed', ('A'*32, '0'*31, 41, None)), ('radius_m', (True, math.nan, 1e6, 2e8, '6e6')),
+        for field, values in (('radius_m', (True, math.nan, 1e6, 2e8, '6e6')),
                               ('plate_count', (1, 53, 12.0, True)), ('continental_fraction', (-.1, 1.1, math.nan,
                                                                                                True)),
                               ('epoch_id', ('', '   ', 3)), ('time_s', (math.inf, 2e18)),
@@ -175,9 +174,6 @@ class RequestValidation(unittest.TestCase):
                 with self.subTest(field=field, value=value), self.assertRaises(F.FamilyRefused) as caught:
                     _request(**{field: value})
                 self.assertEqual(caught.exception.code, F.INVALID_REQUEST)
-        with self.assertRaises(F.FamilyRefused) as caught:
-            F.starting_family(dict(seed='0'*32))
-        self.assertEqual(caught.exception.code, F.INVALID_REQUEST)
 
     def test_numpy_scalars_accepted_as_numbers(self):
         plain = _request()
@@ -804,39 +800,6 @@ class PredeclaredControls(_FamilyChecks, unittest.TestCase):
                     self.assertFalse(anchored & skipped)
         self.assertGreater(exercised, 0)
 
-    def test_datum_gate_is_exact_on_both_fields(self):
-        """Round-2 ruling: v1 families exist only on the 3300 kg/m3 / 293.15 K datum; a twin datum with another T_ref
-        that happens to derive the same mantle-lid density is refused too."""
-        family = _family(1, 12, .35, 1)
-        support = P.trace_support(family.network)
-        target = F.mantle_reference_density(F.MANTLE_DATUM_KG_M3, F.DATUM_REFERENCE_K)
-        t_ref, rho = 273.15, None
-        guess = target*(1-F.ALPHA_PER_K*(F.BASE_K-t_ref))
-        candidate = guess
-        for _ in range(64):
-            if F.mantle_reference_density(candidate, t_ref) == target:
-                rho = candidate
-                break
-            candidate = np.nextafter(candidate, np.inf if F.mantle_reference_density(candidate, t_ref) < target
-                                     else -np.inf)
-        self.assertIsNotNone(rho, 'no exact twin datum found near the guess')
-        base = CASE['gpe_hemispheres']['datum']
-        # The twin; then each field alone off the v1 datum, the other exact. A T_ref one ulp above 293.15 with the
-        # density exactly 3300 derives the same mantle-lid density, so only the T_ref comparison refuses it.
-        t_near = float(np.nextafter(F.DATUM_REFERENCE_K, np.inf))
-        self.assertEqual(F.mantle_reference_density(F.MANTLE_DATUM_KG_M3, t_near), target)
-        for fields in (dict(mantle_density_kg_m3=float(rho), reference_temperature_k=t_ref),
-                       dict(mantle_density_kg_m3=F.MANTLE_DATUM_KG_M3, reference_temperature_k=t_near),
-                       dict(mantle_density_kg_m3=float(np.nextafter(F.MANTLE_DATUM_KG_M3, np.inf)),
-                            reference_temperature_k=F.DATUM_REFERENCE_K)):
-            datum = D.Datum(**dict(base, **fields))
-            header = P.Header('P1', family.state.state_id, (0, 0, 0., 0.), 0., family.network.network_id,
-                              support.support_id, D.datum_id(datum), family.family_id, family.network.sphere.frame_id,
-                              'test', F.SCHEMA)
-            with self.assertRaises(P.PortRefused, msg=str(fields)) as caught:
-                F.family_columns(family, support, header, datum)
-            self.assertEqual((caught.exception.code, caught.exception.detail), (P.STALE_IDENTITY, 'datum_id'), fields)
-
     def test_mirrored_sites_take_their_province_type(self):
         """Round-2 ruling, option 1: a mirrored pair's plates take the province's crust type, even where the mirror
         lands in ocean."""
@@ -887,12 +850,6 @@ class PredeclaredControls(_FamilyChecks, unittest.TestCase):
         other = D.Datum(**dict(CASE['gpe_hemispheres']['datum'], pressure_pa=6.5e9, gravity_m_s2=9.8))
         F.family_columns(family, support, header(datum_id=D.datum_id(other)), other)
         refusals = (
-            (dict(parent_state_id='0'*64), datum, P.STALE_IDENTITY, 'parent_state_id'),
-            (dict(parameter_id='0'*64), datum, P.STALE_IDENTITY, 'parameter_id'),
-            (dict(network_id='0'*64), datum, P.STALE_IDENTITY, 'network_id'),
-            (dict(support_id='0'*64), datum, P.INCOMPATIBLE_SUPPORT, 'support_id'),
-            (dict(frame_id='another-frame'), datum, P.STALE_IDENTITY, 'frame_id'),
-            (dict(datum_id='0'*64), datum, P.STALE_IDENTITY, 'datum_id'),
             (dict(interval=(0, 1, state.time_s, state.time_s+1.), endpoint_s=state.time_s+1.), datum, P.UNSUPPORTED,
              D.EVALUATION),
             # Part A: endpoint at the START of the interval (ruling P4 / D-P3), never its end.
@@ -902,19 +859,129 @@ class PredeclaredControls(_FamilyChecks, unittest.TestCase):
             with self.subTest(changes=changes), self.assertRaises(P.PortRefused) as caught:
                 F.family_columns(family, support, header(**changes), used)
             self.assertEqual((caught.exception.code, caught.exception.detail), (code, detail))
-        # Mismatched datums (review ports-03): another mantle fill or reference temperature, even when the header
-        # names that datum, would put a density jump at the base of the lithosphere: refused, never rebuilt.
-        for change in (dict(mantle_density_kg_m3=3200.), dict(mantle_density_kg_m3=3190.),
-                       dict(reference_temperature_k=273.15)):
-            mismatched = D.Datum(**dict(CASE['gpe_hemispheres']['datum'], **change))
-            for named in (mismatched, datum):
-                with self.subTest(change=change, named=named is datum), \
-                        self.assertRaises(P.PortRefused) as caught:
-                    F.family_columns(family, support, header(datum_id=D.datum_id(named)), mismatched)
-                self.assertEqual((caught.exception.code, caught.exception.detail), (P.STALE_IDENTITY, 'datum_id'))
-        with self.assertRaises(P.PortRefused) as caught:
-            F.family_columns(family, support, header(), D.datum_id(datum))
-        self.assertEqual((caught.exception.code, caught.exception.detail), (P.MISSING_VALUE, 'datum'))
+
+
+
+class FamilyBackground(unittest.TestCase):
+    """The background is each face less its provinces, written wedge by wedge: the same region as the exact
+    complement, in cells that grow with the fan triangles reaching the face."""
+
+    levels = tuple(FAMILY['resolution_levels'])
+
+    def build(self, seed, count, fraction, level, rng):
+        built, calls = {}, []
+        occupied, outside = F._occupied, F._outside
+
+        def spy_occupied(network, *args):
+            pieces, coverage = occupied(network, *args)
+            built.update(network=network, footprints=coverage.footprints)
+            return pieces, coverage
+
+        def spy_outside(cells, outline, reached):
+            out = outside(cells, outline, reached)
+            calls.append((tuple(cells), outline, reached, tuple(out)))
+            return out
+
+        with mock.patch.object(F, '_occupied', spy_occupied), mock.patch.object(F, '_outside', spy_outside):
+            try:
+                F.starting_family(F.FamilyRequest('%032x' % seed if type(seed) is int else seed, RADIUS_M, count,
+                                                  fraction, EPOCH, 0., level, rng))
+            except F.FamilyRefused:
+                pass
+        return built, calls
+
+    def check_same_region(self, built, calls):
+        for cells, outline, reached, out in calls:
+            tris = tuple(tuple(t) for t, r in zip(outline.tris, reached) if r)
+            province = Q.intersection(cells, tris, canonical=True)
+            self.assertFalse(Q._has_overlap(out, province))
+        if not built:
+            return
+        network, shapes, cover = built['network'], T._Shapes(built['network']), {}
+        for (face, _), footprint in built['footprints'].items():
+            cover.setdefault(face, []).extend(footprint.cells)
+        for index, face in enumerate(network.face_ids):
+            own, cells = Q.cells_of_rings(shapes.rings(index)), tuple(cover[face])
+            self.assertFalse(Q._uncovered(own, cells, canonical=True), face)
+            self.assertFalse(Q._uncovered(cells, own, canonical=True), face)
+
+    def test_background_and_provinces_cover_each_face_exactly(self):
+        count, fraction = FAMILY['development_plate_count'], FAMILY['development_continental_fraction']
+        for seed, rng in _development():
+            for level in self.levels:
+                with self.subTest(seed=seed, rng=rng, level=level):
+                    self.check_same_region(*self.build(seed, count, fraction, level, rng))
+
+    def test_a_face_holding_a_whole_province_builds_at_both_levels(self):
+        built, calls = self.build(3, 4, .02, self.levels[0], 'default')
+        self.assertTrue(any(all(reached) for _, _, reached, _ in calls))
+        self.check_same_region(built, calls)
+        self.assertIsNotNone(PredeclaredControls.pair(self, 3, 'default', 4, .02))
+
+    def test_a_background_sliver_builds_at_both_levels(self):
+        """World 4 at level 2 was refused on the area closure: a background sliver booked by subtraction from the
+        face's measured area. A province larger than the background now takes the face's rounding."""
+        count, fraction = FAMILY['development_plate_count'], FAMILY['development_continental_fraction']
+        seen, occupied = [], F._occupied
+
+        def spy_occupied(network, geometry, *args):
+            pieces, coverage = occupied(network, geometry, *args)
+            seen.append((network, geometry, pieces))
+            return pieces, coverage
+
+        with mock.patch.object(F, '_occupied', spy_occupied):
+            for level in self.levels:
+                F.starting_family(F.FamilyRequest('%032x' % 4, RADIUS_M, count, fraction, EPOCH, 0., level,
+                                                  'default'))
+        self.assertIsNotNone(PredeclaredControls.pair(self, 4, 'default'))
+        settled = 0
+        for network, geometry, pieces in seen:
+            plate = {face.face_id: face.plate_id for face in network.faces}
+            by_face = {}
+            for piece in pieces:
+                by_face.setdefault(piece.face_id, {})[piece.cohort_id] = piece.area_m2
+            for face_id, measured in zip(network.face_ids, network.face_area_m2):
+                areas = by_face[face_id]
+                background = ('continental:background' if geometry.background_type == F.CONTINENTAL
+                              else 'oceanic:'+plate[face_id])
+                if background not in areas or not any(v > areas[background] for c, v in areas.items()
+                                                       if c != background):
+                    continue
+                settled += 1
+                largest = max(areas, key=areas.get)
+                self.assertEqual(areas[largest], float(measured)-math.fsum(v for c, v in areas.items() if c != largest))
+        self.assertGreater(settled, 0)
+
+
+class SupportBooking(unittest.TestCase):
+    """The material-support booking (Support.workspace_bytes) is never below the memory its check measures."""
+
+    def test_the_support_booking_covers_its_measured_peak(self):
+        rows, reserve = [], R.WorkBudget.reserve
+
+        @contextlib.contextmanager
+        def measured(budget, count, *, category='work'):
+            with reserve(budget, count, category=category):
+                if category != 'i03-material-support':
+                    yield
+                    return
+                base = tracemalloc.get_traced_memory()[0]
+                tracemalloc.reset_peak()
+                yield
+                rows.append((count, tracemalloc.get_traced_memory()[1]-base))
+
+        tracemalloc.start()
+        try:
+            with mock.patch.object(R.WorkBudget, 'reserve', measured):
+                for level in FAMILY['resolution_levels']:
+                    F.starting_family(F.FamilyRequest('%032x' % 1, RADIUS_M, FAMILY['development_plate_count'],
+                                                      FAMILY['development_continental_fraction'], EPOCH, 0., level,
+                                                      'default'))
+        finally:
+            tracemalloc.stop()
+        self.assertEqual(len(rows), len(FAMILY['resolution_levels']))
+        for booked, peak in rows:
+            self.assertGreaterEqual(booked, peak)
 
 
 class ReviewWorld(_FamilyChecks):

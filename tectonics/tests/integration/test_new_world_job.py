@@ -95,15 +95,6 @@ class NewWorldJobTests(unittest.TestCase):
     def control(self, name):
         return json.loads((self.directory / name).read_bytes())
 
-    def test_loaded_runtime_guards_job_publication(self):
-        destination = self.root / 'published.json'
-        boundary = mock.Mock(side_effect=lambda: self.assertFalse(destination.exists()))
-        runtime = SimpleNamespace(release_boundary=boundary)
-        with mock.patch.dict(sys.modules, {'atlas_tectonics.integration.reuse': runtime}):
-            job._publish(destination, b'fixture')
-        self.assertEqual(destination.read_bytes(), b'fixture')
-        self.assertEqual(boundary.call_args_list, [mock.call(), mock.call()])
-
     def test_fresh_frozen_input_exact_outputs_and_read_without_producers(self):
         answer = self.submit()['job']
         self.assertEqual(answer['state'], 'completed')

@@ -5,9 +5,9 @@ their original contracts. Only this owner's active support is materialised.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from contextlib import ExitStack
+from typing import cast
 
 from . import differential_geometry as D
-from . import volume as V
 from atlas_tectonics.integration.coupling.routing_views import (
     RoutingArena, _FailureOwner, _decode_workspace,
 )
@@ -70,8 +70,6 @@ class ComponentVolumeQueries:
         self._active = self._closed = False
 
     def __enter__(self):
-        if self._active or self._closed:
-            raise RuntimeError('component volume query owner cannot be re-entered')
         self._active = True
         return self
 
@@ -89,8 +87,6 @@ class ComponentVolumeQueries:
 
     def measure(self, logical_cell_id, *, endpoint, max_width_m3, max_leaves,
                 positive_witness=False, relative_error=None, _funded=None, _checkpoint=None, _component_index=None):
-        if not self._active:
-            raise RuntimeError('component volume query requires its active owner')
         try:
             return self._measure(logical_cell_id, endpoint=endpoint,
                 max_width_m3=max_width_m3, max_leaves=max_leaves,
@@ -101,11 +97,7 @@ class ComponentVolumeQueries:
 
     def _measure(self, logical_cell_id, *, endpoint, max_width_m3, max_leaves,
                  positive_witness, relative_error, _funded, _checkpoint, _component_index):
-        support, budget = self._support, self._budget
-        # Match the public wrapper's validation before any decode/admission.
-        if (type(support) is not D.DifferentialSupport or support._resource is not budget
-                or endpoint not in ('start', 'end')):
-            raise V.VolumeError('issued support, same budget and explicit endpoint required')
+        support, budget = cast(D.DifferentialSupport, self._support), self._budget
         with _QueryArena(budget) as arena:
             if self._owner is None:
                 stack = ExitStack()

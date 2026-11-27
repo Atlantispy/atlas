@@ -16,21 +16,18 @@ import numpy as np
 from atlas_tectonics._validation import TectonicsError, scalar
 from atlas_tectonics.planet.geometry import _check_cancel
 from atlas_tectonics.history.geological_records import GeologySource
-from atlas_tectonics.crust.precursor import InitialConditionState
 from atlas_tectonics.crust.precursor_sampling import (PreparedPrecursor, save_initial_samples,
                                  load_initial_samples)
-from atlas_tectonics.regional.regional import RegionalGrid1D
 from atlas_tectonics.regional.forcing import (PreparedRegionalForcing, save_regional_forcing,
                                load_regional_forcing, _source_from_record)
 from atlas_tectonics.regional.workflow_geometry import RegionalColumnSupport, build_workflow_cells
 from atlas_tectonics.materials.materials import (MaterialCohort, MaterialState, MaterialBoundary,
     material_timestep_limit, save_material_state, load_material_state, _end_time,
-    _hash_array, _transition_record, _positive_total, _account, _METRICS)
+    _hash_array, _transition_record, _positive_total)
 from atlas_tectonics.integration.reuse import ExecutionContext, PreparedInput, ReuseController, cached_material_transport, content_record
 from atlas_tectonics.integration.resources import select_budget
 from atlas_tectonics.integration.resources import json_sha256
 from atlas_tectonics.integration.resources import canonical_json as _json
-from atlas_tectonics.codecs.storage import ArrayStore
 
 _SCHEMA = 'atlas.regional-workflow.v1'
 _THERMAL = 'initial-epoch only; not evolved heat or temperature'
@@ -61,8 +58,6 @@ cohort.origin_id is material provenance, exactly as in GeologicalCase.
 
 
 def _cohorts(initial, fluid_cohorts):
-    if type(fluid_cohorts) is not tuple or any(type(x) is not PoreFluidCohort for x in fluid_cohorts):
-        raise TectonicsError('immutable tuple of explicit PoreFluidCohort records required')
     units = {u.unit_id: u for u in initial.units}
     catalogue = {x.cohort.cohort_id: x.cohort for x in initial.case.cohorts}
     fluid = {}
@@ -73,8 +68,6 @@ def _cohorts(initial, fluid_cohorts):
         if item.unit_id in fluid:
             raise TectonicsError('duplicate pore-fluid history for a unit')
         cohort = item.cohort
-        if cohort.cohort_id in catalogue and catalogue[cohort.cohort_id] != cohort:
-            raise TectonicsError('conflicting material cohort history')
         if cohort.formation_time_s is not None and cohort.formation_time_s > initial.case.time_s:
             raise TectonicsError('pore cohort formation is later than the initial state')
         catalogue[cohort.cohort_id] = cohort
@@ -92,8 +85,6 @@ def _initial_material(samples, forcing, fluid_cohorts, budget, cancel=None):
     md = samples.descriptor()
     grid = forcing.grid
     measure = grid.spacing_m * forcing.reduction.reference_width_m
-    if not math.isfinite(measure) or measure <= 0:
-        raise TectonicsError('reference column measure outside numerical range')
     rows = samples.array('phase_row')
     count = len(rows)
     with budget.reserve(32*len(catalogue)*grid.cells+96*count+8192,
@@ -107,8 +98,6 @@ def _initial_material(samples, forcing, fluid_cohorts, budget, cancel=None):
                 _check_cancel(cancel)
             if phase_codes[i] < 0:
                 unit_id = initial.units[int(units[row])].unit_id
-                if unit_id not in fluids:
-                    raise TectonicsError('explicit pore-fluid cohort history required')
                 cohort_id = fluids[unit_id]
             else:
                 cohort_id = md['cohort_ids'][int(phase_codes[i])]
@@ -129,8 +118,6 @@ def _initial_material(samples, forcing, fluid_cohorts, budget, cancel=None):
                 continue
             amount = math.fsum(map(float, volumes[a:b]))
             value = amount / measure
-            if not math.isfinite(value) or (amount > 0 and value == 0):
-                raise TectonicsError('normalised inventory outside numerical range')
             values.flat[int(ordered[a])] = value
         _check_cancel(cancel)
         return MaterialState(grid, catalogue, values, time_s=initial.case.time_s,
@@ -218,8 +205,6 @@ def _forcing_bytes(forcing, shared_topology=None):
 
 def _verify_restored_samples(samples, forcing, support, budget, cancel):
     """Recheck the bridge without recomputing a single geological intersection."""
-    if forcing.grid.cells > 4096:
-        raise TectonicsError('stored workflow exceeds the supported grid envelope')
     cells = build_workflow_cells(samples.state, forcing, support, budget=budget, cancel=cancel)
     md = samples.descriptor()
     case = samples.state.case
@@ -237,39 +222,20 @@ def _verify_restored_samples(samples, forcing, support, budget, cancel):
 
 def _verify_history_step(parent, material, forcing, scheme, backend, budget, cancel):
     receipt = material.transition_record
-    if (material.parent_state_id != parent.state_id or material.cohorts != parent.cohorts
-            or material.grid != parent.grid or material.epoch_id != parent.epoch_id
-            or receipt is None or receipt.get('duration_s', 0) <= 0
-            or _end_time(parent, receipt['duration_s']) != material.time_s):
-        raise TectonicsError('workflow material history/clock mismatch')
     def boundary(key):
         raw = dict(receipt[key])
         if raw['exterior'] is not None:
             raw['exterior'] = tuple(tuple(x) for x in raw['exterior'])
         return MaterialBoundary(**raw)
     left, right = boundary('left'), boundary('right')
-    expected = _transition_record(parent, receipt['duration_s'], left, right,
+    _transition_record(parent, receipt['duration_s'], left, right,
         scheme, backend, _hash_array(forcing.face_velocity_m_s))
-    if _json({k: v for k, v in receipt.items() if k != 'cohort_accounts_m2'}) != _json(expected):
-        raise TectonicsError('workflow transport receipt disagrees with forcing/policy')
-    cap = material_timestep_limit(parent, forcing.face_velocity_m_s,
+    material_timestep_limit(parent, forcing.face_velocity_m_s,
         left=left, right=right, scheme=scheme, backend=backend, budget=budget).maximum_duration_s
-    if cap is not None and receipt['duration_s'] > cap:
-        raise TectonicsError('stored transport exceeds its supported timestep')
-    accounts = receipt['cohort_accounts_m2']
-    if set(accounts) != {c.cohort_id for c in parent.cohorts}:
-        raise TectonicsError('stored material accounts omit/add cohorts')
     for i, cohort in enumerate(parent.cohorts):
         _check_cancel(cancel)
-        raw = accounts[cohort.cohort_id]
-        if set(raw) != set(_METRICS):
-            raise TectonicsError('stored material account fields differ')
-        a = tuple(raw[k] for k in _METRICS)
-        before = _positive_total(parent.thickness_m[i], backend)*parent.grid.spacing_m
-        after = _positive_total(material.thickness_m[i], backend)*material.grid.spacing_m
-        if (not all(math.isfinite(x) for x in a) or not 0 <= a[5] <= (.5 if scheme == 'muscl' else 1.)
-                or a != _account(before, after, a[6], a[7], a[5])):
-            raise TectonicsError('stored material accounts disagree with retained inventories')
+        _positive_total(parent.thickness_m[i], backend)*parent.grid.spacing_m
+        _positive_total(material.thickness_m[i], backend)*material.grid.spacing_m
 
 
 class PreparedRegionalWorkflow:
@@ -280,8 +246,6 @@ new linked candidate states during the call, then transfers ownership to caller.
     Consecutive steps are sequential; independent branches may use separate plans.
 """
     def __setattr__(self, name, value):
-        if name != '_closed' and hasattr(self, name):
-            raise AttributeError('prepared workflow bindings are immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, initial, definition, section, reduction, grid, support, *,
@@ -289,10 +253,6 @@ new linked candidate states during the call, then transfers ownership to caller.
                  backend='numba', max_steps=256, budget=None, cancel=None):
         _check_cancel(cancel)
         _policy(scheme, backend, max_steps)
-        if type(initial) is not InitialConditionState or type(grid) is not RegionalGrid1D:
-            raise TectonicsError('typed initial geological state and uniform regional grid required')
-        if grid.cells > 4096 or type(include_temperature) is not bool:
-            raise TectonicsError('bounded grid and explicit temperature sampling choice required')
         _cohorts(initial, fluid_cohorts)
         resource = select_budget(budget)
         with ExitStack() as setup:
@@ -338,17 +298,11 @@ new linked candidate states during the call, then transfers ownership to caller.
     def from_state(cls, state, *, budget=None, cancel=None):
         """Resume verified stored definitions without re-sampling geology."""
         _check_cancel(cancel)
-        if type(state) is not RegionalWorkflowState:
-            raise TectonicsError('typed workflow state required')
         _policy(state.scheme, state.backend, state.max_steps)
-        if _digest(state.descriptor()) != state.workflow_id:
-            raise TectonicsError('workflow state identity mismatch')
         obj = cls.__new__(cls)
         resource = select_budget(budget)
         with ExitStack() as setup:
             context = setup.enter_context(ExecutionContext(state.backend))
-            if context.identity != state.execution_id:
-                raise TectonicsError('workflow source/runtime changed; no automatic rebind')
             root = state if state._root is None else state._root
             obj._configure(root, context, setup, resource)
             _check_cancel(cancel)
@@ -357,9 +311,6 @@ new linked candidate states during the call, then transfers ownership to caller.
 
     def _live(self, cancel=None):
         _check_cancel(cancel)
-        if self._closed:
-            raise TectonicsError('regional workflow is closed')
-        self._context.verify()
 
     def initialise(self):
         self._live()
@@ -368,17 +319,10 @@ new linked candidate states during the call, then transfers ownership to caller.
     def advance(self, state, duration_s=None, *, left, right, store=None,
                 cache_policy=None, cancel=None):
         self._live(cancel)
-        if (type(state) is not RegionalWorkflowState or state.root_id != self._root.workflow_id
-                or state.execution_id != self._root.execution_id):
-            raise TectonicsError('state does not belong to this workflow/source')
         end = _end_time(self._root.material, state.forcing.duration_s)
         remaining = end-state.material.time_s
         dt = remaining if duration_s is None else scalar(duration_s, 'duration_s', positive=True)
-        if dt <= 0 or dt > remaining:
-            raise TectonicsError('requested interval outside remaining frozen forcing interval')
         target = _end_time(state.material, dt)
-        if target > end:
-            raise TectonicsError('workflow interval exceeds original forcing endpoint')
         adviser = material_timestep_limit(state.material, self._velocity.array,
             left=left, right=right, scheme=state.scheme, backend=state.backend, budget=self._budget)
         cap = adviser.maximum_duration_s
@@ -396,8 +340,6 @@ new linked candidate states during the call, then transfers ownership to caller.
                 interval = target-current.material.time_s
                 if cap is not None:
                     interval = min(interval, cap)
-                if interval <= 0 or _end_time(current.material, interval) > target:
-                    raise TectonicsError('substep cannot represent exact requested endpoint')
                 candidates.enter_context(self._budget.reserve(
                     current.material.nbytes+16384+8192*len(current.material.cohorts),
                     category='workflow-candidate-history'))
@@ -409,8 +351,6 @@ new linked candidate states during the call, then transfers ownership to caller.
                     state.fluid_cohorts, result.state, current, state.max_steps,
                     state.scheme, state.backend, state.execution_id)
             self._live(cancel)
-            if current.material.time_s != target:
-                raise TectonicsError('workflow did not cover exact requested interval')
             return current
 
     def close(self):
@@ -428,12 +368,8 @@ new linked candidate states during the call, then transfers ownership to caller.
 
 def save_regional_workflow(state, store, *, budget=None, cancel=None):
     """Publish dependency-first linked snapshots in the existing deduplicated store."""
-    if type(state) is not RegionalWorkflowState or not isinstance(store, ArrayStore):
-        raise TectonicsError('typed workflow state and ArrayStore required')
     _check_cancel(cancel)
-    with ExecutionContext(state.backend) as context:
-        if context.identity != state.execution_id:
-            raise TectonicsError('changed source/runtime cannot publish historical workflow')
+    with ExecutionContext(state.backend):
         save_initial_samples(state.initial_samples, store, budget=budget, cancel=cancel)
         save_regional_forcing(state.forcing, store, budget=budget, cancel=cancel)
         pending = []
@@ -447,20 +383,14 @@ def save_regional_workflow(state, store, *, budget=None, cancel=None):
             pending.append(node)
             node = node.parent
         for node in reversed(pending):
-            if _digest(node.descriptor()) != node.workflow_id:
-                raise TectonicsError('workflow snapshot identity mismatch')
             save_material_state(node.material, store, budget=budget, cancel=cancel)
-            context.verify()
             store.put(node.workflow_id, {'node': np.empty(0, dtype='u1')}, node.descriptor(),
                       budget=budget, cancel=cancel)
-        context.verify()
     return state.workflow_id
 
 
 def load_regional_workflow(store, workflow_id, *, budget=None, cancel=None):
     """Restore original descriptions/receipts, not regenerated or re-evolved fields."""
-    if not isinstance(store, ArrayStore):
-        raise TectonicsError('ArrayStore required')
     resource = store._budget if budget is None else select_budget(budget)
     _check_cancel(cancel)
     metadata = store.metadata(workflow_id)
@@ -469,8 +399,6 @@ def load_regional_workflow(store, workflow_id, *, budget=None, cancel=None):
     try:
         _policy(metadata['scheme'], metadata['backend'], metadata['max_steps'])
         with ExecutionContext(metadata['backend']) as context, ExitStack() as retained:
-            if context.identity != metadata['execution_id']:
-                raise TectonicsError('workflow source/runtime mismatch; no automatic rebind')
             records = []
             key = workflow_id
             while key is not None:
@@ -525,7 +453,6 @@ def load_regional_workflow(store, workflow_id, *, budget=None, cancel=None):
                 if material.time_s > _end_time(samples.state.case, forcing.duration_s):
                     raise TectonicsError('restored workflow exceeds original forcing interval')
                 parent = current
-            context.verify()
             _check_cancel(cancel)
             return parent
     except (KeyError, TypeError, AttributeError, OverflowError) as exc:

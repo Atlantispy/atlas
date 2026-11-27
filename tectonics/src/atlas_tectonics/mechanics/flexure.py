@@ -12,7 +12,7 @@ import math
 
 import numpy as np
 
-from atlas_tectonics._validation import FloatArray, TectonicsError, read_array as array, frozen, input_shape
+from atlas_tectonics._validation import FloatArray, read_array as array, frozen, input_shape
 from atlas_tectonics.integration.resources import elements, select_budget
 from atlas_tectonics.integration.resources import _immutable_deepcopy
 from atlas_tectonics.planet.parameters import FlexureParameters, PeriodicGrid1D, identity
@@ -41,8 +41,6 @@ class PeriodicFlexure:
     operator_id: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.grid, PeriodicGrid1D) or not isinstance(self.parameters, FlexureParameters):
-            raise TectonicsError("explicit grid and flexure parameters required")
         n = self.grid.cells // 2 + 1
         with select_budget(None).reserve(96 * n):
             k = np.arange(n, dtype=np.float64)
@@ -62,8 +60,6 @@ class PeriodicFlexure:
                 with np.errstate(all="ignore"):
                     gain[1:] = np.exp(-np.logaddexp(logs,
                                       math.log(self.parameters.restoring_pa_per_m)))
-            if np.any(~np.isfinite(gain)) or np.any(gain <= 0):
-                raise TectonicsError("flexure transfer outside numerical range")
             object.__setattr__(self, "_gain", frozen(gain))
         # Nested parameters, grid and method name all participate. This is not
         # a historical execution seal or an authentication of a saved result.
@@ -80,16 +76,12 @@ class PeriodicFlexure:
             # Amortise setup without creating a full-world spectrum. One row is a
             # coupled physical domain and must never be split to meet this target.
             return max(1, DEFAULT_FLEXURE_BATCH_BYTES // (8 * self.grid.cells))
-        if type(batch_loads) is not int or batch_loads <= 0:
-            raise TectonicsError("batch_loads must be a positive integer or None")
         return batch_loads
 
     def work_bytes(self, shape, *, batch_loads: int | None = None) -> int:
         """Bounded array-work estimate, not process RSS or retained operator bytes."""
         batch_loads = self._batch_loads(batch_loads)
         count = elements(shape)
-        if not shape or shape[-1] != self.grid.cells or not count:
-            raise TectonicsError("load must be nonempty with grid cells in its final dimension")
         rows = count // self.grid.cells
         return 32 * count + 64 * min(rows, batch_loads) * self.grid.cells + 8192
 
@@ -108,8 +100,6 @@ class PeriodicFlexure:
         batch_loads = self._batch_loads(batch_loads)
         with select_budget(budget).reserve(required):
             load = array(downward_load_pa, "downward_load_pa")
-            if load.shape != shape:
-                raise TectonicsError("input shape changed during capture")
             if load.size // self.grid.cells <= batch_loads:
                 # Reuse the proven contiguous FFT path when a group fits. Forcing
                 # tiny row groups added overhead without a demonstrated gain.

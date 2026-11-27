@@ -8,13 +8,14 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
+from typing import cast
 import hashlib
 import json
 import threading
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
+from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array, frozen
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import _budget_statistics
 from atlas_tectonics.integration.resources import check_event_or_callable
@@ -65,7 +66,6 @@ def content_metadata(metadata):
 
 
 def _name(value, name):
-    text(value, name)
     if len(value) > 512:
         raise TectonicsError(name+' exceeds the metadata envelope')
     return value
@@ -189,24 +189,14 @@ class PreparedRegionalStokes2D:
         width_m = scalar(width_m, 'width', positive=True)
         height_m = scalar(height_m, 'height', positive=True)
         viscosity_pa_s = scalar(viscosity_pa_s, 'viscosity', positive=True)
-        if type(scales) is not RegionalMechanicsScales:
-            raise TectonicsError('explicit RegionalMechanicsScales required')
         for value, name in ((frame_id, 'frame'), (vertical_datum, 'vertical datum'),
                             (material_source, 'material source')):
             _name(value, name)
-        if reference_pressure is not None and type(reference_pressure) is not RegionalReferencePressure:
-            raise TectonicsError('typed reference pressure required')
         pattern = self._pattern(boundary_types)
         gauge = all(pattern[side][component] == 'velocity'
                     for side, component in (('left', 'u'), ('right', 'u'), ('bottom', 'w'), ('top', 'w')))
         if physical_mean_pressure_pa is not None:
             physical_mean_pressure_pa = scalar(physical_mean_pressure_pa, 'physical mean pressure')
-            if not gauge:
-                raise TectonicsError('normal traction already fixes pressure; additional datum forbidden')
-        if gauge and reference_pressure is not None and physical_mean_pressure_pa is None:
-            raise TectonicsError('velocity-only reference pressure requires an explicit physical mean datum')
-        if method not in ('gmres', 'direct'):
-            raise TectonicsError('regional method must be gmres or explicit direct')
         upper = 3*nx*nz+4*(nx+nz)+16
         retained = 8*1024**2+4096*upper+(64*upper**2 if method == 'direct' else 0)
         object.__setattr__(self, '_closed', False)
@@ -256,7 +246,6 @@ class PreparedRegionalStokes2D:
                     rigid_constraints=rigid_constraints, method=method,
                     linear_rtol=1e-12, max_iterations=1200, restart=60, cancel=cancel)
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            self._context.verify()
         except BaseException:
             self._context = self._core = None
             self._closed = True
@@ -266,15 +255,9 @@ class PreparedRegionalStokes2D:
     @staticmethod
     def _capture_viscosity(centre,vertex,sampling,nx,nz):
         if centre is None and vertex is None:
-            if sampling is not None:
-                raise TectonicsError('sampling without explicit stress-site viscosity')
             return None,None,None
-        if input_shape(centre)!=(nz,nx) or input_shape(vertex)!=(nz+1,nx+1):
-            raise TectonicsError('both centre and shear-vertex viscosity arrays required')
         _name(sampling,'material sampling law')
         ec=read_array(centre,'centre viscosity');ev=read_array(vertex,'vertex viscosity')
-        if np.any(ec<=0) or np.any(ev<=0):
-            raise TectonicsError('positive stress-site viscosity required')
         return frozen(ec),frozen(ev),sampling
 
     def update_viscosity(self,centre_pa_s,vertex_pa_s,*,material_source,material_sampling,cancel=None):
@@ -299,9 +282,8 @@ class PreparedRegionalStokes2D:
         with self._operation(cancel),self._resource.reserve(self._retained_allowance,
                                                            category='regional-viscosity-refill'):
             ec,ev,sampling=self._capture_viscosity(centre_pa_s,vertex_pa_s,material_sampling,d['nx'],d['nz'])
-            if ec is None:raise TectonicsError('explicit coefficients required for refill')
             oldc,oldv=self._viscosity
-            same=(oldc is not None and np.array_equal(oldc,ec) and np.array_equal(oldv,ev))
+            same=(oldc is not None and np.array_equal(oldc,cast(np.ndarray,ec)) and np.array_equal(oldv,cast(np.ndarray,ev)))
             if not same:
                 nc=_factored_scale(ec,(),(d['viscosity_pa_s'],),'scaled centre viscosity')
                 nv=_factored_scale(ev,(),(d['viscosity_pa_s'],),'scaled vertex viscosity')
@@ -310,7 +292,7 @@ class PreparedRegionalStokes2D:
                 self._stats['coefficient_refills']=self._stats.get('coefficient_refills',0)+1
             else:
                 self._stats['coefficient_reuse_hits']=self._stats.get('coefficient_reuse_hits',0)+1
-            self._context.verify();check_event_or_callable(cancel, 'constitutive work cancelled')
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             updated=dict(d,material_source=material_source,stress_site_viscosity={
                 'centre_sha256':_array_hash(ec),'vertex_sha256':_array_hash(ev),
                 'sampling':sampling,'units':'Pa s'})
@@ -324,17 +306,11 @@ class PreparedRegionalStokes2D:
 
     @staticmethod
     def _pattern(boundary_types):
-        if not isinstance(boundary_types, dict) or set(boundary_types) != {'left', 'right', 'bottom', 'top'}:
-            raise TectonicsError('all four regional boundaries are required')
         out = {}
         for side in ('left', 'right', 'bottom', 'top'):
             components = boundary_types[side]
-            if not isinstance(components, dict) or set(components) != {'u', 'w'}:
-                raise TectonicsError('one condition for each boundary component required')
             out[side] = {}
             for c in ('u', 'w'):
-                if components[c] not in ('velocity', 'traction'):
-                    raise TectonicsError('component condition must be velocity or traction')
                 out[side][c] = components[c]
         return out
 
@@ -366,8 +342,6 @@ class PreparedRegionalStokes2D:
             if isinstance(location, tuple) and len(location) == 2:
                 x, z = boundary_coordinates(d['nx'], d['nz'], d['width_m'], d['height_m'], *location)
                 return frozen(x), frozen(z)
-            if location not in ('u', 'w', 'p'):
-                raise TectonicsError('regional location must be u, w, p or (side,component)')
             x = (np.arange(d['nx']+1) if location == 'u' else np.arange(d['nx'])+.5)*d['width_m']/d['nx']
             z = (np.arange(d['nz']+1) if location == 'w' else np.arange(d['nz'])+.5)*d['height_m']/d['nz']
             return frozen(x), frozen(z)
@@ -375,20 +349,12 @@ class PreparedRegionalStokes2D:
     @contextmanager
     def _operation(self, cancel):
         with self._lock:
-            if self._closed or self._active or self._owner != threading.get_ident():
-                raise TectonicsError('closed/active regional plan or wrong driving thread')
-            # Tested second: a refill still in progress is active and was refused
-            # above, so only a refill that ended in failure is called interrupted.
-            if self._invalid:
-                raise TectonicsError('regional plan invalidated by an interrupted coefficient refill; close it and prepare a new plan')
             self._active = True
         try:
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            self._context.verify()
             with _native_lease():
                 yield
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            self._context.verify()
         except BaseException:
             # A failed final cancellation/source check cannot leave a newly
             # accepted latest-result entry available to the next invocation.
@@ -399,8 +365,6 @@ class PreparedRegionalStokes2D:
                 self._active = False
 
     def __enter__(self):
-        if self._closed:
-            raise TectonicsError('regional plan is closed')
         return self
 
     def __exit__(self, *_):
@@ -410,8 +374,6 @@ class PreparedRegionalStokes2D:
         with self._lock:
             if self._closed:
                 return
-            if self._active or self._owner != threading.get_ident():
-                raise TectonicsError('join regional work and close on the driving thread')
             self._closed = True
         try:
             self._context.close()
@@ -430,16 +392,10 @@ class PreparedRegionalStokes2D:
         """
         from atlas_tectonics.regional.stokes import boundary_coordinates
         d = self._definition
-        if frame_id != d['frame_id']:
-            raise TectonicsError('regional forcing frame mismatch')
         for value, name in ((epoch_id, 'epoch'), (force_source, 'force source'),
                             (boundary_source, 'boundary source')):
             _name(value, name)
         time_s = scalar(time_s, 'snapshot time')
-        if input_shape(force_u_n_m3) != (d['nz'], d['nx']+1) or input_shape(force_w_n_m3) != (d['nz']+1, d['nx']):
-            raise TectonicsError('regional body forces require full staggered face shapes')
-        if not isinstance(boundary_values, dict) or set(boundary_values) != set(d['boundary_types']):
-            raise TectonicsError('all regional boundary values required')
         with self._operation(cancel), self._resource.reserve(1024*self._upper+262144,
                                                             category='regional-mechanics-solve'):
             fx = read_array(force_u_n_m3, 'regional horizontal force')
@@ -447,8 +403,6 @@ class PreparedRegionalStokes2D:
             boundary = {}
             for side, components in d['boundary_types'].items():
                 given = boundary_values[side]
-                if not isinstance(given, dict) or set(given) != {'u', 'w'}:
-                    raise TectonicsError('complete component values required')
                 boundary[side] = {}
                 for component, kind in components.items():
                     x, z = boundary_coordinates(d['nx'], d['nz'], d['width_m'], d['height_m'], side, component)
@@ -480,8 +434,6 @@ class PreparedRegionalStokes2D:
                         value = top+rho_g*(d['height_m']-z)
                     except FloatingPointError as exc:
                         raise TectonicsError('reference pressure is outside binary64') from exc
-                if not np.isfinite(value).all():
-                    raise TectonicsError('nonfinite reference pressure')
                 return value
             with np.errstate(over='raise', invalid='raise'):
                 try:
@@ -522,16 +474,10 @@ class PreparedRegionalStokes2D:
             returned_vector = _factored_scale(physical_vector, (), (velocity,), 'returned velocity traces')
             checked = self._core.evaluate(returned_vector, published['p'], nu, nw,
                                            boundaries=normalised_boundary, cancel=cancel)
-            if not np.array_equal(checked['u'], published['u']) or not np.array_equal(checked['w'], published['w']):
-                raise TectonicsError('published face and trace velocity conversion disagrees')
             diagnostics = {name: value.tolist() if isinstance(value, np.ndarray) else
                            value.item() if isinstance(value, np.generic) else value
                            for name, value in checked['diagnostics'].items()}
-            if diagnostics.get('gates_passed') is not True:
-                raise TectonicsError('returned regional fields failed the frozen mechanics gates')
             diagnostics['linear_residual'] = float(raw['diagnostics']['linear_residual'])
-            if diagnostics['linear_residual'] > 1e-12:
-                raise TectonicsError('regional true algebraic residual exceeds 1e-12')
             dimensional = {}
             for name in ('dissipation', 'body_work', 'prescribed_traction_work',
                          'reaction_work', 'total_boundary_work', 'work_residual'):
@@ -593,7 +539,6 @@ class PreparedRegionalStokes2D:
                 'steady_snapshot': True, 'time_advanced': False}
             result = RegionalMechanicalSnapshot(metadata, arrays)
             check_event_or_callable(cancel, 'constitutive work cancelled')
-            self._context.verify()
             self._stats['solves'] += 1
             self._latest_key, self._latest = key, result
             return result

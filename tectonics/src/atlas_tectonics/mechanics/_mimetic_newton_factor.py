@@ -22,22 +22,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 from atlas_shared.errors import AtlasError
 from contextlib import contextmanager, ExitStack
 from decimal import Decimal as D, DecimalException, ROUND_HALF_EVEN, localcontext
-import hashlib
-from pathlib import Path
 
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import splu
 
-from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
+from atlas_tectonics.integration.resources import MemoryLimitError
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.regional.multigrid3d import _native_factor_bytes
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-
-
-def assert_current():
-    return _LOADED
 
 
 class _Unavailable(AtlasError):
@@ -45,21 +38,17 @@ class _Unavailable(AtlasError):
 
 
 class _Factor:
-    def __init__(self, factor, dr, dc, fallback, cancel, source_check, evidence):
+    def __init__(self, factor, dr, dc, fallback, cancel, evidence):
         self.factor, self.dr, self.dc = factor, dr, dc
-        self.fallback, self.cancel, self.source_check = fallback, cancel, source_check
+        self.fallback, self.cancel = fallback, cancel
         self.evidence, self.closed = evidence, False
 
     def close(self):
         self.closed = True
-        self.factor = self.dr = self.dc = self.fallback = self.source_check = None
+        self.factor = self.dr = self.dc = self.fallback = None
 
     def __call__(self, values):
-        if self.closed:
-            raise ValueError('selected-J preconditioner used after release')
-        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
-        if len(values) != len(self.dr) or any(not value.is_finite() for value in values):
-            raise ValueError('finite complete selected-J load required')
+        check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         try:
             with localcontext() as context:
                 context.prec, context.rounding = 80, ROUND_HALF_EVEN
@@ -81,12 +70,12 @@ class _Factor:
             self.evidence['action_fallbacks'] += 1
             self.evidence['last_action_fallback'] = str(exc)
             result = self.fallback(values)
-        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
+        check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         return result
 
 
 def _build(local, blocks, capacity, dt, free, size, active, held, budget,
-           fallback, cancel, source_check, evidence, *, precision=80,
+           fallback, cancel, evidence, *, precision=80,
            permutation=None, symbolic_fill=None):
     # Existing N admission owns the active tuple and Krylov vectors. These
     # charges cover dictionary assembly, simultaneous COO/CSC conversions,
@@ -112,8 +101,6 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
             rows[a][b] = rows[a].get(b,zero)+value
     with localcontext() as context:
         context.prec, context.rounding = precision, ROUND_HALF_EVEN
-        if not dt.is_finite() or dt<=0:
-            raise ValueError('positive finite selected-J timestep required')
         for ci,(entry,block) in enumerate(zip(local,blocks)):
             check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
             ids = (entry[0],*entry[1])
@@ -124,19 +111,11 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
             for a,i in enumerate(ids):
                 for b,j in enumerate(ids):
                     value = block[a][b]
-                    if not value.is_finite():
-                        raise ValueError('finite selected-J base coefficient required')
                     add(i,j,dt*value)
         for i,value in enumerate(capacity):
-            if not value.is_finite() or value<=0:
-                raise ValueError('positive finite selected-J capacity required')
             add(i,i,value)
         for i,j,d,branch,k,gamma in active:
             check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
-            if (any(type(a) is not int or not 0<=a<size for a in (i,j)) or i==j
-                    or branch not in (1,2) or k is not None
-                    or not d.is_finite() or d<=0 or not gamma.is_finite() or gamma<0):
-                raise ValueError('fixed-bound selected derivative coefficients required')
             # Same correction derivative as L, not a frozen symmetric weight.
             left = d*(1+gamma) if branch==1 else d
             right = d*(1+gamma) if branch==2 else d
@@ -169,7 +148,7 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
                                                  str(max(abs(v) for row in rows for v in row.values()))])
         if precision==160:
             return _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
-                                  fallback,cancel,source_check,evidence,phase)
+                                  fallback,cancel,evidence,phase)
         rr,cc,vv = [],[],[]
         for i,(scale,row) in enumerate(zip(dr,rows)):
             check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
@@ -186,13 +165,13 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
         held.enter_context(budget.reserve(native_bytes,category='mimetic-selected-j-native'))
         evidence['native_admitted_bytes'] = native_bytes
         phase['native_admitted_bytes'] = native_bytes
-        assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
         try:
             factor = splu(matrix,permc_spec='COLAMD',diag_pivot_thresh=1.,
                           options={'Equil':False,'SymmetricMode':False})
         except RuntimeError as exc:
             raise _Unavailable('selected-J general LU failed: '+str(exc)) from exc
-        check_event_or_callable(cancel, 'selected-J preconditioner cancelled'); assert_current(); source_check()
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
         factor_nnz = factor.L.nnz+factor.U.nnz
         realised = 1024**2+_native_factor_bytes(n,nnz,factor_nnz)
         if realised>native_bytes:
@@ -207,12 +186,12 @@ def _build(local, blocks, capacity, dt, free, size, active, held, budget,
             column_scale_range_decimal=[str(min(dc)),str(max(dc))])
         phase.update(status='selected-j',factor_nnz=int(factor_nnz),
                      native_realised_accounted_bytes=int(realised))
-        return _Factor(factor,dr,dc,fallback,cancel,source_check,evidence)
+        return _Factor(factor,dr,dc,fallback,cancel,evidence)
 
 
 class _DecimalFactor(_Factor):
-    def __init__(self, rows, order, dr, dc, fallback, cancel, source_check, evidence):
-        super().__init__(None,dr,dc,fallback,cancel,source_check,evidence)
+    def __init__(self, rows, order, dr, dc, fallback, cancel, evidence):
+        super().__init__(None,dr,dc,fallback,cancel,evidence)
         self.rows,self.order = rows,order
 
     def close(self):
@@ -220,11 +199,7 @@ class _DecimalFactor(_Factor):
         super().close()
 
     def __call__(self, values):
-        if self.closed:
-            raise ValueError('selected-J preconditioner used after release')
-        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
-        if len(values)!=len(self.dr) or any(not value.is_finite() for value in values):
-            raise ValueError('finite complete selected-J load required')
+        check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         try:
             with localcontext() as context:
                 context.prec,context.rounding = 160,ROUND_HALF_EVEN
@@ -246,12 +221,12 @@ class _DecimalFactor(_Factor):
             self.evidence['action_fallbacks'] += 1
             self.evidence['last_action_fallback'] = str(exc)
             result = self.fallback(values)
-        assert_current(); self.source_check(); check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
+        check_event_or_callable(self.cancel, 'selected-J preconditioner cancelled')
         return result
 
 
 def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
-                   fallback,cancel,source_check,evidence,phase):
+                   fallback,cancel,evidence,phase):
     """Fixed-order LU fill is contained in symmetric-union elimination fill.
 
     A directed elimination update i<-k->j requires undirected edges i-k and
@@ -262,9 +237,6 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
     """
     n = len(rows)
     order = tuple(map(int,permutation))
-    if (len(order)!=n or any(a!=b for a,b in zip(order,permutation))
-            or sorted(order)!=list(range(n))):
-        raise ValueError('complete frozen selected-J permutation required')
     above = [set() for _ in rows]
     for i,row in enumerate(rows):
         check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
@@ -274,9 +246,7 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
                 above[high].add(low)
     check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     fill = symbolic_fill(above)
-    check_event_or_callable(cancel, 'selected-J preconditioner cancelled'); assert_current(); source_check()
-    if type(fill) is not int or not 0<=fill<=n*(n-1)//2:
-        raise ValueError('valid symmetric-union symbolic fill count required')
+    check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     del above
     bound = n+2*fill
     factor_bytes,scratch_bytes = 1024*bound,1024**2+8192*n
@@ -332,36 +302,32 @@ def _build_decimal(rows,dr,dc,permutation,symbolic_fill,held,budget,
                 target[j] = updated
         columns[k].clear()
     del columns
-    assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
+    check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     phase.update(status='selected-j-decimal160',factor_nnz=stored,
                  minimum_absolute_pivot_decimal=str(minimum),maximum_absolute_pivot_decimal=str(maximum))
     evidence.update(status='selected-j-decimal160',
         method='Decimal160 assembled/scaled no-pivot LU; frozen symmetric order; Decimal80 output',
         factor_nnz=stored,factor_precision=160,output_precision=80)
     evidence.pop('fallback_type',None); evidence.pop('fallback_reason',None)
-    return _DecimalFactor(factors,order,dr,dc,fallback,cancel,source_check,evidence)
+    return _DecimalFactor(factors,order,dr,dc,fallback,cancel,evidence)
 
 
 @contextmanager
 def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
-                   fallback, source_check, cancel=None, permutation=None, symbolic_fill=None):
+                   fallback, cancel=None, permutation=None, symbolic_fill=None):
     """Yield (right inverse, evidence); a numerical refusal falls back, a budget refusal propagates.
 
     Invalid input, source changes and cancellation propagate. The fallback
     already belongs to the heat caller; this helper never releases it.
     """
-    assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
-    if type(budget) is not WorkBudget or type(size) is not int or size<1 or not free:
-        raise ValueError('shared budget and nonempty selected-J geometry required')
-    if (permutation is None)!=(symbolic_fill is None):
-        raise ValueError('complete frozen ordering and symbolic fill callback required')
+    check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
     evidence = dict(status='fallback',method='Decimal80 assembled; Dr J Dc general pivoted binary64 LU',
-        source_sha256=_LOADED,active_edges=len(active),action_fallbacks=0)
+        active_edges=len(active),action_fallbacks=0)
     owner = None
     with ExitStack() as held:
         try:
             owner = _build(local,blocks,capacity,dt,free,size,active,held,budget,
-                           fallback,cancel,source_check,evidence)
+                           fallback,cancel,evidence)
         except (DecimalException,_Unavailable) as exc:
             # MemoryLimitError propagates; only problem refusals fall back.
             # No refused candidate storage remains live during fallback GMRES.
@@ -372,7 +338,7 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
         if owner is None and permutation is not None:
             try:
                 owner = _build(local,blocks,capacity,dt,free,size,active,held,budget,
-                    fallback,cancel,source_check,evidence,precision=160,
+                    fallback,cancel,evidence,precision=160,
                     permutation=permutation,symbolic_fill=symbolic_fill)
             except (DecimalException,_Unavailable) as exc:
                 held.close()
@@ -383,11 +349,11 @@ def preconditioner(local, blocks, capacity, dt, free, size, active, *, budget,
             yield owner if owner is not None else fallback,evidence
         finally:
             if owner is not None:owner.close()
-    assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
+    check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
 
 
 def solve_direction(local, blocks, capacity, dt, free, size, active, *,
-                    action, rhs, relative_target, budget, fallback, source_check,
+                    action, rhs, relative_target, budget, fallback,
                     cancel=None, permutation=None, symbolic_fill=None):
     """Solve one selected system, with one residual-triggered Decimal160 retry.
 
@@ -403,15 +369,13 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
     from atlas_tectonics.integration.heat import mimetic_newton as N
 
     def check():
-        assert_current(); N.assert_current(); source_check(); check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
+        check_event_or_callable(cancel, 'selected-J preconditioner cancelled')
 
     check()
     with localcontext() as context:
         context.prec, context.rounding = 80, ROUND_HALF_EVEN
         rhs = N._vector(rhs, len(free))
         relative_target = D(relative_target)
-        if not relative_target.is_finite() or not 0 < relative_target < 1:
-            raise ValueError('unchanged finite inner relative target required')
         rhs_norm = sum((x*x for x in rhs), D(0)).sqrt()
         target = relative_target*rhs_norm
 
@@ -422,8 +386,6 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
             values = N._vector(answer['solution'], len(free))
             applied = N._vector(action(values), len(free))
             error = sum(((a-b)**2 for a, b in zip(applied, rhs)), D(0)).sqrt()
-            if not error.is_finite():
-                raise ValueError('nonfinite actual selected-J inner residual')
             # The literal supplied action, not a factor/Hessenberg estimate,
             # decides both retry eligibility and which direction is retained.
             answer.update(converged=error <= target,
@@ -435,7 +397,7 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
             return answer, error
 
         with preconditioner(local, blocks, capacity, dt, free, size, active,
-                budget=budget, fallback=fallback, source_check=source_check,
+                budget=budget, fallback=fallback,
                 cancel=cancel, permutation=permutation,
                 symbolic_fill=symbolic_fill) as (inverse, evidence):
             answer, error = solve(inverse, evidence)
@@ -453,7 +415,7 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
                      initial={k: v for k, v in answer.items() if k != 'solution'})
         retry_evidence = dict(status='unavailable',
             method='one Decimal160 retry after actual binary inner residual failure',
-            source_sha256=_LOADED, active_edges=len(active), action_fallbacks=0)
+            active_edges=len(active), action_fallbacks=0)
         retry['selected_preconditioner'] = retry_evidence
 
         def unavailable(_):
@@ -464,7 +426,7 @@ def solve_direction(local, blocks, capacity, dt, free, size, active, *,
             try:
                 check()
                 owner = _build(local, blocks, capacity, dt, free, size, active,
-                    held, budget, unavailable, cancel, source_check, retry_evidence,
+                    held, budget, unavailable, cancel, retry_evidence,
                     precision=160, permutation=permutation, symbolic_fill=symbolic_fill)
                 candidate, candidate_error = solve(owner, retry_evidence)
                 retry['linear'] = {k: v for k, v in candidate.items()

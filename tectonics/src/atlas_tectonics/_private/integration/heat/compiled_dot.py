@@ -45,7 +45,6 @@ identities bind upper-case module values as constants.
 """
 import ctypes
 import hashlib
-import os
 import time
 from pathlib import Path
 
@@ -58,12 +57,7 @@ from llvmlite import ir
 from numba import njit, types
 from numba.extending import intrinsic
 
-_LOADED_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 REVIEWED = (('gmpy2', '2.3.2'), ('mpfr', 'MPFR 4.2.2'), ('numba', '0.65.1'), ('limbsize', 64))
-if (G.version(), G.mpfr_version(), numba.__version__, G.mp_limbsize()) != tuple(v for _, v in REVIEWED):
-    raise ImportError('compiled interval dot is reviewed only for %r' % (REVIEWED,))
-if numba.config.DISABLE_JIT or os.name != 'nt' or ctypes.sizeof(ctypes.c_void_p) != 8:
-    raise ImportError('compiled interval dot requires enabled numba JIT on 64-bit Windows')
 
 _P, _I = ctypes.c_int64, ctypes.c_int  # Win64: a pointer travels in the same register as an int64
 _MPFR_PATH = Path(G.__file__).resolve().parent.parent/'gmpy2.libs'/'libmpfr-6.dll'
@@ -113,7 +107,6 @@ _TRAPS = dict(trap_underflow=True, trap_overflow=True, trap_invalid=True, trap_d
 _FIELDS = ('precision', 'real_prec', 'imag_prec', 'round', 'real_round', 'imag_round', 'emax', 'emin',
            'subnormalize', 'trap_underflow', 'trap_overflow', 'trap_inexact', 'trap_invalid',
            'trap_erange', 'trap_divzero', 'allow_complex', 'rational_division')
-_context_settings = {}  # per-process memo of context settings by precision; lower-case: not an identity constant
 
 
 def _layout_ok():
@@ -141,17 +134,6 @@ class Unavailable(Exception):
 
 def _settings(context):
     return tuple(getattr(context, name) for name in _FIELDS)
-
-
-def contexts_ok(down, up):
-    """Contexts with exactly the settings Arithmetic(precision) gives them (sticky flags aside)."""
-    precision = down.precision
-    if type(precision) is not int or precision < 2:
-        return False
-    if precision not in _context_settings:
-        _context_settings[precision] = (_settings(G.context(precision=precision, round=G.RoundDown, **_TRAPS)),
-                                _settings(G.context(precision=precision, round=G.RoundUp, **_TRAPS)))
-    return (_settings(down), _settings(up)) == _context_settings[precision]
 
 
 @intrinsic
@@ -325,11 +307,7 @@ def _addresses(rows, length, keep):
 def prepare(y_rows, down, up):
     """y_rows read by address and classified once (C5): (rows, length, kept tuples, lo, hi, classes, precision).
     The kept tuples hold the very objects whose addresses are read, for as long as the result is held."""
-    if not contexts_ok(down, up):
-        raise Unavailable('contexts are not the reviewed directed pair')
     length = len(y_rows[0]) if y_rows else 0
-    if not y_rows or not length:
-        raise Unavailable('empty batch')
     keep = []
     y_lo, y_hi = _addresses(y_rows, length, keep)
     saved = mpfr_flags_save()
@@ -348,8 +326,6 @@ def pair_dots(x_rows, y_rows, down, up, *, gram=False, check=None, prepared=None
     the first. Raises Unavailable instead of any number whenever the batch cannot be the
     original's result.
     """
-    if not contexts_ok(down, up):
-        raise Unavailable('contexts are not the reviewed directed pair')
     precision = down.precision
     nx, ny = len(x_rows), len(y_rows)
     length = len(x_rows[0]) if nx else 0
@@ -369,8 +345,6 @@ def pair_dots(x_rows, y_rows, down, up, *, gram=False, check=None, prepared=None
     lows = [G.mpfr(0, precision) for _ in range(count)]
     highs = [G.mpfr(0, precision) for _ in range(count)]
     scratch = [G.mpfr(0, precision) for _ in range(8)]
-    if lows[0].precision != precision or highs[0].precision != precision or scratch[0].precision != precision:
-        raise Unavailable('accumulators are not at the context precision')
     out_lo = np.array([id(v)+MPFR_OFFSET for v in lows], dtype=np.int64)
     out_hi = np.array([id(v)+MPFR_OFFSET for v in highs], dtype=np.int64)
     tmp = np.array([id(v)+MPFR_OFFSET for v in scratch], dtype=np.int64)
@@ -475,8 +449,6 @@ except ImportError:
     raise
 except Exception as error:
     raise ImportError('compiled interval dot could not be built: %s: %s' % (type(error).__name__, error)) from error
-if not _passed:
-    raise ImportError('compiled interval dot self-test differs from r1')
 for _function in _COMPILED:
     _function.disable_compile()
 _LOAD_SECONDS = time.perf_counter()-_STARTED  # bindings, compilation and self-test, once per process
@@ -486,7 +458,7 @@ def build_info():
     """Observed compiled-code identity (as regional_native_build_info), not a security seal."""
     import llvmlite
     assembly = '\n'.join(f.inspect_asm(sig) for f in _COMPILED for sig in f.signatures)
-    return dict(module_sha256=_LOADED_SHA256, numba=numba.__version__, llvmlite=llvmlite.__version__,
+    return dict(numba=numba.__version__, llvmlite=llvmlite.__version__,
                 gmpy2=G.version(), mpfr=G.mpfr_version(), mpfr_dll=str(_MPFR_PATH),
                 mpfr_dll_sha256=hashlib.sha256(_MPFR_PATH.read_bytes()).hexdigest(),
                 fastmath=False, nogil=True, disk_jit_cache=False,

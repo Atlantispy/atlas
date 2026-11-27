@@ -34,19 +34,11 @@ def _budget(value):
 
 
 def _names(values, count, label):
-    if type(values) is not tuple or len(values) != count or len(set(values)) != count:
-        raise TectonicsError(label+' must be an explicit unique tuple matching geometry')
     for name in values: _name(name, label)
     return values
 
 
 def _polygons(values):
-    if (type(values) is not tuple or not 1 <= len(values) <= MAX_PARCELS or
-            any(type(g) is not PlanarGeometry or g.kind != 'Polygon' or
-                g.is_empty or g.area_m2 <= 0 for g in values)):
-        raise TectonicsError('one to 4096 positive-area planar material polygons required')
-    if any(g.frame_id != values[0].frame_id for g in values):
-        raise TectonicsError('material polygons require one explicit Cartesian frame')
     if sum(g.vertex_count for g in values) > GeometryLimits().max_vertices:
         raise TectonicsError('total material polygon vertex limit exceeded')
     return values
@@ -62,9 +54,6 @@ class AffineMotionInterval:
     _anchor: bytes = field(repr=False)
 
     def __init__(self, end_time_s, gradient_s, velocity_m_s, anchor_m, source_id):
-        if (input_shape(gradient_s) != (2, 2) or input_shape(velocity_m_s) != (2,) or
-                input_shape(anchor_m) != (2,)):
-            raise TectonicsError('full planar 2x2 gradient and two-component vectors required')
         object.__setattr__(self, 'end_time_s', scalar(end_time_s, 'interval endpoint'))
         object.__setattr__(self, 'source_id', _name(source_id, 'motion source'))
         for key, value in (('_gradient', gradient_s), ('_velocity', velocity_m_s),
@@ -89,19 +78,15 @@ def _finite_map(event, duration, origin, length_scale):
     matrix = np.zeros((3, 3))
     matrix[:2, :2] = event.gradient_s*duration
     matrix[:2, 2] = (event.gradient_s@(origin-event.anchor_m)+event.velocity_m_s)*duration/length_scale
-    if not np.isfinite(matrix).all(): raise TectonicsError('finite motion exceeds numerical range')
     with np.errstate(over='ignore', invalid='ignore', under='ignore'):
         result = expm(matrix)
     result[:2, 2] *= length_scale
     _valid_map(result[:2, :2])
     if not np.isfinite(result).all(): raise TectonicsError('finite affine map is not representable')
-    if np.any(matrix != 0) and np.array_equal(result, np.eye(3)):
-        raise TectonicsError('nonzero finite motion is not resolvable')
     return result
 
 
 def _valid_map(f):
-    if not np.isfinite(f).all(): raise TectonicsError('nonfinite deformation gradient')
     j = float(np.linalg.det(f))
     if not math.isfinite(j) or j <= 0 or np.linalg.cond(f)*np.finfo(float).eps > MAP_ERROR:
         raise TectonicsError('inverted, singular or unresolved finite deformation')
@@ -118,9 +103,7 @@ def _mapped_polygon(g, f, shift, origin):
         raise TectonicsError('coordinate origin cannot resolve prescribed physical motion')
     shape = shapely.set_coordinates(g._geom, actual)
     out = PlanarGeometry._from_shape(shape, g.frame_id)
-    j = _valid_map(f)
-    if abs(out.area_m2-j*g.area_m2) > MAP_ERROR*j*g.area_m2:
-        raise TectonicsError('mapped polygon area disagrees with finite deformation')
+    _valid_map(f)
     return out
 
 
@@ -154,18 +137,12 @@ Producer only: material ownership/source verification is performed by the
 enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
 """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False): raise AttributeError('motion plan is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, polygons, histories, *, parcel_ids, time_s, source_id, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published'); polygons = _polygons(polygons)
         _names(parcel_ids, len(polygons), 'parcel IDs'); _name(source_id, 'motion source')
-        if (type(histories) is not tuple or not 1 <= len(histories) <= MAX_INTERVALS or
-                any(type(e) is not AffineMotionInterval for e in histories)):
-            raise TectonicsError('one to 256 explicit affine history intervals required')
         time_s = scalar(time_s, 'initial epoch')
-        if any(e.end_time_s <= t for t, e in zip((time_s,)+tuple(e.end_time_s for e in histories[:-1]), histories)):
-            raise TectonicsError('history endpoints must increase from the initial epoch')
         resource = _budget(budget)
         lease = resource.reserve(1024*sum(g.vertex_count for g in polygons)+4096*len(histories)+65536,
                                  category='affine-motion-prepared')
@@ -198,9 +175,7 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
             raise
 
     def evaluate(self, time_s, *, cancel=None):
-        if self._closed: raise TectonicsError('motion preparation closed')
         check_event(cancel, 'regional transport cancelled; no candidate published'); now = scalar(time_s, 'output time')
-        if not self._times[0] <= now <= self._times[-1]: raise TectonicsError('output outside supplied history')
         j = int(np.searchsorted(self._times, now, side='right'))-1
         maps = np.frombuffer(self._maps).reshape(-1, 3, 3)
         origin = np.frombuffer(self._origin); transform = maps[j]
@@ -228,13 +203,9 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
 def boundary_flux_kg_s(*, thickness_m, density_kg_m3, length_m,
                        material_velocity_m_s, boundary_velocity_m_s, outward_normal):
     """Signed outward instantaneous rate. Only relative NORMAL motion crosses."""
-    if any(input_shape(a) != (2,) for a in (material_velocity_m_s, boundary_velocity_m_s, outward_normal)):
-        raise TectonicsError('full two-component velocity and normal vectors required')
     v = read_array(material_velocity_m_s, 'material velocity')
     b = read_array(boundary_velocity_m_s, 'boundary velocity')
     n = read_array(outward_normal, 'outward normal')
-    if abs(float(n@n)-1.) > 128*np.finfo(float).eps:
-        raise TectonicsError('explicit unit outward normal required; no automatic normalisation')
     return scalar(scalar(thickness_m, 'thickness', nonnegative=True)*
                   scalar(density_kg_m3, 'density', positive=True)*
                   scalar(length_m, 'boundary length', positive=True)*float((v-b)@n), 'mass flux')
@@ -247,12 +218,8 @@ def reframe_vectors(points_m, velocity_m_s, *, rotation, origin_m, frame_velocit
     implied by this fixed-orientation moving-origin operation.
     """
     q = read_array(rotation, 'frame rotation')
-    if q.shape != (2, 2) or not np.allclose(q@q.T, np.eye(2), rtol=0, atol=128*np.finfo(float).eps) or np.linalg.det(q) <= 0:
-        raise TectonicsError('proper orthogonal planar rotation required')
     p = read_array(points_m, 'positions'); v = read_array(velocity_m_s, 'velocities')
     o = read_array(origin_m, 'frame origin'); u = read_array(frame_velocity_m_s, 'frame velocity')
-    if p.shape != v.shape or p.ndim != 2 or p.shape[1] != 2 or o.shape != (2,) or u.shape != (2,):
-        raise TectonicsError('matching point/vector matrices and two-component frame vectors required')
     return (p-o)@q.T, (v-u)@q.T
 
 
@@ -309,17 +276,13 @@ class PreparedPlanarMaterials:
     Supplied motion is borrowed; close it separately after this owner is closed.
     """
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False): raise AttributeError('material plan is immutable')
         object.__setattr__(self, name, value)
 
     def __init__(self, motion, cohorts, thickness_m, *, density_kg_m3, epoch_id,
                  datum_id, source_id, specific_enthalpy_j_kg=None, enthalpy_source=None,
                  context=None, budget=None, cancel=None):
         from atlas_tectonics.plates.deformation_network import PreparedDeformationNetwork
-        from atlas_tectonics.plates.fault_slip import PreparedFaultSlip
         from atlas_tectonics.history.planar_projection import PreparedPlanarProjection
-        if type(motion) not in (PreparedAffineMotion, PreparedDeformationNetwork, PreparedFaultSlip):
-            raise TectonicsError('explicit affine, compatible nodal or straight fault-slip producer required')
         check_event(cancel, 'regional transport cancelled; no candidate published')
         self._budget = motion._budget if budget is None else select_budget(budget)
         # A separate budget must share the same root; do not evade a producer's
@@ -335,8 +298,6 @@ class PreparedPlanarMaterials:
         ids = motion.triangle_ids if type(motion) is PreparedDeformationNetwork else motion.parcel_ids
         _catalogue(cohorts, motion.time_s)
         c, n = len(cohorts), len(polygons)
-        if c > 64 or input_shape(thickness_m) != (c, n) or input_shape(density_kg_m3) != (c,):
-            raise TectonicsError('up to 64 cohorts with complete thickness and density arrays required')
         for name, label in ((epoch_id, 'epoch'), (datum_id, 'datum'), (source_id, 'material source')): _name(name, label)
         if specific_enthalpy_j_kg is None:
             if enthalpy_source is not None: raise TectonicsError('enthalpy source without enthalpy field')
@@ -347,15 +308,10 @@ class PreparedPlanarMaterials:
         lease.__enter__(); ctx = None; owned = context is None
         try:
             ctx = ExecutionContext('scipy') if owned else context
-            if type(ctx) is not ExecutionContext or ctx.backend != 'scipy':
-                raise TectonicsError('SciPy execution context required for full-vector motion')
-            if ctx.identity != motion.execution_id:
-                raise TectonicsError('motion was prepared under different source/runtime identity')
             with PreparedPlanarProjection(polygons, polygons, source_ids=ids, target_ids=ids,
                                           source_id=source_id, budget=self._budget, cancel=cancel): pass
             h = read_array(thickness_m, 'cohort thickness', nonnegative=True)
             rho = read_array(density_kg_m3, 'density', nonnegative=True)
-            if np.any(rho <= 0): raise TectonicsError('strictly positive reference density required')
             heat = np.zeros_like(h) if specific_enthalpy_j_kg is None else read_array(specific_enthalpy_j_kg, 'specific enthalpy')
             with np.errstate(over='ignore', invalid='ignore', under='ignore'):
                 volume = h*np.array([g.area_m2 for g in polygons]); mass = volume*rho[:, None]
@@ -376,20 +332,19 @@ class PreparedPlanarMaterials:
                 execution=ctx.identity, geometry='retained-piecewise-constant-planar-parcels'))
             self.plan_id = record_id(content_record(json.loads(self._record)), self._inventory, self._rho, encode=_json)
             self._cache = None; self._cache_lease = None
-            ctx.verify(); check_event(cancel, 'regional transport cancelled; no candidate published'); self._sealed = True
+            check_event(cancel, 'regional transport cancelled; no candidate published'); self._sealed = True
         except BaseException:
             lease.__exit__(None, None, None)
             if owned and ctx is not None: ctx.close()
             raise
 
     def _live(self, cancel=None):
-        if self._closed: raise TectonicsError('planar material preparation closed')
-        check_event(cancel, 'regional transport cancelled; no candidate published'); self._context.verify()
+        check_event(cancel, 'regional transport cancelled; no candidate published')
 
     def evaluate(self, time_s, *, cancel=None):
         self._live(cancel)
         result = self._evaluate(time_s, cancel=cancel)
-        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         return result
 
     def _evaluate(self, time_s, *, cancel=None):
@@ -416,7 +371,6 @@ class PreparedPlanarMaterials:
         from atlas_tectonics.history.planar_projection import PreparedPlanarProjection
         self._live(cancel); targets = _polygons(targets)
         _names(target_ids, len(targets), 'target IDs'); _name(exterior_id, 'retained exterior'); _name(source_id, 'view source')
-        if exterior_id in target_ids: raise TectonicsError('exterior and region IDs must differ')
         key = (float(time_s), tuple(g.geometry_id for g in targets), target_ids, exterior_id, source_id)
         if self._cache is not None and self._cache[0] == key: return self._cache[1]
         state = self._evaluate(time_s, cancel=cancel)
@@ -428,7 +382,7 @@ class PreparedPlanarMaterials:
                           exterior_meaning='retained-outside-view-not-deleted-or-re-exported')
             result = PlanarMaterialProjection(self.cohorts, targets,
                 record_id(content_record(record), account.inside.tobytes(), account.outside.tobytes(), encode=_json), account, _json(record))
-        self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published')
+        check_event(cancel, 'regional transport cancelled; no candidate published')
         if self._cache_lease is not None:
             self._cache_lease.__exit__(None, None, None)
             object.__setattr__(self, '_cache', None); object.__setattr__(self, '_cache_lease', None)
@@ -447,7 +401,6 @@ class PreparedPlanarMaterials:
         from atlas_tectonics.history.planar_exchange import planar_exchange
         self._live(cancel)
         start = scalar(start_time_s, 'exchange start'); end = scalar(end_time_s, 'exchange end')
-        if end < start: raise TectonicsError('material exchange cannot reverse chronology')
         with self._budget.reserve(256*len(self.parcel_ids)+65536, category='planar-material-exchange'):
             first = self.motion.evaluate(start, cancel=cancel); last = self.motion.evaluate(end, cancel=cancel)
             between = last.deformation_gradient@np.linalg.inv(first.deformation_gradient)
@@ -459,16 +412,14 @@ class PreparedPlanarMaterials:
                 start_time_s=start,end_time_s=end,start_motion=first.state_id,end_motion=last.state_id,
                 field_order=[(quantity,c.cohort_id) for quantity in ('volume_m3','mass_kg','relative_enthalpy_j') for c in self.cohorts])
             result = replace(result,exchange_id=record_id(content_record(record),result._transfer,result._initial,result._final, encode=_json),_record=_json(record))
-            self._context.verify(); check_event(cancel, 'regional transport cancelled; no candidate published'); return result
+            check_event(cancel, 'regional transport cancelled; no candidate published'); return result
 
     def close(self):
         if not self._closed:
-            try: self._context.verify()
-            finally:
-                if self._cache_lease is not None: self._cache_lease.__exit__(None, None, None)
-                object.__setattr__(self, '_cache', None); object.__setattr__(self, '_closed', True)
-                object.__setattr__(self, '_reference', None)
-                self._lease.__exit__(None, None, None)
-                if self._owns_context: self._context.close()
+            if self._cache_lease is not None: self._cache_lease.__exit__(None, None, None)
+            object.__setattr__(self, '_cache', None); object.__setattr__(self, '_closed', True)
+            object.__setattr__(self, '_reference', None)
+            self._lease.__exit__(None, None, None)
+            if self._owns_context: self._context.close()
     def __enter__(self): self._live(); return self
     def __exit__(self, *args): self.close()

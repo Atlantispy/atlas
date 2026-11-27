@@ -18,23 +18,12 @@ import time
 
 
 SCHEMA = 'atlas.dev-stage-timing.events.v1'
-ENV = 'ATLAS_DEV_STAGE_TIMING'
 FILENAME = 'dev-stage-timing.jsonl'
 MAX_LINE_BYTES = 16 << 10
 MAX_FILE_BYTES = 256 << 20
 MAX_NAMES = 256
 WORKSPACE_BYTES = 256 << 10
 _CURRENT = ContextVar('atlas_dev_stage_timing', default=None)
-
-
-def enabled(flag=False, environ=None):
-    """Explicit flag or exact 1; reject ambiguous environment values early."""
-    if type(flag) is not bool:
-        raise ValueError('dev timing flag must be boolean')
-    value = (os.environ if environ is None else environ).get(ENV, '')
-    if value not in ('', '0', '1'):
-        raise ValueError(ENV+' must be unset, 0 or 1')
-    return flag or value == '1'
 
 
 class Recorder:
@@ -283,8 +272,17 @@ def profile_selection(value):
 
 
 def profile_words(selection):
-    child = sorted(selection.intersection(('stages', 'stacks')))
+    child = sorted(selection)
     return ['--run-profile', ','.join(child)] if child else []
+
+
+def profile_tool(selection, path):
+    """Linked settings: 'tree' needs the sampling profiler executable, and the executable needs 'tree'."""
+    if ('tree' in selection) != (path is not None):
+        raise ValueError('--run-profile tree and --profile-tool are given together or not at all')
+    if path is not None and not Path(path).is_file():
+        raise ValueError(f'--profile-tool is not a file: {path}')
+    return path
 
 
 def profile_command(selection, guarded_argv, *, raw_path, executable):
@@ -310,4 +308,4 @@ def report(kind, path, *args, reader=None, **options):
 
 
 def stacks_enabled(selection):
-    return 'stacks' in selection or os.environ.get('ATLAS_PROFILE_SAMPLER') == '1'
+    return 'stacks' in selection

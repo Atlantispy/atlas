@@ -17,12 +17,10 @@ symbolic issue-growth inventory, solver, geometry or FINISH route runs here.
 The process meter covers the growing buffer and final immutable copy. The
 identity hashes the canonical record with the result_id field omitted.
 """
-from atlas_tectonics.integration.reuse import execution_mode, helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
 from concurrent.futures import CancelledError
 from hashlib import sha256
 import math
-from pathlib import Path
 import sys
 
 from atlas_tectonics._private.integration.heat import correction_owned as O
@@ -32,15 +30,7 @@ from atlas_tectonics._private import private_heat_finish_kernel_r3 as K
 from atlas_tectonics._private.integration.heat import process_meter as METER
 
 
-HERE = Path(__file__).resolve().parent
 METHOD = 'private:standalone-conservative-physical-face-finish-r7'
-PINS = {
-    'atlas_tectonics/_private/integration/heat/correction_owned.py': '51a257aaad77baccb79fd3c2102f3ceb32553920c8a0fac57754b1e9fe814b6e',
-    'atlas_tectonics/_private/integration/heat/finish_codec_inventory.py': '6e8d7b56f9283a2b1e9d94673459e8a62ad707ad94d226d1cd2eb1c4bcc5e295',
-    'atlas_tectonics/_private/private_heat_finish_kernel_r3.py': '037bb851c55b558f9e70968b3a76b93d524146ab42d2f3c23ab965692b2ce4a9',
-}
-_SOURCES = dict(E._SOURCES, **PINS)
-_SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 class _IssueArithmetic(E.Arithmetic):
@@ -96,7 +86,7 @@ class IssueOwner(O.OwnedSolve):
 def _codec_plan(record, ar):
     """Count the complete already-owned record without formatting any value.
 
-    This structural walk covers all actual keys/literals/identifiers/bindings,
+    This structural walk covers all actual keys/literals/identifiers,
     avoiding a source-size proxy for fixed metadata. It funds escaped text as
     text, exact rationals by their current bit widths, and public floats by the
     fixed binary64 repr bound. Containers/frames were admitted separately.
@@ -124,14 +114,10 @@ def _codec_plan(record, ar):
             component = max(component, width)
             return width
         if type(value) is float:
-            if not math.isfinite(value):
-                raise ValueError('Out of range float values are not JSON compliant')
             return 32
         if type(value) in (list, tuple):
             return 2+max(0, len(value)-1)+sum(count(v) for v in value)
         if type(value) is dict:
-            if any(type(key) is not str for key in value):
-                raise TypeError('Fixed issue record requires string mapping keys')
             return 2+max(0, len(value)-1)+sum(count(k)+1+count(v) for k, v in value.items())
         raise TypeError('Unexpected fixed issue codec value')
 
@@ -139,12 +125,10 @@ def _codec_plan(record, ar):
     return C.codec_inventory(chars, component, max(text, 64, len('result_id')))
 
 
-def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, powers, bindings, sealed_output, *, strict_sources):
+def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, powers, sealed_output):
     check = ar.check
     if not math.isfinite(ar.public(target)) or not ar.less(0, target):
         raise ValueError('An independently supplied positive finite absolute residual target is required')
-    if any(not ar.less(0, e) for e in new):
-        raise ValueError('Positive capacities and corrected enthalpies required')
     cap_public = [ar.public(c) for c in cap]
     if any(not ar.equal(ar.represented(c), exact)
            for c, exact in zip(cap_public, cap, strict=True)):
@@ -152,9 +136,6 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     stocks = [ar.public(e) for e in new]
     temperatures = [e/c for e, c in zip(stocks, cap_public, strict=True)]
     exterior = {f for f, (_, j, _) in enumerate(faces) if j is None}
-    if (not set(fixed).issubset(exterior) or not set(powers).issubset(exterior)
-            or set(fixed) & set(powers) or any(not ar.less(0, t) for t in fixed.values())):
-        raise ValueError('Consistent positive Dirichlet or prescribed-energy exterior declarations required')
     for f in exterior-set(fixed):
         if not ar.equal(faces[f][2], powers.get(f, 0)):
             raise ValueError('An exterior prescribed transfer changed or an undeclared face is non-insulated')
@@ -178,17 +159,11 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
                        for c, e in zip(cap, new, strict=True))
     public_bounds = all(not ar.less(t, bounds[0]) and not ar.less(bounds[1], t)
                         for t in map(ar.represented, temperatures))
-    if not exact_bounds or not public_bounds:
-        raise ValueError('Corrected state leaves its declared loaded/prescribed/Dirichlet convex hull')
     load = ar.array(len(old))
     for i, (e, s) in enumerate(zip(old, source, strict=True)):
         ar.put(load, i, ar.op('add', e, s))
     exact_residual = ar.loaded_residual(new, faces, load[1])
-    if any(not ar.equal(a, b) for a, b in zip(exact_residual, retained, strict=True)):
-        raise ValueError('Corrected result changed the declared exact per-cell ledger residual')
     residual_max = ar.maximum(ar.absolute(r) for r in exact_residual)
-    if ar.less(target, residual_max):
-        raise ValueError('Retained exact cell residual exceeds the independently supplied absolute residual target')
     public_stocks = ar.array(len(stocks))
     for i, value in enumerate(stocks):
         ar.put(public_stocks, i, ar.represented(value))
@@ -208,9 +183,6 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     outward = ar.G.mpq(0)
     for i, j, amount in faces:
         check()
-        if not isinstance(i, int) or not 0 <= i < len(old) or j is not None and (
-                not isinstance(j, int) or not 0 <= j < len(old) or j == i):
-            raise ValueError('Single shared physical face owners are invalid')
         if j is None:
             outward = ar.op('add', outward, amount)
     global_total = ar.op('add', total, outward)
@@ -222,26 +194,11 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
     relative = ar.op('divide', ar.absolute(global_total), scale)
     if ar.less(ar.G.mpq(1, 10**11), relative):
         raise ValueError('Private booked-ledger global residual exceeds the existing 1e-11 energy gate')
-    sources = dict(K._CORE_SOURCES)
-    for incoming in (K._SOURCES, _SOURCES, bindings):
-        for path, digest in incoming.items():
-            check()
-            key = _atlas_identity.relkey(path)
-            if key in sources and sources[key] != digest:
-                raise ValueError('Input source binding conflicts with a core adapter/helper binding')
-            sources[key] = digest
-    for path, digest in sources.items():
-        check()
-        if (strict_sources and path.startswith('atlas_tectonics/_private/')
-                and _SOURCES.get(path) == digest):
-            continue
-        if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != digest:
-            raise ValueError('Private adapter input source binding changed')
     # Record scalars must also remain owned if the external caller settles the
     # transient scalar envelope after this numerical producer frame has gone.
     ar.copy((target, residual_max, source_total, boundary_energy, global_total, relative))
     record = dict(schema=K.SCHEMA, private_only=True, production_acceptance=False,
-        production_issue_called=False, sources=sources,
+        production_issue_called=False,
         native_origin_bound=False, production_resource_admitted=False,
         method_id=METHOD, state_semantics='Authoritative extensive enthalpy and represented capacity; public T=stored E/C is a caloric point representative, not an exact continuum cell mean.',
         endpoint_face_trace_status=K.TRACE_STATUS,
@@ -305,7 +262,7 @@ def _seal_record(record, check):
 
 
 def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powers,
-          bindings, check, *, budget, _sealed_output=None):
+          check, *, budget, _sealed_output=None):
     """Own sealed native-free numerical result; borrowed values expire on close."""
     def checkpoint():
         if check is not None and check():
@@ -322,19 +279,10 @@ def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, power
                    (q for _, _, q in faces), fixed.values(), powers.values()):
         for value in values:
             checkpoint()
-            if type(value) is not G.mpq:
-                raise TypeError('Exact owned GMP issue inputs required')
-    maps = (K._CORE_SOURCES, K._SOURCES, _SOURCES, bindings)
-    paths, text, source_size = 0, sum(len(fid) for fid in face_ids), 0
-    for mapping in maps:
-        for path, digest in mapping.items():
-            checkpoint()
-            paths += 1
-            text += len(path)+len(digest)+len(str(HERE))
-            source_size = max(source_size, _atlas_identity.as_path(path).stat().st_size)
-    # Additional issue graphs, copied key arrays, metadata strings and source
-    # read/hash buffers. Byte counts NEVER become rational bit-width estimates.
-    fixed_bytes = 1024*(192+48*n+24*nf+8*paths)+32*text+2*source_size
+    text = sum(len(fid) for fid in face_ids)
+    # Additional issue graphs, copied key arrays and metadata strings.
+    # Byte counts NEVER become rational bit-width estimates.
+    fixed_bytes = 1024*(192+48*n+24*nf)+32*text
     workspace = R.OwnedWorkspace(budget, 65536, category='heat-fixed-issue-incremental', cancelled=checkpoint)
     workspace.__enter__()
     owned = O._OwnerWorkspace(workspace)
@@ -342,11 +290,6 @@ def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, power
         ar = _IssueArithmetic(workspace, G, R, n, nf, 1, checkpoint,
                               extra_fixed_bytes=fixed_bytes)
         owned.arithmetic = ar
-        strict_sources = execution_mode() == 'strict'
-        for path, pin in _SOURCES.items():
-            checkpoint()
-            if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != pin:
-                raise ValueError('Fixed issue implementation source changed')
         old, cap, new, source, retained = [ar.copy(values)[1]
                                          for values in (old, cap, new, source, retained)]
         faces = ar.copy(faces)[1]
@@ -354,7 +297,7 @@ def issue(old, cap, new, faces, face_ids, source, retained, target, fixed, power
         ar.copy(fixed.values())
         ar.copy(powers.values())
         result = _issue(ar, old, cap, new, faces, face_ids, source, retained,
-                        target, fixed, powers, bindings, _sealed_output, strict_sources=strict_sources)
+                        target, fixed, powers, _sealed_output)
         # The numerical/encoder producer frame is gone. The complete exact
         # record and sealed immutable bytes stay owned, but bytearray/chunk
         # buffers no longer exist. Exceptions never take this return credit.

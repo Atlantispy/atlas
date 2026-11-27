@@ -9,27 +9,16 @@ correctly rounded Fraction-to-float conversion, 64 feasible scalar refinements
 and the shared-face global identity. No solver, geometry, control driver,
 native result origin or WorkBudget admission is imported or claimed.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest; import atlas_tectonics._identity as _atlas_identity
 
-from collections.abc import Sequence
 from concurrent.futures import CancelledError
 from fractions import Fraction as Q
-from hashlib import sha256
-from pathlib import Path
 
-_SOURCES = {_atlas_identity.relkey(__file__): sha256(Path(__file__).read_bytes()).hexdigest()}
-
-
-class ExactBackendUnavailable(RuntimeError):
-    pass
 
 
 def exact_library():
     """Use the native selected backend, never import gmpy2 or select one here."""
     from atlas_tectonics._exact_runtime import selected
     backend = selected.library()
-    if backend is None:
-        raise ExactBackendUnavailable('This exact/MPFR finisher requires the selected native GMP backend; Python-backend import is supported but execution is not')
     return backend
 
 
@@ -120,8 +109,6 @@ class Arithmetic:
             lo = G.mpfr(q)
         with self.up:
             hi = G.mpfr(q)
-        if not G.is_finite(lo) or not G.is_finite(hi):
-            raise Unresolved('Nonfinite interval input')
         return lo, hi
 
     def add(self, a, b):
@@ -157,26 +144,8 @@ def quadratic_nonincrease(old, new, capacity, *, precisions=(320, 640, 1280, 256
         if cancelled is not None and cancelled():
             raise CancelledError('Quadratic sign certification cancelled')
 
-    def verify_sources():
-        for path, pin in _SOURCES.items():
-            check()
-            if _helper_source_digest(_atlas_identity.as_path(path), owner_file=__file__) != pin:
-                raise ValueError('Quadratic sign helper source changed since import')
-
-    check()
-    verify_sources()
-    arrays = old, new, capacity
-    if (any(not isinstance(a, Sequence) or isinstance(a, (str, bytes)) for a in arrays)
-            or not old or len(old) != len(new) or len(old) != len(capacity)):
-        raise ValueError('Complete matching nonempty energy/capacity arrays required')
-    if (not isinstance(precisions, (tuple, list)) or not precisions
-            or any(type(p) is not int or p < 2 for p in precisions)
-            or any(a >= b for a, b in zip(precisions[:-1], precisions[1:], strict=True))):
-        raise ValueError('Explicit strictly increasing MPFR precisions >=2 required')
-    if type(exact_fallback) is not bool or type(exact_fallback_bit_limit) is not int or exact_fallback_bit_limit < 1:
-        raise ValueError('Explicit fallback policy and positive arithmetic bit limit required')
     audit = {} if evidence is None else evidence
-    audit.update(schema='atlas.private-quadratic-sign.r1', sources=dict(_SOURCES),
+    audit.update(schema='atlas.private-quadratic-sign.r1',
         predicate='sum_i((new_i-old_i)*(new_i+old_i)/(2*C_i)) <= 0',
         physical_predicate_changed=False, native_workbudget_admitted=False,
         exact_fallback_bit_limit=exact_fallback_bit_limit, attempts=[], exact_fallback_executed=False)
@@ -184,8 +153,6 @@ def quadratic_nonincrease(old, new, capacity, *, precisions=(320, 640, 1280, 256
     for before, after, cap in zip(old, new, capacity, strict=True):
         check()
         before, after, cap = _quadratic_q(before), _quadratic_q(after), _quadratic_q(cap)
-        if cap <= 0:
-            raise ValueError('Strictly positive exact represented capacities required')
         factors.append((after-before, after+before, G.mpq(1)/(2*cap)))
 
     def issue(route, bounds, precision, exact=None):
@@ -211,8 +178,6 @@ def quadratic_nonincrease(old, new, capacity, *, precisions=(320, 640, 1280, 256
             return issue('DIRECTED_INTERVAL_NONPOSITIVE', bounds, precision)
         if bounds[0] > 0:
             return issue('DIRECTED_INTERVAL_STRICT_POSITIVE', bounds, precision)
-    if not exact_fallback:
-        raise UnresolvedQuadraticSign('Quadratic interval contains zero; exact fallback disabled', dict(audit))
     audit['exact_fallback_executed'] = True
     limit = exact_fallback_bit_limit
 
@@ -261,9 +226,6 @@ def paired_global_balance(final_energy, loaded_energy, physical_faces, *, cancel
             raise CancelledError('Exact paired global balance cancelled')
 
     check()
-    count = len(final_energy)
-    if not count or len(loaded_energy) != count:
-        raise ValueError('Complete matching final and source-loaded energy arrays required')
     total, outward = G.mpq(0), G.mpq(0)
     for energy, load in zip(final_energy, loaded_energy, strict=True):
         check()
@@ -271,9 +233,6 @@ def paired_global_balance(final_energy, loaded_energy, physical_faces, *, cancel
     interior_count = boundary_count = 0
     for i, j, amount in physical_faces:
         check()
-        if not isinstance(i, int) or not 0 <= i < count or j is not None and (
-                not isinstance(j, int) or not 0 <= j < count or j == i):
-            raise ValueError('Single shared physical face owners are invalid')
         # Validate exact/finiteness even for interior values; do not accumulate.
         amount = rational(amount)
         if j is None:

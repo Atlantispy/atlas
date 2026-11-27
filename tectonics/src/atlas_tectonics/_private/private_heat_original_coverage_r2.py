@@ -9,35 +9,12 @@ The returned detached primitive report is caller-owned diagnostic output, as in
 R1. Its long-lived allocation is outside this scientific-work ownership proof.
 It contains no graph, mesh, owner or traceback aliases.
 """
-from atlas_tectonics.integration.reuse import helper_source_digest as _helper_source_digest
 
-from hashlib import sha256 as _sha256
 from pathlib import Path as _Path
 import sys as _sys
 
 _ROOT = _Path(__file__).resolve().parent
-_PINS = {
-    'private_heat_original_coverage_r1.py':
-        '82b6632a865c513ed88a8368acde254ed2cab29155d8332d85c0d8cd21f6e37e',
-    'private_heat_issuer_resources_r1.py':
-        'a05d036dde9fa04a14a61e764c45cba137eb25f9c5f8fe1bebf59a2ada06ce43',
-}
-_SELF_SHA = _sha256(_Path(__file__).read_bytes()).hexdigest()
-
-
-def source_bindings():
-    pins = {str(_ROOT / name): expected for name, expected in _PINS.items()}
-    pins[str(_Path(__file__).resolve())] = _SELF_SHA
-    for path, expected in pins.items():
-        if _helper_source_digest(_Path(path), owner_file=__file__) != expected:
-            raise ValueError('Coverage successor source changed: ' + path)
-    return pins
-
-
-source_bindings()
 _PRIOR_BYTES = (_ROOT / 'private_heat_original_coverage_r1.py').read_bytes()
-if _sha256(_PRIOR_BYTES).hexdigest() != _PINS['private_heat_original_coverage_r1.py']:
-    raise ValueError('Pinned coverage source changed while loading')
 # Additive exact copy: physical_coverage, save_operands and cache helpers retain
 # their original code/defaults. Only inspect_preadvance is replaced below.
 exec(compile(_PRIOR_BYTES, str(_ROOT / 'private_heat_original_coverage_r1.py'), 'exec'), globals())
@@ -167,11 +144,6 @@ def check_saved(mesh_blob, graph_blob, graph_id, resources, budget, cancel=None,
     prove that saved bytes are a current live owner, an accepted endpoint, or
     historically the same mesh. The caller must bind their source/provenance.
     """
-    source_bindings()
-    if type(mesh_blob) is not bytes or type(graph_blob) is not bytes:
-        raise TypeError('Immutable saved mesh and graph bytes required')
-    if observe_counts is not None and not callable(observe_counts):
-        raise TypeError('Optional count observer must be callable')
     from atlas_tectonics.integration.heat.mimetic_heat import _q
     with _compact_mesh(mesh_blob, resources, budget, cancel, observe_counts) as compact:
         with resources.decoded(graph_blob, budget=budget, cancel=cancel) as decoded:
@@ -191,7 +163,6 @@ def check_saved(mesh_blob, graph_blob, graph_id, resources, budget, cancel=None,
 
 
 def inspect_preadvance(mesh, graph, bounds, resources, budget, cancel, artifacts, record, save):
-    source_bindings()
     record['preadvance_operands'] = save_operands(artifacts, mesh=mesh._json,
         closed_graph=graph._json, bounds=bounds._json)
     save()

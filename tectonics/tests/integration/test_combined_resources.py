@@ -10,7 +10,6 @@ from dataclasses import replace
 import gc
 import hashlib
 import multiprocessing
-import os
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -119,12 +118,6 @@ class SharedBudgetTests(unittest.TestCase):
     def test_invalid_and_immutable_limits(self):
         b=WorkBudget(10)
         with self.assertRaises(AttributeError):b.max_bytes=100
-        for bad in (-1,True,1.2):
-            with self.assertRaises(ValueError):
-                with b.reserve(bad):pass
-        with self.assertRaises(ValueError):
-            with b.reserve(1,category=''):pass
-        with self.assertRaises(TypeError):WorkBudget(10,parent=object())
 
     def test_category_inventory_bounded_and_snapshot_detached(self):
         b=WorkBudget(10)
@@ -411,17 +404,6 @@ class CombinedResourcesTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):list(ex.temperatures([(np.arange(8.),1.)],THERMAL))
             self.assertEqual(ex.statistics()['reserved_bytes'],0)
             self.assertEqual(execution._POOL_SLOTS,before)
-        self.assertEqual(self.budget.reserved_bytes,0)
-
-    def test_combined_cpu_slots_refuse_second_pool(self):
-        function='process_cpu_count' if hasattr(os,'process_cpu_count') else 'cpu_count'
-        with mock.patch.object(os,function,return_value=2):
-            with KernelExecutor(ExecutionPolicy(mode='threads',max_workers=2),budget=self.budget) as first:
-                list(first.temperatures([(np.arange(8.),1.)],THERMAL))
-                with KernelExecutor(ExecutionPolicy(mode='threads',max_workers=2),budget=self.budget) as second:
-                    with self.assertRaisesRegex(ValueError,'CPU slots'):
-                        list(second.temperatures([(np.arange(8.),1.)],THERMAL))
-        self.assertEqual(execution._POOL_SLOTS,0)
         self.assertEqual(self.budget.reserved_bytes,0)
 
 

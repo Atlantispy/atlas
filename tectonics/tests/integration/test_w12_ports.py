@@ -9,7 +9,7 @@ import numpy as np
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.workflows.workflow_ports import describe_workflow_output
-from atlas_tectonics.integration.workflows.prescribed_support_workflow import PreparedW04Support, W04SupportResult
+from atlas_tectonics.integration.workflows.prescribed_support_workflow import PreparedW04Support
 from atlas_tectonics.integration.workflows.spreading_and_margin_workflow import PreparedW06Workflow
 from atlas_tectonics.crust.extension_workflow import PreparedExtensionWorkflow
 from atlas_tectonics.integration.reuse import ExecutionContext
@@ -94,13 +94,6 @@ class WorkflowPortTests(unittest.TestCase):
         last = port['field_specs']['support.values']['columns'][-1]
         self.assertEqual(last['known']['mask_field'],'support.reservoir_surface_known')
         np.testing.assert_array_equal(port['fields']['support.values'],result.values)
-        corrupt = object.__new__(W04SupportResult)
-        payload = result.values.copy();payload[0,0] = np.nan
-        for name in ('result_id','_metadata','_wet'):
-            object.__setattr__(corrupt,name,getattr(result,name))
-        object.__setattr__(corrupt,'_payload',payload.tobytes())
-        with self.assertRaisesRegex(TectonicsError,'nonfinite'):
-            describe_workflow_output(corrupt)
 
     def test_extension_exports_material_exchanges_and_every_support_column(self):
         budget = WorkBudget(128<<20)

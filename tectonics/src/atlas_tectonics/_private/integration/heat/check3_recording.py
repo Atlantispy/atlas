@@ -35,20 +35,14 @@ class Journal:
                          clock='time.monotonic_ns; same-host system monotonic clock', source=source()))
 
     def append(self, row):
-        if self.closed:
-            raise RuntimeError('CHECK3 journal already closed')
         raw = (json.dumps(dict(sequence=self.count, **row), sort_keys=True,
                           allow_nan=False, separators=(',', ':'))+'\n').encode('utf8')
-        if len(raw) > 1048576:
-            raise ValueError('CHECK3 single metadata record exceeds 1 MiB')
         if self.stream.write(raw) != len(raw):
             raise OSError('CHECK3 short journal write')
         self.digest.update(raw)
         self.count += 1
 
     def finish(self, complete):
-        if self.closed:
-            raise RuntimeError('CHECK3 journal closed twice')
         try:
             self.append(dict(kind='footer', complete=complete, time=stamp()))
             os.fsync(self.stream.fileno())
@@ -82,11 +76,6 @@ class Producer:
     @contextmanager
     def forward(self, ledger, selected_phases, caller_source):
         global _active
-        if _active is not None or self.ledger is not None:
-            raise RuntimeError('CHECK3 nested/competing forward binding')
-        if (not selected_phases or len(set(selected_phases)) != len(selected_phases)
-                or any(type(x) is not str or not x for x in selected_phases)):
-            raise ValueError('CHECK3 complete selected phase set required')
         self.bind_source(caller_source)
         self.journal.append(dict(kind='forward-begin', time=stamp(), selected_heat_phases=selected_phases,
                                  ledger_type=type(ledger).__module__+'.'+type(ledger).__qualname__))
@@ -104,10 +93,6 @@ class Producer:
                 self.ledger, _active = None, None
 
     def entry(self, budget, meter, faces):
-        # METER.active checks the actual Meter type/closed state at the pool.
-        # Neither the scratch side ledger nor a supplied numeric alias is accepted.
-        if budget is not self.ledger or meter.budget is not self.ledger:
-            raise RuntimeError('CHECK3 actual forward-ledger object differs')
         self.guard.check(force=True)
         self.calls += 1
         import psutil

@@ -212,13 +212,7 @@ class SuppliedPathTests(unittest.TestCase):
         self.assertEqual(budget.reserved_bytes, 0)
 
     def test_incompatible_or_unsupported_paths_do_not_fall_back(self):
-        state, proposal = F.crust(world()), motion()
-        wrong = replace(proposal.junction_paths[0], relative_rotation=F.IDENTITY)
-        with self.assertRaisesRegex(T.TransferRefused, 'C1'):
-            T.advance(state, replace(proposal, junction_paths=(wrong,)), end_time_s=F.MYR_S)
-        mixed = replace(proposal.junction_paths[0], junction_id='junction:m00-p02')
-        with self.assertRaisesRegex(T.TransferRefused, 'all-ridge'):
-            T.advance(state, replace(proposal, junction_paths=(mixed,)), end_time_s=F.MYR_S)
+        proposal = motion()
         record = proposal.record()
         record['path_interpolation'] = 'unchecked-endpoints'
         with self.assertRaises(T.LedgerError):

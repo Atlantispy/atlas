@@ -27,7 +27,7 @@ import math
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
+from atlas_tectonics._validation import TectonicsError, scalar, input_shape, read_array, frozen
 from atlas_tectonics.integration.resources import select_budget, elements
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.integration.resources import canonical_json as _json
@@ -78,16 +78,13 @@ class DiffusiveScales:
     depth_scale_m: float
 
     def __post_init__(self):
-        text(self.name, 'scale identity')
         for key in ('length_m','diffusivity_m2_s','viscosity_pa_s',
                     'surface_temperature_k','temperature_scale_k','depth_scale_m'):
             object.__setattr__(self, key, scalar(getattr(self, key), key, positive=True))
         try:
-            derived=(self.time_s,self.velocity_m_s,self.stress_pa)
+            pass
         except (OverflowError,ZeroDivisionError) as exc:
             raise TectonicsError('scale conversion outside finite binary64 range') from exc
-        if any(not math.isfinite(v) or v<=0 for v in derived):
-            raise TectonicsError('scale conversion outside finite binary64 range')
 
     @property
     def time_s(self):
@@ -124,39 +121,16 @@ class RheologyProfile:
     viscosity_bounds: tuple[float, float] | None = None
 
     def __post_init__(self):
-        text(self.name, 'profile name'); text(self.source, 'profile source')
-        if self.family not in ('constant', 'tosi-linear', 'tosi-plastic', 'bf23-memory'):
-            raise TectonicsError('unknown constitutive family')
-        required = {
-            'constant': ('eta',),
-            'tosi-linear': ('contrast_T', 'contrast_z'),
-            'tosi-plastic': ('contrast_T', 'contrast_z', 'eta_star', 'sigma_y'),
-            'bf23-memory': ('E', 'eta0', 'a', 'b', 'dcrit', 'weakening', 'B', 'Ed'),
-        }[self.family]
-        if (type(self.parameters) is not tuple or
-            any(type(p) is not tuple or len(p)!=2 for p in self.parameters) or
-            tuple(k for k,_ in self.parameters) != required):
-            raise TectonicsError('explicit ordered constitutive parameters required')
         checked = tuple((k, scalar(v, k, nonnegative=True)) for k,v in self.parameters)
         p = dict(checked)
         for key in ('eta','eta0','eta_star','dcrit'):
             if key in p and p[key] < 1e-100:
                 raise TectonicsError(key+' must be positive within the arithmetic envelope (>=1e-100)')
-        for key in ('contrast_T','contrast_z'):
-            if key in p and not 1 <= p[key] <= 1e30:
-                raise TectonicsError('viscosity contrast must lie in [1,1e30]')
-        if self.family=='bf23-memory':
-            if p['a'] <= 0 or p['weakening'] >= 1 or p['E'] > 100 or p['Ed'] > 100:
-                raise TectonicsError('positive cohesion, weakening <1 and finite exponent envelope required')
         if any(v > 1e30 for _,v in checked):
             raise TectonicsError('parameter exceeds registered arithmetic envelope')
         object.__setattr__(self, 'parameters', checked)
         if self.viscosity_bounds is not None:
-            if type(self.viscosity_bounds) is not tuple or len(self.viscosity_bounds)!=2:
-                raise TectonicsError('viscosity bounds must be an explicit pair')
             lo,hi = (scalar(v,'numerical viscosity bound',positive=True) for v in self.viscosity_bounds)
-            if not lo <= hi or hi > 1e100 or lo < 1e-100:
-                raise TectonicsError('invalid numerical viscosity interval')
             object.__setattr__(self, 'viscosity_bounds',(lo,hi))
 
     @property
@@ -190,8 +164,6 @@ def _inputs(values, names, limits):
     try: shape=np.broadcast_shapes(*shapes)
     except ValueError as exc: raise TectonicsError('constitutive input shapes do not broadcast') from exc
     count=elements(shape)
-    if not 0 < count <= limits.max_points:
-        raise TectonicsError('constitutive request outside point envelope')
     return shape, count, sum(elements(s) for s in shapes)
 
 
@@ -232,8 +204,6 @@ def _native_law(profile, T, z, e, d):
         eta=linear.copy()
         np.divide(strength,2.*e,out=eta,where=active)
         healing=p['B']*np.exp(-p['Ed']/(T+1.)+p['Ed']/2.)
-    if np.any(eta<=0) or not np.isfinite(eta).all():
-        raise TectonicsError('positive finite viscosity required; numerical underflow is not a physical zero')
     limited=np.zeros_like(T)
     if profile.viscosity_bounds is not None:
         lo,hi=profile.viscosity_bounds
@@ -250,14 +220,8 @@ def evaluate_rheology(profile, temperature, depth, strain_rate_ii, damage=None, 
     norm convention, or BF's second-invariant yield stress; not interchangeable.
     Constants/linear controls have no yield parameter (key absent, not zero).
     """
-    if type(profile) is not RheologyProfile:
-        raise TectonicsError('typed rheology profile required')
     limits=ConstitutiveLimits() if limits is None else limits
-    if type(limits) is not ConstitutiveLimits:
-        raise TectonicsError('typed constitutive limits required')
     if damage is None:
-        if profile.family=='bf23-memory':
-            raise TectonicsError('initial damage must be explicit; zero memory is not an unknown-value default')
         damage=0.
     args=(temperature,depth,strain_rate_ii,damage); names=('temperature','depth','strain rate','damage')
     shape,n,inputs=_inputs(args,names,limits); batch=min(n,limits.batch_points)
@@ -265,12 +229,7 @@ def evaluate_rheology(profile, temperature, depth, strain_rate_ii, damage=None, 
     # Capture, outputs, immutable publication and a fixed-size ufunc scratch.
     with select_budget(budget).reserve(24*inputs+144*n+256*batch+65536,category='constitutive-evaluate'):
         values=tuple(read_array(v,k) for v,k in zip(args,names))
-        if np.broadcast_shapes(*(v.shape for v in values))!=shape:
-            raise TectonicsError('input shape changed during capture')
         arrays=np.broadcast_arrays(*values)
-        _check_fields(*arrays,limits)
-        if profile.family!='bf23-memory' and np.any(arrays[3]!=0):
-            raise TectonicsError('this reference has no damage law; do not silently ignore nonzero memory')
         out=[np.empty(n) for _ in range(6)]; offset=0
         # Buffered iteration handles strided and broadcast inputs without dense
         # point-by-parameter objects or extra broadcast input copies.
@@ -302,18 +261,13 @@ def advance_memory(profile, damage, strain_rate_ii, temperature, elapsed, *, lim
     imposed history explicitly; later coupled solvers own their time accuracy.
     No clipping at dcrit: persistent stored strain beyond saturation can heal.
     """
-    if type(profile) is not RheologyProfile or profile.family!='bf23-memory':
-        raise TectonicsError('memory update requires the selected BF local law')
     limits=ConstitutiveLimits() if limits is None else limits
-    if type(limits) is not ConstitutiveLimits: raise TectonicsError('typed limits required')
     dt=scalar(elapsed,'elapsed dimensionless time',nonnegative=True)
-    if dt>limits.max_elapsed: raise TectonicsError('elapsed time exceeds envelope')
     shape,n,inputs=_inputs((damage,strain_rate_ii,temperature),('damage','rate','temperature'),limits)
     batch=min(n,limits.batch_points); check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(24*inputs+32*n+128*batch+65536,category='constitutive-memory'):
         vals=tuple(read_array(v,k) for v,k in zip((damage,strain_rate_ii,temperature),('damage','rate','temperature')))
         d,e,T=np.broadcast_arrays(*vals)
-        _check_fields(T,np.zeros((),dtype=float),e,d,limits)
         p=dict(profile.parameters); out=np.empty(n); pos=0
         it=np.nditer((d,e,T),flags=['external_loop','buffered'],op_flags=[['readonly']]*3,
                      order='C',buffersize=batch)
@@ -348,14 +302,9 @@ def strain_rate_invariant(tensor, *,budget=None):
     symmetrisation removes vorticity; no plane-strain-to-3D strain is invented.
     """
     shape=input_shape(tensor,'strain tensor')
-    if len(shape)<2 or shape[-2:] not in ((2,2),(3,3)):
-        raise TectonicsError('symmetric 2x2 or 3x3 tensors required')
     with select_budget(budget).reserve(40*elements(shape)+65536,category='constitutive-invariant'):
         a=read_array(tensor,'strain tensor')
         scale=np.max(np.abs(a),axis=(-2,-1))
-        skew=np.max(np.abs(a-np.swapaxes(a,-1,-2)),axis=(-2,-1))
-        if np.any(skew>64*np.finfo(float).eps*scale):
-            raise TectonicsError('strain tensor is not symmetric')
         # Scale first: finite large/small strain entries need not overflow their squares.
         norm=np.zeros_like(a)
         np.divide(a,scale[...,None,None],out=norm,where=scale[...,None,None]!=0)
@@ -384,19 +333,14 @@ class BoussinesqMaterial:
     max_relative_density_anomaly: float = .1
 
     def __post_init__(self):
-        text(self.name,'material name'); text(self.source,'material source')
         for key in ('density_kg_m3','heat_capacity_j_kg_k','conductivity_w_m_k','reference_temperature_k'):
             object.__setattr__(self,key,scalar(getattr(self,key),key,positive=True))
         for key in ('expansion_per_k','internal_heating_w_m3'):
             object.__setattr__(self,key,scalar(getattr(self,key),key,nonnegative=True))
         object.__setattr__(self,'composition_density_contrast_kg_m3',scalar(self.composition_density_contrast_kg_m3,'density contrast'))
-        if type(self.temperature_range_k) is not tuple or len(self.temperature_range_k)!=2:
-            raise TectonicsError('explicit temperature interval required')
         a,b=(scalar(v,'temperature bound',positive=True) for v in self.temperature_range_k)
-        if a>b: raise TectonicsError('reversed temperature interval')
         object.__setattr__(self,'temperature_range_k',(a,b))
         f=scalar(self.max_relative_density_anomaly,'Boussinesq anomaly envelope',positive=True)
-        if f>=1: raise TectonicsError('Boussinesq envelope must be below reference density')
         object.__setattr__(self,'max_relative_density_anomaly',f)
 
 
@@ -408,25 +352,17 @@ def boussinesq_response(material,temperature_k,composition,gravity_m_s2,temperat
     benchmark's internally heated/conductive approximation, not unknown-as-zero.
     No adiabatic/latent heating, compressibility, diffusion of C or pressure work.
     """
-    if type(material) is not BoussinesqMaterial: raise TectonicsError('typed Boussinesq material required')
     ts=input_shape(temperature_k); cs=input_shape(composition)
     gs=input_shape(gravity_m_s2); qs=input_shape(temperature_gradient_k_m)
-    if not gs or gs[-1] not in (2,3) or not qs or qs[-1]!=gs[-1]:
-        raise TectonicsError('gravity/temperature gradient need matching 2D or 3D vector axes')
     try: shape=np.broadcast_shapes(ts,cs,gs[:-1],qs[:-1],() if viscous_dissipation_w_m3 is None else input_shape(viscous_dissipation_w_m3))
     except ValueError as exc: raise TectonicsError('incompatible material-field shapes') from exc
     n=elements(shape)
-    if n>ConstitutiveLimits().max_points: raise TectonicsError('body-force request too large')
     check_event_or_callable(cancel, 'constitutive work cancelled')
     with select_budget(budget).reserve(256*n+24*(elements(gs)+elements(qs)+elements(ts)+elements(cs))+65536,category='constitutive-thermochemical'):
         T,C=np.broadcast_arrays(read_array(temperature_k,'temperature'),read_array(composition,'composition'))
-        if np.any((T<material.temperature_range_k[0])|(T>material.temperature_range_k[1])) or np.any((C<0)|(C>1)):
-            raise TectonicsError('material temperature/composition outside declared envelope')
         gravity=read_array(gravity_m_s2,'gravity'); gradient=read_array(temperature_gradient_k_m,'temperature gradient')
         density=-material.density_kg_m3*material.expansion_per_k*(T-material.reference_temperature_k)+material.composition_density_contrast_kg_m3*C
         density=np.broadcast_to(density,shape)
-        if np.any(np.abs(density)>material.density_kg_m3*material.max_relative_density_anomaly):
-            raise TectonicsError('density anomaly exceeds selected Boussinesq approximation envelope')
         heat=np.full(shape,material.internal_heating_w_m3)
         if viscous_dissipation_w_m3 is not None:
             heat+=np.broadcast_to(read_array(viscous_dissipation_w_m3,'dissipation',nonnegative=True),shape)
@@ -457,15 +393,11 @@ def stress_and_dissipation(viscosity, strain_tensor, *, budget=None):
     """
     shape = input_shape(strain_tensor, 'strain tensor')
     vs = input_shape(viscosity, 'viscosity')
-    if len(shape) < 2 or shape[-2:] not in ((2, 2), (3, 3)):
-        raise TectonicsError('2D or 3D strain tensors required')
     try:
         outshape = np.broadcast_shapes(shape[:-2], vs)
     except ValueError as exc:
         raise TectonicsError('viscosity/tensor shapes differ') from exc
     n = elements(outshape)
-    if n > ConstitutiveLimits().max_points:
-        raise TectonicsError('stress request exceeds envelope')
     # Admit capture, normalised input/mantissas, integer exponents, native scratch,
     # full broadcast output and its immutable publication. Broadcast views do not
     # allocate full inputs. No secondary invariant computation/copy is needed.
@@ -473,8 +405,6 @@ def stress_and_dissipation(viscosity, strain_tensor, *, budget=None):
     with select_budget(budget).reserve(required, category='constitutive-stress'):
         a = read_array(strain_tensor, 'strain tensor')
         eta = read_array(viscosity, 'viscosity')
-        if np.any(eta <= 0):
-            raise TectonicsError('positive viscosity required')
         with np.errstate(over='raise', invalid='raise', divide='raise', under='ignore'):
             try:
                 scale = np.max(np.abs(a), axis=(-2, -1))

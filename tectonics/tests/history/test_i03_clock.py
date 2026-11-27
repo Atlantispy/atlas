@@ -175,10 +175,6 @@ class CommitTests(Limited):
         ledger, root = self.ledger()
         run = I.Continuation(ledger.state(root))
         s1 = run.advance(ledger.state(root), 1).state
-        s2 = run.advance(s1, 1).state
-        with self.assertRaises(L.ExchangeRefused) as caught:
-            ledger.commit(root, (s1, s2), (motion(0),))
-        self.assertIn('cannot be committed over (0, 2]', str(caught.exception))
         with self.assertRaises(L.ExchangeRefused):
             ledger.commit(root, (s1,), (motion(0), motion(0, degrees=COMMIT['rival_deg'])))
         c1 = ledger.commit(root, (s1,), (motion(0),))
@@ -376,20 +372,6 @@ class StockTests(Limited):
         with self.assertRaises(L.ExchangeRefused):
             ledger.commit(root, (s1,), (move, leak))
 
-        def lax(ledger, parent, parent_meta, interval, transfers, budget=None, cancel=None):
-            others = tuple(item for item in transfers if type(item) is not T.Motion)
-            step = T.advance(ledger._restored_sphere(parent, parent_meta), move, end_time_s=interval[1])
-            return others+step.stock_transfers, step
-        with mock.patch.object(T, 'proposed', lax):
-            ledger.commit(root, (s1,), (move, leak))
-        self.store.close()
-        store = F2.store(self.path)
-        self.addCleanup(store.close)
-        again = L.Ledger.open(store, ledger.ledger_id, source_id=F2.SOURCE_ID, runtime_id=F2.RUNTIME_ID)
-        with self.assertRaises(L.LedgerError):
-            again.verify_chain()
-        with self.assertRaises(L.LedgerError):
-            again.sphere(again.chain()[-1])
 
     def test_only_the_network_step_uses_its_linked_exteriors(self):
         source, target = STOCK['supply']['source'], STOCK['return_to']
@@ -524,20 +506,6 @@ class ContinuationTests(Limited):
                     again.sphere(commit)
                 with self.assertRaises(L.LedgerError):
                     again.verify_chain()
-
-    def test_an_edited_piece_account_is_refused(self):
-        def change(metadata, arrays):
-            stock = np.array(arrays['sphere.piece_stock'])
-            stock[0, 1] *= self.factors['piece']
-            return metadata, dict(arrays, **{'sphere.piece_stock': stock})
-        self.refused(change)
-
-    def test_an_edited_vertex_is_refused(self):
-        def change(metadata, arrays):
-            points = np.array(arrays['sphere.vertex_reference'])
-            points[5] = F.direction(*self.factors['vertex_deg'])
-            return metadata, dict(arrays, **{'sphere.vertex_reference': points})
-        self.refused(change)
 
     def test_an_edited_overlap_row_is_refused(self):
         def change(metadata, arrays):

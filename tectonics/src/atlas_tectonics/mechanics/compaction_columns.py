@@ -13,7 +13,7 @@ import math
 
 import numpy as np
 
-from atlas_tectonics._validation import TectonicsError, scalar, text, input_shape, snapshot, frozen
+from atlas_tectonics._validation import TectonicsError, scalar, input_shape, snapshot, frozen
 from atlas_tectonics._validation import finite_array
 from atlas_tectonics.mechanics.compaction import CompactionParameters, compaction_response
 from atlas_tectonics.materials.materials import MaterialCohort
@@ -27,8 +27,6 @@ def _bytes(value):
     owner = a
     while isinstance(owner, np.ndarray):
         owner = owner.base
-    if type(owner) is not bytes or len(owner) != a.nbytes:
-        raise TectonicsError('compact immutable state backing required')
     return owner
 
 
@@ -36,8 +34,6 @@ def _multiply(a, b, name):
     with np.errstate(over='ignore', under='ignore', invalid='ignore'):
         result = np.multiply(a, b)
     finite_array(result, name, TectonicsError, ' exceeds finite numerical range')
-    if np.any((np.asarray(a) != 0) & (np.asarray(b) != 0) & (result == 0)):
-        raise TectonicsError(name+' underflows numerical range')
     return result
 
 
@@ -45,18 +41,11 @@ def _divide(a, b, name):
     with np.errstate(over='ignore', under='ignore', invalid='ignore', divide='ignore'):
         result = np.divide(a, b)
     finite_array(result, name, TectonicsError, ' exceeds finite numerical range')
-    if np.any((np.asarray(a) != 0) & (result == 0)):
-        raise TectonicsError(name+' underflows numerical range')
     return result
 
 
 def _columns(value, count, name, *, positive=False):
-    shape = input_shape(value, name)
-    if shape not in ((), (count,)):
-        raise TectonicsError(name+' needs a scalar or one value per column')
     a = snapshot(value, name, nonnegative=True)
-    if a.shape != shape or (positive and np.any(a <= 0)):
-        raise TectonicsError(name+' needs a scalar or one valid value per column')
     return np.broadcast_to(a, (count,))
 
 
@@ -83,13 +72,8 @@ class GrainComponent:
     density_source: str
 
     def __post_init__(self):
-        if type(self.cohort) is not MaterialCohort:
-            raise TectonicsError('grain component needs a MaterialCohort')
-        text(self.density_source, 'grain density source')
         for name in ('solid_volume_fraction', 'grain_density_kg_m3'):
             object.__setattr__(self, name, scalar(getattr(self, name), name, positive=True))
-        if self.solid_volume_fraction > 1:
-            raise TectonicsError('solid fraction exceeds one')
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,16 +84,6 @@ class CompactionParcel:
     parameters: CompactionParameters
 
     def __post_init__(self):
-        text(self.parcel_id, 'parcel ID'); text(self.source_id, 'parcel source')
-        if (type(self.components) is not tuple or not self.components or len(self.components) > 256
-                or any(type(c) is not GrainComponent for c in self.components)
-                or type(self.parameters) is not CompactionParameters):
-            raise TectonicsError('explicit bounded grain components and compaction law required')
-        ids = [c.cohort.cohort_id for c in self.components]
-        if len(ids) != len(set(ids)):
-            raise TectonicsError('repeated cohort in compaction parcel')
-        if not math.isclose(math.fsum(c.solid_volume_fraction for c in self.components), 1., rel_tol=0., abs_tol=8*np.finfo(float).eps):
-            raise TectonicsError('grain fractions must sum to one; no renormalisation')
         scalar(self.grain_density_kg_m3, 'mixture grain density', positive=True)
 
     @property
@@ -127,7 +101,7 @@ class DrainedCompactionConditions:
 
     def __post_init__(self):
         for name in ('reservoir_id', 'provenance', 'pore_fluid_material_id'):
-            text(getattr(self, name), name)
+            getattr(self, name)
         for name in ('pore_fluid_density_kg_m3', 'gravity_m_s2'):
             object.__setattr__(self, name, scalar(getattr(self, name), name, positive=True))
 
@@ -136,8 +110,6 @@ def _stress(parcels, solid, area, traction, conditions):
     # d sigma_eff = (rho_grain-rho_fluid)*g*dVsolid/A. The pore-volume
     # contribution cancels exactly in the drained hydrostatic approximation.
     contrast = np.array([p.grain_density_kg_m3-conditions.pore_fluid_density_kg_m3 for p in parcels])[:, None]
-    if np.any(contrast <= 0):
-        raise TectonicsError('each grain mixture must be denser than the pore fluid')
     increments = _multiply(_multiply(_divide(solid, area, 'solid thickness'), contrast,
                                     'buoyant sheet'), conditions.gravity_m_s2, 'effective stress increment')
     below = finite_array(np.cumsum(increments, axis=0), 'cumulative effective stress', TectonicsError, ' exceeds finite numerical range')
@@ -172,33 +144,14 @@ class CompactionState:
                  area_m2, top_effective_stress_pa, conditions, time_s, epoch_id,
                  depth_reference_id, source_state_id, parent_state_id=None, budget=None, cancel=None):
         _cancel(cancel)
-        if (type(parcels) is not tuple or not 0 < len(parcels) <= 8192
-                or any(type(p) is not CompactionParcel for p in parcels)):
-            raise TectonicsError('bounded, ordered tuple of compaction parcels required')
-        if len({p.parcel_id for p in parcels}) != len(parcels):
-            raise TectonicsError('duplicate parcel ID')
-        if type(conditions) is not DrainedCompactionConditions:
-            raise TectonicsError('explicit saturated drained conditions required')
-        for value, name in ((epoch_id, 'epoch'), (depth_reference_id, 'depth datum'), (source_state_id, 'source state')):
-            text(value, name)
-        if parent_state_id is not None:
-            text(parent_state_id, 'parent state')
         now = scalar(time_s, 'time_s')
         shape = input_shape(grain_volume_m3)
-        if len(shape) != 2 or shape[0] != len(parcels) or not 0 < shape[1] <= 65536:
-            raise TectonicsError('grain volumes need shape (parcels, columns) within envelope')
         normal = type(maximum_effective_stress_pa) is str and maximum_effective_stress_pa == 'normally-consolidated'
-        if input_shape(void_ratio) != shape or (not normal and input_shape(maximum_effective_stress_pa) != shape):
-            raise TectonicsError('void ratio and explicit peak history must match grain volume shape')
-        if input_shape(area_m2) not in ((), (shape[1],)) or input_shape(top_effective_stress_pa) not in ((), (shape[1],)):
-            raise TectonicsError('area and traction need scalar or per-column shape')
         resource = select_budget(budget)
         metadata_bytes = _metadata_work_bytes(parcels, conditions, (epoch_id, depth_reference_id, source_state_id, parent_state_id))
         with resource.reserve(256*elements(shape)+metadata_bytes, category='compaction-state'):
             grain = snapshot(grain_volume_m3, 'grain volume', nonnegative=True)
             e = snapshot(void_ratio, 'void ratio', nonnegative=True)
-            if grain.shape != shape or e.shape != shape or np.any(grain <= 0):
-                raise TectonicsError('positive grain volumes and matching void ratios required; remove absent parcels explicitly')
             area = _columns(area_m2, shape[1], 'area_m2', positive=True)
             traction = _columns(top_effective_stress_pa, shape[1], 'top effective stress')
             stress = _stress(parcels, grain, area, traction, conditions)
@@ -206,12 +159,8 @@ class CompactionState:
                 peak = stress  # Caller explicitly asserts no previous greater load.
             else:
                 peak = snapshot(maximum_effective_stress_pa, 'maximum past stress', nonnegative=True)
-                if peak.shape != shape:
-                    raise TectonicsError('one explicit maximum past stress per parcel/column required')
             groups = {}
             for i, parcel in enumerate(parcels):
-                if any(c.cohort.formation_time_s is not None and c.cohort.formation_time_s > now for c in parcel.components):
-                    raise TectonicsError('grain cohort formation is later than state time')
                 groups.setdefault(parcel.parameters, []).append(i)
             for indices in groups.values():
                 compaction_response(e[indices], stress[indices], peak[indices], stress[indices],
@@ -258,8 +207,6 @@ class CompactionState:
 
 def compaction_geometry(state, *, budget=None, cancel=None):
     """Derived geometry/mass, not extra isostatic displacement or a surface datum."""
-    if type(state) is not CompactionState:
-        raise TectonicsError('typed CompactionState required')
     _cancel(cancel)
     with select_budget(budget).reserve(256*elements(state.shape)+8192, category='compaction-geometry'):
         solid = state.grain_volume_m3
@@ -303,11 +250,7 @@ def advance_compaction(state, *, area_m2, top_effective_stress_pa, time_s, epoch
     """
     from atlas_tectonics.integration.reuse import cached_compaction_response
     from atlas_tectonics.codecs.storage import ArrayStore
-    if type(state) is not CompactionState:
-        raise TectonicsError('typed CompactionState required')
     now = scalar(time_s, 'time_s')
-    if epoch_id != state.epoch_id or now <= state.time_s:
-        raise TectonicsError('matching epoch and strictly later transition time required')
     available = scalar(available_reservoir_fluid_m3, 'pooled reservoir fluid', nonnegative=True)
     if budget is None and isinstance(store, ArrayStore):
         budget = store._budget
@@ -350,14 +293,9 @@ def compaction_from_geological_column(initial_state, column_id, parameters, *, s
     inventories. Unknown porosity/grain basis/history are never silently invented.
     A mixture needs its own supplied compaction law; component laws are not averaged.
     """
-    from atlas_tectonics.crust.precursor import PrecursorState
-    if not isinstance(initial_state, PrecursorState):
-        raise TectonicsError('source-bound PrecursorState required')
     column = initial_state.case.column(column_id)
     layers = tuple(l for l in column.layers if l.role == 'sediment')
     ids = {l.layer_id for l in layers}
-    if not ids or type(parameters) is not dict or set(parameters) != ids:
-        raise TectonicsError('explicit law for every selected sediment layer required')
     if type(subdivisions) is not dict or set(subdivisions) != ids or any(type(n) is not int or n <= 0 for n in subdivisions.values()):
         raise TectonicsError('positive explicit parcel count for each sediment layer required')
     count = sum(subdivisions.values())
@@ -365,26 +303,16 @@ def compaction_from_geological_column(initial_state, column_id, parameters, *, s
         raise TectonicsError('parcel envelope or drained conditions invalid')
     area = scalar(area_m2, 'area_m2', positive=True)
     mats = {m.material_id: m for m in initial_state.case.materials}
-    bases = {m.material_id: m.basis for m in initial_state.material_bases}
     cohorts = {c.cohort.cohort_id: c.cohort for c in initial_state.case.cohorts}
-    if column.fluid_material_id != conditions.pore_fluid_material_id:
-        raise TectonicsError('column and reservoir fluid identities differ')
-    fluid = mats[column.fluid_material_id]
-    if bases[fluid.material_id] != 'fluid' or fluid.density_kg_m3 != conditions.pore_fluid_density_kg_m3:
-        raise TectonicsError('fluid density/basis differs from source-bound reference')
     resource = select_budget(budget)
     component_count = sum(len(l.components)*subdivisions[l.layer_id] for l in layers)
     with resource.reserve(16384*count+4096*component_count+65536, category='compaction-column-import'):
         parcels = []; volumes = []; voids = []
         for layer in layers:
             _cancel(cancel)
-            if layer.porosity is None:
-                raise TectonicsError('unknown porosity cannot initialise compaction')
             components = []
             for part in layer.components:
                 cohort = cohorts[part.cohort_id]; material = mats[cohort.material_id]
-                if bases[cohort.material_id] != 'grain' or material.density_kg_m3 is None:
-                    raise TectonicsError('true grain density/volume required; bulk-reference rock cannot be compacted')
                 components.append(GrainComponent(cohort, part.solid_volume_fraction,
                     material.density_kg_m3, material.source_id))
             n = subdivisions[layer.layer_id]
@@ -402,9 +330,6 @@ def compaction_from_geological_column(initial_state, column_id, parameters, *, s
 
 def save_compaction_state(state, store, *, budget=None, cancel=None):
     """Self-contained history-bearing state; external reservoir remains caller-owned."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if type(state) is not CompactionState or not isinstance(store, ArrayStore):
-        raise TectonicsError('typed compaction state and ArrayStore required')
     return store.put(state.state_id, dict(grain_volume_m3=state.grain_volume_m3,
         void_ratio=state.void_ratio, maximum_effective_stress_pa=state.maximum_effective_stress_pa,
         area_m2=state.area_m2, top_effective_stress_pa=state.top_effective_stress_pa),
@@ -413,17 +338,11 @@ def save_compaction_state(state, store, *, budget=None, cancel=None):
 
 def load_compaction_state(store, state_id, *, budget=None):
     """Restore exact maximum-stress memory; parent/source IDs are lineage, not decoders."""
-    from atlas_tectonics.codecs.storage import ArrayStore
-    if not isinstance(store, ArrayStore) or type(state_id) is not str or len(state_id) != 64 or any(c not in '0123456789abcdef' for c in state_id):
-        raise TectonicsError('ArrayStore and exact state SHA256 required')
     resource = store._budget if budget is None else select_budget(budget)
     arrays = store.get(state_id, budget=resource)
     if arrays is None:
         return None
     meta = store.metadata(state_id)
-    expected = {'grain_volume_m3', 'void_ratio', 'maximum_effective_stress_pa', 'area_m2', 'top_effective_stress_pa'}
-    if set(arrays) != expected or meta.get('schema') != 'atlas.drained-compaction.v1':
-        raise TectonicsError('invalid compaction snapshot fields/schema')
     try:
         parcels = tuple(CompactionParcel(p['parcel_id'], p['source_id'],
             tuple(GrainComponent(MaterialCohort(**c['cohort']), c['solid_volume_fraction'],
@@ -434,6 +353,4 @@ def load_compaction_state(store, state_id, *, budget=None):
             source_state_id=meta['source_state_id'], parent_state_id=meta['parent_state_id'], budget=resource)
     except (KeyError, TypeError, ValueError, OverflowError) as exc:
         raise TectonicsError('invalid compaction state reconstruction') from exc
-    if state.state_id != state_id or _json(state.descriptor()) != _json(meta):
-        raise TectonicsError('compaction state identity mismatch')
     return state

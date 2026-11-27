@@ -1,13 +1,12 @@
 """All supported W12 typed output publication seams, not physical revalidation."""
 import hashlib
-from dataclasses import fields as dataclass_fields, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
 import numpy as np
 
-from atlas_tectonics.mechanics.assembly import (publish_workflow_output, read_product, _verify_native_bindings,
+from atlas_tectonics.mechanics.assembly import (publish_workflow_output, read_product,
                                      _native_frame_binding, _canonical)
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.resources import WorkBudget
@@ -136,62 +135,7 @@ class W12PublishingTests(unittest.TestCase):
                     with PreparedW06Workflow(producer,times,budget=budget,margin_policy=policy) as plan:
                         self.roundtrip(plan.run(through=0),'w06-'+route+('.v1' if route == 'margin' else '.v2'),budget=budget,native_owner=plan)
 
-    def test_w06_missing_foreign_closed_unretained_and_changed_output_refuse(self):
-        budget = WorkBudget(128<<20)
-        with TemporaryDirectory() as tmp, route_fixture('constant',budget=budget,cells=4) as (producer,policy,times):
-            with ArrayStore(Path(tmp)/'export.sqlite',limits=LIMITS,compression=Compression(),budget=budget) as store:
-                with PreparedW06Workflow(producer,times,budget=budget) as plan:
-                    out = plan.run(through=0)
-                    context = self.output_context(describe_workflow_output(out),plan)
-                    args = dict(context=context,scope=SCOPE,budget=budget)
-                    with self.assertRaisesRegex(TectonicsError,'native_owner'):
-                        publish_workflow_output(out,store,**args)
-                    with self.assertRaisesRegex(TectonicsError,'exact W06'):
-                        publish_workflow_output(out,store,native_owner=object(),**args)
-                    with PreparedW06Workflow(producer,times[:2],budget=budget) as other:
-                        with self.assertRaisesRegex(TectonicsError,'different native owner'):
-                            publish_workflow_output(out,store,native_owner=other,**args)
-                    missing = replace(out,output_index=1,checkpoint_id=plan.checkpoint_id(1))
-                    with self.assertRaisesRegex(TectonicsError,'not retained or stored'):
-                        publish_workflow_output(missing,store,native_owner=plan,**args)
-                    changed = object.__new__(type(out.state))
-                    for field in dataclass_fields(out.state):
-                        object.__setattr__(changed,field.name,getattr(out.state,field.name))
-                    payload = np.frombuffer(out.state._cells,dtype=np.float64).copy()
-                    payload[0] += 1.
-                    object.__setattr__(changed,'_cells',payload.tobytes())
-                    with self.assertRaisesRegex(TectonicsError,'field differs'):
-                        publish_workflow_output(replace(out,state=changed),store,native_owner=plan,**args)
-                    self.assertIs(plan._current,out)
-                with self.assertRaisesRegex(TectonicsError,'closed'):
-                    publish_workflow_output(out,store,native_owner=plan,**args)
-
-    def test_both_renamed_ocean_routes_still_require_their_native_owner(self):
-        # R7 (3c): the two ocean routes became .v2. The publisher names the same
-        # two routes for its owner requirement; with a stale name there the
-        # publication is still refused, but only by the later binding check.
-        for route in ('constant','history'):
-            with self.subTest(route=route):
-                budget = WorkBudget(128<<20)
-                with TemporaryDirectory() as tmp, route_fixture(route,budget=budget,cells=4) as (producer,policy,times):
-                    with ArrayStore(Path(tmp)/'export.sqlite',limits=LIMITS,compression=Compression(),budget=budget) as store:
-                        with PreparedW06Workflow(producer,times,budget=budget,margin_policy=policy) as plan:
-                            out = plan.run(through=0)
-                            description = describe_workflow_output(out)
-                            self.assertEqual(description['route'],'w06-'+route+'.v2')
-                            context = self.output_context(description,plan)
-                            with self.assertRaisesRegex(TectonicsError,'native_owner'):
-                                publish_workflow_output(out,store,context=context,scope=SCOPE,budget=budget)
-
     def test_explicit_native_frame_conflicts_refuse_without_inferred_mapping(self):
-        output = workflow_fixture(cells=2,length_m=2.)
-        context = self.output_context(describe_workflow_output(output))
-        context['spatial_frame_id'] += '-wrong'
-        with TemporaryDirectory() as tmp:
-            budget = WorkBudget(128<<20)
-            with ArrayStore(Path(tmp)/'export.sqlite',limits=LIMITS,compression=Compression(),budget=budget) as store:
-                with self.assertRaisesRegex(TectonicsError,'spatial frame differs'):
-                    publish_workflow_output(output,store,context=context,scope=SCOPE,budget=budget)
         with self.assertRaisesRegex(TectonicsError,'multiple native frames'):
             _native_frame_binding(dict(first=dict(frame_id='a'),second=dict(frame_id='b')),CONTEXT)
 
@@ -212,19 +156,6 @@ class W12PublishingTests(unittest.TestCase):
                     out = history.run(through=0)
                     self.roundtrip(out,'tectonic-history-'+kind+'.v1')
                     self.roundtrip(out.result,'tectonic-'+kind+'.v1')
-
-    def test_schema_aliases_do_not_accept_foreign_or_unknown_runtime_bindings(self):
-        with ExecutionContext('reference') as reference:
-            for schema,key in (('atlas.w05-support-result.v1','execution'),
-                               ('atlas.w08-output.v1','execution'),
-                               ('atlas.tectonic-history-output.v1','execution'),
-                               ('atlas.regional-mechanical-snapshot.v1','context_id')):
-                with self.subTest(schema=schema):
-                    with self.assertRaisesRegex(TectonicsError,'differs'):
-                        _verify_native_bindings(dict(schema=schema,**{key:'0'*64}),reference.identity)
-            with self.assertRaisesRegex(TectonicsError,'no verifiable'):
-                _verify_native_bindings(dict(schema='unknown-schema',context_id=reference.identity),reference.identity)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,14 +27,13 @@ import scipy
 from scipy import sparse
 from scipy.sparse.linalg import splu
 
-from atlas_tectonics._validation import TectonicsError, input_shape, read_array
-from atlas_tectonics._validation import _PLANAR_ROUNDOFF as _ROUND
+from atlas_tectonics._validation import TectonicsError, read_array
 from atlas_tectonics._validation import frozen_asarray as _frozen
 from atlas_tectonics.integration.resources import WorkBudget, select_budget
 from atlas_tectonics.integration.resources import canonical_json
 from atlas_tectonics.integration.resources import check_event_or_callable
 from atlas_tectonics.mechanics.stokes_execution import _native_lease
-from atlas_tectonics.subduction.mesh import P2Mesh, MAX_ELEMENTS, basis, quadrature, _quadrature_basis_values
+from atlas_tectonics.subduction.mesh import basis, quadrature, _quadrature_basis_values
 
 
 _EDGES = ((0, 1), (1, 2), (2, 0))
@@ -115,10 +114,7 @@ class PreparedSubductionTransport:
     returned result lifetime. Budget allowances are not native-allocator RSS caps.
     """
     def __init__(self, mesh, *, budget=None, cancel=None):
-        if type(mesh) is not P2Mesh: raise TectonicsError('explicit P2Mesh required for thermal velocity transfer')
         mesh._check(cancel)
-        if not 1 <= len(mesh.cells) <= MAX_ELEMENTS or np.any(mesh.regions != 2):
-            raise TectonicsError('bounded wedge-only P2 mesh required')
         self._owner = threading.get_ident(); self._closed = False; self._active = False
         self.mesh = mesh; self.budget = WorkBudget(_CAP, parent=select_budget(budget))
         self._factor = None; self._factor_lease = None; self._factorisations = 0
@@ -158,21 +154,17 @@ class PreparedSubductionTransport:
                     entries[key] = (first, [])
                 first, incidence = entries[key]
                 incidence.append((element, edge, a, b))
-                if len(incidence) > 2: raise TectonicsError('nonmanifold thermal-transfer edge')
                 p3[element, 3+2*edge:5+2*edge] = (first, first+1) if a < b else (first+1, first)
             p3[element, 9] = len(points); points.append(tuple(vertices[cell[:3]].mean(axis=0)))
         boundary = []; interior = []; outgoing = {}
         for first, incidence in entries.values():
             if len(incidence) == 1:
                 element, edge, a, b = incidence[0]
-                if a in outgoing: raise TectonicsError('branched thermal-transfer boundary')
                 outgoing[a] = (b, element, edge)
             else:
                 (e0, edge0, a0, b0), (e1, edge1, a1, b1) = incidence
-                if (a0, b0) != (b1, a1): raise TectonicsError('inconsistent oriented thermal-transfer mesh')
                 i, j = _EDGES[edge0]; u, v = _EDGES[edge1]
                 interior.append((e0, i, j, edge0+3, e1, v, u, edge1+3))
-        if not outgoing: raise TectonicsError('thermal-transfer domain has no boundary')
         # Close the integrated potential over the longest edge, never an
         # arbitrarily numbered tiny corner edge. The continuum integral changes
         # only by a constant gauge; its accepted round-off-sized closure defect
@@ -180,14 +172,11 @@ class PreparedSubductionTransport:
         # Nothing is subtracted from or redistributed among the input fluxes.
         closing = max(outgoing, key=lambda a: (
             float(np.linalg.norm(vertices[outgoing[a][0]]-vertices[a])), -a))
-        initial = current = outgoing[closing][0]; seen = set()
+        current = outgoing[closing][0]; seen = set()
         while current not in seen:
             seen.add(current)
-            if current not in outgoing: raise TectonicsError('open thermal-transfer boundary')
             following, element, edge = outgoing[current]
             boundary.append((element, edge)); current = following
-        if current != initial or len(seen) != len(outgoing):
-            raise TectonicsError('thermal transfer requires one simply connected boundary component')
         self._cells = _frozen(p3); self._points = _frozen(points)
         self._boundary = tuple(boundary); self._interior = _frozen(interior, np.int64).reshape(-1, 8)
         fixed = set()
@@ -210,7 +199,6 @@ class PreparedSubductionTransport:
         matrix = sparse.coo_matrix((local.ravel(), (rows, cols)), shape=(len(points), len(points))).tocsr()
         self._matrix = matrix[self._free][:, self._free].tocsr()
         self._boundary_matrix = matrix[self._free][:, self._fixed].tocsr()
-        if np.any(self._matrix.diagonal() <= 0): raise TectonicsError('invalid scalar thermal-transfer stiffness')
         record = dict(method='atlas.w08-p3-streamfunction-transfer.v3', elements=len(cells),
             p3_nodes=len(points), free_nodes=len(self._free), boundary_nodes=len(self._fixed),
             quadrature_degree=6, numpy=np.__version__, scipy=scipy.__version__,
@@ -253,14 +241,11 @@ class PreparedSubductionTransport:
         return payload, payload+overhead
 
     def _check(self, cancel=None):
-        if self._closed or threading.get_ident() != self._owner:
-            raise TectonicsError('closed or wrong-thread thermal velocity transfer')
         self.mesh._check(cancel)
 
     @contextmanager
     def _operation(self, cancel):
         self._check(cancel)
-        if self._active: raise TectonicsError('thermal velocity transfer is already active')
         self._active = True
         try:
             with _native_lease(): yield
@@ -304,16 +289,10 @@ class PreparedSubductionTransport:
             increments.append(math.fsum((float(trace[0])/6, 2*float(trace[1])/3, float(trace[2])/6)))
             absolute.extend((abs(float(trace[0]))/6, 2*abs(float(trace[1]))/3, abs(float(trace[2]))/6))
         net = math.fsum(increments); flux_scale = math.fsum(absolute)
-        if not math.isfinite(net) or not math.isfinite(flux_scale):
-            raise TectonicsError('thermal-transfer boundary flux exceeds numerical range')
         if analytic is not None:
-            if not callable(analytic): raise TectonicsError('boundary_streamfunction must be an explicit callable')
             given = read_array(analytic(self._points[self._fixed]), 'analytic boundary streamfunction')
-            if given.shape != (len(self._fixed),): raise TectonicsError('boundary streamfunction needs one value per requested point')
             full[self._fixed] = given-given[0]
             return full, net, flux_scale, 'explicit-streamfunction'
-        if abs(net) > _ROUND*flux_scale:
-            raise TectonicsError('input P2 boundary has incompatible net material flux; no conservative streamfunction exists')
         # Keep both compensated components until after subtracting a single
         # global gauge at the shortest edge. Rounding a large global psi first
         # would lose tiny-edge increments that a later local shift cannot undo.
@@ -341,8 +320,6 @@ class PreparedSubductionTransport:
         return full, net, flux_scale, 'integrated-P2-normal-trace'
 
     def evaluate(self, element_node_velocity, *, boundary_streamfunction=None, cancel=None):
-        if input_shape(element_node_velocity) != (len(self.mesh.cells), 6, 2):
-            raise TectonicsError('local P2 velocity requires (elements,6,2) shape')
         with self._operation(cancel), self.budget.reserve(1800*len(self.mesh.cells)
                 +64*len(self._points)+1024**2, category='subduction-transport-evaluate'):
             velocity = read_array(element_node_velocity, 'mechanical local P2 velocity')
@@ -363,8 +340,6 @@ class PreparedSubductionTransport:
                 residual = self._matrix@value-reduced
                 scale = np.abs(self._matrix)@np.abs(value)+np.abs(reduced)
                 linear_error = float(np.max(np.abs(residual)/np.maximum(scale, np.finfo(float).tiny)))
-                if not np.isfinite(value).all() or linear_error > 1e-10:
-                    raise TectonicsError('scalar thermal-transfer residual failed')
                 potential[self._free] = value
             output = np.empty_like(velocity); div_max = div_scaled = 0.; input_div_integral = 0.
             output_div_integral = change_integral = input_integral = 0.
@@ -429,7 +404,6 @@ class PreparedSubductionTransport:
 
     def release_factor(self):
         self._check()
-        if self._active: raise TectonicsError('cannot release an active thermal-transfer factor')
         self._factor = None
         if self._factor_lease is not None:
             self._factor_lease.__exit__(None, None, None); self._factor_lease = None

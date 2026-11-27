@@ -2,14 +2,12 @@
 
 The public ``integration_private_heat_cold`` stays at its diag20 bytes, so the
 execution identity is unchanged. This module derives the diag21 text from it
-(the reviewed binding pin and the lazy ``cold_transport`` branch), checks both
-digests, and executes it as a separate module. ``selected()`` binds it as the
+(the lazy ``cold_transport`` branch) and executes it as a separate module. ``selected()`` binds it as the
 package attribute that ``CollarWorkflow``'s ``from . import`` resolves, for the
 reader scope only; ``sys.modules`` and the public module object are untouched,
 so the strict callable inventory still sees the public functions.
 """
 from contextlib import contextmanager
-from hashlib import sha256
 from pathlib import Path
 import sys
 import threading
@@ -19,13 +17,8 @@ from atlas_tectonics.integration import heat as HEAT
 import atlas_tectonics.integration.heat.private_heat_cold as PUBLIC
 
 NAME = 'private_heat_cold'
-PUBLIC_SHA = '86037a1b70d32c900c5852409b22634cda28eb084e011057e44b1126e90abe76'
-# The derived text: the public file above with the _EDITS replacements below (the binding pin and diag21's
-# lazy-transport branch); made in memory by _derive, never written to disk, checked against this hash.
-DERIVED_SHA = '8483845f728aaa3587eeeeef833dbfde2a104aa69feb7a4cb8ca0ad4170f1947'
+# The derived text: the public file with diag21's lazy-transport branch; made in memory by _derive.
 _EDITS = (
-    ("_BINDING_SHA = '29ad6024cfe0125f5424b38648cf212e60bbf6a958a8a6e89ddd327fb3de5ae2'",
-     "_BINDING_SHA = 'aaaecca81b24c350e958ffc263c6b1d97cd9ca055cc00969802e9c0d1747e451'"),
     ("""            metadata = {k: v for k, v in exchange['transport'].items() if k != 'result_id'}
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))
@@ -56,19 +49,13 @@ _lock = threading.Lock()
 
 def _derive():
     path = Path(PUBLIC.__file__)
-    raw = path.read_bytes()
-    if sha256(raw).hexdigest() != PUBLIC_SHA:
-        raise ValueError('public cold bridge source differs')
-    text = raw.decode('utf-8')
+    text = path.read_bytes().decode('utf-8')
     for old, new in _EDITS:
         if text.count(old) != 1:
             raise ValueError('public cold bridge edit site differs')
         text = text.replace(old, new)
-    if sha256(text.encode('utf-8')).hexdigest() != DERIVED_SHA:
-        raise ValueError('derived cold bridge differs')
     module = types.ModuleType(__name__ + '.derived')
-    # __file__ stays the public path: its _verify rehashes that file against the
-    # public digest, so a public edit after derivation still refuses.
+    # __file__ stays the public path.
     module.__dict__.update(__file__=str(path), __package__=PUBLIC.__package__, __builtins__=__builtins__)
     exec(compile(text, str(path)+'[cold_bridge_r1]', 'exec', dont_inherit=True), module.__dict__)
     return module

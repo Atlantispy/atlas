@@ -35,19 +35,12 @@ def _admit(matrix, target, *, budget, cancelled, evidence, resource_evidence,
            reference=False, verified=False):
     K._require_gmp()
     INVENTORY.check(cancelled)
-    if (type(matrix) not in (list, tuple) or not matrix or type(target) not in (list, tuple)
-            or not target or any(type(row) not in (list, tuple) or len(row) != len(target) for row in matrix)):
-        raise ValueError('Nonempty rectangular observations and matching target required')
     m, n, largest = len(matrix), len(target), 1
     for row in matrix:
         for value in row:
             INVENTORY.check(cancelled)
-            if type(value) not in (int, G.mpq):
-                raise TypeError('Already owned int/GMP observation values required')
             largest = max(largest, sys.getsizeof(value))
     for value in target:
-        if type(value) not in (int, G.mpq):
-            raise TypeError('Already owned int/GMP target values required')
         largest = max(largest, sys.getsizeof(value))
     from atlas_tectonics._private.integration.heat import gmp_resources as R
     metadata = 262144+INVENTORY.D.CONTAINER_UNIT*(12*m*n+16*n*n+32*m+64*n+256)
@@ -56,7 +49,7 @@ def _admit(matrix, target, *, budget, cancelled, evidence, resource_evidence,
     work.__enter__()
     try:
         if not verified:
-            INVENTORY.verify_sources(cancelled)
+            pass
         arena = _Arithmetic(work, G, scalar_slots=6*m*n+5*n*n+24*m+48*n+128,
             container_bytes=metadata, initial_bits=max(128, 8*largest), cancelled=cancelled)
         arena.children = []
@@ -111,8 +104,6 @@ def _reference(matrix, target, *, arena, cancelled=None, evidence=None):
     try:
         check('input')
         m, n = len(matrix), len(target)
-        if not m or not n or any(len(row) != n for row in matrix):
-            raise ValueError('Nonempty rectangular observations and matching target required')
         original, rows, original_primitive = [], [], []
         right = [arena.q(value) for value in target]
         for i, row in enumerate(matrix):
@@ -157,8 +148,6 @@ def _reference(matrix, target, *, arena, cancelled=None, evidence=None):
                     audit['peak_integer_bits'] = max(audit['peak_integer_bits'], bits(numerator))
                     if previous != 1:
                         quotient, remainder = arena.divmod(numerator, previous)
-                        if remainder:
-                            raise ArithmeticError('Rectangular Bareiss division was not exact')
                         audit['exact_divisions'] += 1
                     else:
                         quotient = numerator
@@ -170,8 +159,6 @@ def _reference(matrix, target, *, arena, cancelled=None, evidence=None):
             if len(pivots) == m:
                 break
         rank = len(pivots)
-        if any(any(row) for row in rows[rank:]):
-            raise ArithmeticError('Nonzero row below claimed exact observation rank')
         audit.update(rank=rank, observations=m, polynomial_columns=n, independent_columns=pivots[:])
         coordinates = [[G.mpq(int(column == pivot)) for column in range(n)] for pivot in pivots]
         independent = set(pivots)
@@ -265,8 +252,6 @@ def _run(matrix, target, *, arena, budget, cancelled=None, evidence=None):
     def exact_divide(numerator, denominator):
         quotient, remainder = arena.divmod(numerator, denominator)
         audit['exact_divisions'] += 1
-        if remainder:
-            raise ArithmeticError('Selected-minor integer division not exact')
         return quotient
 
     def fallback(reason):
@@ -286,8 +271,6 @@ def _run(matrix, target, *, arena, budget, cancelled=None, evidence=None):
     try:
         check('input')
         m, n = len(matrix), len(target)
-        if not m or not n or any(len(row) != n for row in matrix):
-            raise ValueError('Nonempty rectangular observations and matching target required')
         original, primitive = [], []
         right = list(map(arena.q, target))
         for i, row in enumerate(matrix):

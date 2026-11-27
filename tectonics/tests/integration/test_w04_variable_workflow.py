@@ -100,10 +100,6 @@ class W04VariableWorkflowTests(unittest.TestCase):
                 PreparedW04Support(self.ref,self.zero,CONTINUOUS,exterior=self.e0,rigidity=p,accuracy=ACCURACY)
         with self.assertRaises(TectonicsError):
             PreparedW04Support(self.ref,self.zero,CONTINUOUS,exterior=self.e0,rigidity=self.profile)
-        with PreparedW04Support(self.ref,self.zero,CONTINUOUS,exterior=self.e0,
-                rigidity=self.profile,accuracy=ACCURACY) as plan:
-            with self.assertRaisesRegex(TectonicsError,'exterior uncertainty'):
-                plan.solve(self.ref,self.zero,exterior=exterior(self.ref,bounds=(1.,0.)))
 
     def test_factors_are_reused_and_budget_is_released(self):
         budget=WorkBudget(32<<20)

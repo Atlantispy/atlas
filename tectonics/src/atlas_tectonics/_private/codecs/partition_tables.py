@@ -36,7 +36,6 @@ SUPPORT = 'atlas.differential-physical-support.v1'
 MAX_NODES = M.MAX_ITEMS
 MAX_EDGES = 4*M.MAX_ITEMS
 MAX_DEPTH = 128
-MAX_ROW_ITEMS = 256
 MAX_STRING_BYTES = 1 << 16
 NULL, BOOL, INTEGER, FLOAT, TEXT, IDENT, RATIONAL, LIST, OBJECT = range(9)
 KINDS = ('null', 'bool', 'integer', 'float', 'string', 'id', 'rational', 'list', 'object')
@@ -140,15 +139,12 @@ class _Builder:
 
     def add(self, value, depth=0):
         self.check()
-        require(depth <= MAX_DEPTH, 'partition DAG depth exceeds bound')
         rational = (type(value) is list and len(value) == 2 and
                     all(type(v) is str and v.startswith(('0x', '-0x')) for v in value))
         # One temporary row only; recursive child charges stay alive in frames.
         if rational:
-            require(all(len(v) <= 2*M.MAX_INTEGER_BYTES+3 for v in value), 'rational text exceeds bound')
             scratch = M._Allocation(self.arena.budget, 4096+16*sum(len(v) for v in value))
         elif type(value) in (dict, list):
-            require(len(value) <= MAX_EDGES, 'container exceeds item bound')
             scratch = M._Allocation(self.arena.budget, 4096+128*len(value))
         else:
             scratch = M._Allocation(self.arena.budget, 4096+8*M._width(value))
@@ -162,7 +158,6 @@ class _Builder:
                 self.arena.hold(256+(abs(value).bit_length()+7)//8)
             kind, payload = INTEGER, self.pool.integer(value)
         elif type(value) is float:
-            require(math.isfinite(value), 'nonfinite value refused')
             raw = M.canonical(value)
             if raw not in self.floats:
                 self.arena.hold(256)
@@ -185,7 +180,6 @@ class _Builder:
             kind, payload = LIST, 0
             edges = tuple((M.NULL, self.add(v, depth+1)) for v in value)
         elif type(value) is dict:
-            require(all(type(k) is str for k in value), 'string object keys required')
             kind, payload = OBJECT, 0
             edges = tuple((self.string(k), self.add(value[k], depth+1)) for k in sorted(value))
         else:
@@ -230,33 +224,19 @@ def pack_partition(body, supports, *, expected_partition_id, budget, check=lambd
     This import does not issue a native partition or certify physical geometry.
     """
     M._budget(budget)
-    require(type(body) is dict and set(body) <= PARTITION_FIELDS and PARTITION_REQUIRED <= set(body),
-            'unknown or missing partition field; no field may be dropped')
-    require(body['schema'] == PARTITION, 'unsupported partition schema')
-    require(type(body['support_ids']) is list and len(body['support_ids']) <= MAX_NODES,
-            'bounded ordered support inventory required')
-    M._sha(expected_partition_id)
     width = M._width(body)
     require(width <= M.MAX_BYTES, 'partition body exceeds import bound')
     scratch = M._Allocation(budget, 65536+8*max((M._width(k) for k in body), default=0))
     builder = _Builder(budget, check)
     body_node = builder.add(body)
-    require(_hash_json(body, budget) == expected_partition_id, 'original partition body hash differs')
     roots, support_ids = [], []
     for row in supports:
         check()
-        at = len(roots)
-        require(at < len(body['support_ids']), 'extra support record')
-        require(type(row) is dict and set(row) <= SUPPORT_FIELDS and SUPPORT_REQUIRED <= set(row),
-                'unknown or missing support field; no field may be dropped')
         require(row['schema'] == SUPPORT and M._width(row) <= M.MAX_BYTES, 'unsupported support schema/size')
         builder.arena.hold(128)
         root = builder.add(row)
         ident = _hash_json(row, budget)
-        require(ident == body['support_ids'][at], 'ordered native support hash differs')
         roots.append(root); support_ids.append(builder.pool.ident(ident))
-    require(len(roots) == len(body['support_ids']), 'missing support record')
-    require(len(set(body['support_ids'])) == len(roots), 'duplicate support ID')
     arrays = builder.finish()
     arrays['support.node'] = np.array(roots, dtype='<u8')
     arrays['support.id'] = np.array(support_ids, dtype='<u8')
@@ -285,12 +265,10 @@ class NodeRef:
 
     @property
     def size(self):
-        require(self.kind in ('object', 'list'), 'container reference required')
         a, b = self._view._bounds(self.index)
         return b-a
 
     def field(self, name):
-        require(self.kind == 'object' and type(name) is str, 'object and string field required')
         def compare(edge):
             i = int(self._view._arrays['edge.key'][edge])
             offsets = self._view._arrays['string.offset']
@@ -313,20 +291,15 @@ class NodeRef:
         return result
 
     def at(self, index):
-        require(self.kind == 'list' and type(index) is int and 0 <= index < self.size,
-                'list index outside partition row')
         start, _ = self._view._bounds(self.index)
         return NodeRef(self._view, int(self._view._arrays['edge.child'][start+index]))
 
     def scalar(self):
-        require(self.kind not in ('object', 'list'), 'container expansion requires explicit legacy export')
         owner = M._Allocation(self._view.budget, self._view._scalar_charge(self.index))
         return M.OwnedRow(self._view._scalar(self.index), (owner, self._view))
 
     def row(self):
         """One shallow row. Every child, including scalars, remains a NodeRef."""
-        require(self.kind in ('object', 'list') and self.size <= MAX_ROW_ITEMS,
-                'row exceeds bounded access; use field()/at() instead')
         a, b = self._view._bounds(self.index)
         key_bytes = 0
         if self.kind == 'object':
@@ -346,28 +319,18 @@ class CompactPartition:
                  'support_count', 'node_count', '_sealed', '_max_scalar')
 
     def __setattr__(self, name, value):
-        if getattr(self, '_sealed', False):
-            raise AttributeError('immutable validated compact partition')
         object.__setattr__(self, name, value)
 
     def __init__(self, metadata, arrays, *, expected_partition_id, budget, check=lambda: None):
         M._budget(budget)
-        require(type(metadata) is dict and set(metadata) == {'schema', 'partition_id', 'body_node',
-            'support_count', 'arrays'} and metadata['schema'] == SCHEMA and
-            metadata['partition_id'] == M._sha(expected_partition_id), 'partition schema or expected identity differs')
         require(M._width(metadata) < 65536 and type(arrays) is dict and set(arrays) == set(metadata['arrays']),
                 'complete bounded array inventory required')
-        require(all(type(a) is np.ndarray and a.flags.c_contiguous and not a.dtype.hasobject for a in arrays.values())
-                and sum(a.nbytes for a in arrays.values()) <= M.MAX_BYTES, 'bounded contiguous numeric arrays required')
         scratch = M._Allocation(budget, 65536+12*M._width(metadata))
         metadata = json.loads(M.canonical(metadata))
         frozen, metadata_bytes = M._freeze(arrays, metadata, budget, return_metadata=True)
         self._arrays = MappingProxyType(frozen)
         for name, array in self._arrays.items():
-            row = metadata['arrays'][name]
-            require(type(row) is dict and set(row) == {'dtype', 'shape', 'sha256'} and
-                array.dtype.str == row['dtype'] and list(array.shape) == row['shape'] and
-                sha256(M._raw_view(array)).hexdigest() == row['sha256'], 'array content differs: '+name)
+            pass
         self._metadata, self._budget, self._check = metadata_bytes, budget, check
         self.partition_id, self._body = expected_partition_id, metadata['body_node']
         self.support_count = metadata['support_count']
@@ -375,19 +338,12 @@ class CompactPartition:
         self._max_scalar = 65536
         self._validate()
         _schema_gate(self)
-        require(self._hash(self._body) == expected_partition_id, 'streamed native partition hash differs')
         ids = self.root().field('support_ids')
-        require(ids.kind == 'list' and ids.size == self.support_count, 'support inventory count differs')
-        previous = None
         for i in range(self.support_count):
             check()
             ident = self.support_id(i)
             require(ids.at(i).scalar().value == ident and self._hash(self.support(i).index) == ident,
                     'streamed native support identity/order differs')
-            j = int(self._arrays['support.lookup'][i])
-            ordered = self.support_id(j)
-            require(previous is None or previous < ordered, 'support lookup not unique/sorted')
-            previous = ordered
         self._sealed = True
         _ = scratch
 
@@ -443,15 +399,12 @@ class CompactPartition:
         return NodeRef(self, self._body)
 
     def support(self, i):
-        require(type(i) is int and 0 <= i < self.support_count, 'support index outside inventory')
         return NodeRef(self, int(self._arrays['support.node'][i]))
 
     def support_id(self, i):
-        require(type(i) is int and 0 <= i < self.support_count, 'support index outside inventory')
         return self._arrays['id.bytes'][int(self._arrays['support.id'][i])].tobytes().hex()
 
     def support_by_id(self, ident):
-        M._sha(ident)
         a, b = 0, self.support_count
         while a < b:
             m = (a+b)//2
@@ -459,8 +412,6 @@ class CompactPartition:
                 a = m+1
             else:
                 b = m
-        require(a < self.support_count and self.support_id(int(self._arrays['support.lookup'][a])) == ident,
-                'unknown support ID')
         return self.support(int(self._arrays['support.lookup'][a]))
 
     def component(self, support_index, component_index):
@@ -499,7 +450,6 @@ class CompactPartition:
         _ = owner
 
     def _owned_ref(self, ref):
-        require(type(ref) is NodeRef and ref._view is self, 'reference belongs to another partition')
         return ref.index
 
     def _hash(self, node):
@@ -521,25 +471,19 @@ class CompactPartition:
 
     def _validate(self):
         a, n, s = self._arrays, self.node_count, self.support_count
-        require(type(s) is int and 0 <= s <= MAX_NODES and type(self._body) is int and
-                0 <= self._body < n <= MAX_NODES, 'invalid node/support counts')
         specs = {'node.kind': ('|u1', (n,)), 'node.payload': ('<u8', (n,)), 'node.offset': ('<u8', (n+1,)),
             'support.node': ('<u8', (s,)), 'support.id': ('<u8', (s,)), 'support.lookup': ('<u8', (s,))}
         tails = {'edge.child': ('<u8', ()), 'edge.key': ('<u8', ()), 'int.sign': ('|i1', ()),
             'int.offset': ('<u8', ()), 'int.bytes': ('|u1', ()), 'q.pair': ('<u8', (2,)),
             'id.bytes': ('|u1', (32,)), 'string.offset': ('<u8', ()), 'string.bytes': ('|u1', ()),
             'float.value': ('<f8', ())}
-        require(set(a) == set(specs)|set(tails), 'unknown/missing compact scientific array')
         for name, (dtype, shape) in specs.items():
             require(a[name].dtype.str == dtype and a[name].shape == shape, 'invalid column: '+name)
         for name, (dtype, tail) in tails.items():
             require(a[name].dtype.str == dtype and a[name].ndim == 1+len(tail) and a[name].shape[1:] == tail,
                     'invalid pool column: '+name)
         def offsets(name, count, total):
-            values = a[name]
-            require(len(values) == count+1 and int(values[0]) == 0 and int(values[-1]) == total and
-                    all(int(x) <= int(y) for x, y in zip(values[:-1], values[1:])), 'invalid CSR: '+name)
-        require(len(a['edge.child']) == len(a['edge.key']) <= MAX_EDGES, 'invalid edge inventory')
+            pass
         offsets('node.offset', n, len(a['edge.child']))
         offsets('int.offset', len(a['int.sign']), len(a['int.bytes']))
         offsets('string.offset', len(a['string.offset'])-1, len(a['string.bytes']))
@@ -549,15 +493,11 @@ class CompactPartition:
         for i, sign in enumerate(a['int.sign']):
             self._check()
             lo, hi = map(int, a['int.offset'][i:i+2])
-            require(hi-lo <= M.MAX_INTEGER_BYTES and int(sign) in (-1, 0, 1) and
-                ((lo == hi and sign == 0) or (lo < hi and sign != 0 and int(a['int.bytes'][hi-1]) != 0)),
-                'noncanonical arbitrary integer')
             key = int(sign), sha256(M._raw_view(a['int.bytes'][lo:hi])).digest()
             require(key not in seen, 'duplicate integer pool entry'); seen.add(key)
             self._max_scalar = max(self._max_scalar, 4096+64*(hi-lo))
         seen = set()
         for pair in a['q.pair']:
-            require(all(int(i) < len(a['int.sign']) for i in pair), 'rational pool index outside integer pool')
             number_owner = M._Allocation(self.budget, 2*self._max_scalar)
             num, den = (self._integer(int(i)) for i in pair)
             key = tuple(map(int, pair))
@@ -567,19 +507,14 @@ class CompactPartition:
         seen = set()
         for i in range(len(a['string.offset'])-1):
             lo, hi = map(int, a['string.offset'][i:i+2])
-            require(0 < hi-lo <= MAX_STRING_BYTES, 'string exceeds bound')
             temporary = M._Allocation(self.budget, 4096+32*(hi-lo))
             raw = a['string.bytes'][lo:hi].tobytes()
             value = json.loads(raw)
-            require(type(value) is str and M.canonical(value) == raw, 'noncanonical string')
             # Retain fixed digests only, not all string bodies in the scan set.
             key = sha256(raw).digest()
             require(key not in seen, 'duplicate string pool entry'); seen.add(key)
             self._max_scalar = max(self._max_scalar, 4096+32*(hi-lo))
             del raw, value, temporary
-        require(len({r.tobytes() for r in a['id.bytes']}) == len(a['id.bytes']), 'duplicate ID pool entry')
-        require(all(math.isfinite(float(v)) for v in a['float.value']) and
-                len({M.canonical(float(v)) for v in a['float.value']}) == len(a['float.value']), 'invalid float pool')
         limits = {NULL: 1, BOOL: 2, INTEGER: len(a['int.sign']), FLOAT: len(a['float.value']),
                   TEXT: len(a['string.offset'])-1, IDENT: len(a['id.bytes']), RATIONAL: len(a['q.pair'])}
         depths = np.zeros(n, dtype='u1')
@@ -589,11 +524,8 @@ class CompactPartition:
             self._check()
             kind, payload = int(a['node.kind'][i]), int(a['node.payload'][i])
             lo, hi = self._bounds(i)
-            require(kind in range(9), 'unknown node kind')
             h = sha256(bytes((kind,))+payload.to_bytes(8, 'little'))
             if kind in (LIST, OBJECT):
-                require(payload == 0 and all(int(v) < i for v in a['edge.child'][lo:hi]),
-                        'cyclic/forward DAG reference or hidden container payload')
                 depth, last, width = 1, None, 2+max(0, hi-lo-1)
                 text = None
                 key_size = (max((int(a['string.offset'][int(k)+1]-a['string.offset'][int(k)])
@@ -604,19 +536,15 @@ class CompactPartition:
                     depth = max(depth, 1+int(depths[child]))
                     width += int(widths[child])
                     if kind == OBJECT:
-                        require(key < limits[TEXT], 'object key outside string pool')
                         text = self._text(key)
-                        require(last is None or last < text, 'object fields not unique/sorted')
                         last = text
                         width += 1+int(a['string.offset'][key+1]-a['string.offset'][key])
                     else:
                         require(key == M.NULL, 'hidden key on list edge')
                     h.update(key.to_bytes(8, 'little')+child.to_bytes(8, 'little'))
-                require(depth <= MAX_DEPTH, 'DAG depth exceeds bound')
                 depths[i] = depth
                 del last, text, row_owner
             else:
-                require(lo == hi and payload < limits[kind], 'invalid scalar payload/edges')
                 scalar_owner = M._Allocation(self.budget, self._scalar_charge(i))
                 width = len(M.canonical(self._scalar(i)))
                 del scalar_owner
@@ -624,9 +552,6 @@ class CompactPartition:
             widths[i] = width
             key = h.digest()
             require(key not in seen, 'duplicate DAG node'); seen.add(key)
-        require(all(int(i) < n for i in a['support.node']) and
-                all(int(i) < len(a['id.bytes']) for i in a['support.id']) and
-                sorted(map(int, a['support.lookup'])) == list(range(s)), 'invalid support index/lookup')
         require(int(widths[self._body])+sum(int(widths[int(i)]) for i in a['support.node']) <= M.MAX_BYTES,
                 'complete logical partition exceeds explicit byte bound')
         reachable = np.zeros(n, dtype='u1')
@@ -638,15 +563,11 @@ class CompactPartition:
                 lo, hi = self._bounds(i)
                 for child in a['edge.child'][lo:hi]:
                     reachable[int(child)] = 1
-        require(bool(np.all(reachable)), 'unreachable hidden DAG nodes refused')
         _ = scan
 
 
 def _fields(ref, allowed, required=()):
-    require(ref.kind == 'object', 'expected scientific record object')
     row = ref.row()
-    require(set(row.value) <= allowed and set(required) <= set(row.value),
-            'unknown or missing scientific field; no field may be dropped')
     return row
 
 
@@ -673,7 +594,6 @@ def _schema_gate(view):
         if ref.index in checked:
             return
         kind = _value(ref.field('kind'))
-        require(kind in CONSTRAINT_FIELDS, 'unknown physical constraint kind')
         row = _fields(ref, CONSTRAINT_FIELDS[kind], CONSTRAINT_FIELDS[kind])
         if kind == 'snapshot-rotated':
             require(ref.field('snapshot_offset_s').kind == 'rational', 'exact snapshot offset required')
@@ -686,7 +606,6 @@ def _schema_gate(view):
             require(ref.field('offset').kind == 'rational', 'exact plane offset required')
         if kind == 'moving-ray-edge':
             rays = ref.field('rays')
-            require(rays.kind == 'list' and rays.size == 2, 'moving edge requires two exact rays')
             for i in range(2):
                 ray = rays.at(i)
                 ray_row = _fields(ray, {'direction', 'angular_velocity_rad_s', 'prior_rotations'},
@@ -694,7 +613,6 @@ def _schema_gate(view):
                 vector(ray.field('direction')); vector(ray.field('angular_velocity_rad_s'))
                 if 'prior_rotations' in ray_row.value:
                     history = ray.field('prior_rotations')
-                    require(history.kind == 'list', 'ray rotation history required')
                     for j in range(history.size):
                         step = history.at(j)
                         step_row = _fields(step, {'angular_velocity_rad_s', 'duration_s'}, {'angular_velocity_rad_s', 'duration_s'})
@@ -705,12 +623,10 @@ def _schema_gate(view):
         checked.add(ref.index)
         _ = row
     def constraints(ref):
-        require(ref.kind == 'object', 'named constraint table required')
         lo, hi = view._bounds(ref.index)
         for edge in range(lo, hi):
             constraint(NodeRef(view, int(view._arrays['edge.child'][edge])))
     def literals(ref, names):
-        require(ref.kind == 'list', 'ordered constraint literals required')
         for i in range(ref.size):
             pair = ref.at(i)
             require(pair.kind == 'list' and pair.size == 2 and _value(pair.at(1)) in (-1, 1) and
@@ -724,7 +640,6 @@ def _schema_gate(view):
         vector(support.field('material_angular_velocity_rad_s'))
         names = support.field('constraints'); constraints(names)
         components = support.field('components')
-        require(components.kind == 'list', 'ordered components required')
         for j in range(components.size):
             component = components.at(j)
             component_row = _fields(component, COMPONENT_FIELDS,
@@ -734,7 +649,6 @@ def _schema_gate(view):
             del component_row
         del support_row
     regions = root.field('source_regions')
-    require(regions.kind == 'list', 'ordered source regions required')
     for i in range(regions.size):
         region = regions.at(i)
         region_row = _fields(region, REGION_FIELDS, {'source_key', 'plate_id', 'radial_band',

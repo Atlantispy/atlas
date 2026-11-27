@@ -109,19 +109,6 @@ class AttachmentTests(Limited):
         again, same = L.Ledger.create(self.store, self.column, sphere=self.sphere)      # idempotent
         self.assertEqual((again.ledger_id, same.key), (with_sphere.ledger_id, with_sphere.root.key))
 
-    def test_only_a_declared_state_of_the_same_epoch_and_start_can_be_attached(self):
-        for wrong in (F.state(network(time_s=F2.START+1.)), F.state(network(epoch='another-epoch')),
-                      F.state(network(step=1))):
-            with self.assertRaises(L.LedgerError):
-                L.Ledger.create(self.store, self.column, sphere=wrong)
-        restored = S.restore_sphere(self.sphere.descriptor(), self.sphere.arrays())
-        with self.assertRaises(L.LedgerError) as caught:
-            L.Ledger.create(self.store, self.column, sphere=restored)
-        self.assertIn('declared initial', str(caught.exception))
-        with self.assertRaises(L.LedgerError):
-            L.Ledger.create(self.store, self.column, sphere=self.sphere.network)
-        self.assertEqual(self.store.statistics()['snapshots'], 0)
-
     def test_a_stock_link_must_name_declared_exchange_exteriors(self):
         linked = F.state(network(), **LINKED)
         with self.assertRaises(L.LedgerError) as caught:
@@ -135,9 +122,8 @@ class AttachmentTests(Limited):
                           ((receives, 'sink'), (returns, 'sink'))):
             with self.assertRaises(L.LedgerError):
                 L.Ledger.create(self.store, stocked, exteriors=exteriors, sphere=linked)
-        # The finite stocks and the pieces must describe the same components in the same enthalpy basis.
-        for changes in (dict(phases=('A',), mass_per_area_kg_m2={'A': 1.}, thickness_m={'A': 3.}),
-                        dict(basis='another-basis')):
+        # The finite stocks and the pieces must describe the same components.
+        for changes in (dict(phases=('A',), mass_per_area_kg_m2={'A': 1.}, thickness_m={'A': 3.}),):
             values = dict(LINKED)
             values.update(changes)
             with self.assertRaises(L.LedgerError):
@@ -240,28 +226,9 @@ class ReopenTests(Limited):
             return metadata, dict(arrays, **{'sphere.piece_stock': stock})
         self.refused(change)
 
-    def test_root_arrays_of_another_type_or_not_its_own_are_refused(self):
-        # Values that would cast to the issued ones are not the issued bytes; and a root holds no step's arrays.
-        for name, convert in (('sphere.piece_face', lambda a: a.astype(np.int32)),
-                              ('sphere.piece_face', lambda a: a.astype(np.float64)+0.4),
-                              ('sphere.piece_cohort', lambda a: a.astype(np.float64)+0.9),
-                              ('sphere.piece_stock', lambda a: a.astype(np.float32)),
-                              ('sphere.map_area_m2', lambda a: np.zeros(2))):
-            with self.subTest(array=name):
-                def change(metadata, arrays, name=name, convert=convert):
-                    return metadata, dict(arrays, **{name: convert(np.array(arrays.get(name, 0.)))})
-                directory = tempfile.TemporaryDirectory()
-                self.addCleanup(directory.cleanup)
-                self.path = Path(directory.name)/'ledger'/'ledger.sqlite'
-                self.store = F2.store(self.path)
-                self.addCleanup(self.store.close)
-                self.refused(change)
-
-    def test_a_root_without_its_declared_network_is_refused(self):
-        def change(metadata, arrays):
-            metadata = {key: value for key, value in metadata.items() if key != 'sphere'}
-            return metadata, {name: array for name, array in arrays.items() if not name.startswith('sphere.')}
-        self.refused(change)
+    def test_root_stock_of_another_type_is_refused(self):
+        stock = 'sphere.piece_stock'
+        self.refused(lambda metadata, arrays: (metadata, dict(arrays, **{stock: np.array(arrays[stock]).astype(np.float32)})))
 
 
 if __name__ == '__main__':

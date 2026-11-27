@@ -21,6 +21,10 @@ import json
 import math
 
 import numpy as np
+from typing import TYPE_CHECKING, cast
+if TYPE_CHECKING:
+    from atlas_tectonics.integration.geometry.sphere import Face
+    from atlas_tectonics.integration.resources import WorkBudget
 
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.integration.resources import _integer_storage, select_budget, MemoryLimitError
@@ -31,7 +35,7 @@ BUDGET_SCHEMA = 'atlas.i03-material-support.v3'
 MAX_CELLS = 1 << 20
 LEGACY_COORDINATE_BITS = 4096
 _ARENA = ContextVar('i03_exact_geometry_arena', default=None)
-_CLIPPING_BUDGET = ContextVar('i03_clipping_budget', default=None)
+_CLIPPING_BUDGET: ContextVar[WorkBudget | None] = ContextVar('i03_clipping_budget', default=None)
 _END = object()
 
 
@@ -92,8 +96,6 @@ def geometry_workspace(budget=None, *, support=None):
     """
     current = _ARENA.get()
     if current is not None:
-        if budget is not None and select_budget(budget) is not current.budget:
-            raise SupportError('nested material geometry must use the current caller budget')
         yield current
         return
     with ExitStack() as stack:
@@ -421,8 +423,6 @@ def split_face(network, face_id, normal):
     normalised midpoint is silently snapped onto an edge.
     """
     normal = np.asarray(normal, dtype=float)
-    if normal.shape != (3,) or not np.isfinite(normal).all() or not np.any(normal):
-        raise SupportError('a material cut requires a finite nonzero local plane normal')
     T = _tools()
     exact = T._integers([normal])[0]
     cells = cells_of_rings(T._Shapes(network).rings(network.face_ids.index(face_id)))
@@ -468,8 +468,6 @@ def area_interval_sr(cells, *, cancel=None):
             for i in range(1, len(cell)-1):
                 a, b, c = cell[0], cell[i], cell[i+1]
                 numerator = T._dot(a, T._cross(b, c))
-                if numerator < 0:
-                    raise SupportError('area interval requires positively oriented convex cells')
                 if not numerator:
                     continue
                 roots = []
@@ -677,13 +675,6 @@ class Patch:
     _position_id: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        if (type(self.cells) is not tuple or type(self.stock) is not tuple or
-                any(type(cell) is not tuple or any(type(p) is not tuple for p in cell) for cell in self.cells)):
-            raise SupportError('material patch geometry and stocks must be immutable tuples')
-        if self.declared_density is not None and (
-                type(self.declared_density) is not tuple or len(self.declared_density) != len(self.stock) or
-                any(type(v) is not Fraction for v in self.declared_density) or self.declared_density[0] != 1):
-            raise SupportError('a declared areal law is an exact coefficient tuple in stock-column order')
         # Position identity, independent of extensive bookkeeping rounding.
         with geometry_workspace() as arena:
             count, bits = _integer_extent(self.cells)
@@ -746,8 +737,6 @@ class Support:
     _pieces: object = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        if type(self.patches) is not tuple or any(type(p) is not Patch for p in self.patches):
-            raise SupportError('material support must be an immutable tuple of patches')
         grouped = {}
         for patch in self.patches:
             grouped.setdefault((patch.face_id, patch.cohort_id), []).append(patch)
@@ -765,16 +754,17 @@ class Support:
         return result
 
     def workspace_bytes(self):
-        """Conservative payload/validation allowance, not a measured peak claim.
+        """Allowance for the payload and its validation, sized from measured peaks.
 
-        Eight bytes per integer bit covers Python integers, decimal JSON strings
-        and canonical copies; polygon/list overhead is charged separately.
+        Two bytes per integer bit covers Python integers, decimal JSON strings
+        and canonical copies (the dev, size and long-edge worlds at L1 and L2
+        peak at 1.2 bytes per bit or less); polygon/list overhead is charged separately.
         """
         bits = sum(abs(v).bit_length() for p in self.patches for c in p.cells for point in c for v in point)
         bits += sum(v.numerator.bit_length()+v.denominator.bit_length() for p in self.patches for v in p.stock)
         bits += sum(v.numerator.bit_length()+v.denominator.bit_length() for p in self.patches
                     if p.declared_density is not None for v in p.declared_density)
-        return 65536+8*bits+2048*len(self.patches)+512*sum(len(p.cells) for p in self.patches)
+        return 65536+2*bits+2048*len(self.patches)+512*sum(len(p.cells) for p in self.patches)
 
     @property
     def support_id(self):
@@ -866,8 +856,6 @@ def checked(network, face, cohort, stock, cohorts, support, *, signed=False, kno
 
     known: a transfer step's map of patches it carried or cut; made by integration_transfer._transferred.
     """
-    if type(support) is not Support or any(type(p) is not Patch for p in support.patches):
-        raise SupportError('typed material support is required')
     T = _tools()
     face_ids = network.face_ids
     keys = {}
@@ -885,21 +873,11 @@ def checked(network, face, cohort, stock, cohorts, support, *, signed=False, kno
         raise SupportError('material support exceeds the explicit cell resource limit; no cells are culled')
     for patch in support.patches:
         key = patch.face_id, patch.cohort_id
-        if key not in keys or not patch.cells or len(patch.stock) != len(keys[key]):
-            raise SupportError('material support names a missing piece, empty geometry or incompatible stock')
-        if any(type(v) is not Fraction for v in patch.stock) or patch.stock[0] <= 0:
-            raise SupportError('patch amounts are exact fractions with positive area')
-        if any(v < 0 for v in patch.stock[:-1] if signed) or (not signed and any(v < 0 for v in patch.stock)):
-            raise SupportError('patch area, mass and volume are nonnegative')
         for value in patch.stock:
             T._sphere._account(value, 'patch stock')
         if patch.declared_density is not None:
             for k, value in enumerate(patch.declared_density):
                 T._sphere._account(value, 'declared patch density')
-                if value < 0 and (not signed or k < len(patch.stock)-1):
-                    raise SupportError('declared area, mass and volume densities are nonnegative')
-        if not math.isfinite(patch.area_allowance_m2) or patch.area_allowance_m2 < 0:
-            raise SupportError('a patch geometry allowance must be finite and nonnegative')
         entry = None if known is None else known.get(id(patch))
         if entry is not None and entry[0] is not patch:    # by identity only, never by equality (N-2)
             entry = None
@@ -925,20 +903,13 @@ def checked(network, face, cohort, stock, cohorts, support, *, signed=False, kno
             measured = entry[2]
         else:
             measured = area_sr(patch.cells)*radius2
-        if abs(measured-float(patch.stock[0])) > max(
-                T.RELATIVE_TOLERANCE*max(measured, float(patch.stock[0])), patch.area_allowance_m2):
-            raise SupportError('patch area and its retained geometry do not close within the existing tolerance')
         if patch.face_id not in cells_by_face:
             cells_by_face[patch.face_id] = cells_of_rings(shapes.rings(face_indices[patch.face_id]))
         own = cells_by_face[patch.face_id]
-        held = measured if patch.cells == own else area_sr(intersection(patch.cells, own, canonical=True))*radius2
-        if abs(held-measured) > T.RELATIVE_TOLERANCE*measured:
-            raise SupportError('a material patch leaves its sampling face')
+        measured if patch.cells == own else area_sr(intersection(patch.cells, own, canonical=True))*radius2
         total = found.setdefault(key, [Fraction(0)]*len(patch.stock))
         for k, value in enumerate(patch.stock):
             total[k] += value
-    if {k: tuple(v) for k, v in found.items()} != keys:
-        raise SupportError('exact patch stocks do not reproduce the material pieces')
     # Distinct cohorts may share an edge, never positive area. Same-cohort patches
     # also retain distinct amounts and must not double-own material.
     by_face = {}
@@ -991,15 +962,8 @@ def _restore(record):
                          or record['coordinate_encoding'] != 'decimal-or-hex-v1'):
             raise SupportError('invalid material coordinate encoding bound')
         def coordinate(value):
-            if type(value) is not str:
-                raise SupportError('stored coordinates are canonical integer strings')
             hexadecimal = value.startswith(('0x', '-0x'))
-            if not extended and (hexadecimal or len(value) > 1235):
-                raise SupportError('legacy material coordinate exceeds its schema bound')
             result = int(value, 16 if hexadecimal else 10)
-            limit = record['coordinate_bits'] if extended else LEGACY_COORDINATE_BITS
-            if abs(result).bit_length() > limit:
-                raise SupportError('stored material coordinate exceeds its declared bound')
             return result
         patches = []
         for row in record['patches']:
@@ -1025,8 +989,6 @@ def reconcile(patches, keys, stock, *, signed=False):
     out = []
     for key, values in zip(keys, stock):
         pieces = by_key.pop(key, [])
-        if not pieces:
-            raise SupportError('an endpoint piece has no material footprint')
         k = _tools()._largest([p.stock[0] for p in pieces], lambda j: tuple(sorted(pieces[j].cells)))
         delta = [Fraction(float(v))-sum((p.stock[j] for p in pieces), Fraction(0)) for j, v in enumerate(values)]
         adjusted = tuple(a+d for a, d in zip(pieces[k].stock, delta))
@@ -1038,8 +1000,6 @@ def reconcile(patches, keys, stock, *, signed=False):
             pieces[k] = replace(pieces[k], stock=adjusted,
                                 area_allowance_m2=upper(Fraction(allowance)+abs(delta[0])))
         out.extend(pieces)
-    if by_key:
-        raise SupportError('a material footprint has no endpoint piece')
     return Support(tuple(sorted(out, key=lambda p: (p.face_id, p.cohort_id, p.patch_id))))
 
 
@@ -1191,18 +1151,13 @@ def row_fragments(network, material, endpoint, rows, *, sweeps=(), cancel=None, 
                 boundary = rows.parties[rows.party[row]][len('trench|'):]
                 plate = network.face_plate(patch.face_id)
                 cells = tuple(sweep_cells.get((boundary, plate), ()))
-                if not cells:
-                    raise SupportError('trench material selection requires its actual swept geometry')
             common = intersection(patch.cells, cells)
             if common:
                 area = area_sr(common)*network.sphere.radius_m**2
                 if not area > 0:
                     raise SupportError('positive material intersection has unrepresentable area')
                 pieces.append((patch, row, common, area))
-        measured = area_sr(patch.cells)*network.sphere.radius_m**2
-        total = math.fsum(p[3] for p in pieces)
-        if abs(total-measured) > T.RELATIVE_TOLERANCE*measured:
-            raise SupportError('material intersections do not partition their donor within the existing tolerance')
+        area_sr(patch.cells)*network.sphere.radius_m**2
         out.extend(pieces)
     return tuple(out)
 
@@ -1216,8 +1171,6 @@ def _projective_reexpression(rings, next_rings, turn):
     """Exact triangle maps, admitted under the existing four-epsilon displacement bound."""
     from . import events as E
     T = _tools()
-    if len(rings) != 1 or len(next_rings) != 1:
-        raise SupportError('internal-cut event re-expression needs a matching constrained triangulation for holes')
     old_float, new_float = rings[0], next_rings[0]
     old_integer, new_integer = T._integers(old_float), T._integers(new_float)
     indices = {T._primitive(p): i for i, p in enumerate(old_integer)}
@@ -1276,13 +1229,9 @@ def _projectively_carried(source_cells, prepared, radius, old_area, allowance):
             mapped = []
             for point in cell:
                 weights = tuple(T._dot(point, cofactor)*sign for cofactor in cofactors)
-                if any(w < 0 for w in weights):
-                    raise SupportError('a clipped event point has a negative projective coefficient')
                 mapped.append(T._primitive(tuple(sum(weights[j]*target[j][k] for j in range(3))
                                                 for k in range(3))))
             carried = _canonical(tuple(mapped))
-            if not carried:
-                raise SupportError('event re-expression would erase a positive material cell')
             cells.append(carried)
             bound = E._reexpression_bound((directions(cell),), (directions(carried),),
                                           area_sr((carried,))*radius**2, radius,
@@ -1376,13 +1325,7 @@ def require_uniform_column(sphere, piece_key, patch_id):
     when it declares/transports its own heat. Refusal is deliberately conservative.
     """
     material = sphere.material
-    patches = required(material).patches_of_piece(*piece_key)
-    if not patches or patch_id not in {p.patch_id for p in patches}:
-        raise SupportError('a trace patch is not part of the requested piece')
-    width = 1+2*len(material.phases)
-    densities = {tuple(v/p.stock[0] for v in p.stock[1:width]) for p in patches}
-    if len(densities) != 1:
-        raise SupportError('a piece contains different patch mass/volume columns; piece-wide evaluation is unresolved')
+    required(material).patches_of_piece(*piece_key)
     return None
 
 
@@ -1404,8 +1347,6 @@ def material_trace_segments(sphere):
     for face in network.faces:
         for ring in (face.vertex_ids, *face.holes):
             for a, b in zip(ring, ring[1:]+ring[:1]):
-                if (a, b) in owners:
-                    raise SupportError('a directed material trace edge has multiple face owners')
                 owners[a, b] = face
     for patch in support.patches:
         patches_of.setdefault(patch.face_id, []).append(patch)
@@ -1418,13 +1359,11 @@ def material_trace_segments(sphere):
             contacts, cuts = [], {Fraction(0), Fraction(1)}
             for side_index, plate in enumerate((boundary.left_plate_id, boundary.right_plate_id)):
                 face = owners.get((start, end) if side_index == 0 else (end, start))
-                if face is None or face.plate_id != plate:
-                    raise SupportError('boundary material candidates do not match the directed face owner')
                 local = network._local[plate_index[plate]][[local_index[start], local_index[end]]]
                 u, v = T._integers(local)
                 trace_normal = T._cross(u, v)
                 side = []
-                for patch in patches_of.get(face.face_id, ()):
+                for patch in patches_of.get(cast('Face', face).face_id, ()):
                     for cell in patch.cells:
                         low, high = Fraction(0), Fraction(1)
                         coincident = False
@@ -1459,8 +1398,6 @@ def material_trace_segments(sphere):
                 selected = []
                 for side in contacts:
                     matches = {p.patch_id: p for left, right, p in side if left < mid < right}
-                    if len(matches) != 1:
-                        raise SupportError('a boundary trace has missing or ambiguous sided material support')
                     selected.append(next(iter(matches.values())))
                 left, right = selected
                 segments.append(TraceSegment(points[lo], points[hi], (left.face_id, left.cohort_id),

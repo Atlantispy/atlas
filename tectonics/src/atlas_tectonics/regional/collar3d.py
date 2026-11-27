@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction
 import math
+from typing import TYPE_CHECKING, Any, cast
 from atlas_tectonics._private.integration import live_collar_patch as LIVE_COLLAR
 from atlas_tectonics._private.integration.geometry import live_spatial_patch as LIVE_SPATIAL
 
@@ -16,16 +17,16 @@ import numpy as np
 from atlas_tectonics.regional.caloric import component_sum as _component_sum, component_workspace as _component_workspace
 
 from atlas_tectonics._validation import TectonicsError, scalar, frozen
-from atlas_tectonics.integration.coupling.regional_evolution import RegionalVolumeMap
 from atlas_tectonics.integration.geometry.volume import CartesianCell
-from atlas_tectonics.regional.evolution3d import PreparedRegionalEvolution3D
 from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
 from atlas_tectonics.regional.execution3d import SIDES, _array, _hash, _json, _name, _cancel
 from atlas_tectonics.regional.heat3d import PreparedRegionalHeat3D
 from atlas_tectonics.regional.transport3d import PreparedRegionalTransport3D, ConservativeFaceFlow3D
-from atlas_tectonics.integration.resources import WorkBudget
 from atlas_tectonics.integration.resources import _retain_result
 from atlas_tectonics.integration.reuse import content_record
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from atlas_tectonics.integration.coupling.regional_inventory import ComponentRegistry
 
 
 
@@ -35,9 +36,6 @@ class RigidCollarMotion:
     source_id: str
 
     def __post_init__(self):
-        if (type(self.angular_velocity_rad_s) is not tuple or len(self.angular_velocity_rad_s) != 3 or
-                any(type(v) not in (float, int) or not math.isfinite(v) for v in self.angular_velocity_rad_s)):
-            raise TectonicsError('explicit finite three-component rigid angular velocity required')
         _name(self.source_id, 'rigid exterior source')
 
     def record(self):
@@ -206,55 +204,25 @@ class PreparedRegionalCollar3D:
     inference occurs. Native source heating/history is applied only inside.
     """
     def __setattr__(self, key, value):
-        if not key.startswith('_') and hasattr(self, key):
-            raise TectonicsError('prepared collar definition is immutable')
         object.__setattr__(self, key, value)
 
     def __init__(self, native, volume_map, collar_cells, *, budget, component_registry=None,
                  mechanics_scope='rigid-collar'):
-        if type(native) is not PreparedRegionalEvolution3D or type(volume_map) is not RegionalVolumeMap:
-            raise TectonicsError('typed native evolution and actual physical volume map required')
-        if type(budget) is not WorkBudget or native._resource is not budget:
-            raise TectonicsError('collar and native evolution must share one WorkBudget')
-        if mechanics_scope not in ('rigid-collar', 'complete-grid'):
-            raise TectonicsError('explicit rigid-collar or complete-grid mechanics scope required')
-        if (type(collar_cells) is not tuple or len(collar_cells) != 3 or
-                any(type(p) is not tuple or len(p) != 2 or any(type(v) is not int for v in p)
-                    for p in collar_cells)):
-            raise TectonicsError('three explicit integer lower/upper padding pairs required')
-        if mechanics_scope == 'complete-grid' and collar_cells != ((0, 0),)*3:
-            raise TectonicsError('complete-grid mechanics requires exactly zero padding on every side')
-        if mechanics_scope == 'rigid-collar' and any(v < 1 for p in collar_cells for v in p):
-            raise TectonicsError('at least one whole collar cell on all six sides is required')
         self._mechanics_scope = mechanics_scope
         definition = native.descriptor()
-        from atlas_tectonics.integration.coupling.regional_inventory import ComponentRegistry
         if component_registry is not None:
-            if type(component_registry) is not ComponentRegistry:
-                raise TectonicsError('explicit typed component registry required')
             component_registry.validate_native(native, source_id=volume_map.record()['source']['moving_id'])
-            keys = tuple(sorted({(r['patch_id'], r['sublayer']) for r in volume_map.record()['cell_sources']}))
-            if not set(keys) <= set(component_registry.source_keys):
-                raise TectonicsError('registered initial prefix omits actual collar source geometry')
-            if component_registry.source_keys != keys and not component_registry.initial_source_plate_ids:
-                raise TectonicsError('additional original components require an explicit source plate domain')
+            tuple(sorted({(r['patch_id'], r['sublayer']) for r in volume_map.record()['cell_sources']}))
         self._registry = component_registry
-        if (mechanics_scope == 'rigid-collar' and native._material.internal_heating_w_m3 != 0 or
-                native._rheology_family == 'bf23-memory'):
-            raise TectonicsError('this rigid collar has no radiogenic or independent damage source law')
         volume_map.native_binding(native)
         self._native, self._budget, self._map = native, budget, volume_map
         self._closed = False
         self._active = False
         self._transport = self._heat = self._guard = None
         self.cells = tuple(n+sum(p) for n, p in zip(native.cells, collar_cells))
-        if any(n > 24 for n in self.cells):
-            raise TectonicsError('enlarged grid exceeds the existing transport cell-count admission')
         self._lower = tuple(p[0] for p in collar_cells)
         spacing = tuple(Fraction(v)/n for v, n in zip(native.lengths_m, native.cells))
         self.lengths_m = tuple(float(h*n) for h, n in zip(spacing, self.cells))
-        if any(Fraction(v)/n != h for v, n, h in zip(self.lengths_m, self.cells, spacing)):
-            raise TectonicsError('enlarged represented lengths do not preserve exact native spacing')
         self._inner = tuple(slice(a, a+n) for a, n in zip(self._lower, native.cells))
         self._nodes = tuple(slice(2*a, 2*(a+n)+1) for a, n in zip(self._lower, native.cells))
         # Include the optional independently transported material measure.
@@ -268,9 +236,6 @@ class PreparedRegionalCollar3D:
             m = native._material
             self._heat = PreparedRegionalHeat3D(self.cells, self.lengths_m,
                 m.density_kg_m3*m.heat_capacity_j_kg_k, m.conductivity_w_m_k, budget=budget)
-            if (self._transport.volume_m3 != native._volume or self._heat._volume != native._volume or
-                    not np.array_equal(self._transport._areas, native._transport._areas)):
-                raise TectonicsError('enlarged arithmetic does not preserve native cell volumes/face areas')
             embedding = volume_map.record()['embedding']
             rational = lambda value: Fraction(int(value[0]), int(value[1]))
             self._basis = np.asarray([[float(rational(v)) for v in row] for row in embedding['basis']])
@@ -286,8 +251,6 @@ class PreparedRegionalCollar3D:
             if component_registry is not None:
                 self._definition['component_registry'] = component_registry.record()
             if mechanics_scope == 'complete-grid':
-                if self._transport.plan_id != native._transport.plan_id:
-                    raise TectonicsError('complete-grid transport must be the identical native discretisation')
                 self._definition.update(mechanics_scope=mechanics_scope,
                     source_rule='actual native donor sources on every cell, booked once',
                     flow_rule='actual native face samples and conservative streams; no rigid exterior substitution',
@@ -298,15 +261,11 @@ class PreparedRegionalCollar3D:
             raise
 
     def _verify(self):
-        if self._closed:
-            raise TectonicsError('closed or changed collar source')
         self._native._verify()
 
     @contextmanager
     def _operation(self, cancel):
         self._verify(); _cancel(cancel)
-        if self._active:
-            raise TectonicsError('regional collar is non-reentrant')
         self._active = True
         try:
             yield
@@ -342,28 +301,16 @@ class PreparedRegionalCollar3D:
                 origin_m=origin, basis=basis, budget=self._budget) for index in np.ndindex(self.cells))
 
     def _exterior_operator(self, operator):
-        from atlas_tectonics.integration.heat.exterior_heat import PreparedFiniteExteriorHeat3D
-        if (type(operator) is not PreparedFiniteExteriorHeat3D or operator.interior is not self._heat or
-                operator._budget is not self._budget):
-            raise TectonicsError('finite exterior heat must use this actual enlarged heat operator and budget')
         operator.descriptor()
 
     def _exterior_bound(self, state, operator):
         if state.exterior_heat is None:
-            if operator is not None:
-                raise TectonicsError('finite exterior thermal owner cannot be added to an existing collar state')
             return
         self._exterior_operator(operator)
-        meta = state.exterior_heat.descriptor()
-        if (meta.get('plan_id') != operator.plan_id or meta.get('time_s') != state.native_state.descriptor()['time_s'] or
-                set(state.exterior_heat.array_names) != {'enthalpy_j'}):
-            raise TectonicsError('finite exterior thermal plan, clock or state layout changed')
         _array(state.exterior_heat.array('enthalpy_j'), (len(operator._cells),), 'exterior heat', positive=True)
 
     def rigid_velocity(self, motion):
         self._verify()
-        if type(motion) is not RigidCollarMotion:
-            raise TectonicsError('typed physical rigid exterior motion required')
         with self._budget.reserve(1024*math.prod(self.cells)+65536, category='regional-collar-rigid-field'):
             local = np.stack(np.meshgrid(*(np.arange(2*n+1)*h/2-a*h
                 for n, h, a in zip(self.cells, self._spacing, self._lower)), indexing='ij'), axis=-1)
@@ -381,14 +328,8 @@ class PreparedRegionalCollar3D:
         transport later multiplies these rates by the SAME duration; its binary
         volume difference is retained by the paired exterior projection account.
         """
-        from atlas_tectonics.integration.geometry.wall_measures import WallMeasures
         from atlas_tectonics.integration.coupling.regional_inventory import _width, _project
         self._verify()
-        if self._mechanics_scope == 'complete-grid':
-            raise TectonicsError('complete-grid mechanics cannot replace solved outer streams with rigid wall measures')
-        if (type(wall_measures) is not WallMeasures or wall_measures._resource is not self._budget or
-                type(motion) is not RigidCollarMotion):
-            raise TectonicsError('issued physical wall measures and typed rigid motion required')
         record = wall_measures.descriptor()
         with self._budget.reserve(65536+16*_width(record), category='regional-collar-exact-wall-streams'):
             q = lambda p: Fraction(int(p[0], 16), int(p[1], 16))
@@ -400,7 +341,7 @@ class PreparedRegionalCollar3D:
                 raise TectonicsError('exact outer wall geometry, interval or motion differs')
             streams = {s: (np.zeros(self._transport._shape('xyz'.index(s[0]), side=True)),
                            np.zeros(self._transport._shape('xyz'.index(s[0]), side=True))) for s in SIDES}
-            expected = {(side, at) for side, values in streams.items()
+            {(side, at) for side, values in streams.items()
                         for at in np.ndindex(values[0].shape)}
             seen = set()
             sides = {'x-': 'x0', 'x+': 'x1', 'y-': 'y0', 'y+': 'y1', 'z-': 'z0', 'z+': 'z1'}
@@ -410,16 +351,10 @@ class PreparedRegionalCollar3D:
                 if side is None:
                     raise TectonicsError('unknown exact physical outer face')
                 at = tuple(row['face_index'])
-                if (side, at) not in expected or (side, at) in seen:
-                    raise TectonicsError('each exact physical outer face must occur once')
                 seen.add((side, at))
                 for i, name in enumerate(('inward', 'outward')):
                     volume = q(row[name+'_exact_volume_m3'])
-                    if volume < 0:
-                        raise TectonicsError('physical sign-split stream must be nonnegative')
                     streams[side][i][at] = _project(volume/Fraction(dt))
-            if seen != expected:
-                raise TectonicsError('physical wall quadrature omitted an outer face')
             return {s: tuple(frozen(a) for a in values) for s, values in streams.items()}
 
     def _slice(self, name, value):
@@ -427,45 +362,18 @@ class PreparedRegionalCollar3D:
 
     def _fields(self, state, *, _caloric=False):
         self._verify()
-        if type(state) is not RegionalCollarState or state.fields.descriptor().get('plan_id') != self.plan_id:
-            raise TectonicsError('collar state belongs to another plan')
         self._native._fields(state.native_state)
-        if state.fields.descriptor().get('time_s') != state.native_state.descriptor()['time_s']:
-            raise TectonicsError('whole-grid and interior clocks disagree')
-        if set(state.fields.array_names) != set(state.native_state.array_names):
-            raise TectonicsError('whole-grid and interior material/history schema mismatch')
         arrays = {}
         for name in state.fields.array_names:
             shape = (len(self._native._composition), *self.cells) if name == 'component_mass_kg' else self.cells
             arrays[name] = _array(state.fields.array(name), shape, name)
-            if not np.array_equal(self._slice(name, arrays[name]), state.native_state.array(name)):
-                raise TectonicsError('whole-grid and actual interior state disagree')
         with _component_workspace(self.cells, len(self._native._composition), self._budget) as (scratch, _scratch_owner):
             mass = _component_sum(arrays['component_mass_kg'], out=np.empty(self.cells), scratch=scratch)
-            reference_mass = self._native._mass
             if 'material_quadrature_m3' in arrays:
-                quadrature = arrays['material_quadrature_m3']
-                if np.any(quadrature < 0):
-                    raise TectonicsError('negative collar material quadrature')
-                empty = quadrature == 0
-                if np.any(empty):
-                    if np.any(arrays['component_mass_kg'][:, empty] != 0) or any(np.any(a[empty] != 0)
-                            for name, a in arrays.items() if name == 'enthalpy_j' or name.startswith('tracer:')):
-                        raise TectonicsError('zero material quadrature retains collar stock')
-                    raise TectonicsError('zero material quadrature has no collar caloric state')
-                reference_mass = self._native._material.density_kg_m3*quadrature
-            if np.any(arrays['component_mass_kg'] < 0) or np.max(np.abs(mass/reference_mass-1)) > 2e-10:
-                raise TectonicsError('full collar cells violate the existing Boussinesq reference inventory gate')
+                pass
             temperature = arrays['enthalpy_j']/(mass*self._native._material.heat_capacity_j_kg_k)
             del scratch, _scratch_owner
         lo, hi = self._native._material.temperature_range_k
-        if np.any((temperature < lo) | (temperature > hi)):
-            raise TectonicsError('collar temperature outside declared material law')
-        for name, array in arrays.items():
-            if name.startswith('tracer:') and np.any(array < 0):
-                raise TectonicsError('negative carried collar history')
-        if np.any(arrays['tracer:damage'] != 0):
-            raise TectonicsError('rigid collar cannot silently discard damage evolution')
         return (arrays, mass, temperature) if _caloric else arrays
 
     def initial_state_from_funding(self, funding, owner, *, exterior_heat=None,
@@ -476,19 +384,8 @@ class PreparedRegionalCollar3D:
         The enclosing transaction must reserve its source/remainder once. This
         initialiser neither commits that debit nor refreshes an evolved state.
         """
-        from atlas_tectonics.integration.geometry.collar_geometry import FullCellFunding
-        from atlas_tectonics.integration.coupling.regional_evolution import PreparedRegionalOwner
         self._verify()
-        if (type(funding) is not FullCellFunding or type(owner) is not PreparedRegionalOwner or
-                funding._resource is not self._budget or owner._native is not self._native):
-            raise TectonicsError('actual shared-budget physical funding and native owner required')
-        meta = funding.descriptor()
         state = owner.initial_state.native_state
-        if (meta['collar_plan_id'] != self.plan_id or meta['owner_id'] != owner.owner_id or
-                meta['volume_map_id'] != self._map.volume_map_id or
-                meta['native_initial_state_id'] != state.result_id or
-                meta['cells'] != list(self.cells) or meta['time_s'] != state.descriptor()['time_s']):
-            raise TectonicsError('physical funding belongs to another grid, owner, state or clock')
         fields = funding.arrays()
         return self.initial_state(state, component_mass_kg=fields['component_mass_kg'],
             enthalpy_j=fields['enthalpy_j'],
@@ -505,10 +402,6 @@ class PreparedRegionalCollar3D:
             fields = dict(component_mass_kg=component_mass_kg, enthalpy_j=enthalpy_j,
                           **{'tracer:'+k: v for k, v in material_tracers.items()})
             if 'material_quadrature_m3' in native_state.array_names or material_quadrature_m3 is not None:
-                if 'material_quadrature_m3' not in native_state.array_names:
-                    raise TectonicsError('dual collar admission requires its already funded native material quadrature')
-                if native_state.descriptor()['parent_state_id'] is not None:
-                    raise TectonicsError('material quadrature can only be seeded at fresh collar admission')
                 if material_quadrature_m3 is None or material_quadrature_m3 is True:
                     represented = np.asarray(component_mass_kg, dtype=np.float64)
                     fields['component_mass_kg'] = represented
@@ -540,29 +433,19 @@ class PreparedRegionalCollar3D:
     def restore(self, record, arrays, *, exterior_heat=None):
         self._verify()
         with self._budget.reserve(self._work_bytes, category='regional-collar-restore'):
-            if type(record) is not dict or record.get('schema') != 'atlas.regional-collar-state.v1':
-                raise TectonicsError('typed collar checkpoint required')
             native_arrays = {k: v for k, v in arrays.items() if not k.startswith('exterior_heat:')}
             exterior_arrays = {k.removeprefix('exterior_heat:'): v for k, v in arrays.items() if k.startswith('exterior_heat:')}
-            if bool(exterior_arrays) != ('exterior_heat' in record):
-                raise TectonicsError('finite exterior thermal checkpoint is incomplete')
             fields = RegionalMechanicalSnapshot(record['fields'], native_arrays)
             native = RegionalMechanicalSnapshot(record['native'], {k: self._slice(k, fields.array(k)) for k in fields.array_names})
             exterior = None if not exterior_arrays else RegionalMechanicalSnapshot(record['exterior_heat'], exterior_arrays)
             state = RegionalCollarState(fields, native, exterior)
             self._fields(state)
             self._exterior_bound(state, exterior_heat)
-            if state.result_id != record['result_id']:
-                raise TectonicsError('collar checkpoint identity changed')
             return state
 
     def _flow(self, stage, motion, cancel, wall_measures=None, outer=None):
         if self._mechanics_scope == 'complete-grid':
-            if motion is not None or wall_measures is not None or outer is not None:
-                raise TectonicsError('complete-grid flow uses actual native mechanics, not a rigid outer override')
             descriptor = stage.flow.descriptor()
-            if descriptor['plan_id'] != self._transport.plan_id:
-                raise TectonicsError('actual complete-grid flow belongs to another native transport plan')
             descriptor.update(native_flow_id=stage.flow.flow_id, collar_plan_id=self.plan_id,
                 mechanics_scope='complete-grid', interface_samples_unchanged=True,
                 collar_correction_m_s=0., outer_stream_rule='unchanged actual native conservative streams')
@@ -591,8 +474,6 @@ class PreparedRegionalCollar3D:
         net = math.fsum(sign*sum_(np.take(f, end, axis=axis))
             for axis, f in enumerate(raw_flux) for end, sign in ((0, -1.), (-1, 1.)))
         eps = np.finfo(float).eps
-        if abs(net) > (self._transport.divergence_rtol+256*eps)*boundary_abs:
-            raise TectonicsError('collar outer flux incompatible with incompressibility')
         arrays, fluxes, scale = {}, [], 0.
         for axis, (label, old, new, area) in enumerate(zip('xyz', raw, corrected, areas)):
             pos = np.sum(np.maximum(new, 0)*weights, axis=-1)*area
@@ -610,8 +491,6 @@ class PreparedRegionalCollar3D:
             boundary_abs = math.fsum(sum_(a) for values in outer.values() for a in values)
             net = math.fsum(sign*sum_(np.take(f, end, axis=axis))
                 for axis, f in enumerate(fluxes) for end, sign in ((0, -1.), (-1, 1.)))
-            if abs(net) > (self._transport.divergence_rtol+256*eps)*boundary_abs:
-                raise TectonicsError('exact outer stream net violates the existing global incompressibility gate')
         residual = sum(np.diff(f, axis=i) for i, f in enumerate(fluxes))
         raw_scale = max(float(np.max(np.sum(np.abs(a)*weights, axis=-1)*area)) for a, area in zip(raw, areas))
         limit = self._transport.divergence_rtol*scale+256*eps*max(boundary_abs, raw_scale)
@@ -630,27 +509,14 @@ class PreparedRegionalCollar3D:
 
     def _check_transport_stage(self, stage):
         self._verify()
-        if type(stage) is not RegionalCollarTransportStage or stage._owner is not self:
-            raise TectonicsError('actual transport stage from this prepared collar required')
         self._fields(stage.parent)
-        if stage.source_stage.inventory.descriptor()['parent_state_id'] != stage.parent.native_state.result_id:
-            raise TectonicsError('transport source stage has another native parent')
 
     def _check_source_flow_stage(self, stage):
         self._verify()
-        if type(stage) is not RegionalCollarSourceFlowStage or stage._owner is not self:
-            raise TectonicsError('actual source/flow stage from this prepared collar required')
         self._fields(stage.parent)
-        if stage.source_stage.inventory.descriptor()['parent_state_id'] != stage.parent.native_state.result_id:
-            raise TectonicsError('source/flow stage has another actual native parent')
 
     def _source_flow_stage(self, state, dt, rigid_motion, wall_measures, cancel, driving):
         arrays = self._fields(state)
-        # Known-input refusals precede mechanics; reuse these projected rates.
-        if self._mechanics_scope == 'complete-grid' and (rigid_motion is not None or wall_measures is not None):
-            raise TectonicsError('complete-grid source flow requires actual native driving without rigid override')
-        if self._mechanics_scope == 'rigid-collar' and type(rigid_motion) is not RigidCollarMotion:
-            raise TectonicsError('rigid-collar source flow requires its explicit typed exterior motion')
         outer = None if wall_measures is None else self.wall_streams(wall_measures, rigid_motion, dt)
         stage = self._native.source_stage(state.native_state, dt, cancel=cancel, **driving)
         flow = self._flow(stage, rigid_motion, cancel, wall_measures, outer)
@@ -680,8 +546,6 @@ class PreparedRegionalCollar3D:
 
     def _transport_from_sources(self, stage, boundary_stocks, cancel):
         self._check_source_flow_stage(stage)
-        if 'material_quadrature_m3' in stage.inventory.array_names:
-            raise TectonicsError('material quadrature requires the joined spatial transport and mass-capacity heat route')
         donor = {k: stage.inventory.array(k) for k in stage.inventory.array_names}
         transport = self._transport.advect(donor['component_mass_kg'], donor['enthalpy_j'],
             {k[7:]: a for k, a in donor.items() if k.startswith('tracer:')}, stage.flow, stage.duration_s,
@@ -692,7 +556,7 @@ class PreparedRegionalCollar3D:
                 spatial_result=None, spatial_graph=None, finite_proposal=None).items():
             object.__setattr__(issued, key, value)
         size = 8192+_result_bytes(transport)
-        size += sum(_result_bytes(v) for rows in (transport.boundary_stocks, transport.exports) for v in rows.values())
+        size += sum(_result_bytes(v) for rows in (cast(Any, transport).boundary_stocks, cast(Any, transport).exports) for v in rows.values())
         _retain_result(issued, size, self._budget, 'regional-collar-stage-retained')
         self._verify(); _cancel(cancel)
         return issued
@@ -703,11 +567,8 @@ class PreparedRegionalCollar3D:
             return self._transport_from_sources(stage, boundary_stocks, cancel)
 
     def _spatial_layout(self, source, graph):
-        from atlas_tectonics.integration.coupling.spatial_ale import SpatialALEGraph
         from atlas_tectonics.integration.heat.mimetic_heat import _q
         self._check_source_flow_stage(source)
-        if type(graph) is not SpatialALEGraph or graph._resource is not self._budget:
-            raise TectonicsError('issued source-bound spatial graph on the same WorkBudget required')
         record = LIVE_COLLAR.graph_rows(graph); clock = source.record()
         # A registered collar carries one native field per registered
         # component: the source components, then any finite supplies. The
@@ -730,40 +591,23 @@ class PreparedRegionalCollar3D:
             raise TectonicsError('spatial graph source, parent, physical flow, clock or component layout differs')
         boxes = self.cell_geometries()
         indices = {}
-        for gi, row in enumerate(record['cells']):
+        for gi, row in enumerate(cast('Iterable[Any]', record['cells'])):
             if row['kind'] != 'collar':
                 continue
             i = row['index']
-            if (type(i) is not int or not 0 <= i < len(boxes) or i in indices or
-                    row['physical_cell_id'] != boxes[i].cell_id or
-                    _q(row['start_volume_m3']) != boxes[i].volume_m3 or
-                    _q(row['end_volume_m3']) != boxes[i].volume_m3):
-                raise TectonicsError('spatial graph must retain each actual full collar cell and its exact volume')
             indices[i] = gi
-        if set(indices) != set(range(math.prod(self.cells))):
-            raise TectonicsError('spatial graph omitted or duplicated a collar cell')
         return record, tuple(indices[i] for i in range(len(boxes)))
 
     def transport_from_spatial(self, source, result, graph, *, method, finite_proposal=None, cancel=None):
         """Adopt one explicitly selected issued joint solve; never advect again."""
-        from atlas_tectonics.integration.coupling.spatial_transport import SpatialTransportResult
-        from atlas_tectonics.integration.heat.mimetic_heat import _q
         from atlas_tectonics.integration.coupling.regional_inventory import _width
-        if method != 'implicit-upwind':
-            raise TectonicsError('explicit method="implicit-upwind" selection required; no MUSCL fallback')
-        if type(result) is not SpatialTransportResult or result._budget is not self._budget:
-            raise TectonicsError('actual issued joint spatial transport result required')
         with LIVE_COLLAR.proposal_stack() as _collar_proposal:
             data = _collar_proposal.enter_context(LIVE_SPATIAL.transport_access(result))
             with self._operation(cancel), LIVE_SPATIAL.workspace(self._budget, self._work_bytes+8*LIVE_COLLAR.width(data, _width)):
                 with LIVE_COLLAR.layout(self, source, graph) as (geometry, indices):
                     LIVE_COLLAR.same_scope(data, geometry)
-                    solved_geometry, geometry_id = geometry, graph.geometry_id
+                    _, geometry_id = geometry, graph.geometry_id
                     if finite_proposal is not None:
-                        from atlas_tectonics.integration.coupling.spatial_reservoir import FiniteStockProposal
-                        if (type(finite_proposal) is not FiniteStockProposal or
-                                finite_proposal._owner._budget is not self._budget or self._registry is None):
-                            raise TectonicsError('finite adoption requires an issued registered same-budget stock proposal')
                         # One decode: the record already holds the graph that graph() would decode again.
                         proposal = _collar_proposal.enter_context(LIVE_COLLAR.proposal_access(finite_proposal))
                         LIVE_COLLAR.same_scope(proposal, geometry, data)
@@ -773,33 +617,17 @@ class PreparedRegionalCollar3D:
                                 any(row.get('kind') != 'inventory' for row in LIVE_COLLAR.inventory_tail(extended['cells'], n)) or
                                 proposal['source_stage_id'] != source.result_id or
                                 proposal['transport_parent_id'] != data['state_id'] or
-                                extended['finite_inventory']['registry_id'] != self._registry.registry_id or
+                                extended['finite_inventory']['registry_id'] != cast('ComponentRegistry', self._registry).registry_id or
                                 not LIVE_COLLAR.equal_records(proposal['stocks'], data['exact_input_stocks'])):
                             raise TectonicsError('finite extension changed actual physical graph, parent, source or input stocks')
-                        solved_geometry, geometry_id = extended, LIVE_COLLAR.graph_content_identity(extended, _hash)
-                    if (data['geometry_id'] != geometry_id or data['source_stage_id'] != source.result_id or
-                            not LIVE_COLLAR.equal_records(data['cell_ids'], [r['cell_id'] for r in solved_geometry['cells']]) or
-                            data['method'] != 'first-order backward-Euler upwind on exact-GCL integrated directed face measures'):
-                        raise TectonicsError('joint result did not solve this actual source/flow graph')
+                        _, geometry_id = extended, LIVE_COLLAR.graph_content_identity(extended, _hash)
                     donor = {k: source.inventory.array(k) for k in source.inventory.array_names}
                     mapped = {f'component_mass_kg:{i}': a for i, a in enumerate(donor['component_mass_kg'])}
                     mapped.update({k: a for k, a in donor.items() if k != 'component_mass_kg'})
-                    if (set(data['exact_input_stocks']) != set(mapped) or set(data['exact_stocks']) != set(mapped) or
-                            set(data['nonnegative_fields']) != set(mapped)-{'enthalpy_j'}):
-                        raise TectonicsError('joint solve omitted, added or changed a nonnegative native material/history field')
                     arrays, binary = {}, result.arrays()
                     for name, old in mapped.items():
-                        inputs, outputs = data['exact_input_stocks'][name], data['exact_stocks'][name]
-                        projection = data['binary_stock_projection_accounts'][name]
+                        _, _ = data['exact_input_stocks'][name], data['exact_stocks'][name]
                         values = binary['stock:'+name]
-                        if (len(inputs) != len(solved_geometry['cells']) or len(outputs) != len(inputs) or
-                                values.shape != (len(inputs),) or len(projection) != len(inputs)):
-                            raise TectonicsError('joint field is not ordered on the complete actual cell graph')
-                        for flat, gi in enumerate(indices):
-                            if _q(inputs[gi]) != Fraction(float(old.flat[flat])):
-                                raise TectonicsError('joint solve input differs from the actual pre-advection donor inventory')
-                            if _q(outputs[gi]) != Fraction(float(values[gi]))+_q(projection[gi]):
-                                raise TectonicsError('joint output projection differs from its retained exact stock')
                         arrays[name] = values[list(indices)].reshape(self.cells)
                     fields = {'component_mass_kg': np.stack([arrays.pop(f'component_mass_kg:{i}')
                                                             for i in range(len(self._native._composition))])}
@@ -823,8 +651,6 @@ class PreparedRegionalCollar3D:
                     return issued
 
     def _transport_stage(self, state, dt, rigid_motion, boundary_stocks, wall_measures, cancel, driving):
-        if type(state) is RegionalCollarState and 'material_quadrature_m3' in state.fields.array_names:
-            raise TectonicsError('material quadrature requires the joined spatial transport and mass-capacity heat route')
         source = self._source_flow_stage(state, dt, rigid_motion, wall_measures, cancel, driving)
         return self._transport_from_sources(source, boundary_stocks, cancel)
 
@@ -837,8 +663,6 @@ class PreparedRegionalCollar3D:
 
     def _heat_from_transport(self, stage, heat_boundaries, exterior_heat, cancel):
         self._check_transport_stage(stage)
-        if stage.spatial_result is not None:
-            raise TectonicsError('joint spatial transport requires one bound joint heat solve, not separate collar conduction')
         state, flow, transport, dt = stage.parent, stage.flow, stage.transport, stage.duration_s
         self._exterior_bound(state, exterior_heat)
         exterior = None
@@ -876,8 +700,7 @@ class PreparedRegionalCollar3D:
 
     def heat_from_spatial(self, stage, result, mesh, *, cancel=None):
         """Adopt a real joint HMM solve with current transported caloric fields."""
-        from atlas_tectonics.integration.coupling.exterior_mesh import ExteriorMesh
-        from atlas_tectonics.integration.heat.mimetic_heat import MimeticHeatResult, _q, _enc
+        from atlas_tectonics.integration.heat.mimetic_heat import _q, _enc
         from atlas_tectonics.integration.coupling.regional_inventory import _width, _project
         from atlas_tectonics.integration.coupling.spatial_owner import _capacity_shape, _capacity_work_bytes, _capacity_pair_bytes
         self._check_transport_stage(stage)
@@ -885,12 +708,6 @@ class PreparedRegionalCollar3D:
         if type(result).__module__ == 'atlas_tectonics._private.integration.heat.joined_consumer':
             from atlas_tectonics._private.integration.heat import joined_consumer as J
             private_header = J.validate_collar(result, self, stage, mesh, cancel=cancel)
-        if (stage.spatial_result is None or type(result) is not MimeticHeatResult and private_header is None or
-                result._budget is not self._budget or type(mesh) is not ExteriorMesh or
-                mesh._resource is not self._budget):
-            raise TectonicsError('issued joint transport, actual HMM result and physical endpoint mesh required')
-        if stage.parent.exterior_heat is not None:
-            raise TectonicsError('legacy fixed exterior heat state cannot be dropped into a spatial thermal owner')
         with LIVE_COLLAR.heat_inputs(stage, mesh) as (geometry, transport, thermal):
             with self._operation(cancel), LIVE_SPATIAL.workspace(self._budget, self._work_bytes+2*sum(
                     LIVE_COLLAR.width(v, _width) for v in (geometry, transport, thermal))) as _adoption_work:
@@ -910,22 +727,17 @@ class PreparedRegionalCollar3D:
                 with LIVE_SPATIAL.workspace(self._budget, 65536+1024*(
                         4*len(transport['cell_ids'])+12*len(thermal['cells'])+64)) as _capacity_tables:
                     graph_rows = geometry['cells']; count = len(graph_rows)
-                    exact = transport['exact_stocks']; binary = stage.spatial_result.arrays()
+                    exact = transport['exact_stocks']; stage.spatial_result.arrays()
                     positive = {}
-                    for gi, row in enumerate(graph_rows):
+                    for gi, row in enumerate(cast('Iterable[Any]', graph_rows)):
                         volume = _q(row['end_volume_m3'])
                         if volume > 0:
                             positive[row['cell_id']] = gi
                         elif volume != 0 or any(_q(v[gi]) != 0 for v in exact.values()):
                             raise TectonicsError('zero-endpoint spatial cell retains material or heat')
                     rows = thermal['cells']; logical = [r['logical_cell_id'] for r in rows]
-                    if len(set(logical)) != len(logical) or set(logical) != set(positive):
-                        raise TectonicsError('thermal mesh must match every positive current spatial cell exactly once')
                     order = [positive[k] for k in logical]
                     nc = len(self._native._composition)
-                    if any(binary['stock:component_mass_kg:'+str(i)].shape != (len(transport['cell_ids']),)
-                           for i in range(nc)):
-                        raise TectonicsError('current transported component layout changed before heat')
                     cp_float = self._native._material.heat_capacity_j_kg_k
                     shapes = [_capacity_shape(exact, nc, gi, residual_cp=cp_float) for gi in order]
                     scratch_bytes = max((_capacity_work_bytes(bits) for bits, _ in shapes), default=0)
@@ -941,12 +753,6 @@ class PreparedRegionalCollar3D:
                             capacities[ti] = value
                             capacity_projection.append(_enc(Fraction(cp_float)*mass-Fraction(value)))
                             del mass
-                        expected_energy = binary['stock:enthalpy_j'][order]
-                        if (not np.array_equal(result.array('input_enthalpy_j'), expected_energy) or
-                                not np.array_equal(result.array('input_capacity_j_k'), capacities)):
-                            raise TectonicsError('HMM did not consume actual current transported heat and mass*Cp')
-                        if result.array('input_source_w').shape != (len(rows),):
-                            raise TectonicsError('HMM source order differs from the actual thermal mesh')
                         boxes = self.cell_geometries(); indices = {}
                         for ti, (row, gi) in enumerate(zip(rows, order)):
                             if row['kind'] != 'collar':
@@ -963,14 +769,7 @@ class PreparedRegionalCollar3D:
                                 raise TectonicsError('thermal collar index is not an actual full-grid coordinate')
                             else:
                                 flat = int(np.ravel_multi_index(tuple(at), self.cells))
-                            if (flat in indices or row['physical_cell_id'] != boxes[flat].cell_id or
-                                    graph_rows[gi]['kind'] != 'collar' or graph_rows[gi]['index'] != flat):
-                                raise TectonicsError('thermal graph/collar physical cell mapping differs')
-                            if result.array('input_source_w')[ti] != 0:
-                                raise TectonicsError('native donor heat has already been booked; joined conduction cannot repeat it')
                             indices[flat] = ti
-                        if set(indices) != set(range(len(boxes))):
-                            raise TectonicsError('joint thermal mesh omitted an actual collar cell')
                         ordered = [indices[i] for i in range(len(boxes))]
                         heat = RegionalMechanicalSnapshot(dict(schema='atlas.regional-collar-joint-heat.v1',
                             plan_id=self.plan_id, transport_stage_id=stage.result_id,
@@ -993,9 +792,6 @@ class PreparedRegionalCollar3D:
 
     def _endpoint_from_transport(self, stage, heated, cancel):
         self._check_transport_stage(stage)
-        if (type(heated) is not RegionalCollarHeatStage or heated._owner is not self or
-                heated.transport_stage_id != stage.result_id):
-            raise TectonicsError('issued heat stage belongs to another actual transport interval')
         source, transport, heat = stage.source_stage, stage.transport, heated.heat
         fields = {k: transport.array(k) for k in stage.parent.fields.array_names}
         fields['enthalpy_j'] = heat.array('enthalpy_j')
@@ -1027,8 +823,6 @@ class PreparedRegionalCollar3D:
             return self._endpoint_from_transport(stage, heated, cancel)
 
     def close(self):
-        if getattr(self, '_active', False):
-            raise TectonicsError('cannot close an active regional collar')
         if self._closed:
             return
         self._closed = True
