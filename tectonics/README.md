@@ -6,7 +6,7 @@ It imports neither `engineering/work` nor `shared_generator`; those are separate
 Atlas routes. Static spherical geometry, regional evolution and a physically
 accepted evolving planet are different capabilities.
 
-The maintained package in `src` uses `0.1.0.dev82`. The composed historical
+The maintained package in `src` uses `0.1.0.dev83`. The composed historical
 sources retain the versions bound by their receipts. Receipts also bind the exact source
 and execution identities. Read [current delivery and acceptance](../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 for reviewed scope, platform coverage, holds and remaining work, including I04/I05a.

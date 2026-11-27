@@ -7,7 +7,7 @@ grows by one rotation step per interval, so it grows linearly, not geometrically
 See the retained exact-width measurement notes.
 
 This module records the widest numerator and denominator bits and the value count of
-every exact field, per record kind and root field, plus the trajectory step count. It
+every exact field, per record kind and root field. It
 projects interval 2 as W1+(W1-W0) and interval 3 as W1+2*(W1-W0). The gate passes
 only if every projected interval-2 width is at most 50% of the limit and every
 interval-3 projection at most 100%. A field absent at interval 0 takes W0 = 0 (the
@@ -35,7 +35,6 @@ import re
 LIMIT_BITS = 8*(1 << 20)
 INTERVAL2_SHARE = 0.5
 INTERVAL3_SHARE = 1.0
-TRAJECTORY_KEY = 'trajectory_segments'
 
 _HEX_DIGITS = re.compile(rb'[0-9a-f]*')
 _PLAIN = re.compile(rb'[^"\\]*')
@@ -70,7 +69,7 @@ class StreamScanner:
     """Incremental canonical-JSON width scanner for one record."""
 
     def __init__(self):
-        self.fields, self.trajectory_steps = {}, None
+        self.fields = {}
         self._stack, self._root_key, self._string, self._scalar = [], None, None, False
 
     def _field(self):
@@ -119,8 +118,6 @@ class StreamScanner:
                 for bits in top.first:
                     if bits is not None:
                         self._integer(bits)
-            if self._root_key == TRAJECTORY_KEY and len(self._stack) == 1:
-                self.trajectory_steps = top.elements
         if not self._stack:
             self._root_key = None
         self._value(None)
@@ -235,16 +232,16 @@ class WidthTable:
     """Exact widths per record kind and root field for one interval's records."""
 
     def __init__(self, interval):
-        self.interval, self.records, self.trajectory_steps = interval, {}, None
+        self.interval, self.records = interval, {}
 
     def scan(self, kind, chunks):
         """Scan one record's canonical JSON chunks and merge it under ``kind``."""
         scanner = StreamScanner()
         for chunk in chunks:
             scanner.feed(chunk)
-        return self.merge(kind, scanner.finish(), scanner.trajectory_steps)
+        return self.merge(kind, scanner.finish())
 
-    def merge(self, kind, fields, trajectory_steps):
+    def merge(self, kind, fields):
         """Merge one finished scan of a record under ``kind``; returns its fields."""
         merged = self.records.setdefault(kind, {})
         for name, value in fields.items():
@@ -254,8 +251,6 @@ class WidthTable:
             old['integers'] += value['integers']
             old['max_numerator_bits'] = max(old['max_numerator_bits'], value['max_numerator_bits'])
             old['max_denominator_bits'] = max(old['max_denominator_bits'], value['max_denominator_bits'])
-        if trajectory_steps is not None:
-            self.trajectory_steps = max(self.trajectory_steps or 0, trajectory_steps)
         return fields
 
     def widths(self):
@@ -264,17 +259,16 @@ class WidthTable:
 
     def wire(self):
         return {'schema': 'atlas.exact-width-table.v1', 'interval': self.interval,
-                'trajectory_steps': self.trajectory_steps, 'limit_bits': LIMIT_BITS,
+                'limit_bits': LIMIT_BITS,
                 'records': {kind: dict(sorted(fields.items())) for kind, fields in sorted(self.records.items())}}
 
     @classmethod
     def from_wire(cls, value):
         """A recorded table (an earlier reader's verdict) back as a gate operand; closed shape."""
         row_fields = {'count', 'integers', 'max_numerator_bits', 'max_denominator_bits'}
-        if (type(value) is not dict or set(value) != {'schema', 'interval', 'trajectory_steps', 'limit_bits', 'records'}
+        if (type(value) is not dict or set(value) != {'schema', 'interval', 'limit_bits', 'records'}
                 or value['schema'] != 'atlas.exact-width-table.v1' or value['limit_bits'] != LIMIT_BITS
-                or type(value['interval']) is not int or type(value['records']) is not dict
-                or not (value['trajectory_steps'] is None or type(value['trajectory_steps']) is int)):
+                or type(value['interval']) is not int or type(value['records']) is not dict):
             raise ValueError('recorded exact-width table required')
         for fields in value['records'].values():
             if type(fields) is not dict or not all(
@@ -285,7 +279,6 @@ class WidthTable:
         table = cls(value['interval'])
         table.records = {kind: {name: dict(row) for name, row in fields.items()}
                          for kind, fields in value['records'].items()}
-        table.trajectory_steps = value['trajectory_steps']
         if table.wire() != value:
             raise ValueError('recorded exact-width table is not canonical')
         return table
@@ -306,11 +299,11 @@ class OptionalScan:
                 self._scanner = None
 
     def result(self):
-        """(fields, trajectory steps), or None if the scan was turned off."""
+        """The scanned fields, or None if the scan was turned off."""
         if self._scanner is None:
             return None
         try:
-            return self._scanner.finish(), self._scanner.trajectory_steps
+            return self._scanner.finish()
         except Exception:  # noqa: BLE001 - as in feed
             self._scanner = None
             return None
@@ -337,10 +330,10 @@ class Proofs:
     def enter(self, descriptor, identity, scan):
         result = scan.result()
         if result is not None:
-            self._proved[self._key(descriptor)] = (dict(identity), *result)
+            self._proved[self._key(descriptor)] = (dict(identity), result)
 
     def get(self, descriptor):
-        """(identity {'bytes', 'sha256'}, fields, trajectory steps), or None."""
+        """(identity {'bytes', 'sha256'}, fields), or None."""
         return self._proved.get(self._key(descriptor))
 
     def __len__(self):
@@ -389,8 +382,7 @@ def gate(root, interval1):
                      'w2_share': w2/LIMIT_BITS, 'w3_share': w3/LIMIT_BITS, 'passed': ok})
     return {'schema': 'atlas.exact-width-gate.v1', 'passed': passed, 'limit_bits': LIMIT_BITS,
             'interval2_share': INTERVAL2_SHARE, 'interval3_share': INTERVAL3_SHARE,
-            'root_trajectory_steps': root.trajectory_steps,
-            'interval1_trajectory_steps': interval1.trajectory_steps, 'rows': rows}
+            'rows': rows}
 
 
 def gate_next(previous, current):
@@ -418,8 +410,7 @@ def gate_next(previous, current):
     return {'schema': 'atlas.exact-width-gate.v2', 'interval': current.interval,
             'next_interval': current.interval+1, 'passed': passed, 'limit_bits': LIMIT_BITS,
             'next_share': INTERVAL2_SHARE, 'after_next_share': INTERVAL3_SHARE,
-            'previous_trajectory_steps': previous.trajectory_steps,
-            'trajectory_steps': current.trajectory_steps, 'rows': rows}
+            'rows': rows}
 
 
 def compare(reference, measured):
@@ -472,10 +463,10 @@ def _proved_records(store, refs, *, budget, scope, source_producer, table, proof
         if hit is None:
             misses[name] = descriptor
             continue
-        identity, fields, steps = hit
+        identity, fields = hit
         require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},
                 'adopted record differs from its reference: '+name)
-        table.merge(name, fields, steps)
+        table.merge(name, fields)
         result[name] = {'sha256': descriptor['sha256'], 'nbytes': descriptor['bytes']}
     if not misses:
         return result
@@ -506,7 +497,7 @@ def _mesh(workflow, scope, table):
     if scan is not None:
         # I3: the restore's open rendered and proved these bytes in this reader block and scanned them as it did.
         identity = mesh.identity()
-        table.merge('mesh', *scan)
+        table.merge('mesh', scan)
         result = {'sha256': identity.sha256, 'nbytes': identity.canonical_bytes}
     else:
         result = _scanned(table, 'mesh', SI.iter_logical_json(mesh))

@@ -1420,8 +1420,7 @@ class CollarWorkflow:
                 start != Fraction(self._exterior_state.time_s) or end-start != Fraction(dt) or
                 end != Fraction(self._exterior_state.time_s+dt) or
                 wall['start_support_id'] != exterior['support_id'] or
-                wall['prior_trajectory_id'] != exterior['trajectory_id'] or
-                wall['trajectory']['segments'][:-1] != exterior['trajectory']['segments']):
+                wall['prior_trajectory_id'] != exterior['trajectory_id']):
             raise RegionalOwnerRefused('spatial wall source, parent, exact clock or carried trajectory differs')
         if self._head['sequence'] >= MAX_INTERVALS:
             raise RegionalOwnerRefused('funded collar interval envelope exceeded')
@@ -1470,8 +1469,7 @@ class CollarWorkflow:
         if (record['parent_network_id'] != network or start != Fraction(self._exterior_state.time_s) or
                 end-start != Fraction(dt) or end != Fraction(self._exterior_state.time_s+dt) or
                 record['start_support_id'] != exterior['support_id'] or
-                record['prior_trajectory_id'] != exterior['trajectory_id'] or
-                record['trajectory']['segments'][:-1] != exterior['trajectory']['segments']):
+                record['prior_trajectory_id'] != exterior['trajectory_id']):
             raise RegionalOwnerRefused('differential interval differs from actual carried network, clock or trajectory')
         if self._head['sequence'] >= MAX_INTERVALS:
             raise RegionalOwnerRefused('funded collar interval envelope exceeded')

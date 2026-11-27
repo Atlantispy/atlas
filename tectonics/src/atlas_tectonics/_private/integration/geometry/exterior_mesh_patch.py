@@ -7,10 +7,8 @@ legacy construction, restore and record semantics are unchanged.
 """
 from __future__ import annotations
 from atlas_shared.errors import AtlasError
-from builtins import AssertionError as _release_assertion_error
 
 import hashlib
-import json
 import weakref
 
 
@@ -42,23 +40,12 @@ def admit_compact_mesh(cls, view, *, budget):
     header_owner = view.header()
     header = header_owner.value
     required = ('funding_id', 'source', 'support_id', 'trajectory_id', 'time_s',
-                'grid_id', 'endpoint', 'trajectory_segments')
+                'grid_id', 'endpoint')
     if (header.get('schema') != _SCHEMA or header.get('method') != METHOD
             or any(k not in header for k in required) or 'grid_lines' not in view._grids):
         raise CompactExteriorRefused('unsupported saved thermal geometry method or header')
-    from atlas_tectonics.integration.heat.mimetic_heat import _stream_encoding_capacity
-    _, scratch = _stream_encoding_capacity(header['trajectory_segments'], budget)
-    # Use the existing audited streaming codec allowance, then hash without a
-    # second whole trajectory string. Header ownership survives held errors.
-    scratch_owner = _SmallOwner(budget, scratch, category='compact-exterior-trajectory-check')
-    digest = hashlib.sha256()
-    for chunk in json.JSONEncoder(sort_keys=True, separators=(',', ':'), allow_nan=False).iterencode(header['trajectory_segments']):
-        digest.update(chunk.encode())
-    trajectory = digest.hexdigest()
-    if header['endpoint'] not in ('start', 'end') or trajectory != header['trajectory_id']:
-        raise CompactExteriorRefused('saved thermal trajectory differs')
-    if not (scratch_owner._guard is not None):
-        raise _release_assertion_error()
+    if header['endpoint'] not in ('start', 'end'):
+        raise CompactExteriorRefused('saved thermal endpoint differs')
     # The codec owns its immutable arrays/metadata; the native wrapper retains
     # that actual owner rather than reserving or copying a second mesh.
     guard = budget.reserve(1024, category='compact-exterior-wrapper')

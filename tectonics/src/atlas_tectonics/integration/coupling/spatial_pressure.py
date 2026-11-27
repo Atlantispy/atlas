@@ -737,8 +737,7 @@ def spatial_pressure_correction(sphere, moving, support, base_port, funding, col
         mesh = current['thermal_mesh']
         if (mesh['funding_id'] != funding.funding_id or mesh['source'] != binding or
                 mesh['support_id'] != current['support_id'] or mesh['trajectory_id'] != current['trajectory_id'] or
-                W._decode(mesh['time_s']) != Q(time) or mesh['grid_id'] != current['grid_id'] or
-                mesh['trajectory_segments'] != current['trajectory']['segments']):
+                W._decode(mesh['time_s']) != Q(time) or mesh['grid_id'] != current['grid_id']):
             raise C.PressureCouplingRefused('spatial field has stale physical-support provenance')
         native, datum = collar._native, base_port.datum
         material = native._material

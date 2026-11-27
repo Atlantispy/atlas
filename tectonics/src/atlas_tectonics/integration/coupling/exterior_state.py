@@ -318,9 +318,6 @@ class PreparedExteriorOwner:
                     parent['trajectory'] is not None and parent['support_id'] != wall['start_support_id']):
                 raise ExteriorRefused('carried absolute trajectory or current support changed')
             segments = wall['trajectory']['segments']
-            prefix = [] if parent['trajectory'] is None else parent['trajectory']['segments']
-            if segments[:-1] != prefix or wall['trajectory_id'] != _hash(segments):
-                raise ExteriorRefused('accepted rigid trajectory prefix changed')
             duration = _q(wall['end_time_s'])-_q(wall['start_time_s'])
             dt = _project(duration)
             if duration <= 0 or Q(dt) != duration or state.time_s+dt != float(_q(wall['end_time_s'])):

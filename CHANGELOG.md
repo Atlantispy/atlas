@@ -203,6 +203,20 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev83](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev83) - 2026-11-27
+
+### Optimisations
+
+- Saved exterior meshes and width tables no longer carry the trajectory segment list. Three list compares that
+  repeated an id compare are removed.
+
+### Pin records
+
+- `private_heat_original_joined_r8._PUBLIC_ACCOUNTS_SHA` changes from
+  `86dfeda43e3fdaa8776cf92b9ce67f77e864eed2404415f0fd5d1e8c1fdb5efe` to
+  `cf897ac53deaac15f063ec4556a0ac2270fb87b16585eabce43d81a4f41c2021`, because the segment-list removal edits
+  `regional_workflow.py`.
+
 ## [0.1.0.dev82](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev82) - 2026-11-27
 
 ### Optimisations

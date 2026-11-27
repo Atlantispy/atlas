@@ -46,7 +46,7 @@ FACE_TAGS = frozenset(('kind', 'geometry_kind', 'relative_advection', 'boundary_
 FACE_FIELDS = FACE_TAGS | {'face_id', 'centroid_m', 'area_vector_m2', 'owners',
                          'vertices_m', 'cartesian_support', 'reservoir_cut'}
 HEADER_FIELDS = frozenset(('schema', 'method', 'physical_geometry_family', 'funding_id',
-    'source', 'support_id', 'trajectory_id', 'trajectory_segments', 'endpoint',
+    'source', 'support_id', 'trajectory_id', 'endpoint',
     'wall_measure_id', 'time_s', 'grid_id', 'support_ids', 'representative_quaternion',
     'pose_operator_error_bound', 'geometry_volume_max_deviation_m3',
     'max_geometry_volume_error_m3', 'radial_rule', 'endpoint_lower_rule', 'advection_rule',

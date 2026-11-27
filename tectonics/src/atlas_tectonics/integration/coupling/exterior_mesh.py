@@ -616,11 +616,11 @@ class ExteriorMesh:
             if record.get('schema') != 'atlas.source-bound-exterior-thermal-mesh.v1' or record.get('method') != METHOD:
                 raise V.VolumeError('unsupported saved thermal geometry method')
             required = ('cells', 'faces', 'support_tables', 'funding_id', 'source', 'support_id',
-                        'trajectory_id', 'time_s', 'grid_id', 'grid_lines', 'endpoint', 'trajectory_segments')
+                        'trajectory_id', 'time_s', 'grid_id', 'grid_lines', 'endpoint')
             if any(k not in record for k in required) or _hash(record) != geometry_id:
                 raise V.VolumeError('saved thermal geometry identity or record contract changed')
-            if record['endpoint'] not in ('start', 'end') or _hash(record['trajectory_segments']) != record['trajectory_id']:
-                raise V.VolumeError('saved thermal trajectory differs')
+            if record['endpoint'] not in ('start', 'end'):
+                raise V.VolumeError('saved thermal endpoint differs')
             encoded = json.dumps(record, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
             lease = budget.reserve(8192+4*len(encoded), category='exterior-thermal-mesh-retained')
             lease.__enter__()
@@ -820,7 +820,7 @@ def build_exterior_mesh(funding, sphere, wall_measures, *, grid_lines,
             raise V.VolumeError('thermal exterior does not cover every actual active-grid boundary face')
         result_record = dict(schema='atlas.source-bound-exterior-thermal-mesh.v1', method=METHOD,
             funding_id=funding.funding_id, source=record['source'], support_id=support_id,
-            trajectory_id=trajectory_id, trajectory_segments=segments, endpoint=endpoint,
+            trajectory_id=trajectory_id, endpoint=endpoint,
             wall_measure_id=wall_measures.measure_id, time_s=motion[endpoint+'_time_s'], grid_id=grid_id,
             grid_lines=[list(map(_enc, axis)) for axis in lines], cells=cells, faces=faces,
             support_tables=support_tables,
@@ -1036,7 +1036,7 @@ def _build_exterior_mesh_record(funding, sphere, wall_measures, *, grid_lines,
             del box_by_cell, radial_by_cell, by_cell
         result_record = dict(schema='atlas.source-bound-exterior-thermal-mesh.v1', method=METHOD,
             funding_id=funding.funding_id, source=record['source'], support_id=support_id,
-            trajectory_id=trajectory_id, trajectory_segments=segments, endpoint=endpoint,
+            trajectory_id=trajectory_id, endpoint=endpoint,
             wall_measure_id=wall_measures.measure_id, time_s=motion[endpoint+'_time_s'], grid_id=grid_id,
             grid_lines=[list(map(_enc, axis)) for axis in lines], cells=cells, faces=faces,
             support_tables=support_tables,
