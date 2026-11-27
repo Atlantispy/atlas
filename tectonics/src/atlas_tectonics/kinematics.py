@@ -10,8 +10,9 @@ from typing import Any
 
 import numpy as np
 
-from ._validation import FloatArray, TectonicsError, read_array as array, frozen, scalar, input_shape
-from .resources import elements, select_budget
+from atlas_tectonics._validation import FloatArray, TectonicsError, read_array as array, frozen, scalar, input_shape
+from atlas_tectonics.integration.resources import elements, select_budget
+from atlas_tectonics.integration.resources import _immutable_deepcopy
 
 
 def _vector(value: Any, dimensions: int, name: str) -> FloatArray:
@@ -143,9 +144,7 @@ class Rotation:
         # renormalise them. Pickles written before this still name the class.
         return (_restore_rotation, (self.quaternion,))
 
-    def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return self
+    __deepcopy__ = _immutable_deepcopy
 
 
 def _restore_rotation(quaternion: Any) -> Rotation:

@@ -6,8 +6,8 @@ It imports neither `engineering/work` nor `shared_generator`; those are separate
 Atlas routes. Static spherical geometry, regional evolution and a physically
 accepted evolving planet are different capabilities.
 
-The optimised package's version string is `0.1.0.dev51`; `pyproject.toml` and the older package copies
-under `src` and `optimisation/composed-r2` keep `0.1.0.dev42`. It is not a release or acceptance marker. Receipts bind actual source
+The maintained package in `src` uses `0.1.0.dev52`. The composed historical
+sources retain the versions bound by their receipts. Receipts also bind the exact source
 and execution identities. Read [current delivery and acceptance](../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 for reviewed scope, platform coverage, holds and remaining work, including I04/I05a.
 Numerical checks and physical acceptance are separate outcomes.
@@ -48,7 +48,8 @@ dependencies stay intact. Mechanical response remains in tectonics.
 
 Use a separate Python 3.12 or 3.13 environment for this package, **not** the old
 source-only `tools/develop.py` environment. Dependencies and version ranges live
-in `tectonics/pyproject.toml`; only Numba is exact-pinned there. A passing run must
+in `tectonics/pyproject.toml`. The editable checkout installs both local distributions
+in one command. A passing run must
 record its actual versions, not claim all dependencies are pinned. The optional
 `visual` extra supplies Matplotlib for the diagnostic tool, not the physical core.
 The commands below install dependencies only when you explicitly run them.
@@ -66,7 +67,7 @@ From the repository root on Linux/macOS:
 
 ```sh
 python3.13 -m venv tectonics/.venv
-tectonics/.venv/bin/python -m pip install -e 'tectonics[visual]'
+tectonics/.venv/bin/python -m pip install -e ./shared -e './tectonics[visual]'
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
   tectonics/.venv/bin/python -I -B tectonics/verify.py > fresh-tests.json
 ```
@@ -75,7 +76,7 @@ From the repository root in Windows PowerShell:
 
 ```powershell
 py -3.13 -m venv tectonics\.venv
-& .\tectonics\.venv\Scripts\python.exe -m pip install -e ".\tectonics[visual]"
+& .\tectonics\.venv\Scripts\python.exe -m pip install -e ".\shared" -e ".\tectonics[visual]"
 $env:OPENBLAS_NUM_THREADS="1"; $env:OMP_NUM_THREADS="1"; $env:MKL_NUM_THREADS="1"
 & .\tectonics\.venv\Scripts\python.exe -I -B .\tectonics\verify.py > fresh-tests.json
 ```
@@ -106,14 +107,14 @@ Use the existing verifier with the tested environment for the changed boundary:
 | `--i02-quick` | I02 tests excluding only the four full timing-harness integration tests. |
 | `--i02-measurement` | Those four real-workload measurement, restart and failure-propagation tests. |
 | `--regional3d` | Regional 3-D component, solver and evolution test modules. |
-| `--quick` | Full discovery or one focused profile with only the registered measured slow tests omitted; reports a quick selection, not a full gate. |
+| `--ci` | Full discovery or one focused profile with only the registered measured slow tests omitted; reports a quick selection, not a full gate. |
 
 For example, `python -I -B tectonics/verify.py --i02-quick` records the actual
 selected test IDs, timing and source identities. The quick and measurement
 selections together cover the complete I02 selection. Choose the selection that
 covers the changed boundary and its affected consumers; use `--i02` when complete
 I02 coverage is required. Quick-only is not equivalent coverage. The separate
-general `--quick` option can combine with the focused profiles in this table;
+general `--ci` option (alias `--quick`) can combine with the focused profiles in this table;
 it additionally omits their registered slow tests and cannot combine with
 `--core`, `--native`, `--acceptance` or the legacy W01/W04/W05/W06 profiles.
 [Development tools](../docs/DEVELOPMENT_TOOLS.md#when-the-full-gate-is-still-required) owns that
@@ -136,23 +137,23 @@ documentation changes. Use new output paths and never rebind changed-source runs
 ### Supported W12 and authored precursor examples
 
 ```text
-python -B tectonics/tools/run_tectonics.py --directory w12-demo
-python -B tectonics/tools/run_tectonics.py --directory w12-demo --resume
+python -B tectonics/tools/run/run_tectonics.py --directory w12-demo
+python -B tectonics/tools/run/run_tectonics.py --directory w12-demo --resume
 ```
 
 The first directory must be new. [Supported assembly](docs/W12_ASSEMBLY.md)
 describes the bounded W01–W04 example, graph/cache connection, exports and native
 recovery dependencies. The [read-only bridge](docs/W12_ASSEMBLY.md#read-only-ui-connection)
-uses `tools/read_tectonics.py` without starting a simulation; it is a backend
+uses `tools/report/read_tectonics.py` without starting a simulation; it is a backend
 reader rather than a browser UI.
 
 ```sh
 # Authored two-province initial output; no simulation or reference download.
-python -I -B tectonics/tools/prepare_precursor_example.py > initial-example.json
+python -I -B tectonics/tools/run/prepare_precursor_example.py > initial-example.json
 # Existing files refuse; load the result by its reported sample_id, then .state.
-python -I -B tectonics/tools/prepare_precursor_example.py --save-store initial-example.db
+python -I -B tectonics/tools/run/prepare_precursor_example.py --save-store initial-example.db
 # Restricted prescribed-motion regional workflow.
-python -I -B tectonics/tools/run_w01_workflow.py
+python -I -B tectonics/tools/run/run_w01_workflow.py
 ```
 
 The examples use authored assumptions, not calibrated Earth-like defaults.
@@ -164,9 +165,9 @@ for geometry, memory, history and source restrictions.
 
 ```sh
 # Strict consistency: exit 1 reports the retained discrepancies.
-python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-strict.json
+python -I -B tectonics/tools/check/prepare_plate_reference.py --verify-only > 3cr1-strict.json
 # Permitted uses: exit 0 only for exact audited data and known findings.
-python -I -B tectonics/tools/prepare_plate_reference.py --verify-only --assess-use > 3cr1-use.json
+python -I -B tectonics/tools/check/prepare_plate_reference.py --verify-only --assess-use > 3cr1-use.json
 ```
 
 Both return exit 2 for unavailable/changed inputs. `--assess-use` does not waive
@@ -179,20 +180,20 @@ are not qualified morphology or geological acceptance.
 
 | Component | Bounded numerical/timing check | Optional diagnostic visual |
 | --- | --- | --- |
-| Precursor | `python -I -B tectonics/tests/check_precursor_r2.py` | `python -I -B tectonics/tools/visual_qa.py --output /new/path` |
-| Local rheology | `python -I -B tectonics/tests/check_constitutive_r3.py` | `python -I -B tectonics/tools/visual_r3.py --output /new/path` |
-| Steady 2-D mechanics | `python -I -B tectonics/tests/check_stokes_r4_1.py` | `python -I -B tectonics/tools/visual_stokes_r4_1.py --output /new/path` |
-| Thermal/composition evolution | `python -I -B tectonics/tests/check_thermochemical_r4_2.py` | `python -I -B tectonics/tools/visual_thermochemical_r4_2.py --output /new/path` |
-| Variable mechanics | [Execution contract](docs/OPTIMISATION_REFERENCE.md#3cr4-3-execution) | `python -I -B tectonics/tools/visual_variable_stokes_r4_3.py --output /new/path` |
+| Precursor | `python -I -B tectonics/tests/check_precursor_r2.py` | `python -I -B tectonics/tools/report/visual_qa.py --output /new/path` |
+| Local rheology | `python -I -B tectonics/tests/check_constitutive_r3.py` | `python -I -B tectonics/tools/report/visual_r3.py --output /new/path` |
+| Steady 2-D mechanics | `python -I -B tectonics/tests/check_stokes_r4_1.py` | `python -I -B tectonics/tools/report/visual_stokes_r4_1.py --output /new/path` |
+| Thermal/composition evolution | `python -I -B tectonics/tests/check_thermochemical_r4_2.py` | `python -I -B tectonics/tools/report/visual_thermochemical_r4_2.py --output /new/path` |
+| Variable mechanics | [Execution contract](docs/OPTIMISATION_REFERENCE.md#3cr4-3-execution) | `python -I -B tectonics/tools/report/visual_variable_stokes_r4_3.py --output /new/path` |
 | W05 extension | Motion, load/support and save/reopen/resume timing against matched outputs, no terrain run: `tectonics/tools/benchmark_w05_{motion,support,workflow}.py` ([record](evidence/w05-acceptance.json)) | |
 | W06 spreading | Matched-output cooling, fixed-cell history (not a persistent-cache benchmark), margin with preparation, and compute/publication/verified-recovery timing: `tectonics/tools/benchmark_w06_{cooling,history,margin,workflow}.py` ([cooling](evidence/w06-cooling-timing.json), [history](evidence/w06-history-timing.json), [margin](evidence/w06-margin-timing.json), [workflow](evidence/w06-workflow-acceptance.json) records) | |
-| W07 coupling | Thermal/mechanical coupling refinement on a synthetic case: `tectonics/tools/check_w07_coupling.py` (no evidence record) | |
-| New-world layout | Fixed small step-2 plate-layout assessment, no fitting or seed retries: `tectonics/tools/check_new_world_layout.py` (tested by `tests/test_new_world_layout_report.py`) | |
+| W07 coupling | Thermal/mechanical coupling refinement on a synthetic case: `tectonics/tools/check/check_w07_coupling.py` (no evidence record) | |
+| New-world layout | Fixed small step-2 plate-layout assessment, no fitting or seed retries: `tectonics/tools/check/check_new_world_layout.py` (tested by `tests/test_new_world_layout_report.py`) | |
 
 These cards are not full benchmark campaigns. The timing and diagnostic scripts are
 measurements, not scientific acceptance; each takes the arguments its docstring states. Visuals require the optional
 `visual` extra, inspected outputs and new destinations. The thermal example
-(`tectonics/tools/thermochemical_example.py`, recorded in the
+(`tectonics/tools/run/thermochemical_example.py`, recorded in the
 [R4.2 measurements](evidence/3cr4-2-measurements.json)) advances an authored 48×48 box for 40 steps; endpoint velocity is recomputed from
 the accepted endpoint, rather than an intermediate stage. This is not calibration.
 
@@ -206,20 +207,20 @@ For an explicitly authorised study, from the scoped source root using the declar
 
 ```sh
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-  python -I -B tectonics/tools/run_convection_r4_4.py \
+  python -I -B tectonics/tools/run/run_convection_r4_4.py \
   --output NEW_RUN --case tosi-1 --cells 16 --dt 1e-5 \
   --max-steps 30000 --segment-steps 1000 --sample-every 25 --save-every 500
 
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-  python -I -B tectonics/tools/run_convection_r4_4.py \
+  python -I -B tectonics/tools/run/run_convection_r4_4.py \
   --output NEW_RUN --resume --segment-steps 1000
 
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-  python -I -B tectonics/tools/analyse_convection_r4_4.py \
+  python -I -B tectonics/tools/report/analyse_convection_r4_4.py \
   --run CLOSED_RUN --output NEW_ANALYSIS.json
 
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-  python -I -B tectonics/tools/visual_convection_r4_4.py \
+  python -I -B tectonics/tools/report/visual_convection_r4_4.py \
   --run CLOSED_RUN --output NEW_VISUAL_DIRECTORY
 
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
@@ -259,7 +260,7 @@ pictures are not promoted to mature convection or observational evidence.
 
 ```sh
 # Use the environment's Python as above. The destination must not already exist.
-python -I -B tectonics/tools/visual_qa.py --output tectonics/visual_output/review
+python -I -B tectonics/tools/report/visual_qa.py --output tectonics/visual_output/review
 ```
 
 This runs the unchanged authored R2 example and a fixed seed-41 plate-layout

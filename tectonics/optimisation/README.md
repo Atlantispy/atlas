@@ -24,10 +24,10 @@ every performance-related implementation in Atlas.
 | Location | Purpose |
 | --- | --- |
 | [`composed-r2/`](composed-r2/) | Historical checkpoint package, helpers and composition pins. |
-| [`drivers/`](drivers/) | Interval entry points, launch/reopen tools and tests; [continuation method](drivers/INTERVAL_CHAIN.md). |
+| [`drivers/`](drivers/) | Retained launch/reopen drivers and tests for historical source maps. The [continuation method](drivers/INTERVAL_CHAIN.md) links the maintained profile-selected entry point. |
 | [`pending/`](pending/) | Retained candidates and predecessors; the name does not establish present selection. |
 | [`workbench/`](workbench/) | Source constructors, component owner records, measurements and predecessor selections. |
-| [`working-snapshot-20261113/`](working-snapshot-20261113/README.md) | Working copy of the later package, including `_private`, published for visibility; its README describes what the code does. Not the folded package and not a selected runtime. |
+| [`working-snapshot-20261113/`](working-snapshot-20261113/README.md) | Historical notes for the later package. Unit 10 promoted its sources into [`tectonics/src/atlas_tectonics`](../src/atlas_tectonics). The [move table](../../docs/SOURCE_MOVES.tsv) maps the former paths. |
 | [`docs/COMPACT_EVERYWHERE_PLAN.md`](docs/COMPACT_EVERYWHERE_PLAN.md) | Compact storage/restart design, ownership, measurement and completion contracts. |
 | [`docs/release/`](docs/release/) | [Check policy](docs/release/RELEASE-CHECKS.md), [fold](docs/release/FOLD.md), [languages](../../docs/CODING_SAFETY.md#7-conditional-compiled-kernel-development) and [landing expectations](../../docs/CODING_SAFETY.md#6-changed-expectations-and-landing-obligations). |
 | [`MANIFEST.json`](MANIFEST.json) | Historical export origins, not a live runtime manifest. |

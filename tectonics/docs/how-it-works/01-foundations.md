@@ -23,6 +23,13 @@ to three-dimensional vectors and supplies local east–north–up axes. On a mov
 frame it subtracts both the origin's velocity and the velocity caused by rotating
 axes. A static change of vector components alone would miss those effects.
 
+For selected unsigned minor arcs between unit directions, Atlas evaluates twice
+`atan2` of the lengths of their difference and sum vectors. The driving minor-arc
+refusal, the Voronoi edge construction threshold and the public ring sampler use
+their original cross-and-dot angles to preserve those decisions. The plain
+longitude/latitude conversions share the Cartesian component expressions and use
+their original scalar or array trigonometry.
+
 Finite rotations move rigid geometry around an axis. Their order matters: rotating
 an object sideways and then turning it over generally differs from reversing those
 actions. The resulting positions should retain distances and acquire no strain.

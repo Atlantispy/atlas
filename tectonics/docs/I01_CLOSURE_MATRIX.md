@@ -142,10 +142,10 @@ Feedback ownership and exchange rules not repeated here are in
 - *Law:* D2 `atlas.nonlocal-weakening-candidate.v1` with a physical length; D6
   `atlas.regime-transactions.v1`.
 - *Evidence:* `i01-controls-r1` (1D), `i01-fault2d-r1` (periodic 2D), `i01-strength-r1`.
-  `boundary-kinematics-r1` is a descriptive PB2002 comparison, not acceptance.
-  The separation, initiation and junction choices now have `i01-separation-feasibility-r4`,
+  `boundary-kinematics-r1` records historical descriptive PB2002 diagnostics.
+  The separation, initiation and junction choices had controls recorded in `i01-separation-feasibility-r4`,
   `i01-initiation-verification-r1` and `i01-junction-feasibility-r1` respectively;
-  these do not generate or admit an evolving boundary network.
+  the separation receipt predates the regroup. These controls do not generate or admit an evolving boundary network.
 - *Refused:* bend-score optimisation, fairing and fitted random rotations presented as
   mechanics (UR-03, UR-08).
 - *Remaining:* in I04, layout consumes structure and inheritance; forcing and strength
@@ -160,7 +160,7 @@ Feedback ownership and exchange rules not repeated here are in
   forcing. P: prescribed rotations remain a reference mode (UR-01).
 - *Exchange:* rad/s and N m. Positive drag anchors the declared mantle frame; net
   rotation is reported, never subtracted after the solve.
-- *Evidence:* `i01-controls-r1`, `i01-gpe-r1`, `i01-motion-coupling-r4`,
+- *Evidence:* `i01-controls-r1`, `i01-gpe-r1`, historical `i01-motion-coupling-r4`,
   `i01-thermomechanical-motion-r5`, `i01-finite-strain-r6`, `i01-water-gpe-r1`,
   `i01-elastic-core-r1`.
 - *Validity:* dry compensated columns, manufactured hemispheres and fixed-temperature
@@ -192,9 +192,9 @@ Feedback ownership and exchange rules not repeated here are in
 - *Routes:* G column law (composite creep plus regularised friction), evolving
   weakening, force-balanced motion, column heat and finite strain. Mechanical
   decoupling is the separate D6 record `atlas.rift-decoupling-handoff.v1`.
-- *Evidence:* `i01-column-r2`, `i01-weakening-r5`, `i01-column-heat-r6`,
+- *Evidence:* `i01-column-r2`, historical `i01-weakening-r5`, `i01-column-heat-r6`,
   `i01-thermomechanical-motion-r5`, `i01-finite-strain-r6`, `i01-decoupling-r1`,
-  `i01-column-admission-r4`, `i01-finite-admission-r12`, `i01-transitions-r2`.
+  historical `i01-column-admission-r4`, `i01-finite-admission-r12`, `i01-transitions-r2`.
 - *Validity:* laterally uniform strips. The linear handoff bound covers only its linear
   control. The homogeneous strip is admitted at 10%; the layered strip is honestly
   uncertified at 1%.
@@ -223,7 +223,7 @@ Feedback ownership and exchange rules not repeated here are in
   Crustal, mantle-lithosphere and mechanical-handoff diagnostics stay separate
   (section 6.1).
 - *Evidence:* `i01-breakup-closure-r5`, `i01-transitions-r2`, `i01-finite-strain-r6`.
-  `i01-separation-feasibility-r4` records bounded controls and focused tests for
+  `i01-separation-feasibility-r4` records historical bounded controls and focused tests for
   fixed-length/time refinement, independent energy accounts and non-breakage
   controls in a synthetic nonuniform shear strip. Physical acceptance stays false.
   The retained column is `REFUSED_REQUIRES_RESOLVED_NECK`: plastic share 0.5506 at the

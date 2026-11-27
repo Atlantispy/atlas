@@ -1918,7 +1918,9 @@ Reproducible runners live in `tectonics/tools/`: `check_w11_guards.py`,
 declared environment, new output destinations and a separate baseline source
 checkout. `--baseline`/`--current`/`--baseline-source` name the directory containing
 `atlas_tectonics`; the storage runner instead takes the baseline `storage.py`.
-The W07 runner requires its recorded old caller and current compatible fixture.
+Replay the W07 measurement with the retained runner, the recorded old caller
+from `d75d074a` and its compatible pre-regroup W11 checkout and fixture. The
+historical runner selects their flat source layout and records its original inventory.
 Portable path/report guards were packaged after measurement, not called a new
 simulation. The older `check_w11.py` deliberately still refuses stale W10/source
 bindings; it is not silently redirected to claim a new physical acceptance.

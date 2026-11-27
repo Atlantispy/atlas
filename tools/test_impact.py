@@ -319,8 +319,6 @@ def _relative(root, path):
 
 def record(args):
     root = Path(args.root).resolve()
-    current_source = _runner.source_snapshot(root)
-    blobs = current_source['files']
     if args.from_run:
         # Rebuild the map from an earlier traced run of this same clean commit (after a change to these rules).
         run_dir = Path(args.from_run).resolve()
@@ -346,13 +344,19 @@ def record(args):
         runner_exit = subprocess.run(command, capture_output=True, text=True).returncode
         summary = json.loads((run_dir/'run'/'summary.json').read_text(encoding='utf-8'))
     provenance = summary.get('provenance') or {}
-    before, after = provenance.get('before'), provenance.get('after')
-    if (not before or before != after or not provenance.get('unchanged')
-            or before.get('source') != current_source):
+    start = provenance.get('start')
+    if any(name in provenance for name in ('before', 'after', 'unchanged')):
+        before = provenance.get('before')
+        start = before if before == provenance.get('after') and provenance.get('unchanged') is True else None
+    if not start or not start.get('source'):
         raise ValueError('traced run source provenance is missing, changed or from another commit: re-record')
-    if (before.get('fingerprint') != fingerprint(args.python, root)
-            or before.get('cwd') != str(root) or before.get('src') != str(root/'tectonics'/'src')
-            or before.get('tests_dir') != str(root/SUITE_DIR)):
+    source = start['source']
+    blobs = source['files']
+    if args.from_run and source != _runner.source_snapshot(root):
+        raise ValueError('traced run source provenance is missing, changed or from another commit: re-record')
+    if (not start.get('fingerprint') or start.get('cwd') != str(root)
+            or start.get('src') != str(root/'tectonics'/'src') or start.get('tests_dir') != str(root/SUITE_DIR)
+            or (args.from_run and start['fingerprint'] != fingerprint(args.python, root))):
         raise ValueError('traced run runtime, environment or execution paths changed: re-record')
     if (not summary.get('fresh_process_per_unit') or summary.get('quick') or summary.get('only')
             or summary.get('patterns') != list(SUITE_PATTERNS)):
@@ -409,10 +413,8 @@ def record(args):
             unit = test_id.rsplit('.', 1)[0]
             units.setdefault(unit, dict(tests=[], skipped=False, complete=False))['tests'].append(test_id)
     numba = sorted(set(_numba_files(root, blobs)) | (compiled & set(blobs)))
-    if _runner.source_snapshot(root) != current_source or fingerprint(args.python, root) != before['fingerprint']:
-        raise ValueError('source or runtime changed while constructing the map: re-record')
-    out = dict(schema=SCHEMA, commit=before['source']['commit'], scope=dict(tests_dir=SUITE_DIR, patterns=list(SUITE_PATTERNS)),
-               fingerprint=before['fingerprint'], files=before['source']['files'], provenance=provenance,
+    out = dict(schema=SCHEMA, commit=source['commit'], scope=dict(tests_dir=SUITE_DIR, patterns=list(SUITE_PATTERNS)),
+               fingerprint=start['fingerprint'], files=blobs, provenance=provenance,
                numba_files=numba, code_observers=observers,
                units=units, recorded_with=dict(runner_exit=runner_exit, run=str(run_dir),
                                                wall_seconds=summary['wall_seconds'], counts=summary['counts'],

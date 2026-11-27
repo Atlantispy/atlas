@@ -495,7 +495,7 @@
       "world": "sector6 as two mirror-image hemisphere plates along a closed equatorial transform carried by its right side (the coordinator's p3)",
       "turn_deg": 10.0,
       "rule": "north turns turn_deg, then a still interval ends with the merge of north and south into NS; the same history with north spelled 'znorth'",
-      "expects": "the measured plate areas tie (the coordinator's p3), but the exact rational piece-area accounts do not; under both spellings NS continues the plate with the larger exact account, so the outcome does not depend on the names. On an exact tie of the accounts the first plate in identity order continues (declared, documented; no control produces such a tie)",
+      "expects": "the measured plate areas tie (the coordinator's p3), but the exact rational piece-area accounts do not; under both spellings NS continues the plate with the larger exact account, so the outcome does not depend on the names. A second control subtracts one ulp from the stationary southern polar face to produce exactly equal booked accounts. A fresh tie requires the prescribed continuation parent, whose frame and total rotation carry under either spelling. A bare historical tie restores its recorded first parent only through exact step reconstruction",
       "declared": "3 October 2026, round 1, before its test ran",
       "tolerances": [],
       "revision": "3 October 2026, round 1: the first run of this control, as declared, found that the exact accounts do not tie: north exceeds south by 3/1024 m2, so its premise of an exact tie failed. It now checks spelling independence where the measured areas tie. No tolerance or expected value of any other control changed"

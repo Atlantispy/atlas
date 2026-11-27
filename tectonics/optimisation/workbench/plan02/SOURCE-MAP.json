@@ -217,7 +217,7 @@
       "path": "ROUTE2_ADMISSION.md",
       "source": "<PRIVATE_PLAN02_LIVE>/ROUTE2_ADMISSION.md",
       "original_sha256": "f262d2b4bc365e5591a70bca723e48e8130b055df83a5145fa49d94d230f81ba",
-      "public_sha256": "a551f6dfe9ec70889d5461cd69d707a236ea6b6815e26be55a5326e975cb12f8",
+      "public_sha256": "6e68768c6453bf19971f8cd2ffa8eb5fb6deb92e50a7a5792ec18a8a36b114fe",
       "user_path_replacements": 0,
       "line_endings": "LF",
       "publication_changes": [
@@ -225,7 +225,8 @@
       ],
       "public_path": "tectonics/optimisation/workbench/plan02/ROUTE2_ADMISSION.md",
       "transformations": [
-        "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged."
+        "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged.",
+        "Removed the draft-status prefix from the public document."
       ]
     },
     {

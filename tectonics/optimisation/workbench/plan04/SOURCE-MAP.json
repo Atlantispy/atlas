@@ -12,14 +12,15 @@
       "path": "README.md",
       "source": "<PUBLIC_PLAN04_PUBLICATION>/README.md",
       "original_sha256": "3deba57d04e55ef785576c609850109ceed994768e88f74401c0de58339c8229",
-      "public_sha256": "58dc1d098c0db977b9a6ebdaaefd6e980aba2dc141cf029d2c1beb332edc4a76",
+      "public_sha256": "a6abdf3639c756b606e83d7e006c2511f6275b51cca7c945bac5ff2f3b92d6d1",
       "transformations": [
         "Current guarded width integration scope and bounded evidence; no scientific receipt relabelled.",
         "Record completed guarded source integration and cancellation of later individual-plan verification; original evidence and selected tool bytes unchanged.",
         "Final reviewer accepted guarded source composition; ordinary spacing and source-versus-emitted-runtime-profile clarification. Immutable receiving snapshot and source bytes unchanged.",
         "Current export supplies accepted guarded implementation; no retained publication or post-assembly verification tail. Source/payload bytes unchanged.",
         "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged.",
-        "Remove Atlas canon status from mutable prose; preserve engineering/scientific scope, original source pins and historical results."
+        "Remove Atlas canon status from mutable prose; preserve engineering/scientific scope, original source pins and historical results.",
+        "Updated the public link to the guarded width composer."
       ]
     },
     {
@@ -614,13 +615,14 @@
     {
       "path": "BOUNDED-WIDTH.md",
       "original_sha256": "5e53a9a1f0be98dcb9aecff62806e989a60d59f2ea53bbf4cf9e4c2259f03745",
-      "public_sha256": "c48c5b4598ceed577bad730218ac8373c5effd42e4071210847300b2fdac64b8",
+      "public_sha256": "c71ffed85fb467eba0b3fed9ec03e796a3e9f80305d624ff20980e07eacb7a5d",
       "transformations": [
         "Record completed guarded source integration and cancellation of later individual-plan verification; original evidence and selected tool bytes unchanged.",
         "Final reviewer accepted guarded source composition; ordinary spacing and source-versus-emitted-runtime-profile clarification. Immutable receiving snapshot and source bytes unchanged.",
         "Current export supplies accepted guarded implementation; no retained publication or post-assembly verification tail. Source/payload bytes unchanged.",
         "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged.",
-        "Remove Atlas canon status from mutable prose; preserve engineering/scientific scope, original source pins and historical results."
+        "Remove Atlas canon status from mutable prose; preserve engineering/scientific scope, original source pins and historical results.",
+        "Updated the public attribution and the link to the guarded width composer."
       ]
     }
   ]

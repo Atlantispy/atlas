@@ -208,7 +208,7 @@ Proposed improvements and pull requests are welcome. No automatic merging, backg
 Cite Atlas as software, naming the release tag or commit you used, since results are tied to a version:
 
 ```text
-Atlan. Atlas: a world generator for physically informed worldbuilding (version 0.1.0.dev51,
+Atlan. Atlas: a world generator for physically informed worldbuilding (version 0.1.0.dev52,
 WORKING NON-CANON). Source code, https://github.com/Atlantispy/atlas, 2026.
 ```
 

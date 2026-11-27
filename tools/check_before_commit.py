@@ -9,9 +9,9 @@ of the Git index, exports the candidate blobs exactly as Git stores them and run
 the existing guards on that export:
 
 1. tools/check_current_evidence.py: registered receipts and their declared bindings;
-2. tectonics/tests/test_digest_line_endings.py: no digest of a CRLF rendering and no
+2. tectonics/tests/integration/test_digest_line_endings.py: no digest of a CRLF rendering and no
    I01 receipt writer using the platform newline;
-3. the I01/I02 test modules, with process-local PYTHONPATH=<export>/tectonics/src,
+3. the I01/I02 test modules, with process-local imports from tectonics/src and shared/src,
    unless every candidate change is an added/modified regular file in the reviewed
    documentation allowlist below. --full or an explicit --tests keeps this check.
 
@@ -45,7 +45,8 @@ import tempfile
 import time
 from typing import Iterator, Sequence
 
-EXPORTED = ('tectonics/', 'tools/')
+EXPORTED = ('tectonics/', 'shared/src/', 'tools/')
+SOURCE_MOVES = 'docs/SOURCE_MOVES.tsv'
 TESTS = 'test_i0[12]_*.py'
 # Closed list of reviewed navigation/status documents, not all Markdown files:
 # method documents can be inputs to checks (including I01/I02 content assertions).
@@ -174,7 +175,7 @@ def _export(git: _Git, target: Path,
     for mode, blob, stage, name in _entries(git) if index is None else index:
         if stage != '0':
             raise CandidateError(f'unmerged index entry {name}; resolve it before checking a commit')
-        if not name.startswith(EXPORTED):
+        if name != SOURCE_MOVES and not name.startswith(EXPORTED):
             continue
         if mode not in REGULAR:
             skipped.append(f'{mode} {name}')
@@ -252,14 +253,14 @@ def documentation_only(snapshot: Candidate) -> bool:
 
 def checks(export: Path, pattern: str | None = TESTS) -> list[tuple[str, list[str], dict[str, str]]]:
     """The existing guards, run on the export with this interpreter: (name, command, environment additions)."""
-    python, tests = sys.executable, str(export / 'tectonics' / 'tests')
+    python = sys.executable
+    top = export / 'tectonics'
+    discovery = [python, '-B', '-m', 'unittest', 'discover', '-s', str(top / 'tests'), '-t', str(top)]
+    imports = {'PYTHONPATH': os.pathsep.join(map(str, (top / 'src', export / 'shared' / 'src')))}
     steps = [('current-evidence register', [python, '-B', str(export / 'tools' / 'check_current_evidence.py')], {}),
-             ('digest line endings', [python, '-B', '-m', 'unittest', 'discover', '-s', tests,
-                                      '-p', 'test_digest_line_endings.py'], {})]
+             ('digest line endings', [*discovery, '-p', 'test_digest_line_endings.py'], imports)]
     if pattern is not None:
-        steps.append((f'I01/I02 tests ({pattern})',
-                      [python, '-B', '-m', 'unittest', 'discover', '-s', tests, '-p', pattern],
-                      {'PYTHONPATH': str(export / 'tectonics' / 'src')}))
+        steps.append((f'I01/I02 tests ({pattern})', [*discovery, '-p', pattern], imports))
     return steps
 
 

@@ -30,7 +30,12 @@ def replace_once(text, before, after):
 
 
 def write_mesh(store, scope, refs, out, index):
-    from atlas_tectonics._private.compact_store import CompactMeshStoreV3
+    try:
+        from atlas_tectonics._private.codecs.compact_store import CompactMeshStoreV3
+    except ModuleNotFoundError as error:
+        if error.name != 'atlas_tectonics._private.codecs':
+            raise
+        from atlas_tectonics._private.compact_store import CompactMeshStoreV3
 
     require(len(refs) == 1, f"Expected one thermal mesh reference, found {len(refs)}")
     ref = refs[0]

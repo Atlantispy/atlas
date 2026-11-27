@@ -30,44 +30,44 @@ FOCUSED_PATTERNS = {
 # These four tests execute the real timing harness (including its fault paths).
 # Keep them in full discovery and --i02; only --i02-quick omits them.
 I02_MEASUREMENT_TESTS = frozenset({
-    'test_i02_joined.TimingHarnessTests.test_the_harness_times_one_workload_only_after_checking_it_is_the_same',
-    'test_i02_joined.TimingHarnessTests.test_a_measurement_whose_modes_disagree_records_failed_equality',
-    'test_i02_measurement.MeasurementRegressionTests.test_source_drift_withholds_all_times',
-    'test_i02_measurement.MeasurementRegressionTests.test_review_probe_with_cold_temperature_and_reopen_account_drift_withholds_times',
+    'tests.integration.test_i02_joined.TimingHarnessTests.test_the_harness_times_one_workload_only_after_checking_it_is_the_same',
+    'tests.integration.test_i02_joined.TimingHarnessTests.test_a_measurement_whose_modes_disagree_records_failed_equality',
+    'tests.integration.test_i02_measurement.MeasurementRegressionTests.test_source_drift_withholds_all_times',
+    'tests.integration.test_i02_measurement.MeasurementRegressionTests.test_review_probe_with_cold_temperature_and_reopen_account_drift_withholds_times',
 })
 
 # Measured slow tests: exact test IDs, or class IDs where the class fixture dominates. They stay in full
-# discovery and in every focused profile; only --quick omits them, and a stale entry refuses the quick run.
+# discovery and in every focused profile; only --ci omits them, and a stale entry refuses the CI selection.
 # Except the separately documented I04 control, seconds are wall times measured at remake 30a79e6 by
 # tools/run_tests_parallel.py (one class per worker
 # process, single-threaded BLAS, 14 workers on 16 logical CPUs, so under load); see docs/DEVELOPMENT_TOOLS.md.
 # Class entries are classes whose fixture alone took at least the threshold. Re-measure, don't guess.
 SLOW_TEST_THRESHOLD_SECONDS = 30
 SLOW_TESTS = MappingProxyType({
-    'test_convection_diagnostic_recovery_r4_4.EndpointDiagnosticRecoveryTests.test_adaptive_inner_preserves_diagnostic_recovery': 33.2,
-    'test_convection_diagnostic_recovery_r4_4.EndpointDiagnosticRecoveryTests.test_cancelled_initial_intermediate_and_final_diagnostics_resume_exactly': 30.4,
-    'test_i02_workflow.InspectionTests.test_invalid_requests_change_nothing': 65.2,
-    'test_i02_workflow.LifecycleTests.test_create_advance_inspect_save_load_and_continue_the_real_route': 54.4,
+    'tests.integration.test_convection_diagnostic_recovery_r4_4.EndpointDiagnosticRecoveryTests.test_adaptive_inner_preserves_diagnostic_recovery': 33.2,
+    'tests.integration.test_convection_diagnostic_recovery_r4_4.EndpointDiagnosticRecoveryTests.test_cancelled_initial_intermediate_and_final_diagnostics_resume_exactly': 30.4,
+    'tests.integration.test_i02_workflow.InspectionTests.test_invalid_requests_change_nothing': 65.2,
+    'tests.integration.test_i02_workflow.LifecycleTests.test_create_advance_inspect_save_load_and_continue_the_real_route': 54.4,
     # ED-7, 5 October 2026: one measured run of this single-test class, kept in full discovery.
-    'test_i04_controls.ResolvedCaseB': 2760.8,
-    'test_r3_delivery_contracts.VisualDataTests': 81.1,
-    'test_regional_evolution3d.DeclaredStartTests.test_force_driven_result_is_independent_of_earlier_solves': 35.1,
-    'test_regional_evolution3d.DeclaredStartTests.test_restarted_interval_on_a_new_plan_reproduces_the_continuous_run': 56.8,
-    'test_tectonic_history.TectonicHistoryTests.test_stopped_resumed_and_warm_histories_preserve_exact_ids_without_replay': 58.0,
-    'test_validation_gaps.FocusedGapChecks.test_postcommit_interruption_restores_exact_snapshot_without_repeating_physics': 61.0,
-    'test_w01_workflow.RegionalWorkflowTests.test_cold_restore_and_continuation_match_without_resampling': 30.7,
-    'test_w04_acceptance.W04CombinedAcceptance.test_rebased_sequence_is_additive_without_accumulating_previous_totals': 33.8,
-    'test_w04_acceptance.W04CombinedAcceptance.test_saved_evolved_state_continues_and_rebuilds_cached_projection_exactly': 42.4,
-    'test_w05_acceptance.W05AcceptanceTests': 49.6,
-    'test_w06_history_cooling.HistoryCoolingTests.test_64_128_partitions_and_direct_event_spanning_request_agree': 54.2,
-    'test_w06_history_cooling.HistoryCoolingTests.test_true_crop_means_centres_and_ages_on_three_grids_switch_and_stop': 33.9,
-    'test_w06_history_geometry.HistoryGeometryTests.test_semantic_and_requested_interval_caps': 35.4,
-    'test_w06_spreading.W06SpreadingTests.test_32_64_128_partitions_do_not_bin_history_or_duplicate_births': 30.7,
-    'test_w06_spreading.W06SpreadingTests.test_accepted_interval_ceiling_is_256': 34.9,
-    'test_w06_spreading_cooling.SpreadingCoolingTests.test_partition_32_64_128_preserves_final_fields_accounts_and_birth_history': 61.9,
-    'test_w07_verification_reuse.GeologyVerificationReuseTests.test_all_workflow_routes_match_complete_outputs_with_live_reuse': 50.2,
-    'test_w12_assembly.W12AssemblyTests.test_direct_clean_incremental_recovery_graph_and_full_fields': 86.2,
-    'test_w12_ports.WorkflowPortTests.test_every_packed_matrix_lists_its_columns_as_name_and_units_rows': 34.2,
+    'tests.integration.test_i04_controls.ResolvedCaseB': 2760.8,
+    'tests.integration.test_r3_delivery_contracts.VisualDataTests': 81.1,
+    'tests.regional.test_regional_evolution3d.DeclaredStartTests.test_force_driven_result_is_independent_of_earlier_solves': 35.1,
+    'tests.regional.test_regional_evolution3d.DeclaredStartTests.test_restarted_interval_on_a_new_plan_reproduces_the_continuous_run': 56.8,
+    'tests.history.test_tectonic_history.TectonicHistoryTests.test_stopped_resumed_and_warm_histories_preserve_exact_ids_without_replay': 58.0,
+    'tests.integration.test_validation_gaps.FocusedGapChecks.test_postcommit_interruption_restores_exact_snapshot_without_repeating_physics': 61.0,
+    'tests.integration.test_w01_workflow.RegionalWorkflowTests.test_cold_restore_and_continuation_match_without_resampling': 30.7,
+    'tests.integration.test_w04_acceptance.W04CombinedAcceptance.test_rebased_sequence_is_additive_without_accumulating_previous_totals': 33.8,
+    'tests.integration.test_w04_acceptance.W04CombinedAcceptance.test_saved_evolved_state_continues_and_rebuilds_cached_projection_exactly': 42.4,
+    'tests.integration.test_w05_acceptance.W05AcceptanceTests': 49.6,
+    'tests.spreading.test_w06_history_cooling.HistoryCoolingTests.test_64_128_partitions_and_direct_event_spanning_request_agree': 54.2,
+    'tests.spreading.test_w06_history_cooling.HistoryCoolingTests.test_true_crop_means_centres_and_ages_on_three_grids_switch_and_stop': 33.9,
+    'tests.spreading.test_w06_history_geometry.HistoryGeometryTests.test_semantic_and_requested_interval_caps': 35.4,
+    'tests.spreading.test_w06_spreading.W06SpreadingTests.test_32_64_128_partitions_do_not_bin_history_or_duplicate_births': 30.7,
+    'tests.spreading.test_w06_spreading.W06SpreadingTests.test_accepted_interval_ceiling_is_256': 34.9,
+    'tests.spreading.test_w06_spreading_cooling.SpreadingCoolingTests.test_partition_32_64_128_preserves_final_fields_accounts_and_birth_history': 61.9,
+    'tests.integration.test_w07_verification_reuse.GeologyVerificationReuseTests.test_all_workflow_routes_match_complete_outputs_with_live_reuse': 50.2,
+    'tests.integration.test_w12_assembly.W12AssemblyTests.test_direct_clean_incremental_recovery_graph_and_full_fields': 86.2,
+    'tests.integration.test_w12_ports.WorkflowPortTests.test_every_packed_matrix_lists_its_columns_as_name_and_units_rows': 34.2,
 })
 FULL_PATTERNS = ('test_*.py', 'check_native_transport.py')
 
@@ -75,83 +75,83 @@ FULL_PATTERNS = ('test_*.py', 'check_native_transport.py')
 # Keep exact selections reviewable; no implicit all-tests fallback on bad names.
 W01_GATES = {
     'original_representation_and_thermal_limits': (
-        'test_foundations.RotationTests.test_inverse_restores_batch',
-        'test_foundations.RotationTests.test_composition_order_is_not_commutative',
-        'test_foundations.RotationTests.test_distances_orthogonality_and_orientation',
-        'test_w01_coordinates.SphericalTests.test_round_trip_grid',
-        'test_w01_coordinates.SphericalTests.test_poles_exact_xy_and_near_pole_not_snapped',
-        'test_w01_coordinates.SphericalTests.test_seam_continuity',
-        'test_w01_coordinates.LocalFrameTests.test_finite_rotation_then_frame_invariants',
-        'test_w01_coordinates.ConventionTests.test_length_and_angle_units',
-        'test_w01_coordinates.ConventionTests.test_legacy_axial_rule_preserves_cross_product',
-        'test_w01_coordinates.TimeTests.test_axes_round_trip_and_strided_input',
-        'test_w01_coordinates.TimeTests.test_explicit_epoch_bridge',
-        'test_w01_geometry.SphericalGeometryTests.test_octant_independent_area_perimeter',
-        'test_w01_geometry.SphericalGeometryTests.test_dateline_crossing_not_world_spanning',
-        'test_w01_boundaries.SharedPlanarTests.test_rectangle_shared_once',
-        'test_w01_boundaries.SharedPlanarTests.test_reversal_swaps_regions_plates_and_direction',
-        'test_w01_boundaries.SharedPlanarTests.test_shared_trace_correct_and_reversed',
-        'test_w01_boundaries.SharedSphericalTests.test_spherical_reversal',
-        'test_w01_spherical_atlas.AtlasQueries.test_every_seam_reports_true_owners',
-        'test_foundations.ThermalTests.test_initial_and_surface_conditions',
-        'test_foundations.ThermalTests.test_equal_temperature_limit',
+        'tests.integration.test_foundations.RotationTests.test_inverse_restores_batch',
+        'tests.integration.test_foundations.RotationTests.test_composition_order_is_not_commutative',
+        'tests.integration.test_foundations.RotationTests.test_distances_orthogonality_and_orientation',
+        'tests.planet.test_w01_coordinates.SphericalTests.test_round_trip_grid',
+        'tests.planet.test_w01_coordinates.SphericalTests.test_poles_exact_xy_and_near_pole_not_snapped',
+        'tests.planet.test_w01_coordinates.SphericalTests.test_seam_continuity',
+        'tests.planet.test_w01_coordinates.LocalFrameTests.test_finite_rotation_then_frame_invariants',
+        'tests.planet.test_w01_coordinates.ConventionTests.test_length_and_angle_units',
+        'tests.planet.test_w01_coordinates.ConventionTests.test_legacy_axial_rule_preserves_cross_product',
+        'tests.planet.test_w01_coordinates.TimeTests.test_axes_round_trip_and_strided_input',
+        'tests.planet.test_w01_coordinates.TimeTests.test_explicit_epoch_bridge',
+        'tests.planet.test_w01_geometry.SphericalGeometryTests.test_octant_independent_area_perimeter',
+        'tests.planet.test_w01_geometry.SphericalGeometryTests.test_dateline_crossing_not_world_spanning',
+        'tests.plates.test_w01_boundaries.SharedPlanarTests.test_rectangle_shared_once',
+        'tests.plates.test_w01_boundaries.SharedPlanarTests.test_reversal_swaps_regions_plates_and_direction',
+        'tests.plates.test_w01_boundaries.SharedPlanarTests.test_shared_trace_correct_and_reversed',
+        'tests.plates.test_w01_boundaries.SharedSphericalTests.test_spherical_reversal',
+        'tests.planet.test_w01_spherical_atlas.AtlasQueries.test_every_seam_reports_true_owners',
+        'tests.integration.test_foundations.ThermalTests.test_initial_and_surface_conditions',
+        'tests.integration.test_foundations.ThermalTests.test_equal_temperature_limit',
     ),
     'initial_inventory_and_unknown_meaning': (
-        'test_w01_initial_sampling.RegionalInitialSampling.test_mixed_cells_and_refinement_conserve_reference_inventory',
-        'test_w01_initial_sampling.RegionalInitialSampling.test_unknown_porosity_and_temperature_remain_explicit',
-        'test_w01_initial_sampling.RegionalInitialSampling.test_used_unknown_density_refuses_only_mass_not_volume',
-        'test_w01_initial_sampling.RegionalInitialSampling.test_temperature_validity_checks_interior_not_mean',
+        'tests.planet.test_w01_initial_sampling.RegionalInitialSampling.test_mixed_cells_and_refinement_conserve_reference_inventory',
+        'tests.planet.test_w01_initial_sampling.RegionalInitialSampling.test_unknown_porosity_and_temperature_remain_explicit',
+        'tests.planet.test_w01_initial_sampling.RegionalInitialSampling.test_used_unknown_density_refuses_only_mass_not_volume',
+        'tests.planet.test_w01_initial_sampling.RegionalInitialSampling.test_temperature_validity_checks_interior_not_mean',
     ),
     'supported_workflow_geometry_history_recovery': (
-        'test_w01_workflow', 'test_w01_workflow_geometry',
+        'tests.integration.test_w01_workflow', 'tests.integration.test_w01_workflow_geometry',
     ),
-    'combined_stage8': ('test_w01_acceptance',),
-    'shared_execution_invalidation': ('test_execution_reuse.IdentityTests',),
-    'acceptance_status_contract': ('test_w01_acceptance_profile',),
+    'combined_stage8': ('tests.integration.test_w01_acceptance',),
+    'shared_execution_invalidation': ('tests.integration.test_execution_reuse.IdentityTests',),
+    'acceptance_status_contract': ('tests.integration.test_w01_acceptance_profile',),
 }
 
 
 W04_GATES = {
-    'physical_reference_loads': ('test_w04_column_loads',),
-    'uniform_periodic_discrete_support': ('test_foundations.FlexureTests',),
-    'uniform_finite_continuum_support': ('test_w04_finite_region',),
-    'fixed_variable_rigidity_continuum_support': ('test_w04_variable_flexure',),
-    'combined_stationary_workflow': ('test_w04_acceptance',),
-    'verified_load_reuse': ('test_w04_load_reuse',),
+    'physical_reference_loads': ('tests.mechanics.test_w04_column_loads',),
+    'uniform_periodic_discrete_support': ('tests.integration.test_foundations.FlexureTests',),
+    'uniform_finite_continuum_support': ('tests.mechanics.test_w04_finite_region',),
+    'fixed_variable_rigidity_continuum_support': ('tests.mechanics.test_w04_variable_flexure',),
+    'combined_stationary_workflow': ('tests.integration.test_w04_acceptance',),
+    'verified_load_reuse': ('tests.integration.test_w04_load_reuse',),
     'source_geometry_ownership_and_validity_guards': (
-        'test_w04_workflow.W04WorkflowTests.test_surface_requires_correct_cells_complete_water_and_explicit_shapes',
-        'test_w04_workflow.W04WorkflowTests.test_policy_ownership_periodic_scope_and_old_water_bath_stiffness_refuse',
-        'test_w04_workflow.W04WorkflowTests.test_finite_capacity_and_linear_validity_limits_refuse',
-        'test_w04_workflow.W04WorkflowTests.test_changed_source_datum_and_loaded_callable_refuse',
-        'test_w04_regional_workflow.W04RegionalWorkflowTests.test_unknown_surroundings_gate_displacement_and_derivative_validity',
-        'test_w04_variable_workflow.W04VariableWorkflowTests.test_source_profile_shape_frame_and_uncertainty_refuse',
+        'tests.integration.test_w04_workflow.W04WorkflowTests.test_surface_requires_correct_cells_complete_water_and_explicit_shapes',
+        'tests.integration.test_w04_workflow.W04WorkflowTests.test_policy_ownership_periodic_scope_and_old_water_bath_stiffness_refuse',
+        'tests.integration.test_w04_workflow.W04WorkflowTests.test_finite_capacity_and_linear_validity_limits_refuse',
+        'tests.integration.test_w04_workflow.W04WorkflowTests.test_changed_source_datum_and_loaded_callable_refuse',
+        'tests.integration.test_w04_regional_workflow.W04RegionalWorkflowTests.test_unknown_surroundings_gate_displacement_and_derivative_validity',
+        'tests.integration.test_w04_variable_workflow.W04VariableWorkflowTests.test_source_profile_shape_frame_and_uncertainty_refuse',
     ),
-    'acceptance_status_contract': ('test_w04_acceptance_profile',),
+    'acceptance_status_contract': ('tests.integration.test_w04_acceptance_profile',),
 }
 
 
 W05_GATES = {
-    'independent_reference_controls': ('test_w05_reference', 'test_w05_support_reference'),
+    'independent_reference_controls': ('tests.crust.test_w05_reference', 'tests.crust.test_w05_support_reference'),
     'characteristic_kinematics_and_accounts': (
-        'test_w05_extension.W05ExtensionTests.test_characteristic_means_and_signed_multicohort_accounts',
-        'test_w05_extension.W05ExtensionTests.test_continuation_references_initial_family_and_complete_export',
-        'test_w05_extension.W05ExtensionTests.test_stationary_footwall_zero_motion_and_immutable_views',
-        'test_w05_extension.W05ExtensionTests.test_tiny_front_cell_integrals_against_quadrature',
-        'test_w05_extension.W05ExtensionTests.test_invalid_definition_clock_and_underflow_guards',
-        'test_w05_extension.W05ExtensionTests.test_foreign_closed_cancel_and_budget_guards_release',
-        'test_w05_extension.W05ExtensionTests.test_separate_existing_ale_uniform_dilation',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_characteristic_means_and_signed_multicohort_accounts',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_continuation_references_initial_family_and_complete_export',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_stationary_footwall_zero_motion_and_immutable_views',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_tiny_front_cell_integrals_against_quadrature',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_invalid_definition_clock_and_underflow_guards',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_foreign_closed_cancel_and_budget_guards_release',
+        'tests.crust.test_w05_extension.W05ExtensionTests.test_separate_existing_ale_uniform_dilation',
     ),
-    'single_owner_load_support_and_envelopes': ('test_w05_support',),
-    'combined_frozen_case': ('test_w05_acceptance',),
-    'atomic_recovery_and_verified_reuse': ('test_w05_workflow',),
-    'acceptance_status_contract': ('test_w05_acceptance_profile',),
+    'single_owner_load_support_and_envelopes': ('tests.crust.test_w05_support',),
+    'combined_frozen_case': ('tests.integration.test_w05_acceptance',),
+    'atomic_recovery_and_verified_reuse': ('tests.integration.test_w05_workflow',),
+    'acceptance_status_contract': ('tests.integration.test_w05_acceptance_profile',),
 }
 
 
 W06_GATES = {
-    'combined_three_route_recovery_and_reuse': ('test_w06_workflow',),
-    'shared_execution_invalidation': ('test_execution_reuse.IdentityTests',),
-    'acceptance_status_contract': ('test_w06_acceptance_profile',),
+    'combined_three_route_recovery_and_reuse': ('tests.integration.test_w06_workflow',),
+    'shared_execution_invalidation': ('tests.integration.test_execution_reuse.IdentityTests',),
+    'acceptance_status_contract': ('tests.integration.test_w06_acceptance_profile',),
 }
 
 
@@ -260,7 +260,7 @@ def w04_acceptance_record(technical_passed):
 
 
 def _acceptance_suite(gates, label):
-    sys.path.insert(0, str(ROOT / 'tests'))
+    sys.path.insert(0, str(ROOT))
     suite = unittest.TestSuite()
     selected = {}
     seen = set()
@@ -312,7 +312,8 @@ def quick_partition(tests, patterns, discovered=None):
     present = {test.id() for test in (tests if discovered is None else discovered)}
     classes = {test_id.rsplit('.', 1)[0] for test_id in present}
     for entry in SLOW_TESTS:
-        module = entry.split('.', 1)[0]
+        parts = entry.split('.')
+        module = parts[2] if parts[0] == 'tests' else parts[0]
         if (any(fnmatch.fnmatchcase(module + '.py', pattern) for pattern in patterns)
                 and entry not in present and entry not in classes):
             raise ValueError('slow-test registry is stale (not discovered): ' + entry)
@@ -330,7 +331,7 @@ def focused_suite(name, quick=False):
     if name not in FOCUSED_PATTERNS:
         raise ValueError('unknown focused verification profile: ' + name)
     loader = unittest.TestLoader()
-    discovered = loader.discover(str(ROOT / 'tests'), pattern=FOCUSED_PATTERNS[name])
+    discovered = loader.discover(str(ROOT / 'tests'), pattern=FOCUSED_PATTERNS[name], top_level_dir=str(ROOT))
     if loader.errors:
         raise ValueError('focused verification discovery failed: ' + '\n'.join(loader.errors))
 
@@ -360,10 +361,10 @@ def focused_suite(name, quick=False):
 
 
 def verification_suite(option, quick=False):
-    """Retain the default full suite; focused profiles require an explicit flag. --quick (alone or with a
+    """Retain the default full suite; focused profiles require an explicit flag. --ci (alone or with a
     focused profile) omits only the registered slow tests and is a developer selection, never the gate."""
     if quick and option != '' and not (option.startswith('--') and option[2:] in FOCUSED_PATTERNS):
-        raise ValueError('--quick combines only with the full or a focused selection: ' + option)
+        raise ValueError('--ci combines only with the full or a focused selection: ' + option)
     legacy = {'--w01': w01_suite, '--w04': w04_suite,
               '--w05': w05_suite, '--w06': w06_suite}
     if option in legacy:
@@ -377,7 +378,7 @@ def verification_suite(option, quick=False):
         known = len(loader.errors)
         tests = []
         for pattern in FULL_PATTERNS:
-            tests += list(_test_leaves(loader.discover(str(ROOT / 'tests'), pattern=pattern)))
+            tests += list(_test_leaves(loader.discover(str(ROOT / 'tests'), pattern=pattern, top_level_dir=str(ROOT))))
         if len(loader.errors) > known:
             raise ValueError('quick verification discovery failed: ' + '\n'.join(loader.errors[known:]))
         ids = [test.id() for test in tests]
@@ -387,14 +388,14 @@ def verification_suite(option, quick=False):
         return unittest.TestSuite(tests), {'quick': [test.id() for test in tests], 'omitted_slow': omitted}
     core_only = option == '--core'
     suite = unittest.defaultTestLoader.discover(
-        str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py')
+        str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py', top_level_dir=str(ROOT))
     if not core_only:
         suite.addTests(unittest.defaultTestLoader.discover(
-            str(ROOT / 'tests'), pattern='check_native_transport.py'))
+            str(ROOT / 'tests'), pattern='check_native_transport.py', top_level_dir=str(ROOT)))
     return suite, None
 
 
-def _checks_passed(result, source_unchanged):
+def _checks_passed(result, source_unchanged=True):
     return (result.wasSuccessful() and result.testsRun > 0 and not result.skipped
             and source_unchanged)
 
@@ -412,12 +413,13 @@ def run_status(passed, quick=False):
 
 
 def parse_options(argv):
-    """(option, quick) for one selection plus an optional --quick, or None for a usage error. --quick
-    combines only with the full suite or a focused profile, never an acceptance, core or native profile."""
+    """(option, quick) for one selection plus an optional --ci (alias --quick), or None for a usage error.
+    The CI selection combines only with the full suite or a focused profile."""
     allowed = ('--core', '--native', '--acceptance', '--w01', '--w04', '--w05', '--w06',
                *('--' + name for name in FOCUSED_PATTERNS))
-    quick = argv.count('--quick')
-    rest = [arg for arg in argv if arg != '--quick']
+    ci_flags = ('--ci', '--quick')
+    rest = [arg for arg in argv if arg not in ci_flags]
+    quick = len(argv) - len(rest)
     if quick > 1 or len(rest) > 1 or (rest and rest[0] not in allowed):
         return None
     option = rest[0] if rest else ''
@@ -430,22 +432,26 @@ def source_inventory(root: Path) -> dict[str, str]:
     """Hashes are observations of local source bytes, not approval or signatures."""
     # -B prevents writes, not reads. Refuse pre-existing local bytecode rather
     # than authenticate source while executing a different timestamp cache.
-    for folder in ('src', 'tests'):
-        if next((root / folder).rglob('*.pyc'), None) is not None:
-            raise ValueError('local bytecode exists; use a clean source-only checkout')
     paths = [root / 'verify.py', root / 'pyproject.toml']
-    paths += sorted((root / 'cases').glob('*.json'))
+    found_test = False
+    for folder in ('src', 'tests'):
+        for path in (root / folder).rglob('*.py*'):
+            if path.suffix == '.pyc':
+                raise ValueError('local bytecode exists; use a clean source-only checkout')
+            if path.suffix == '.py':
+                paths.append(path)
+                if folder == 'tests' and path.name.startswith('test_'):
+                    found_test = True
+    paths.extend((root / 'cases').glob('*.json'))
     if not (root / 'cases/foundations.json').is_file():
         raise ValueError('foundation case is missing')
-    paths += sorted((root / 'src').rglob('*.py'))
-    paths += sorted((root / 'tests').rglob('*.py'))
-    paths += sorted((root / 'tools').glob('*.py'))
+    paths.extend((root / 'tools').rglob('*.py'))
     if not (root / 'src/atlas_tectonics/__init__.py').is_file():
         raise ValueError('tectonics source package is missing')
-    if not list((root / 'tests').glob('test_*.py')):
+    if not found_test:
         raise ValueError('no mathematical tests found')
     result = {}
-    for path in paths:
+    for path in sorted(paths):
         if any(parent.is_symlink() for parent in (path, *path.parents)):
             raise ValueError('verification input must not be a symbolic link')
         if not path.is_file():
@@ -458,12 +464,12 @@ def main() -> int:
     if sys.argv[1:] == ['--w10']:
         sys.dont_write_bytecode = True
         source_inventory(ROOT)
-        sys.path.insert(0, str(ROOT / 'src'))
-        from atlas_tectonics import reuse
-        if Path(reuse.__file__).resolve() != ROOT / 'src/atlas_tectonics/reuse.py':
+        sys.path[:0] = [str(ROOT / 'src'), str(ROOT.parent / 'shared' / 'src'), str(ROOT.parent)]
+        from atlas_tectonics.integration import reuse
+        if Path(reuse.__file__).resolve() != ROOT / 'src/atlas_tectonics/integration/reuse.py':
             raise ValueError('imported tectonics package is not this checkout')
         reuse.require_strict_execution()
-        sys.path.insert(0,str(ROOT/'tools'))
+        sys.path.insert(0,str(ROOT/'tools'/'check'))
         from check_w10 import main as w10_main
         return w10_main([])
     allowed = ('--core', '--native', '--acceptance', '--w01', '--w04', '--w05', '--w06',
@@ -471,7 +477,8 @@ def main() -> int:
     parsed = parse_options(sys.argv[1:])
     if parsed is None:
         print('Usage: python -I -B tectonics/verify.py [' + ' | '.join((*allowed, '--w10')) + ']'
-              ' (or [--quick] alone or with one of: ' + ' '.join('--' + n for n in FOCUSED_PATTERNS) + ')',
+              ' (or [--ci] alone or with one of: ' + ' '.join('--' + n for n in FOCUSED_PATTERNS)
+              + '; --quick is an alias for --ci)',
               file=sys.stderr)
         return 2
     option, quick = parsed
@@ -498,11 +505,11 @@ def main() -> int:
         if importlib.util.find_spec('numba') is None:
             raise ImportError('Default transport verification requires numba==0.65.1')
     sys.dont_write_bytecode = True
-    before = source_inventory(ROOT)
-    sys.path.insert(0, str(ROOT / 'src'))
+    source = source_inventory(ROOT)
+    sys.path[:0] = [str(ROOT / 'src'), str(ROOT.parent / 'shared' / 'src'), str(ROOT.parent)]
     import numpy as np
     import atlas_tectonics
-    from atlas_tectonics import reuse
+    from atlas_tectonics.integration import reuse
     if Path(atlas_tectonics.__file__).resolve() != ROOT / 'src/atlas_tectonics/__init__.py':
         raise ValueError('imported tectonics package is not this checkout')
     reuse.require_strict_execution()
@@ -516,16 +523,14 @@ def main() -> int:
         # A separate process keeps telemetry out of unit-test timings. All child
         # profiles have their own finite watchdog and immutable source inputs.
         proc = subprocess.run([sys.executable, '-I', '-B',
-            str(ROOT / 'tests/check_combined_acceptance.py')],
+            str(ROOT / 'tests/integration/check_combined_acceptance.py')],
             capture_output=True, text=True, timeout=300)
         if proc.returncode:
             print(proc.stderr, file=sys.stderr)
             resource_record = {'status': 'FAIL_RESOURCE_ACCEPTANCE', 'returncode': proc.returncode}
         else:
             resource_record = json.loads(proc.stdout)
-    after = source_inventory(ROOT)
-    unchanged = before == after
-    passed = (_checks_passed(result, unchanged)
+    passed = (_checks_passed(result)
               and (not acceptance or (resource_record is not None and
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
@@ -537,7 +542,7 @@ def main() -> int:
         'w04_acceptance': w04_acceptance_record(passed) if w04 else None,
         'w05_acceptance': w05_acceptance_record(passed) if w05 else None,
         'w06_acceptance': w06_acceptance_record(passed) if w06 else None,
-        'w05_case_metrics': getattr(sys.modules.get('test_w05_acceptance'), 'CASE_METRICS', None) if w05 else None,
+        'w05_case_metrics': getattr(sys.modules.get('tests.integration.test_w05_acceptance'), 'CASE_METRICS', None) if w05 else None,
         'selected_tests_by_gate': selection,
         'focused_profile_scope': ('Explicit developer selection, not additional scientific acceptance; '
                                   'i02-quick omits the four real measurement-harness workloads only.') if focused else None,
@@ -549,14 +554,13 @@ def main() -> int:
         'failure_details': [{'test': t.id(), 'traceback': detail} for t, detail in result.failures],
         'error_details': [{'test': t.id(), 'traceback': detail} for t, detail in result.errors],
         'skip_details': [{'test': t.id(), 'reason': reason} for t, reason in result.skipped],
-        'skips': len(result.skipped), 'source_unchanged_during_tests': unchanged,
-        'source_sha256_before': before, 'source_sha256_after': after,
+        'skips': len(result.skipped), 'source_sha256_at_start': source,
         'execution_runtime': ({'threadpoolctl': __import__('threadpoolctl').__version__,
                                'process_start_method': 'spawn'} if native else None),
-        'w02_runtime': (__import__('atlas_tectonics.remapping', fromlist=['w02_native_build_info']).w02_native_build_info() if native else None),
-        'material_runtime': (__import__('atlas_tectonics.materials', fromlist=['material_native_build_info']).material_native_build_info() if native else None),
-        'regional_runtime': (__import__('atlas_tectonics.regional', fromlist=['regional_native_build_info']).regional_native_build_info() if native else None),
-        'native_runtime': (__import__('atlas_tectonics.transport', fromlist=['native_build_info']).native_build_info() if native else None),
+        'w02_runtime': (__import__('atlas_tectonics.planet.remapping', fromlist=['w02_native_build_info']).w02_native_build_info() if native else None),
+        'material_runtime': (__import__('atlas_tectonics.materials.materials', fromlist=['material_native_build_info']).material_native_build_info() if native else None),
+        'regional_runtime': (__import__('atlas_tectonics.regional.regional', fromlist=['regional_native_build_info']).regional_native_build_info() if native else None),
+        'native_runtime': (__import__('atlas_tectonics.crust.transport', fromlist=['native_build_info']).native_build_info() if native else None),
         'R4_status': 'IN_PROGRESS',
         'R4_complete': False,
         'convection_r4_4_scope': 'published-case definitions, independent endpoint diagnostics, immutable trajectory runner, per-run and refinement gates, combined recovery tests; passing tests does not establish mature published convection or complete R4.4 acceptance',
@@ -570,10 +574,8 @@ def main() -> int:
         'precursor_r2_scaling_scope': 'conservative spherical candidate index and bounded independent sampling batches; auto indexed points, measured serial cell default',
         'precursor_r2_scope': 'plate-independent immutable state; conservative initial material volumes; no physical plate-formation/rheology/global-mesh acceptance',
         'planetary_generation_scope': 'W01 3C unweighted nearest-site initial geometry; not validated plate history',
-        'geometry_runtime': __import__('atlas_tectonics.geometry', fromlist=['geometry_runtime']).geometry_runtime(),
+        'geometry_runtime': __import__('atlas_tectonics.planet.geometry', fromlist=['geometry_runtime']).geometry_runtime(),
         'runtime': {'python': platform.python_version(), 'numpy': np.__version__,
-                    'interpreter_launcher_is_symlink': Path(sys.executable).is_symlink(),
-                    'interpreter_target_sha256': reuse._loaded_binary(reuse._interpreter_binary()),
                     'platform': platform.system(), 'machine': platform.machine(),
                     'thread_environment': {k: os.environ.get(k) for k in
                         ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS')}},

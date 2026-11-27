@@ -6,7 +6,7 @@ or a replacement for `tectonics/verify.py`; they never relax a test, a tolerance
 
 | Tool | Purpose |
 | --- | --- |
-| `tectonics/verify.py --quick` | The full or a focused selection without the measured slow tests (`SLOW_TESTS`). |
+| `tectonics/verify.py --ci` | The full or a focused selection without the measured slow tests (`SLOW_TESTS`). `--quick` remains an alias. |
 | `tools/run_tests_parallel.py` | Run unittest suites in parallel worker processes, with per-test outcomes and durations. |
 | `tools/test_impact.py` | Record what each test unit executes and opens; select the tests a change can affect. |
 | `tools/verify_candidate.py` | Verify a patch set in a scratch clone: trees, bytes, static checks and one test tier. |
@@ -25,25 +25,25 @@ checks without becoming a full-suite pass. Documentation-only changes use the
 not an unrelated numerical campaign. A quick, focused, parallel or impact-selected
 run is evidence about the tests it ran, and only those. In particular:
 
-- `--quick` omits real tests; its JSON reports `PASS_QUICK_SELECTION_ONLY`, never the gate's status.
+- `--ci` omits real tests; its JSON reports `PASS_QUICK_SELECTION_ONLY`, never the gate's status.
 - A parallel run reports the same per-test outcomes as a serial run of the same selection (checked once, below), but
   it is not `verify.py`: it does not write verify's source-inventory record.
 - An impact selection rests on stated assumptions (below). Use it to select affected
   checks; it cannot replace a full gate or exact qualification explicitly required
   by the route or stage. Reuse adequate unchanged results at the final candidate.
 
-## Test tiers: `SLOW_TESTS` and `--quick`
+## Test tiers: `SLOW_TESTS` and `--ci`
 
 `tectonics/verify.py` keeps every test in full discovery. `SLOW_TESTS` names measured slow tests by exact test ID, or
-by class ID where the class fixture dominates. `--quick` omits them, either alone (the full discovery, native checks
+by class ID where the class fixture dominates. `--ci` omits them, either alone (the full discovery, native checks
 included) or with one focused profile:
 
 ```text
-python -I -B tectonics/verify.py --quick
-python -I -B tectonics/verify.py --quick --i02
+python -I -B tectonics/verify.py --ci
+python -I -B tectonics/verify.py --ci --i02
 ```
 
-`--quick` refuses to combine with `--core`, `--native`, `--acceptance`, `--w01`, `--w04`, `--w05`, `--w06` and
+`--ci` refuses to combine with `--core`, `--native`, `--acceptance`, `--w01`, `--w04`, `--w05`, `--w06` and
 `--w10`; acceptance selections are exact and stay whole. A registry entry whose module the selection covers must name
 a discovered test or class exactly, or the run refuses as stale; an entry for a module outside the selection is not
 judged. An empty quick partition refuses. The full run, `_checks_passed` (no skips) and the local-bytecode refusal are
@@ -51,7 +51,7 @@ unchanged. `--i02-quick` keeps its own meaning: the I02 selection with the four 
 measurement-harness workloads omitted. `--i02-measurement` selects those workloads.
 The verifier requires strict execution before running a suite, including before the W10 delegation; a live
 packaged release mode cannot produce verification evidence.
-When combined with `--quick`, both I02 partitions validate registry entries against the original complete I02
+When combined with `--ci`, both I02 partitions validate registry entries against the original complete I02
 discovery, then omit slow tests only from the requested partition.
 
 The registry was measured at `30a79e6`: wall time per test, or per class fixture, of at least
@@ -103,8 +103,10 @@ python -B tools/run_tests_parallel.py --compare RUN_A/summary.json RUN_B/summary
   per-test outcome, seconds and detail, per-unit wall time, counts, the omitted slow tests and the bytecode check.
   Subtests are recorded separately and their parent test is recorded as failed, errored or skipped accordingly. A
   worker that dies or exceeds `--unit-timeout` is reported for every test of its unit and replaced.
-  Traced runs also retain source and runtime provenance before discovery and after execution. An impact map requires
-  equal snapshots of the clean commit, tracked blobs, actual file hashes and worker runtime/import environment.
+  Traced runs bind the clean commit, tracked blobs, actual file hashes and worker runtime/import environment before
+  discovery. Keep the program files fixed for the run. When rebuilding a map from an existing trace, the recorder
+  checks that snapshot against the current checkout and worker environment. Older traces also need matching recorded
+  before and after snapshots.
   The summary (`atlas.dev.parallel-test-run.v2`) holds `root`, `patterns`, `quick`, `only`, `provenance`,
   `omitted_slow`, `serial_reference`, `workers`, `fresh_process_per_unit`, `wall_seconds`, `worker_tmp_root`,
   `pycache`, `tests_selected`, `counts`, `passed`, `local_bytecode`, `units` (per unit `wall_seconds`, `crashed`,
@@ -112,7 +114,7 @@ python -B tools/run_tests_parallel.py --compare RUN_A/summary.json RUN_B/summary
 - **Exit code.** 0 only when nothing failed, errored or unexpectedly succeeded, every selected test has a result and
   no local bytecode exists. Skips are reported, not hidden; unlike `verify.py`, they do not fail the run.
 
-`--quick` reads the tree's `SLOW_TESTS` (or `--slow-file`, a JSON object of ID to seconds) and refuses a stale entry
+`--ci` reads the tree's `SLOW_TESTS` (or `--slow-file`, a JSON object of ID to seconds) and refuses a stale entry
 as `verify.py` does.
 
 ## `test_impact.py`

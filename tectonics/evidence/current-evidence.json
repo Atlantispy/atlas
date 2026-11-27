@@ -35,20 +35,8 @@
       "id": "i01-separation-feasibility-r4",
       "path": "tectonics/evidence/i01-separation-feasibility-r4.json",
       "sha256": "4ddc05e6a5018d8ec78d1a5ba19fbfb25b3ad1f2efe22eb09df316ff7a859424",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Synthetic 1D resolved transverse shear strip, homogeneous along slip/strike, with elastic surroundings and fixed pressure/temperature; not calibrated lithosphere rupture.",
-        "Bonded connectivity differs from point-set connectivity. Cohort preservation is a contract/helper, not implemented conservative global bond transport.",
-        "Full mixed-material neck, thermal/free-surface/basal/exterior sensitivity and global event/handoff acceptance remain I05/I07/I02. Numerical event brackets are refinement diagnostics, not rigorous event-time enclosures."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. The separation feasibility checker, its test and the separation law helper changed in the source regroup. A current bounded qualification of the receiving sources is open. Synthetic 1D resolved transverse shear strip, homogeneous along slip/strike, with elastic surroundings and fixed pressure/temperature; not calibrated lithosphere rupture. Bonded connectivity differs from point-set connectivity. Cohort preservation is a contract/helper, not implemented conservative global bond transport. Full mixed-material neck, thermal/free-surface/basal/exterior sensitivity and global event/handoff acceptance remain I05/I07/I02. Numerical event brackets are refinement diagnostics, not rigorous event-time enclosures."
     },
     {
       "id": "i01-initiation-verification-r1",
@@ -68,20 +56,8 @@
       "id": "i01-separation-law-r1",
       "path": "tectonics/evidence/i01-separation-law-r1.json",
       "sha256": "ebc6b22485c0501ad69cdb16dd6870af2aecc0fcc83b57346be5d4b324c56b9c",
-      "status": "current",
-      "note": "Reviewed local cohesion-loss candidate after exact-yield, residual-state, history and numeric-range corrections. Codex completed the final positive-energy underflow guard. Thirty-five focused tests pass in 0.359 s and nine campaign groups in 0.0452191 s. For 50 identical local advances, rebuilt/prepared medians are 0.0041113/0.0037912 s; setup reuse only, not world performance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Exact fixed-temperature/pressure local band with elastic surroundings, optional Newtonian creep and declared linear slip weakening; synthetic parameters, not calibrated rupture or a resolved neck.",
-        "Externally supplied graph comparisons and explicit support histories are not generated separation or healing. Exact-yield split histories retain the documented floating-point conditioning limit.",
-        "Physical support, irreversible surface history, resolved comparison, owner wording/input decisions and global event admission remain open. No MC-01 or I01 completion."
-      ]
+      "status": "historical",
+      "note": "Reviewed local cohesion-loss candidate after exact-yield, residual-state, history and numeric-range corrections. Codex completed the final positive-energy underflow guard. Thirty-five focused tests pass in 0.359 s and nine campaign groups in 0.0452191 s. For 50 identical local advances, rebuilt/prepared medians are 0.0041113/0.0037912 s; setup reuse only, not world performance. The separation law checker and its test changed in the source regroup. A current bounded qualification of the receiving sources is open. Exact fixed-temperature/pressure local band with elastic surroundings, optional Newtonian creep and declared linear slip weakening; synthetic parameters, not calibrated rupture or a resolved neck. Externally supplied graph comparisons and explicit support histories are not generated separation or healing. Exact-yield split histories retain the documented floating-point conditioning limit. Physical support, irreversible surface history, resolved comparison, owner wording/input decisions and global event admission remain open. No MC-01 or I01 completion."
     },
     {
       "id": "i01-gibbs-provider-r3",
@@ -192,19 +168,8 @@
       "id": "i01-column-admission-r4",
       "path": "tectonics/evidence/i01-column-admission-r4.json",
       "sha256": "e0de86619f8878f48a230c0d9b793debaec614769267a44306340fd3895de037",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Sufficient bound for the represented Gauss-point fixed column with constant drive, drag, width, temperature and pore state, positive extension and nondecreasing history; every point needs plastic regularisation and total used plus future strain stays at most 0.05.",
-        "No continuum enclosure, finite-strain transport or physical separation claim; an inherited column left uncertified is not falsely admitted. Runtime versions are recorded observations, not sealed binaries."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. The selected motion and weakening implementations and the admission callers differ from the bound source bytes. A current bounded column admission qualification is open. Sufficient bound for the represented Gauss-point fixed column with constant drive, drag, width, temperature and pore state, positive extension and nondecreasing history; every point needs plastic regularisation and total used plus future strain stays at most 0.05. No continuum enclosure, finite-strain transport or physical separation claim; an inherited column left uncertified is not falsely admitted. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-thermomechanical-motion-r5",
@@ -239,37 +204,15 @@
       "id": "i01-motion-coupling-r4",
       "path": "tectonics/evidence/i01-motion-coupling-r4.json",
       "sha256": "a8102385a0c93922d9d10e76d46fdf3a742eb8e8c5f821f4d7063553a19ba41d",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Fixed-temperature, fixed-width small-strain column and constant authored external force and generalised drag. No spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate.",
-        "Runtime versions are recorded observations, not sealed binaries. Timings are small-control observations, not world speedups."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. The selected motion and weakening implementations and the motion control callers differ from the bound source bytes. A current bounded force and motion qualification is open. Fixed-temperature, fixed-width small-strain column and constant authored external force and generalised drag. No spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate. Runtime versions are recorded observations, not sealed binaries. Timings are small-control observations, not world speedups."
     },
     {
       "id": "i01-weakening-r5",
       "path": "tectonics/evidence/i01-weakening-r5.json",
       "sha256": "094fcd7ed687e0b44d7c8fea72631a422b48be4acb5ddacc4c8fa5cd10ee8cdd",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration.",
-        "Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates. Runtime versions are recorded observations, not sealed binaries."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. The selected weakening implementation and control callers differ from the bound source bytes. A current bounded weakening qualification is open. Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration. Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-weakening-r2",
@@ -396,134 +339,31 @@
       "id": "boundary-kinematics-r1",
       "path": "tectonics/evidence/boundary-kinematics-r1.json",
       "sha256": "bd91ae4cd4960d02ea6a723cd7d38c57eb3b5f44d06c1d1e7441a8322f035309",
-      "status": "current",
-      "note": "B1 matched diagnostics of retained seed 42 and a paused geometry prototype with original rotations, against PB2002 development at 100/250/500 km. No new world, refit, withheld evaluation or realism acceptance.",
-      "bindings": [
-        {
-          "pointer": "/tool_sha256",
-          "file": "tectonics/tools/assess_boundary_kinematics.py"
-        },
-        {
-          "pointer": "/sources/0/identity/input_sha256",
-          "file": "tectonics/evidence/boundary-input-original-r1.json"
-        },
-        {
-          "pointer": "/sources/1/identity/input_sha256",
-          "file": "tectonics/evidence/boundary-input-prototype-r1.json"
-        }
-      ],
-      "not_checked": [
-        {
-          "pointer": "/campaign/atlas_id",
-          "kind": "artefact",
-          "reason": "Retained native atlas identity; neutral inputs are bound separately."
-        },
-        {
-          "pointer": "/campaign/geometry_id",
-          "kind": "artefact",
-          "reason": "Retained native geometry identity, not a source hash."
-        },
-        {
-          "pointer": "/campaign/motion_id",
-          "kind": "artefact",
-          "reason": "Retained original motion, not a newly fitted motion."
-        },
-        {
-          "pointer": "/campaign/project_id",
-          "kind": "artefact",
-          "reason": "External read-only saved project; portable inputs are bound separately."
-        },
-        {
-          "pointer": "/campaign/preparation_script_sha256",
-          "kind": "artefact",
-          "reason": "Local export harness outside the repository; replay uses the checked-in neutral inputs."
-        },
-        {
-          "pointer": "/campaign/source_files_sha256/*",
-          "kind": "artefact",
-          "reason": "External retained world and prototype; before/after hashes matched during export."
-        },
-        {
-          "pointer": "/protocol/protocol_id",
-          "kind": "artefact",
-          "reason": "Canonical measurement protocol identity, not a file hash."
-        },
-        {
-          "pointer": "/comparisons/*/audit/candidate_id",
-          "kind": "artefact",
-          "reason": "Evaluation identity; explicit input_sha256 bindings are checked separately."
-        },
-        {
-          "pointer": "/comparisons/*/audit/dataset_id",
-          "kind": "artefact",
-          "reason": "Logical PB2002 dataset identity verified during measurement."
-        },
-        {
-          "pointer": "/comparisons/*/audit/evaluation_id",
-          "kind": "artefact",
-          "reason": "Canonical evaluation identity, not a source hash."
-        },
-        {
-          "pointer": "/comparisons/*/audit/protocol_id",
-          "kind": "artefact",
-          "reason": "Logical reference-use protocol identity."
-        },
-        {
-          "pointer": "/reference/audit/candidate_id",
-          "kind": "artefact",
-          "reason": "PB2002 source-only evaluation uses its dataset identity."
-        },
-        {
-          "pointer": "/reference/audit/dataset_id",
-          "kind": "artefact",
-          "reason": "Dataset identity verified during measurement, not re-executed here."
-        },
-        {
-          "pointer": "/reference/audit/evaluation_id",
-          "kind": "artefact",
-          "reason": "Canonical evaluation identity."
-        },
-        {
-          "pointer": "/reference/audit/protocol_id",
-          "kind": "artefact",
-          "reason": "Logical reference-use protocol identity."
-        },
-        {
-          "pointer": "/reference/identity/dataset_id",
-          "kind": "artefact",
-          "reason": "PB2002 source inventory verified by the measurement loader."
-        },
-        {
-          "pointer": "/reference/identity/policy_id",
-          "kind": "artefact",
-          "reason": "Reference-use policy identity; not a source-file binding in this checker."
-        },
-        {
-          "pointer": "/reference/identity/reference_protocol_id",
-          "kind": "artefact",
-          "reason": "Logical reference protocol identity."
-        }
-      ],
-      "limits": [
-        "Current means the tool and two neutral input byte bindings match. Native project, export harness, reference-loader dependencies and Python/NumPy binaries are not sealed here; known drift requires review or historical classification.",
-        "One development seed and PB2002 development only. Prototype motion was not refitted or junction compatibility re-established. No generated-world realism or physical simulation acceptance."
-      ]
+      "status": "historical",
+      "note": "B1 matched diagnostics of retained seed 42 and a paused geometry prototype with original rotations, against PB2002 development at 100/250/500 km. No new world, refit, withheld evaluation or realism acceptance. The relocated assessment tool changed. Both neutral input files retain their recorded digests. The receipt reports historical diagnostics and does not bind the current assessment tool. Current means the tool and two neutral input byte bindings match. Native project, export harness, reference-loader dependencies and Python/NumPy binaries are not sealed here; known drift requires review or historical classification. One development seed and PB2002 development only. Prototype motion was not refitted or junction compatibility re-established. No generated-world realism or physical simulation acceptance."
     },
     {
       "id": "new-world-s7-r2-matrix",
       "path": "tectonics/evidence/new-world-s7-r2-matrix.json",
       "sha256": "3345e9502e0fd286df14ea9d92f423d7cf72542f99e6aa459d27b03471c7e7c1",
+      "status": "historical",
+      "note": "Predeclared three-case matrix written before the Step 7 r2 run and bound by new-world-s7-r2 /matrix_sha256. The relocated acceptance tool changed. This receipt records the historical cases, times and attempt policy. A current matrix declaration on the relocated tool is open. Declares the cases, times and one-attempt policy only; outcomes are recorded in new-world-s7-r2."
+    },
+    {
+      "id": "new-world-s7-regroup-matrix",
+      "path": "tectonics/evidence/2026-11/new-world-s7-regroup-matrix.json",
+      "sha256": "dfb293327c02d1f94d38fc56c2c44b01827f2a4b09372fb4d2fcefccfb1375e4",
       "status": "current",
-      "note": "Predeclared three-case matrix written before the Step 7 r2 run and bound by new-world-s7-r2 /matrix_sha256.",
+      "note": "The relocated S7 tool declares identical cases, times and attempt policy.",
       "bindings": [
         {
           "pointer": "/tool_sha256",
-          "file": "tectonics/tools/check_new_world_acceptance.py"
+          "file": "tectonics/tools/check/check_new_world_acceptance.py"
         }
       ],
       "not_checked": [],
       "limits": [
-        "Declares the cases, times and one-attempt policy only; outcomes are recorded in new-world-s7-r2."
+        "Declaration only. No S7 world, evolution or resume phase was executed."
       ]
     }
   ]

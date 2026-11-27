@@ -71,12 +71,16 @@ tests sit in one folder.
 
 ## Moving files
 
-An unissued development copy resolves `atlas_shared` from `shared/src`.
-Set `PYTHONPATH` to the absolute snapshot and shared source directories, with the snapshot
-first. Use `;` between the paths on Windows and `:` on POSIX. The parallel test runner supplies
-the snapshot path through `--src` and inherits the shared path. The isolated tests supply both
-paths directly or use adjacent package copies. Snapshot CI stages the declared source with
-the shared package beside it.
+An unissued checkout uses `tectonics/src` and the same checkout's `shared/src`.
+Set `PYTHONPATH` to those absolute directories, with `tectonics/src` first. Use `;` between
+the paths on Windows and `:` on POSIX. The parallel test runner supplies the tectonics
+path through `--src` and inherits the shared path. CI applies one gate to both maintained
+tectonics test populations.
+
+The [source move table](SOURCE_MOVES.tsv) records the previous tree paths and their homes
+in the commit that adds the table. Sealed receipts retain their original paths and source
+digests. Verify a sealed receipt against the revision that issued it, using the table to
+find maintained successors.
 
 The issued snapshot stages `atlas_tectonics` and `atlas_shared` next to each other in its
 selected native root. The application declaration lists all Python sources in both packages.

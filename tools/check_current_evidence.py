@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import csv
 import hashlib
 import json
 import math
@@ -26,6 +27,7 @@ from typing import Any, Iterator
 
 SCHEMA = 'atlas.current-evidence-register.v1'
 DEFAULT_REGISTER = 'tectonics/evidence/current-evidence.json'
+SOURCE_MOVES = 'docs/SOURCE_MOVES.tsv'
 STATUSES = ('current', 'historical', 'superseded', 'invalid')
 KINDS = ('runtime', 'artefact', 'historical')
 CAPTURE = '{key}'
@@ -371,12 +373,33 @@ def _check_current(record: dict[str, Any], data: bytes, read, registered: dict[s
                    limits=list(record['limits']))
 
 
+def source_moves(root: Path) -> dict[str, str]:
+    try:
+        (root / SOURCE_MOVES).lstat()
+    except FileNotFoundError:
+        return {}
+    rows = csv.reader(read_file(root, SOURCE_MOVES).decode('utf-8').splitlines(), delimiter='\t')
+    if next(rows, None) != ['previous_path', 'receiving_path']:
+        raise RegisterError('invalid source move table header')
+    moves = {}
+    for number, row in enumerate(rows, 2):
+        label = f'{SOURCE_MOVES}:{number}'
+        if len(row) != 2:
+            raise RegisterError(f'{label}: expected previous and receiving paths')
+        before, after = (_path(item, label) for item in row)
+        if before in moves:
+            raise RegisterError(f'{label}: duplicate previous source path')
+        moves[before] = after
+    return moves
+
+
 def check(root: Path, register: Any, register_path: str = DEFAULT_REGISTER
           ) -> tuple[list[str], dict[str, dict[str, Any]]]:
     """Return (failures, visited records). Only current records have their bindings checked."""
     root = root.resolve(strict=True)
     records = validate(register)
     registered = {record['path']: record for record in records}
+    moves = source_moves(root)
     cache: dict[str, bytes | EvidenceError] = {}
 
     def read(relative: str) -> bytes:
@@ -389,6 +412,9 @@ def check(root: Path, register: Any, register_path: str = DEFAULT_REGISTER
         if isinstance(value, EvidenceError):
             raise value
         return value
+
+    def read_source(relative: str) -> bytes:
+        return read(moves.get(relative, relative))
 
     failures: list[str] = []
     visited: dict[str, dict[str, Any]] = {}
@@ -412,7 +438,7 @@ def check(root: Path, register: Any, register_path: str = DEFAULT_REGISTER
                                 'Review the change; record any correction explicitly before '
                                 f'updating {register_path}. Evidence must not be rewritten silently.')
             if status == 'current':
-                _check_current(record, data, read, registered, register_path, failures, summary)
+                _check_current(record, data, read_source, registered, register_path, failures, summary)
         summary['ok'] = len(failures) == before
     return failures, visited
 

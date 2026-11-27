@@ -42,28 +42,13 @@ The scratch rehearsal prepared the published Unit 4 candidate twice with the sam
 
 ## Optional finite-stock reference case
 
+Run from the repository root with the pinned Atlas interpreter. The selected tectonics package resolves its companion package from the same checkout's `shared/src`.
+
 ```powershell
-$snapshot = 'tectonics/optimisation/working-snapshot-20261113'
-$tempRoot = (Get-Item -LiteralPath ([System.IO.Path]::GetTempPath()) -ErrorAction Stop).FullName
-$stagingPath = Join-Path $tempRoot "atlas-e4-$([guid]::NewGuid())"
-$packageParent = (New-Item -Path $stagingPath -ItemType Directory -ErrorAction Stop).FullName
-try {
-    Copy-Item -LiteralPath "$snapshot/atlas_tectonics", 'shared/src/atlas_shared' -Destination $packageParent -Recurse -ErrorAction Stop
-    python -I -B tools/e4_collar_finite_adoption.py $packageParent
-    if ($LASTEXITCODE -ne 0) { throw "Collar adoption check failed with exit $LASTEXITCODE." }
-} finally {
-    $staged = Get-Item -LiteralPath $packageParent -ErrorAction Stop
-    if ($staged.FullName -ne $packageParent -or $staged.Parent.FullName -ne (Split-Path -Parent $stagingPath) -or
-        ($staged.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-        throw "The temporary package folder changed: $packageParent"
-    }
-    Remove-Item -LiteralPath $staged.FullName -Recurse -Force -ErrorAction Stop
-}
+python -I -B tools/e4_collar_finite_adoption.py tectonics/src
 ```
 
-Run from the repository root with the pinned Atlas interpreter. The commands stage both packages from the same checkout in the adjacent layout used by snapshot CI. You can also point `$packageParent` at an existing staged pair from that checkout.
-
-To reproduce the historical refusal, set `$historicalPackageParent` to the parent of the retained build-3 `atlas_tectonics` package and run it in a fresh process.
+To reproduce the historical refusal, set `$historicalPackageParent` to the parent of the retained build-3 `atlas_tectonics` package and run the tool in a fresh process. It selects the flat layout for that package.
 
 ```powershell
 python -I -B tools/e4_collar_finite_adoption.py $historicalPackageParent

@@ -8,6 +8,7 @@ import argparse
 from contextlib import nullcontext
 from fractions import Fraction
 import hashlib
+from importlib.util import find_spec
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -19,13 +20,23 @@ class FiniteCollarAdoption(unittest.TestCase):
         import numpy as np
         from threadpoolctl import threadpool_limits
 
-        from atlas_tectonics import integration_spatial_ale as ale
-        from atlas_tectonics.integration_mimetic_heat import _enc
-        from atlas_tectonics.integration_spatial_reservoir import PreparedFiniteStocks
-        from atlas_tectonics.integration_spatial_transport import PreparedSpatialTransport
-        from atlas_tectonics.regional_collar3d import PreparedRegionalCollar3D
-        from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
-        from atlas_tectonics.resources import WorkBudget
+        layout = find_spec('atlas_tectonics.integration')
+        if layout is not None and layout.submodule_search_locations is not None:
+            from atlas_tectonics.integration.coupling import spatial_ale as ale
+            from atlas_tectonics.integration.heat.mimetic_heat import _enc
+            from atlas_tectonics.integration.coupling.spatial_reservoir import PreparedFiniteStocks
+            from atlas_tectonics.integration.coupling.spatial_transport import PreparedSpatialTransport
+            from atlas_tectonics.regional.collar3d import PreparedRegionalCollar3D
+            from atlas_tectonics.regional.execution import RegionalMechanicalSnapshot
+            from atlas_tectonics.integration.resources import WorkBudget
+        else:
+            from atlas_tectonics import integration_spatial_ale as ale
+            from atlas_tectonics.integration_mimetic_heat import _enc
+            from atlas_tectonics.integration_spatial_reservoir import PreparedFiniteStocks
+            from atlas_tectonics.integration_spatial_transport import PreparedSpatialTransport
+            from atlas_tectonics.regional_collar3d import PreparedRegionalCollar3D
+            from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot
+            from atlas_tectonics.resources import WorkBudget
 
         names = ('component_mass_kg:0', 'component_mass_kg:1', 'enthalpy_j',
                  'tracer:damage', 'tracer:accumulated_strain_ii')

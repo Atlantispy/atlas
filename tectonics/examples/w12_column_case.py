@@ -21,13 +21,13 @@ from atlas_tectonics import (
     ThermalInitialProfile, ThermalParameters, ThermalSupportParameters,
     build_boundary_network,
 )
-from atlas_tectonics.compaction import CompactionParameters
-from atlas_tectonics.compaction_columns import DrainedCompactionConditions
-from atlas_tectonics.parameters import FlexureParameters
-from atlas_tectonics.regional_workflow import PoreFluidCohort, PreparedRegionalWorkflow
-from atlas_tectonics.resources import WorkBudget
-from atlas_tectonics.w03_workflow import initialise_w03_columns
-from atlas_tectonics.w04_workflow import W04SurfaceInputs, W04SupportPolicy
+from atlas_tectonics.mechanics.compaction import CompactionParameters
+from atlas_tectonics.mechanics.compaction_columns import DrainedCompactionConditions
+from atlas_tectonics.planet.parameters import FlexureParameters
+from atlas_tectonics.regional.workflow import PoreFluidCohort, PreparedRegionalWorkflow
+from atlas_tectonics.integration.resources import WorkBudget
+from atlas_tectonics.integration.workflows.drained_column_workflow import initialise_w03_columns
+from atlas_tectonics.integration.workflows.prescribed_support_workflow import W04SurfaceInputs, W04SupportPolicy
 
 
 def make_column_case(*, cells=8, budget=None):

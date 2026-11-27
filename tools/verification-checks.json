@@ -83,7 +83,7 @@
     {
       "id": "atlas.snapshot.column.owned-prefix-revalidation",
       "purpose": "Re-applied public resume validation and immutable input capture to data from an already issued accepted column.",
-      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/integration_state.py",
+      "module": "tectonics/src/atlas_tectonics/integration/state.py",
       "process": "Cold continuation of an accepted coupled-column state",
       "entry_point": "Continuation._prefix, formerly through public resume(_carried(state))",
       "owner": "Coupled-column snapshot owner",
@@ -125,7 +125,7 @@
     {
       "id": "atlas.snapshot.column.public-resume-input-validation",
       "purpose": "Check and capture raw carried-column inputs before solving and issuing the accepted endpoint prefix.",
-      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/integration_evolution.py",
+      "module": "tectonics/src/atlas_tectonics/integration/evolution.py",
       "process": "Raw coupled-column resume",
       "entry_point": "integration_evolution.resume",
       "owner": "Coupled-column snapshot owner",
@@ -163,7 +163,7 @@
     {
       "id": "atlas.snapshot.column.checkpoint-restore-validation",
       "purpose": "Validate the persisted column record, including finite predictor values and their shape and identities, before issuing restored state.",
-      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/integration_state.py",
+      "module": "tectonics/src/atlas_tectonics/integration/state.py",
       "process": "V2 coupled-column ledger recovery",
       "entry_point": "integration_state.restore, called by v2 ledger restoration",
       "owner": "Coupled-column snapshot owner",
@@ -638,7 +638,7 @@
     {
       "id": "atlas.snapshot.history.fresh-producer-validation",
       "purpose": "Repeated the history validator immediately after each of the three prepared producers issued a fresh result.",
-      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/tectonic_history.py",
+      "module": "tectonics/src/atlas_tectonics/history/tectonic_history.py",
       "process": "Fresh tectonic history output",
       "entry_point": "TectonicHistory._compute after prepared evaluation",
       "owner": "Tectonic history snapshot owner",
@@ -681,7 +681,7 @@
     {
       "id": "atlas.snapshot.history.checkpoint-result-validation",
       "purpose": "Reconcile a decoded history result with its admitted route inputs and verify expected result fields, including applicable regional forces.",
-      "module": "tectonics/optimisation/working-snapshot-20261113/atlas_tectonics/tectonic_history.py",
+      "module": "tectonics/src/atlas_tectonics/history/tectonic_history.py",
       "process": "Tectonic history checkpoint recovery",
       "entry_point": "TectonicHistory._restore to _validate",
       "owner": "Tectonic history snapshot owner",
@@ -1581,12 +1581,18 @@
       "process": "Public development test profiles",
       "entry_point": "python -I -B tools/develop.py test --binding BINDING --profile PROFILE",
       "owner": "Atlas development tooling owner",
-      "consumers": ["Public development suite"],
+      "consumers": [
+        "Public development suite"
+      ],
       "classification": "QUALIFICATION_ONLY",
       "classification_reason": "Profile evidence for explicit public development; outside ordinary simulation.",
-      "classification_refs": ["docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"],
+      "classification_refs": [
+        "docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"
+      ],
       "execution": {
-        "stages": ["development"],
+        "stages": [
+          "development"
+        ],
         "trigger": "Each completed child report read by the parent profile command.",
         "release_state": "NOT_APPLICABLE",
         "debug_state": "NOT_APPLICABLE",
@@ -1594,8 +1600,15 @@
         "control": "Explicit public test command."
       },
       "on_failure": "Exit 2 for a missing or mismatched report or a contradictory process exit.",
-      "affected_by": ["Profile request", "Selected binding", "Child report and process exit"],
-      "evidence": ["tests/test_development.py", "docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"],
+      "affected_by": [
+        "Profile request",
+        "Selected binding",
+        "Child report and process exit"
+      ],
+      "evidence": [
+        "tests/test_development.py",
+        "docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"
+      ],
       "cost_note": "Compare the already parsed report fields with the verified binding and subprocess exit; no added I/O."
     },
     {
@@ -1605,12 +1618,19 @@
       "process": "Public development test profiles and smoke fixture",
       "entry_point": "python -I -B tools/develop.py test --binding BINDING --profile PROFILE or smoke --binding BINDING",
       "owner": "Atlas development tooling owner",
-      "consumers": ["Public development profile discovery", "Public integer smoke fixture"],
+      "consumers": [
+        "Public development profile discovery",
+        "Public integer smoke fixture"
+      ],
       "classification": "QUALIFICATION_ONLY",
       "classification_reason": "Source-bound public development evidence outside ordinary simulation.",
-      "classification_refs": ["docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"],
+      "classification_refs": [
+        "docs/INDEPENDENT_DEVELOPMENT.md#interpreting-the-results"
+      ],
       "execution": {
-        "stages": ["development"],
+        "stages": [
+          "development"
+        ],
         "trigger": "First development-module load after binding verification or first use of the loaded smoke components.",
         "release_state": "NOT_APPLICABLE",
         "debug_state": "NOT_APPLICABLE",
@@ -1618,8 +1638,15 @@
         "control": "Explicit public test or smoke command."
       },
       "on_failure": "Refuse unbound or mismatching development source before executing it and mismatching smoke components before starting the graph.",
-      "affected_by": ["Verified source inventory", "Loaded module path", "Executed-byte digest"],
-      "evidence": ["tests/test_development.py", "development/atlas_dev/fixture.py"],
+      "affected_by": [
+        "Verified source inventory",
+        "Loaded module path",
+        "Executed-byte digest"
+      ],
+      "evidence": [
+        "tests/test_development.py",
+        "development/atlas_dev/fixture.py"
+      ],
       "cost_note": "Reuse the digest of the import bytes or the recorded execution digest. Check each selected component once."
     }
   ]

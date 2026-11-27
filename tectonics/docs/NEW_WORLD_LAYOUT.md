@@ -711,7 +711,7 @@ independence assumption, p-value or universal realism score.
 
 #### First matched checkpoint: retained seed 42
 
-[The recorded comparison](../evidence/boundary-kinematics-r1.json) measures the
+[The historical comparison](../evidence/boundary-kinematics-r1.json) measured the
 existing 13-plate, 1,024-support-cell development world and the paused prototype
 against PB2002 development. Both use the **original saved rotations**. Only
 prototype vertex positions were transferred by matching native vertex IDs; no

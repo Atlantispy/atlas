@@ -147,7 +147,7 @@ this is **not** a security sandbox for untrusted pull requests.
 
 ## Faster development checks
 
-For the tectonics suites, [DEVELOPMENT_TOOLS.md](DEVELOPMENT_TOOLS.md) describes `verify.py --quick` (the measured
+For the tectonics suites, [DEVELOPMENT_TOOLS.md](DEVELOPMENT_TOOLS.md) describes `verify.py --ci` (the measured
 slow tests omitted), a parallel test runner, a conservative test-impact selector and a one-command patch-candidate
 verifier. They report only their selected coverage. Use the qualification required
 by the affected route or stage; a focused pass does not claim a full-suite pass,

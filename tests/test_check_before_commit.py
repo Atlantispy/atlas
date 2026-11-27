@@ -55,7 +55,7 @@ class DocumentationSelectionTests(unittest.TestCase):
                    ('D README.md',), ('R100 README.md renamed.md',), ('T README.md',),
                    ('M docs/I01_MELT_SEGREGATION.md',), ('M tectonics/docs/I01_MELT_SEGREGATION.md',),
                    ('A docs/NEW_METHOD.md',), ('M engineering/work/README.md',),
-                   ('M README.md', 'M tectonics/src/atlas_tectonics/execution.py'),
+                   ('M README.md', 'M tectonics/src/atlas_tectonics/integration/parallel/execution.py'),
                    ('M README.md', 'M tectonics/evidence/current-evidence.json')]
         for changed in changes:
             with self.subTest(changed=changed):
@@ -86,8 +86,12 @@ class CandidateTests(unittest.TestCase):
         self.write('.gitignore', b'tectonics/private/\n')
         self.write('tectonics/evidence/receipt.json', RECEIPT)
         self.write('tectonics/tools/tool.py', b'VALUE = 1\n')
-        self.write('tectonics/tests/test_digest_line_endings.py', PASSING)
-        self.write('tectonics/tests/test_i01_fixture.py', PASSING)
+        self.write('tectonics/tests/__init__.py', b'')
+        self.write('tectonics/tests/integration/__init__.py', b'')
+        self.write('tectonics/tests/integration/test_digest_line_endings.py', PASSING)
+        self.write('tectonics/tests/integration/test_i01_fixture.py', PASSING)
+        self.write('shared/src/atlas_shared/__init__.py', b'')
+        self.write('docs/SOURCE_MOVES.tsv', b'previous_path\treceiving_path\n')
         self.write('tools/check_current_evidence.py', CHECKER)
         self.write('README.md', b'# Guard fixture\n')
         self.git('add', '--all')
@@ -237,7 +241,7 @@ sys.exit(0 if (root / "tectonics/docs/TECTONICS_PLAN.md").read_bytes() == b"boun
         self.assertNotIn('I01/I02 tests (', output)
 
     def test_document_change_cannot_bypass_failed_line_ending_guard(self):
-        self.write('tectonics/tests/test_digest_line_endings.py', b'''import unittest
+        self.write('tectonics/tests/integration/test_digest_line_endings.py', b'''import unittest
 class Fixture(unittest.TestCase):
     def test_refuses(self):
         self.fail("synthetic line-ending failure")
@@ -356,7 +360,12 @@ class Fixture(unittest.TestCase):
         self.assertEqual(steps[0][1][-1], str(self.root / 'tools' / 'check_current_evidence.py'))
         self.assertIn('test_digest_line_endings.py', steps[1][1])
         self.assertEqual(steps[2][1][-1], guard.TESTS)
-        self.assertEqual(steps[2][2], {'PYTHONPATH': str(self.root / 'tectonics' / 'src')})
+        self.assertIn(str(self.root / 'tectonics'), steps[2][1])
+        self.assertEqual(steps[2][2], {'PYTHONPATH': os.pathsep.join(
+            (str(self.root / 'tectonics' / 'src'), str(self.root / 'shared' / 'src')))})
+        with guard.candidate(self.root, staged=True) as candidate:
+            self.assertTrue((candidate.root / 'shared/src/atlas_shared/__init__.py').is_file())
+            self.assertTrue((candidate.root / 'docs/SOURCE_MOVES.tsv').is_file())
 
 
 if __name__ == '__main__':

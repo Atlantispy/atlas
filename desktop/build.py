@@ -2,7 +2,7 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import shutil
 import stat
 import zipfile
@@ -18,6 +18,9 @@ job-manager.mjs view-reader.mjs new-world-bridge.mjs world-manager.mjs
 evolution-manager.mjs native-launch.mjs bundle-data.mjs'''.split()
 UI_PIN = ROOT / 'desktop' / 'ui-snapshot.json'      # tracked name -> SHA-256 pin of the UI owner's snapshot
 UI_PIN_SCHEMA = 'atlas.desktop-ui-snapshot.v1'
+PORTABLE_MANIFEST = 'atlas_tectonics/_application_sources.json'
+PORTABLE_PIN = 'atlas_tectonics/_application_sources.sha256'
+W12_EXAMPLE = 'tectonics/examples/w12_column_case.py'
 
 
 def digest(path):
@@ -73,13 +76,61 @@ def ui_snapshot(ui, pin=UI_PIN):
     return found
 
 
-def seal(output):
-    files = {p.relative_to(output).as_posix(): digest(p)
-             for p in sorted(output.rglob('*')) if p.is_file() and p != output / 'build-manifest.json'}
+def portable_sources(root):
+    native = root / 'tectonics/src'
+    declaration = plain_path(native / PORTABLE_MANIFEST).read_bytes()
+    pin = plain_path(native / PORTABLE_PIN).read_bytes()
+    declaration_sha = hashlib.sha256(declaration).hexdigest()
+    if pin != declaration_sha.encode() + b'\n':
+        raise ValueError('Portable source declaration fingerprint differs.')
+    app = json.loads(declaration)
+    files, data, adapter = app['files'], app['data_only'], app['application_files']
+    if (app['schema'] != 'atlas.application-sources.v1' or files != app['source_hashes']
+            or set(adapter) != {'atlas_runtime.py'} or files.keys() & data.keys()
+            or adapter.keys() & (files.keys() | data.keys())
+            or any(not name.endswith('.py') for name in files)
+            or any(not name.startswith('atlas_tectonics/') or PurePosixPath(name).suffix not in ('.json', '.md', '.txt')
+                   for name in data)):
+        raise ValueError('Invalid portable source declaration.')
+    members = files | data | adapter | {PORTABLE_MANIFEST: declaration_sha,
+                                        PORTABLE_PIN: hashlib.sha256(pin).hexdigest()}
+    payload = {}
+    for name, sha in members.items():
+        path = PurePosixPath(name)
+        if (not path.parts or path.is_absolute() or '..' in path.parts or path.as_posix() != name
+                or ':' in name or '\\' in name
+                or (name != 'atlas_runtime.py' and path.parts[0] not in ('atlas_tectonics', 'atlas_shared'))):
+            raise ValueError(f'Invalid portable source path: {name}')
+        prefix = 'shared/src' if path.parts[0] == 'atlas_shared' else 'tectonics/src'
+        relative = f'{prefix}/{name}'
+        payload[relative] = (plain_path(root / relative), sha)
+    return payload
+
+
+def seal(output, expected=None):
+    count, _ = seal_totals(output, expected)
+    return count
+
+
+def seal_totals(output, expected=None):
+    manifest_path = output / 'build-manifest.json'
+    files, size = {}, 0
+    for path in sorted(output.rglob('*')):
+        if path == manifest_path:
+            continue
+        try:
+            entry = path.stat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISREG(entry.st_mode):
+            files[path.relative_to(output).as_posix()] = digest(path)
+            size += entry.st_size
+    if expected and any(files.get(name) != sha for name, sha in expected.items()):
+        raise ValueError('Copied UI or portable sources differ from their pins.')
     manifest = {'schema': 'atlas.desktop-build.v1', 'electron': '44.4.5',
                 'status': 'WORKING NON-CANON', 'scientific_acceptance': False, 'files': files}
-    (output / 'build-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-    return len(files)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+    return len(files), size + manifest_path.stat().st_size
 
 
 def release_marker(native):
@@ -88,6 +139,17 @@ def release_marker(native):
     with target.open('x', encoding='utf-8', newline='\n') as stream:
         json.dump({'schema': 'atlas.desktop-runtime.v1', 'identity_mode': 'release'}, stream)
         stream.write('\n')
+
+
+def copy_native_payload(root, native, payload):
+    for name, (source, _) in payload.items():
+        copy_file(source, native / name)
+    copy_tree(root / 'tectonics/tools', native / 'tectonics/tools', lambda p: p.suffix == '.py')
+    copy_file(plain_path(root / W12_EXAMPLE), native / W12_EXAMPLE)
+    copy_tree(root / 'tectonics/cases', native / 'tectonics/cases', lambda p: p.suffix == '.json')
+    copy_tree(root / 'tectonics/requirements', native / 'tectonics/requirements')
+    for name in ('LICENSE', 'LICENSING.md', 'tectonics/LICENSE', 'tectonics/pyproject.toml', 'shared/pyproject.toml'):
+        copy_file(root / name, native / name)
 
 
 def main():
@@ -113,12 +175,21 @@ def main():
         setattr(args, name, plain_path(getattr(args, name)))
     if args.output.exists():
         raise ValueError('Use a new output directory; existing builds are never removed.')
-    copied_roots = [args.python, args.ui] + [ROOT / 'tectonics' / p for p in ['src', 'tools', 'cases', 'requirements']]
+    copied_roots = [args.python, args.ui, ROOT / 'shared/src', ROOT / W12_EXAMPLE]
+    copied_roots += [ROOT / 'tectonics' / p for p in ['src', 'tools', 'cases', 'requirements']]
     if any(args.output.is_relative_to(p) or p.is_relative_to(args.output) for p in copied_roots):
         raise ValueError('Build output must not overlap copied source trees.')
     if digest(args.electron) != ELECTRON_SHA256:
         raise ValueError('Electron checksum mismatch.')
+    from prepare_python import requirements
+    pins = requirements([ROOT / 'tectonics/requirements/windows-amd64-cp312-core.txt'])
+    python_receipt = json.loads(plain_path(args.python / 'atlas-python-payload.json').read_bytes())
+    versions = {package['name']: package['version'] for package in python_receipt['packages']}
+    if (python_receipt['schema'] != 'atlas.desktop-python-payload.v1'
+            or any(versions.get(name) != version for name, version in pins.items())):
+        raise ValueError('Python payload does not match the receiving Windows requirements.')
     pinned_ui = ui_snapshot(args.ui)
+    payload = portable_sources(ROOT)
     args.output.mkdir(parents=True)
     with zipfile.ZipFile(args.electron) as archive:
         for info in archive.infolist():
@@ -133,24 +204,17 @@ def main():
     # UI is the owner's pinned source snapshot, with tests/private records excluded.
     for name in UI_FILES:
         copy_file(args.ui / name, app / 'ui' / name)
-    if {name: digest(app / 'ui' / name) for name in UI_FILES} != pinned_ui:
-        raise ValueError('Copied UI files differ from the pinned snapshot.')
     native = args.output / 'resources' / 'atlas'
-    for name in ['src', 'tools']:
-        copy_tree(ROOT / 'tectonics' / name, native / 'tectonics' / name, lambda p: p.suffix == '.py')
-    copy_tree(ROOT / 'tectonics' / 'cases', native / 'tectonics' / 'cases', lambda p: p.suffix == '.json')
-    copy_tree(ROOT / 'tectonics' / 'requirements', native / 'tectonics' / 'requirements')
-    for name in ['LICENSE', 'LICENSING.md']:
-        copy_file(ROOT / name, native / name)
-    copy_file(ROOT / 'tectonics' / 'LICENSE', native / 'tectonics' / 'LICENSE')
-    copy_file(ROOT / 'tectonics' / 'pyproject.toml', native / 'tectonics' / 'pyproject.toml')
+    copy_native_payload(ROOT, native, payload)
     copy_file(ROOT / 'desktop' / 'README.md', args.output / 'README.md')
     copy_tree(args.python, args.output / 'resources' / 'python')
     release_marker(native)
     # Bind this build's actual delivered bytes; no historical receipt is repinned.
-    count = seal(args.output)
+    expected = {f'resources/app/ui/{name}': sha for name, sha in pinned_ui.items()}
+    expected.update({f'resources/atlas/{name}': sha for name, (_, sha) in payload.items()})
+    count, size = seal_totals(args.output, expected)
     print(json.dumps({'status': 'built', 'files': count,
-                      'bytes': sum(p.stat().st_size for p in args.output.rglob('*') if p.is_file()),
+                      'bytes': size,
                       'executable': str(args.output / 'Atlas.exe')}))
 
 

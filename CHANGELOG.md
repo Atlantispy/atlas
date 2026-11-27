@@ -203,6 +203,49 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev52](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev52) - 2026-11-27
+
+### Tectonics
+
+- Moved the maintained tectonics package into `tectonics/src` and grouped modules by scientific stage.
+  The installed package keeps the supported tectonics entry points.
+- Shared unsigned spherical arc calculations across the geometry, transport, heat and reference callers.
+  The driving minor-arc check, Voronoi edge construction and public ring sampling retain their existing
+  angle variants.
+- Shared the conversion from plain longitude and latitude to Cartesian directions.
+- Preserved stored event bindings when reading prior material transfers. Fresh events still establish
+  their own bindings.
+
+### Tools
+
+- Grouped tectonics launchers, checks and reports by purpose and updated the documented commands.
+- Unified quick test discovery around the maintained tectonics layout. Registered slow methods are
+  reported as omitted.
+- Bound adaptive convection resume and reporting to the selected case and reference data. A legacy run
+  keeps its original configuration ID and receipt chain.
+- Reused the assessment receipt binding between the W10 capacity assessment and the W11 reader.
+
+### Optimisations
+
+- Carried the declared solver identity through matching solver contexts and workers. The cache uses a
+  separate key for the new execution identity.
+- Reused the funded regional solve plan for the final two forces in the junction test while keeping all
+  eight solves.
+- Reused the physical heat update when constructing the new temperature and energy change.
+- Reused authenticated support identifiers during single-worker dispatch.
+- Kept the selected source binding through installed Fresh and Prepared startup and removed repeated
+  source-tree scans.
+- Removed readbacks after writing adaptive receipts and the prepared checkpoint copy. Adaptive receipt
+  links use the bytes passed to the atomic write.
+- Removed timed source rescans from overlap idle waits. Initial source loading and live guard checks
+  remain.
+- Removed unused per-tree checkpoint hashes and carried the accepted verdict and adoption digests
+  through the driver. The combined checkpoint digest remains.
+
+### Bugfixes
+
+- Resolved spherical layout ownership after validating the atlas and its boundaries.
+
 ## 0.1.0.dev51 - 2026-11-26
 
 ### Optimisations

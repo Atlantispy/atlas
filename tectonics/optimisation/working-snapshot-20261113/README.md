@@ -36,21 +36,21 @@ from the code at `f29ca36`, the batch 2 section from the code at `9f5080c`, the 
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
 the historical chain sections are not whole-snapshot review records. The later source fixes have the bounded evidence described below.
 
-## Contents
+## Current location
 
-- `atlas_tectonics/`: the public package and `_private`, based on the issued first-break source plus the fixes below, with the
-  source-list files `_application_sources.json` and `_application_sources.sha256`.
-- The issued layout places `atlas_shared` beside `atlas_tectonics`. Its exact selector source
-  lives under `shared/src` in this repository.
-- Left out: the compiled compression library and compiled Python files.
-- `.gitattributes` keeps git from rewriting line endings in this folder.
+Unit 10 promoted the snapshot package and its application manifest into
+[`tectonics/src/atlas_tectonics`](../../src/atlas_tectonics). The shared package is
+under [`shared/src/atlas_shared`](../../../shared/src/atlas_shared). The
+[repository move table](../../../docs/SOURCE_MOVES.tsv) maps the former paths to
+their maintained locations. This directory retains the historical notes and
+`.gitattributes`.
 
-## The one difference from the working arm
+## How the historical snapshot differed from the working arm
 
 The portable runner reads the qualification folder from `ATLAS_REAL_INPUT_QUALIFICATION`.
 The dev49 successor source declaration binds that portable file. The earlier working arm used a
 machine-specific path and its declaration binds those earlier installed bytes. Its diagnostic results
-remain attached to that arm. This publication remains an experimental source snapshot.
+remain attached to that arm. The original snapshot export issued no operational reference.
 
 ## One identity check per read batch
 

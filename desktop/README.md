@@ -23,20 +23,21 @@ A rebuild needs four inputs. Three can be reproduced from this repository:
 1. The official Electron 44.4.5 archive: `node desktop/fetch_electron.mjs CACHE_DIRECTORY`
    fetches it, and `build.py` verifies its pinned SHA-256.
 2. The Python payload: `desktop/prepare_python.py --help` stages it from the tested
-   Windows CPython 3.12 environment without modifying that environment.
-3. The native tectonics sources, cases and requirements from this checkout, copied
-   unchanged.
+   Windows CPython 3.12 environment without modifying it. Prepare it using
+   `tectonics/requirements/windows-amd64-cp312-core.txt` from this checkout so the
+   payload includes the pinned exact-arithmetic dependency.
+3. The portable tectonics and shared sources, declared package data, W12 example,
+   cases and requirements from the same checkout.
 4. The UI owner's source snapshot: exactly the 33 files named by `UI_FILES` in
    `build.py`, from `index.html`, `styles.css` and `app.mjs` to `serve.mjs` and the
    view, data, reader and manager modules. **It is not in this repository**, so a
    reviewer cannot rebuild the accepted application from a clone. The build refuses
    a snapshot unless every file matches `desktop/ui-snapshot.json`, a
    name-to-SHA-256 pin of those 33 files with schema `atlas.desktop-ui-snapshot.v1`.
-   The tracked pin was recovered from the accepted 26 September build's
-   `build-manifest.json` and checked against all 33 delivered UI files. It holds
-   digests, not UI content. Use that matching source snapshot, or the unchanged
-   `resources/app/ui` directory from that accepted build. A clone alone still
-   does not contain the UI files needed to rebuild.
+   Use the UI owner's snapshot that matches this checkout's pin. It includes
+   the launcher paths for the grouped tools. A clone alone lacks the UI source.
+   To reproduce an older build, use its repository revision and matching
+   snapshot together.
 
 Run `python -B desktop/build.py --electron ARCHIVE --python PYTHON_PAYLOAD
 --ui UI_SNAPSHOT_DIRECTORY --output NEW_OUTPUT_DIRECTORY`. Existing destinations

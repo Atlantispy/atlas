@@ -7,7 +7,7 @@ name = "atlas-shared"
 version = "0.1.0"
 description = "Shared runtime support for Atlas modules"
 requires-python = ">=3.12,<3.14"
-dependencies = ["gmpy2==2.3.2"]
+dependencies = ["gmpy2==2.3.2", "numpy>=2.0,<3"]
 license = {text = "AGPL-3.0-only"}
 
 [project.optional-dependencies]

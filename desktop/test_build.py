@@ -87,7 +87,9 @@ class BuildTests(unittest.TestCase):
             record = json.loads((root / 'build-manifest.json').read_text())
             self.assertEqual(record['files'], {'Atlas.exe': build.digest(file)})
             file.write_bytes(b'changed development fixture')
-            self.assertEqual(build.seal(root), 1)
+            count, size = build.seal_totals(root)
+            self.assertEqual(count, 1)
+            self.assertEqual(size, file.stat().st_size + (root / 'build-manifest.json').stat().st_size)
             current = json.loads((root / 'build-manifest.json').read_text())
             self.assertNotEqual(record['files']['Atlas.exe'], current['files']['Atlas.exe'])
 

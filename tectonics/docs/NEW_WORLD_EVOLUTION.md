@@ -257,7 +257,7 @@ They do not establish present-source performance or Linux acceptance.
 
 ## Combined lifecycle qualification
 
-The fixed [Step-7 runner](../tools/check_new_world_acceptance.py) declares three
+The fixed [Step-7 runner](../tools/check/check_new_world_acceptance.py) declares three
 cases before execution: seed42 and seed43 each use six plates/192 support patches;
 seed42-finer uses twelve/512. All use Earth radius/gravity and continental fraction
 0.3. Each saves an actual initial world, reopens in another process, samples a
@@ -277,8 +277,9 @@ test the prescribed regional model, not empirical forcing or plate morphology.
 This incoming anchor names the tested r2 snapshot, **not the present sources**.
 The [r2 receipt](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s7-r2.json) predates the same-day
 [A3 repair](../../docs/CURRENT_EVIDENCE.md#a3-follow-on-bounded-source-inventory-capacity)
-and is historical. The [predeclared matrix](../evidence/new-world-s7-r2-matrix.json)
-has its separate register classification. All nine fresh-process r2 phases passed
+and is historical. The [historical matrix declaration](../evidence/new-world-s7-r2-matrix.json)
+records the cases, times and attempt policy for r2. The [regrouped tool's declaration](../evidence/2026-11/new-world-s7-regroup-matrix.json)
+matches those fields. All nine fresh-process r2 phases passed
 in 46.767698 s with matching source/runtime bindings. Corrected motion gave mean
 100,000-year regional surface changes of 181.254509 / 119.939201 / 1.644192 m for
 seed42/seed43/seed42-finer, replacing r1's 2.768 / 120.330 / 26.849 m. This physical
@@ -304,13 +305,13 @@ Supported initial-world limits remain 1,024 patches, 256 MiB accounted work and
 120 s; regional jobs remain 256 outputs, 2 MiB per record, 64 MiB outputs and
 300 s per attempt, subject to native footprint/horizon admission. The matrix's
 100,000-year regional horizon is no global-duration promise. The existing
-`tectonics/tools/check_new_world_acceptance.py` runner and its guards retain the
+`tectonics/tools/check/check_new_world_acceptance.py` runner and its guards retain the
 declared matrix; this documentation grants no run authority. [Portable bundles](#portable-world-projects)
 carry combined initial/results storage; global plate-network evolution is separate.
 
 ## CLI and UI handoff
 
-`tectonics/tools/new_world_job.py` supports `submit`, `resume`, `status`, `cancel`
+`tectonics/tools/run/new_world_job.py` supports `submit`, `resume`, `status`, `cancel`
 and read-only `result`. Use the declared scientific environment, an existing
 safe jobs root, and a new lowercase 32-hex-character job ID. Submit additionally
 requires `--file ORIGINAL.atlas` and this JSON on stdin:
@@ -381,7 +382,7 @@ Initial-world preservation and separate local job storage remain unchanged.
 **backend implemented.** Installed UI coverage is recorded
 separately in the [desktop delivery record](../../desktop/README.md#obtained-windows-qualification).
 
-`tools/new_world_bundle.py` saves an initial world and selected regional results
+`tools/run/new_world_bundle.py` saves an initial world and selected regional results
 in one `.atlas` file. Loading restores the original world, saved times and the
 prepared inputs needed to continue a compatible partial run. Neither saving nor
 loading generates a world, samples geology or runs the physics. Resume is a separate,
@@ -507,10 +508,10 @@ updated adapters. Existing job and native execution guards remain unchanged.
 Use the declared scientific Python and trusted server-owned paths:
 
 ```text
-python -B tectonics/tools/new_world_bundle.py save --file NEW.atlas --world ORIGINAL.atlas --root JOBS_ROOT
-python -B tectonics/tools/new_world_bundle.py inspect --file SAVED.atlas
-python -B tectonics/tools/new_world_bundle.py result --file SAVED.atlas --job ORIGINAL_JOB_ID --index 0
-python -B tectonics/tools/new_world_bundle.py load --file SAVED.atlas --directory NEW_DIRECTORY
+python -B tectonics/tools/run/new_world_bundle.py save --file NEW.atlas --world ORIGINAL.atlas --root JOBS_ROOT
+python -B tectonics/tools/run/new_world_bundle.py inspect --file SAVED.atlas
+python -B tectonics/tools/run/new_world_bundle.py result --file SAVED.atlas --job ORIGINAL_JOB_ID --index 0
+python -B tectonics/tools/run/new_world_bundle.py load --file SAVED.atlas --directory NEW_DIRECTORY
 ```
 
 `save` reads exactly `{"job_ids":["lowercase-32-hex-job-id"]}` from standard input.

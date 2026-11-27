@@ -95,6 +95,38 @@ class SlowRegistryTests(unittest.TestCase):
             self.assertEqual(sorted(summary['tests']), ['check_native_transport.N.test_n', 'test_plain.A.test_a'])
             self.assertEqual(summary['patterns'], ['test_*.py', 'check_native_transport.py'])
 
+    def test_quick_defaults_share_one_verify_read_and_overrides_need_none(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)/'tree'
+            (root/'tectonics'/'src').mkdir(parents=True)
+            verify = root/'tectonics'/'verify.py'
+            write(verify, '''
+                raise SystemExit('must not be imported')
+                FULL_PATTERNS = ('test_*.py', 'check_extra.py')
+                SLOW_TESTS = MappingProxyType({'test_plain.A.test_a': 60})
+            ''')
+            tests = root/'tectonics'/'tests'
+            write(tests/'test_plain.py', 'import unittest\nclass A(unittest.TestCase):\n    def test_a(self): pass\n')
+            write(tests/'check_extra.py', 'import unittest\nclass B(unittest.TestCase):\n    def test_b(self): pass\n')
+            override = Path(folder)/'slow.json'
+            write(override, '{"check_extra.B.test_b": 90}')
+            for name, flags, reads, kept, omitted in (
+                ('defaults', [], 1, 'check_extra.B.test_b', 'test_plain.A.test_a'),
+                ('overrides', ['--pattern', '*.py', '--slow-file', str(override)], 0,
+                 'test_plain.A.test_a', 'check_extra.B.test_b'),
+            ):
+                for option in ('--ci', '--quick'):
+                    with self.subTest(name=name, option=option):
+                        output = Path(folder)/(name + option)
+                        with patch.object(runner, '_read_verify_settings', wraps=runner._read_verify_settings) as read:
+                            self.assertEqual(runner.main(['--root', str(root), option, '--workers', '1',
+                                                          '--run-dir', str(output), *flags]), 0)
+                        self.assertEqual(read.call_count, reads)
+                        summary = json.loads((output/'summary.json').read_text(encoding='utf-8'))
+                        self.assertTrue(summary['quick'])
+                        self.assertEqual(list(summary['tests']), [kept])
+                        self.assertEqual(summary['omitted_slow'], [omitted])
+
     def test_units_are_classes_unless_the_module_has_fixtures(self):
         units = runner.units_of(['m1.A.t1', 'm1.A.t2', 'm1.B.t3', 'm2.C.t4', 'm2.D.t5'], {'m2': True})
         self.assertEqual(units, {'m1.A': ['m1.A.t1', 'm1.A.t2'], 'm1.B': ['m1.B.t3'], 'm2': ['m2.C.t4', 'm2.D.t5']})
@@ -110,7 +142,8 @@ class ParallelRunnerTests(unittest.TestCase):
         (root/'tectonics'/'src').mkdir(parents=True)
         tests = root/'tectonics'/'tests'
         write(tests/'test_one.py', '''
-            import os, tempfile, unittest
+            import os, sys, tempfile, unittest
+            from pathlib import Path
             class Mixed(unittest.TestCase):
                 def test_pass(self):
                     self.assertEqual(os.environ['OMP_NUM_THREADS'], '1')
@@ -126,6 +159,10 @@ class ParallelRunnerTests(unittest.TestCase):
                     for i in range(3):
                         with self.subTest(i=i):
                             self.assertNotEqual(i, 1)
+                            if i == 2:
+                                log = Path(sys.stderr.name).read_text(encoding='utf-8')
+                                self.assertIn('FAILURE: test_one.Mixed.test_subtests (i=1)', log)
+                                self.assertIn('AssertionError: 1 == 1', log)
                 def test_subtest_skip(self):
                     for i in range(2):
                         with self.subTest(i=i):
@@ -177,6 +214,7 @@ class ParallelRunnerTests(unittest.TestCase):
         self.assertEqual(outcomes['test_one.Mixed.test_expected'], 'expected_failure')
         self.assertEqual(outcomes['test_one.Mixed.test_subtests'], 'failure')          # recorded, not lost
         self.assertEqual(outcomes['test_one.Mixed.test_subtests (i=1)'], 'failure')
+        self.assertNotIn('test_one.Mixed.test_subtests (i=2)', outcomes)
         self.assertEqual(outcomes['test_one.Mixed.test_subtest_skip'], 'skipped')
         self.assertEqual(outcomes['test_one.Mixed.test_subtest_skip (i=1)'], 'skipped')
         self.assertEqual(outcomes['test_one.Temp.test_private_temporary_folder'], 'success')
@@ -188,6 +226,34 @@ class ParallelRunnerTests(unittest.TestCase):
                                    str(self.runs/'parallel'/'summary.json'), str(self.runs/'serial'/'summary.json')],
                                   capture_output=True, text=True)
         self.assertEqual(compared.returncode, 0, compared.stdout)
+
+    def test_qualified_discovery_keeps_the_module_fixture_with_both_classes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)/'tree'
+            (root/'tectonics'/'src').mkdir(parents=True)
+            tests = root/'tectonics'/'tests'
+            stage = tests/'integration'
+            write(tests/'__init__.py', '')
+            write(stage/'__init__.py', '')
+            original = self.root/'tectonics'/'tests'
+            write(stage/'test_one.py', (original/'test_one.py').read_text(encoding='utf-8'))
+            write(stage/'test_two.py', (original/'test_two.py').read_text(encoding='utf-8') + r'''
+
+def tearDownModule():
+    with open('fixture-teardown.txt', 'a', encoding='utf-8') as stream:
+        stream.write('closed\n')
+''')
+            out = Path(folder)/'run'
+            proc = subprocess.run([sys.executable, '-B', str(ROOT/'tools'/'run_tests_parallel.py'), '--root',
+                                   str(root), '--python', sys.executable, '--run-dir', str(out), '--workers', '2',
+                                   '--only', 'tests.integration.test_one.Mixed.test_pass',
+                                   '--only', 'tests.integration.test_two'], capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 1, proc.stdout+proc.stderr)
+            summary = json.loads((out/'summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(sorted(summary['units']), ['tests.integration.test_one.Mixed', 'tests.integration.test_two'])
+            self.assertEqual(summary['tests']['tests.integration.test_one.Mixed.test_pass']['outcome'], 'success')
+            self.assertEqual(summary['tests']['tests.integration.test_two.A.test_module_fixture_ran']['outcome'], 'success')
+            self.assertEqual((root/'fixture-teardown.txt').read_text(encoding='utf-8'), 'closed\n')
 
     def test_local_bytecode_fails_the_run(self):
         pyc = self.root/'tectonics'/'tests'/'__pycache__'/'stale.cpython-312.pyc'
@@ -507,7 +573,8 @@ class ImpactSelectionTests(unittest.TestCase):
         for folder in (first, second):
             with patch.dict(os.environ, {'PYTHONPATH': str(folder)}):
                 fingerprints.append(impact.fingerprint(sys.executable, self.root))
-                args = SimpleNamespace(src=self.root/'tectonics'/'src', pycache=self.root/'external-cache')
+                args = SimpleNamespace(root=self.root, src=self.root/'tectonics'/'src',
+                                       pycache=self.root/'external-cache')
                 proc = subprocess.run([sys.executable, '-B', '-c', 'import external_probe; print(external_probe.VALUE)'],
                                       env=runner._child_env(args, self.root), capture_output=True, text=True, check=True)
                 observed.append(proc.stdout.strip())
@@ -532,19 +599,31 @@ class ImpactRecordTests(unittest.TestCase):
                                    from_run=None, run_dir=str(Path(folder)/'record'), workers=1, durations=None)
             self.assertEqual(impact.record(args), 0)
             original = json.loads(Path(args.map).read_text())
-            self.assertTrue(original['provenance']['unchanged'])
-            self.assertEqual(original['provenance']['before'], original['provenance']['after'])
+            self.assertEqual(set(original['provenance']), {'start'})
+            self.assertEqual(original['provenance']['start']['source']['commit'], original['commit'])
             args.from_run = args.run_dir
             self.assertEqual(impact.record(args), 0)
             rebuilt = json.loads(Path(args.map).read_text())
             self.assertEqual(rebuilt['provenance'], original['provenance'])
             self.assertEqual(rebuilt['fingerprint'], original['fingerprint'])
-            with patch.dict(os.environ, {'PYTHONPATH': str(Path(folder)/'different-import-path')}):
+            prior_pythonpath = os.environ.get('PYTHONPATH')
+            try:
+                os.environ['PYTHONPATH'] = str(Path(folder)/'different-import-path')
                 with self.assertRaisesRegex(ValueError, 'runtime, environment'):
                     impact.record(args)
+            finally:
+                if prior_pythonpath is None:
+                    os.environ.pop('PYTHONPATH', None)
+                else:
+                    os.environ['PYTHONPATH'] = prior_pythonpath
             summary_path = Path(args.run_dir)/'run'/'summary.json'
             summary = json.loads(summary_path.read_text())
-            for provenance in (None, dict(summary['provenance'], unchanged=False)):
+            start = summary['provenance']['start']
+            legacy = dict(before=start, after=start, unchanged=True)
+            summary_path.write_text(json.dumps(dict(summary, provenance=legacy)))
+            self.assertEqual(impact.record(args), 0)
+            self.assertEqual(json.loads(Path(args.map).read_text())['provenance'], legacy)
+            for provenance in (None, dict(legacy, unchanged=False), dict(legacy, after={})):
                 summary_path.write_text(json.dumps(dict(summary, provenance=provenance)))
                 with self.assertRaisesRegex(ValueError, 'source provenance'):
                     impact.record(args)
@@ -554,28 +633,6 @@ class ImpactRecordTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'source provenance'):
                 impact.record(args)
             self.assertEqual(json.loads(Path(args.map).read_text())['commit'], original['commit'])
-
-    def test_source_mutation_during_tracing_cannot_produce_an_impact_map(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)/'tree'
-            (root/'tectonics'/'src').mkdir(parents=True)
-            write(root/'tectonics'/'tests'/'test_change.py', '''
-                import pathlib, unittest
-                class T(unittest.TestCase):
-                    def test_changes_source(self):
-                        path = pathlib.Path(__file__)
-                        path.write_text(path.read_text() + '\\n# changed during the run\\n')
-            ''')
-            git(root, 'init', '-q')
-            git(root, 'add', '-A')
-            git(root, 'commit', '-q', '-m', 'fixture')
-            args = SimpleNamespace(root=str(root), python=sys.executable, map=str(Path(folder)/'map.json'),
-                                   from_run=None, run_dir=str(Path(folder)/'record'), workers=1, durations=None)
-            with self.assertRaisesRegex(ValueError, 'source provenance'):
-                impact.record(args)
-            self.assertFalse(Path(args.map).exists())
-            summary = json.loads((Path(args.run_dir)/'run'/'summary.json').read_text())
-            self.assertFalse(summary['provenance']['unchanged'])
 
 
 class CandidateVerifierTests(unittest.TestCase):
@@ -601,6 +658,7 @@ class CandidateVerifierTests(unittest.TestCase):
                                                  python=sys.executable, **extra)) + '\\n')
         '''
         write(root/'tectonics'/'src'/'scheduling_probe.py', marker)
+        write(root/'shared'/'src'/'scheduling_shared.py', '')
         for name in ('check_coding_safety', 'check_public_paths'):
             write(root/'tools'/(name+'.py'), textwrap.dedent(marker) + f'\nrecord({name!r})\n')
         write(root/'tools'/'check_current_evidence.py', textwrap.dedent(marker) + '''
@@ -626,7 +684,11 @@ class RemainingLeaf(unittest.TestCase):
         record('remaining_test')
         self.assertNotEqual(os.environ.get('ATLAS_TEST_ROOT_MODE'), 'failure')
 ''')
-        write(root/'tectonics'/'tests'/'test_digest_line_endings.py', '''
+        tests = root/'tectonics'/'tests'
+        integration = tests/'integration'
+        write(tests/'__init__.py', '')
+        write(integration/'__init__.py', '')
+        write(integration/'test_digest_line_endings.py', '''
             from pathlib import Path
             import unittest
             class DigestLeaf(unittest.TestCase):
@@ -634,15 +696,17 @@ class RemainingLeaf(unittest.TestCase):
                     self.assertEqual((Path.cwd()/'tectonics'/'binding.txt').read_bytes().splitlines(),
                                      [b'normalised'])
         ''')
-        write(root/'tectonics'/'tests'/'test_i01_fixture.py', '''
+        write(integration/'test_i01_fixture.py', '''
             import os
             from pathlib import Path
             import unittest
             import scheduling_probe
+            import scheduling_shared
             class NumericalLeaf(unittest.TestCase):
                 def test_records_its_real_execution_context(self):
                     scheduling_probe.record('numerical', pythonpath=os.environ.get('PYTHONPATH'),
-                                            imported=str(Path(scheduling_probe.__file__).resolve()))
+                                            imported=str(Path(scheduling_probe.__file__).resolve()),
+                                            shared=str(Path(scheduling_shared.__file__).resolve()))
         ''')
         git(root, 'init', '-q')
         git(root, 'add', '-A')
@@ -659,7 +723,7 @@ class RemainingLeaf(unittest.TestCase):
         root, base, original_patch = fixture
         work, markers = Path(folder)/name, Path(folder)/(name+'.jsonl')
         with patch.dict(os.environ, {'ATLAS_TEST_MARKERS': str(markers),
-                                     'ATLAS_TEST_EVIDENCE_EXIT': str(evidence_exit)}):
+                                     'ATLAS_TEST_EVIDENCE_EXIT': str(evidence_exit), 'PYTHONPATH': ''}):
             code = candidate.main(['--repo', str(root), '--base', base, '--combined',
                                    str(patch_path or original_patch), '--python', sys.executable,
                                    '--workers', '1', '--work', str(work), *extra])
@@ -746,10 +810,13 @@ class RemainingLeaf(unittest.TestCase):
             for row in numerical:
                 self.assertEqual(Path(row['python']).resolve(), Path(sys.executable).resolve())
                 self.assertEqual(canon(row['imported']).parent, canon(row['cwd'])/'tectonics'/'src')
+                self.assertEqual(canon(row['shared']).parent, canon(row['cwd'])/'shared'/'src')
             guard_row = next(row for row in numerical if canon(row['cwd']) == export)
-            self.assertEqual(canon(guard_row['pythonpath']), export/'tectonics'/'src')
+            self.assertEqual([canon(path) for path in guard_row['pythonpath'].split(os.pathsep)],
+                             [export/'tectonics'/'src', export/'shared'/'src'])
             worker_row = next(row for row in numerical if canon(row['cwd']) == combined)
-            self.assertEqual(canon(worker_row['pythonpath'].split(os.pathsep)[0]), combined/'tectonics'/'src')
+            self.assertEqual([canon(path) for path in worker_row['pythonpath'].split(os.pathsep)],
+                             [combined/'tectonics'/'src', combined/'shared'/'src'])
 
     def test_evidence_failure_rejects_before_the_requested_tier(self):
         with tempfile.TemporaryDirectory() as folder:

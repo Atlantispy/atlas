@@ -1,6 +1,7 @@
 # Store and check out text with LF everywhere unless a later rule says otherwise.
 * text=auto eol=lf
 # Preserve source-bound bytes on Windows checkouts. Do not renormalise old sources.
+shared/src/** -text whitespace=cr-at-eol
 engineering/** -text
 shared_generator/** -text
 # New public development tooling uses explicit LF source bytes.

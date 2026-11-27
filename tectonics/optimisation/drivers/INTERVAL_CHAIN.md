@@ -9,7 +9,14 @@ queue ticket, source repin, legacy migration or default activation is authorised
 by this document. N9 remains PAUSED BY USER; fresh full intervals, scientific
 and individual ticket holds and the 256 accepted-step ceiling remain intact.
 
-The retained driver docstrings describe actual entry points. Source integration,
+The [maintained Atlas launcher](../../src/atlas_runtime.py) selects the grouped
+fresh or prepared engine from the authenticated profile. Use that entry point
+for the current layout. The driver scripts and tests in this directory belong
+to historical profiles and source maps, including the
+[Plan 02 source map](../workbench/plan02/SOURCE-MAP.json). Replay them with the
+source selection their original profiles pin.
+
+Source integration,
 focused qualification, an adopted interval, final assembly, whole-workflow cold
 recovery and scientific acceptance remain different outcomes. In particular,
 old design-only statements about unbuilt work do not override later scoped

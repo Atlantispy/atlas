@@ -256,7 +256,11 @@ class TectonicsEnvironmentTests(unittest.TestCase):
         except ImportError:  # Python 3.10 has no TOML reader; the other checks still ran.
             self.skipTest('tomllib unavailable')
         project = tomllib.loads((repository / lock['declared_by']).read_text(encoding='utf-8'))['project']
-        declared = {'core': project['dependencies'], **project['optional-dependencies']}
+        shared = tomllib.loads((repository / 'shared/pyproject.toml').read_text(encoding='utf-8'))['project']
+        local_pin = f"{shared['name']}=={shared['version']}"
+        core = set(project['dependencies'])
+        self.assertIn(local_pin, core, 'Tectonics must select its companion distribution from this checkout')
+        declared = {'core': core - {local_pin}, **project['optional-dependencies']}
         for route, spec in lock['routes'].items():
             names = {guard.normal(re.match(r'[A-Za-z0-9._-]+', text).group()) for text in declared[route]}
             direct = {name for name, pin in spec['packages'].items() if pin.get('direct')}

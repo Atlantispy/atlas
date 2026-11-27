@@ -420,7 +420,7 @@ stored-energy change in its internal-work account.
 
 The [motion connection](../I01_MOTION_COUPLING.md) balances external driving force against drag and the actual layered column's resistance. Speed is an output. As plastic history weakens the column, the same force can drive faster extension. The drag represents a separate process, so its resistance must not duplicate deformation already resolved inside the column.
 
-At each stage, driving work must equal drag dissipation plus column work. Exact linear examples and an independent [SciPy Brent root solver](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html) check the nonlinear solution; evolving cases then test time and depth refinement. The [implementation](../../tools/check_i01_motion_coupling.py), [focused tests](../../tests/test_i01_motion_coupling.py) and [recorded control result](../../evidence/i01-motion-coupling-r4.json) make that reasoning inspectable. This is a regional force balance with supplied drive, not an assembled moving sphere.
+At each stage, driving work must equal drag dissipation plus column work. Exact linear examples and an independent [SciPy Brent root solver](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html) check the nonlinear solution; evolving cases then test time and depth refinement. The [implementation](../../tools/check/check_i01_motion_coupling.py), [focused tests](../../tests/integration/test_i01_motion_coupling.py) and [historical control result](../../evidence/i01-motion-coupling-r4.json) make that reasoning inspectable. Qualification on the regrouped sources is open. This is a regional force balance with supplied drive, not an assembled moving sphere.
 
 ### Balance the plates of the shared network
 
@@ -740,6 +740,14 @@ other plate's cells beside it are sheared and their rock passed along between th
 never across the boundary. It is accepted only when the slip runs exactly along the
 boundary's great circle; a boundary with any opening or closing must be declared a
 ridge or a trench.
+
+On a straight sliding trace with an unchanged far-side face layout, the overlap
+calculation clips material on the original donor plane while keeping the endpoint's
+motion along the trace. The same projected corner is used by every adjoining face
+on that plate. Atlas maps each clipped fragment onto the stored endpoint under the
+existing displacement and area bounds, preserving its material accounts. The
+boundary driving calculation still requires complete, unique material coverage on
+each side of every open trace segment.
 
 **New crust is made as new faces.** When a ridge opens, each plate keeps the edge it
 had, and the strip between that old edge and the ridge's new position becomes new
@@ -1517,8 +1525,8 @@ proof that a broken bond has healed or its earlier history was valid.
 Closed-form local solutions and focused tests check those distinctions and the
 energy spent weakening the band. A final numerical guard refuses positive energy
 that is too small to represent instead of reporting free breakage. The
-[reviewed controls](../../evidence/i01-separation-law-r1.json) establish that local
-calculation; the spatial rupture law, physical inputs and whole-section event
+[historical controls](../../evidence/i01-separation-law-r1.json) exercised that local
+calculation. Qualification on the regrouped sources is open. The spatial rupture law, physical inputs and whole-section event
 still require their separately specified checks. The method records its PyLith,
 Fei–Choo and Aagaard research basis and exactly which sources were consulted.
 
@@ -1538,7 +1546,7 @@ strip at a fixed physical width. It reconstructs the fixed-length weakening
 field from raw material history and accounts separately for elastic storage,
 creep, cohesion breakdown, friction and overstress dissipation. Exact uniform
 limits, spatial/time refinement, physical sensitivities and negative controls
-now pass in the [bounded campaign](../../evidence/i01-separation-feasibility-r4.json).
+passed in the [historical bounded campaign](../../evidence/i01-separation-feasibility-r4.json). Qualification on the regrouped sources is open.
 The first run refused an overly large numerical creep timestep; halving that
 step preserved the same physical inputs and acceptance limits. The strip retains
 contact while losing a bond, so it is neither a free-surface lithosphere neck
@@ -1868,7 +1876,7 @@ lookahead while retaining serial adoption order, resource admission and refusal 
 mismatched inputs. Its timing comes from a detached endpoint replay, not a run of
 the integrated successor or a whole interval.
 
-The working snapshot uses `atlas_shared.execution.schedule` for rolling endpoint,
+The maintained package uses `atlas_shared.execution.schedule` for rolling endpoint,
 wall and interface batches. A restored endpoint advances the same serial position
 as a newly measured endpoint. If that query was already in a speculative batch,
 the scheduler keeps the batch funded until its remaining queries are consumed

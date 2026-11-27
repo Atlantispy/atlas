@@ -1454,8 +1454,9 @@ and so its measured area can change by rounding (below). The bookkeeping that fo
   continues one plate, its frame and its total rotation, by a rule that does not depend
   on spelling:
   - for a ridge jump, the plate across the old ridge;
-  - otherwise, the larger plate by its exact rational piece-area account, the first
-    in identity order on an exact tie. Rounded measured areas do not decide.
+  - otherwise, the larger plate by its exact rational piece-area account. A fresh
+    exact tie requires the prescribed event to name its continuation parent with
+    `tie_continuation_plate_id`. Rounded measured areas do not decide.
 
   The other plate's coordinates, and a retired ridge's vertices, are carried into that
   frame at the instant. New ridge records start with a frame of their own.
@@ -1874,9 +1875,10 @@ adds nothing here. Its cost is one bound per face an event measures again: twelv
   - Junction reorganisation, generated events and a standalone retirement are refused.
   - A merged plate continues one plate's frame and total rotation:
     - for a ridge jump, the plate across the old ridge;
-    - otherwise the larger plate by its exact rational piece-area account, and on an exact tie the first in identity
-      order. That is a convention: on an exact tie it depends on the names, and on a near tie the exact accounts
-      themselves carry the rounding of the measures they were set from, so rotated axes may decide differently.
+    - otherwise the larger plate by its exact rational piece-area account. A fresh exact tie requires the prescribed
+      continuation parent. Stored steps with bare historical events still reproduce the first recorded parent under
+      full record and array verification. On a near tie the exact accounts themselves carry the rounding of the
+      measures they were set from, so rotated axes may decide differently.
   - Two splits that cut the same record in one interval are refused; the second belongs to a later interval.
   - A regional return commits only where the interval carried its faces whole, and only for faces whose cohorts it
     conserves exactly.

@@ -17,8 +17,8 @@ the interpreter given by ``--python`` (the tested environment), so no private pa
   exceed the path limit, after which Python silently recompiles every module in every worker.
 * Units named in the serial group (``--serial-unit`` and ``SERIAL_UNITS``) run after the parallel phase, one at a
   time, for anything that proves timing- or memory-sensitive under load.
-* ``--quick`` omits the tree's registered slow tests (``SLOW_TESTS`` in tectonics/verify.py, or ``--slow-file``),
-  refusing a stale registry entry exactly as verify.py does. A quick run is a developer selection, never a gate.
+* ``--ci`` (alias ``--quick``) selects the hosted CI tests. It omits registered slow tests
+  (``SLOW_TESTS`` in tectonics/verify.py, or ``--slow-file``) and refuses a stale entry.
 * ``--serial`` runs the whole selection the conventional way, in one process in discovery order: the reference
   against which parallel outcomes are compared (``compare``).
 * Results stream to ``<run-dir>/results.jsonl`` as units finish (crash-safe); the summary JSON is written atomically.
@@ -49,7 +49,8 @@ SCHEMA = 'atlas.dev.parallel-test-run.v2'
 # each in its own fresh process. MultigridPlanTests.test_default_budget_admits_a_nine_cube_... expects the multigrid
 # factor reservation and failed in 2 of 7 shared-worker full runs at 30a79e6 (passing in the others, in every
 # fresh-per-unit run, and alone on the same trees): its outcome depends on earlier units in the same process.
-SERIAL_UNITS = ('test_regional_multigrid3d.MultigridPlanTests',)
+SERIAL_UNITS = ('test_regional_multigrid3d.MultigridPlanTests',
+                'tests.regional.test_regional_multigrid3d.MultigridPlanTests')
 THREAD_VARIABLES = ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS',
                     'VECLIB_MAXIMUM_THREADS', 'BLIS_NUM_THREADS')
 OUTCOMES = ('success', 'failure', 'error', 'skipped', 'expected_failure', 'unexpected_success')
@@ -67,20 +68,28 @@ _METADATA_FILES = tuple(os.path.normcase(os.path.join(*parts)) for parts in (
 DEFAULT_FULL_PATTERNS = ('test_*.py', 'check_native_transport.py')
 
 
-def full_patterns(root):
+def _read_verify_settings(root):
+    verify = Path(root)/'tectonics'/'verify.py'
+    values = {}
+    if verify.is_file():
+        for node in ast.parse(verify.read_text(encoding='utf-8')).body:
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id in ('FULL_PATTERNS', 'SLOW_TESTS'):
+                        values.setdefault(target.id, node.value)
+    return values
+
+
+def full_patterns(root, *, verify_settings=None):
     """The tree's full verify.py discovery: its FULL_PATTERNS literal, read without importing the tree, or
     DEFAULT_FULL_PATTERNS for a tree that does not name it. The runner's default selection, so that a default run is
     never narrower than verify.py's full run."""
-    verify = Path(root)/'tectonics'/'verify.py'
-    if verify.is_file():
-        for node in ast.parse(verify.read_text(encoding='utf-8')).body:
-            if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'FULL_PATTERNS'
-                                                    for t in node.targets):
-                return tuple(str(p) for p in ast.literal_eval(node.value))
-    return DEFAULT_FULL_PATTERNS
+    settings = _read_verify_settings(root) if verify_settings is None else verify_settings
+    value = settings.get('FULL_PATTERNS')
+    return DEFAULT_FULL_PATTERNS if value is None else tuple(str(p) for p in ast.literal_eval(value))
 
 
-def load_slow_registry(root, slow_file=None):
+def load_slow_registry(root, slow_file=None, *, verify_settings=None):
     """{test or class ID: measured seconds} from ``slow_file`` (JSON object) or the tree's verify.py SLOW_TESTS
     literal; {} when neither exists. Read without importing the tree."""
     if slow_file is not None:
@@ -88,34 +97,36 @@ def load_slow_registry(root, slow_file=None):
         if not isinstance(data, dict):
             raise ValueError('the slow-test file must be a JSON object of ID -> seconds')
         return {str(k): float(v) for k, v in data.items()}
-    verify = Path(root)/'tectonics'/'verify.py'
-    if not verify.is_file():
+    settings = _read_verify_settings(root) if verify_settings is None else verify_settings
+    value = settings.get('SLOW_TESTS')
+    if value is None:
         return {}
-    for node in ast.parse(verify.read_text(encoding='utf-8')).body:
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'SLOW_TESTS' for t in node.targets):
-            value = node.value
-            if isinstance(value, ast.Call) and value.args:          # MappingProxyType({...})
-                value = value.args[0]
-            return {str(k): float(v) for k, v in ast.literal_eval(value).items()}
-    return {}
+    if isinstance(value, ast.Call) and value.args:          # MappingProxyType({...})
+        value = value.args[0]
+    return {str(k): float(v) for k, v in ast.literal_eval(value).items()}
 
 
-def quick_filter(test_ids, registry, patterns):
+def quick_filter(test_ids, registry, patterns, test_modules=None):
     """(kept IDs, omitted IDs). A registry entry is a test ID or a class ID (``module.Class``); an entry whose
     module matches a selected pattern but is not discovered refuses (a stale registry never silently broadens)."""
     ids = set(test_ids)
-    classes = {i.rsplit('.', 1)[0] for i in ids}
+    modules = test_modules or {i: i.split('.', 1)[0] for i in ids}
+    by_class = {}
+    for test_id in test_ids:
+        by_class.setdefault(test_id.rsplit('.', 1)[0], []).append(test_id)
     omitted = set()
     for entry in registry:
-        module = entry.split('.', 1)[0]
-        if not any(fnmatch.fnmatch(module+'.py', p) for p in patterns):
-            continue
-        if entry in ids:
-            omitted.add(entry)
-        elif entry in classes:
-            omitted |= {i for i in ids if i.rsplit('.', 1)[0] == entry}
+        selected = [entry] if entry in ids else by_class.get(entry, [])
+        if selected:
+            stems = {modules[test_id].rsplit('.', 1)[-1] for test_id in selected}
         else:
+            parts = entry.split('.')
+            stems = parts[:-1] if test_modules is not None and parts[0] == 'tests' else parts[:1]
+        if not any(fnmatch.fnmatch(stem+'.py', pattern) for stem in stems for pattern in patterns):
+            continue
+        if not selected:
             raise ValueError('slow-test registry entry is stale (not discovered): '+entry)
+        omitted.update(selected)
     return [i for i in test_ids if i not in omitted], sorted(omitted)
 
 
@@ -151,17 +162,25 @@ class _Recorder:
                 self.records[test.id()] = dict(outcome=outcome, seconds=None if start is None else
                                                time.perf_counter()-start, detail=detail)
 
+            def _log_exception(self, test_id, outcome, detail):
+                self.stream.write(f'\n{outcome.upper()}: {test_id}\n{detail}')
+                self.stream.flush()
+
             def addSuccess(self, test):
                 super().addSuccess(test)
                 self._put(test, 'success')
 
             def addFailure(self, test, err):
                 super().addFailure(test, err)
-                self._put(test, 'failure', self.failures[-1][1])
+                detail = self.failures[-1][1]
+                self._put(test, 'failure', detail)
+                self._log_exception(test.id(), 'failure', detail)
 
             def addError(self, test, err):
                 super().addError(test, err)
-                self._put(test, 'error', self.errors[-1][1])
+                detail = self.errors[-1][1]
+                self._put(test, 'error', detail)
+                self._log_exception(test.id(), 'error', detail)
 
             def addSkip(self, test, reason):
                 super().addSkip(test, reason)
@@ -184,10 +203,12 @@ class _Recorder:
                 super().addSubTest(test, subtest, err)
                 if err is not None:
                     kind = 'failure' if issubclass(err[0], test.failureException) else 'error'
-                    self.records[subtest.id()] = dict(outcome=kind, seconds=None, detail=self._exc_info_to_string(
-                        err, test))
-                    if self._sub_failed.get(test.id()) != 'error':
-                        self._sub_failed[test.id()] = kind
+                    detail = (self.failures if kind == 'failure' else self.errors)[-1][1]
+                    subtest_id, parent_id = subtest.id(), test.id()
+                    self.records[subtest_id] = dict(outcome=kind, seconds=None, detail=detail)
+                    if self._sub_failed.get(parent_id) != 'error':
+                        self._sub_failed[parent_id] = kind
+                    self._log_exception(subtest_id, kind, detail)
 
             def stopTest(self, test):
                 # unittest reports no outcome of its own for a test whose subtests failed or were skipped: record
@@ -352,7 +373,7 @@ def _run_one(unit, test_ids, log_path):
 def _worker_main(args):
     from multiprocessing.connection import Client
     os.chdir(args.cwd)
-    sys.path.insert(0, args.tests_dir)
+    sys.path[:0] = _test_import_paths(args.tests_dir, args.test_top or args.tests_dir)
     tracer = _Tracer() if args.trace_dir else None
     connection = Client(args.address, authkey=bytes.fromhex(os.environ.pop('ATLAS_DEV_RUNNER_KEY')))
     connection.send(dict(hello=os.environ.pop('ATLAS_DEV_WORKER_TOKEN'), pid=os.getpid()))
@@ -361,7 +382,8 @@ def _worker_main(args):
         if message is None:
             break
         if message.get('suite'):                                          # the conventional serial reference
-            outcome = _run_suite(message['patterns'], message['tests'], message['log'])
+            outcome = _run_suite(args.tests_dir, args.test_top or args.tests_dir,
+                                 message['patterns'], message['tests'], message['log'])
         else:
             outcome = _run_one(message['unit'], message['tests'], message['log'])
         if tracer is not None:
@@ -373,16 +395,16 @@ def _worker_main(args):
     connection.close()
 
 
-def _run_suite(patterns, test_ids, log_path):
+def _run_suite(tests_dir, test_top, patterns, test_ids, log_path):
     """All selected tests in one process, in discovery order (the conventional run)."""
     import unittest
     started = time.perf_counter()
     loader = unittest.TestLoader()
     tests = []
     for pattern in patterns:
-        tests += list(_leaves(loader.discover(sys.path[0], pattern=pattern, top_level_dir=sys.path[0])))
+        tests += list(_leaves(loader.discover(tests_dir, pattern=pattern, top_level_dir=test_top)))
     keep = set(test_ids)
-    suite = unittest.TestSuite([t for t in tests if t.id() in keep or t.id().split('.')[0] in keep])
+    suite = unittest.TestSuite([t for t in tests if t.id() in keep or type(t).__module__ in keep])
     with open(log_path, 'w', encoding='utf-8', errors='replace') as log:
         saved = os.dup(1), os.dup(2)
         out_stream, err_stream = sys.stdout, sys.stderr
@@ -407,24 +429,22 @@ def _discover_main(args):
     fixtures make the module one unit."""
     import unittest
     os.chdir(args.cwd)
-    sys.path.insert(0, args.tests_dir)
+    test_top = args.test_top or args.tests_dir
+    sys.path[:0] = _test_import_paths(args.tests_dir, test_top)
     loader = unittest.TestLoader()
-    out, errors = [], []
+    out, modules = [], {}
     for pattern in args.pattern:
-        suite = loader.discover(args.tests_dir, pattern=pattern, top_level_dir=args.tests_dir)
+        suite = loader.discover(args.tests_dir, pattern=pattern, top_level_dir=test_top)
         for test in _leaves(suite):
-            out.append(test.id())
-    errors = list(loader.errors)
-    modules = {}
-    for test_id in out:
-        module = test_id.split('.', 1)[0]
-        modules.setdefault(module, []).append(test_id)
+            test_id = test.id()
+            out.append(test_id)
+            modules[test_id] = type(test).__module__
     fixtures = {}
-    for module in modules:
+    for module in set(modules.values()):
         mod = sys.modules.get(module)
         fixtures[module] = bool(mod is not None and any(hasattr(mod, n) for n in (
             'setUpModule', 'tearDownModule', 'load_tests')))
-    print(json.dumps(dict(tests=out, module_fixtures=fixtures, errors=errors)))
+    print(json.dumps(dict(tests=out, test_modules=modules, module_fixtures=fixtures, errors=loader.errors)))
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -456,16 +476,21 @@ def source_snapshot(root):
     return dict(commit=commit, files=blobs, sha256=hashes)
 
 
-def _worker_env(src):
+def _worker_env(src, root):
     env = dict(os.environ)
     for name in THREAD_VARIABLES:
         env[name] = '1'
     inherited = env.get('PYTHONPATH')
-    paths = [str(Path(src).resolve())]
+    source = Path(src).resolve()
+    root = Path(root).resolve()
+    paths = [str(source)]
+    shared = root/'shared'/'src'
+    if source == (root/'tectonics'/'src').resolve() and shared.is_dir():
+        paths.append(str(shared.resolve()))
     if inherited:
         # Python resolves these at process start, before the worker changes directory.
         paths += [os.path.abspath(p or os.curdir) for p in inherited.split(os.pathsep)]
-    env['PYTHONPATH'] = os.pathsep.join(paths)
+    env['PYTHONPATH'] = os.pathsep.join(dict.fromkeys(paths))
     env['PYTHONIOENCODING'] = 'utf-8'
     return env
 
@@ -473,7 +498,7 @@ def _worker_env(src):
 _FINGERPRINT = r'''
 import hashlib, json, os, sys
 from importlib import metadata
-root, tests, runner = sys.argv[1:]
+root, runner, *tests = sys.argv[1:]
 def normal(path):
     path = os.path.normcase(os.path.realpath(path))
     if path == root or path.startswith(root + os.sep):
@@ -486,30 +511,46 @@ names = sorted('%s==%s' % (d.metadata['Name'], d.version) for d in metadata.dist
 print(json.dumps(dict(executable=os.path.normcase(os.path.realpath(sys.executable)), version=sys.version,
     executable_sha256=hashlib.sha256(open(sys.executable, 'rb').read()).hexdigest(),
     distributions=hashlib.sha256('\n'.join(names).encode()).hexdigest(), environment=env,
-    worker_import_paths=[normal(p) for p in [tests, runner, *sys.path[1:]]])))
+    worker_import_paths=[normal(p) for p in [*tests, runner, *sys.path[1:]]])))
 '''
 
 
-def runtime_fingerprint(python, root, src=None, tests_dir=None):
+def _test_top(root, tests_dir):
+    if tests_dir == root/'tectonics'/'tests' and (tests_dir/'__init__.py').is_file():
+        return tests_dir.parent
+    return tests_dir
+
+
+def _test_import_paths(tests_dir, top):
+    top = Path(top)
+    roots = [str(top)]
+    if top.name == 'tectonics' and Path(tests_dir) == top/'tests':
+        roots.append(str(top.parent))  # Qualified tectonics.tools helpers in the same checkout.
+    return roots
+
+
+def runtime_fingerprint(python, root, src=None, tests_dir=None, test_top=None):
     """Observe the tested interpreter with the same inherited import environment as the workers."""
     root = Path(root).resolve()
-    env = _worker_env(src or root/'tectonics'/'src')
+    env = _worker_env(src or root/'tectonics'/'src', root)
     env.pop('PYTHONPYCACHEPREFIX', None)
     env.pop('PYTHONDONTWRITEBYTECODE', None)
+    tests_dir = Path(tests_dir or root/'tectonics'/'tests').resolve()
+    import_paths = _test_import_paths(tests_dir, test_top or _test_top(root, tests_dir))
     proc = subprocess.run([python, '-B', '-c', _FINGERPRINT, os.path.normcase(str(root)),
-                           str(tests_dir or root/'tectonics'/'tests'), str(Path(__file__).resolve().parent)],
+                           str(Path(__file__).resolve().parent), *import_paths],
                           env=env, capture_output=True, text=True, check=True)
     return json.loads(proc.stdout)
 
 
 def run_provenance(args, root):
     return dict(source=source_snapshot(root),
-                fingerprint=runtime_fingerprint(args.python, root, args.src, args.tests_dir),
+                fingerprint=runtime_fingerprint(args.python, root, args.src, args.tests_dir, args.test_top),
                 cwd=str(args.cwd), src=str(args.src), tests_dir=str(args.tests_dir))
 
 
 def _child_env(args, worker_tmp):
-    env = _worker_env(args.src)
+    env = _worker_env(args.src, args.root)
     env['PYTHONPYCACHEPREFIX'] = str(args.pycache)
     env.pop('PYTHONDONTWRITEBYTECODE', None)
     for name in ('TMP', 'TEMP', 'TMPDIR'):
@@ -520,7 +561,8 @@ def _child_env(args, worker_tmp):
 
 def discover(args):
     proc = subprocess.run([args.python, str(Path(__file__).resolve()), '--discover', '--cwd', str(args.cwd),
-                           '--tests-dir', str(args.tests_dir), *sum((['--pattern', p] for p in args.pattern), [])],
+                           '--tests-dir', str(args.tests_dir), '--test-top', str(args.test_top),
+                           *sum((['--pattern', p] for p in args.pattern), [])],
                           capture_output=True, text=True, env=_child_env(args, Path(tempfile.gettempdir())))
     if proc.returncode:
         raise RuntimeError('discovery failed:\n'+proc.stderr[-4000:])
@@ -530,11 +572,11 @@ def discover(args):
     return data
 
 
-def units_of(tests, module_fixtures):
+def units_of(tests, module_fixtures, test_modules=None):
     """{unit: [test IDs]}: one unit per class, or per module with module-level fixtures."""
     units = {}
     for test_id in tests:
-        module = test_id.split('.', 1)[0]
+        module = test_id.split('.', 1)[0] if test_modules is None else test_modules[test_id]
         unit = module if module_fixtures.get(module) else test_id.rsplit('.', 1)[0]
         units.setdefault(unit, []).append(test_id)
     return units
@@ -570,19 +612,20 @@ class Driver:
         token = secrets.token_hex(8)
         env['ATLAS_DEV_WORKER_TOKEN'] = token
         command = [self.args.python, str(Path(__file__).resolve()), '--worker', '--address', self.listener.address,
-                   '--cwd', str(self.args.cwd), '--tests-dir', str(self.args.tests_dir)]
+                   '--cwd', str(self.args.cwd), '--tests-dir', str(self.args.tests_dir),
+                   '--test-top', str(self.args.test_top)]
         if self.args.fresh:
             command.append('--fresh')
         if self.args.trace_dir:
             command += ['--trace-dir', str(self.args.trace_dir)]
-        log = open(Path(self.args.run_dir)/'workers'/('w%04d.log' % number), 'w', encoding='utf-8')
-        proc = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
+        with (Path(self.args.run_dir)/'workers'/('w%04d.log' % number)).open('w', encoding='utf-8') as log:
+            proc = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
         connection = self.listener.accept()
         hello = connection.recv()
         if hello.get('hello') != token:
             raise RuntimeError('a worker connection does not belong to the spawned worker')
         proc.worker_pid = hello['pid']          # the real interpreter (a venv launcher may be its parent)
-        return proc, connection, log
+        return proc, connection
 
     def _record(self, outcome):
         with self.lock:
@@ -593,7 +636,7 @@ class Driver:
     def _serve(self, work, fresh=None):
         """Run queued units in one worker at a time; ``fresh`` gives every unit its own new process."""
         fresh = self.args.fresh if fresh is None else fresh
-        proc = connection = log = None
+        proc = connection = None
         while True:
             try:
                 item = work.get_nowait()
@@ -606,7 +649,7 @@ class Driver:
             else:
                 message = dict(unit=unit, tests=tests, log=str(Path(self.args.run_dir)/'logs'/(unit+'.log')))
             if proc is None:
-                proc, connection, log = self._spawn()
+                proc, connection = self._spawn()
             try:
                 connection.send(message)
                 if self.args.unit_timeout and not connection.poll(self.args.unit_timeout):
@@ -683,11 +726,12 @@ def _order(units, durations):
     return sorted(units.items(), key=lambda kv: (-durations.get(kv[0], 0.), kv[0]))
 
 
-def run(args):
+def run(args, *, verify_settings=None):
     started = time.perf_counter()
     root = Path(args.root).resolve()
     args.cwd = Path(args.cwd or root).resolve()
     args.tests_dir = Path(args.tests_dir or root/'tectonics'/'tests').resolve()
+    args.test_top = Path(args.test_top).resolve() if args.test_top else _test_top(root, args.tests_dir)
     args.src = Path(args.src or root/'tectonics'/'src').resolve()
     args.run_dir = Path(args.run_dir).resolve()
     args.tmp_root = str(Path(args.tmp_root or tempfile.gettempdir()).resolve())
@@ -703,27 +747,29 @@ def run(args):
         args.trace_dir = str(Path(args.trace_dir).resolve())
         Path(args.trace_dir).mkdir(parents=True, exist_ok=True)
     try:
-        return _run(args, root, started)
+        return _run(args, root, started, verify_settings=verify_settings)
     finally:
         if own_cache and not args.keep_tmp:
             shutil.rmtree(args.pycache, ignore_errors=True)
 
 
-def _run(args, root, started):
+def _run(args, root, started, *, verify_settings=None):
     provenance = None
     if args.trace_dir:
         try:
-            provenance = dict(before=run_provenance(args, root))
+            provenance = dict(start=run_provenance(args, root))
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             provenance = dict(error=str(error))
     data = discover(args)
     tests = data['tests']
+    modules = data['test_modules']
     omitted = []
     if args.quick:
-        tests, omitted = quick_filter(tests, load_slow_registry(root, args.slow_file), args.pattern)
+        registry = load_slow_registry(root, args.slow_file, verify_settings=verify_settings)
+        tests, omitted = quick_filter(tests, registry, args.pattern, modules)
     if args.only:
         keep = set(args.only)
-        tests = [t for t in tests if t in keep or t.rsplit('.', 1)[0] in keep or t.split('.', 1)[0] in keep]
+        tests = [t for t in tests if t in keep or t.rsplit('.', 1)[0] in keep or modules[t] in keep]
     if not tests:
         raise ValueError('empty selection')
     durations = {}
@@ -739,7 +785,7 @@ def _run(args, root, started):
         args.workers, args.fresh = 1, False
         driver.run([(('<serial suite>', message), tests)], [])
     else:
-        units = units_of(tests, data['module_fixtures'])
+        units = units_of(tests, data['module_fixtures'], modules)
         serial = set(SERIAL_UNITS) | set(args.serial_unit or ())
         driver.run([(u, t) for u, t in _order({u: t for u, t in units.items() if u not in serial}, durations)],
                    [(u, t) for u, t in sorted(units.items()) if u in serial])
@@ -753,12 +799,6 @@ def _run(args, root, started):
     for row in per_test.values():
         counts[row['outcome']] = counts.get(row['outcome'], 0)+1
     leaked = sorted(str(p) for folder in (args.src, args.tests_dir) for p in folder.rglob('*.pyc'))
-    if provenance is not None and 'before' in provenance:
-        try:
-            provenance['after'] = run_provenance(args, root)
-            provenance['unchanged'] = provenance['before'] == provenance['after']
-        except (OSError, ValueError, subprocess.SubprocessError) as error:
-            provenance.update(unchanged=False, error=str(error))
     summary = dict(schema=SCHEMA, root=str(root), patterns=args.pattern, quick=bool(args.quick),
                    only=args.only or [], provenance=provenance,
                    omitted_slow=omitted, serial_reference=bool(args.serial), workers=args.workers,
@@ -808,7 +848,8 @@ def main(argv=None):
     parser.add_argument('--serial', action='store_true', help='the conventional single-process reference run')
     parser.add_argument('--serial-unit', action='append', help='a unit to run in the serial group')
     parser.add_argument('--fresh', action='store_true', help='a new worker process for every unit')
-    parser.add_argument('--quick', action='store_true', help="omit the tree's registered slow tests")
+    parser.add_argument('--ci', '--quick', dest='quick', action='store_true',
+                        help="omit the tree's registered slow tests")
     parser.add_argument('--slow-file', help='a JSON {ID: seconds} registry instead of verify.py SLOW_TESTS')
     parser.add_argument('--durations', help='a previous results.jsonl, to start long units first')
     parser.add_argument('--unit-timeout', type=float, default=None, help='seconds per unit (default: none)')
@@ -823,7 +864,8 @@ def main(argv=None):
     parser.add_argument('--keep-tmp', action='store_true', help='keep the workers\' temporary folders')
     parser.add_argument('--cwd', default=None, help='worker working directory (default: the root)')
     parser.add_argument('--tests-dir', default=None, help='default: ROOT/tectonics/tests')
-    parser.add_argument('--src', default=None, help='default: ROOT/tectonics/src (prepended to PYTHONPATH)')
+    parser.add_argument('--test-top', default=None, help='import root for qualified test discovery')
+    parser.add_argument('--src', default=None, help='default: ROOT/tectonics/src alongside ROOT/shared/src')
     args = parser.parse_args(argv)
     if args.worker:
         args.fresh = bool(args.fresh)
@@ -832,9 +874,12 @@ def main(argv=None):
         return _discover_main(args)
     if args.compare:
         return compare(*args.compare)
-    args.pattern = args.pattern or list(full_patterns(args.root))          # verify.py's full discovery
+    verify_settings = None
+    if not args.pattern:
+        verify_settings = _read_verify_settings(args.root)
+        args.pattern = list(full_patterns(args.root, verify_settings=verify_settings))
     args.run_dir = args.run_dir or tempfile.mkdtemp(prefix='atlas-tests-')
-    return run(args)
+    return run(args, verify_settings=verify_settings)
 
 
 if __name__ == '__main__':

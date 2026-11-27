@@ -325,8 +325,8 @@ files, the package solver module, the retained tools, cases and package modules
 listed in the tool, and the thermomechanical, column-heat and motion-coupling
 receipts that the tool pins, which must equal their accepted SHA-256 values. The
 designated successors for the package-owned code are
-`i01-thermomechanical-motion-r5`, `i01-column-heat-r6` and `i01-motion-coupling-r4`;
-each is evidence only once captured, reviewed and listed as current in the
+`i01-thermomechanical-motion-r5`, `i01-column-heat-r6` and `i01-motion-coupling-r4`.
+The motion-coupling receipt is historical after the regroup. A current claim that depends on it requires a qualifying successor listed in the
 [evidence register](../../docs/CURRENT_EVIDENCE.md). Timings
 exclude imports; the cooperative budget is 120 s after them. The reuse
 comparison is one matched observation, not a generator forecast.
