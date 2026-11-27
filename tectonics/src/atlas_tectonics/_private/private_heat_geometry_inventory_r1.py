@@ -31,8 +31,8 @@ from atlas_tectonics.integration.heat import mimetic_heat as HEAT
 HERE = Path(__file__).resolve().parent
 _PINS = {
     'atlas_tectonics/_private/integration/heat/low_geometry_kernel.py': 'b3036a440f67d3411d58482c985bd45c8201a5577eea4a59d79f93d738d0cb23',
-    'atlas_tectonics/_private/integration/heat/low_ledger_inventory.py': 'a3bab4d89906d945d2f879d98a85203c4188679e7fd9123124c27103937673fa',
-    'atlas_tectonics/_private/integration/heat/gmp_resources.py': '5398d54be0ec91f85be88a6e1dcb7d50d60dfec172632c0a0a1c6c184d606d45',
+    'atlas_tectonics/_private/integration/heat/low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5',
+    'atlas_tectonics/_private/integration/heat/gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724',
     'atlas_tectonics/_private/integration/heat/endpoint_assembly_inventory.py': '8c1342cdd9f2c1e42f93a4b20af87d5b5deb73a4de5287dacf03ce07bd3cb587',
     'atlas_tectonics/_private/integration/heat/decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87',
     _atlas_identity.relkey(HEAT.__file__): 'fdbb30ec4eea4454286048a08b6e960da5967ff9bca6cd982e1742d35a312fbf',

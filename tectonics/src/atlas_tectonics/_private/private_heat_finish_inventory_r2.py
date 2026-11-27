@@ -17,7 +17,7 @@ from atlas_tectonics._private import private_heat_finish_inventory_r1 as B
 
 HERE = Path(__file__).resolve().parent
 PINS = dict(B.PINS, **{
-    'atlas_tectonics/_private/private_heat_finish_inventory_r1.py': '84168477d642868194fb8b5be910cb627c9ce1f0d5b303ea73735675331bb411',
+    'atlas_tectonics/_private/private_heat_finish_inventory_r1.py': '5f17f3799a456ab098fe0674328667a6e2529f04691ccc666d1b67c665b57343',
     'atlas_tectonics/_private/private_heat_finish_kernel_r2.py': '319e0e6a93f3dee621377f0299c2d99ec69af2da2ab2595ff6b560927e8285bc',
     'atlas_tectonics/_private/integration/heat/public_float.py': '9ce024ccc0922034b25ea578fadf6e99c403c7132a5f91066d11f0190f1f39a1',
 })

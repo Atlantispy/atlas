@@ -45,7 +45,7 @@ PUBLIC_BINARY64 = I.Shape(2098, 1075, True)
 # L1: a Fraction's fixed __slots__ instance size, which slot() used to measure on every call.
 _FRACTION_ZERO_SIZE = sys.getsizeof(Fraction(0))
 # L1: op()/slot() inline formulas copied from private_heat_gmp_resources_r1 at exactly this content.
-_INLINE_RESOURCES_SHA256 = '5398d54be0ec91f85be88a6e1dcb7d50d60dfec172632c0a0a1c6c184d606d45'
+_INLINE_RESOURCES_SHA256 = '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724'
 # Lower case on purpose: the loaded-implementation identity records upper-case module values as
 # constants, and this cache is filled on first use. Only sys.modules' own entry is cached.
 _inline_checked = []

@@ -31,7 +31,7 @@ from atlas_tectonics._private.integration.heat import endpoint_assembly as M
 HERE = Path(__file__).resolve().parent
 PINS = {'atlas_tectonics/_private/private_heat_finish_kernel_r1.py': '96c6506cccebbfa92dab7990de0f6723db021c10a64d7911be4e56dd1c597c68',
         'atlas_tectonics/_private/integration/heat/finish_arithmetic.py': '24a7437cc0fa811de4e74fa1b05fb21fff2cf45a9b1549d90ee7037e019a951e',
-        'atlas_tectonics/_private/integration/heat/low_ledger_inventory.py': 'a3bab4d89906d945d2f879d98a85203c4188679e7fd9123124c27103937673fa'}
+        'atlas_tectonics/_private/integration/heat/low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5'}
 UNIT = D.CONTAINER_UNIT
 ZERO, ONE, TWO = E.Shape(1, 1, True), E.Shape(1, 1, True), E.Shape(2, 1, True)
 PUBLIC = L.PUBLIC_BINARY64

@@ -16,6 +16,7 @@ concern. The per-expression bounds do not by themselves budget an entire solve.
 from concurrent.futures import CancelledError
 from contextlib import ExitStack
 from dataclasses import dataclass
+import functools
 from pathlib import Path
 import sys
 
@@ -149,6 +150,7 @@ def reported_gmp_bytes(values):
     return total
 
 
+@functools.cache  # the loaded backend cannot change within a process (ruling 1)
 def _installed_policy():
     if (G.version(), G.mp_version(), G.mp_limbsize()) != ('2.3.2', 'GMP 6.3.0', 64):
         raise RuntimeError('GMP accounting policy requires the reviewed installed backend')
@@ -259,7 +261,8 @@ class OwnedWorkspace:
         if not self.entered or self.finished:
             raise RuntimeError('workspace is not active')
         self.checkpoint()
-        self.lease.resize(count)
+        if type(count) is not int or count != self.lease.count:  # an equal int resize charges nothing
+            self.lease.resize(count)
 
     def __exit__(self, kind, error, traceback):
         self.finished = True

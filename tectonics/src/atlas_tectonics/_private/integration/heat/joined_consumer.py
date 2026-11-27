@@ -35,9 +35,9 @@ LABEL = 'PRIVATE uniform-k composed physical-face heat; original transported cal
 EXCHANGE_SCHEMA = 'atlas.private.spatial-composed-advance.r1'
 REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
 _PINS = {
-    'private_heat_grouped_account_r1.py': (ACCOUNT, '84d69336e616689c51e87ac1bce4ee7bc6e50983b16649e8f89a158415156eaa'),
+    'private_heat_grouped_account_r1.py': (ACCOUNT, 'c373deec02c82ec21de7d478ae291c1f510712672127e8e9d0bc7585b9a9482b'),
     'private_heat_native_issuer_r13.py': (I, '64c32e64c0ad1375d2169b1da4cbb5e6a3eddc42d5ac68a527635db31cf26b07'),
-    'private_heat_checkpoint_consumer_r10.py': (CAS, 'f307379c0eebd7edef3897cd1c127723f329a9c6f703ddf21e71251778031304'),
+    'private_heat_checkpoint_consumer_r10.py': (CAS, '6e893fc31be71ee8ede77a6c936a56afea55659841f9ccc9a1a54440f878c4d1'),
     'private_heat_forward_kernel_r13.py': (I.F, '78ea9cc2c64193dcb27e610b59cee3a51da0fee95c36e34fbf57623bb610f944'),
 }
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()

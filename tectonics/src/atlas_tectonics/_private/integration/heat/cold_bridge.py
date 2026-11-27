@@ -25,7 +25,7 @@ PUBLIC_SHA = '86037a1b70d32c900c5852409b22634cda28eb084e011057e44b1126e90abe76'
 DERIVED_SHA = '8483845f728aaa3587eeeeef833dbfde2a104aa69feb7a4cb8ca0ad4170f1947'
 _EDITS = (
     ("_BINDING_SHA = '29ad6024cfe0125f5424b38648cf212e60bbf6a958a8a6e89ddd327fb3de5ae2'",
-     "_BINDING_SHA = 'bb7d6ce1f0f5cca2dcdb88faee3fdf70ca3a11b9b2c79bc20da347142845ed3e'"),
+     "_BINDING_SHA = 'e89b4d050d48c8a4994b8d433922673fed61ac1b29a9e6afdbab1d58a922509a'"),
     ("""            metadata = {k: v for k, v in exchange['transport'].items() if k != 'result_id'}
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))

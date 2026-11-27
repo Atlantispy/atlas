@@ -12,7 +12,7 @@ from pathlib import Path as _RepairPath
 _REPAIR_ROOT = _RepairPath(__file__).resolve().parent
 _REPAIR_SOURCE = _REPAIR_ROOT / 'private_heat_original_coverage_r2.py'
 _REPAIR_SOURCE_SHA = 'cc5f69fbc8c5fee11fbe032396f03c9127cba792f108135b189d7a890c98afcc'
-_REPAIR_FACADE_SHA = 'c412d09c8d4448b3a1921271323d0aaca56b1281a871f9379784d53b2a3dcd5c'
+_REPAIR_FACADE_SHA = 'df07fcc10fb1341e1b578ca6e4e143639fae72099dd0acab22ccde514d0df53f'
 _REPAIR_BYTES = _REPAIR_SOURCE.read_bytes()
 if _repair_sha256(_REPAIR_BYTES).hexdigest() != _REPAIR_SOURCE_SHA:
     raise ValueError('Frozen sequential coverage R2 source changed')

@@ -201,7 +201,7 @@ from pathlib import Path as _Path  # noqa: E402
 from types import MethodType as _MethodType  # noqa: E402
 
 # H1c r3: the inline route runs only for gmp_resources_r1 at exactly this content, and its G.
-_INLINE_RESOURCES_SHA256 = '5398d54be0ec91f85be88a6e1dcb7d50d60dfec172632c0a0a1c6c184d606d45'
+_INLINE_RESOURCES_SHA256 = '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724'
 # Mutable route state is lower case on purpose: the loaded-implementation identity records
 # upper-case module values as constants, and this state changes on first use.
 # _inline_verified[0] is (module, module.G) of the last verified module; private placeholders

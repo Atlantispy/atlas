@@ -203,6 +203,18 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev57](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev57) - 2026-11-27
+
+### Optimisations
+
+#### Heat
+
+- Computed the fixed correction allowance once per peak instead of on every reserve. A put reserves again only
+  when it released something.
+- Checked the exact-arithmetic backend policy once per process, and skipped the lease call when a workspace is
+  resized to its current size. Booked amounts and counts are unchanged.
+- Updated the source pins of the heat files that hold the two changed files' hashes.
+
 ## [0.1.0.dev56](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev56) - 2026-11-27
 
 ### Tools

@@ -40,7 +40,7 @@ HERE = Path(__file__).resolve().parent
 PINS = {
     'atlas_tectonics/_private/private_heat_decimal_sparse_core_r1.py': 'bd587346c2fb07d6dd6957616c1e0aa9d9f56319b27592c07263905666fc466f',
     'atlas_tectonics/_private/integration/heat/decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87',
-    'atlas_tectonics/_private/integration/heat/mpfr_lu_resources.py': '56884fb688b01f7c04366c6e23c23bd8778bb21929f16f600f5fd65b21b8dad1',
+    'atlas_tectonics/_private/integration/heat/mpfr_lu_resources.py': 'fe7c109051ef70b4674c3f23cc99902a4f7b5c760cd5f1653f7844a00fbe5c48',
     'atlas_tectonics/_private/integration/heat/rational_decimal.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
     'atlas_tectonics/_private/integration/heat/sparse_resources.py': '8f0335a82e57d7c5b565c62417c961c8555c61466437ab1483cf826eab18fda8',
 }

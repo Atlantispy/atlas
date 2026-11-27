@@ -27,7 +27,7 @@ from atlas_tectonics._private.integration.heat import endpoint_inventory as BASE
 from atlas_tectonics._private.integration.heat import unit_owner_interval_assembly as A
 
 HERE = Path(__file__).resolve().parent
-_PINS = {'endpoint_inventory.py': 'fae622cc516f8aed05ecee7d8b920140539554388731da7c3e3f1355f2e48218', 'rounding_inventory.py': 'a98909c9661fc5d45a77000ec3854f8ba2aa363d1f6fd1aa4069dcc9e4a16255', 'endpoint_assembly.py': '082b34ea0a49246a8eed875ef3d62ec80cc9fddece978c235e470bbbd0d8dadb', 'rational_decimal_kernel.py': '9fd6c758940a7719840b2f15ed10e0e2869e0ce5ef2f269b937b489d92ac891d', 'gmp_resources.py': '5398d54be0ec91f85be88a6e1dcb7d50d60dfec172632c0a0a1c6c184d606d45', 'exact_gmp.py': '39b0f1de7b30f74529edfc210d274774e09b54807a38a4c7d27bbea4dea13457', 'unit_owner_interval_assembly.py': '70ac20b8e04ce8d4e6cb0d9937f7156e17b66365991e44d4d4a132b0e93d3612'}
+_PINS = {'endpoint_inventory.py': 'fae622cc516f8aed05ecee7d8b920140539554388731da7c3e3f1355f2e48218', 'rounding_inventory.py': 'a98909c9661fc5d45a77000ec3854f8ba2aa363d1f6fd1aa4069dcc9e4a16255', 'endpoint_assembly.py': '082b34ea0a49246a8eed875ef3d62ec80cc9fddece978c235e470bbbd0d8dadb', 'rational_decimal_kernel.py': '9fd6c758940a7719840b2f15ed10e0e2869e0ce5ef2f269b937b489d92ac891d', 'gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724', 'exact_gmp.py': '39b0f1de7b30f74529edfc210d274774e09b54807a38a4c7d27bbea4dea13457', 'unit_owner_interval_assembly.py': '70ac20b8e04ce8d4e6cb0d9937f7156e17b66365991e44d4d4a132b0e93d3612'}
 
 
 def _check(cancel):

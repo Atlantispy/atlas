@@ -24,7 +24,7 @@ HERE = Path(__file__).resolve().parent
 PINS = {
     'atlas_tectonics/_private/integration/heat/finish_arithmetic.py': '24a7437cc0fa811de4e74fa1b05fb21fff2cf45a9b1549d90ee7037e019a951e',
     'atlas_tectonics/_private/integration/heat/public_float.py': '9ce024ccc0922034b25ea578fadf6e99c403c7132a5f91066d11f0190f1f39a1',
-    'atlas_tectonics/_private/integration/heat/gmp_resources.py': '5398d54be0ec91f85be88a6e1dcb7d50d60dfec172632c0a0a1c6c184d606d45',
+    'atlas_tectonics/_private/integration/heat/gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724',
 }
 _SOURCES = dict(PINS)
 _SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
@@ -68,13 +68,18 @@ class _Arithmetic:
         # This is the existing conservative 1024-byte container-unit policy.
         self.containers = 1024*(512+32*n+32*f)+extra_fixed_bytes
         self.history = 70*resources.native_slot_allowance(resources.RationalShape(65, 65))
+        self._fixed_peak = None
         self.reserve(initial_bits)
 
     def reserve(self, bits):
         self.check()
         peak = max(self.peak_bits, bits, 1)
-        slot = self.R.native_slot_allowance(self.R.RationalShape(peak, peak))
-        amount = self.containers+self.history+self.live+64*slot+self.R.native_workspace_allowance(8*peak, 64)
+        if peak != self._fixed_peak:
+            # The allowances are pure functions of peak; a put reserves twice at one peak.
+            slot = self.R.native_slot_allowance(self.R.RationalShape(peak, peak))
+            self._fixed = 64*slot+self.R.native_workspace_allowance(8*peak, 64)
+            self._fixed_peak = peak
+        amount = self.containers+self.history+self.live+self._fixed
         if amount > sys.maxsize:
             raise OverflowError('Fixed correction exceeds addressable memory')
         self.workspace.resize_before_allocation_or_after_drop(amount)
@@ -187,8 +192,9 @@ class _Arithmetic:
             raise
         values[at] = value
         charges[at] = size
-        self.live -= previous
-        self.reserve(self.peak_bits)
+        if previous:  # nothing released: the same peak and total were just reserved
+            self.live -= previous
+            self.reserve(self.peak_bits)
 
     def copy(self, values):
         result = self.array(len(values))
