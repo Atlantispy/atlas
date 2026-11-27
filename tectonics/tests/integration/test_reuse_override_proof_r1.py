@@ -5,8 +5,18 @@ import sys
 import unittest
 from unittest import mock
 
+_STATE = list(sys.argv), list(sys.path), set(sys.modules)   # restored by tearDownModule: test workers are shared
 sys.path.insert(0, sys.argv.pop(1))
 from atlas_tectonics._private.integration import reopen_fresh_restart as R  # noqa: E402
+
+
+def tearDownModule():   # a later unit in the same worker must not meet modules imported outside the checked loader
+    argv, path, modules = _STATE
+    sys.argv[:], sys.path[:] = argv, path
+    for name in set(sys.modules) - modules:
+        if name.partition('.')[0] in ('atlas_shared', 'atlas_tectonics'):   # numpy and others cannot load twice
+            del sys.modules[name]
+
 
 REFUSAL = 'the identity override is refused for a proof-mode producer (--open-proofs)'
 

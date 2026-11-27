@@ -1646,9 +1646,6 @@ class UnlistedCandidate:
                 codec, payload = 'raw', raw
             else:
                 codec, payload = transformed
-                if native.ArrayStore._decode(self, codec, payload, dt, meta['count']) != raw:
-                    self._failed = True
-                    raise ContractError('native encoder changed typed bytes')
             stored = digest(descriptor + b'\0' + codec.encode() + b'\0' + payload)
             addition = len(payload) + len(descriptor) + 128
             if self._stats['retained_record_bytes'] + addition > LIMITS.max_store_bytes:

@@ -203,6 +203,25 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev59](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev59) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- Sizing a transport graph copy no longer walks the record byte by byte (3.4 s measured in the walk;
+  about 8 s in all, estimated).
+
+#### Storage and restore
+
+- Stopped decoding each interval-store chunk again straight after encoding it (0.054 s per store,
+  measured).
+
+### Bugfixes
+
+- A reuse-override test now restores the argument list, import path and the Atlas modules it loads, so a
+  later test sharing its parallel worker no longer meets modules imported outside the checked loader.
+
 ## [0.1.0.dev58](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev58) - 2026-11-27
 
 ### Optimisations

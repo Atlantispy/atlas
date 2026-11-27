@@ -28,7 +28,7 @@ _STRING_SPECIAL = re.compile(rb'["\\]')
 _JSON_NUMBER = re.compile(rb'-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?')
 
 
-def _decoded_json_capacity(encoded):
+def _walked_json_capacity(encoded):
     """Count a conservative decoded graph capacity without decoding a record.
 
     Issued JSON has already passed its canonical codec. This is an allocation
@@ -107,6 +107,52 @@ def _decoded_json_capacity(encoded):
             else:
                 raise ValueError('invalid issued JSON token')
     return capacity
+
+
+# U-4: the same count as the walk, in C, for bytes shaped as the canonical codec issues them.
+_PLAIN_STRING = re.compile(rb'"[^"]*+"')
+_PLAIN_TOKENS = re.compile(
+    rb'(?:[{}\[\]:, \r\n\t]*+(?:true|false|null|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)'
+    rb'(?![^{}\[\]:, \r\n\t]))*+[{}\[\]:, \r\n\t]*+')
+_DIGIT_MARKS = bytes(48 if 48 <= c <= 57 else 32 for c in range(256))   # a digit to 0, all else to a space
+_TOKEN_MARKS = bytes(32 if c in b'{}[]:, \r\n\t' else 120 for c in range(256))   # a separator to a space, else x
+
+
+def _floor_digits():
+    """The fewest decimal digits whose integer costs the walk more than its 64-byte floor."""
+    digits = 1
+    while max(64, sys.getsizeof(0)+(4*digits+sys.int_info.bits_per_digit-1)//sys.int_info.bits_per_digit
+              * sys.int_info.sizeof_digit) == 64:
+        digits += 1
+    return digits
+
+
+_LONG_DIGITS = b'0'*_floor_digits()
+
+
+def _counted_json_capacity(encoded):
+    """The walk's number, or None where the bytes are not plainly shaped (the walk then counts or refuses).
+    Strings: 80 + 4 per content byte; { 192, [ 128, : 96, , 16; each number or literal 64. Transient copies of
+    at most len(encoded) bytes each, two at once (not booked: the reserved figures do not move, design s5)."""
+    if b'\\' in encoded:
+        return None   # shortcut: an escape goes to the walk; issued graph records carry none in practice
+    rest, strings = _PLAIN_STRING.subn(b' ', encoded)
+    # a quote left (an unterminated string) fails the grammar: the walk refuses
+    if _LONG_DIGITS in rest.translate(_DIGIT_MARKS) or _PLAIN_TOKENS.fullmatch(rest) is None:
+        return None
+    content = len(encoded)-len(rest)-strings   # each string of n+2 bytes became one space
+    marks = rest.translate(_TOKEN_MARKS)
+    return (80*strings+4*content+192*rest.count(b'{')+128*rest.count(b'[')+96*rest.count(b':')
+            + 16*rest.count(b',')+64*(marks.count(b' x')+marks.startswith(b'x')))
+
+
+def _decoded_json_capacity(encoded):
+    """Count a conservative decoded graph capacity without decoding a record (the walk's number; see
+    _walked_json_capacity for the convention)."""
+    if type(encoded) is not bytes:
+        raise TypeError('issued canonical JSON bytes required')
+    counted = _counted_json_capacity(encoded)
+    return _walked_json_capacity(encoded) if counted is None else counted
 
 
 def _decode_workspace(encoded):
