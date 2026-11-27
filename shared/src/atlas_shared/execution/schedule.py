@@ -282,6 +282,8 @@ class Schedule:
                            stretches=0, waited_seconds=0.0, judged=0, surprises=0,
                            checkpoint_consumed=0, checkpoint_speculated=0, checkpoint_excluded_batches=0)
         self.reasons, self.recent = {}, deque(maxlen=RECENT)
+        # Requests the parent ran itself, with their seconds, by the reason that stood when it took each one.
+        self.parent_reasons, self._standing, self._why = {}, None, None
 
     def offer(self, job, prefix, label, exact=None):
         """One upcoming request, in router order.
@@ -318,14 +320,22 @@ class Schedule:
         Batches wholly behind the parent are returned to their session.
         """
         kept, self._head = True, None
+        if self.stopped is not None:
+            self._why = self.stopped
+        elif not self.ahead:
+            self._why = 'nothing ahead'
         if self.ahead:
             entry = self.ahead.popleft()
             if entry[2] is None:
                 self._sight -= entry[5]
                 self._free -= 1
                 self._head = entry
+                if self.stopped is None:
+                    self._why = 'batch not bound' if entry[6] else self._standing or 'not planned'
             else:
                 kept = False
+                if self.stopped is None:
+                    self._why = 'batch handed back'
         position, self.position = self.position, self.position+1
         while self.live and self.live[0]['last'] < position:
             passed = self.live.popleft()
@@ -365,7 +375,7 @@ class Schedule:
 
     def unlisted(self):
         """The parent is about to run a request that was never offered: nothing is learned of it."""
-        self._head = None
+        self._head, self._why = None, 'never offered'
 
     def ran(self, seconds):
         """The parent itself ran the request it last reached, which no batch held.
@@ -376,6 +386,10 @@ class Schedule:
         becomes worth a worker again.
         """
         entry, self._head = self._head, None
+        why, self._why = self._why or 'not planned', None
+        booked = self.parent_reasons.setdefault(why, [0, 0.0])
+        booked[0] += 1
+        booked[1] += seconds
         if entry is None or self.closed or entry[4] is not None:
             return      # nothing reached, or a request remembered one by one: it says nothing of its class
         found = self._estimate(entry[3])
@@ -518,6 +532,7 @@ class Schedule:
                 return
             running += 1
         # Every worker is busy, or as much is held as may be: looked at again when that changes.
+        self._standing = 'every worker busy' if running >= self.workers else 'as much held as may be'
         self._later(session, False, running)
 
     def _guard(self, step, *operands):
@@ -846,6 +861,7 @@ class Schedule:
     def _note(self, reason, detail):
         self.reason, self.detail = reason, detail
         self.reasons[reason] = self.reasons.get(reason, 0)+1
+        self._standing = reason
         return None
 
     def _later(self, session, declined, running):
@@ -907,6 +923,7 @@ class Schedule:
                     avoided_seconds=self.totals['avoided_seconds'],
                     parent_seconds=None if session is None else dict(session.seconds),
                     longest_lookahead=self.totals['longest_lookahead'], reasons=dict(self.reasons),
+                    parent_reasons={reason: list(pair) for reason, pair in self.parent_reasons.items()},
                     recent=list(self.recent),
                     **(dict(logical_offered=self.offered, returned=session.stats['returned'],
                             extra_batches=self.totals.get('extra_batches', 0))
