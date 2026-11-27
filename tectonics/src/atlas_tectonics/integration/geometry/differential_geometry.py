@@ -4519,7 +4519,7 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
     if not isinstance(exchanges, list):
         raise V.VolumeError('complete certified finite exchange interval list required')
     starts = dict(start_volumes_m3)
-    geometric_starts = {}
+    geometric_starts, decoded = {}, []
     if geometry_volume_errors is not None:
         if type(geometry_volume_errors) is not dict or set(geometry_volume_errors)-physical:
             raise V.VolumeError('carried geometric volume errors must name actual physical cells')
@@ -4533,6 +4533,7 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
                     widths[key] += hi-lo
         for face in exchanges:
             lo, hi = map(W._decode, face['volume_bounds_m3'])
+            decoded.append((lo, hi))
             widths[face['physical_cell_id']] += hi-lo
         for row in augmented['cells']:
             key = row['cell_id']
@@ -4569,7 +4570,7 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
             if row['kind'] == 'collar':
                 row['end_volume_bounds_m3'] = row['true_end_volume_bounds_m3']
     maxima, used, face_ids = {}, set(), {r['face_id'] for r in record['face_intervals']}
-    for row in exchanges:
+    for index, row in enumerate(exchanges):
         required = {'stock_id', 'physical_cell_id', 'direction', 'face_id',
                     'volume_bounds_m3', 'physical_certificate_id', 'stock_lineage'}
         if type(row) is not dict or set(row) != required:
@@ -4583,7 +4584,7 @@ def _close_differential_record(record, start_volumes_m3, stock_record, budget, g
         if direction not in ('supply', 'export') or stock['kind'] not in (
                 'reservoir', 'source' if direction == 'supply' else 'sink'):
             raise V.VolumeError('finite source/export direction differs from its actual retained stock')
-        lo, hi = map(W._decode, row['volume_bounds_m3'])
+        lo, hi = decoded[index] if decoded else map(W._decode, row['volume_bounds_m3'])
         if lo < 0 or hi < lo:
             raise V.VolumeError('finite exchange must retain nonnegative certified bounds')
         stock_id = row['stock_id']; node = 'finite-stock:'+stock_id

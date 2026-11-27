@@ -524,12 +524,14 @@ def _replaced(network, material, items, held, budget, supports=None):
         fault = _shaped(pieces, columns, cohort_index)
         if fault:
             raise BridgeRefused('region %r returns %s' % (footprint.region_id, fault), INCOMPATIBLE_SUPPORT)
+        given, held_totals = _cohort_totals(pieces, len(columns)), _cohort_totals(kept, len(columns))
         for column in range(len(columns)):
-            if _exact_column(pieces, column) != _exact_column(kept, column):
+            if (sum((t[column] for t in given.values()), Fraction(0)) !=
+                    sum((t[column] for t in held_totals.values()), Fraction(0))):
                 raise BridgeRefused('region %r does not return its %s exactly: a regional exchange with an exterior '
                                     'goes through a named exterior, not a return' % (
                                         footprint.region_id, columns[column]), INCOMPATIBLE_SUPPORT)
-        _same_cohorts(footprint.region_id, pieces, kept, columns)
+        _same_cohorts(footprint.region_id, given, held_totals, columns)
         for name, rows in pieces.items():
             replaced[face_index[name]] = rows
     keep = [row for row in range(len(material.piece_face)) if int(material.piece_face[row]) not in replaced]
@@ -762,14 +764,13 @@ def _cohort_totals(pieces, width):
     return out
 
 
-def _same_cohorts(region, pieces, held, columns):
+def _same_cohorts(region, given, kept, columns):
     """Refuse a result that changes any cohort's exact amount of any column over its footprint (B1).
 
     Material may move between the footprint's faces, but no cohort's amounts may change. A regional process that turns
     one cohort into another would need a named, booked transformation with its own origin record, which is not built.
     """
     width = len(columns)
-    given, kept = _cohort_totals(pieces, width), _cohort_totals(held, width)
     zero = [Fraction(0)]*width
     for cohort in sorted(set(given) | set(kept)):
         a, b = given.get(cohort, zero), kept.get(cohort, zero)

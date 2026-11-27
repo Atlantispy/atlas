@@ -719,17 +719,18 @@ def conducted(endpoint, records, heat, reference, parent, step, conduction, budg
             raise ThermalRefused('the explicit lateral step is unstable: dt (sum G)/C = %r exceeds %r; declare more '
                                  'substeps' % (worst, STABILITY), 'unsupported', 'stability')
         lateral = loss = g = None
-    temperature = [temperatures(c[0], c[1], q, reference, phases) for c, q in zip(columns, heat)]
     physical_energy = None
     if physical:
         physical_energy = [list(physical_columns[(p.face_id, p.cohort_id)][1]) for p in pieces]
         temperature = [PH.field_temperature(c[0], (tuple(c[2]), tuple(u), ()), reference, budget=budget)
                        for c, u in zip(columns, physical_energy)]
+    else:
+        temperature = [temperatures(c[0], c[1], q, reference, phases) for c, q in zip(columns, heat)]
     # Keep the small mechanical-temperature signal in the modal variable. Forming T = T_steady + theta and
     # subtracting T_steady on every substep (or T_ref when returning heat) discards significant source energy.
     # Absolute temperatures below are diagnostics only on the heated path; zero sources retain their old path.
     departures = heated or physical
-    deviations = None if not departures else [np.array([
+    deviations = None if not departures or physical else [np.array([
         math.fsum((float(q)/float(capacity), reference, -float(steady)))
         for q, capacity, steady in zip(column_heat, column[3], column[4].steady_k)])
         for column, column_heat in zip(columns, heat)]
@@ -1047,11 +1048,12 @@ def conducted_patches(endpoint, records, patch_heat, reference, parent, step, co
             columns.append((record, piece, thickness, capacity, thermal, propagator))
         del cache
         exact = [list(patch_heat[p.patch_id]) for p in patches]
-        theta = [np.array([math.fsum((float(q/Fraction(c)), reference, -float(s)))
-                            for q, c, s in zip(values, col[3], col[4].steady_k)])
-                 for values, col in zip(exact, columns)]
         fields = None if physical_columns is None else dict(physical_columns)
-        if fields is not None:
+        if fields is None:
+            theta = [np.array([math.fsum((float(q/Fraction(c)), reference, -float(s)))
+                                for q, c, s in zip(values, col[3], col[4].steady_k)])
+                     for values, col in zip(exact, columns)]
+        else:
             theta = [np.array([math.fsum((float(u/c), reference, -float(s)))
                        for u, c, s in zip(fields[p.patch_id][1], P.capacity_area(col[0], col[2], budget=budget), col[4].steady_k)])
                      for p, col in zip(patches, columns)]

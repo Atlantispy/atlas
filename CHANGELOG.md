@@ -203,6 +203,14 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev85](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev85) - 2026-11-27
+
+### Optimisations
+
+- Differential trace calls no longer build a descriptor that nothing used.
+- Differential geometry reuses bounds it has already decoded.
+- Thermal and bridge steps drop repeated work.
+
 ## [0.1.0.dev84](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev84) - 2026-11-27
 
 ### Optimisations

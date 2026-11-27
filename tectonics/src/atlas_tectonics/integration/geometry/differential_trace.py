@@ -919,18 +919,21 @@ class PreparedDifferentialTrace:
             self.close()
             raise
 
-    def descriptor(self):
+    def _live(self):
         if self._guard is None:
             raise TectonicsError('differential trace is closed')
         self._native.descriptor()
+
+    def descriptor(self):
+        self._live()
         return dict(trace_id=self.trace_id, **json.loads(json.dumps(self._definition)))
 
     def modes(self):
-        self.descriptor()
+        self._live()
         return self._full
 
     def velocity(self, angular_rates_rad_s):
-        self.descriptor()
+        self._live()
         rates = np.asarray(angular_rates_rad_s, dtype=float)
         if rates.shape != (2, 3) or not np.isfinite(rates).all():
             raise TectonicsError('actual two-plate angular-rate vectors required')
@@ -950,7 +953,7 @@ class PreparedDifferentialTrace:
         Squared error has units m4/s2 (endpoint) or m4/s (interval); work is W
         or J respectively. All physical moment intervals remain exact here.
         """
-        self.descriptor()
+        self._live()
         # The exact residual/energy sums need new numerators and denominators;
         # admission includes the binary64 inputs before their conversion.
         amount = 65536+512*self._exact_value_count+16*(self._exact_value_bits+2150*(2*len(self._fixed)+6))
@@ -1015,7 +1018,7 @@ class PreparedDifferentialTrace:
             self._guard = None
 
     def __enter__(self):
-        self.descriptor()
+        self._live()
         return self
 
     def __exit__(self, *_):
@@ -1099,7 +1102,7 @@ class DifferentialPlateBoundaryLift(D.PlateBoundaryLift):
             raise
 
     def descriptor(self):
-        self._trace.descriptor()
+        self._trace._live()
         return super().descriptor()
 
     def trace_account(self, rates, reaction):
