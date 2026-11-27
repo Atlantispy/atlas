@@ -13,8 +13,9 @@ on:
 permissions:
   contents: read
 
+# Pushes group by commit, so every pushed commit's run finishes; a pull request cancels its older run.
 concurrency:
-  group: quick-tests-${{ github.ref }}
+  group: quick-tests-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: true
 
 # Every repository path the workflow uses, named once. A folder move edits this block only.
