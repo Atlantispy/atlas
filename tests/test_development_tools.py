@@ -95,6 +95,18 @@ class SlowRegistryTests(unittest.TestCase):
             self.assertEqual(sorted(summary['tests']), ['check_native_transport.N.test_n', 'test_plain.A.test_a'])
             self.assertEqual(summary['patterns'], ['test_*.py', 'check_native_transport.py'])
 
+    def test_workers_run_with_dash_b(self):
+        # Process pools under test copy the worker's interpreter flags; the heat pool refuses without -B.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)/'tree'
+            (root/'tectonics'/'src').mkdir(parents=True)
+            write(root/'tectonics'/'tests'/'test_flag.py', 'import sys, unittest\nclass A(unittest.TestCase):\n'
+                  '    def test_b(self):\n        self.assertTrue(sys.flags.dont_write_bytecode)\n')
+            proc = subprocess.run([sys.executable, '-B', str(ROOT/'tools'/'run_tests_parallel.py'), '--root', str(root),
+                                   '--python', sys.executable, '--run-dir', str(Path(folder)/'run')],
+                                  capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout+proc.stderr)
+
     def test_quick_defaults_share_one_verify_read_and_overrides_need_none(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)/'tree'

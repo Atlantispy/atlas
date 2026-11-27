@@ -203,6 +203,14 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev75](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev75) - 2026-11-27
+
+### Bugfixes
+
+- Fixed the parallel test runner to start its workers with `-B`. The heat worker pool copies its caller's
+  interpreter flags and refuses to start without `-B`, so pool tests run through the runner never used the pool:
+  every call fell back to the serial route.
+
 ## [0.1.0.dev74](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev74) - 2026-11-27
 
 ### Tools

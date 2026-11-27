@@ -10,8 +10,9 @@ the interpreter given by ``--python`` (the tested environment), so no private pa
 * Units are test classes, or whole modules where ``setUpModule``/``tearDownModule``/``load_tests`` exist, so module
   fixtures keep their meaning. Units run in a pool of long-lived worker processes (``--fresh`` starts a new process
   for every unit, as the impact recorder needs). A unit is never split across processes.
-* Every worker runs with single-threaded BLAS/OpenMP, its own temporary directory, and
+* Every worker runs with single-threaded BLAS/OpenMP, its own temporary directory, ``-B`` and
   ``PYTHONPYCACHEPREFIX`` pointing at a bytecode cache outside the tree (never ``.pyc`` files beside sources).
+  Discovery fills the cache; workers read it without writing.
   The temporary directories and the default cache are short siblings in the inherited temporary folder
   (``--tmp-root``): several tests budget Windows path lengths from the temporary folder, and a deep cache path can
   exceed the path limit, after which Python silently recompiles every module in every worker.
@@ -607,8 +608,9 @@ class Driver:
         env['ATLAS_DEV_RUNNER_KEY'] = self.key.hex()
         token = secrets.token_hex(8)
         env['ATLAS_DEV_WORKER_TOKEN'] = token
-        command = [self.args.python, str(Path(__file__).resolve()), '--worker', '--address', self.listener.address,
-                   '--cwd', str(self.args.cwd), '--tests-dir', str(self.args.tests_dir),
+        # -B: process pools under test copy the worker's flags, and the heat pool's workers require it.
+        command = [self.args.python, '-B', str(Path(__file__).resolve()), '--worker',
+                   '--address', self.listener.address, '--cwd', str(self.args.cwd), '--tests-dir', str(self.args.tests_dir),
                    '--test-top', str(self.args.test_top)]
         if self.args.fresh:
             command.append('--fresh')
