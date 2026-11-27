@@ -477,12 +477,15 @@ class IssuedResultProvenance(unittest.TestCase):
         self.assertLess(len(B._COUPLED_ISSUED), count)
 
 
-class Provenance(unittest.TestCase):
+class _Provenance:
     """Rulings P1 and P2(e) on an I02 ledger: the coupled route reads and replays the parent commit's record itself
     (``step``), binds the interval and the inheritance before writing (``commit``, and I05 at every commit), and
     ``verify_driving`` solves each committed interval again from its verified parent, comparing every field. Forged
     inherited fields, a dropped inheritance and a malformed record refuse by name; a refused interval commits nothing.
-    Multi-interval chains use the one-sided belt on the carrier (mid-build ruling, 4 October 2026)."""
+    Multi-interval chains use the one-sided belt on the carrier (mid-build ruling, 4 October 2026). Split into five
+    classes, so five parallel units; each builds its own first interval unless ``build_first`` is false."""
+
+    build_first = True
 
     @classmethod
     def setUpClass(cls):
@@ -491,6 +494,8 @@ class Provenance(unittest.TestCase):
         cls.prepared = F2.preparation()
         cls.inputs = Z.inputs(declaration=Z.side_declaration('right'))
         cls.stores = []
+        if not cls.build_first:
+            return
         cls.first_ledger = cls.make('chain')
         cls.first = B.step(cls.first_ledger, cls.inputs)                 # a first interval: no parent record
         cls.first_verified = B.commit(cls.first_ledger, cls.first, deadline=time.perf_counter()+600.)
@@ -518,6 +523,8 @@ class Provenance(unittest.TestCase):
             conduction=coupled.advance.conduction, increments=coupled.advance.increments, driving=driving)
         return K.Clock(ledger).advance(steps=1, transfers=(coupled.motion, advance), deadline=time.perf_counter()+600.)
 
+
+class ProvenanceChain(_Provenance, unittest.TestCase):
     def test_a_chain_inherits_from_its_parent_commit_and_replays(self):
         ledger = self.first_ledger
         self.assertEqual(self.first_verified.status, B.PRODUCED)
@@ -573,6 +580,8 @@ class Provenance(unittest.TestCase):
         self.assertIn(caught.exception.detail, ('cache', 'parent_driving_sha256'))
         self.assertIs(B.verify_driving(ledger, head, cache=cache), replayed)   # a valid cache still certifies
 
+
+class ProvenanceForged(_Provenance, unittest.TestCase):
     def test_forged_inherited_fields_refuse_by_name(self):
         """Ruling P1(3): a fabricated record committed through the plain path is refused by the reader, field by
         field: labels, the cumulative strain, the heat bound, and the replayed P5."""
@@ -598,6 +607,8 @@ class Provenance(unittest.TestCase):
                 B.verify_driving(ledger, outcome.head, cache={honest_commit.key: self.first_verified})
             self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'cache'))
 
+
+class ProvenanceReplayed(_Provenance, unittest.TestCase):
     def test_the_committed_increments_and_split_names_are_replayed(self):
         """The dkappa half of the fixed point: increments halved under the honest record refuse 'advance'; a producer
         whose history names are salted (not the pure reference) refuses on reopen."""
@@ -627,6 +638,8 @@ class Provenance(unittest.TestCase):
         # the renamed sub-cohorts change the endpoint state and the motion; the binding fields are compared in order
         self.assertEqual((caught.exception.code, caught.exception.detail), (B.STALE, 'endpoint_state_id'))
 
+
+class ProvenanceRefusals(_Provenance, unittest.TestCase):
     def test_a_dropped_inheritance_refuses_at_commit_and_on_reopen(self):
         ledger = self.make('dropped')
         B.commit(ledger, self.first, deadline=time.perf_counter()+600.)
@@ -681,6 +694,10 @@ class Provenance(unittest.TestCase):
         self.assertEqual(caught.exception.code, B.NONCONVERGED)
         self.assertEqual((capped.head().key, len(capped.chain()), hashlib.sha256(path.read_bytes()).hexdigest()),
                          before)
+
+
+class ProvenanceGpe(_Provenance, unittest.TestCase):
+    build_first = False
 
     def test_a_coupled_interval_with_gpe_replays(self):
         """Ruling P7 (notes): the coupled route with GPE binds its P1 columns in the endpoint balance, and replays."""

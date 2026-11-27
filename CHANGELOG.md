@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev87](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev87) - 2026-11-27
+
+### Tests
+
+- The i04 feedback provenance checks now run as 5 separate units. The longest takes 137 seconds instead of the
+  previous 418-second single unit.
+
 ## [0.1.0.dev86](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev86) - 2026-11-27
 
 ### Tests
