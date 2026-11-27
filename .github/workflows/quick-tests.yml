@@ -4,8 +4,10 @@
 # explicitly registered slow tests and reports them in its summary.
 name: quick-tests
 
+# Branch pushes only: a tag push re-runs the same commit already tested on its branch.
 on:
   push:
+    branches: ["**"]
   pull_request:
 
 permissions:
@@ -23,7 +25,8 @@ env:
   PACKAGE_SRC: tectonics/src
   PACKAGE_TESTS: tectonics/tests
   SHARED_SRC: shared/src
-  REQUIREMENTS: tectonics/requirements/windows-amd64-cp312-core.txt
+  # Core route plus psutil: package modules import it at load time (continuation_guard, since dev55).
+  REQUIREMENTS: tectonics/requirements/windows-amd64-cp312-acceptance.txt
   PYTHONDONTWRITEBYTECODE: "1"
   # Writes one runner summary's counts to the run's summary page.
   COUNTS: >-
