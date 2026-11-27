@@ -769,6 +769,8 @@ class RegionalBoundaryFunding:
                     arrays['remaining:'+address] = left.array(key)
                     values = tuple(_q(q)+Q(float(v)) for q, v in
                                    zip(previous['export_exact'][address], exported.array(key).flat))
+                    if any(v < 0 for v in values):
+                        raise InventoryRefused('invalid exact exported material account')
                     exact_exports[address] = [_encoded(v) for v in values]
                     arrays['export:'+address] = np.asarray([_project(v) for v in values]).reshape(self._array_shapes[address])
             # These signed exact differences expose floating transport/account
@@ -801,9 +803,9 @@ class RegionalBoundaryFunding:
                 source_audit_id=result.source_audit.result_id, duration_s=result.descriptor()['duration_s'],
                 export_exact=exact_exports, transport_roundoff_accounts=rounding,
                 last_remaining_stock_ids=report['remaining_boundary_stock_ids'], last_export_ids=report['export_ids'])
-            issued = RegionalMechanicalSnapshot(metadata, arrays)
-            self._bound(issued)
-            return issued
+            if metadata['intervals'] > 256:
+                raise InventoryRefused('bounded boundary-inventory interval count required')
+            return RegionalMechanicalSnapshot(metadata, arrays)
 
     def restore(self, record, arrays, expected_result_id):
         with self._budget.reserve(self._work+32*_width(record), category='regional-halo-inventory-restore'):
