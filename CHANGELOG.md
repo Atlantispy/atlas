@@ -203,6 +203,13 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev60](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev60) - 2026-11-27
+
+### Bugfixes
+
+- Two I03 network and transfer tests now read their W01 case file from the tectonics `cases` folder; the
+  packaged fixture folder has no W01 case.
+
 ## [0.1.0.dev59](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev59) - 2026-11-27
 
 ### Optimisations

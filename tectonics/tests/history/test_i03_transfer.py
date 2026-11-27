@@ -673,7 +673,7 @@ class SmallFaceTests(unittest.TestCase):
         # overlap with the cell is the square itself, whose area is known exactly; the existing W01 tolerance for
         # small spherical areas applies. Measuring it from an anchor at the chart's centre misses by far more.
         control = F.control('polar_rows')['small_overlap']
-        small = json.loads((F.CASES/'w01_geometry.json').read_text(encoding='utf-8'))['acceptance'][
+        small = json.loads((Path(__file__).resolve().parents[2]/'cases'/'w01_geometry.json').read_text(encoding='utf-8'))['acceptance'][
             'small_spherical_area_relative']
         half = control['half_width_rad']
         expected = 4*math.atan(half*half/math.sqrt(1+2*half*half))

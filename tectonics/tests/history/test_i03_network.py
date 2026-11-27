@@ -70,7 +70,7 @@ def build(parts):
 
 class CaseTests(unittest.TestCase):
     def test_every_tolerance_of_the_case_is_an_existing_one(self):
-        cases = F.CASES
+        cases = Path(__file__).resolve().parents[2]/'cases'  # the w01/w02 cases are not packaged
         read = lambda name: json.loads((cases/name).read_text(encoding='utf-8'))
         atlas = read('w01_spherical_atlas.json')['acceptance']
         self.assertEqual(RELATIVE, atlas['relative_tolerance'])
