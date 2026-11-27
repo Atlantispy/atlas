@@ -203,6 +203,19 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev79](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev79) - 2026-11-27
+
+### Optimisations
+
+#### Dispatch and execution
+
+- A kept worker now signals each finished batch on its output pipe. The parent sees a batch finish within about
+  1 ms instead of polling for up to 50 ms, and checks for the finished file only on a signal or a survey round.
+- Memory readings no longer re-check that a process is alive just after the survey has done so.
+- A survey no longer asks again about processes it has already seen alive in the same call.
+- Once a worker's record has been verified and owned, the process, start-time and command look-ups are skipped.
+  Its figures are still read.
+
 ## [0.1.0.dev78](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev78) - 2026-11-27
 
 ### Optimisations

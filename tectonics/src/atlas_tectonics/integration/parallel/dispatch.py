@@ -432,6 +432,8 @@ def _kept_worker(home, process):
                 pass    # the completion is already verified
             with (directory/'done').open('xb'):
                 pass
+            sys.stdout.buffer.write(line.rstrip(b'\r\n')+b'\n')    # the parent's completion signal
+            sys.stdout.buffer.flush()
 
 
 class _Child:
@@ -455,7 +457,8 @@ class _Child:
         # and the body seconds the worker reports. Neither is ever evidence.
         self.elapsed = self.body_seconds = self.ledger_peak = None
         self._owned = {}
-        self._worker_identity = None
+        self._signals = {}    # a kept worker's batch path -> the Event its completion line sets
+        self._worker_identity = self._worker_verified = None
         self._launched_at = None
         # A Windows venv executable can only be the small redirector. Its
         # exit alone says nothing about the real interpreter it launched.
@@ -514,22 +517,25 @@ class _Child:
         identity = pid, created
         if self._worker_identity is not None and self._worker_identity != identity:
             raise RuntimeError('owned worker identity changed')
-        try:
-            process = psutil.Process(pid)
-            if process.create_time() != created:
-                # The named worker exited and its PID was reused. Never add
-                # or signal the unrelated replacement.
-                self._worker_identity = identity
-                return
-            command = process.cmdline()
-            if (len(command) < 3 or command[-3:-1] !=
-                    ['-m', 'atlas_tectonics.integration.parallel.worker']
-                    or os.path.normcase(os.path.abspath(command[-1])) !=
-                    os.path.normcase(os.path.abspath(str(self.directory)))):
-                raise RuntimeError('resource identity is not the owned worker command')
-            self._remember(process)
-        except psutil.NoSuchProcess:
-            pass
+        # A worker whose command was verified and that is in _owned is not looked up again; liveness is asked elsewhere.
+        if identity != self._worker_verified or identity not in self._owned:
+            try:
+                process = psutil.Process(pid)
+                if process.create_time() != created:
+                    # The named worker exited and its PID was reused. Never add
+                    # or signal the unrelated replacement.
+                    self._worker_identity = identity
+                    return
+                command = process.cmdline()
+                if (len(command) < 3 or command[-3:-1] !=
+                        ['-m', 'atlas_tectonics.integration.parallel.worker']
+                        or os.path.normcase(os.path.abspath(command[-1])) !=
+                        os.path.normcase(os.path.abspath(str(self.directory)))):
+                    raise RuntimeError('resource identity is not the owned worker command')
+                self._remember(process)
+                self._worker_verified = identity
+            except psutil.NoSuchProcess:
+                pass
         self._worker_identity = identity
         reported = record.get('peak_rss')
         if type(reported) is int and reported >= 0:
@@ -549,15 +555,20 @@ class _Child:
 
     def _discover(self):
         import psutil
+        # Identities shown alive in this call: the closing pass does not ask them again.
+        shown = set()
         if self.process is not None and self.process.poll() is None:
             try:
-                self._remember(psutil.Process(self.process.pid))
+                shown.add(self._remember(psutil.Process(self.process.pid)))
             except psutil.NoSuchProcess:
                 pass
         covered = set()
         for identity, process in tuple(self._owned.items()):
-            if identity in covered or not self._alive(identity, process):
+            if identity in covered:
                 continue
+            if identity not in shown and not self._alive(identity, process):
+                continue
+            shown.add(identity)
             try:
                 descendants = process.children(recursive=True)
             except psutil.NoSuchProcess:
@@ -576,13 +587,14 @@ class _Child:
                         # subtree in this round. Orphaned tracked roots that
                         # were absent from that census are surveyed separately.
                         covered.add(remembered)
+                        shown.add(remembered)
                 except psutil.NoSuchProcess:
                     pass
         # Recovers the trusted one-shot worker when its redirector exited
         # before enumeration. A missing/malformed record is never exit proof.
         self._worker_record()
         return [(identity, process) for identity, process in self._owned.items()
-                if self._alive(identity, process)]
+                if identity in shown or self._alive(identity, process)]
 
     @staticmethod
     def _descends_from(process, identity):
@@ -634,7 +646,7 @@ class _Child:
         command, env = _worker_launch(self.directory)
         started = time.monotonic()
         launched = time.perf_counter()
-        process = self._popen(command, env, subprocess.DEVNULL)
+        process = self._popen(command, env, subprocess.DEVNULL, subprocess.DEVNULL)
         try:
             while True:
                 with self.lock:
@@ -655,7 +667,7 @@ class _Child:
             self.elapsed = time.perf_counter()-launched
             self.stop()
 
-    def _popen(self, command, env, stdin):
+    def _popen(self, command, env, stdin, stdout):
         with self.lock:
             if self.cancelled:
                 raise RuntimeError('optional child cancelled before launch')
@@ -663,7 +675,7 @@ class _Child:
             with (self.directory/'stderr.txt').open('wb') as errors:
                 self.process = subprocess.Popen(
                     command,
-                    env=env, stdin=stdin, stdout=subprocess.DEVNULL, stderr=errors,
+                    env=env, stdin=stdin, stdout=stdout, stderr=errors,
                     creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
             return self.process
 
@@ -674,12 +686,20 @@ class _Child:
         rss = 0
         for identity, monitor in live:
             try:
-                if self._alive(identity, monitor):
-                    rss += monitor.memory_info().rss
+                # _survey returned only processes shown alive this round, under this lock.
+                rss += monitor.memory_info().rss
             except psutil.NoSuchProcess:
                 pass
         self.peak_rss = max(self.peak_rss, rss)
         return live, whole
+
+    def _read_signals(self, stream):
+        # Daemon reader of a kept worker's stdout, to its end: a batch path sets that batch's Event; other lines drop.
+        with stream:
+            for line in stream:
+                event = self._signals.get(line.rstrip(b'\r\n').decode('utf8', 'replace'))
+                if event is not None:
+                    event.set()
 
     def _stderr(self):
         with (self.directory/'stderr.txt').open('rb') as errors:
@@ -703,25 +723,30 @@ class _Child:
         try:
             if self.process is None:
                 command, env = _worker_launch(self.directory)
-                self._popen(command, env, subprocess.PIPE)
+                self._popen(command, env, subprocess.PIPE, subprocess.PIPE)
+                threading.Thread(target=self._read_signals, args=(self.process.stdout,), daemon=True,
+                                 name='atlas-kept-signal').start()
             process = self.process
+            key = str(path.absolute())
+            signalled = self._signals[key] = threading.Event()
             with self.lock:
                 if self.cancelled:
                     raise RuntimeError('optional child cancelled before launch')
-                process.stdin.write(str(path.absolute()).encode('utf8')+b'\n')
+                process.stdin.write(key.encode('utf8')+b'\n')
                 process.stdin.flush()
             done = path/'done'
             while True:
                 with self.lock:
                     live, whole = self._measure(process)
-                    finished = done.exists() and self._worker_known()
+                    # done is stat'ed after the worker's signal or on a survey round, not every round.
+                    finished = (signalled.is_set() or whole) and done.exists() and self._worker_known()
                     if not finished and (process.poll() is not None or whole and not live and self._worker_known()):
                         raise RuntimeError('kept worker ended before its batch was done: '+self._stderr())
                 if finished:
                     break
                 if self.peak_rss > self.rss_limit or time.monotonic()-started > self.deadline:
                     raise RuntimeError('optional child resource guard reached')
-                time.sleep(0.05)
+                signalled.wait(0.05)
             with self.lock:
                 self._worker_record()
             W.load_pose_memo(path/W.pose_memo_added_file)
@@ -730,6 +755,7 @@ class _Child:
             self.stop()
             raise
         finally:
+            self._signals.pop(str(path.absolute()), None)
             self.elapsed = time.perf_counter()-launched
 
     def stop(self):
