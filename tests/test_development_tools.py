@@ -608,7 +608,8 @@ class ImpactRecordTests(unittest.TestCase):
             git(root, 'add', '-A')
             git(root, 'commit', '-q', '-m', 'fixture')
             args = SimpleNamespace(root=str(root), python=sys.executable, map=str(Path(folder)/'map.json'),
-                                   from_run=None, run_dir=str(Path(folder)/'record'), workers=1, durations=None)
+                                   from_run=None, run_dir=str(Path(folder)/'record'), workers=1, durations=None,
+                                   exclude=None)
             self.assertEqual(impact.record(args), 0)
             original = json.loads(Path(args.map).read_text())
             self.assertEqual(set(original['provenance']), {'start'})
@@ -645,6 +646,60 @@ class ImpactRecordTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'source provenance'):
                 impact.record(args)
             self.assertEqual(json.loads(Path(args.map).read_text())['commit'], original['commit'])
+
+    def test_an_excluded_unit_is_not_run_has_no_row_and_is_always_selected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)/'tree'
+            (root/'tectonics'/'src').mkdir(parents=True)
+            write(root/'tectonics'/'tests'/'test_tiny.py',
+                  'import unittest\nclass T(unittest.TestCase):\n    def test_ok(self):\n        pass\n'
+                  'class Slow(unittest.TestCase):\n    def test_never(self):\n        raise SystemExit(9)\n')
+            git(root, 'init', '-q')
+            git(root, 'add', '-A')
+            git(root, 'commit', '-q', '-m', 'fixture')
+            args = SimpleNamespace(root=str(root), python=sys.executable, map=str(Path(folder)/'map.json'),
+                                   from_run=None, run_dir=str(Path(folder)/'record'), workers=1, durations=None,
+                                   exclude=['test_tiny.Slow'])
+            self.assertEqual(impact.record(args), 0)
+            the_map = json.loads(Path(args.map).read_text())
+            self.assertEqual(the_map['recorded_with']['excluded'], ['test_tiny.Slow.test_never'])
+            self.assertEqual(the_map['recorded_with']['tests_selected'], 1)
+            self.assertEqual(the_map['units']['test_tiny.Slow'], dict(tests=['test_tiny.Slow.test_never'],
+                                                                      skipped=False, complete=False))
+            self.assertTrue(the_map['units']['test_tiny.T']['complete'])
+            self.assertIn('test_tiny.Slow', impact.select(the_map, root, None, files=[], python=sys.executable)['always'])
+
+    def test_one_excluded_test_leaves_its_unit_incomplete(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)/'tree'
+            (root/'tectonics'/'src').mkdir(parents=True)
+            write(root/'tectonics'/'tests'/'test_tiny.py',
+                  'import unittest\nclass T(unittest.TestCase):\n    def test_ok(self):\n        pass\n'
+                  '    def test_other(self):\n        pass\n')
+            git(root, 'init', '-q')
+            git(root, 'add', '-A')
+            git(root, 'commit', '-q', '-m', 'fixture')
+            args = SimpleNamespace(root=str(root), python=sys.executable, map=str(Path(folder)/'map.json'),
+                                   from_run=None, run_dir=str(Path(folder)/'record'), workers=1, durations=None,
+                                   exclude=['test_tiny.T.test_ok'])
+            self.assertEqual(impact.record(args), 0)
+            the_map = json.loads(Path(args.map).read_text())
+            self.assertEqual(the_map['recorded_with']['excluded'], ['test_tiny.T.test_ok'])
+            self.assertFalse(the_map['units']['test_tiny.T']['complete'])
+            self.assertIn('test_tiny.T', impact.select(the_map, root, None, files=[], python=sys.executable)['always'])
+
+    def test_an_exclusion_that_matches_nothing_is_refused_at_the_start(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)/'tree'
+            (root/'tectonics'/'src').mkdir(parents=True)
+            write(root/'tectonics'/'tests'/'test_tiny.py',
+                  'import unittest\nclass T(unittest.TestCase):\n    def test_ok(self):\n        raise SystemExit(9)\n')
+            proc = subprocess.run([sys.executable, '-B', str(ROOT/'tools'/'run_tests_parallel.py'), '--root', str(root),
+                                   '--python', sys.executable, '--run-dir', str(Path(folder)/'run'),
+                                   '--exclude', 'test_tiny.Typo'], capture_output=True, text=True)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn('--exclude matches no test: test_tiny.Typo', proc.stdout+proc.stderr)
+            self.assertFalse((Path(folder)/'run'/'results.jsonl').exists())
 
 
 class CandidateVerifierTests(unittest.TestCase):

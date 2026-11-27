@@ -341,6 +341,8 @@ def record(args):
             command += ['--pattern', pattern]
         if args.durations:
             command += ['--durations', args.durations]
+        for unit in args.exclude or ():
+            command += ['--exclude', unit]
         runner_exit = subprocess.run(command, capture_output=True, text=True).returncode
         summary = json.loads((run_dir/'run'/'summary.json').read_text(encoding='utf-8'))
     provenance = summary.get('provenance') or {}
@@ -407,21 +409,26 @@ def record(args):
                                spawned=bool(trace['spawned']), numba=bool(trace['numba_compiled']),
                                observes_code=bool(functions & observed or module_observers & set(modules)))
     # Every discovered test belongs to a unit; a unit with no recorded row is incomplete (always selected).
+    # Excluded tests were discovered but not run: their units get no row and are always selected.
     recorded = {t for row in units.values() for t in row['tests']}
-    for test_id in summary['tests']:
+    for test_id in list(summary['tests']) + summary.get('excluded', []):
         if test_id not in recorded and ' (' not in test_id:
             unit = test_id.rsplit('.', 1)[0]
-            units.setdefault(unit, dict(tests=[], skipped=False, complete=False))['tests'].append(test_id)
+            row = units.setdefault(unit, dict(tests=[], skipped=False, complete=False))
+            row['tests'].append(test_id)
+            row['complete'] = False
     numba = sorted(set(_numba_files(root, blobs)) | (compiled & set(blobs)))
     out = dict(schema=SCHEMA, commit=source['commit'], scope=dict(tests_dir=SUITE_DIR, patterns=list(SUITE_PATTERNS)),
                fingerprint=start['fingerprint'], files=blobs, provenance=provenance,
                numba_files=numba, code_observers=observers,
                units=units, recorded_with=dict(runner_exit=runner_exit, run=str(run_dir),
                                                wall_seconds=summary['wall_seconds'], counts=summary['counts'],
-                                               tests_selected=summary['tests_selected']))
+                                               tests_selected=summary['tests_selected'],
+                                               excluded=summary.get('excluded', [])))
     Path(args.map).write_text(json.dumps(out, indent=1), encoding='utf-8')
     incomplete = sorted(u for u, v in units.items() if not v['complete'])
     print(json.dumps(dict(map=args.map, units=len(units), incomplete_units_always_selected=incomplete,
+                          excluded=summary.get('excluded', []),
                           wall_seconds=round(summary['wall_seconds'], 1), counts=summary['counts'])))
     return 0
 
@@ -568,6 +575,7 @@ def main(argv=None):
     rec.add_argument('--workers', type=int, default=max(1, (os.cpu_count() or 2)-2))
     rec.add_argument('--durations', help='a previous results.jsonl, to start long units first')
     rec.add_argument('--run-dir', help='a new or empty folder for the traced run')
+    rec.add_argument('--exclude', action='append', help='a test, class or module ID to leave out (always selected)')
     rec.add_argument('--from-run', help='rebuild from an earlier traced run (RUN_DIR) of this clean commit')
     sel = sub.add_parser('select', help='the units a change can affect')
     sel.add_argument('--map', required=True)

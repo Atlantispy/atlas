@@ -768,6 +768,15 @@ def _run(args, root, started, *, verify_settings=None):
     if args.only:
         keep = set(args.only)
         tests = [t for t in tests if t in keep or t.rsplit('.', 1)[0] in keep or modules[t] in keep]
+    excluded = []
+    if args.exclude:
+        drop = set(args.exclude)
+        unmatched = sorted(u for u in drop if not any(t == u or t.rsplit('.', 1)[0] == u or modules[t] == u for t in tests))
+        if unmatched:
+            raise ValueError('--exclude matches no test: %s' % ', '.join(unmatched))
+        excluded = [t for t in tests if t in drop or t.rsplit('.', 1)[0] in drop or modules[t] in drop]
+        gone = set(excluded)
+        tests = [t for t in tests if t not in gone]
     if not tests:
         raise ValueError('empty selection')
     durations = {}
@@ -798,7 +807,8 @@ def _run(args, root, started, *, verify_settings=None):
         counts[row['outcome']] = counts.get(row['outcome'], 0)+1
     leaked = sorted(str(p) for folder in (args.src, args.tests_dir) for p in folder.rglob('*.pyc'))
     summary = dict(schema=SCHEMA, root=str(root), patterns=args.pattern, quick=bool(args.quick),
-                   only=args.only or [], provenance=provenance,
+                   only=args.only or [], exclude=args.exclude or [], excluded=sorted(excluded),
+                   provenance=provenance,
                    omitted_slow=omitted, serial_reference=bool(args.serial), workers=args.workers,
                    fresh_process_per_unit=bool(args.fresh), wall_seconds=time.perf_counter()-started,
                    worker_tmp_root=args.tmp_root, pycache=str(args.pycache),
@@ -842,6 +852,7 @@ def main(argv=None):
                         help="discovery pattern(s), e.g. 'test_i0[12]_*.py' (default: the tree's verify.py "
                              "FULL_PATTERNS, i.e. its full discovery including check_native_transport.py)")
     parser.add_argument('--only', action='append', help='restrict to these test, class or module IDs')
+    parser.add_argument('--exclude', action='append', help='leave out these test, class or module IDs')
     parser.add_argument('--workers', type=int,  # a queue ticket's booking (RUNQ_WORKERS), else this machine
                         default=int(os.environ.get('RUNQ_WORKERS') or max(1, (os.cpu_count() or 2)-2)))
     parser.add_argument('--serial', action='store_true', help='the conventional single-process reference run')

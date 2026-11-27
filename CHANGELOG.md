@@ -203,6 +203,14 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev77](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev77) - 2026-11-27
+
+### Tools
+
+- Added `--exclude` to the test runner and to the impact map's `record`. An excluded test, class or module is not
+  run, and the unit it belongs to is always selected afterwards. An ID that matches no test is refused before any
+  test runs.
+
 ## [0.1.0.dev76](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev76) - 2026-11-27
 
 ### Tools
