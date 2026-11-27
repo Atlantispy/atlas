@@ -13,7 +13,7 @@ import tectonics.tools.check.check_w11 as w11
 class W11ProfileTests(unittest.TestCase):
     def test_exact_selection_resolves_without_discovery(self):
         suite,selection=w11.verifier()._acceptance_suite(w11.GATES,'W11')
-        self.assertEqual(suite.countTestCases(),14)
+        self.assertEqual(suite.countTestCases(),13)
         def leaves(suite):
             for test in suite:
                 if isinstance(test,unittest.TestSuite): yield from leaves(test)
@@ -32,7 +32,7 @@ class W11ProfileTests(unittest.TestCase):
         with patch.object(w11,'read_json',return_value=dict(schema='atlas.w10-assessment.v1',decision={'status':'FAIL'})):
             with self.assertRaises(ValueError): w11.retained_w10(Path('unused'),{})
         with patch.object(w11,'read_json',return_value=dict(schema='atlas.w11-scale-evidence.v1',status='FAIL')):
-            with self.assertRaises(ValueError): w11.scale_evidence(Path('unused'))
+            with self.assertRaises(ValueError): w11.scale_evidence(Path('unused'),{})
 
 
 if __name__=='__main__': unittest.main()

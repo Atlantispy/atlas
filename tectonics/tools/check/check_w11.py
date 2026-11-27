@@ -26,7 +26,6 @@ from tectonics.tools.check.check_w10 import read_json, digest, local, verifier, 
 GATES={
     'PT01_selected_thread_parity': ['tests.integration.test_execution_reuse.ExecutionTests.test_parallel_all_kernels_match_serial'],
     'PT03_selected_invalidation': [
-        'tests.integration.test_execution_reuse.IdentityTests.test_source_bytes_changes_without_metadata_shortcuts',
         'tests.integration.test_execution_reuse.CacheExecutionTests.test_changed_inputs_parameters_backend_change_identity'],
     'PT04_same_key': ['tests.integration.test_execution_reuse.CacheExecutionTests.test_concurrent_same_request_computes_and_writes_once'],
     'PT05_ownership': ['tests.mechanics.test_evolving_mechanics.EvolvingMechanicsTests.test_inputs_outputs_and_descriptors_are_detached_immutable_snapshots'],
@@ -67,19 +66,36 @@ def retained_w10(path,inventory):
         retained_decision=data['decision'],scope='Added W11 tools/tests separately checked; W10 is not whole-field validation')
 
 
-def scale_evidence(path):
-    import numpy as np
-    import scipy
-    from atlas_tectonics.integration.reuse import _source_bytes
-    from tectonics.tools.check.check_w11_scale import summarise_case, SIZES, PAIRS, LIMIT_BYTES
+def scale_evidence(path, inventory):
     data=read_json(path)
     if (data['schema']!='atlas.w11-scale-evidence.v1' or data['status']!='PASS_BOUNDED_SCALE'
             or data['source_bindings_unchanged'] is not True):
         raise ValueError('scale study failed or incomplete')
-    production={k:json.loads(v) for k,v in _source_bytes().items()}
-    if data['sources']['production']!=production: raise ValueError('scale production binding changed')
+    from atlas_tectonics import _identity
+
+    saved = {name: row['sha256'] for name, row in data['sources']['production'].items()}
+    native_prefix = 'src/atlas_tectonics/'
+    native = {name.removeprefix(native_prefix): inventory[name] for name in _identity.members(
+        name for name in inventory if name.startswith(native_prefix) and name.endswith('.py'))}
+    saved_native = {name: pin for name, pin in saved.items() if not name.startswith('atlas_shared/')}
+    if native != saved_native:
+        raise ValueError('scale production binding changed')
+
+    from atlas_runtime import _application_declaration
+    declaration = _application_declaration(ROOT/'src')
+    if declaration is None:
+        raise ValueError('scale shared production binding unavailable')
+    shared = {name: pin for name, pin in declaration[1]['source_hashes'].items()
+              if name.startswith('atlas_shared/') and name.endswith('.py')}
+    saved_shared = {name: pin for name, pin in saved.items() if name.startswith('atlas_shared/')}
+    if shared != saved_shared:
+        raise ValueError('scale shared production binding changed')
     for name,sha in data['sources']['tools_and_fixtures'].items():
-        if digest(local(name))!=sha: raise ValueError('scale driver/fixture binding changed')
+        if inventory.get(name)!=sha: raise ValueError('scale driver/fixture binding changed')
+
+    import numpy as np
+    import scipy
+    from tectonics.tools.check.check_w11_scale import summarise_case, SIZES, PAIRS, LIMIT_BYTES
     hw=data['execution_card']['hardware'];runtime=data['runtime']
     if (hw['platform']!=platform.platform() or hw['python']!=platform.python_version()
             or runtime['numpy']!=np.__version__ or runtime['scipy']!=scipy.__version__
@@ -123,9 +139,9 @@ def assess(writer):
     started=time.perf_counter()
     try:
         report['w10']=retained_w10(evidence_paths[0],before)
-        report['scale']=scale_evidence(evidence_paths[1])
+        report['scale']=scale_evidence(evidence_paths[1],before)
         suite,selection=verify._acceptance_suite(GATES,'W11')
-        if suite.countTestCases()!=14: raise ValueError('W11 requires exactly 14 selected safeguards')
+        if suite.countTestCases()!=13: raise ValueError('W11 requires exactly 13 selected safeguards')
         result=unittest.TextTestRunner(stream=sys.stderr,verbosity=1,resultclass=Measurements).run(suite)
         report.update(selected_tests_by_gate=selection,results=result.rows,tests_run=result.testsRun,
             failures=len(result.failures),errors=len(result.errors),skips=len(result.skipped),

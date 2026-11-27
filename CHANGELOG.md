@@ -203,6 +203,15 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev53](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev53) - 2026-11-27
+
+### Bugfixes
+
+- Updated the W11 invalidation selection to check that changes to inputs, parameters or backend
+  still invalidate cached execution results after the source-edit test was retired.
+- Fixed W11 scale evidence validation to use the native and tool digests checked at admission and
+  the full declared shared-source list. Older receipts still need matching source and runtime bindings.
+
 ## [0.1.0.dev52](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev52) - 2026-11-27
 
 ### Tectonics
