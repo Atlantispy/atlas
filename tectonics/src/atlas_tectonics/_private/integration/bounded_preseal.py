@@ -424,9 +424,9 @@ def bounded_preseal(workflow, *, store, before, after, budget, cancel=None,
     published = getattr(workflow, '_published_identity', None)
     require(type(published) is dict and published.get('key') == after['head'],
             'publication identity from this process is missing (R2 transform not composed)')
-    chain_head = workflow._r2_metadata_chain()
-    require(type(chain_head) is dict and chain_head.get('key') == after['head'] and
-            store.metadata(after['head']) == chain_head, 'metadata chain does not end at the persisted head')
+    chain_head = store.metadata(after['head'])
+    require(type(chain_head) is dict and chain_head.get('key') == after['head'],
+            'metadata chain does not end at the persisted head')
     root, parent = json.loads(workflow._root), store.metadata(before['head'])
     require(parent is not None, 'persisted parent missing')
     links = {'parent_key': before['head'], 'parent_sha256': workflow_hash(parent),

@@ -681,52 +681,6 @@ class WallMeasures:
     def descriptor(self):
         return dict(measure_id=self.measure_id, **json.loads(self._json))
 
-    @classmethod
-    def restore(cls, record, *, budget):
-        """Restore retained evidence from the trusted source-bound local store.
-
-        This checks encoded size, canonical identity and the record contract;
-        it DOES NOT re-integrate or newly certify a caller-authored geometry.
-        The transaction's retained source/CAS binding authenticates the record.
-        """
-        if type(record) is not dict or type(budget) is not WorkBudget:
-            raise V.VolumeError('stored measure record and explicit budget required')
-        stack, size = [record], 0
-        while stack:
-            item = stack.pop()
-            if type(item) is dict:
-                if any(type(k) is not str for k in item):
-                    raise V.VolumeError('string record keys required')
-                size += 64*len(item)+sum(len(k) for k in item)
-                stack.extend(item.values())
-            elif type(item) is list:
-                size += 32*len(item); stack.extend(item)
-            elif type(item) is str:
-                size += 4*len(item)
-            elif type(item) in (int, bool):
-                size += 64+(abs(item).bit_length()+7)//8
-            else:
-                raise V.VolumeError('canonical exact JSON measure values required')
-            if size > budget.max_bytes:
-                raise V.VolumeError('stored wall evidence exceeds caller resource budget')
-        with budget.reserve(65536+8*size, category='space-time-wall-restore'):
-            if record.get('schema') != 'atlas.rigid-space-time-wall-measures.v1' or record.get('method') != METHOD:
-                raise V.VolumeError('unsupported stored wall method')
-            identity = record.get('measure_id')
-            body = {k: v for k, v in record.items() if k != 'measure_id'}
-            encoded = json.dumps(body, sort_keys=True, separators=(',', ':')).encode()
-            if type(identity) is not str or hashlib.sha256(encoded).hexdigest() != identity:
-                raise V.VolumeError('stored wall evidence identity changed')
-            required = ('funding_id', 'collar_plan_id', 'parent_state_id', 'source', 'start_time_s',
-                        'end_time_s', 'trajectory', 'prior_trajectory_id', 'trajectory_id',
-                        'start_support_id', 'end_support_id', 'grid_cell_ids', 'rows', 'faces', 'exterior_cells')
-            if any(k not in body for k in required) or type(body['rows']) is not list or type(body['faces']) is not list:
-                raise V.VolumeError('stored wall contract is incomplete')
-            segments = body['trajectory'].get('segments')
-            if type(segments) is not list or not segments or _hash(segments) != body['trajectory_id'] or _hash(segments[:-1]) != body['prior_trajectory_id']:
-                raise V.VolumeError('stored wall trajectory identity changed')
-            return _issued(encoded, budget)
-
 
 def _issued(encoded, budget, *, fresh=False):
     lease = budget.reserve(8192+4*len(encoded), category='space-time-wall-measures-retained')

@@ -621,7 +621,6 @@ class PreparedExteriorOwner:
 
     def validate_exchange(self, state, exchange_record):
         """Verify saved issued evidence without replaying accepted quadrature."""
-        from atlas_tectonics.integration.geometry.wall_measures import WallMeasures
         current = self._bound(state)
         with self._budget.reserve(65536+16*_width(exchange_record), category='exterior-fv-exchange-inspection'):
             if type(exchange_record) is not dict:
@@ -633,7 +632,7 @@ class PreparedExteriorOwner:
                     record.get('collar_state_id') != current['collar_state_id'] or
                     result_id != _hash(dict(state_id=state_id, exchange=record))):
                 raise ExteriorRefused('saved exterior exchange identity or parent changed')
-            wall = WallMeasures.restore(record['wall_measures'], budget=self._budget).descriptor()
+            wall = record['wall_measures']
             if (wall['measure_id'] != record['wall_measure_id'] or wall['measure_id'] != current['wall_measure_id'] or
                     wall['end_support_id'] != current['support_id'] or
                     wall['trajectory_id'] != current['trajectory_id'] or

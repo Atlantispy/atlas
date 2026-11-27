@@ -203,6 +203,24 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev78](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev78) - 2026-11-27
+
+### Optimisations
+
+#### Repeated checks removed
+
+- `bridges.extract` no longer re-verifies a parent that `step()` has already verified.
+- Preseal reads the head metadata directly. `RegionalWorkflow._r2_metadata_chain` is deleted.
+- `exterior_state.validate_exchange` reads the stored wall body, which the exchange `result_id` binds, instead of
+  restoring it. `WallMeasures.restore` is deleted.
+
+### Pin records
+
+- `private_heat_original_joined_r8._PUBLIC_ACCOUNTS_SHA` (`regional_workflow.py`) changes from
+  `87ef361d68310d116eb94106bea8880f13d15e62b8fed92c159925793566a3be` to
+  `86dfeda43e3fdaa8776cf92b9ce67f77e864eed2404415f0fd5d1e8c1fdb5efe`, because the metadata-chain removal edits that
+  file. The extracted `retained_inventory_accounts` text is unchanged.
+
 ## [0.1.0.dev77](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev77) - 2026-11-27
 
 ### Tools

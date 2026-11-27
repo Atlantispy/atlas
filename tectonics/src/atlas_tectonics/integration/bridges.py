@@ -331,7 +331,11 @@ def extract(state, footprint, motion=None, duration_s=None):
     the footprint is not a set of faces of this network or is not a Footprint. Non-finite velocities are refused,
     whatever the process's floating-point warning policy.
     """
-    state = _sphere.verified(state)
+    return _extract(_sphere.verified(state), footprint, motion, duration_s)
+
+
+def _extract(state, footprint, motion, duration_s):
+    """extract() on a state its caller has already verified."""
     if type(footprint) is not Footprint:
         raise BridgeRefused('a Footprint record is required', INCOMPATIBLE_SUPPORT)
     network, material = state.network, state.material
@@ -705,7 +709,7 @@ def _returned_at_end(parent, network, material, returns, motion, budget=None):
                                 STALE_GEOMETRY)
         # Records are reconstructible data, not authentication of a prior extract() call. Reapply every
         # representation's admission, including finite velocities and any omitted component, to the real forcing.
-        checked = extract(parent, footprint, motion, duration)
+        checked = _extract(parent, footprint, motion, duration)
         if checked.extract_id != item.extract_id:
             raise BridgeRefused('region %r was not read from the parent of this interval as recorded'
                                 % footprint.region_id, STALE_GEOMETRY)
