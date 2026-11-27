@@ -1429,21 +1429,31 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             extra=dict(base, record_identities=identities_record, **widths))
     RUN.storage_point(record, 'before-advance', checkpoint=catalog, query_directory=query_directory, store=store)
     save()
+    # SL-D2: the pose memo carried between interval processes, beside the store folder, never inside it
+    # (the store is sealed, measured and read by a separate reader). No input to any result. The first
+    # interval starts empty (D-2).
+    from atlas_tectonics.integration.geometry import wall_measures    # function-local, as width_gate below
+    memo_path = store_directory.with_name(wall_measures.pose_memo_name(store_directory.name))
+    held = frozenset() if lineage is None else wall_measures.load_pose_memo(memo_path)
     guard.phase('advance-exactly-one-fresh-interval')
     # Unit A: the publications inside the advance enter their proofs for finish's width pass.
     from atlas_tectonics._private.integration import width_gate as WG       # function-local: not a pressure-startup module
     with _focused_capture(output), WG.collect_proofs(store):
         if lineage is None:
-            return FRESH.advance_first_interval(m, store=store, expected_root=root_runner['root'], budget=budget,
+            sealed = FRESH.advance_first_interval(m, store=store, expected_root=root_runner['root'], budget=budget,
                 artifacts=output, phase=guard.phase, guard=guard, record=record, save=save,
                 query_checkpoints=query_checkpoints, finish=finish, measurements=measurements,
                 end_geometry_provider_factory=end_provider_factory,
                 **({'require_heat_pool': True} if require_heat_pool else {}),
                 **({} if retained_execution is None else {'retained_execution': retained_execution}))
-        return FRESH.advance_successor_interval(m, store=store, expected_root=root_runner['root'],
-            lineage=lineage['lineage'], budget=budget, artifacts=output, phase=guard.phase, guard=guard, record=record,
-            save=save, query_checkpoints=query_checkpoints, finish=finish, measurements=measurements,
-            worker_selection=lineage['worker_selection'])
+        else:
+            sealed = FRESH.advance_successor_interval(m, store=store, expected_root=root_runner['root'],
+                lineage=lineage['lineage'], budget=budget, artifacts=output, phase=guard.phase, guard=guard,
+                record=record, save=save, query_checkpoints=query_checkpoints, finish=finish,
+                measurements=measurements, worker_selection=lineage['worker_selection'])
+        # Only this process's entries: the loaded, older histories can no longer be a prefix.
+        wall_measures.save_pose_memo(memo_path, held)    # not in a finally: a failed advance saves nothing
+        return sealed
 
 
 def final_status(errors, mode, record=None):

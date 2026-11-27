@@ -203,6 +203,23 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev70](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev70) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- Plate poses along a trajectory are remembered by a digest of their history, so a pose one step longer than
+  a remembered one folds in only its new step instead of the whole history again. The memo holds at most
+  4,096 entries (oldest first out) and is carried between interval processes in a file beside the store
+  folder, never inside it; it is not an input to any result, and the first interval starts empty.
+
+### Pin records
+
+- The fresh-interval driver `_private/integration/run_fresh_interval.py` now loads and saves the pose memo,
+  so its profile record changes in this landing (no repin of any existing record): sha256 `f4fa526558a1631eaf2c10b7098eb4d95618875a2440efa74d75053eabb29efb`
+  becomes `cbf93a869453436a00577c20a079222ec56931231e7241d6b91b68fa7d8f79d2`.
+
 ## [0.1.0.dev69](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev69) - 2026-11-27
 
 ### Optimisations

@@ -495,8 +495,20 @@ def _dot_bounds(a, b):
     return _sum(_product(x, y) for x, y in zip(a, b))
 
 
+# Histories decoded in the current query: id(rows) -> (rows, tuple). Emptied by _unpack; the held rows keep ids unique.
+_history_rows = {}
+_history_lock = threading.Lock()
+
+
 def _history(value):
-    return tuple((_load_vec(row['angular_velocity_rad_s']), W._decode(row['duration_s'])) for row in value)
+    entry = _history_rows.get(id(value))
+    if entry is not None and entry[0] is value:
+        return entry[1]
+    history = tuple((_load_vec(row['angular_velocity_rad_s']), W._decode(row['duration_s'])) for row in value)
+    with _history_lock:
+        _history_rows[id(value)] = (value, history)
+        W._register_history(history, value)
+    return history
 
 
 def _history_record(value):
@@ -546,12 +558,12 @@ class _ComponentRayCache:
         if self.owner is not arena:
             raise V.VolumeError('ray-pose cache belongs to another or closed query arena')
         return (tuple(ray), tuple(omega), a, b, level,
-                tuple((tuple(w), duration) for w, duration in prior))
+                W._history_digest(prior) or tuple((tuple(w), duration) for w, duration in prior))
 
-    def retain(self, key, answer):
+    def retain(self, key, answer, prior):
         if len(self.values) >= self.MAX_ENTRIES:
             return
-        ray, omega, a, b, level, prior = key
+        ray, omega, a, b, level = key[:5]
         point, error, boxes = answer
         values = (*ray, *omega, a, b, level,
                   *(v for w, duration in prior for v in (*w, duration)),
@@ -574,7 +586,7 @@ def _ray_box(ray, omega, a, b, level, arena, prior=()):
     point, error = W._pose_vector(ray, omega, a, b, level, arena, prior)
     answer = point, error, tuple((v-error, v+error) for v in point)
     if cache is not None:
-        cache.retain(key, answer)
+        cache.retain(key, answer, prior)
     return answer
 
 
@@ -979,6 +991,10 @@ def _bernstein_hull(polynomial, bounds):
 def _unpack(interval, plate_id, budget, *, _record=None):
     if type(interval) not in (DifferentialInterval, CurrentGeometry) or interval._resource is not budget:
         raise V.VolumeError('issued differential interval and the same WorkBudget required')
+    with _history_lock:
+        # A query starts here; a dropped entry is only a miss (the identity tests refuse a reused id).
+        _history_rows.clear()
+        W._history_digests.clear()
     # The assembly already owns this decoded record. Borrowing it avoids only
     # another JSON parse; all plate/ray/history decoders below still run, and
     # the issued-object and shared-budget checks above are never bypassed.

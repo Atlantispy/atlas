@@ -41,6 +41,7 @@ import time
 import weakref
 
 from atlas_tectonics.integration.geometry import differential_geometry as G
+from atlas_tectonics.integration.geometry import wall_measures as W
 from atlas_tectonics.integration import resources as R
 from atlas_tectonics.integration.parallel.worker_bootstrap import launch as _worker_launch
 from atlas_tectonics.integration.parallel.binding import (BATCH_LIMIT, WALL_KIND, BatchBinding, JobBinding,
@@ -234,6 +235,7 @@ def worker_main(directory):
     supports = [_support(inputs['support'], request['support_id'], child_budget)]
     other = None if 'other' not in inputs else _support(inputs['other'], request['other_support_id'], child_budget)
     body = []
+    held = W.load_pose_memo(directory.parent/W.pose_memo_file)
     with ExecutionContext('reference') as context:
         def run(actual_budget):
             begun = time.perf_counter()
@@ -249,6 +251,7 @@ def worker_main(directory):
             raise ValueError('receipt exceeds optional wire envelope')
         with (directory/'result.json').open('xb') as stream:
             stream.write(receipt)
+    W.save_pose_memo(directory/W.pose_memo_added_file, held)
     try:
         _resource_report(directory, process, body[0] if body else None)
     except Exception:
@@ -324,6 +327,7 @@ def _read_inputs(directory, requests):
 def _complete(directory, binding_bytes, requests, inputs, context, observed, *, batch_seconds=None,
               _binding=None, _record=None):
     """Every member through the unchanged issuer call between the two binding checks; result.json written."""
+    held = W.load_pose_memo(directory/W.pose_memo_file)
     wall = requests[0].get('kind') == WALL_KIND
 
     def run(new_ledger):
@@ -387,6 +391,7 @@ def _complete(directory, binding_bytes, requests, inputs, context, observed, *, 
         raise ValueError('receipt exceeds optional wire envelope')
     with (directory/'result.json').open('xb') as stream:
         stream.write(receipt)
+    W.save_pose_memo(directory/W.pose_memo_added_file, held)
 
 
 def _kept_worker(home, process):
@@ -644,6 +649,7 @@ class _Child:
                 time.sleep(0.05)
             if process.returncode:
                 raise RuntimeError('optional exact child declined: '+self._stderr())
+            W.load_pose_memo(self.directory/W.pose_memo_added_file)
             return _mapped_read(self.directory/'result.json', MAX_RECEIPT)
         finally:
             self.elapsed = time.perf_counter()-launched
@@ -718,6 +724,7 @@ class _Child:
                 time.sleep(0.05)
             with self.lock:
                 self._worker_record()
+            W.load_pose_memo(path/W.pose_memo_added_file)
             return _mapped_read(path/'result.json', MAX_RECEIPT)
         except BaseException:
             self.stop()
@@ -918,6 +925,7 @@ class InterfaceParallelSession:
                 return None
             self.directory = tempfile.TemporaryDirectory(prefix='atlas-interfaces-')
             (Path(self.directory.name)/'inputs').mkdir()
+            W.save_pose_memo(Path(self.directory.name)/W.pose_memo_file)
         return identity
 
     def _prepare_automatic(self, jobs):
@@ -1607,6 +1615,7 @@ class BatchParallelSession(InterfaceParallelSession):
                 batch_seconds=self.batch_seconds)
             path = Path(self.directory.name)/('batch-%d' % self.stats['started'])
             (path/'inputs').mkdir(parents=True)
+            W.save_pose_memo(path/W.pose_memo_file)
             # The batch's own encoded inputs; each child still verifies every digest.
             for identity, raw in inputs.items():
                 with (path/'inputs'/(identity+'.json')).open('xb') as stream:

@@ -11,7 +11,10 @@ from fractions import Fraction as Q
 import hashlib
 import heapq
 import json
+from pathlib import Path
 import math
+import os
+import threading
 import weakref
 
 from . import volume as V
@@ -169,11 +172,136 @@ def _round_up(value, quantum):
     return -((-value)//quantum)*quantum
 
 
+# Decoded histories issued by differential_geometry._history in the current query:
+# id(tuple) -> [tuple, record rows, lazy (digest, digest without the last row)]. The held
+# tuple keeps its id unique.
+_history_digests = {}
+# Forward pose after a history's steps, by (vector, vector types, level, history digest):
+# (vector, error, arena work charges of those steps). Shared by all queries of the process.
+_pose_memo = {}
+_pose_lock = threading.Lock()
+# shortcut: unmeasured figure; set from the entry count in the first Debug profile.
+pose_memo_limit = 4096
+
+
+def _register_history(history, rows):
+    _history_digests[id(history)] = [history, rows, None]
+
+
+def _history_digest(history):
+    entry = _history_digests.get(id(history))
+    if entry is None or entry[0] is not history:
+        return None
+    if entry[2] is None:
+        # One rendering gives both ids: the list so far equals _text(rows[:-1]), then _text(rows).
+        running = TrajectoryHash()
+        running.extend(entry[1][:-1])
+        before = running.id()
+        running.extend(entry[1][-1:])
+        entry[2] = running.id(), before
+    return entry[2]
+
+
+class _Charges:
+    # Forwards a pose step's arena work and records it for replay on a memo hit.
+    def __init__(self, arena):
+        self.arena, self.resource, self.counts = arena, arena.resource, []
+
+    def work(self, count):
+        self.counts.append(count)
+        return self.arena.work(count)
+
+
 def _pose_vector(vector, omega, t0, t1, level, arena, prior=(), *, inverse=False):
-    steps = tuple((w, duration, duration) for w, duration in prior)+((omega, t0, t1),)
-    if inverse:
-        steps = tuple((tuple(-q for q in w), a, b) for w, a, b in reversed(steps))
-    error = Q(0)
+    digests = None if inverse or not prior else _history_digest(prior)
+    if digests is None:
+        steps = tuple((w, duration, duration) for w, duration in prior)+((omega, t0, t1),)
+        if inverse:
+            steps = tuple((tuple(-q for q in w), a, b) for w, a, b in reversed(steps))
+        return _pose_steps(vector, steps, level, arena, Q(0))
+    head = (tuple(vector), tuple(map(type, vector)), level)
+    with _pose_lock:
+        hit = _pose_memo.get(head+digests[:1])
+        start = None if hit is not None or len(prior) < 2 else _pose_memo.get(head+digests[1:])
+    if hit is None:
+        # Each step's rounding reads only the level and the incoming vector and error, so the
+        # pose after n-1 steps plus step n equals the full fold.
+        charges = _Charges(arena)
+        if start is None:
+            posed, error = _pose_steps(vector, tuple((w, d, d) for w, d in prior), level, charges, Q(0))
+            counts = ()
+        else:
+            for count in start[2]:
+                arena.work(count)
+            w, d = prior[-1]
+            posed, error = _pose_steps(start[0], ((w, d, d),), level, charges, start[1])
+            counts = start[2]
+        hit = posed, error, counts+tuple(charges.counts)
+        with _pose_lock:
+            # Insertion order is history age: the oldest histories go first at the cap.
+            while len(_pose_memo) >= pose_memo_limit:
+                del _pose_memo[next(iter(_pose_memo))]
+            _pose_memo[head+digests[:1]] = hit
+    else:
+        # Same work units as the skipped steps; their temporary reservations are not re-taken.
+        for count in hit[2]:
+            arena.work(count)
+    return _pose_steps(hit[0], ((omega, t0, t1),), level, arena, hit[1])
+
+
+# The pose-memo file carries entries between the processes of one run (CARRIER-r1 section 1). It is
+# no input to any result: with or without it every value, record byte and work unit is equal.
+def pose_memo_name(stem):
+    # D-2: the method is in the name; a file written under another method is simply not found.
+    return stem+'.pose-memo.'+METHOD+'.json'
+
+
+pose_memo_file, pose_memo_added_file = pose_memo_name('pool'), pose_memo_name('added')
+
+
+def _memo_number(value):
+    return [type(value) is Q, str(value)]
+
+
+def save_pose_memo(path, since=frozenset()):
+    """Write the memo entries whose keys are not in `since`; nothing is written when there are none."""
+    with _pose_lock:
+        entries = [item for item in _pose_memo.items() if item[0] not in since]
+    rows = []
+    for (vector, _, level, digest), (posed, error, counts) in entries:
+        if all(type(x) in (int, Q) for x in (*vector, *posed, error)):
+            rows.append([[_memo_number(x) for x in vector], level, digest, [_memo_number(x) for x in posed],
+                         _memo_number(error), list(counts)])
+    if rows:
+        # Whole file, then rename: a killed process leaves the old file or none.
+        path = Path(path)
+        temporary = path.with_name(path.name+'.tmp')
+        temporary.write_text(json.dumps(rows, separators=(',', ':')), encoding='utf-8')
+        os.replace(temporary, path)
+
+
+def load_pose_memo(path):
+    """Merge a memo file this run wrote (read on trust, 1804); missing or unreadable is a miss.
+
+    Returns the keys held afterwards, so a worker can save only what it added."""
+    number = lambda pair: (Q if pair[0] else int)(pair[1])
+    entries = {}
+    try:
+        for vector, level, digest, posed, error, counts in json.loads(Path(path).read_text(encoding='utf-8')):
+            vector = tuple(map(number, vector))
+            entries[vector, tuple(map(type, vector)), level, digest] = (
+                tuple(map(number, posed)), number(error), tuple(counts))
+    except (OSError, ValueError, TypeError):
+        entries = {}
+    with _pose_lock:
+        for key, value in entries.items():
+            if len(_pose_memo) >= pose_memo_limit:
+                break
+            _pose_memo.setdefault(key, value)
+        return frozenset(_pose_memo)
+
+
+def _pose_steps(vector, steps, level, arena, error):
     for w, a, b in steps:
         # Prior segments are endpoint rotations; only the current segment's
         # interval is time-dependent, even when applying the inverse product.
