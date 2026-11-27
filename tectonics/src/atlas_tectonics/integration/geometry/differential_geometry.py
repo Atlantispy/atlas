@@ -786,12 +786,34 @@ def prepare_differential_interval(parent_network, motion, *, end_time_s,
             motion_id=motion.motion_id, plate_angular_velocity_rad_s=record['plate_angular_velocity_rad_s'],
             boundary_angular_velocity_rad_s={row['boundary_id']: row['angular_velocity_rad_s'] for row in boundary_rows})
         record['trajectory'] = dict(segments=previous_segments+[segment])
-        record['trajectory_id'] = W._hash(record['trajectory']['segments'])
-        record['prior_trajectory_id'] = W._hash(previous_segments)
         epoch = record['parent_network_id'] if prior_record is None else prior_record['trajectory']['segments'][0]['parent_network_id']
-        record['start_support_id'] = W._hash(dict(epoch_network_id=epoch, segments=previous_segments))
-        record['end_support_id'] = W._hash(dict(epoch_network_id=epoch, segments=record['trajectory']['segments']))
+        trajectory, support, record['prior_trajectory_id'] = _trajectory_hashes(prior_record, previous_segments, epoch)
+        record['start_support_id'] = support.id()
+        trajectory.append(segment); support.append(segment)
+        record['trajectory_id'], record['end_support_id'] = trajectory.id(), support.id()
+        with _trajectory_lock:
+            _trajectory_states[record['trajectory_id']] = (trajectory, support)
+            while len(_trajectory_states) > 2:
+                del _trajectory_states[next(iter(_trajectory_states))]
     return _issue(DifferentialInterval, record, budget, endpoint)
+
+
+# Running segment-list hashes of the last issued intervals, keyed by trajectory id (ids bind the lists).
+_trajectory_states = {}
+_trajectory_lock = threading.Lock()
+
+
+def _trajectory_hashes(prior_record, previous_segments, epoch):
+    # Returns copies of the prior list's trajectory and support hash states, and the prior list id.
+    if prior_record is not None:
+        with _trajectory_lock:
+            states = _trajectory_states.get(prior_record['trajectory_id'])
+        if states is not None:
+            return states[0].copy(), states[1].copy(), prior_record['trajectory_id']
+    trajectory = W.TrajectoryHash()
+    support = W.TrajectoryHash('{"epoch_network_id":'+W._text(epoch)+',"segments":', '}')
+    trajectory.extend(previous_segments); support.extend(previous_segments)
+    return trajectory, support, trajectory.id()
 
 
 def _qtext(value):

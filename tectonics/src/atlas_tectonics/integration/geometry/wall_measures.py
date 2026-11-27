@@ -24,8 +24,43 @@ from atlas_tectonics.integration.resources import WorkBudget, select_budget
 METHOD = 'exact-rational-enclosed-rigid-space-time-wall-v1'
 
 
+def _text(record):
+    return json.dumps(record, sort_keys=True, separators=(',', ':'))
+
+
 def _hash(record):
-    return hashlib.sha256(json.dumps(record, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    return hashlib.sha256(_text(record).encode()).hexdigest()
+
+
+class TrajectoryHash:
+    """Running `_hash(prefix-wrapped list)`: one appended item costs one item rendering.
+
+    The compact JSON of a list is `[`, the item texts joined by commas, `]`, so the
+    id of the list so far is a copy of the running state fed the closing bytes.
+    """
+
+    def __init__(self, prefix='', suffix=''):
+        self._state = hashlib.sha256((prefix+'[').encode())
+        self._suffix = (']'+suffix).encode()
+        self._count = 0
+
+    def append(self, item):
+        self._state.update(((',' if self._count else '')+_text(item)).encode())
+        self._count += 1
+
+    def extend(self, items):
+        for item in items:
+            self.append(item)
+
+    def copy(self):
+        other = object.__new__(TrajectoryHash)
+        other._state, other._suffix, other._count = self._state.copy(), self._suffix, self._count
+        return other
+
+    def id(self):
+        state = self._state.copy()
+        state.update(self._suffix)
+        return state.hexdigest()
 
 
 def _q(value):

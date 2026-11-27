@@ -203,6 +203,16 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev69](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev69) - 2026-11-27
+
+### Optimisations
+
+#### Geometry and transport
+
+- Trajectory and support ids are kept as running hashes of the segment list, so issuing an interval hashes
+  only its new segment instead of the whole list again. The ids are the same bytes as before; a record
+  without a remembered state falls back to hashing the full list.
+
 ## [0.1.0.dev68](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev68) - 2026-11-27
 
 ### Bugfixes
