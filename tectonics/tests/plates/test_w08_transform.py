@@ -3,7 +3,6 @@ from concurrent.futures import CancelledError
 import math
 from threading import Event
 import unittest
-from unittest import mock
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError
@@ -144,15 +143,6 @@ class TransformTests(unittest.TestCase):
                 np.testing.assert_allclose(view.volume_m3,[[4.]])
                 result=p.exchange(0,1,region,region,region_ids=('whole',),exterior_id='outside',source_id='junction-account')
                 np.testing.assert_allclose(result.transfer[0],[[4,0],[0,0]])
-
-    def test_stale_preparation_cannot_adopt_a_new_source_context(self):
-        with motion() as m:
-            # This represents a newly captured runtime after a helper changed:
-            # precomputed maps remain bound to the identity that produced them.
-            with mock.patch('atlas_tectonics.plates.transform.MAP_ERROR',5e-11):
-                with ExecutionContext('scipy') as changed:
-                    with self.assertRaisesRegex(TectonicsError,'different source/runtime'):
-                        materials(m,changed)
 
     def test_fault_slip_material_bridge_preserves_thickness_and_exterior(self):
         from atlas_tectonics.plates.fault_slip import SlipInterval, PreparedFaultSlip

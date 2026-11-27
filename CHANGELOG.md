@@ -203,6 +203,15 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev81](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev81) - 2026-11-27
+
+### Tests
+
+- Removed eight retired source-inventory and identity tests. Code-identity checks are no longer part of any run
+  mode, so these tests were checking records that no longer exist.
+- Six refusal tests now expect the messages the solvers give today.
+- Removed six imports the deleted tests left unused.
+
 ## [0.1.0.dev80](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev80) - 2026-11-27
 
 ### Optimisations

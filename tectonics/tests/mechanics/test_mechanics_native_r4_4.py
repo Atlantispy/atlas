@@ -9,7 +9,6 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 from atlas_tectonics import PreparedVariableStokes2D, NonlinearStokesPolicy
 from atlas_tectonics.mechanics import _mechanics_native as native
-from atlas_tectonics.integration import reuse
 from atlas_tectonics.mechanics.variable_stokes import _StressMACOperator
 from atlas_tectonics.integration.resources import WorkBudget
 from tests.fixtures.variable_stokes_fixtures import unit_box, unit_scales, analytic_variable, request
@@ -154,13 +153,6 @@ class PreparedNativeContracts(unittest.TestCase):
         with mock.patch.object(native,'prepare',side_effect=AssertionError('must not compile')):
             with self.assertRaises(CancelledError):self.plan(cancel=cancel)
         self.assertEqual(self.budget.reserved_bytes,0)
-
-    def test_native_and_compiler_inventory_is_recorded(self):
-        with reuse.ExecutionContext('numba') as context:
-            self.assertIn('atlas_tectonics.mechanics._mechanics_native.stress_saddle',
-                          {token[0] for token in context._tokens})
-            self.assertIn('numba_helper',context._runtime['binaries'])
-            self.assertIn('llvmlite',context._runtime['binaries'])
 
     def test_no_hidden_request_history_after_different_force(self):
         with self.plan() as p:

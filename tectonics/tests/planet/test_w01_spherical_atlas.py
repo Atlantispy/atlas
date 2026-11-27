@@ -31,7 +31,6 @@ from atlas_tectonics import (SphericalFrame, SphericalChart, SphericalGeometry,
     BoundaryRegion, build_boundary_network)
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits, StoreError
-from atlas_tectonics.integration.reuse import ExecutionContext
 from atlas_tectonics.planet.spherical_atlas import _restore_atlas
 
 CASE = json.loads((Path(__file__).resolve().parents[2]/'cases/w01_spherical_atlas.json').read_text())
@@ -602,10 +601,6 @@ class AtlasResourcesAndStorage(unittest.TestCase):
     def test_oversized_or_wrong_restore_payload(self):
         with self.assertRaises(GeometryError):_restore_atlas(self.a.descriptor(),b'bad')
         with self.assertRaises(GeometryError):_restore_atlas(self.a.descriptor(),self.a._points,limits=GeometryLimits(max_vertices=1))
-    def test_native_spatial_runtime_is_identified(self):
-        with ExecutionContext() as context:
-            self.assertEqual(len(context._runtime['binaries']['scipy_ckdtree']),64)
-            self.assertIn('scipy_spatial',context._runtime['versions'])
 
     def test_fresh_process_rebuild(self):
         with self.store() as s:save(self.a,s)

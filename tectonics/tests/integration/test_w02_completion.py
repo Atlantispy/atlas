@@ -24,7 +24,7 @@ from atlas_tectonics.planet.topology import (PlateRecord,BlockRecord,BoundaryRec
 from atlas_tectonics.planet.markers import MaterialMarkers1D,move_material_markers
 from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
 from atlas_tectonics.integration.resources import WorkBudget,MemoryLimitError
-from atlas_tectonics.integration.reuse import cached_material_remap,cached_ale_transport,CachePolicy,ExecutionContext
+from atlas_tectonics.integration.reuse import cached_material_remap,cached_ale_transport,CachePolicy
 from atlas_tectonics.integration.parallel.execution import KernelExecutor,ExecutionPolicy
 
 CLOSED=MaterialBoundary('closed')
@@ -435,9 +435,6 @@ class PersistenceAndExecutionTests(unittest.TestCase):
             cached_ale_transport(s,u,np.full(17,.01),.01,left=ext(),right=ext(),store=store,cache_policy=always)
             self.assertEqual(store.statistics()['snapshots'],2)
             with self.assertRaises(TectonicsError):cached_ale_transport(s,u,w,.01,left=ext(),right=ext(),event_times_s=(1.005,),store=store,cache_policy=always)
-    def test_source_inventory_covers_new_methods(self):
-        with ExecutionContext('numba') as context:
-            self.assertIn('planet.remapping', context._modules)
     def test_ale_execution_modes(self):
         s=state(8);requests=[(np.full(9,.1),np.zeros(9)),(np.full(9,.2),np.zeros(9))]
         expected=[advect_ale(s,u,w,.01,left=ext(),right=ext()) for u,w in requests]

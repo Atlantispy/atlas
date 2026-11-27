@@ -321,7 +321,7 @@ class CouplingTests(unittest.TestCase):
         for ip in (None,at.AdaptiveInnerPolicy(rhs_relative_cap=1e-5)):
             with at.PreparedThermochemical2D(s.problem,nonlinear_start='previous-stage1',
                     anderson_policy=at.AndersonPolicy(),adaptive_inner_policy=ip) as q:
-                with self.assertRaisesRegex(at.TectonicsError,'source/policy'):q.advance(s,1e-6,source='wrong')
+                with self.assertRaisesRegex(at.TectonicsError,'continued state physical plan changed'):q.advance(s,1e-6,source='wrong')
 
     def test_second_stage_cancellation_preserves_input_and_seed(self):
         class CancelStage(at.PreparedThermochemical2D):

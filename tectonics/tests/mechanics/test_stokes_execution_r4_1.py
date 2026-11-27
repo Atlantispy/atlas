@@ -17,7 +17,6 @@ from atlas_tectonics import (PreparedStokes2D,StokesSolvePolicy,StokesSolution,
     reference_rheology,save_stokes_solution,load_stokes_solution,TectonicsError)
 from atlas_tectonics.integration.resources import WorkBudget,MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits
-from atlas_tectonics.integration import reuse
 from atlas_tectonics.mechanics import stokes_execution
 from tests.fixtures.stokes_fixtures import unit_box,unit_scales,request,analytic
 ROOT=Path(__file__).resolve().parents[2]
@@ -157,12 +156,6 @@ class PreparedExecutionTests(unittest.TestCase):
         with self.plan(budget=b) as p:
             self.solve(p);self.assertEqual(b.reserved_bytes,p.retained_bytes_estimate)
         self.assertEqual(b.reserved_bytes,0)
-    def test_context_includes_new_modules_and_native_backends(self):
-        with reuse.ExecutionContext('scipy') as context:
-            for name in ('mechanics.stokes','mechanics.stokes_execution'):
-                self.assertIn(name,context._modules)
-            for name in ('scipy_superlu','scipy_fft'):
-                self.assertIn(name,context._runtime['binaries'])
     def test_invalid_policy_cannot_hide_failure(self):
         for kwargs in ({'method':'fallback'},{'max_iterations':0},{'momentum_tolerance':np.inf},
                        {'divergence_tolerance':-1.},{'krylov_rtol':True}):

@@ -143,12 +143,6 @@ class Execution(unittest.TestCase):
     def test_viscosity_contrast_not_silently_capped(self):
         with self.plan(policy=NonlinearStokesPolicy(max_viscosity_contrast=2)) as p:
             with self.assertRaisesRegex(TectonicsError,'contrast'):self.solve(p)
-    def test_source_and_native_dependencies_retained(self):
-        with reuse.ExecutionContext('scipy') as context:
-            for k in ('mechanics.variable_stokes','mechanics.variable_stokes_execution'):
-                self.assertIn(k,context._modules)
-            for k in ('scipy_superlu','scipy_fft'):
-                self.assertIn(k,context._runtime['binaries'])
     def test_extreme_publication_rejects_wrong_returned_answer(self):
         b=unit_box(2);small=np.nextafter(0.,1.)
         with PreparedVariableStokes2D(b,unit_scales()) as p:
@@ -203,8 +197,3 @@ class SourceIdentityRegression(unittest.TestCase):
         held=[reference_rheology(k) for k in ('constant','tosi-1','tosi-2','bf23-memory')]
         with reuse.ExecutionContext('scipy') as b:second=b.identity
         self.assertEqual(first,second);self.assertEqual(len(held),4)
-    def test_new_aliases_registered_for_source_verification(self):
-        with reuse.ExecutionContext('scipy') as context:
-            signatures={token[0] for token in context._tokens}
-            for k in ('gmres','spilu','_native_law'):
-                self.assertIn('atlas_tectonics.mechanics.variable_stokes_execution.'+k,signatures)

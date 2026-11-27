@@ -88,11 +88,11 @@ class ExplicitGuessTests(unittest.TestCase):
         with self.assertRaises(at.TectonicsError):VariableStokesSolution(d,{k:warm.array(k) for k in warm.array_names})
     def test_different_policy_refused(self):
         with at.PreparedVariableStokes2D(self.b,self.sc,policy=at.NonlinearStokesPolicy(ilu_fill_factor=17.)) as plan:
-            with self.assertRaisesRegex(at.TectonicsError,'source/plan'):plan.solve_rheology(*scalar_inputs(),initial_guess=self.guess,**request(self.b))
+            with self.assertRaisesRegex(at.TectonicsError,'initial-guess plan/geometry/scales/policy differs'):plan.solve_rheology(*scalar_inputs(),initial_guess=self.guess,**request(self.b))
     def test_different_geometry_refused(self):
         b=unit_box(3)
         with at.PreparedVariableStokes2D(b,self.sc) as plan:
-            with self.assertRaisesRegex(at.TectonicsError,'source/plan'):
+            with self.assertRaisesRegex(at.TectonicsError,'initial-guess plan/geometry/scales/policy differs'):
                 plan.solve_rheology(np.zeros((3,2)),np.zeros((2,3)),np.ones((3,3))*1.6,
                     at.reference_rheology('tosi-2'),initial_guess=self.guess,**request(b))
     def test_different_epoch_refused(self):
@@ -236,7 +236,7 @@ class WarmCouplingTests(unittest.TestCase):
     def test_wrong_start_policy_cannot_resume(self):
         warm=self.run_step().state
         with at.PreparedThermochemical2D(self.p) as q:
-            with self.assertRaisesRegex(at.TectonicsError,'source/policy'):q.advance(warm,.001,source='wrong')
+            with self.assertRaisesRegex(at.TectonicsError,'continued state physical plan changed'):q.advance(warm,.001,source='wrong')
     def test_restore_rejects_incorrect_seed_link_and_policy(self):
         state=self.run_step().state
         for mutate in ('mode','id','first','missing'):
@@ -280,7 +280,7 @@ class WarmCouplingTests(unittest.TestCase):
     def test_cold_state_cannot_resume_as_warm(self):
         cold=self.run_step('zero-rate').state
         with at.PreparedThermochemical2D(self.p,nonlinear_start='rk-stage0') as q:
-            with self.assertRaisesRegex(at.TectonicsError,'source/policy'):q.advance(cold,.001,source='wrong')
+            with self.assertRaisesRegex(at.TectonicsError,'continued state physical plan changed'):q.advance(cold,.001,source='wrong')
 
 
 class WarmRunnerTests(unittest.TestCase):

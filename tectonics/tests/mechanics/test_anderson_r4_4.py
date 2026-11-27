@@ -271,7 +271,7 @@ class CoupledAndersonTests(unittest.TestCase):
         s=self.step().state
         for ap in (None,at.AndersonPolicy(depth=3)):
             with at.PreparedThermochemical2D(self.p,anderson_policy=ap) as p:
-                with self.assertRaisesRegex(at.TectonicsError,'source/policy'):p.advance(s,.001,source='bad')
+                with self.assertRaisesRegex(at.TectonicsError,'continued state physical plan changed'):p.advance(s,.001,source='bad')
     def test_store_reopen_continuation_exact(self):
         with at.PreparedThermochemical2D(self.p,anderson_policy=at.AndersonPolicy(),nonlinear_start='rk-stage0') as p:
             a=p.advance(self.s,.001,source='one').state;b=p.advance(a,.001,source='two').state

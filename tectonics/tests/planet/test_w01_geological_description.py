@@ -32,7 +32,6 @@ from atlas_tectonics import (GeologyError, GeologySource, MaterialDefinition,
 from atlas_tectonics.history.geological_case import _snapshot, restore_geological_case
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits, StoreError
-from atlas_tectonics.integration.reuse import ExecutionContext
 
 SOURCE = GeologySource('synthetic','synthetic','Synthetic case; no Earth calibration.')
 ROCK = MaterialDefinition('rock','solid','synthetic',3000.,3.,1000.,0.,3e-5,300.,(0.,2000.))
@@ -524,11 +523,6 @@ class PersistenceContracts(unittest.TestCase):
             out=list(pool.map(lambda _:save_geological_case(self.case,self.store),range(4)))
         self.assertEqual(set(out),{self.case.definition_id})
         self.assertEqual(self.store.statistics()['snapshots'],1)
-
-    def test_identity_context_covers_new_modules(self):
-        with ExecutionContext() as context:
-            self.assertIn('history.geological_case',context._modules)
-            self.assertIn('history.geological_records',context._modules)
 
 
 class AdditionalAcceptance(unittest.TestCase):
