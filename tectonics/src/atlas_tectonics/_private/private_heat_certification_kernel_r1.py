@@ -872,11 +872,11 @@ def solve_enclosure(matrix, rhs, *, precision, cancelled=None, evidence=None):
         ar.check('interval-add')
     r = approximate_inverse(a, ar)
     ri = [[(v, v) for v in row] for row in r]
-    xhat = []
+    xhat, mids = [], [ar.midpoint(bound) for bound in b]    # one midpoint per bound, not per row
     for row in r:
         value = ar.zero
-        for v, bound in zip(row, b, strict=True):
-            value = ar.near.add(value, ar.near.mul(v, ar.midpoint(bound)))
+        for v, mid in zip(row, mids, strict=True):
+            value = ar.near.add(value, ar.near.mul(v, mid))
         xhat.append(value)
     a_columns = list(zip(*a, strict=True))
     rho = ar.zero
@@ -956,6 +956,22 @@ class ExactIncompatibility(ArithmeticError):
     """An exact necessary moment constraint proves infeasibility."""
 
 
+def nought_column(matrix):
+    """First column of M that is an exact nought in every row, else None (proves or abstains).
+
+    Such a column makes the Gram matrix singular, so no precision rung can certify it
+    (ladder-unresolved.md section 2). Only exact int/mpz/mpq noughts count, compared as handed in;
+    a ragged matrix or an entry of any other type is not claimed.
+    """
+    exact = (int, type(G.mpz(0)), type(G.mpq(0)))
+    if not matrix or len({len(row) for row in matrix}) != 1:
+        return None
+    for column in range(len(matrix[0])):
+        if all(type(row[column]) in exact and row[column] == 0 for row in matrix):
+            return column
+    return None
+
+
 def certified_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *,
                       precisions=PRECISIONS, cancelled=None, evidence=None):
     """Enclose unchanged exact weights, refining only algebraically fixed ones."""
@@ -984,6 +1000,10 @@ def certified_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *,
         key = keys[index]
         jump = signed_tau if key == base_keys[0] else -signed_tau if key == base_keys[1] else G.mpq(0)
         physical[key] = (value+jump)*conversion[index]
+    column = nought_column(matrix)
+    if column is not None:
+        audit['attempts'].append(dict(status='UNRESOLVED', proof='nought-column', column=column))
+        precisions = ()    # every rung would be unresolved: the end of the ladder, as today
     for precision in precisions:
         attempt = dict(precision_bits=precision)
         began = perf_counter()

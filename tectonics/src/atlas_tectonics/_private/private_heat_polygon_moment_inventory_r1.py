@@ -21,7 +21,7 @@ from atlas_tectonics._private.integration.heat import low_ledger_inventory as L
 from atlas_tectonics._private.integration.heat import endpoint_assembly_inventory as I
 from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 
-FUNCTIONALS_SHA = 'a4f07bf96433f499d9d2b55004d4df75476eb965e95e36f78cf26c031d8ea326'
+FUNCTIONALS_SHA = '94dc7c871aedf7770f6e89ee7e864827ced67e5655fd54d8f1f106cc534ee130'
 ONE = I.Shape(1, 1, True)
 
 

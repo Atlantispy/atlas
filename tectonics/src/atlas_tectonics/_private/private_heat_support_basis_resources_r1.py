@@ -21,7 +21,7 @@ from atlas_tectonics._private.integration.heat import exact_growth as E
 from atlas_tectonics._private.integration.heat import low_ledger_inventory as L
 
 G = F.G
-FUNCTIONALS_SHA = 'a4f07bf96433f499d9d2b55004d4df75476eb965e95e36f78cf26c031d8ea326'
+FUNCTIONALS_SHA = '94dc7c871aedf7770f6e89ee7e864827ced67e5655fd54d8f1f106cc534ee130'
 
 
 def _verify(cancelled):
@@ -37,12 +37,8 @@ def _coordinate(value):
                sys.getsizeof(value.denominator)) if type(value) is Fraction else sys.getsizeof(value)
 
 
-def support(observations, centre, *, budget, minimum=40, cancelled=None, resource_evidence=None):
-    """Owner of original ScreenedSupport; .full_ranking() is already funded."""
-    F.K._require_gmp()
-    I.check(cancelled)
-    if type(observations) not in (list, tuple) or not observations or type(centre) not in (list, tuple) or len(centre) != 3:
-        raise ValueError('Owned explicit observation pool and 3D centre required')
+def _observations(observations, cancelled):
+    """Validate the observations; return the largest coordinate size and the tie-text allowance."""
     largest, text = 1, 0
     for key, point in observations:
         I.check(cancelled)
@@ -56,6 +52,51 @@ def support(observations, centre, *, budget, minimum=40, cancelled=None, resourc
             raise ValueError('Three-dimensional exact observation point required')
         for value in point:
             largest = max(largest, _coordinate(value))
+    return largest, text
+
+
+class ObservationPool:
+    """Centre-independent support inputs of one observation pool. Never changed after it is built.
+    It holds no lease: its holder keeps it exactly as long as the observations it was built from."""
+    __slots__ = ('screen', 'largest', 'text', 'shapes', 'binary64_bits')
+
+
+def observation_pool(observations, *, cancelled=None):
+    """Validate, shape and screen-prepare the observations once, for every face of one worker."""
+    F.K._require_gmp()
+    I.check(cancelled)
+    if type(observations) not in (list, tuple) or not observations:
+        raise ValueError('Owned explicit observation pool and 3D centre required')
+    pool = ObservationPool()
+    pool.largest, pool.text = _observations(observations, cancelled)
+    from atlas_tectonics._private.integration.heat import gmp_resources as R
+    _verify(cancelled)
+    ar, shapes = L.RationalGrowth(G, R, cancelled), []
+    for _, point in observations:
+        row = tuple(ar.q(value) for value in point)
+        # Adjacent binary64 enclosure comparisons use <=1075-bit parts.
+        for shape in row:
+            ar.op('subtract', shape, L.PUBLIC_BINARY64)
+        shapes.append(row)
+    pool.shapes, pool.binary64_bits = tuple(shapes), ar.expression_bits
+    pool.screen = F.screen_inputs(observations, cancelled)
+    return pool
+
+
+def support(observations, centre, *, budget, minimum=40, cancelled=None, resource_evidence=None):
+    """Owner of original ScreenedSupport; .full_ranking() is already funded.
+    An ObservationPool in place of the observations reuses its prepared inputs; every figure is the same."""
+    F.K._require_gmp()
+    I.check(cancelled)
+    pool = observations if type(observations) is ObservationPool else None
+    if pool is not None:
+        if type(centre) not in (list, tuple) or len(centre) != 3:
+            raise ValueError('Owned explicit observation pool and 3D centre required')
+        observations, largest, text = pool.screen[0], pool.largest, pool.text
+    else:
+        if type(observations) not in (list, tuple) or not observations or type(centre) not in (list, tuple) or len(centre) != 3:
+            raise ValueError('Owned explicit observation pool and 3D centre required')
+        largest, text = _observations(observations, cancelled)
     for value in centre:
         largest = max(largest, _coordinate(value))
     from atlas_tectonics._private.integration.heat import gmp_resources as R
@@ -68,14 +109,22 @@ def support(observations, centre, *, budget, minimum=40, cancelled=None, resourc
         ar = L.RationalGrowth(G, R, cancelled)
         c = [ar.q(value) for value in centre]
         cached, shapes = 0, []
-        for _, point in observations:
-            difference = [ar.op('subtract', ar.q(a), b) for a, b in zip(point, c, strict=True)]
-            distance = ar.total(ar.op('multiply', d, d) for d in difference)
-            cached += ar.slot(distance)
-            shapes.append(distance)
-            # Adjacent binary64 enclosure comparisons use <=1075-bit parts.
-            for value in point:
-                ar.op('subtract', ar.q(value), L.PUBLIC_BINARY64)
+        if pool is not None:
+            for coordinates in pool.shapes:
+                difference = [ar.op('subtract', a, b) for a, b in zip(coordinates, c, strict=True)]
+                distance = ar.total(ar.op('multiply', d, d) for d in difference)
+                cached += ar.slot(distance)
+                shapes.append(distance)
+            ar.expression_bits = max(ar.expression_bits, pool.binary64_bits)
+        else:
+            for _, point in observations:
+                difference = [ar.op('subtract', ar.q(a), b) for a, b in zip(point, c, strict=True)]
+                distance = ar.total(ar.op('multiply', d, d) for d in difference)
+                cached += ar.slot(distance)
+                shapes.append(distance)
+                # Adjacent binary64 enclosure comparisons use <=1075-bit parts.
+                for value in point:
+                    ar.op('subtract', ar.q(value), L.PUBLIC_BINARY64)
         for value in c:
             ar.op('subtract', value, L.PUBLIC_BINARY64)
         ar.choice(shapes)  # bound all exact distance comparison products
@@ -84,7 +133,8 @@ def support(observations, centre, *, budget, minimum=40, cancelled=None, resourc
         containers = L.CONTAINER_UNIT*(48*m+128)+text
         total = I.size(metadata+cached+containers+ar.scalar_work(rational_slots=48))
         work.resize_before_allocation_or_after_drop(total)
-        result = F.nearest_complete_shell(observations, centre, minimum=minimum, cancelled=cancelled)
+        result = F.nearest_complete_shell(observations, centre, minimum=minimum, cancelled=cancelled,
+                                          inputs=None if pool is None else pool.screen)
         if resource_evidence is not None:
             resource_evidence.update(observations=m, admitted_bytes=total,
                 maximum_expression_bits=ar.expression_bits, deferred_full_ranking_admitted=True,
@@ -144,14 +194,18 @@ class Basis:
         self._vector()
         coordinate = [self.op('divide', self.op('subtract', self.q(a), b), self.scale)
                       for a, b in zip(point, self.origin, strict=True)]
+        # Each power from the one before: the same multiplications at the same widths, once each.
+        powers = []
+        for value in coordinate:
+            row = [self.q(1)]
+            for _ in range(3):
+                row.append(self.op('multiply', row[-1], value))
+            powers.append(row)
         result = []
         for exponent in F.EXPONENTS:
             product = self.q(1)
-            for value, power in zip(coordinate, exponent, strict=True):
-                factor = self.q(1)
-                for _ in range(power):
-                    factor = self.op('multiply', factor, value)
-                product = self.op('multiply', product, factor)
+            for row, power in zip(powers, exponent, strict=True):
+                product = self.op('multiply', product, row[power])
             result.append(product)
         return result
 
@@ -159,15 +213,20 @@ class Basis:
         self._vector()
         mean = [self.op('divide', self.op('subtract', self.q(a), b), self.scale)
                 for a, b in zip(face_point, self.origin, strict=True)]
+        square, averages = self.op('multiply', self.scale, self.scale), {}
         def average(exponent):
-            indices = [i for i, power in enumerate(exponent) for _ in range(power)]
-            if not indices:
-                return self.q(1)
-            if len(indices) == 1:
-                return mean[indices[0]]
-            i, j = indices
-            return self.op('add', self.op('multiply', mean[i], mean[j]),
-                self.op('divide', self.q(moment[i][j]), self.op('multiply', self.scale, self.scale)))
+            # Each distinct average worked out once per call: exact values, so every use is equal.
+            if exponent not in averages:
+                indices = [i for i, power in enumerate(exponent) for _ in range(power)]
+                if not indices:
+                    averages[exponent] = self.q(1)
+                elif len(indices) == 1:
+                    averages[exponent] = mean[indices[0]]
+                else:
+                    i, j = indices
+                    averages[exponent] = self.op('add', self.op('multiply', mean[i], mean[j]),
+                        self.op('divide', self.q(moment[i][j]), square))
+            return averages[exponent]
         return [self.op('multiply', -self.q(conductivity), self.total(
                     self.op('divide', self.op('multiply', self.op('multiply', self.q(normal[j]), power),
                         average(tuple(p-int(i == j) for i, p in enumerate(exponent)))), self.scale)

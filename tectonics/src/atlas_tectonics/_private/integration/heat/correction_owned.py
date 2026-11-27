@@ -202,6 +202,28 @@ class _Arithmetic:
             self.put(result, at, value)
         return result
 
+    def cell_sums(self, plus, minus, into=None):
+        """Each cell's exact sum(plus[c]) - sum(minus[c]), each list added as a balanced tree.
+
+        An exact sum does not depend on its order, so every value is the running sum's; k terms still
+        take k-1 operations, each booked by op from its operands' true shapes. Narrow terms join
+        first, so most additions run below the full width. One put a cell, of the final value.
+        Every plus list holds at least one term (each caller seeds one).
+        """
+        result = self.array(len(plus)) if into is None else into
+        for at, (terms, taken) in enumerate(zip(plus, minus, strict=True)):
+            value = self._tree(terms, 0, len(terms))
+            if taken:
+                value = self.op('subtract', value, self._tree(taken, 0, len(taken)))
+            self.put(result, at, value)
+        return result
+
+    def _tree(self, terms, lo, hi):
+        if hi-lo == 1:
+            return terms[lo]
+        mid = (lo+hi)//2    # depth first: at most log2(k) partial sums live at once
+        return self.op('add', self._tree(terms, lo, mid), self._tree(terms, mid, hi))
+
     def drop_to(self, mark):
         # Only used after predicate-local arrays have been explicitly deleted;
         # the known predicate returns a bool, never a borrowed numeric value.
@@ -239,12 +261,12 @@ class _Arithmetic:
                     enthalpy_j=stocks, temperature_k=temperatures)
 
     def residual(self, energy, faces):
-        result = self.copy(energy)
+        plus, minus = [[e] for e in energy], [[] for _ in energy]
         for i, j, amount in faces:
-            self.put(result, i, self.op('add', result[1][i], amount))
+            plus[i].append(amount)
             if j is not None:
-                self.put(result, j, self.op('subtract', result[1][j], amount))
-        return result
+                minus[j].append(amount)
+        return self.cell_sums(plus, minus)
 
 
 def _public_guard(ar, low, candidate, cap, lo_faces, faces, alphas, bounds):

@@ -30,7 +30,7 @@ source_hash, stream_hash, target_bytes = BASE.source_hash, BASE.stream_hash, BAS
 verified_private = BASE.verified_private
 owner_projection_bytes = BASE.owner_projection_bytes
 projection_output_plan = BASE.projection_output_plan
-_OWNER_SHA = '3ac813d248b233eb06a766bb0ec56d98426a30ec31ba4efcc5a06a961dad40ea'
+_OWNER_SHA = '51a257aaad77baccb79fd3c2102f3ceb32553920c8a0fac57754b1e9fe814b6e'
 _SOURCES = dict(O._SOURCES, **{_atlas_identity.relkey(BASE.__file__):
     'a05d036dde9fa04a14a61e764c45cba137eb25f9c5f8fe1bebf59a2ada06ce43'})
 _SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()
@@ -120,8 +120,18 @@ class _ProjectionArithmetic(O._Arithmetic):
     def encoded_equal(self, values, encoded, label):
         if len(values) != len(encoded):
             raise ValueError('Complete original '+label+' array required')
+        mpz, mpq = self.G.mpz, self.G.mpq
         for at, (value, pair) in enumerate(zip(values, encoded, strict=True)):
             self.encoded_location = dict(array=label, index=at)
+            if type(pair) in (tuple, list) and type(value) in (int, mpq):
+                # The writer encodes a canonical pair as decimal digits (private_heat_finish_kernel_r3
+                # _encode_rational): equal strings are equal numbers. decode's reservation stays, its
+                # parse is skipped; equal(value, value) makes the same reservations, evidence and count.
+                shape = BASE.pair_shape(pair)
+                self.reserve(max(shape.numerator, shape.denominator))
+                if pair[0] == mpz(value.numerator).digits(10) and pair[1] == mpz(value.denominator).digits(10):
+                    self.equal(value, value)
+                    continue
             if not self.equal(value, self.decode(pair)):
                 raise ValueError('Returned '+label+' differs from the actual original values')
 
@@ -183,8 +193,8 @@ def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt,
     if not ar.less(0, target) or not ar.equal(target, ar.decode(record['independently_supplied_absolute_residual_target'])):
         raise ValueError('Original independently supplied residual target differs')
     out, canonical = face_arrays(ar, record, n, nf)
-    for at in range(n):
-        ar.put(out, at, ar.G.mpq(0))
+    zero = ar.G.mpq(0)
+    plus, minus = [[zero] for _ in range(n)], [[] for _ in range(n)]    # out = 0 + inflow - outflow
     outward = ar.G.mpq(0)
     for f, ((i, j, pair), linked) in enumerate(zip(record['physical_faces'], incidence, strict=True)):
         ar.check()
@@ -195,10 +205,11 @@ def _calculate(ar, record, incidence, old_values, cap_values, source_values, dt,
         signed = amount if linked[0][1] == 1 else ar.neg(amount)
         ar.put(canonical, f, signed)
         for owner, sign in linked:
-            increment = signed if sign == 1 else ar.neg(signed)
-            ar.put(out, owner, ar.op('add', out[1][owner], increment))
+            (plus if sign == 1 else minus)[owner].append(signed)
         if j is None:
             outward = ar.op('add', outward, amount)
+    ar.cell_sums(plus, minus, into=out)
+    del plus, minus
     new = ar.decoded_array(record['corrected_energy_exact'], n)
     stored, temperatures = record['enthalpy_j'], record['temperature_k']
     if len(stored) != n or len(temperatures) != n:

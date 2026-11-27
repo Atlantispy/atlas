@@ -244,6 +244,12 @@ def assess_weights(matrix, rhs, keys, base_keys, signed_tau, conversion, *, budg
         # Generated exact singleton values can be wider than the input. Getter
         # and conversion scratch for them is already in the screen envelope.
         largest = max(largest, *(sys.getsizeof(value) for value in physical.values())) if physical else largest
+        INVENTORY.check(cancelled)
+        column = K.nought_column(matrix)
+        if column is not None:
+            # A nought column of M: singular at every precision, so all rungs go (ladder-unresolved.md :37).
+            audit['attempts'].append(dict(status='UNRESOLVED', proof='nought-column', column=column))
+            precisions = ()
         for precision in precisions:
             INVENTORY.check(cancelled)
             attempt = dict(precision_bits=precision)

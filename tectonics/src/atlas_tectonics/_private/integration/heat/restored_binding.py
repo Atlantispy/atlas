@@ -29,13 +29,13 @@ SCHEMA = 'atlas.private.restored-composed-heat-binding.r1'
 EXCHANGE_SCHEMA = 'atlas.private.spatial-composed-advance.r1'
 REF_SCHEMA = 'atlas.private.joined-heat-reference.r1'
 _PINS = {
-    'private_heat_checkpoint_consumer_r10.py': '6e893fc31be71ee8ede77a6c936a56afea55659841f9ccc9a1a54440f878c4d1',
+    'private_heat_checkpoint_consumer_r10.py': '9487443dd62796fcc867395a03016c8d7c283ac4f7aaae40c82958e48bc44374',
     'private_heat_native_issuer_r13.py': '64c32e64c0ad1375d2169b1da4cbb5e6a3eddc42d5ac68a527635db31cf26b07',
-    'private_heat_issuer_resources_r4.py': '166dd82ba45500279b37c5189b56c78990f62b58470a45effa23c0e5b9b686b1',
+    'private_heat_issuer_resources_r4.py': '32e4161b5a01e465c0d21d4b16f8f136540b997c8e8303bbbd494ace59953cc7',
     'private_heat_snapshot_store_r4.py': 'b5b5691d97ae847582f19072b870c26262b1adc5dafcc1b576cfa01179a5bb99',
     'private_heat_forward_kernel_r13.py': '78ea9cc2c64193dcb27e610b59cee3a51da0fee95c36e34fbf57623bb610f944',
-    'private_heat_grouped_account_r1.py': 'c373deec02c82ec21de7d478ae291c1f510712672127e8e9d0bc7585b9a9482b',
-    'private_heat_joined_consumer_r6.py': '590ca42d6093add4a966bd7dbaba1f446394f7f9d9eb61c9a1fc7a80a4c26059',
+    'private_heat_grouped_account_r1.py': '46568908954ad44590121f643080e4a1ebf8e313b86f8c816c7daee2d2b41ffa',
+    'private_heat_joined_consumer_r6.py': 'da6ac2e8694d4781bb8dd0778a2ee4f873d637ae376553e024c57fbab35d9c11',
 }
 _RESTORE_SHA = 'b3b58c0cd4b721bca1e8d745fb7eb0cc1ee85f2c3dd09a2f34e2f91bdc655d8e'
 _restore_bound = False

@@ -211,8 +211,9 @@ def _face(fid, data, prepared, moment, *, budget, cancelled, certification_preci
             return P.OwnedSolve(dict(row=dict(face_id=fid, owners=owners, ordered_keys=[key], bounds={key: (value, value)}),
                 diagnostics=dict(face_id=fid, prescribed_power_exact=True, samples=1,
                                  moment_identity_kind='prescribed-exact-transfer')), work)
-        screen_owner = work.stack.enter_context(B.support(list(points.items()), centre, budget=budget,
-                                                        minimum=40, cancelled=cancelled))
+        pool = prepared.get('pool')    # a worker's observations, prepared once for all its faces
+        screen_owner = work.stack.enter_context(B.support(list(points.items()) if pool is None else pool, centre,
+                                                        budget=budget, minimum=40, cancelled=cancelled))
         screen = screen_owner.value
         ranked, full_order = list(screen.shell), False
         count = len(ranked)

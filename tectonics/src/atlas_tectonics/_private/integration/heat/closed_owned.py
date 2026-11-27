@@ -130,14 +130,12 @@ def _quadratic(ar, old, new, cap):
 
 
 def _residual(ar, energy, faces, load):
-    values = ar.array(len(energy))
-    for i, (a, b) in enumerate(zip(energy, load, strict=True)):
-        ar.put(values, i, ar.op('subtract', a, b))
+    plus, minus = [[a] for a in energy], [[b] for b in load]
     for i, j, q in faces:
-        ar.put(values, i, ar.op('add', values[1][i], q))
+        plus[i].append(q)
         if j is not None:
-            ar.put(values, j, ar.op('subtract', values[1][j], q))
-    return values[1]
+            minus[j].append(q)
+    return ar.cell_sums(plus, minus)[1]
 
 
 def _equal_arrays(ar, first, second):

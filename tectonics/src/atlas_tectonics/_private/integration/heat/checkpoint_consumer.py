@@ -29,7 +29,7 @@ SCHEMA = 'atlas.private.i12-detached-checkpoint-consumer.r10'
 _ISSUER_SHA = '64c32e64c0ad1375d2169b1da4cbb5e6a3eddc42d5ac68a527635db31cf26b07'
 _SOURCES = {
     'atlas_tectonics/_private/integration/heat/snapshot_store.py': 'b5b5691d97ae847582f19072b870c26262b1adc5dafcc1b576cfa01179a5bb99',
-    'atlas_tectonics/_private/private_heat_issuer_resources_r4.py': '166dd82ba45500279b37c5189b56c78990f62b58470a45effa23c0e5b9b686b1',
+    'atlas_tectonics/_private/private_heat_issuer_resources_r4.py': '32e4161b5a01e465c0d21d4b16f8f136540b997c8e8303bbbd494ace59953cc7',
     'atlas_tectonics/_private/integration/heat/native_projection.py': '2e49297217d38e9be7f667906087b7d92a5dcfff4c06e6f043ae1e45d8b338ef',
     'atlas_tectonics/_private/integration/heat/forward_kernel.py': '78ea9cc2c64193dcb27e610b59cee3a51da0fee95c36e34fbf57623bb610f944',
     'atlas_tectonics/_private/integration/heat/native_issuer.py': _ISSUER_SHA,
@@ -75,20 +75,23 @@ def _equations(ar, meta, geometry, arrays, plan, dt):
     for at, (e, s) in enumerate(zip(old, source, strict=True)):
         ar.put(source_array, at, ar.op('multiply', timestep, s))
         ar.put(loaded, at, ar.op('add', e, source_array[1][at]))
-        ar.put(outward_cells, at, ar.G.mpq(0))
     source = source_array[1]
+    zero = ar.G.mpq(0)
+    plus, minus = [[zero] for _ in range(n)], [[] for _ in range(n)]    # outward_cells = 0 + out - in
     outward = ar.G.mpq(0)
     walls = ar.array(sum(kind == 'temperature' for kind, _ in plan['boundary'].values()))
     wall_at = 0
     encoded_faces = meta['exact_paired_face_energy_j']
     if len(encoded_faces) != len(geometry._face_ids):
         raise ValueError('Complete original physical face coverage required')
-    for fid, owners, encoded in zip(geometry._face_ids, geometry._incidence, encoded_faces, strict=True):
+    held = ar.array(len(encoded_faces))    # decoded amounts now live until the cell sums: booked
+    for face, (fid, owners, encoded) in enumerate(zip(geometry._face_ids, geometry._incidence, encoded_faces,
+                                                      strict=True)):
         ar.check()
         canonical = ar.decode(encoded)
+        ar.put(held, face, canonical)
         for at, sign in owners:
-            amount = canonical if sign == 1 else ar.neg(canonical)
-            ar.put(outward_cells, at, ar.op('add', outward_cells[1][at], amount))
+            (plus if sign == 1 else minus)[at].append(canonical)
         if len(owners) == 1:
             at, sign = owners[0]
             amount = canonical if sign == 1 else ar.neg(canonical)
@@ -103,6 +106,9 @@ def _equations(ar, meta, geometry, arrays, plan, dt):
                 ar.put(loaded, at, ar.op('subtract', loaded[1][at], amount))
     if wall_at != len(walls[1]):
         raise ValueError('Original boundary declarations must cover actual exterior faces only')
+    ar.cell_sums(plus, minus, into=outward_cells)
+    del plus, minus    # same values as held: drop them first, then credit held at its last use
+    ar.release_arrays(held[1])
     hull = ar.array(n+wall_at)
     for at, (e, c) in enumerate(zip(loaded[1], cap, strict=True)):
         ar.put(hull, at, ar.op('divide', e, c))

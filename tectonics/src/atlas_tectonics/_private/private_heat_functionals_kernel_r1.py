@@ -231,6 +231,23 @@ def _exact_distance(point, centre):
     return sum((Q(*_parts(a))-Q(*_parts(b)))**2 for a, b in zip(point, centre, strict=True))
 
 
+def screen_inputs(observations, cancelled=None):
+    """The centre-independent inputs of ScreenedSupport, built once per observation pool: points,
+    coordinate enclosures and their uncertain count."""
+    points = tuple((key, tuple(point)) for key, point in observations)
+    intervals, uncertain = [], 0
+    for _, point in points:
+        if cancelled is not None and cancelled():
+            raise CancelledError('Exact nearest-shell screen cancelled')
+        row = []
+        for value in point:
+            bounds, flag = _enclosure(value)
+            row.append(bounds)
+            uncertain += flag
+        intervals.append(tuple(row))
+    return points, tuple(intervals), uncertain
+
+
 class ScreenedSupport:
     """Exact initial complete shell plus lazy full exact rank-expansion fallback.
 
@@ -241,8 +258,8 @@ class ScreenedSupport:
     it includes every original observation and retains original stable tie order.
     Diagnostics count the actual distance evaluations, including reused seeds.
     """
-    def __init__(self, observations, centre, minimum, cancelled):
-        self._points = tuple((key, tuple(point)) for key, point in observations)
+    def __init__(self, observations, centre, minimum, cancelled, inputs=None):
+        self._points = inputs[0] if inputs is not None else tuple((key, tuple(point)) for key, point in observations)
         self._centre = tuple(centre)
         self._cancelled = cancelled
         self._distances = {}
@@ -266,14 +283,20 @@ class ScreenedSupport:
             self.diagnostics['uncertain_coordinate_enclosures'] += uncertain
         binary64 = sys.float_info.radix == 2 and sys.float_info.mant_dig == 53
         lower = []
-        for _, point in self._points:
-            self._check()
-            intervals = []
-            for value in point:
-                bounds, uncertain = _enclosure(value)
-                intervals.append(bounds)
-                self.diagnostics['uncertain_coordinate_enclosures'] += uncertain
-            lower.append(_distance_lower(intervals, centre_intervals) if binary64 else 0.)
+        if inputs is not None:
+            self.diagnostics['uncertain_coordinate_enclosures'] += inputs[2]
+            for intervals in inputs[1]:
+                self._check()
+                lower.append(_distance_lower(intervals, centre_intervals) if binary64 else 0.)
+        else:
+            for _, point in self._points:
+                self._check()
+                intervals = []
+                for value in point:
+                    bounds, uncertain = _enclosure(value)
+                    intervals.append(bounds)
+                    self.diagnostics['uncertain_coordinate_enclosures'] += uncertain
+                lower.append(_distance_lower(intervals, centre_intervals) if binary64 else 0.)
         wanted = min(minimum, len(self._points))
         seeds = nsmallest(wanted, range(len(lower)), key=lambda i: (lower[i], i))
         cutoff = max(self._distance(i) for i in seeds)
@@ -325,9 +348,9 @@ class ScreenedSupport:
         return self._full
 
 
-def nearest_complete_shell(observations, centre, *, minimum=40, cancelled=None):
+def nearest_complete_shell(observations, centre, *, minimum=40, cancelled=None, inputs=None):
     """Return ScreenedSupport; use .shell first, .full_ranking() on rank expansion."""
-    return ScreenedSupport(observations, centre, minimum, cancelled)
+    return ScreenedSupport(observations, centre, minimum, cancelled, inputs)
 
 
 class ExactIncompatibility(ValueError):

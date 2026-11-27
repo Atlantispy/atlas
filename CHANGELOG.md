@@ -203,6 +203,22 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev72](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev72) - 2026-11-27
+
+### Optimisations
+
+#### Heat
+
+- Each heat worker prepares the inputs that do not depend on the face once, at worker start. An invalid
+  observation is now refused when the worker starts, not at the first face.
+- The support basis builds each power from the one before and forms pair products once.
+- Residual cell sums are added as a balanced tree instead of one long running sum. This raises the booked
+  memory peak from 1.73 GB to 2.10 GB reserved; three record fields carry the new peak.
+- The projection audit compares encoded pairs before decoding them.
+- The certification kernel computes interval midpoints once.
+- A column that is exactly nought is recognised before the first precision rung, so the audit's
+  `attempts` list no longer holds the rungs this skips and gains one proof entry instead.
+
 ## [0.1.0.dev71](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev71) - 2026-11-27
 
 ### Optimisations

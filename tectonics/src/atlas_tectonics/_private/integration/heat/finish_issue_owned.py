@@ -35,7 +35,7 @@ from atlas_tectonics._private.integration.heat import process_meter as METER
 HERE = Path(__file__).resolve().parent
 METHOD = 'private:standalone-conservative-physical-face-finish-r7'
 PINS = {
-    'atlas_tectonics/_private/integration/heat/correction_owned.py': '3ac813d248b233eb06a766bb0ec56d98426a30ec31ba4efcc5a06a961dad40ea',
+    'atlas_tectonics/_private/integration/heat/correction_owned.py': '51a257aaad77baccb79fd3c2102f3ceb32553920c8a0fac57754b1e9fe814b6e',
     'atlas_tectonics/_private/integration/heat/finish_codec_inventory.py': '6e8d7b56f9283a2b1e9d94673459e8a62ad707ad94d226d1cd2eb1c4bcc5e295',
     'atlas_tectonics/_private/private_heat_finish_kernel_r3.py': '037bb851c55b558f9e70968b3a76b93d524146ab42d2f3c23ab965692b2ce4a9',
 }
@@ -71,14 +71,12 @@ class _IssueArithmetic(E.Arithmetic):
         return float(value)
 
     def loaded_residual(self, energy, faces, load):
-        result = self.array(len(energy))
-        for at, (e, b) in enumerate(zip(energy, load, strict=True)):
-            self.put(result, at, self.op('subtract', e, b))
+        plus, minus = [[e] for e in energy], [[b] for b in load]
         for i, j, amount in faces:
-            self.put(result, i, self.op('add', result[1][i], amount))
+            plus[i].append(amount)
             if j is not None:
-                self.put(result, j, self.op('subtract', result[1][j], amount))
-        return result[1]
+                minus[j].append(amount)
+        return self.cell_sums(plus, minus)[1]
 
 
 class IssueOwner(O.OwnedSolve):

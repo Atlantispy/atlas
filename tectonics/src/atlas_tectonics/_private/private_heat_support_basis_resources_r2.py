@@ -10,6 +10,7 @@ import sys
 from atlas_tectonics._private import private_heat_support_basis_resources_r1 as B
 
 support = B.support
+observation_pool = B.observation_pool
 
 
 class Basis(B.Basis):

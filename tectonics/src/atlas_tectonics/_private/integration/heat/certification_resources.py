@@ -26,7 +26,7 @@ from atlas_tectonics._private.integration.heat import decimal_inventory as D
 
 HERE = Path(__file__).resolve().parent
 PUBLIC_BINDING = 'plan40b.c3.public-receiving.r2'
-PINS = {'private_heat_certification_kernel_r1.py': '7e50fcb019b4dde6c95002e158a60a7fc976753ce7431cdf06b908483565e92a', 'gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724', 'low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5', 'endpoint_assembly_inventory.py': '8c1342cdd9f2c1e42f93a4b20af87d5b5deb73a4de5287dacf03ce07bd3cb587', 'decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87'}
+PINS = {'private_heat_certification_kernel_r1.py': '7aa035147bbd2da8da17c61e7659841c88360224050c27362493f0b037658895', 'gmp_resources.py': '8a874d12d2e6bdb25b6e3ce493e3642e3a958f5608ef5c4739865b777f458724', 'low_ledger_inventory.py': 'c13cdb0b9452ecc054fc2d09e975e3a36d7a1e6b1317473dbb3d232797b4f9a5', 'endpoint_assembly_inventory.py': '8c1342cdd9f2c1e42f93a4b20af87d5b5deb73a4de5287dacf03ce07bd3cb587', 'decimal_inventory.py': '29cf02041295b26d937399d59b9dc0bd6f50b548ac0f4480730ef45dafa07e87'}
 
 
 def check(cancel):
