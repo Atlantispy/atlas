@@ -223,6 +223,19 @@ class W09WaterTests(unittest.TestCase):
                 plan.advance(exhausted,1.,forcing_id='over-limit')
             self.assertEqual(exhausted.accepted_intervals,256)
 
+    def test_state_whose_account_does_not_close_is_refused(self):
+        from atlas_tectonics.surface.water import WaterState
+        with single_lake() as plan:
+            initial=plan.initialise([1.,0.])
+            d=initial.descriptor(); d['initial_total_m3']=1.+2*np.finfo(float).eps
+            WaterState(initial.water_m3,**d)  # rounding inside the tolerance closes
+            for key in ('initial_total_m3','supplied_m3','subsurface_m3','evaporated_m3','exported_m3'):
+                d=initial.descriptor(); d[key]+=1e-12
+                with self.subTest(key=key), self.assertRaisesRegex(TectonicsError,'water account does not close'):
+                    WaterState(initial.water_m3,**d)
+            with self.assertRaisesRegex(TectonicsError,'water account does not close'):
+                WaterState(initial.water_m3+[1e-12,0.],**initial.descriptor())
+
     def test_stillwater_and_immutable_snapshots_do_not_borrow_caller_buffers(self):
         bed = np.array([0., 10.]); areas = np.array([2., 0.])
         links = np.array([[0, 1]]); water = np.array([1., 0.])

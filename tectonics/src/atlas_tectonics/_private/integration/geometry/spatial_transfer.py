@@ -318,7 +318,6 @@ def admit_migrated_spatial_owner(*, collar, native_transfer, funding_record, fun
     N._keys(historical_owner_definition, _OWNER, _OWNER_OPTIONAL, label='historical spatial owner')
     N._keys(historical_spatial_record, _STATE, _STATE_OPTIONAL, label='historical spatial state')
     N._keys(funding_binding, ('funding_id', 'debit_count', 'ledger_sha256'), label='original funding ledger binding')
-    funding_binding['ledger_sha256']
     byte_count = sum(a.nbytes for arrays in (funding_arrays, spatial_arrays) for a in arrays.values()
                      if type(a) is np.ndarray)
     from atlas_tectonics._private.integration.geometry import geometry_transfer as G

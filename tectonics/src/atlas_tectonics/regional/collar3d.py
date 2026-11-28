@@ -300,13 +300,9 @@ class PreparedRegionalCollar3D:
                 tuple((i-a+1)*h for i, a, h in zip(index, self._lower, spacing)),
                 origin_m=origin, basis=basis, budget=self._budget) for index in np.ndindex(self.cells))
 
-    def _exterior_operator(self, operator):
-        operator.descriptor()
-
     def _exterior_bound(self, state, operator):
         if state.exterior_heat is None:
             return
-        self._exterior_operator(operator)
         _array(state.exterior_heat.array('enthalpy_j'), (len(operator._cells),), 'exterior heat', positive=True)
 
     def rigid_velocity(self, motion):
@@ -415,7 +411,6 @@ class PreparedRegionalCollar3D:
                 fields['material_quadrature_m3'] = quadrature
             exterior = None
             if exterior_heat is not None:
-                self._exterior_operator(exterior_heat)
                 _name(exterior_state_id, 'actual finite exterior thermal state')
                 energy = _array(exterior_enthalpy_j, (len(exterior_heat._cells),), 'exterior heat', positive=True)
                 exterior = RegionalMechanicalSnapshot(dict(schema='atlas.regional-collar-exterior-heat.v1',

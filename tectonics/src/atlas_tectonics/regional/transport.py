@@ -504,20 +504,37 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
             row = cohort_accounts[region.cohort_id]
             for key, value in zip(row, (first, last, entering, exiting)):
                 row[key].append(value)
-        for key,k in index.items():
-            selected = [region for region in moved if region.cohort_id == key]
-            for row in range(grid.nz):
+        # One clip per rectangle. Up to two pieces, one float add is the exactly rounded sum, as fsum;
+        # a cell with three or more pieces of a cohort is re-summed with fsum.
+        for key, k in index.items():
+            count, parts = np.zeros((grid.nz, grid.nx), dtype=np.intp), []
+            for region in moved:
+                if region.cohort_id != key:
+                    continue
                 _cancel(cancel)
-                for col in range(grid.nx):
-                    volumes = []
-                    for region in selected:
-                        bounds = region.bounds_m
-                        dx = np.maximum(0.,np.minimum(x[col+1],bounds[1])-np.maximum(x[col],bounds[0]))
-                        dz = np.maximum(0.,np.minimum(z[row+1],bounds[3])-np.maximum(z[row],bounds[2]))
-                        volumes.append((dz*dx)*grid.strike_width_m)
-                    mass[k,row,col] = math.fsum(volume*region.mass_density_kg_m3
-                        for volume,region in zip(volumes,selected))
-                    fraction[k,row,col] = math.fsum(volume/grid.volume for volume in volumes)
+                b = region.bounds_m
+                dx = np.maximum(0., np.minimum(x[1:], b[1])-np.maximum(x[:-1], b[0]))
+                dz = np.maximum(0., np.minimum(z[1:], b[3])-np.maximum(z[:-1], b[2]))
+                cols, rows = np.flatnonzero(dx), np.flatnonzero(dz)
+                if not len(cols) or not len(rows):
+                    continue
+                r, c = slice(rows[0], rows[-1]+1), slice(cols[0], cols[-1]+1)
+                volume = np.multiply.outer(dz[r], dx[c])*grid.strike_width_m
+                mass[k, r, c] += volume*region.mass_density_kg_m3
+                fraction[k, r, c] += volume/grid.volume
+                count[r, c] += volume != 0.
+                parts.append((r, c, volume, region.mass_density_kg_m3))
+            many, terms = count > 2, {}
+            for r, c, volume, density in parts:
+                for i, j in zip(*np.nonzero(many[r, c])):
+                    terms.setdefault((r.start+i, c.start+j), []).append((volume[i, j], density))
+            last = None
+            for (row, col), pieces in sorted(terms.items()):
+                if row != last:
+                    _cancel(cancel)
+                    last = row
+                mass[k, row, col] = math.fsum(v*density for v, density in pieces)
+                fraction[k, row, col] = math.fsum(v/grid.volume for v, _ in pieces)
         accounts = {}
         for key, row in cohort_accounts.items():
             acc = {name: math.fsum(values) for name, values in row.items()}

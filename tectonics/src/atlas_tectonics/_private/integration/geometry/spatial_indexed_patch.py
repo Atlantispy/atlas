@@ -176,7 +176,6 @@ def logical_record(state):
     snapshot = state._snapshot
     if type(snapshot) is not IndexedSpatialSnapshot:
         return state.record()
-    snapshot._mesh
     allocation = N._Allocation(state._budget, _decode_charge(snapshot._metadata)+65536,
                                category='indexed-spatial-record')
     value = dict(state_id=state.state_id, **json.loads(snapshot._metadata),
@@ -350,18 +349,7 @@ def validate_projected_payload(owner, body, arrays, state_id):
     from atlas_tectonics._private.integration.geometry import spatial_transfer as S
     if not is_compact_cells(body.get('cells')):
         return S.validate_projected_payload(owner, body, arrays, state_id)
-    from atlas_tectonics.integration.coupling.spatial_owner import _project, _q
-    from atlas_tectonics._private.integration import native_transfer as N
-    names = set(owner._names) | {'volume_m3'}
-    count = cell_count(body['cells'], owner._budget)
-    scratch = N._Allocation(owner._budget, 65536+16*count,
-                            category='indexed-spatial-projected-check')
-    for name in sorted(names):
-        np.fromiter((_project(_q(row['volume_m3'] if name == 'volume_m3'
-            else row['exact'][name])) for row in iter_state_cells(body['cells'], owner._budget)),
-            dtype=np.float64, count=count)
     bindings = S._bindings(arrays)
-    _ = scratch
     return dict(state_id=state_id, metadata=S._stream_stats(body)[0], arrays=bindings)
 
 

@@ -57,8 +57,7 @@ def _check_step_record(record, time_s, source, check_adaptive_stage):
     scalar(record['input_time_s'],'stored initial time')
     try: policy=ThermochemicalPolicy(**record['policy'])
     except (TypeError,KeyError) as exc: raise TectonicsError('invalid stored step policy') from exc
-    if record['velocity_mode']=='prescribed-frozen-MAC': record['velocity_source']
-    elif record['velocity_source'] is not None: raise TectonicsError('coupled velocity has no prescribed source')
+    if record['velocity_mode']!='prescribed-frozen-MAC' and record['velocity_source'] is not None: raise TectonicsError('coupled velocity has no prescribed source')
     for v in record['stage_flow_ids']: _hex(v,'stage flow')
     if record['velocity_mode']=='buoyancy-coupled-variable-viscosity':
         from atlas_tectonics.mechanics.variable_stokes import NonlinearStokesPolicy

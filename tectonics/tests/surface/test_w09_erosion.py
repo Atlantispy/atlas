@@ -183,5 +183,22 @@ class W09ErosionTests(unittest.TestCase):
                     self.assertEqual(out.state_id,expected.state_id)
                     for name,a in out.arrays().items(): np.testing.assert_array_equal(a,expected.arrays()[name])
 
+    def test_state_whose_per_cell_account_does_not_close_is_refused(self):
+        from atlas_tectonics._validation import TectonicsError
+        from atlas_tectonics.surface.erosion import ErosionState
+        with plan() as p:
+            s=state(p)
+            def rebuild(**changes):
+                arrays={k:np.array(v) for k,v in s.arrays().items()}; arrays.update(changes)
+                return ErosionState(**arrays,**s.descriptor())
+            self.assertEqual(rebuild().state_id,s.state_id)
+            for name,cell in ((name,cell) for name in s.arrays() for cell in (0,-1)):
+                bad=np.array(getattr(s,name)); bad.flat[cell]+=1e-9
+                with self.subTest(name=name,cell=cell), self.assertRaisesRegex(TectonicsError,'erosion account does not close'):
+                    rebuild(**{name:bad})
+            moved=np.array(s.rock_mass_kg); moved[0,0,0]-=1.; moved[1,0,0]+=1.  # total kept, cells unbalanced
+            with self.assertRaisesRegex(TectonicsError,'erosion account does not close'):
+                rebuild(rock_mass_kg=moved)
+
 
 if __name__ == '__main__': unittest.main()

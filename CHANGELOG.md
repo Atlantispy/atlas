@@ -203,6 +203,30 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev92](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev92) - 2026-11-28
+
+### Tectonics
+
+- Regional transport sums the material in each cell with plain additions for one or two pieces, which already
+  give the correctly rounded sum, and with `math.fsum` over the same products where a cell holds three or more
+  pieces of one cohort. The recorded mass and fraction are byte-equal to 0.1.0.dev91; a new test keeps the old
+  loop as a reference and compares the bytes.
+- Behaviour note: cancellation in the material cell pass is now checked per rectangle and per re-summed row, not
+  per grid row.
+- Deleted work whose result was discarded after the 0.1.0.dev90 check removal: a rebuilt current geometry and an
+  unread interval record in the regional workflow, the exterior operator descriptor call in `collar3d`, repeated
+  key reads in spatial and native transfer, a second velocity-source read in thermochemical execution, and the
+  discarded projection loop on the compact spatial patch path. Each refusal those lines could raise is still
+  raised by the line that follows or by the rewritten condition.
+
+### Tools
+
+- Repaired tests that no longer matched the present code, each asserting at least as much as before: the W11 guard
+  check's test list, the history split baselines and the thin-face sliver refusal steps.
+- The history split `state_id` pin stays out: the cause of its pole-sign difference is not yet explained.
+- Added tests for the water and erosion balance checks restored in 0.1.0.dev91: in-tolerance rounding closes, a
+  1e-12 error on each term refuses, and a move between erosion cells that preserves the total refuses.
+
 ## [0.1.0.dev91](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev91) - 2026-11-28
 
 ### Tools

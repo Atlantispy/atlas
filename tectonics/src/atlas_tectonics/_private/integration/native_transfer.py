@@ -78,9 +78,6 @@ def _historical_collar_fields(fields):
     """
     evolved = frozenset(('transport_id', 'heat_id'))
     _keys(fields, _FIELD_KEYS, evolved, label='historical collar fields')
-    present = set(fields) & evolved
-    for name in sorted(present):
-        fields[name]
 
 
 def _prepared_plans(native, collar):

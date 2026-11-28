@@ -200,6 +200,10 @@ class SplitTests(unittest.TestCase):
         self.assertEqual(stationary.motion_id, 'd6853a888ff9ed2ed0d8d4e447a6f657b98fe5ed3338fdd63e8087f7f687c733')
         later = F.one_plate_motion(.4, step=3, supplies=supplies)
         self.assertEqual(later.motion_id, 'cdb4b86c5811c5436f7072b743d924347e1d3d7cd8dc485d4e6c2fbd7a1ae7b4')
+        self.assertEqual(self.plain.motion.motion_id, moving.motion_id)
+        self.assertEqual(self.plain.map.map_id, '6400d2a45397223a235f09ae6d42408cf97a7a5fa11724df2b9e30b90a47b105')
+        split = F.one_plate_motion(DEGREES, history_splits=(self.split(),))
+        self.assertNotEqual(split.motion_id, moving.motion_id)
 
     def test_frame_independence(self):
         """The same split about a tilted axis gives the same pieces, cohorts and exact accounts to the I03 tolerance."""

@@ -1139,7 +1139,6 @@ class CollarWorkflow:
         return dt
 
     def _spatial_current(self, current_geometry, duration_s):
-        from atlas_tectonics.integration.geometry import differential_geometry as D
         from atlas_tectonics.integration.geometry.wall_measures import _decode
         from atlas_tectonics._validation import scalar
         self._exterior_owner.validate_parent(self._exterior_state, self._state)
@@ -1150,21 +1149,16 @@ class CollarWorkflow:
         if (current['network_id'] != expected_network or
                 _decode(current['time_s']) != Fraction(self._exterior_state.time_s)):
             raise RegionalOwnerRefused('current force geometry differs from the accepted network or clock')
-        if self._differential_interval is not None:
-            D.current_geometry_from_interval(self._differential_interval, budget=self._budget)
-        elif current_geometry.geometry_id != self._initial_current_geometry.geometry_id:
+        if self._differential_interval is None and current_geometry.geometry_id != self._initial_current_geometry.geometry_id:
             raise RegionalOwnerRefused('current force geometry differs from the saved static source partition')
         if self._head['sequence'] >= MAX_INTERVALS:
             raise RegionalOwnerRefused('funded collar interval envelope exceeded')
         return dt
 
     def _spatial_differential(self, interval, duration_s):
-        from atlas_tectonics.integration.geometry.wall_measures import _decode
         from atlas_tectonics._validation import scalar
         self._exterior_owner.validate_parent(self._exterior_state, self._state)
         dt = scalar(duration_s, 'spatial duration', positive=True)
-        record, _ = interval.record(), _COMPACT_SPATIAL.logical_record(self._exterior_state)
-        start, end = (_decode(record[k]) for k in ('start_time_s', 'end_time_s'))
         if self._head['sequence'] >= MAX_INTERVALS:
             raise RegionalOwnerRefused('funded collar interval envelope exceeded')
         return dt

@@ -366,6 +366,47 @@ class AllowanceTests(unittest.TestCase):
         with self.assertRaises(S.SphereError):
             S.verified(forged_rider(state, index, rule['mismatch_relative']))
 
+    def test_a_sliver_given_to_the_merged_strip_is_refused_at_its_first_step(self):
+        # The thin-faces verifier's construction, honest mesh only: the merged strip takes a sliver of its thin
+        # neighbour through an added vertex. Transfer's own rows must close on the measured areas, so the first such
+        # step is refused as an unresolved overlap.
+        rule, merge = control('occupancy_allowance')['drift'], control('thin_merge')
+        scale = F.RADIUS_M*F.RADIUS_M
+        state = F.crust(F.three_plates())
+        for k in range(merge['rides']):
+            state = T.advance(state, F.one_plate_motion(merge['advance_deg'], k), end_time_s=(k+1)*MYR).state
+        step = state.network.step
+        faces, _, _ = merged(state.network, merge['first_strip'], merge['second_strip'], 'merged-1')
+        state = T.advance(state, T.Motion(step, step+1, {p: F.IDENTITY for p in 'ABC'}, mesh=T.Mesh(faces)),
+                          end_time_s=(step+1)*MYR).state
+        state = renamed(state, rule['neighbour'], 't-1')
+        mine, theirs = 'merged-1', 't-1'
+        network, step = state.network, state.network.step
+        lookup = {name: i for i, name in enumerate(network.vertex_ids)}
+        local = network._local[network.plate_ids.index('A')]
+        faces = {f.face_id: f for f in network.faces}
+        m, t = faces.pop(mine), faces.pop(theirs)
+        ring = list(m.vertex_ids)
+        i0, i1 = ring.index(rule['edge'][1]), ring.index(rule['edge'][0])
+        path = [ring[(i0+k) % len(ring)] for k in range((i1-i0) % len(ring)+1)]
+        u, v = max(zip(path, path[1:]), key=lambda p: float(F.angle(local[lookup[p[0]]], local[lookup[p[1]]])))
+        pu, pv = local[lookup[u]], local[lookup[v]]
+        normal = np.cross(pv, pu)/np.linalg.norm(np.cross(pv, pu))
+        e = lambda name: S._measure_bound(network.face_coordinates(network.face_ids.index(name)))*scale
+        offset = 2*rule['fraction']*2*min(e(mine), e(theirs))/scale/float(F.angle(pu, pv))
+        x = (pu+pv)/np.linalg.norm(pu+pv)+offset*normal
+        x = S._placed(dict(network._layout.frames)['A'], (x/np.linalg.norm(x))[None, :])[0]
+        ring.insert(ring.index(u)+1, 'X2')
+        other = list(t.vertex_ids)
+        other.insert(other.index(v)+1, 'X2')
+        faces['merged-2'], faces['t-2'] = S.Face('merged-2', 'A', tuple(ring)), S.Face('t-2', 'A', tuple(other))
+        mesh = T.Mesh(tuple(faces.values()), (('X2', tuple(float(c) for c in x)),))
+        motion = T.Motion(step, step+1, {p: F.IDENTITY for p in 'ABC'}, mesh=mesh)
+        with self.assertRaises(T.TransferRefused) as caught:
+            T.advance(state, motion, end_time_s=(step+1)*MYR)
+        self.assertIn("face 't-1': its overlap rows sum to", str(caught.exception))
+        self.assertIn('(unresolved overlap)', str(caught.exception))
+
 
 class ThinMergeTests(unittest.TestCase):
     @classmethod

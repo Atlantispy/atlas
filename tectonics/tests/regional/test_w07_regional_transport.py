@@ -363,5 +363,78 @@ class RegionalMaterialTransportTests(unittest.TestCase):
             translate_material_regions(grid(),(r,),(0.,0.),.1,cancel=cancelled)
 
 
+def per_cell_reference(g, result):
+    """The dev91 per-cell fsum loop (transport.py:507-520), kept as the reference for the one-pass route."""
+    x, z = g.edges(result['origin_m'])
+    ids = result['cohort_ids']
+    mass = np.zeros((len(ids), g.nz, g.nx))
+    fraction = np.zeros_like(mass)
+    for k, key in enumerate(ids):
+        selected = [region for region in result['regions'] if region.cohort_id == key]
+        for row in range(g.nz):
+            for col in range(g.nx):
+                volumes = []
+                for region in selected:
+                    bounds = region.bounds_m
+                    dx = np.maximum(0., np.minimum(x[col+1], bounds[1])-np.maximum(x[col], bounds[0]))
+                    dz = np.maximum(0., np.minimum(z[row+1], bounds[3])-np.maximum(z[row], bounds[2]))
+                    volumes.append((dz*dx)*g.strike_width_m)
+                mass[k, row, col] = math.fsum(volume*region.mass_density_kg_m3
+                                              for volume, region in zip(volumes, selected))
+                fraction[k, row, col] = math.fsum(volume/g.volume for volume in volumes)
+    return mass, fraction
+
+
+class MaterialCellSumTests(unittest.TestCase):
+    """The one-pass cell route records the same bytes as the per-cell fsum loop."""
+
+    def assert_same_bytes(self, g, regions, velocity, dt, mesh=(0., 0.)):
+        result = translate_material_regions(g, regions, velocity, dt, mesh_velocity_m_s=mesh)
+        mass, fraction = per_cell_reference(g, result)
+        self.assertEqual(np.asarray(result['cell_mass_kg']).tobytes(), mass.tobytes())
+        self.assertEqual(np.asarray(result['cell_volume_fraction']).tobytes(), fraction.tobytes())
+
+    def test_file_cases(self):
+        two = (MaterialRegion2D('a', (-1., .37, -1., 2.), 2.), MaterialRegion2D('b', (.37, 2., -1., 2.), 3.))
+        one = (MaterialRegion2D('a', (-1., .37, -1., 2.), 2.),)
+        self.assert_same_bytes(grid(16, 8), two, (1., 0.), .2)
+        self.assert_same_bytes(grid(), one, (0., 0.), .2, (.5, -.2))
+        self.assert_same_bytes(grid(), one, (.5, -.2), .2, (.5, -.2))
+        self.assert_same_bytes(grid(), (MaterialRegion2D('pulse', (-.4, -.2, .1, .3), 5.),), (1., 0.), 2.)
+        self.assert_same_bytes(grid(12, 7, width=1.2, height=.7),
+                               (MaterialRegion2D('a', (-.5, .45, -.6, .33), 2.),), (.8, .7), .6, (.1, -.1))
+
+    def test_three_and_four_pieces_in_a_cell(self):
+        # 1e16+1 rounds back to 1e16, so plain adds lose both unit pieces; fsum keeps them.
+        three = tuple(MaterialRegion2D('a', (float(i), i+1., 0., 1.), rho) for i, rho in enumerate((1e16, 1., 1.)))
+        self.assert_same_bytes(grid(2, 2, width=6., height=2.), three, (0., 0.), .1)
+        four = tuple(MaterialRegion2D('a', (i*.5, i*.5+.5, j*.5, j*.5+.5), rho)
+                     for (i, j), rho in zip(((0, 0), (1, 0), (0, 1), (1, 1)), (1e16, 1., 1., 3.)))
+        self.assert_same_bytes(grid(2, 2, width=2., height=2.), four, (0., 0.), .1)
+
+    def test_two_cohorts_in_a_cell(self):
+        regions = (MaterialRegion2D('a', (0., .3, 0., 1.), 2.), MaterialRegion2D('b', (.3, .7, 0., 1.), 5.),
+                   MaterialRegion2D('a', (.7, 1., 0., 1.), 7.))
+        self.assert_same_bytes(grid(2, 2, width=2., height=2.), regions, (.13, .02), .5, (.05, 0.))
+
+    def test_seeded_random_catalogues(self):
+        rng = np.random.default_rng(92)
+        for case in range(60):
+            nx, nz = int(rng.integers(2, 9)), int(rng.integers(2, 9))
+            g = grid(nx, nz, width=float(rng.uniform(.5, 40.)), height=float(rng.uniform(.5, 40.)),
+                     origin=(float(rng.normal()*1e3), float(rng.normal()*1e3)))
+            xs = np.sort(rng.uniform(g.origin_m[0]-3, g.origin_m[0]+g.width_m+3, int(rng.integers(2, 9))))
+            zs = np.sort(rng.uniform(g.origin_m[1]-3, g.origin_m[1]+g.height_m+3, int(rng.integers(2, 9))))
+            regions = tuple(
+                MaterialRegion2D(str(rng.integers(2)), (float(a+rng.choice([0., rng.uniform(0, .2)*(b-a)])),
+                                                        float(b), float(lo), float(hi)),
+                                 float(10**rng.uniform(-3, 17)))
+                for a, b in zip(xs, xs[1:]) for lo, hi in zip(zs, zs[1:]) if rng.random() < .8)
+            if regions:
+                with self.subTest(case=case):
+                    self.assert_same_bytes(g, regions, tuple(rng.normal(size=2)), float(rng.uniform(0, 2)),
+                                           tuple(rng.normal(size=2)*.3))
+
+
 if __name__=='__main__':
     unittest.main()

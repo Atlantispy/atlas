@@ -28,23 +28,22 @@ def main():
     sys.path[:0] = [str(root), str(root/'src'), str(root/'tests'), str(root/'tools')]
     from verify import source_inventory
     from tectonics.tools.check.check_w10 import Measurements
-    modules = ['test_source_verification_r4_4',
-               'test_execution_reuse.IdentityTests', 'test_foundations',
-               'test_w01_workflow.RegionalWorkflowTests.test_cold_restore_and_continuation_match_without_resampling',
-               'test_w01_workflow.RegionalWorkflowTests.test_loaded_workflow_implementation_change_invalidates_plan_and_resume',
-               'test_w01_workflow.RegionalWorkflowTests.test_cached_transport_matches_direct_and_warm_hit_avoids_kernel',
-               'test_w01_workflow.RegionalWorkflowTests.test_budget_refusal_and_close_release_all_reservations',
-               'test_w03_workflow.W03WorkflowTests.test_roundtrip_continuation_preserves_all_accounts_and_history',
-               'test_w03_workflow.W03WorkflowTests.test_mixed_signed_exchange_retains_clock_and_both_material_receipts',
-               'test_w03_workflow.W03WorkflowTests.test_budget_and_cancellation_refuse_without_partial_publication',
-               'test_w04_workflow.W04WorkflowTests.test_changed_source_datum_and_loaded_callable_refuse',
-               'test_w04_workflow.W04WorkflowTests.test_repeated_projection_reuses_stored_load_and_flexure',
-               'test_w04_workflow.W04WorkflowTests.test_finite_capacity_and_linear_validity_limits_refuse',
-               'test_w04_regional_workflow.W04RegionalWorkflowTests.test_explicit_halo_load_changes_crop_and_restores_cache_exactly',
-               'test_w04_variable_workflow.W04VariableWorkflowTests.test_factors_are_reused_and_budget_is_released',
-               'test_w02_completion.PersistenceAndExecutionTests.test_remap_cache_history_invalidation',
-               'test_w02_completion.PersistenceAndExecutionTests.test_ale_cache_motion_and_events',
-               'test_w02_completion.IntegratedW02Tests.test_event_sequence_regrid_motion_birth_split_merge_restore']
+    modules = ['tests.integration.test_source_verification_r4_4',
+               'tests.integration.test_execution_reuse.IdentityTests', 'tests.integration.test_foundations',
+               'tests.integration.test_w01_workflow.RegionalWorkflowTests.test_cold_restore_and_continuation_match_without_resampling',
+               'tests.integration.test_w01_workflow.RegionalWorkflowTests.test_cached_transport_matches_direct_and_warm_hit_avoids_kernel',
+               'tests.integration.test_w01_workflow.RegionalWorkflowTests.test_budget_refusal_and_close_release_all_reservations',
+               'tests.integration.test_w03_workflow.W03WorkflowTests.test_roundtrip_continuation_preserves_all_accounts_and_history',
+               'tests.integration.test_w03_workflow.W03WorkflowTests.test_mixed_signed_exchange_retains_clock_and_both_material_receipts',
+               'tests.integration.test_w03_workflow.W03WorkflowTests.test_budget_and_cancellation_refuse_without_partial_publication',
+               'tests.integration.test_w04_workflow.W04WorkflowTests.test_changed_source_datum_and_loaded_callable_refuse',
+               'tests.integration.test_w04_workflow.W04WorkflowTests.test_repeated_projection_reuses_stored_load_and_flexure',
+               'tests.integration.test_w04_workflow.W04WorkflowTests.test_finite_capacity_and_linear_validity_limits_refuse',
+               'tests.integration.test_w04_regional_workflow.W04RegionalWorkflowTests.test_explicit_halo_load_changes_crop_and_restores_cache_exactly',
+               'tests.integration.test_w04_variable_workflow.W04VariableWorkflowTests.test_factors_are_reused_and_budget_is_released',
+               'tests.integration.test_w02_completion.PersistenceAndExecutionTests.test_remap_cache_history_invalidation',
+               'tests.integration.test_w02_completion.PersistenceAndExecutionTests.test_ale_cache_motion_and_events',
+               'tests.integration.test_w02_completion.IntegratedW02Tests.test_event_sequence_regrid_motion_birth_split_merge_restore']
     if args.tests is not None:
         modules = args.tests
     with args.report.open('x', encoding='utf-8') as handle:
