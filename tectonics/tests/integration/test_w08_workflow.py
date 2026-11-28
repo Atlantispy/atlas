@@ -227,6 +227,15 @@ class W08WorkflowTests(unittest.TestCase):
                             mutate_metadata(store,key,mutate)
                         with self.assertRaises((TectonicsError,StoreError)):p.load(1)
 
+    def test_corrupt_array_and_explicit_stale_checkpoint(self):
+        with TemporaryDirectory() as path:
+            owner=WorkBudget(128*1024**2)
+            with open_store(path,owner) as store:
+                with make_workflow_fixture(store=store,budget=owner) as p:
+                    p.run(through=0)
+                    store._db.execute("UPDATE chunks SET payload=zeroblob(length(payload))")
+                    with self.assertRaises((TectonicsError,StoreError)):p.load(0)
+
     def test_exhaustion_commits_exact_endpoint_and_refuses_continuation(self):
         inv,region,history,owner=fixture_inputs(case='A07')
         d=history[0].descriptor();d['end_time_s']=10.

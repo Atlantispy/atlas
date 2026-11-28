@@ -1035,69 +1035,18 @@ def initial_state(*, identity, start_time_s, frame_id, reference, settings, thet
 # ----------------------------------------------------------------------------- continuation (I02.2b)
 
 def _verified(state):
-    """The exact issued types, every identity recomputed from its content and every join cross-checked.
+    """The exact issued types and every identity recomputed from its content.
 
-    A look-alike, a swapped part or an edited record or array refuses. Introspection that rewrites a whole envelope and
+    An edited record or array refuses. Introspection that rewrites a whole envelope and
     all its identities consistently is not defended, and nothing here confers admission.
     """
-    reference, settings, column, materials = state.reference, state.settings, state.column, state.materials
+    reference, settings, column = state.reference, state.settings, state.column
     if (hashlib.sha256(state._record).hexdigest() != state.state_id
             or hashlib.sha256(settings._record).hexdigest() != settings.settings_id
             or _identity(reference._record, reference._arrays()) != reference.reference_id
             or _identity(_column_identity(column._record), column._arrays()) != column.column_state_id):
         raise TectonicsError('a record or array no longer reproduces its identity: edited or forged state')
-    record, values, stocks = json.loads(state._record), json.loads(column._record), state.reservoirs
-    reserved = record['reservoirs']
-    (
-        (record['schema'], record['route'], record['admission'], record['unit_system'])
-        == (state.schema, state.route, state.admission, state.unit_system) == (SCHEMA, ROUTE, NOT_CONFERRED,
-                                                                                 UNIT_SYSTEM),
-        record['identity'] == dict(world_id=state.world_id, scenario_id=state.scenario_id,
-                                   source_id=state.source_id, runtime_id=state.runtime_id),
-        (record['frame']['frame_id'], record['frame']['support_id']) == (state.frame_id, reference.support_id),
-        record['clock'] == dict(epoch_id=state.epoch_id, time_unit='SI seconds forward from the named epoch',
-                                start_time_s=state.start_time_s, elapsed_s=column.elapsed_s, time_s=state.time_s,
-                                accepted_steps=column.accepted_steps),
-        record['lineage'] == dict(parent_state_id=state.parent_state_id, initial_state_id=state.initial_state_id),
-        (record['reference_id'], record['settings_id'], record['column_state_id'])
-        == (reference.reference_id, settings.settings_id, column.column_state_id),
-        record['materials'] == dict(state_id=materials.state_id, layer_cohorts=list(state.layer_cohorts),
-                                    dated_time_s=materials.time_s, role=MATERIAL_ROLE),
-        (reserved is None) == (stocks is None) == (state.reservoir_basis is None),
-        stocks is None or (reserved['inventory_id'], reserved['enthalpy_basis'], reserved['dated_time_s'])
-        == (stocks.inventory_id, state.reservoir_basis, stocks.time_s),
-        all(values[name] == getattr(column, name) for name in _SCALARS),
-        (values['accounts_j_m'], values['counters'], values['extrema'])
-        == (dict(column._accounts), dict(column._counters), dict(column._extrema)),
-        (state.parent_state_id is None) == (state.initial_state_id is None) == (column.accepted_steps == 0),
-        column.accepted_steps <= settings.steps and column.elapsed_s == column.accepted_steps*settings.step_s,
-        state.time_s == advance_time(state.start_time_s, column.elapsed_s))
     return state
-
-
-def _reproduces(reference, base, thermal):
-    """The rebuilt preparation reproduces every carried reference byte, not only the two fingerprints."""
-    def same(a, b):
-        a, b = np.asarray(a), np.asarray(b)
-        return a.dtype == b.dtype and a.shape == b.shape and a.tobytes() == b.tobytes()
-    density = reference._density
-    (
-        ('fingerprints', (base.fingerprint, thermal.fingerprint, thermal.mechanical_fingerprint)
-         == (reference.mechanical_fingerprint, reference.thermal_fingerprint, reference.mechanical_fingerprint)),
-        ('point layers', np.array_equal(base.layer, reference._layer)
-         and np.array_equal(thermal.layer, reference._layer)),
-        ('support depths', same(base.depth_m, reference._depth) and same(thermal.depth_m, reference._depth)),
-        ('control-volume widths', same(base.weight, reference._weight) and same(thermal.volume_m, reference._weight)),
-        ('overburden', same(base.reference_pa, reference._overburden)),
-        ('mechanical density', same(base.density, density) if density is not None
-         else bool(np.all(np.isnan(base.density)))),
-        ('thickness', base.thickness_m == thermal.thickness_m == reference.thickness_m),
-        ('thermal density', same(thermal.reference_density_kg_m3, reference._thermal_density)),
-        ('heat capacity', same(thermal.capacity, reference._capacity)),
-        ('radiogenic source', same(thermal.radiogenic, reference._radiogenic)),
-        ('steady geotherm', same(thermal.steady_k, reference._steady)),
-        ('boundary temperatures', tuple(thermal.boundary_temperature) == reference.boundary_temperature_k),
-        ('pore pressure', not np.any(np.asarray(base.pore_pa) != 0)))
 
 
 def _context(state):
@@ -1212,7 +1161,6 @@ class Continuation:
                                         inputs['densities'], inputs['boundaries'],
                                         reference_temperature=inputs['reference_temperature'],
                                         mechanical_fingerprint=base.fingerprint)
-        _reproduces(reference, base, thermal)
         record = json.loads(settings._record)
         parameters, numerics = record['parameters'], record['numerical_policy']
         law, drive, window, schedule = (parameters['law'], parameters['drive'], numerics['window'],
@@ -1398,11 +1346,8 @@ def _reference_flows(reference):
     an operator: each boundary conductance is the end point's conductivity over its distance to the boundary
     (_integration_heat.prepare_thermal:221-222), times the steady departure from the boundary temperature, and zero
     where no temperature is fixed (_integration_thermomechanical.reference_throughput:85-88). The conductivities are
-    the carried pinned inputs from which Continuation also builds its runner, and _reproduces confirms the support,
-    thickness, boundary temperatures and steady geotherm, so with this code these are the runner's values.
-    _reproduces compares the fingerprint of the pinned inputs, conductivities included, but not the conductances a
-    runtime derives from them: a runtime that derived others is refused here, at commit, only where that changes a
-    steady boundary flow. Where both flows vanish (an insulated or isothermal reference) the recorded runtime
+    the carried pinned inputs from which Continuation also builds its runner. A runtime that derived other
+    conductances is refused here, at commit, only where that changes a steady boundary flow. Where both flows vanish (an insulated or isothermal reference) the recorded runtime
     identity is the only guard against it."""
     props = reference.thermal_inputs()['props']
     layer, depth, steady = reference._layer, reference._depth, reference._steady

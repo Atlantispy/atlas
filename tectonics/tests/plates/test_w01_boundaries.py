@@ -33,7 +33,7 @@ from atlas_tectonics import (PlanarGeometry as PG, SphericalGeometry as SG,
     build_boundary_network as build, save_boundary_network, load_boundary_network,
     GeometryError, GeometryLimits, boundary_motion, Rotation, rigid_velocity)
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
-from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
 
 ROOT = Path(__file__).resolve().parents[2]
 ACCEPT = json.loads((ROOT/'cases/w01_boundaries.json').read_text())['acceptance']
@@ -406,6 +406,12 @@ class BoundaryEngineeringTests(unittest.TestCase):
                 r=load_boundary_network(s,n.network_id);self.assertEqual(r.network_id,n.network_id)
                 assert_array_equal(r.frames().tangent,n.frames().tangent)
                 self.assertIsNone(load_boundary_network(s,'a'*64))
+
+    def test_corrupt_snapshot_rejected(self):
+        n=square_network()
+        with tempfile.TemporaryDirectory() as tmp,ArrayStore(Path(tmp)/'b.db',StoreLimits(4096,8<<20,32<<20)) as s:
+            save_boundary_network(n,s);s._db.execute("UPDATE chunks SET payload=?",(b'bad',))
+            with self.assertRaises(StoreError):load_boundary_network(s,n.network_id)
 
     def test_wrong_metadata_even_with_recomputed_checksum(self):
         n=square_network()

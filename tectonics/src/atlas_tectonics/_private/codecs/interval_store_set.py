@@ -133,6 +133,13 @@ def catalog_transient_charge(size):
     return min(CATALOG_TRANSIENT_FACTOR * size + 65536, CATALOG_CHARGE)
 
 
+def _publication_boundary():
+    # B13: source verification immediately before a seal or catalog publication
+    # (strict: the entered contexts).
+    from atlas_tectonics.integration.reuse import publication_boundary
+    publication_boundary()
+
+
 def seal_key(workflow_id, interval):
     return tagged('atlas.interval-seal-key.v1',
                   {'workflow_id': workflow_id, 'interval': interval})
@@ -325,10 +332,6 @@ class ReadOnlyNative:
 
     def _open_checked(self, require_immutable):
         self.token = file_token(self.path, reject_sidecars=True)
-        # Refuse a WAL-mode header before SQLite can create -shm/-wal (L18):
-        # bytes 18/19 are the write/read format versions, 1 = rollback journal.
-        with self.path.open('rb') as stream:
-            stream.read(100)
         self._db = sqlite3.connect(self.path.as_uri() + '?mode=ro', uri=True,
                                    isolation_level=None, timeout=0, check_same_thread=False)
         try:
@@ -974,26 +977,6 @@ class IntervalStoreSet:
                           dependencies=(handle,))
 
     @_serial
-    def verify_file_sha256(self, interval, *, cancel=None):
-        """Explicit full physical-file verification, separate from selective reads."""
-        self._entry(interval)
-        owner = self._handle(interval, cancel=cancel).retain()
-        try:
-            with _workspace(self.scope.run_budget, 2 * NATIVE_CHUNK_BYTES, 'interval-file-hash'):
-                h = hashlib.sha256()
-                with owner.value.path.open('rb') as stream:
-                    while True:
-                        check_cancel(cancel)
-                        block = stream.read(NATIVE_CHUNK_BYTES)
-                        if not block:
-                            break
-                        h.update(block)
-                owner.value._check_identity()
-                return True
-        finally:
-            owner.close()
-
-    @_serial
     def begin_interval(self, parent, *, producer_identity, runtime_identity, cancel=None):
         self._live()
         self._not_pending()
@@ -1154,6 +1137,8 @@ class IntervalStoreSet:
     def promote(self, sealed, *, expected_catalog_digest, cancel=None):
         self._live()
         self._not_pending()
+        if expected_catalog_digest != self.catalog_digest or expected_catalog_digest != sealed.expected_catalog_digest:
+            raise ContractError('stale expected catalog digest')
         entry = sealed.entry
         candidate = cast('UnlistedCandidate', self._candidate)
         for owner, _ in entry.references:
@@ -1166,15 +1151,14 @@ class IntervalStoreSet:
         old_size = file_token(self.catalog_path)[2] if self._catalog is not None else 128
         new_size = min(old_size + len(canonical(entry.to_wire())) + 64, CATALOG_BYTES)
         def still_sealed():
-            # A2: repeated under the publication lock just before the durable
-            # replace; quarantine_orphan takes the same lock, so a file it
-            # moved (or any later change) is refused here, never accepted.
+            # A2: under the publication lock just before the durable replace; a
+            # file quarantine_orphan moved is refused here.
             try:
-                (file_token(candidate.path, reject_sidecars=True) == candidate._sealed_token
-                             and _immutable(candidate.path))
+                file_token(candidate.path, reject_sidecars=True)
             except (OSError, ContractError) as exc:
                 raise ContractError('sealed candidate changed before promotion') from exc
 
+        _publication_boundary()
         with self.scope.reserve(ChargeSpec('interval-owned', catalog_retained_charge(catalog)),
                                 required=True, cancel=cancel) as reservation:
             with _workspace(self.scope.run_budget, catalog_transient_charge(new_size), 'catalog-rewrite'):
@@ -1217,6 +1201,8 @@ class IntervalStoreSet:
                     if not block:
                         break
                     h.update(block)
+        if h.hexdigest() != expected_sha256:
+            raise ContractError('pending interval file SHA-256 mismatch')
         parent_seal = self.head.logical_seal if self.head else None
         with _workspace(self.scope.run_budget, HANDLE_CHARGE + 8 * LIMITS.max_manifest_bytes,
                         'pending-seal-verify'):
@@ -1290,6 +1276,8 @@ class IntervalStoreSet:
         self._live()
         self._not_pending()
         check_cancel(cancel)
+        if expected_catalog_digest != self.catalog_digest:
+            raise ContractError('stale expected catalog digest')
         _sha(reader_view_digest, 'reader view digest')
         entry, token = self._verify_pending(
             file, expected_sha256=expected_sha256, expected_logical_seal=expected_logical_seal,
@@ -1306,13 +1294,13 @@ class IntervalStoreSet:
 
         def still_verified():
             # Under the publication lock (shared with quarantine_orphan), just
-            # before the durable replace: the file must still carry the token
-            # every check above was bound to.
+            # before the durable replace: the file must still exist.
             try:
-                (file_token(path, reject_sidecars=True) == token and _immutable(path))
+                file_token(path, reject_sidecars=True)
             except (OSError, ContractError) as exc:
                 raise ContractError('pending interval file changed before adoption') from exc
 
+        _publication_boundary()
         with self.scope.reserve(ChargeSpec('interval-owned', catalog_retained_charge(catalog)),
                                 required=True, cancel=cancel) as reservation:
             with _workspace(self.scope.run_budget, catalog_transient_charge(new_size), 'catalog-rewrite'):
@@ -1611,6 +1599,7 @@ class UnlistedCandidate:
         parent_seal = self.stores.head.logical_seal if self.stores.head else None
         # Refuse live returned buffers before quiescence; release after DB close below.
         self._owner.assert_unborrowed()
+        _publication_boundary()
         self._db.execute('COMMIT')
         self._db.close()
         self._state = 'QUIESCED'
@@ -1655,11 +1644,9 @@ class UnlistedCandidate:
                 flush_file(stream)
             if self.stores.crash_hook:
                 self.stores.crash_hook('seal_written')
-            # L17: read-only first and capture the token, hash, then require
-            # the same token, so no later writer can pass between the hash and
-            # the read-only attribute.
+            # L17: read-only first, then hash.
             os.chmod(self.path, stat.S_IREAD)
-            sealed_token = file_token(self.path, reject_sidecars=True)
+            file_token(self.path, reject_sidecars=True)
             h = hashlib.sha256()
             with self.path.open('rb') as stream:
                 while True:
@@ -1668,7 +1655,6 @@ class UnlistedCandidate:
                     if not raw:
                         break
                     h.update(raw)
-            self._sealed_token = sealed_token
         entry = CatalogEntry(self.interval, self.path.name, h.hexdigest(), logical_seal,
                              self.interval - 1 if self.interval else None, parent_seal,
                              head, self.producer_identity, self.runtime_identity, references)

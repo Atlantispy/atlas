@@ -273,10 +273,8 @@ class PreparedMagmaticTransfer:
         if self.exhaustion_duration_s is not None and duration == self.exhaustion_duration_s:
             raise TectonicsError('variable-mass mixed exhaustion needs an explicit resolved endpoint law')
         y0 = np.zeros((size, n+2)); y0[:n,:n] = np.eye(n); y0[-2:,-2:] = np.eye(2)
-        calls = 0
         def rhs(t, flat):
-            nonlocal calls
-            calls += 1; check_event_or_callable(cancel, 'constitutive work cancelled')
+            check_event_or_callable(cancel, 'constitutive work cancelled')
             return (self._coefficients(t)@flat.reshape(size,n+2)).ravel()
         # Drive one step at a time: retain only active state, never a growing
         # history of maps. No negative trial result can be published or clipped.

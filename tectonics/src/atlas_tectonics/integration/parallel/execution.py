@@ -494,7 +494,6 @@ class KernelExecutor:
             global _POOL_SLOTS
             slots = self.policy.max_workers * self.policy.inner_threads
             with _LIMIT_LOCK:
-                process_cpus()
                 _POOL_SLOTS += slots
                 self._pool_slots = slots
             try:

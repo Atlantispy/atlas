@@ -43,6 +43,8 @@ def factor(rows, *, precision=512, cancel=None, observe=None):
         for k in range(n):
             _check(cancel)
             pivot = max(range(k, n), key=lambda i: abs(a[i].get(k, 0)))
+            if not a[pivot].get(k, 0):
+                raise ValueError('Exactly zero represented MPFR pivot; no regularisation permitted')
             pivots.append(pivot)
             if pivot != k:
                 a[k], a[pivot] = a[pivot], a[k]

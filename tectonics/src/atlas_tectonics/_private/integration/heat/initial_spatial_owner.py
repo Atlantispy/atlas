@@ -24,6 +24,8 @@ _EDITS = (
 def _derive(source):
     result = source
     for label, before, after in _EDITS:
+        if result.count(before) != 1:
+            raise ValueError('source-text anchor missing or ambiguous: '+label)
         result = result.replace(before, after, 1)
     return result
 

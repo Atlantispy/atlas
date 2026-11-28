@@ -3095,16 +3095,6 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
     finally:
         if measured_inner is not None:
             measured_inner.clear()
-    if not fresh:
-        # Rows are numerical overlap evidence and candidate indices, not
-        # material mixing weights. Authenticate supplied evidence against its
-        # deterministic original producer, including its fast/exact choice.
-        # This deliberately adds bounded remeasurement on replay/reuse; a
-        # guessed per-row tolerance for projected micro-overlaps would not.
-        _motion_rows(network, moved, geometry, cancel, budget, sweep_areas=sweep_areas,
-                                     transient_cache=transient_cache)
-        None if motion.mesh is None else _mesh_rows(moved, endpoint, cancel, budget=budget,
-                                                                    change=mesh_change)
     transient_cache = None
     interval = (network.time_s, end, motion.start_step, motion.end_step)
     supplies = {(supply.boundary_id, supply.side): supply for supply in motion.supplies}

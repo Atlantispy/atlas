@@ -204,10 +204,8 @@ class RegionalWorkflow:
             current = self._store.metadata(key)
             if current is None:
                 break
-            required = {'schema', 'workflow_id', 'key', 'kind', 'sequence', 'parent_key',
-                        'parent_digest', 'regional'}
-            if root.get('mechanical_heat_receipts') is True or 'mechanical_heat' in current:
-                required |= {'mechanical_heat', 'mechanical_heat_id'}
+            if sequence > MAX_INTERVALS:
+                raise RegionalOwnerRefused('regional workflow exceeds its interval envelope')
             state, _ = current['regional'], previous['regional']
             previous = current
         # Only the current arrays are needed. Older records are linked by digest;
@@ -905,6 +903,8 @@ class CollarWorkflow:
         # Nonzero roots require their own typed transfer restore. This exact
         # boundary does not treat an evidence-only descriptor as admission.
         base_sequence = root.get('sequence')
+        if type(base_sequence) is not int or not 0 <= base_sequence <= MAX_INTERVALS:
+            raise RegionalOwnerRefused('invalid absolute workflow base sequence')
         if root.get('kind') == 'migrated-root':
             from atlas_tectonics._private.integration.workflow_transfer import verify_migrated_workflow
             verify_migrated_workflow(self)
@@ -918,12 +918,8 @@ class CollarWorkflow:
             current = self._store.metadata(key)
             if current is None:
                 break
-            expected = {'schema', 'workflow_id', 'key', 'kind', 'sequence', 'parent_key', 'parent_digest',
-                        'state', 'advance', 'funding_id', 'source_audit', 'native_state_id'}
-            if self._exterior_owner is not None:
-                expected |= {'exterior_state', 'exterior_advance'}
-            if self._is_differential():
-                expected |= {'differential_geometry', 'differential_partition', 'differential_certification'}
+            if sequence > MAX_INTERVALS:
+                raise RegionalOwnerRefused('funded collar interval envelope exceeded')
             fields, parent = current['state']['fields'], previous['state']['fields']
             if self._exterior_owner is not None:
                 _, _ = current['exterior_state'], previous['exterior_state']

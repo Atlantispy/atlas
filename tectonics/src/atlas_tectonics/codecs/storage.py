@@ -104,10 +104,6 @@ def _hash(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def _sha(key):
-    return key
-
-
 def _positive(value, name):
     if type(value) is not int or value <= 0:
         raise StoreError(name + ' must be a positive integer')
@@ -603,9 +599,15 @@ class ArrayStore:
                 indices[lane::per_byte] = (packed[:size] >> (lane * bits)) & ((1 << bits) - 1)
             raw = palette[indices].tobytes()
         elif codec == 'rle-v1':
+            if dt.kind not in 'biu' or len(payload) < 4:
+                raise StoreError('invalid run-length type/header')
             n = struct.unpack('<I', payload[:4])[0]
+            if not 0 < n <= count or len(payload) != 4 + n * (4 + dt.itemsize):
+                raise StoreError('invalid run-length dimensions')
             runs = np.frombuffer(payload, dtype=[('count', '<u4'), ('value', dt)], offset=4)
             lengths = runs['count']
+            if np.any(lengths == 0) or int(lengths.sum(dtype=np.uint64)) != count:
+                raise StoreError('invalid run-length total')
             raw = np.repeat(runs['value'], lengths.astype(np.intp)).tobytes()
         elif codec.split(':', 1)[0] in ('blosc2-zstd-none', 'blosc2-zstd-byte', 'blosc2-zstd-bit'):
             try:
@@ -620,6 +622,8 @@ class ArrayStore:
                 raise StoreError('unavailable codec or invalid compressed chunk') from exc
         else:
             raise StoreError('unsupported stored codec')
+        if len(raw) != nbytes:
+            raise StoreError('decoded length mismatch')
         return raw
 
     def _chunk(self, key, *, expected_dtype=None, expected_count=None, verify_only=False):
@@ -655,9 +659,15 @@ class ArrayStore:
             raise StoreError('oversized chunk record')
         desc, codec, stored, payload = row[8:]
         self._stats['payload_reads'] += 1
+        if _hash(desc + b'\0' + codec.encode() + b'\0' + payload) != stored:
+            raise StoreError('stored chunk checksum mismatch')
         meta = _parse(desc)
+        if set(meta) != {'dtype', 'count'} or type(meta['count']) is not int:
+            raise StoreError('invalid chunk descriptor')
         dt, count = _dtype(meta['dtype']), meta['count']
         raw = self._decode(codec, payload, dt, count)
+        if self._blob_id(desc, raw) != key:
+            raise StoreError('logical chunk checksum mismatch')
         self._remember(key, dt.str, count)
         self._remember_raw(key, raw)
         return None if verify_only else raw
@@ -754,8 +764,6 @@ class ArrayStore:
                         cancel=cancel, budget=budget)
 
     def _reference_description(self, ref):
-        ref.invocation
-        ref.descriptor_sha256
         m = cast(dict, self._manifest(ref.invocation))
         desc = m['arrays'][ref.array_name]
         return desc
@@ -841,6 +849,8 @@ class ArrayStore:
                 a = _array_view(value)
                 dt = _dtype(a.dtype.str) if dtype is None else _dtype(dtype)
                 raw = np.asarray(a, dtype=dt, order='C').tobytes()
+                if dt.kind == 'f' and not np.isfinite(np.frombuffer(raw, dtype=dt)).all():
+                    raise StoreError('nonfinite values are not supported scientific state')
                 typed = (dt.str, len(raw) // dt.itemsize)
                 desc = _json({'dtype': typed[0], 'count': typed[1]})
                 key = self._blob_id(desc, raw)

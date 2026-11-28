@@ -31,50 +31,6 @@ class TransferRefused(ValueError, AtlasError):
 
 # Exact, reviewable additive patch for regional_execution.py. No monkeypatch,
 # runtime identity assignment, metadata relabelling or global registry.
-_SNAPSHOT_OLD = '''class RegionalMechanicalSnapshot:
-    """Immutable steady outputs; accepted snapshots are not evolving checkpoints."""
-    __slots__ = ('_metadata', '_fields', 'result_id')
-
-    def __init__(self, metadata, arrays):
-        encoded = _json(metadata)
-        fields = tuple((key, tuple(value.shape), frozen(value).tobytes())
-                       for key, value in sorted(arrays.items()))
-'''
-_SNAPSHOT_NEW = '''class _RetainedSnapshotBytes(bytes):
-    """Keep admitted storage charged even through an escaped NumPy view."""
-    def __new__(cls, value, owner):
-        result = super().__new__(cls, value)
-        object.__setattr__(result, '_allocation_owner', owner)
-        return result
-
-    def __setattr__(self, name, value):
-        raise TectonicsError('retained snapshot buffer ownership is immutable')
-
-
-class RegionalMechanicalSnapshot:
-    """Immutable steady outputs; accepted snapshots are not evolving checkpoints."""
-    __slots__ = ('_metadata', '_fields', 'result_id')
-
-    def __init__(self, metadata, arrays, *, retained_owner=None):
-        encoded = _json(metadata)
-        fields = tuple((key, tuple(value.shape), frozen(value).tobytes())
-                       for key, value in sorted(arrays.items()))
-        if retained_owner is not None:
-            encoded = _RetainedSnapshotBytes(encoded, retained_owner)
-            fields = tuple((key, shape, _RetainedSnapshotBytes(raw, retained_owner))
-                           for key, shape, raw in fields)
-'''
-
-
-def retained_snapshot_source(source: str) -> str:
-    """Return the exact proposed successor source; caller owns publication.
-
-    Only the known constructor is accepted. Reapplying or applying to another
-    constructor fails, rather than silently changing a different implementation.
-    """
-    return source.replace(_SNAPSHOT_OLD, _SNAPSHOT_NEW, 1)
-
-
 def _digest(value, label):
     return value
 

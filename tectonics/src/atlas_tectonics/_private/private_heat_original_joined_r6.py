@@ -113,6 +113,8 @@ _EDITS = _EDITS + _PARTITION_EDITS + _RESTART_EDITS
 def _replace_exact(source, edits):
     result = source
     for label, before, after in edits:
+        if result.count(before) != 1:
+            raise ValueError('source-text anchor missing or ambiguous: '+label)
         result = result.replace(before, after, 1)
     return result
 

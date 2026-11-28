@@ -395,6 +395,7 @@ class IdentityTests(unittest.TestCase):
             with ExecutionContext(backend) as ctx:
                 self.assertEqual(ctx.identity,reuse.execution_identity(backend))
                 self.assertEqual(ctx.identity,ctx.identity)
+            with self.assertRaises(TectonicsError):ctx.verify()
 
     def test_identity_is_the_same_for_one_backend_and_differs_between_backends(self):
         self.assertEqual(reuse.execution_identity('reference'),reuse.execution_identity('reference'))

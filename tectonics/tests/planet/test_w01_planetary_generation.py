@@ -30,7 +30,8 @@ from atlas_tectonics import (SphericalFrame, PlanetPartitionSettings, PlanetaryP
 from atlas_tectonics.planet.geometry import _json
 from atlas_tectonics.planet.planetary_generation import _draw_sites
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
-from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
+import sqlite3
 
 CASE = json.loads((Path(__file__).resolve().parents[2]/'cases/w01_planetary_generation.json').read_text())
 ATOL = CASE['acceptance']['angular_absolute_rad']
@@ -400,6 +401,12 @@ class ImmutabilityAndPersistence(unittest.TestCase):
             b=load(s,a.atlas_id);self.assertEqual(a.descriptor(),b.descriptor())
             self.assertEqual(owners(a,directions(16)),owners(b,directions(16)))
             c=repatch(b);self.assertEqual(generated_partition_id(c),generated_partition_id(a))
+
+    def test_corrupted_snapshot_refused_not_regenerated(self):
+        with tempfile.TemporaryDirectory() as tmp,ArrayStore(Path(tmp)/'a.db',StoreLimits(4096,4<<20,16<<20)) as s:
+            a=build();save(a,s)
+            other=sqlite3.connect(s.path);other.execute("UPDATE chunks SET payload=?",(b'bad',));other.commit();other.close()
+            with self.assertRaises(StoreError):load(s,a.atlas_id)
 
 
     def test_backup_restores_after_original_removed(self):

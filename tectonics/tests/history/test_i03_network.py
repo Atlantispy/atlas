@@ -499,6 +499,12 @@ class MaterialTests(unittest.TestCase):
         shared = self.control['shared_face']
         self.assertEqual(shared, 's03-b01')
         area = float(self.network.face_area_m2[self.network.face_ids.index(shared)])
+        with self.assertRaises(S.SphereError) as caught:
+            self.rebuilt(self.pieces(s03_b01=dict(area_m2=area*(1+self.control['occupancy_excess_relative']))))
+        self.assertIn('measured area', str(caught.exception))
+        with self.assertRaises(S.SphereError) as caught:
+            self.rebuilt(tuple(p for p in self.pieces() if p.face_id != shared))
+        self.assertIn('no material', str(caught.exception))
         # Two cohorts can share a face: their areas partition it.
         part = area*self.control['shared_fraction']
         both = list(self.pieces(s03_b01=dict(area_m2=part, mass_kg=(1., 2.), volume_m3=(3., 4.), enthalpy_j=-1.)))
@@ -516,11 +522,21 @@ class MaterialTests(unittest.TestCase):
         # A computed state's unchanged faces are not measured against their pieces again (integration_transfer).
         # The pieces of every state must still cover the sphere once, within the atlas's own area closure.
         material = self.material
-        zero = (Fraction(0),)*material.stock.shape[1]
+        halved = np.array(material.stock)
+        halved[:, 0] /= 2
+        exact = tuple(sum((Fraction(float(x)) for x in halved[:, column]), Fraction(0))
+                      for column in range(halved.shape[1]))
+        zero = (Fraction(0),)*halved.shape[1]
         def issue(stock, total, checked, support=None):
             return S._material(self.network, material.phases, material.enthalpy_basis, material.cohorts, (), None,
                                material.piece_face, material.piece_cohort, stock, total, (), zero, zero, None,
                                checked, support=support)
+        with self.assertRaises(S.SphereError) as caught:
+            issue(halved, exact, ())
+        self.assertIn('cover the sphere once', str(caught.exception))
+        with self.assertRaises(S.SphereError) as caught:
+            issue(halved, exact, None)                                     # a declaration measures every face
+        self.assertIn('measured area', str(caught.exception))
         whole = tuple(material.exact_total(column) for column in material.columns)
         self.assertEqual(issue(material.stock, whole, (), material.support).material_id, material.material_id)
 

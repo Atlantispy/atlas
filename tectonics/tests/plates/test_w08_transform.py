@@ -157,6 +157,7 @@ class TransformTests(unittest.TestCase):
             self.assertEqual(result.transfer[0,1,0],0.)
 
     def test_invalid_history_geometry_budget_cancel_and_closed(self):
+        with self.assertRaises(TectonicsError): motion(histories=())
         with self.assertRaises(MemoryLimitError): motion(budget=WorkBudget(100))
         with motion(polygons=(square(),square(.5))) as m:
             with self.assertRaises(TectonicsError): materials(m,self.context)

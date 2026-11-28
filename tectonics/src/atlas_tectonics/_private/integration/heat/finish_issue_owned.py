@@ -159,11 +159,17 @@ def _issue(ar, old, cap, new, faces, face_ids, source, retained, target, fixed, 
                        for c, e in zip(cap, new, strict=True))
     public_bounds = all(not ar.less(t, bounds[0]) and not ar.less(bounds[1], t)
                         for t in map(ar.represented, temperatures))
+    if not exact_bounds or not public_bounds:
+        raise ValueError('Corrected state leaves its declared loaded/prescribed/Dirichlet convex hull')
     load = ar.array(len(old))
     for i, (e, s) in enumerate(zip(old, source, strict=True)):
         ar.put(load, i, ar.op('add', e, s))
     exact_residual = ar.loaded_residual(new, faces, load[1])
+    if any(not ar.equal(a, b) for a, b in zip(exact_residual, retained, strict=True)):
+        raise ValueError('Corrected result changed the declared exact per-cell ledger residual')
     residual_max = ar.maximum(ar.absolute(r) for r in exact_residual)
+    if ar.less(target, residual_max):
+        raise ValueError('Retained exact cell residual exceeds the independently supplied absolute residual target')
     public_stocks = ar.array(len(stocks))
     for i, value in enumerate(stocks):
         ar.put(public_stocks, i, ar.represented(value))

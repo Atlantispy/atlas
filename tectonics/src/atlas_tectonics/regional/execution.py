@@ -255,9 +255,15 @@ class PreparedRegionalStokes2D:
     @staticmethod
     def _capture_viscosity(centre,vertex,sampling,nx,nz):
         if centre is None and vertex is None:
+            if sampling is not None:
+                raise TectonicsError('sampling without explicit stress-site viscosity')
             return None,None,None
+        if input_shape(centre)!=(nz,nx) or input_shape(vertex)!=(nz+1,nx+1):
+            raise TectonicsError('both centre and shear-vertex viscosity arrays required')
         _name(sampling,'material sampling law')
         ec=read_array(centre,'centre viscosity');ev=read_array(vertex,'vertex viscosity')
+        if np.any(ec<=0) or np.any(ev<=0):
+            raise TectonicsError('positive stress-site viscosity required')
         return frozen(ec),frozen(ev),sampling
 
     def update_viscosity(self,centre_pa_s,vertex_pa_s,*,material_source,material_sampling,cancel=None):
@@ -282,6 +288,7 @@ class PreparedRegionalStokes2D:
         with self._operation(cancel),self._resource.reserve(self._retained_allowance,
                                                            category='regional-viscosity-refill'):
             ec,ev,sampling=self._capture_viscosity(centre_pa_s,vertex_pa_s,material_sampling,d['nx'],d['nz'])
+            if ec is None:raise TectonicsError('explicit coefficients required for refill')
             oldc,oldv=self._viscosity
             same=(oldc is not None and np.array_equal(oldc,cast(np.ndarray,ec)) and np.array_equal(oldv,cast(np.ndarray,ev)))
             if not same:
@@ -349,6 +356,12 @@ class PreparedRegionalStokes2D:
     @contextmanager
     def _operation(self, cancel):
         with self._lock:
+            if self._closed or self._active or self._owner != threading.get_ident():
+                raise TectonicsError('closed/active regional plan or wrong driving thread')
+            # Tested second: a refill still in progress is active and was refused
+            # above, so only a refill that ended in failure is called interrupted.
+            if self._invalid:
+                raise TectonicsError('regional plan invalidated by an interrupted coefficient refill; close it and prepare a new plan')
             self._active = True
         try:
             check_event_or_callable(cancel, 'constitutive work cancelled')
@@ -374,6 +387,8 @@ class PreparedRegionalStokes2D:
         with self._lock:
             if self._closed:
                 return
+            if self._active or self._owner != threading.get_ident():
+                raise TectonicsError('join regional work and close on the driving thread')
             self._closed = True
         try:
             self._context.close()

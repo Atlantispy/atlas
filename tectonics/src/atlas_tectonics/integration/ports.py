@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 import hashlib
 import math
 import sys
+from numbers import Real
 
 import numpy as np
 
@@ -89,16 +90,14 @@ def _digest(record, arrays=()):
     return digest.hexdigest()
 
 
-def _sha(value, label):
-    return value
-
-
 def _seconds(value, label):
     """Finite seconds: a Python or NumPy real scalar (not bool), stored as float."""
     try:
-        pass
+        valid = not isinstance(value, bool) and isinstance(value, Real) and math.isfinite(float(value))
     except (TypeError, OverflowError):
-        pass
+        valid = False
+    if not valid:
+        raise PortRefused(label+' must be finite seconds', MISSING_VALUE, detail=label)
     return float(value)
 
 

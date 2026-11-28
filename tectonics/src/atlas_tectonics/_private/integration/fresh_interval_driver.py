@@ -320,7 +320,7 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
                                      'required minimum 2 before geometry')
 
     with samples_saved(), guard.check3.forward(budget, [name for _, name in _stages(m)
-                                      if name != 'actual-differential-geometry'], __file__), \
+                                      if name != 'actual-differential-geometry']), \
             admission(m, budget=budget, artifacts=artifacts, phase=phase,
                    measurements=measurements, initial_workers=width, launch_load=load,
                    observe_heat_width=observe_heat_width) as a, \
@@ -410,7 +410,7 @@ def advance_successor_interval(m, *, store, expected_root, lineage, budget, arti
     record['initial_admission_workers'] = width = initial_admission_workers(load)    # this launch's own width (Q-1)
     record['pool_widths'] = pool_widths(load, width)    # effective width per stage and its source
     with samples_saved(), guard.check3.forward(budget, [name for _, name in _stages(m)
-                                      if name != 'actual-differential-geometry'], __file__), \
+                                      if name != 'actual-differential-geometry']), \
             admission(m, budget=budget, artifacts=artifacts, phase=phase,
                    measurements=measurements, initial_workers=width, launch_load=load) as a:
         _bind_record_scope(store, a.owner, budget)

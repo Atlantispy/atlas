@@ -270,6 +270,8 @@ class RegionalHeatTransportTests(unittest.TestCase):
     def test_required_inflow_divergence_step_mesh_and_resource_refusals(self):
         g=grid();plan=PreparedHeatTransport(g,.01,1.)
         T=np.ones((g.nz,g.nx));u=np.ones((g.nz,g.nx+1));w=np.zeros((g.nz+1,g.nx))
+        with self.assertRaisesRegex(TectonicsError,'divergence'):
+            plan.step(T,u*np.linspace(1,2,g.nx+1),w,.001,boundaries=uniform_boundaries())
         with self.assertRaisesRegex(TectonicsError,'timestep'):
             plan.step(T,u,w,1.,boundaries=uniform_boundaries())
         with self.assertRaisesRegex(TectonicsError,'256'):
@@ -352,6 +354,8 @@ class RegionalMaterialTransportTests(unittest.TestCase):
 
     def test_material_catalogue_budget_and_event_admission(self):
         r=MaterialRegion2D('a',(0.,1.,0.,1.),1.)
+        with self.assertRaisesRegex(TectonicsError,'catalogue admission'):
+            translate_material_regions(grid(),(r,)*257,(0.,0.),.1)
         with self.assertRaises(MemoryLimitError):
             translate_material_regions(grid(),(r,),(0.,0.),.1,budget=WorkBudget(4096))
         cancelled=Event();cancelled.set()

@@ -26,6 +26,8 @@ def transformed_source(raw):
     prefix, tail = text.split(ANCHOR)
     old = 'def radial_differential_fixture(*, budget=None, reference_pa=0., pressure_space=\'q1\','
     new = 'def prepare_saved_plans(*, budget=None, reference_pa=0., pressure_space=\'q1\','
+    if prefix.count(old) != 1:
+        raise ValueError('source-text anchor missing or ambiguous: '+old[:100])
     return prefix.replace(old, new, 1)+REPLACEMENT
 
 

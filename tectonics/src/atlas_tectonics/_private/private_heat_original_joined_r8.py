@@ -89,7 +89,7 @@ _EDITS = (
      "        # does; where it does not, nothing differs.\n"
      "        import atlas_tectonics._private.integration.heat.process_meter as _meter\n"
      "        import atlas_tectonics._private.integration.heat.check3_recording as _check3_existing_reread\n"
-     "        with _meter.read_scope(budget, 'producer-re-read-after-publication'), _check3_existing_reread.existing_reread(__file__):\n"
+     "        with _meter.read_scope(budget, 'producer-re-read-after-publication'), _check3_existing_reread.existing_reread():\n"
      "            workflow.inspect()\n"
      "        test.assertEqual(workflow.inspect()['intervals'], before_head['intervals']+1)\n"),
 )
@@ -153,6 +153,8 @@ _POST_EDITS = (
 def _replace_exact(source, edits):
     result = source
     for label, before, after in edits:
+        if result.count(before) != 1:
+            raise ValueError('source-text anchor missing or ambiguous: '+label)
         result = result.replace(before, after, 1)
     return result
 

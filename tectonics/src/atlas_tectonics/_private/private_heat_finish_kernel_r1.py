@@ -315,9 +315,15 @@ def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powe
     bounds = min(hull), max(hull)
     exact_bounds = all(c*bounds[0] <= e <= c*bounds[1] for c, e in _walk(zip(cap, new, strict=True), check))
     public_bounds = all(bounds[0] <= _q(t) <= bounds[1] for t in _walk(temperatures, check))
+    if not exact_bounds or not public_bounds:
+        raise ValueError('Corrected state leaves its declared loaded/prescribed/Dirichlet convex hull')
     load = [e+s for e, s in _walk(zip(old, source, strict=True), check)]
     exact_residual = _residual(new, faces, load, check)
+    if exact_residual != retained:
+        raise ValueError('Corrected result changed the declared exact per-cell ledger residual')
     residual_max = max(abs(r) for r in _walk(exact_residual, check))
+    if residual_max > target:
+        raise ValueError('Retained exact cell residual exceeds the independently supplied absolute residual target')
     public_stocks = [_q(p) for p in _walk(stocks, check)]
     public_residual = _residual(public_stocks, faces, load, check)
     stock_projection = [p-e for p, e in _walk(zip(public_stocks, new, strict=True), check)]
@@ -329,6 +335,8 @@ def _issue(old, cap, new, faces, face_ids, source, retained, target, fixed, powe
     scale = max(sum(abs(e) for e in _walk(old, check)), sum(abs(e) for e in _walk(public_stocks, check)),
                 abs(source_total), abs(boundary_energy))
     relative = abs(global_balance['total'])/scale
+    if relative > G.mpq(1, 10**11):
+        raise ValueError('Private booked-ledger global residual exceeds the existing 1e-11 energy gate')
     record = dict(schema=SCHEMA, private_only=True, production_acceptance=False,
         production_issue_called=False,
         native_origin_bound=False, production_resource_admitted=False,

@@ -58,6 +58,7 @@ from atlas_tectonics.integration.geometry.volume_bounds import _BOX_RINGS, NATIV
 # This wheel counts bits in 32 bits: a value crossing 2**32 bits reports a wrong
 # bit length or ends the process. One admitted step's operands are refused long
 # before its results could reach that; the Python route has no such limit.
+CEILING_BITS = 1 << 27
 # Measured for gmpy2 2.3.2: a freed object is reused with its limb blocks when
 # each holds at most 64 allocated limbs, and a result keeps the block its own
 # intermediates needed. _settle therefore bounds the two blocks of a retained
@@ -324,6 +325,9 @@ def _work(bits, count, budget, *, pairs=0):
     # integration_volume._work's allowance for the same operands. Its name and
     # the bits/pairs locals are what a failure report reads from the traceback.
     with budget.reserve(65536+128*bits+256*count+256*pairs, category='i03-physical-volume'):
+        if bits > CEILING_BITS:
+            raise V.VolumeError('exact operands exceed the GMP route ceiling of 2**27 bits in one step; '
+                                'use ATLAS_EXACT_ARITHMETIC=python')
         yield
 
 

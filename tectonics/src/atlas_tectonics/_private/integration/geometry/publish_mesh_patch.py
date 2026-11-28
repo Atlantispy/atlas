@@ -22,49 +22,13 @@ Not bound after publication: nothing after _publish in the interval opens the me
 reference, and a bound view would not intercept such an open (CompactMeshStoreV3.open
 always runs mesh_from_segment). test_publish_mesh_patch traces it instead.
 
-mesh_context is called by the r8 joined helper; published_support_source and transform's
-seams are the composed workflow's. transform(text) is a Step 10 chain stage on
-integration_regional_workflow.py; it changes CollarWorkflow._publish and
-CollarWorkflow._spatial_records only, plus one import.
+mesh_context is called by the r8 joined helper; published_support_source is the composed
+workflow's seam.
 """
-import ast
-import re
 from hashlib import sha256
 
 from atlas_shared.errors import AtlasError
 from atlas_tectonics._private.integration import native_transfer as N
-
-STAGE = 'publish-mesh-after-partition-b-prime'
-IMPORT_ANCHOR = 'import atlas_tectonics._private.partition_workflow_patch as _COMPACT_PARTITION\n'
-IMPORT_LINE = 'import atlas_tectonics._private.publish_mesh_patch as _PUBLISH_MESH\n'
-SIGNATURE = re.compile(r'^(    def _spatial_records\(cls, state, exchange, budget, \*, store=None, source_producer=None, '
-                       r'persist_mesh=True, cancel=None(?:, aliases=False)?)\):$', re.MULTILINE)
-RECORDS_CALL = re.compile(r'(source_producer=source_producer, persist=persist_mesh, cancel=cancel'
-                          r'(?:, aliases=aliases)?)\) as result:')
-SCRATCH = ('            with ExitStack() as scratch:\n'
-           '                if differential_interval is not None:\n'
-           '                    header, certification_arrays = scratch.enter_context(self._certification_payload(\n')
-PAYLOAD_CALL = ('                    header, partition_arrays = scratch.enter_context(self._partition_payload(\n'
-                '                        differential_partition, differential_interval, self._funding, self._collar, '
-                'self._budget,\n')
-COMPACT_PAYLOAD_CALL = (
-    "                    # (b') the selected route issues native proposals: convert once here (payload would\n"
-    "                    # convert inside), so the published view's support source can serve the mesh.\n"
-    '                    publication_partition = _PUBLISH_MESH.compact_partition(differential_partition,\n'
-    '                        differential_interval, self._funding, self._collar, self._budget, self._store)\n'
-    '                    header, partition_arrays = scratch.enter_context(self._partition_payload(\n'
-    '                        publication_partition, differential_interval, self._funding, self._collar, '
-    'self._budget,\n')
-PARTITION = ("                    row['differential_partition'] = header\n"
-             '                    payload.update(partition_arrays)\n')
-SUPPORT = ("                    # (b') D1: the mesh built at JC 408 is compact and unpublished; persist_mesh\n"
-           '                    # publishes it below, after this partition, from that partition\'s support source.\n'
-           '                    support_source = _PUBLISH_MESH.published_support_source(publication_partition,\n'
-           '                        self._store, scratch, source_producer=_COMPACT_SPATIAL.producer(self._collar))\n')
-SPATIAL_CALL = 'saved, exchange, blobs = scratch.enter_context(self._spatial_records(\n'
-CALL_END = 'cancel=cancel))\n'
-CHANGED = frozenset(('CollarWorkflow._publish', 'CollarWorkflow._spatial_records'))
-
 
 class PublishMeshRefused(ValueError, AtlasError):
     pass
@@ -190,48 +154,3 @@ def published_support_source(partition, store, scratch, *, source_producer):
     return source
 
 
-def _once(text, old, new, label):
-    return text.replace(old, new, 1)
-
-
-def _sub_once(text, pattern, replacement, label):
-    result, count = pattern.subn(replacement, text)
-    return result
-
-
-def _functions(tree):
-    found = {}
-
-    def walk(nodes, prefix):
-        for node in nodes:
-            if isinstance(node, ast.ClassDef):
-                walk(node.body, prefix+node.name+'.')
-            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                found[prefix+node.name] = ast.dump(node)
-    walk(tree.body, '')
-    return found
-
-
-def _module_statements(tree):
-    return [ast.dump(node) for node in tree.body if not isinstance(node, (ast.ClassDef, ast.FunctionDef))]
-
-
-def transform(source):
-    """integration_regional_workflow.py text -> text with (b')'s seams; refuses applied text."""
-    text = _once(source, IMPORT_ANCHOR, IMPORT_ANCHOR+IMPORT_LINE, 'import')
-    text = _sub_once(text, SIGNATURE, r'\1, support_source=None):', '_spatial_records signature')
-    text = _sub_once(text, RECORDS_CALL, r'\1, support_source=support_source) as result:', 'records call')
-    text = _once(text, SCRATCH, SCRATCH.replace('scratch:\n', 'scratch:\n                support_source = None\n', 1),
-                 'publication scratch')
-    text = _once(text, PAYLOAD_CALL, COMPACT_PAYLOAD_CALL, 'partition payload call')
-    text = _once(text, PARTITION, PARTITION+SUPPORT, 'partition publication')
-    start = text.index(SPATIAL_CALL)
-    end = text.index(CALL_END, start)
-    text = (text[:end]+'cancel=cancel,\n                    support_source=support_source))\n'
-            +text[end+len(CALL_END):])
-    before, after = ast.parse(source), ast.parse(text)
-    _, _ = _functions(before), _functions(after)
-    _, _ = _module_statements(before), _module_statements(after)
-    ast.dump(ast.parse(IMPORT_LINE).body[0])
-    compile(text, 'integration_regional_workflow.py[publish-mesh]', 'exec')
-    return text

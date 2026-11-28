@@ -30,6 +30,7 @@ from atlas_tectonics.planet.timebase import interval_end, interval_partition
 
 _SIDES = ('left', 'right', 'bottom', 'top')
 _SIGNS = (-1., 1., -1., 1.)
+_MAX_MATERIAL_REGIONS = 256
 
 
 def _cancel(cancel):
@@ -173,9 +174,15 @@ class PreparedHeatTransport:
                 (xc, np.full(g.nx, z[0])), (xc, np.full(g.nx, z[-1])))
 
     def _velocity(self, u, w, mesh, time, origin):
+        g = self.grid
         if callable(u):
             u, w = u(time, origin)
         u, w = read_array(u, 'u'), read_array(w, 'w')
+        scale = max(float(np.max(np.abs(u))) / g.dx, float(np.max(np.abs(w))) / g.dz,
+                    np.finfo(float).tiny)
+        div = np.diff(u, axis=1)/g.dx + np.diff(w, axis=0)/g.dz
+        if float(np.max(np.abs(div))) > 1e-10 * scale:
+            raise TectonicsError('heat transport requires divergence-free physical MAC velocity')
         return u-mesh[0], w-mesh[1]
 
     def _limit(self, u, w, boundaries):
@@ -314,7 +321,10 @@ class PreparedHeatTransport:
             if not np.isfinite(result).all() or np.any(result <= 0.):
                 raise TectonicsError('thermal source or boundary flux exceeds positive-temperature support')
             if b0 is not None and b1 is not None:
-                _, _ = min(b0[0], b1[0]), max(b0[1], b1[1])
+                lo, hi = min(b0[0], b1[0]), max(b0[1], b1[1])
+                tol = 128*np.finfo(float).eps*max(abs(lo), abs(hi))
+                if result.min() < lo-tol or result.max() > hi+tol:
+                    raise TectonicsError('source-free thermal maximum principle failed')
             adv = {s: .5*dt*(a0['advective'][s]+a1['advective'][s]) for s in _SIDES}
             diff = {s: .5*dt*(a0['diffusive'][s]+a1['diffusive'][s]) for s in _SIDES}
             source = .5*dt*(a0['source']+a1['source'])
@@ -323,6 +333,8 @@ class PreparedHeatTransport:
             residual = math.fsum((after, -before, *adv.values(), *diff.values(), -source))
             scale = max(abs(before), abs(after), sum(map(abs, adv.values())),
                         sum(map(abs, diff.values())), abs(source), np.finfo(float).tiny)
+            if abs(residual)/scale > 1e-9:
+                raise TectonicsError('open heat storage/flux closure failed')
             return dict(temperature_k=frozen(result), time_s=end, origin_m=end_origin,
                         advective_energy_j=adv, diffusive_energy_j=diff, source_energy_j=source,
                         heat_before_j=before, heat_after_j=after, balance_residual_j=residual,
@@ -367,6 +379,8 @@ class PreparedHeatTransport:
                              *result['diffusive_energy_j'].values(), -result['source_energy_j']))
         result['balance_residual_j'] = residual
         result['balance_relative'] = abs(residual)/max(abs(before), abs(result['heat_after_j']))
+        if result['balance_relative'] > 1e-9:
+            raise TectonicsError('accumulated open heat storage/flux closure failed')
         return result
 
 
@@ -444,6 +458,8 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
     velocity = _pair(physical_velocity_m_s, 'physical_velocity_m_s')
     mesh = _pair(mesh_velocity_m_s, 'mesh_velocity_m_s')
     dt = scalar(duration_s, 'duration', nonnegative=True)
+    if len(regions) > _MAX_MATERIAL_REGIONS:
+        raise TectonicsError('W07 material catalogue admission is at most 256 rectangles')
     ids = tuple(dict.fromkeys(r.cohort_id for r in regions))
     index = {key: i for i, key in enumerate(ids)}
     budget = WorkBudget(128*1024**2, parent=select_budget(budget))
@@ -511,7 +527,11 @@ def translate_material_regions(grid, regions, physical_velocity_m_s, duration_s,
             acc['cell_inventory_residual_kg'] = inventory-acc['after_kg']
             scale = max(acc['before_kg'], acc['after_kg'], acc['inflow_kg'], acc['outflow_kg'],
                         np.finfo(float).tiny)
+            if max(abs(acc['balance_residual_kg']), abs(acc['cell_inventory_residual_kg']))/scale > 1e-9:
+                raise TectonicsError('material intersection inventory closure failed')
             accounts[key] = acc
+        if np.any(fraction < 0.) or np.any(np.sum(fraction, axis=0) > 1.+1e-12):
+            raise TectonicsError('material intersections exceed cell volume')
         return dict(cohort_ids=ids, cell_mass_kg=frozen(mass), cell_volume_fraction=frozen(fraction),
                     regions=tuple(moved), origin_m=origin, accounts=accounts,
                     inflow_kg=math.fsum(inward), outflow_kg=math.fsum(outward),

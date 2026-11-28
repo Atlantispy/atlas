@@ -203,6 +203,30 @@ review and scientific acceptance are separate outcomes. No entry claims acceptan
 - Runtime cleanup changed the shared heat source bound by three I01 controls. The evidence register
   records their historical scope.
 
+## [0.1.0.dev91](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev91) - 2026-11-28
+
+### Tools
+
+- Restored checks removed in 0.1.0.dev90 that guard a real case: native and codec size, index and ABI checks, store
+  compare-and-swap and replacement checks, exact-arithmetic ceilings, the MPFR zero pivot, non-finite and
+  conservation refusals in thermochemistry, water and erosion, length and depth caps, and the finish hull, ledger
+  and target checks. Each is restored as the dev89 text, with three exceptions:
+  - The transform and underthrust length cap is restored on its own. In dev89 it shared a statement with checks
+    that stay removed.
+  - The reuse publication boundary is restored at three of its four callers. The release boundary is a
+    code-identity check and stays removed.
+  - The subduction convergence check now also records `converged` in `statistics['nonlinear']`.
+- Deleted work whose only use was a removed check, such as file hashes, identity joins and discarded measurements.
+  No caller in the tree reads it.
+- Restored 37 of the deleted dev89 tests, those that test a restored check; the other 885 stay deleted.
+- Correction to 0.1.0.dev90: counted on the pushed tree, the check removal took out 538 top-level definitions in
+  173 modules and deleted 2 modules. The 85 definitions in 50 modules given there counted only part of them.
+
+### Tectonics
+
+- Subduction now records whether each nonlinear solve converged (`converged` in `statistics['nonlinear']`). This
+  is a new recorded value, so the records that carry these statistics and their identities change.
+
 ## [0.1.0.dev90](https://github.com/Atlantispy/atlas/releases/tag/v0.1.0.dev90) - 2026-11-27
 
 ### Tools

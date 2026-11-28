@@ -321,8 +321,8 @@ Fast-loop r1 (design .atlas-dev/designs/fast-loop-r1.md W1+W2), driver only, on 
          or if the earlier journal is RUNNING or INTERRUPTED (step processes may still run).
 
 Additive r3c: the interval producer must cross the accepted CHECK3 recording reader before its independent reader.
-The recorder/driver/pool/joined/guard identities come from the pinned profile and actual installed tree;
-no journal selects executable code or authorises its own recorder/clock. Root mode keeps its original semantics.
+No journal selects executable code or authorises its own clock (1954: recorder and reached-source bindings cut).
+Root mode keeps its original semantics.
 Source/runtime/native clock/bootstrap qualification and final selected input bindings remain prerequisites.
 
 IV1 chain r3b: one admitted ticket, the eight guarded fresh-route steps, fail closed.
@@ -1163,7 +1163,7 @@ def layout_check(config, environment, out):
     return {'record': str(out), 'record_sha256': sha_file(out), 'printed': printed}
 
 
-def install_checks(config, when, *, profile=None, source_selection=None):
+def install_checks(config, when):
     """Pre- and post-run checks of the pinned layout (TC condition 3; pre-review a-c; RT-1; L1-L3)."""
     require('PYTHONUSERBASE' not in os.environ, 'PYTHONUSERBASE is set: unset it before launch (L2)')
     environment = child_environment(config['environment'])
@@ -1171,9 +1171,7 @@ def install_checks(config, when, *, profile=None, source_selection=None):
             'probe': probe_check(config, environment),
             'execution_identity': identity_check(config, environment),
             'layout_check': layout_check(config, environment, Path(config['journal_directory'])/f'layout-{when}.json')}
-    if profile is None:
-        profile, _ = read_json(config['profile']['path'], config['profile']['sha256'])
-    result['check3_selection'] = check3_bindings(config, profile, source_selection=source_selection)
+    result['check3_selection'] = check3_bindings(config)
     machine_modules(config)            # r39: the tree's monitor and gate load before any launch
     return result
 
@@ -1384,7 +1382,7 @@ def check_receipt(path, status, *, pin, prior, seeded=False):
     return receipt, digest
 
 
-CHECK3_READER_SHA = 'a1d71a3d4e5abf8adc2467280d2f831ffa0228e6e544d0592b5092d152e291a8'   # r17: reader r4 (K7 was r3, K3 r2)
+CHECK3_READER_SHA = 'ae485a7e39b8b4093a5d8ef2e2316c861a713b7950c17fa6e0a4b34e6e4c4ddd'   # 1954: reader r5, no source binding (r17 r4, K7 r3, K3 r2)
 CHECK3_CLOCK = 'time.monotonic_ns; same-host system monotonic clock'
 CHECK3_PHASES = (
     'actual-composed-heat-forward', 'heat-low-predictor', 'heat-certified-polygon-reconstruction',
@@ -1393,28 +1391,11 @@ CHECK3_PHASES = (
     'heat-projection-decode', 'heat-projection-exact', 'heat-result-packaging',
     'heat-checkpoint-save', 'heat-exterior-finish', 'endpoint-store-publish')
 CHECK3_R3_PHASES = (*CHECK3_PHASES[:13], 'heat-checkpoint-r3-checks', *CHECK3_PHASES[13:])
-CHECK3_SOURCE_NAMES = {
-    'driver': 'atlas_tectonics/_private/integration/fresh_interval_driver.py',
-    'pool': 'atlas_tectonics/_private/integration/heat/functionals_parallel.py',
-    'joined': 'atlas_tectonics/_private/private_heat_original_joined_r8.py',
-}
-
-
-def check3_member(member, path):
-    require(member == path, f'CHECK3 selected member differs: {path}')
-
-
 def check3_config(config):
-    part = shape(config['check3'], {'reader', 'recorder_member', 'guard_member', 'source_members',
-                                   'heat_phases', 'clock'}, 'check3')
+    part = shape(config['check3'], {'reader', 'heat_phases', 'clock'}, 'check3')
     pinned(part['reader'], 'CHECK3 reader')
     require(Path(part['reader']['path']).is_absolute() and part['reader']['sha256'] == CHECK3_READER_SHA,
             'CHECK3 reader is not the absolute accepted receiving source')
-    check3_member(part['recorder_member'], 'atlas_tectonics/_private/integration/heat/check3_recording.py')
-    check3_member(part['guard_member'], 'atlas_tectonics/_private/integration/heat/continuation_guard.py')
-    shape(part['source_members'], set(CHECK3_SOURCE_NAMES), 'CHECK3 source members')
-    for role, path in CHECK3_SOURCE_NAMES.items():
-        check3_member(part['source_members'][role], path)
     require(type(part['heat_phases']) is list and tuple(part['heat_phases']) in (CHECK3_PHASES, CHECK3_R3_PHASES),
             'CHECK3 phase list is not the selected driver inventory')
     require(part['clock'] == CHECK3_CLOCK, 'CHECK3 selected same-host clock differs')
@@ -1441,28 +1422,12 @@ def profile_source_selection(config, profile):
     return workspace, native
 
 
-def check3_bindings(config, profile, *, source_selection=None):
-    """Independent profile/runtime selection, never authority copied from a journal."""
+def check3_bindings(config):
+    """Independent config selection, never authority copied from a journal."""
     part = check3_config(config)
-    if source_selection is None:
-        source_selection = profile_source_selection(config, profile)
-    _, native = source_selection
-
-    def selected(member):
-        path = check3_ordinary_file(native / member)
-        require(inside(path, native), 'CHECK3 selected source escapes native root')
-        return {'path': str(path), 'sha256': sha_file(path)}
-
-    recorder = selected(part['recorder_member'])
-    guard_source = selected(part['guard_member'])
-    reached = [selected(part['source_members'][role]) for role in CHECK3_SOURCE_NAMES]
-    require(len({row['path'] for row in reached}) == len(CHECK3_SOURCE_NAMES),
-            'CHECK3 selected reached sources repeat a path')
     reader_path = check3_ordinary_file(part['reader']['path'])
     require(sha_file(reader_path) == part['reader']['sha256'], 'CHECK3 accepted reader source changed')
-    return {'recorder': recorder, 'guard_source': guard_source,
-            'sources': {row['path']: row['sha256'] for row in reached},
-            'heat_phases': part['heat_phases'], 'clock': part['clock'],
+    return {'heat_phases': part['heat_phases'], 'clock': part['clock'],
             'reader': {'path': str(reader_path), 'sha256': part['reader']['sha256']}}
 
 
@@ -1542,8 +1507,7 @@ def receive_check3(config, binding, profile_sha, receipt_path, receipt, captured
     exec(compile(raw, str(reader_path), 'exec'), namespace)
     result = namespace['evaluate'](producer_ref, sample_ref, guard,
         expected_nonce=nonce, expected_parent=parent,
-        expected_heat_phases=binding['heat_phases'], expected_sources=binding['sources'],
-        expected_recorder=binding['recorder'], expected_clock=binding['clock'])
+        expected_heat_phases=binding['heat_phases'], expected_clock=binding['clock'])
     for artifact in (path, *artifacts.values()):
         require(sha_file(artifact) == captured[str(artifact)], 'CHECK3 actual artifact changed during receiving')
     measured = result.get('measured')
@@ -2736,8 +2700,7 @@ class Chain:
                 json.dump(release.pop('driver_record'), stream, indent=1, sort_keys=True)
             release['record'] = {'path': str(path), 'sha256': sha_file(path)}
         try:
-            self.journal['pre_checks'] = install_checks(
-                self.config, 'pre', profile=self.profile, source_selection=self.source_selection)
+            self.journal['pre_checks'] = install_checks(self.config, 'pre')
             if run_profile != 'off':
                 selection = self.source_selection
                 if selection is None:

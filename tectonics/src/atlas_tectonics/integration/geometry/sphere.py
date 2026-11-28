@@ -780,8 +780,7 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
     declared_here = declaration_points is not None
     if declared_here:
         layout = _declared_layout(layout, declaration_points, faces, plates, boundaries)
-    names, _ = layout.names, tuple(plate.plate_id for plate in plates)
-    tuple(key for key, _ in layout.ridges) if declared_here else _ridge_ids(boundaries)
+    names = layout.names
     reference = np.asarray(layout.reference, dtype=np.float64)
     for name in names:
         _name(name, 'vertex ID')
@@ -795,9 +794,6 @@ def _checked_layout(layout, faces, plates, boundaries, *, declaration_points=Non
                 raise SphereError('vertex %r is kept by %r, not by a carrier of its records of the lowest rank (%s)'
                                   % (name, home, ', '.join(sorted(repr(plate) for plate in allowed))))
     _unit_rows(reference, 'vertex reference directions')
-    if not declared_here:
-        owner = dict(zip(names, layout.home))
-        sorted((name, plate) for name, plate in _used(faces) if name in owner and owner[name] != plate)
     copies = np.asarray([value for _, value in layout.views], dtype=np.float64).reshape(-1, 3)
     _unit_rows(copies, "a plate's copies of vertices kept elsewhere")
     checked = _Layout(names, tuple(layout.home), _frozen(reference, np.float64),
@@ -1422,10 +1418,16 @@ def _occupancy(network, face, stock, checked=None, allowance=None):
     wanted = None if checked is None else {int(index) for index in checked}
     if wanted is not None and not wanted:
         return
+    areas = network.face_area_m2
     starts = np.flatnonzero(np.r_[True, np.diff(face) != 0])
     for index, start, end in zip(face[starts], starts, np.r_[starts[1:], len(face)]):
         if wanted is not None and int(index) not in wanted:
             continue
+        total = math.fsum(stock[start:end, 0])
+        slack = 0. if allowance is None else float(allowance[index])
+        if abs(total-areas[index]) > max(RELATIVE_TOLERANCE*areas[index], slack):
+            raise SphereError('the pieces of face %r do not occupy its measured area (%r of %r m2)'
+                              % (network.face_ids[int(index)], total, float(areas[index])))
 
 
 def _account(value, label):
@@ -1459,7 +1461,6 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
         raise SphereError('at most 64 phases')
     if basis is not None:
         _name(basis, 'enthalpy basis')
-    tuple(c.cohort_id for c in cohorts)
     for record in cohorts:
         if record.formation_end_s is not None and record.formation_end_s > network.time_s:
             raise SphereError('cohort %r forms in the future of this state' % record.cohort_id)
@@ -1475,8 +1476,16 @@ def _material(network, phases, basis, cohorts, exteriors, link, face, cohort, st
         # One owner per point: the pieces of a face occupy exactly its measured area, within the existing tolerance.
         occupied = np.zeros(faces)
         np.add.at(occupied, face, 1.)
+        if np.any(occupied == 0):
+            raise SphereError('face %r carries no material piece: absent material is declared, never assumed'
+                              % network.face_ids[int(np.flatnonzero(occupied == 0)[0])])
         slack = _frozen(np.zeros(faces) if occupancy_allowance is None else occupancy_allowance, np.float64)
         _occupancy(network, face, stock, checked, slack)
+        radius = network.sphere.radius_m
+        covered = math.fsum(stock[:, 0])
+        if abs(covered-network.area_m2) > (AREA_CLOSURE_SR*radius)*radius:
+            raise SphereError('the pieces do not cover the sphere once: they occupy %r m2 of its %r m2'
+                              % (covered, network.area_m2))
         supplied = tuple(sorted(supplied))
         if initial is None:
             # Fresh declarations start with the issued stock and zero transfers and rounding.

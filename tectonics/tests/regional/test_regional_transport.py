@@ -24,9 +24,10 @@ from atlas_tectonics import (RegionalGrid1D,TransportBoundary,advect_regional,
 from atlas_tectonics.regional.regional import pack_regional_result
 from atlas_tectonics.integration.resources import WorkBudget,MemoryLimitError
 from atlas_tectonics.integration.parallel.execution import KernelExecutor,ExecutionPolicy
-from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
 from atlas_tectonics.integration.reuse import (cached_regional_transport,CachePolicy,
                                   PreparedInput)
+import sqlite3
 OPEN=TransportBoundary('open')
 CLOSED=TransportBoundary('closed')
 
@@ -301,6 +302,13 @@ with ArrayStore(sys.argv[1],StoreLimits(1024,1<<20,8<<20)) as s:
             env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[2]/'src'),PYTHONDONTWRITEBYTECODE='1')
             p=subprocess.run([sys.executable,'-B','-c',script,str(path)],env=env,capture_output=True,text=True,timeout=30)
             self.assertEqual(p.returncode,0,p.stderr);self.assertEqual(p.stdout.strip(),'1')
+
+    def test_cached_corruption_is_error_not_miss(self):
+        with tempfile.TemporaryDirectory() as tmp,ArrayStore(Path(tmp)/'x.db',StoreLimits(1024,1<<20,8<<20)) as store:
+            args=dict(left=self.left,right=OPEN,store=store,cache_policy=CachePolicy(mode='always'))
+            cached_regional_transport(self.h,self.u,self.g,.5,**args)
+            c=sqlite3.connect(store.path);c.execute('UPDATE chunks SET payload=?',(b'bad',));c.commit();c.close()
+            with self.assertRaises(StoreError):cached_regional_transport(self.h,self.u,self.g,.5,**args)
 
 
     def test_missing_native_dependency_never_falls_back(self):

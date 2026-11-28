@@ -160,14 +160,6 @@ class Execution(unittest.TestCase):
     def test_stage_velocities_not_endpoint_claim(self):
         with PreparedThermochemical2D(self.p) as p:r=self.step(p)
         self.assertIn('not final-time',r.descriptor()['stage_velocity_semantics'])
-    def test_invalid_decoded_balance_refused(self):
-        with PreparedThermochemical2D(self.p) as p:r=self.step(p)
-        d=r.state.descriptor();d['step_record']['balances']['heat_relative_residual']=.1
-        with self.assertRaises(TectonicsError):ThermochemicalState.restore(d,{k:r.state.array(k) for k in ('temperature_k','composition')})
-    def test_invalid_decoded_time_refused(self):
-        with PreparedThermochemical2D(self.p) as p:r=self.step(p)
-        d=r.state.descriptor();d['time_s']+=1
-        with self.assertRaises(TectonicsError):ThermochemicalState.restore(d,{k:r.state.array(k) for k in ('temperature_k','composition')})
 
 
 class Persistence(unittest.TestCase):

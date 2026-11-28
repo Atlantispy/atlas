@@ -487,6 +487,8 @@ def functional_solve(matrix, rhs, *, cancelled=None, evidence=None):
             for j, (a, b) in enumerate(zip(row, answer, strict=True)):
                 check('original-residual-element', i, j)
                 value += a*b
+            if value != target:
+                raise ArithmeticError('Exact answer failed the original rational system')
         check('complete')
         audit.update(status='EXACT_COMPATIBLE', original_residual_exact_zero=True,
             free_variables_exact_zero=all(not answer[j] for j in range(size) if j not in pivots),

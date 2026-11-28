@@ -10,7 +10,7 @@ import numpy as np
 from atlas_tectonics._private.codecs.compact_contracts import ContractError
 from atlas_tectonics._private.codecs.content_cache import ChargeSpec
 from atlas_tectonics._private.integration.live_transport_result import (
-    CompactTransportSnapshot, _FieldBytes, identity,
+    CompactTransportSnapshot, _FieldBytes,
 )
 from atlas_tectonics._private.codecs.heat_ledger_tables import own_field
 from atlas_tectonics._private.codecs.record_tables import Scratch
@@ -160,9 +160,6 @@ def cold_transport(record, arrays, budget, *, expected_id, check):
                 fields = reserved.commit(tuple(owned))
             stack.callback(fields.close)
             snapshot = CompactTransportSnapshot(projection, fields, expected_id)
-            from atlas_tectonics._private.codecs.compact_contracts import proving
-            if proving():    # proof mode only; LTR.identity itself is never gated (F-3)
-                identity(snapshot, budget, cancel=lambda: (check(), False)[1])
             yield snapshot
         finally:
             owned.clear()

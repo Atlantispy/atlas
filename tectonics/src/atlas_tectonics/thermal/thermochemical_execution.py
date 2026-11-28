@@ -613,6 +613,9 @@ class PreparedThermochemical2D:
                 composition_relative_residual=composition_relative,advective_local_residual=local,
                 composition_bound_excursion=excursion,courant_stage0=cfl0,courant_stage1=cfl1,
                 dt_divergence_stage0=div0,dt_divergence_stage1=div1)
+            if not all(math.isfinite(v) for v in balances.values()): raise TectonicsError('nonfinite thermochemical balance')
+            if max(heat_relative,composition_relative,local)>self.policy.inventory_rtol:
+                raise TectonicsError('returned thermochemical fields fail inventory/flux accounting')
             record=dict(method=_METHOD,publication_contract=_PUBLICATION_CONTRACT,
                 dt_s=dt,input_time_s=time,source=source,policy=asdict(self.policy),
                 velocity_mode=('buoyancy-coupled-variable-viscosity' if self.nonlinear_policy is not None else 'buoyancy-coupled-constant-viscosity') if velocity is None else 'prescribed-frozen-MAC',

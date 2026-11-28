@@ -267,8 +267,15 @@ class WorkBudget:
 
     def __init__(self, max_bytes: int, *, parent: WorkBudget | None = None,
                  max_predicate_work_units: int | None = None):
+        if parent is not None and not isinstance(parent, WorkBudget):
+            raise TypeError("parent must be a WorkBudget")
         if max_predicate_work_units is None and parent is not None:
             max_predicate_work_units = parent.max_predicate_work_units
+        if max_predicate_work_units is not None:
+            if type(max_predicate_work_units) is not int or max_predicate_work_units <= 0:
+                raise ValueError('max_predicate_work_units must be a positive integer or None')
+            if parent is not None and parent.max_predicate_work_units is None:
+                raise ValueError('separate predicate work requires an opted-in parent scope')
         # A private parallel tree reuses the exact integer admission ledger.
         # Its counts are predicate units, NOT RAM bytes; never expose its byte-
         # named implementation statistics or charge it for physical storage.
@@ -545,6 +552,10 @@ class _ResizableLease:
         return self
 
     def resize(self, count):
+        if self.closed:
+            raise RuntimeError('closed live lease')
+        if type(count) is not int or count < 0:
+            raise ValueError('live capacity must be a nonnegative integer')
         delta = count-self.count
         if delta > 0:
             charged = _admit_budgets(delta, *self.budgets, category=self.category)

@@ -22,6 +22,25 @@ CASE2 = json.loads((F.CASES/'i03_controls_v2.json').read_text(encoding='utf-8'))
 MYR = F.MYR_S
 
 
+def forged_rider(state, index, relative):
+    """``state`` with the first piece of face ``index`` off its measured area by ``relative``, made internally."""
+    from fractions import Fraction
+    from unittest import mock
+    from atlas_tectonics.integration import state as I
+    network, material = state.network, state.material
+    stock = np.array(material.stock)
+    row = int(np.flatnonzero(material.piece_face == index)[0])
+    before = Fraction(float(stock[row, 0]))
+    stock[row, 0] += relative*float(network.face_area_m2[index])
+    initial = (material._initial[0]+Fraction(float(stock[row, 0]))-before,)+tuple(material._initial[1:])
+    with mock.patch.object(S, '_occupancy', lambda *args, **kwargs: None):
+        forged = S._material(network, material.phases, material.enthalpy_basis, material.cohorts, material.exteriors,
+                             None, material.piece_face, material.piece_cohort, stock, initial, material._supplied,
+                             material._rounding, material._allowance, None,
+                             occupancy_allowance=material._occupancy_allowance)
+        return S._sphere(network, forged, state.parent_state_id, state.root_state_id, I.COMPUTED)
+
+
 def control(name):
     return CASE2['controls'][name]
 
@@ -324,11 +343,13 @@ class AllowanceTests(unittest.TestCase):
         state = renamed(state, rule['face'], 'renamed')
         index = state.network.face_ids.index('renamed')
         self.assertEqual(float(state.material.occupancy_allowance_m2[index]), 0.)
+        with self.assertRaises(S.SphereError):
+            S.verified(forged_rider(state, index, rule['mismatch_relative']))
 
     def test_a_compact_face_merged_from_a_thin_strip_keeps_a_zero_allowance(self):
         # The merged face lies above the range, so its allowance is zero although its thin donor's closure carries a
-        # bound (the ceiling of D7').
-        merge = control('thin_merge')
+        # bound (the ceiling of D7'); a rider forged 1.5e-12 off it is refused.
+        merge, rule = control('thin_merge'), control('occupancy_allowance')['above_range']
         state = F.crust(F.three_plates())
         for k in range(merge['rides']):
             state = T.advance(state, F.one_plate_motion(merge['advance_deg'], k), end_time_s=(k+1)*MYR).state
@@ -342,6 +363,8 @@ class AllowanceTests(unittest.TestCase):
                           end_time_s=(step+1)*MYR).state
         index = state.network.face_ids.index('compact')
         self.assertEqual(float(state.material.occupancy_allowance_m2[index]), 0.)
+        with self.assertRaises(S.SphereError):
+            S.verified(forged_rider(state, index, rule['mismatch_relative']))
 
 
 class ThinMergeTests(unittest.TestCase):

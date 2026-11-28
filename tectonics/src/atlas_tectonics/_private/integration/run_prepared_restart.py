@@ -540,7 +540,9 @@ def _successor_checks(workflow, *, store, before, parent, root_bytes, budget):
 
     def refuse(name, condition):
         require(name == next(checks), 'successor check order changed')
+        require(condition, 'driver did not persist exactly one valid successor: '+name)
 
+    require(workflow._store is store, 'driver did not persist exactly one valid successor: workflow store replaced')
     token = store.change_token()
     after = workflow.inspect()
     head = workflow._head

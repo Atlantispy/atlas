@@ -54,6 +54,8 @@ def parent_geometry_transfer(workflow, parent_partition):
 
 def _replace(source, changes, label):
     for old, new in changes:
+        if source.count(old) != 1:
+            raise ValueError('source-text anchor missing or ambiguous: '+label)
         source = source.replace(old, new, 1)
     return source
 

@@ -9,6 +9,7 @@ from dataclasses import dataclass, asdict
 import hashlib
 import json
 import math
+from numbers import Integral
 import threading
 from typing import TYPE_CHECKING, cast
 
@@ -148,7 +149,11 @@ class ErosionState:
     def check_balance(self):
         for i in range(self.soil_mass_kg.shape[0]):
             for k in range(self.soil_mass_kg.shape[1]):
-                pass
+                values = [-self.initial_mass_kg[i,k], *self.rock_mass_kg[i,:,k],
+                          self.soil_mass_kg[i,k], self.released_rock_kg[i,k],
+                          self.released_soil_kg[i,k]]
+                if abs(math.fsum(values)) > 128*EPS*math.fsum(abs(v) for v in values):
+                    raise TectonicsError('per-cell tagged erosion account does not close')
 
 
 class ErosionExhaustionError(TectonicsError):
@@ -187,12 +192,15 @@ class PreparedErosion:
             self.receiver_lengths_m = self._vector(receiver_lengths_m, 'receiver lengths')
             r = []
             for v in receivers:
+                if isinstance(v, (bool, np.bool_)) or not isinstance(v, Integral) or not -1 <= int(v) < self._n:
+                    raise TectonicsError('receiver indices must be integers in -1..n-1')
                 r.append(int(v))
             for i, v in enumerate(r):
                 if v == i: r[i] = -1
             self.receivers = tuple(r)
             order, visiting = [], set()
             def visit(i):
+                if i in visiting: raise TectonicsError('cyclic receiver graph')
                 if i in order: return
                 visiting.add(i)
                 if r[i] >= 0: visit(r[i])

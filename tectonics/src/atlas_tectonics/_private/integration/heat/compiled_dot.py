@@ -449,6 +449,8 @@ except ImportError:
     raise
 except Exception as error:
     raise ImportError('compiled interval dot could not be built: %s: %s' % (type(error).__name__, error)) from error
+if not _passed:
+    raise ImportError('compiled interval dot self-test differs from r1')
 for _function in _COMPILED:
     _function.disable_compile()
 _LOAD_SECONDS = time.perf_counter()-_STARTED  # bindings, compilation and self-test, once per process

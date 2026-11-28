@@ -20,61 +20,6 @@ from atlas_tectonics._private.integration import native_transfer as N
 from atlas_tectonics.integration.reuse import content_record
 
 
-_OWNER_MARKER = '    @classmethod\n    def from_saved(cls, funding, collar, definition, initial_record, initial_arrays, *, budget):\n'
-_OWNER_ENTRY = '''    @classmethod
-    def from_migrated_checkpoint(cls, **arguments):
-        """Explicit evolved admission, never ordinary root restore or funding."""
-        from atlas_tectonics._private.spatial_transfer import admit_migrated_spatial_owner
-        if cls is not PreparedSpatialOwner:
-            raise TectonicsError('exact prepared spatial owner required')
-        return admit_migrated_spatial_owner(**arguments)
-
-'''
-_INITIAL_OLD = '''    @property
-    def initial_state(self):
-        self._verify(); return self._initial
-'''
-_INITIAL_NEW = '''    @property
-    def initial_state(self):
-        self._verify()
-        if self._initial is None:
-            raise TectonicsError('migrated owner has no reseeded initial state; use its transferred endpoint')
-        return self._initial
-'''
-
-
-def spatial_owner_source(source):
-    """Exact minimal additive API patch; never modifies a live source file."""
-    source = source.replace(_OWNER_MARKER, _OWNER_ENTRY+_OWNER_MARKER, 1).replace(_INITIAL_OLD, _INITIAL_NEW, 1)
-    changes = (
-        ('    def restore(self, record, arrays):',
-         '    def restore(self, record, arrays, *, _validate_only=False):'),
-        ("        if (_hash(mesh) != body['thermal_mesh_id'] or mesh['support_id'] != body['support_id'] or",
-         "        if _validate_only:\n            from atlas_tectonics._private.spatial_transfer import _stream_hash as mesh_hash\n"
-         "        else:\n            mesh_hash = _hash\n"
-         "        if (mesh_hash(mesh) != body['thermal_mesh_id'] or mesh['support_id'] != body['support_id'] or"),
-        ('        result = self._issue(body)\n        expected = result.arrays()',
-         '        if _validate_only:\n            from atlas_tectonics._private.spatial_transfer import validate_projected_payload\n'
-         "            return validate_projected_payload(self, body, arrays, record.get('state_id'))\n"
-         '        result = self._issue(body)\n        expected = result.arrays()'),
-        ('    def validate_parent(self, state, collar_state):\n'
-         '        r = self._bound(state); self._collar._fields(collar_state)\n'
-         "        if state.time_s != collar_state.native_state.descriptor()['time_s']:",
-         '    def validate_parent(self, state, collar_state, *, _migrated_record=None):\n'
-         '        if _migrated_record is None:\n'
-         '            r = self._bound(state)\n            time_s = state.time_s\n'
-         '        else:\n'
-         '            from atlas_tectonics._private.spatial_transfer import bound_migrated_record\n'
-         '            r = bound_migrated_record(self, state, _migrated_record)\n'
-         "            time_s = r['time_s']\n"
-         '        self._collar._fields(collar_state)\n'
-         "        if time_s != collar_state.native_state.descriptor()['time_s']:"),
-    )
-    for old, new in changes:
-        source = source.replace(old, new, 1)
-    return source
-
-
 _FUNDING = frozenset(('schema', 'funding_id', 'source', 'owner_id', 'collar_plan_id',
     'volume_map_id', 'native_initial_state_id', 'time_s', 'cells', 'component_keys',
     'cell_geometries', 'cell_accounts', 'source_accounts', 'exterior_remainder',
@@ -172,15 +117,9 @@ def snapshot_metadata_matches(snapshot, binding):
 def validate_projected_payload(owner, body, arrays, state_id):
     """Tail of actual restore: all preceding physical gates already ran.
 
-    Use its exact projection, one field at a time, then the ordinary snapshot
-    identity equation. No new state, mesh decode, or acceptance is produced.
+    No new state, mesh decode, or acceptance is produced.
     """
-    from atlas_tectonics.integration.coupling.spatial_owner import _project, _q as decode
-    expected_names = set(owner._names) | {'volume_m3'}
     bindings = _bindings(arrays)
-    for name in sorted(expected_names):
-        np.fromiter((_project(decode(row['volume_m3'] if name == 'volume_m3'
-            else row['exact'][name])) for row in body['cells']), dtype=np.float64, count=len(body['cells']))
     return dict(state_id=state_id, metadata=_stream_stats(body)[0], arrays=bindings)
 
 

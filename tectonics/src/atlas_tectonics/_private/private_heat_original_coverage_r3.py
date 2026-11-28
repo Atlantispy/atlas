@@ -15,6 +15,8 @@ _REPAIR_BYTES = _REPAIR_SOURCE.read_bytes()
 _REPAIR_BEFORE = 'shape = resources.pair_shape(pair, hexadecimal=True)'
 _REPAIR_AFTER = 'shape = _CANONICAL_SHAPES.pair_shape(pair, hexadecimal=True)'
 _REPAIR_TEXT = _REPAIR_BYTES.decode('utf8')
+if _REPAIR_TEXT.count(_REPAIR_BEFORE) != 1:
+    raise ValueError('source-text anchor missing or ambiguous: canonical-shape-r3')
 _REPAIR_DERIVED = _REPAIR_TEXT.replace(_REPAIR_BEFORE, _REPAIR_AFTER, 1)
 exec(compile(_REPAIR_DERIVED, str(_REPAIR_SOURCE) + '[canonical-shape-r3]', 'exec'), globals())
 

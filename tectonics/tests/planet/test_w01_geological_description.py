@@ -31,7 +31,7 @@ from atlas_tectonics import (GeologySource, MaterialDefinition,
     generate_planetary_partition, GeometryLimits, TectonicsError)
 from atlas_tectonics.history.geological_case import _snapshot, restore_geological_case
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
-from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
 
 SOURCE = GeologySource('synthetic','synthetic','Synthetic case; no Earth calibration.')
 ROCK = MaterialDefinition('rock','solid','synthetic',3000.,3.,1000.,0.,3e-5,300.,(0.,2000.))
@@ -370,6 +370,11 @@ class PersistenceContracts(unittest.TestCase):
 
     def test_absent_is_none_not_regenerated(self):
         self.assertIsNone(load_geological_case(self.store,'0'*64))
+
+    def test_corruption_refused(self):
+        save_geological_case(self.case,self.store)
+        self.store._db.execute('UPDATE chunks SET payload=? WHERE id=(SELECT id FROM chunks LIMIT 1)',(b'corrupt',))
+        with self.assertRaises((TectonicsError,StoreError)):load_geological_case(self.store,self.case.definition_id)
 
 
 

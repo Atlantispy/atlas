@@ -36,7 +36,7 @@ from atlas_tectonics.plates.reference_acceptance import (
     compare_distributions,_vertex_key,
 )
 from atlas_tectonics.integration.resources import WorkBudget,MemoryLimitError
-from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,Compression
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,Compression,StoreError
 
 ROOT=Path(__file__).resolve().parents[2]
 ID='a'*64
@@ -296,6 +296,12 @@ class StoreAndCLI(unittest.TestCase):
             path.unlink()
             with ArrayStore(Path(d)/'backup.db',StoreLimits(4096,1<<20,4<<20),Compression('raw')) as restored:
                 self.assertEqual(read_report_snapshot(restored,key),report)
+
+    def test_report_corruption_is_error(self):
+        with tempfile.TemporaryDirectory() as d,ArrayStore(Path(d)/'r.db',StoreLimits(4096,1<<20,4<<20),Compression('raw')) as store:
+            key=write_report_snapshot(report_fixture(),store)
+            store._db.execute('UPDATE chunks SET payload=?',(b'corrupt',))
+            with self.assertRaises(StoreError):read_report_snapshot(store,key)
     def test_concurrent_metrics_do_not_mutate_shared_input(self):
         p=np.eye(3);expected=spherical_ring_measures(p)
         with ThreadPoolExecutor(3) as pool:r=list(pool.map(lambda _:spherical_ring_measures(p),range(6)))

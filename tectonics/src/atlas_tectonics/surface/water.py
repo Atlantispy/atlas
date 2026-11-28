@@ -42,7 +42,10 @@ def _tol(*values):
 
 
 def _balance(initial, supplied, water, subsurface, evaporated, exported):
-    pass
+    vals = (initial, supplied, -water, -subsurface, -evaporated, -exported)
+    residual = math.fsum(vals)
+    if not math.isfinite(residual) or abs(residual) > 128*EPS*math.fsum(abs(v) for v in vals):
+        raise TectonicsError('water account does not close')
 
 
 @dataclass(frozen=True, init=False)
@@ -148,10 +151,6 @@ class PreparedWater:
         else:
             raise TectonicsError(name+': scalar or one value per cell required')
         return a
-
-    def _validate(self, state):
-        _balance(state.initial_total_m3, state.supplied_m3, _sum(state.water_m3),
-                 state.subsurface_m3, state.evaporated_m3, state.exported_m3)
 
     def _cells_for(self, members):
         return np.concatenate([self._cells[b] for b in sorted(members)])
@@ -438,7 +437,7 @@ class PreparedWater:
 
     def add_water(self, state, by_cell_m3, *, source_id, cancel=None):
         with self._operation(cancel):
-            self._validate(state); _name(source_id,'water supply source')
+            _name(source_id,'water supply source')
             w=self._vector(by_cell_m3,'supplied water')
             water,export,_=self._equilibrate(state.water_m3+w,cancel)
             return self._new(state,water,supplied=_sum(w),exported=export,
@@ -448,7 +447,7 @@ class PreparedWater:
                 evaporation_m_s=0, infiltration_m_s=0, boundary_inflow_m3_s=0,
                 forcing_id, cancel=None):
         with self._operation(cancel):
-            self._validate(state); _name(forcing_id,'water forcing source')
+            _name(forcing_id,'water forcing source')
             duration=scalar(duration_s,'water interval',positive=True)
             r=self._vector(runoff_m_s,'runoff')
             # Omitting rain explicitly means the same supplied water-depth flux
@@ -486,6 +485,8 @@ class PreparedWater:
                 water,escaped,_=self._equilibrate(candidate,cancel)
                 terms[3].append(escaped)
                 next_elapsed=elapsed+dt
+                if next_elapsed == elapsed:
+                    raise TectonicsError('water event resolution exhausted')
                 elapsed=min(duration,next_elapsed); intervals+=1
             supplied,evaporated,infiltrated,exported=map(math.fsum,terms)
             out=self._new(state,water,time_s=state.time_s+duration,supplied=supplied,
@@ -507,7 +508,6 @@ class PreparedWater:
 
     def checkpoint(self, state, *, cancel=None):
         with self._operation(cancel):
-            self._validate(state)
             key=json_sha256(dict(plan=self.plan_id,state=state.state_id), _json)
             meta=dict(schema='atlas.w09-water-checkpoint.v1',plan=self.plan_id,
                       state_id=state.state_id,state=state.descriptor())
@@ -520,7 +520,6 @@ class PreparedWater:
             meta=cast(dict, cast('ArrayStore', self.store).metadata(checkpoint_id))
             arrays=cast(dict, cast('ArrayStore', self.store).get(checkpoint_id,budget=self._resource))
             out=WaterState(arrays['water'],**meta['state'])
-            self._validate(out)
             if out.state_id != meta['state_id'] or checkpoint_id != json_sha256(dict(plan=self.plan_id,state=out.state_id), _json):
                 raise TectonicsError('water checkpoint content mismatch')
             self._stats['restored_states']+=1

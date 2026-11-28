@@ -21,8 +21,12 @@ class _RaisesContext:
         self.expected_regex = None if expected_regex is None else re.compile(expected_regex)
 
     def handle(self, name, args, kwargs):
+        if not _exception_type(self.expected):
+            raise TypeError(name + '() arg 1 must be an exception type or tuple of exception types')
         if not args:
             kwargs.pop('msg', None)
+            if kwargs:
+                raise TypeError(repr(next(iter(kwargs))) + ' is an invalid keyword argument')
             return self
         callable_obj, *call_args = args
         with self:
@@ -33,10 +37,15 @@ class _RaisesContext:
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is None:
+            raise AssertionError('expected exception was not raised')
         traceback.clear_frames(tb)
         if not issubclass(exc_type, self.expected):
             return False
         self.exception = exc_value.with_traceback(None)
+        if self.expected_regex is not None:
+            if not self.expected_regex.search(str(exc_value)):
+                raise AssertionError('exception did not match expected regex')
         return True
 
 

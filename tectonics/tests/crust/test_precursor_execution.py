@@ -25,7 +25,7 @@ from atlas_tectonics import (
 )
 from atlas_tectonics.crust.precursor import _precursor_snapshot, restore_precursor_state
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
-from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
 from tests.fixtures.precursor_fixtures import state,case,mixed_case,rectangle,cell,REQUEST,SOURCE
 from tests.crust.test_precursor_sampling import prior_state
 import tests.integration.test_precursor_contracts as contracts
@@ -200,6 +200,11 @@ with ArrayStore(sys.argv[2],StoreLimits(4096,8<<20,32<<20,8192)) as store:
     def test_missing_snapshot_returns_none_never_generates(self):
         self.assertIsNone(load_precursor_state(self.store,'0'*64))
         self.assertIsNone(load_initial_samples(self.store,'0'*64))
+
+    def test_corrupt_compressed_payload_refused(self):
+        s=state();save_precursor_state(s,self.store)
+        self.store._db.execute('UPDATE chunks SET payload=? WHERE id=(SELECT id FROM chunks LIMIT 1)',(b'corrupt',))
+        with self.assertRaises((TectonicsError,StoreError)): load_precursor_state(self.store,s.state_id)
 
 
     def test_missing_extra_and_changed_dependencies_refused(self):

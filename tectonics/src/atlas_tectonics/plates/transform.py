@@ -142,6 +142,8 @@ enclosing PreparedPlanarMaterials. Caller-owned polygons/results need allowance.
     def __init__(self, polygons, histories, *, parcel_ids, time_s, source_id, budget=None, cancel=None):
         check_event(cancel, 'regional transport cancelled; no candidate published'); polygons = _polygons(polygons)
         _names(parcel_ids, len(polygons), 'parcel IDs'); _name(source_id, 'motion source')
+        if not 1 <= len(histories) <= MAX_INTERVALS:
+            raise TectonicsError('one to 256 explicit affine history intervals required')
         time_s = scalar(time_s, 'initial epoch')
         resource = _budget(budget)
         lease = resource.reserve(1024*sum(g.vertex_count for g in polygons)+4096*len(histories)+65536,

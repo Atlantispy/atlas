@@ -118,6 +118,7 @@ class SharedBudgetTests(unittest.TestCase):
     def test_invalid_and_immutable_limits(self):
         b=WorkBudget(10)
         with self.assertRaises(AttributeError):b.max_bytes=100
+        with self.assertRaises(TypeError):WorkBudget(10,parent=object())
 
     def test_category_inventory_bounded_and_snapshot_detached(self):
         b=WorkBudget(10)

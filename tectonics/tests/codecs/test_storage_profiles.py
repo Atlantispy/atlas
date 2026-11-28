@@ -95,6 +95,13 @@ class StorageProfileTests(unittest.TestCase):
         dt=np.dtype('<i4');valid=struct.pack('<HB',3,2)+np.array([1,2,3],dtype=dt).tobytes()+b'\x24'
         self.assertEqual(self.store._decode('palette-packed-v1',valid,dt,3),np.array([1,2,3],dtype=dt).tobytes())
 
+    def test_rle_decoder_rejects_oversized_counts_before_repeat(self):
+        dt=np.dtype('<i4')
+        for payload in (struct.pack('<IIi',1,0,4),struct.pack('<IIi',1,2**32-1,4),
+                        struct.pack('<I',1000),b''):
+            with mock.patch('numpy.repeat',side_effect=AssertionError('allocated')):
+                with self.assertRaises(StoreError):self.store._decode('rle-v1',payload,dt,4)
+
     def test_signed_zero_float_and_strided_categorical_exact(self):
         arrays={'z':np.array([0.,-0.]*500),'s':np.arange(100).reshape(10,10)[:,::2],
                 'empty':np.zeros((0,2)),'scalar':np.array(7,dtype='u4')}

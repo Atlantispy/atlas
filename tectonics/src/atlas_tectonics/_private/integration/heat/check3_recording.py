@@ -21,18 +21,13 @@ def stamp():
     return dict(monotonic_ns=time.monotonic_ns(), utc=datetime.now(timezone.utc).isoformat())
 
 
-def source():
-    path = Path(__file__).resolve()
-    return dict(path=str(path), sha256=sha256(path.read_bytes()).hexdigest())
-
-
 class Journal:
     def __init__(self, path, binding):
         self.path = Path(path)
         self.stream = self.path.open('xb', buffering=0)
         self.digest, self.count, self.closed = sha256(), 0, False
         self.append(dict(kind='header', schema=SCHEMA, binding=binding,
-                         clock='time.monotonic_ns; same-host system monotonic clock', source=source()))
+                         clock='time.monotonic_ns; same-host system monotonic clock'))
 
     def append(self, row):
         raw = (json.dumps(dict(sequence=self.count, **row), sort_keys=True,
@@ -61,22 +56,10 @@ class Producer:
         self.calls, self.brackets, self.ledger = 0, 0, None
         self.open_brackets = set()
         self.failed = False
-        self.sources = {}
-
-    def bind_source(self, path):
-        path = Path(path).resolve()
-        pin = sha256(path.read_bytes()).hexdigest()
-        old = self.sources.get(str(path))
-        if old is not None and old != pin:
-            raise RuntimeError('CHECK3 reached source changed during recording')
-        if old is None:
-            self.sources[str(path)] = pin
-            self.journal.append(dict(kind='reached-source', path=str(path), sha256=pin))
 
     @contextmanager
-    def forward(self, ledger, selected_phases, caller_source):
+    def forward(self, ledger, selected_phases):
         global _active
-        self.bind_source(caller_source)
         self.journal.append(dict(kind='forward-begin', time=stamp(), selected_heat_phases=selected_phases,
                                  ledger_type=type(ledger).__module__+'.'+type(ledger).__qualname__))
         self.ledger, _active = ledger, self
@@ -138,26 +121,21 @@ class Producer:
     def finish(self):
         if self.ledger is not None or self.open_brackets:
             self.failed = True
-        for path in self.sources:
-            self.bind_source(path)
         return self.journal.finish(not self.failed)
 
 
-def reconstruction_entry(budget, meter, faces, caller_source):
+def reconstruction_entry(budget, meter, faces):
     # Other proof/reader routes remain unchanged. Selected IV must bind forward()
     # and its receiver must require nonempty complete entries; absence never passes.
     if _active is not None:
         if meter is None or meter.categories is not None or meter.failed:
             _active.failed = True
             raise RuntimeError('CHECK3 actual live forward meter required at every reconstruction entry')
-        _active.bind_source(caller_source)
         _active.entry(budget, meter, faces)
 
 
-def existing_reread(caller_source):
+def existing_reread():
     from contextlib import nullcontext
-    if _active is not None:
-        _active.bind_source(caller_source)
     return nullcontext() if _active is None else _active.reread()
 
 

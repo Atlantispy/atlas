@@ -244,6 +244,8 @@ def publish_catalog(path, catalog, *, expected_digest, cancel=None, crash_hook=N
     raw = catalog.to_bytes()
     check_cancel(cancel)
     with publication_lock(path):
-        read_catalog(path)[1] if path.exists() else None
+        current = read_catalog(path)[1] if path.exists() else None
+        if current != expected_digest:
+            raise ContractError('catalog compare-and-swap conflict')
         _publish_checked_image(path, raw, cancel=cancel, crash_hook=crash_hook, precondition=precondition)
     return digest(raw)

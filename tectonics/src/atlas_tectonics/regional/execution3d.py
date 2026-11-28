@@ -1056,6 +1056,9 @@ class PreparedRegionalStokes3D:
                             _,_,r,_,_,_,_ = self._linear(zero_load,modes_d[j],0.,cancel,matrix_state=products)
                             response[:,j] = np.einsum('mij,ij->m',modes,force_conversion(r))
                         response = frozen(response)
+                        scale = max(np.max(np.abs(response)),np.finfo(float).tiny)
+                        if np.max(np.abs(response-response.T)) > 2e-8*scale:
+                            raise TectonicsError('regional coupling violates reciprocal mechanical work')
                     drag_matrix = _factored_scale(drag,(V,),(L,),'scaled exterior resistance')
                     matrix = response+drag_matrix
                     eig = np.linalg.eigvalsh((matrix+matrix.T)/2)
@@ -1233,6 +1236,8 @@ class PreparedRegionalStokes3D:
                                  'choose RegionalMechanicsScales near the problem magnitudes')
         else:
             work_relative = abs(work_error)/work_scale
+        if not work_relative <= 5e-9:
+            raise TectonicsError('3D mechanical work identity failed')
         L,V = self._scales.length_m,self._scales.velocity_m_s
         stress_scale = ((self._eta0,V),(L,))
         force_scale = ((self._eta0,V,L),())

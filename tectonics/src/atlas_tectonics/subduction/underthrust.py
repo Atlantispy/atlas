@@ -274,6 +274,8 @@ class PreparedUnderthrust:
                  gravity_m_s2, receiver_regions, exterior_id, source_id,
                  host_space_source_id, budget=None, cancel=None):
         _check_cancel(cancel)
+        if not 1 <= len(histories) <= MAX_INTERVALS:
+            raise GeometryError('one to 256 explicit motion/work intervals required')
         if type(receiver_regions) is not tuple or not 1 <= len(receiver_regions) <= MAX_RECEIVERS:
             raise GeometryError('one to 64 named receiver polygons required')
         for name in (epoch_id, exterior_id, source_id, host_space_source_id): _label(name, 'section provenance')

@@ -1264,7 +1264,7 @@ def reconstruct_faces(kernel, prepared, face_ids, *, budget, cancelled, certific
     order = list(range(len(face_ids)))                  # the positions not yet done, in payload order
     wanted = _to_reconstruct(prepared, face_ids, order) if _wanted is None else _wanted
     from atlas_tectonics._private.integration.heat import check3_recording as CHECK3
-    CHECK3.reconstruction_entry(budget, meter, wanted, __file__)
+    CHECK3.reconstruction_entry(budget, meter, wanted)
     count = workers(budget, wanted)
     call = dict(faces=len(face_ids), to_reconstruct=wanted, configured=_state['workers'], workers=count, strict=strict(),
                 collected=0, in_caller=0, fallback=None, failed_face=None, restarted=False, second_fallback=None,

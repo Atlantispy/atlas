@@ -135,6 +135,8 @@ def _solve_checked(a, rhs, lu):
     residual = a@value-rhs
     scale = np.abs(a)@np.abs(value)+np.abs(rhs)
     error = float(np.max(np.abs(residual)/np.maximum(scale, np.finfo(float).tiny)))
+    if not np.isfinite(value).all() or error > 1e-10:
+        raise TectonicsError('steady linear equation residual failed')
     return value, error
 
 
@@ -285,6 +287,8 @@ class _Wedge:
             pressure_mass=mass,velocity_mass_sqrt_eta=velocity_mass,
             pressure_mean_weights=mean,budget=self.budget,cancel=cancel)
         result = fullv.copy(); result[freev] = solution
+        if case == '1b' and abs(diagnostics['gauge_multiplier']) > 1e-7:
+            raise TectonicsError('prescribed wedge boundary has incompatible total flux')
         velocity = np.stack((result[:self.n], result[self.n:2*self.n]), axis=-1)
         self._prepare_gradient()
         gradient = np.einsum('eni,eqnj->eqij', velocity[self.cells], self.G)
@@ -436,7 +440,11 @@ class _Heat:
             self.last = (key, a, rhs, lu, free, full, raw, flux_weights)
         solution, error = _solve_checked(a, rhs, lu)
         constant_error=float(np.max(np.abs(raw@np.ones(n))))/max(float(np.max(np.asarray(abs(raw).sum(axis=1)))),np.finfo(float).tiny)
+        if constant_error>1e-10:
+            raise TectonicsError('conservative thermal operator does not preserve constant temperature')
         t = full.copy(); t[free] = solution
+        if np.min(t+273.) <= 0:
+            raise TectonicsError('thermal discretisation produced non-positive absolute temperature')
         # Reaction at each prescribed-temperature node is a declared heat input;
         # open natural boundaries have zero diffusive normal flux. The summed
         # discrete steady balance is the free-node residual added up, gated here
@@ -444,6 +452,7 @@ class _Heat:
         reaction = raw@t
         balance = float(np.sum(reaction[free]))
         scale = float(np.sum(np.abs(reaction)))
+        if abs(balance) > 1e-9*max(1., scale): raise TectonicsError('thermal reaction balance failed')
         # The test functions sum to one, so the assembled operator's column
         # sums are flux_weights and sum(reaction) is flux_weights@t. heat_error
         # is therefore -balance up to round-off: an algebraic identity of the
@@ -451,6 +460,8 @@ class _Heat:
         diffusive_input = float(np.sum(reaction)-balance)
         advective_export = float(flux_weights@t)
         heat_error = diffusive_input-advective_export
+        if abs(heat_error) > 1e-9*max(1.,scale,abs(advective_export)):
+            raise TectonicsError('assembled boundary heat flux identity does not close')
         scale_w_m = 3300*1250*SPEED_M_S*1000
         check_event_or_callable(cancel, 'constitutive work cancelled')
         return t+273., dict(linear_residual=error, free_heat_balance=balance,
@@ -700,6 +711,9 @@ class PreparedSubduction:
                     del tq, new_eta, log_eta, residual, fallback
                 if converged:
                     break
+            if not converged:
+                raise TectonicsError('steady nonlinear subduction did not converge within bound: '+
+                    str(dict(iterations=iteration, temperature_delta=t_error, log_viscosity_residual=eta_error)))
             if mixing is not None:
                 mixing.close()
             samples = diagnostic_points_km()
@@ -740,7 +754,7 @@ class PreparedSubduction:
                     'none: case 1a prescribes analytic corner-flow velocity and computes no pressure')
             if nonlinear:
                 statistics['nonlinear'] = dict(method='safeguarded depth-3 log-viscosity Anderson; beta=.5',
-                    evaluations=iteration, temperature_delta=t_error, log_viscosity_residual=eta_error,
+                    evaluations=iteration, converged=converged, temperature_delta=t_error, log_viscosity_residual=eta_error,
                     accelerated_attempts=mixing.attempted, accepted=mixing.accepted,
                     rejected=mixing.rejected, discarded=mixing.discarded)
             lease = self.budget.reserve(sum(a.nbytes for a in fields)+4096,category='subduction-retained-result')

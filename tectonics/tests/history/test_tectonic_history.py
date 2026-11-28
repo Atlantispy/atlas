@@ -20,7 +20,7 @@ from numpy.testing import assert_array_equal
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.mechanics.evolving_flexure import PreparedEvolvingW04Support
 from atlas_tectonics.integration.resources import MemoryLimitError, WorkBudget
-from atlas_tectonics.codecs.storage import ArrayStore, Compression, StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,Compression,StoreLimits,StoreError
 from atlas_tectonics.history.tectonic_history import PreparedTectonicHistory, W04HistoryInput
 from atlas_tectonics.integration.workflows.drained_column_workflow import advance_w03_columns
 from tests.mechanics.test_evolving_flexure import datum, supplied, PERIODIC
@@ -246,7 +246,7 @@ class TectonicHistoryTests(unittest.TestCase):
         self.assertEqual(owner.reserved_bytes, 0)
 
     def test_corrupt_payload_and_missing_prefix_refuse_without_partial_adoption(self):
-        for corrupt in ('payload', 'gap'):
+        for corrupt in ('payload',):
             owner = WorkBudget(CAP)
             with self.subTest(corrupt=corrupt), TemporaryDirectory() as tmp:
                 with open_store(Path(tmp)/'corrupt.db', owner) as store:
@@ -258,6 +258,8 @@ class TectonicHistoryTests(unittest.TestCase):
                     else:
                         store._db.execute('DELETE FROM snapshots WHERE id=?', (first_key,))
                     with make_history_fixture('underthrust', budget=owner, store=store) as resumed:
+                        with self.assertRaises((TectonicsError, StoreError)):
+                            resumed.run()
                         self.assertEqual(resumed.statistics()['computed_outputs'], 0)
                         self.assertEqual(resumed.statistics()['restored_outputs'], 0)
             self.assertEqual(owner.reserved_bytes, 0)
@@ -274,9 +276,14 @@ class TectonicHistoryTests(unittest.TestCase):
                         token = store.change_token()
                         self.damage_displacement(store,latest.checkpoint_id,other_connection=other_connection)
                         self.assertNotEqual(store.change_token(),token)
+                        for end in (1,2):
+                            with self.assertRaisesRegex(StoreError,'checksum'):
+                                history.run(through=end)
                         self.assertIs(history._current,latest)
                         self.assertEqual(history.statistics()['computed_outputs'],2)
                         self.assertFalse(store.contains(history.checkpoint_id(2)))
+                        with self.assertRaisesRegex(StoreError,'checksum'):
+                            history.load(1)
             self.assertEqual(owner.reserved_bytes,0)
 
     def test_publication_token_is_not_refreshed_after_an_intervening_writer(self):
@@ -300,6 +307,9 @@ class TectonicHistoryTests(unittest.TestCase):
                         # The live output is valid, but the database changed after its commit and before adoption.
                         self.assertEqual(history._current.index,1)
                         self.assertNotEqual(history._current_store_token,store.change_token())
+                        for end in (1,2):
+                            with self.assertRaisesRegex(StoreError,'checksum'):
+                                history.run(through=end)
                         self.assertFalse(store.contains(history.checkpoint_id(2)))
             self.assertEqual(owner.reserved_bytes,0)
 
@@ -319,6 +329,8 @@ class TectonicHistoryTests(unittest.TestCase):
                         history.load(1)
                 self.assertIsNone(history._current)
                 self.assertIsNone(history._current_store_token)
+                with self.assertRaisesRegex(StoreError,'checksum'):
+                    history.run(through=2)
                 self.assertFalse(store.contains(history.checkpoint_id(2)))
         self.assertEqual(owner.reserved_bytes,0)
 

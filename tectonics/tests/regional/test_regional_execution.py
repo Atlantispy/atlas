@@ -1,5 +1,5 @@
 """Focused W07 public boundary, source, scaling and reuse checks."""
-from concurrent.futures import CancelledError
+from concurrent.futures import CancelledError,ThreadPoolExecutor
 import threading
 import unittest
 
@@ -153,6 +153,11 @@ class RegionalExecutionTests(unittest.TestCase):
         with prepare() as plan:
             with self.assertRaises(CancelledError):
                 solve('couette', plan, cancel=event)
+            with ThreadPoolExecutor(max_workers=1) as worker:
+                with self.assertRaises(TectonicsError):
+                    worker.submit(solve, 'couette', plan).result()
+            solve('couette', plan)
+        with self.assertRaises(TectonicsError):
             solve('couette', plan)
         plan.close()
 

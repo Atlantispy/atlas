@@ -131,6 +131,38 @@ def _runtime_record(backend):
 
 
 _lock = threading.RLock()
+# Entered contexts are weakly held and tracked by nesting depth for B13 publication.
+_entered = weakref.WeakKeyDictionary()
+
+
+def publication_boundary():
+    """Require live admitted contexts before publishing to another process (B13).
+
+    Compact seal, promote and adopt call this. Strict checks the active contexts.
+    A concurrently closed context is skipped only after successful close and hold
+    release. A failed or in-progress close refuses publication.
+    """
+    with _lock:
+        contexts = [context for context, depth in _entered.items() if depth]
+    for context in contexts:
+        # Never wait for another thread's close or check, and never hold the registry
+        # lock while taking a context lock. A failed close is not proof of identity.
+        if not context._close_lock.acquire(blocking=False):
+            raise TectonicsError("execution context close or publication check is in progress")
+        try:
+            if context._closed:
+                if not context._close_verified:
+                    raise TectonicsError("execution context closed without successful verification")
+                continue
+            try:
+                context.verify_boundary()
+            except TectonicsError:
+                if not (context._closed and context._close_verified):
+                    raise
+        finally:
+            context._close_lock.release()
+
+
 @lru_cache(maxsize=32)
 def _execution_build(backend, runtime, version):
     return _digest(_json(dict(schema='atlas.kernel-execution.v7', backend=backend, runtime=json.loads(runtime), version=version)))
@@ -144,6 +176,8 @@ class ExecutionContext:
     def _open(self, backend):
         self.backend = backend
         self._runtime = _runtime_record(backend)
+        self._closed = self._close_verified = False
+        self._close_lock = threading.RLock()
         from atlas_tectonics import __version__
         with _lock:
             self._identity = _execution_build(backend, _json(self._runtime), __version__)
@@ -156,14 +190,42 @@ class ExecutionContext:
     def identity(self):
         return self._identity
 
+    def verify(self):
+        if self._closed:
+            raise TectonicsError("execution context is closed")
+
+    def verify_boundary(self):
+        self.verify()
+
     def close(self):
-        pass
+        with self._close_lock:
+            if not self._closed:
+                self._closed = True
+                self._close_verified = True
 
     def __enter__(self):
+        try:
+            self.verify()
+        except BaseException as error:
+            try:
+                self.close()
+            except BaseException as cleanup:
+                error.add_note('Execution context cleanup also failed: ' + repr(cleanup))
+            raise
+        with _lock:
+            _entered[self] = _entered.get(self, 0) + 1
         return self
 
     def __exit__(self, *args):
-        pass
+        try:
+            self.close()
+        finally:
+            with _lock:
+                depth = _entered.get(self, 0) - 1
+                if depth > 0:
+                    _entered[self] = depth
+                else:
+                    _entered.pop(self, None)
 
 
 def execution_identity(backend="reference"):

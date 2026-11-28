@@ -4,7 +4,6 @@ Apply these exact source seams after the compact Step 7 transformations. The
 shared dictionaries below remain inside their original producer frames; no
 new public record or unowned result is issued.
 """
-import ast
 import sys
 
 import numpy as np
@@ -15,10 +14,6 @@ from atlas_tectonics.integration.resources import _close_consumed_stack
 
 
 input_stack = _close_consumed_stack
-
-
-def _once(source, old, new):
-    return source.replace(old, new, 1)
 
 
 class _FloatSequence:
@@ -514,20 +509,3 @@ def check_cancel(cancel):
     _cancel(cancel)
 
 
-def _tail(source, name, anchor, scope, replacement):
-    """Open one bounded-access scope after all native pre-entry guards."""
-    import textwrap
-    part = _function_any(source, name)
-    at = part.index(anchor)
-    prefix, tail = part[:at], part[at:]
-    indent = tail[:len(tail)-len(tail.lstrip(' '))]
-    tail = tail.replace(anchor, replacement, 1)
-    changed = prefix+indent+scope+'\n'+textwrap.indent(tail, '    ')
-    return _once(source, part, changed)
-
-
-def _function_any(source, name):
-    matches = [node for node in ast.walk(ast.parse(source))
-               if isinstance(node, ast.FunctionDef) and node.name == name]
-    node = matches[0]
-    return ''.join(source.splitlines(keepends=True)[node.lineno-1:node.end_lineno])

@@ -37,10 +37,6 @@ def field_workspace(values):
 
 def rational_text(value):
     """Canonical general rational, with no decimal conversion or arbitrary bit ceiling."""
-    try:
-        pass
-    except OverflowError:
-        pass
     return '%s/%s' % (hex(value.numerator), hex(value.denominator))
 
 
@@ -259,9 +255,7 @@ def seed(sphere, pieces, heat, *, winners=None):
 
 
 def checked(sphere, records, values):
-    patches = S.required(sphere.material).patches
-    for patch in patches:
-        pass
+    S.required(sphere.material)
     return tuple(sorted((key, tuple(column)) for key, column in values.items()))
 
 

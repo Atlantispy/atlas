@@ -1920,6 +1920,8 @@ class RecordRef:
             return self._field_batch(name)
 
     def _field_batch(self, name):
+        if self._fields is not None and name not in self._fields:
+            raise KeyError(name)
         v = self._view
         start, stop = v._range('shape', v._v('node.shape', self.index))
         low, high = start, stop
@@ -1934,6 +1936,8 @@ class RecordRef:
             else:
                 high = middle
             del key, scratch
+        if low == stop:
+            raise KeyError(name)
         token = v._v('shape.key', low)
         a, b = v._range('token', token)
         scratch = T.Scratch(self.scope.run_budget, 4096+32*(b-a))

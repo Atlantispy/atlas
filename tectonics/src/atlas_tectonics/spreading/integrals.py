@@ -80,7 +80,7 @@ def _young_means(lo, hi, x, width, plate, budget, cancel, erfc, tolerance):
             if 0. < q < 1.:
                 cuts.append(float(q))
         cuts.sort()
-        pending.extend((i, a, b, 0) for a, b in zip(cuts[:-1], cuts[1:]) if b > a)
+        pending.extend((i, a, b) for a, b in zip(cuts[:-1], cuts[1:]) if b > a)
     evaluated = 0
     while pending:
         _cancel(cancel)
@@ -103,12 +103,12 @@ def _young_means(lo, hi, x, width, plate, budget, cancel, erfc, tolerance):
                 sampled*(weights[None, :]*jacobian)[:, :, None], axis=1))
         estimate = 8*np.abs(values[1]-values[0])+64*_EPS*np.abs(values[1])
         accepted = np.all(estimate <= span[:, None]*tolerance, axis=1)
-        for j, (i, start, end, depth) in enumerate(batch):
+        for j, (i, start, end) in enumerate(batch):
             if accepted[j]:
                 output[i] += values[1][j]; uncertainty[i] += estimate[j]
             else:
                 mid = start+.5*(end-start)
-                pending.extend(((i, start, mid, depth+1), (i, mid, end, depth+1)))
+                pending.extend(((i, start, mid), (i, mid, end)))
     if np.any(uncertainty > tolerance*(1+128*_EPS)):
         raise TectonicsError('spreading thermal accumulated quadrature error bound not met')
     return output

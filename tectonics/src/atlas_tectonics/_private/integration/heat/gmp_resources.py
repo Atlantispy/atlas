@@ -158,6 +158,8 @@ def native_workspace_allowance(bits, count, *, pairs=0):
     all live operands. No OS RSS or arbitrary-operation scratch guarantee.
     """
     _installed_policy()
+    if bits > 1 << 27:
+        raise ValueError('exact operands exceed the existing GMP route ceiling')
     return 65536+128*bits+256*count+256*pairs
 
 

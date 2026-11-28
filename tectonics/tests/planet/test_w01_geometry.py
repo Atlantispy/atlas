@@ -26,14 +26,14 @@ from unittest import mock
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import shapely
-from shapely.geometry import Polygon, GeometryCollection, LineString
+from shapely.geometry import Polygon,GeometryCollection,LineString,Point
 
 from atlas_tectonics import (GeometryError, TectonicsError, GeometryLimits,
     PlanarGeometry as PG, SphericalGeometry as SG, SphericalChart, SphericalFrame,
     GeometryFeature as Feature, GeometryIndex, audit_coverage, save_geometry,
     load_geometry, Rotation, geometry_runtime)
 from atlas_tectonics.integration.resources import WorkBudget, MemoryLimitError
-from atlas_tectonics.codecs.storage import ArrayStore, StoreLimits
+from atlas_tectonics.codecs.storage import ArrayStore,StoreLimits,StoreError
 from atlas_tectonics.integration.reuse import ExecutionContext
 from atlas_tectonics.planet._geometry_native import arc_distances
 
@@ -628,8 +628,25 @@ with ArrayStore(sys.argv[1],StoreLimits(1024,1<<20,4<<20)) as s:
             proc=subprocess.run([sys.executable,'-B','-c',code,str(p),g.geometry_id],env=env,text=True,capture_output=True,timeout=30)
             self.assertEqual(proc.returncode,0,proc.stderr);self.assertEqual(proc.stdout.strip(),g.geometry_id)
 
+    def test_corruption_refused_not_miss(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with ArrayStore(Path(tmp)/'g.db',StoreLimits(1024,1<<20,4<<20)) as s:
+                g=box();save_geometry(g,s)
+                s._db.execute('UPDATE chunks SET payload=?',(b'corrupt',))
+                with self.assertRaises(StoreError):load_geometry(s,g.geometry_id)
+
     def test_invalid_wkb_never_repaired(self):
-        for raw in (b'',b'notwkb'):
+        for raw in (b'',b'notwkb',shapely.to_wkb(Polygon([(0,0),(1,1),(0,1),(1,0)]))):
+            with self.assertRaises(GeometryError):PG.from_wkb(raw,frame_id='p')
+
+    def test_oversized_wkb_counts_refused_before_native_parser(self):
+        import struct
+        raw=b'\x01'+struct.pack('<II',2,1_000_000_000)
+        with mock.patch('shapely.from_wkb',side_effect=AssertionError('native allocation attempted')):
+            with self.assertRaises(GeometryError):PG.from_wkb(raw,frame_id='p')
+
+    def test_wkb_trailing_bytes_and_z_refused(self):
+        for raw in (box().wkb+b'extra',shapely.to_wkb(Point(1,2,3))):
             with self.assertRaises(GeometryError):PG.from_wkb(raw,frame_id='p')
 
     def test_big_endian_wkb_is_explicitly_decoded(self):

@@ -11,6 +11,7 @@ stack-usage output. It is a conservative allowance, not a measured RSS figure.
 from __future__ import annotations
 
 import ctypes as C
+import hashlib
 from pathlib import Path
 import re
 from types import MappingProxyType
@@ -20,6 +21,9 @@ import numpy as np
 
 
 MAX_CHUNK_BYTES = 65536
+MAX_DICTIONARY_BYTES = 65536
+MAX_DICTIONARIES = 64
+MAX_RETAINED_DICTIONARY_BYTES = 4 * 1024 * 1024
 DICTIONARY_BOOKKEEPING_BYTES = 4096
 DICTIONARY_ENTRY_BYTES = 512
 MAX_WORKSPACE_BYTES = 8 * 1024 * 1024
@@ -49,15 +53,23 @@ class _DictionaryOwner:
         self.mapping = MappingProxyType(self._data)
         self._lease = None
         count = len(source)
+        if count > MAX_DICTIONARIES:
+            raise ValueError('at most 64 retained dictionaries are supported')
         if not count:
             return
 
         def size(key, value):
+            if (type(key) is not str or not _SHA.fullmatch(key) or type(value) is not bytes
+                    or not 256 <= len(value) <= MAX_DICTIONARY_BYTES
+                    or hashlib.sha256(value).hexdigest() != key):
+                raise ValueError('invalid retained dictionary bytes/hash')
             return len(value)
 
         total = 0
         for key, value in source.items():
             total += size(key, value)
+            if total > MAX_RETAINED_DICTIONARY_BYTES:
+                raise ValueError('retained dictionary payload exceeds 4 MiB')
         charge = total + DICTIONARY_BOOKKEEPING_BYTES + count * DICTIONARY_ENTRY_BYTES
         lease = budget.reserve(charge, category='codec-dictionary-retained')
         lease.__enter__()
@@ -111,6 +123,8 @@ class ZstdBackend:
         self.library_path = library_path
         self._lib = C.CDLL(str(library_path))
         self._bind()
+        if self._lib.wp10_zstd_abi_version() != 1 or self._lib.wp10_zstd_library_version() != 10507:
+            raise ValueError('unsupported native codec ABI/zstd version')
         self._frozen = True
 
     def _bind(self):
@@ -143,6 +157,10 @@ class ZstdBackend:
         if sha is None:
             return None
         value = self._dictionaries.get(sha)
+        # No file read or native allocation occurs. Immutable content is checked
+        # again at the decode boundary rather than trusting a numeric zstd ID.
+        if hashlib.sha256(value).hexdigest() != sha:
+            raise ValueError('trained dictionary content SHA-256 mismatch')
         return value
 
     def _encode_rule(self, rule):
@@ -196,6 +214,8 @@ class ZstdBackend:
             self._check(self._lib.wp10_zstd_encode(arena, arena_n, _pointer(raw), len(raw),
                 dt.itemsize, _FILTERS[shuffle], level, _pointer(dictionary), len(dictionary or b''),
                 C.byref(output), C.byref(output_n)))
+            if not output.value or not 0 < output_n.value <= output_cap:
+                raise ValueError('native encoder returned invalid output')
             if output_n.value >= len(raw):
                 return 'raw', raw
             payload = C.string_at(output, output_n.value)
@@ -239,6 +259,8 @@ class ZstdBackend:
             self._check(self._lib.wp10_zstd_decode(arena, arena_n, _pointer(payload), len(payload),
                 count * dt.itemsize, dt.itemsize, _FILTERS[shuffle], _pointer(dictionary),
                 len(dictionary or b''), C.byref(output), C.byref(output_n)))
+            if not output.value or output_n.value != count * dt.itemsize:
+                raise ValueError('native decoder returned invalid output')
             result = C.string_at(output, output_n.value)
             return result
         finally:

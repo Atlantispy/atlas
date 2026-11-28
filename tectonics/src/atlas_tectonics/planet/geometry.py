@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any
 import hashlib
 import math
+import struct
 import threading
 
 import numpy as np
@@ -116,6 +117,53 @@ def _preflight_vertices(values, dimensions, limits):
     if total > limits.max_vertices:
         raise GeometryError('geometry vertex limit exceeded')
     return total
+
+
+def _inspect_wkb(raw, limits):
+    """Check type/count/length envelopes before GEOS sees a binary definition.
+
+    A tiny corrupt payload must not request billions of native points/rings. Only
+    standard 2D WKB types 1-7 are supported; EWKB/SRID/Z/M need an explicit importer.
+    This parser does not repair topology. _validate_shape then checks the actual
+    shape: GEOS validity, the vertex-sequence rules and, because GEOS validity
+    does not compare the members of a collection, the collection rule.
+    """
+    offset=0;vertices=0;parts=0;pending=[(None,0)]
+    def count_at(position,endian):
+        if position+4>len(raw):raise GeometryError('truncated WKB count')
+        return struct.unpack_from(endian+'I',raw,position)[0],position+4
+    while pending:
+        expected,depth=pending.pop();parts+=1
+        if depth>64 or parts>limits.max_vertices+1 or offset+5>len(raw):
+            raise GeometryError('WKB nesting/part/length envelope exceeded')
+        order=raw[offset]
+        if order not in (0,1):raise GeometryError('invalid WKB byte order')
+        endian='<' if order else '>'
+        kind=struct.unpack_from(endian+'I',raw,offset+1)[0];offset+=5
+        if kind not in range(1,8) or expected is not None and kind!=expected:
+            raise GeometryError('unsupported WKB type/dimensionality')
+        if kind==1:
+            vertices+=1;offset+=16
+        elif kind in (2,3):
+            rings=1
+            if kind==3:
+                rings,offset=count_at(offset,endian)
+                if rings>limits.max_vertices:raise GeometryError('WKB ring count exceeds limit')
+            for _ in range(rings):
+                count,offset=count_at(offset,endian)
+                vertices+=count
+                if vertices>limits.max_vertices or count>(len(raw)-offset)//16:
+                    raise GeometryError('WKB coordinate count exceeds payload or limit')
+                offset+=16*count
+        else:
+            count,offset=count_at(offset,endian)
+            if count>limits.max_vertices or count>(len(raw)-offset)//5:
+                raise GeometryError('WKB child count exceeds payload or limit')
+            expected_child={4:1,5:2,6:3,7:None}[kind]
+            pending.extend((expected_child,depth+1) for _ in range(count))
+        if offset>len(raw) or vertices>limits.max_vertices:
+            raise GeometryError('WKB coordinate envelope exceeded')
+    if offset!=len(raw):raise GeometryError('WKB trailing bytes are not part of geometry')
 
 
 def _collection_members(g, kind, out):
@@ -389,7 +437,10 @@ class PlanarGeometry:
         after parsing raises 'invalid stored geometry'; the reason is its __cause__.
         """
         limits = _limits(limits)
+        if len(raw) > 64*limits.max_vertices+4096:
+            raise GeometryError('bounded immutable WKB bytes required')
         with select_budget(budget).reserve(32*len(raw)+8192, category='geometry-restore'):
+            _inspect_wkb(raw,limits)
             try:
                 return cls._from_shape(shapely.from_wkb(raw, on_invalid='raise'), frame_id, limits=limits)
             except (GEOSException, ValueError) as exc:

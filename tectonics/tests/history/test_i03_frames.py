@@ -14,8 +14,9 @@ import numpy as np
 
 import tests.fixtures.i03_fixtures as F
 from atlas_tectonics.integration.geometry import sphere as S
-from atlas_tectonics.integration import transfer as T
+from atlas_tectonics.integration import transfer as T,state as I
 from atlas_tectonics.kinematics import _restore_rotation
+from fractions import Fraction
 
 CASE2 = json.loads((F.CASES/'i03_controls_v2.json').read_text(encoding='utf-8'))
 RELATIVE = F.tolerance('relative')
@@ -216,7 +217,21 @@ class StoredFramesTests(unittest.TestCase):
         self.assertTrue(F.crust(network).material.closure()['identity_exact'])
 
     def test_a_restored_computed_state_is_measured_against_its_pieces(self):
+        rule = control('every_interval_occupancy')
         state = self.moved
+        network, material = state.network, state.material
+        stock = np.array(material.stock)
+        before = Fraction(float(stock[0, 0]))
+        stock[0, 0] *= 1+rule['mismatch_relative']
+        initial = (material._initial[0]+Fraction(float(stock[0, 0]))-before,)+tuple(material._initial[1:])
+        with mock.patch.object(S, '_occupancy', lambda *args, **kwargs: None):
+            forged = S._material(network, material.phases, material.enthalpy_basis, material.cohorts,
+                                 material.exteriors, None, material.piece_face, material.piece_cohort, stock, initial,
+                                 material._supplied, material._rounding, material._allowance, None)
+            computed = S._sphere(network, forged, state.parent_state_id, state.root_state_id, I.COMPUTED)
+        with self.assertRaises(S.SphereError) as caught:
+            S.restore_sphere(computed.descriptor(), computed.arrays())
+        self.assertIn('do not occupy', str(caught.exception))
         self.assertEqual(S.restore_sphere(state.descriptor(), state.arrays()).state_id, state.state_id)
 
 
@@ -329,6 +344,23 @@ class RestoreDiagnosisTests(unittest.TestCase):
         with self.assertRaises(S.SphereError) as caught:
             S.restore_network(network.descriptor(), arrays)
         self.assertNotIn('incomplete', str(caught.exception))
+
+    def test_verified_measures_every_face_against_its_pieces(self):
+        rule = control('every_interval_occupancy')
+        good = F.crust(F.three_plates())
+        network, material = good.network, good.material
+        stock = np.array(material.stock)
+        stock[0, 0] *= 1+rule['mismatch_relative']
+        exact = tuple(sum((Fraction(float(x)) for x in stock[:, column]), Fraction(0))
+                      for column in range(stock.shape[1]))
+        zero = (Fraction(0),)*stock.shape[1]
+        forged = S._material(network, material.phases, material.enthalpy_basis, material.cohorts,
+                             material.exteriors, None, material.piece_face, material.piece_cohort, stock, exact, (),
+                             zero, zero, None, ())
+        state = S._sphere(network, forged, None, None, I.DECLARED)
+        with self.assertRaises(S.SphereError):
+            S.verified(state)
+        self.assertIs(S.verified(good), good)
 
 class EveryIntervalOccupancyTests(unittest.TestCase):
     def test_every_face_is_measured_against_its_pieces_every_interval(self):

@@ -175,6 +175,7 @@ class StorageTests(unittest.TestCase):
 
     def test_schema_and_limits(self):
         with self.assertRaises(StoreError):StoreLimits(0,100,65536)
+        with self.assertRaises(StoreError):self.store.put(key('bad'),{'a':np.array([np.nan])})
         with self.assertRaises(StoreError):self.store.put(key('bad'),{'a':np.array([object()])})
         self.assertEqual(self.store.statistics()['snapshots'],0)
 
@@ -222,6 +223,12 @@ class StorageTests(unittest.TestCase):
             s.put(key('p'),{'material':a})
             assert_array_equal(s.get(key('p'))['material'],a)
             self.assertIn('palette8',[r[0] for r in s._db.execute('SELECT codec FROM chunks')])
+
+    def test_corruption_is_not_a_cache_miss(self):
+        self.store.put(key('a'),{'a':np.arange(512.)});self.store.get(key('a'))
+        other=sqlite3.connect(self.path)
+        other.execute("UPDATE chunks SET payload=? WHERE id=(SELECT id FROM chunks LIMIT 1)",(b'bad',));other.commit();other.close()
+        with self.assertRaises(StoreError):self.store.get(key('a'))
 
     def test_absent_key_is_none(self):
         self.assertIsNone(self.store.get(key('absent')))

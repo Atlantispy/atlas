@@ -31,6 +31,10 @@ class HeaderRules(unittest.TestCase):
     def test_refusals_name_their_field_and_numpy_seconds_are_accepted(self):
         header = P.Header(**self.fields(interval=(0, 0, np.float64(0.), np.float64(0.)), endpoint_s=np.float64(0.)))
         self.assertEqual(header.endpoint_s, 0.)
+        for change, code, detail in ((dict(endpoint_s=float('nan')), P.MISSING_VALUE, 'endpoint_s'),):
+            with self.assertRaises(P.PortRefused) as caught:
+                P.Header(**self.fields(**change))
+            self.assertEqual((caught.exception.code, caught.exception.detail), (code, detail), change)
 
     def test_interval_and_endpoint(self):
         header = P.Header(**self.fields(interval=(0, 1, 0, 1.), endpoint_s=0))

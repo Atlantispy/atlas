@@ -1655,6 +1655,10 @@ def _occupied(network, geometry, columns, budget):
                                                 min(position[1] for position in positions))
                 largest = min(tied, key=cohort_positions.__getitem__)
             shares[largest] = measured-math.fsum(v for c, v in shares.items() if c != largest)
+        if set(shares) != set(cells_by_cohort) or any(not cells for cells in cells_by_cohort.values()):
+            raise FamilyRefused('face %s: piece stocks and positive material support have different owners '
+                                '(PIECE_FOOTPRINT); no positive fragment is reassigned or erased' % face_id,
+                                LAYOUT_REFUSED)
         for cohort in sorted(shares):
             area = shares[cohort]
             column = columns[cohort]

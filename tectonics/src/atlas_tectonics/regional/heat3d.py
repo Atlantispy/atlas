@@ -281,6 +281,8 @@ class PreparedRegionalHeat3D:
             energy_scale = max(initial_energy, final_energy, abs(source_energy),
                                *(abs(v) for v in outward.values()), np.finfo(float).tiny)
             relative = abs(balance)/energy_scale
+            if not math.isfinite(relative) or relative > 1e-11:
+                raise TectonicsError('3D heat energy balance exceeds fixed acceptance tolerance')
             # Also expose the increment/flux scale: a large background sensible
             # heat stock must not disguise the accuracy of a small exchange.
             # This explicit storage-roundoff reference is diagnostic only; it

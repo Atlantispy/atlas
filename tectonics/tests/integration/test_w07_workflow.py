@@ -295,7 +295,7 @@ class W07WorkflowTests(unittest.TestCase):
                 finally:
                     store._db.execute('UPDATE snapshots SET body=?,digest=? WHERE id=?', (*original, key))
                 store._db.execute('UPDATE chunks SET payload=?', (b'corrupt',))
-                with self.assertRaises(TectonicsError):
+                with self.assertRaises(StoreError):
                     workflow.load(0)
         self.assertEqual(owner.reserved_bytes, 0)
 
